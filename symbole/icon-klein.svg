@@ -1,27 +1,49 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <!-- Dasselbe Symbol für 16 bis 24 Bildpunkte.
+  <!-- Dasselbe Zeichen für 16 bis 24 Bildpunkte.
 
-       Bei dieser Größe ist jeder Strich zwei Bildpunkte breit. Die beiden
-       Textzeilen und die feinen Absätze am Stift würden zu einem Fleck
-       verschmelzen. Also bleibt nur, was die Sache ausmacht: das Blatt, ein
-       großer Buchstabe und ein Stift ohne Beiwerk.
+       Bei dieser Größe ist ein Strich ein halber Bildpunkt breit. Umriss,
+       Schlitz, Luftloch und der Glanz auf dem Glas verschwämmen zu einem
+       Fleck. Also bleibt nur, was die Sache ausmacht: eine runde Birne,
+       eine Spitze — ausgefüllt statt umrandet — und ein Trieb darin,
+       grob genug, dass er noch etwas ist.
+
+       Auch das Band fällt weg. Es wäre breiter als die Feder und breiter
+       als der Hals der Birne, und seine Ecken stünden nach beiden Seiten
+       als kleine Nasen heraus. Stattdessen setzt die Feder oben genau da
+       an, wo die Birne aufhört: eine einzige, durchgehende Form.
 
        Ein eigenes Bild für kleine Größen ist bei Symbolen üblich. Dieselbe
        Zeichnung herunterzurechnen spart Arbeit und kostet Erkennbarkeit. -->
 
-  <rect width="512" height="512" rx="96" fill="#2F6FB5"/>
+  <defs>
+    <linearGradient id="strich" gradientUnits="userSpaceOnUse" x1="0" y1="182" x2="0" y2="-206">
+      <stop offset="0"    stop-color="#123566"/>
+      <stop offset="0.34" stop-color="#1A62A0"/>
+      <stop offset="0.62" stop-color="#2E9FBC"/>
+      <stop offset="0.84" stop-color="#4FB6AF"/>
+      <stop offset="1"    stop-color="#D9A63E"/>
+    </linearGradient>
+  </defs>
 
-  <path d="M84 54h190l74 74v312a16 16 0 0 1-16 16H84a16 16 0 0 1-16-16V70a16 16 0 0 1 16-16z"
-        fill="#FFFFFF"/>
-  <path d="M274 54l74 74h-56a18 18 0 0 1-18-18z" fill="#B9CEE4"/>
+  <rect width="512" height="512" rx="96" fill="#FAF4E6"/>
 
-  <g transform="translate(108.23 372.00) scale(0.16113 -0.16113)">
-    <path d="M109 411H197L242 196Q284 147 369.0 114.0Q454 81 545 81Q832 81 832 317Q832 391 777.5 442.0Q723 493 606 533Q434 590 358.5 625.5Q283 661 231.0 709.0Q179 757 148.0 825.5Q117 894 117 994Q117 1171 237.5 1263.5Q358 1356 590 1356Q758 1356 962 1313V994H873L828 1178Q726 1252 590 1252Q467 1252 401.0 1206.5Q335 1161 335 1067Q335 1000 390.0 952.5Q445 905 562 868Q791 793 876.5 737.5Q962 682 1007.0 600.0Q1052 518 1052 407Q1052 -20 549 -20Q434 -20 314.5 -0.5Q195 19 109 51Z" fill="#2F6FB5"/>
-  </g>
+  <g transform="translate(256,256) rotate(38) scale(1.06) translate(0,14)"
+     fill="url(#strich)" stroke-linejoin="round">
 
-  <!-- Der Stift: nur Schaft und Spitze, kein Band -->
-  <g>
-    <path d="M330 372 L378 420 L490 308 L442 260 Z" fill="#D9A441"/>
-    <path d="M300 450 L378 420 L330 372 Z" fill="#3C4A57"/>
+    <!-- Glas und Feder, beide gefüllt -->
+    <path d="M-44,-54 C-76,-78 -90,-106 -90,-132
+             C-90,-180 -50,-214 0,-214
+             C50,-214 90,-180 90,-132
+             C90,-106 76,-78 44,-54 Z"/>
+    <path d="M-44,-56 C-41,44 -28,124 0,182 C28,124 41,44 44,-56 Z"/>
+
+    <!-- Der Trieb, in der Farbe der Fläche ausgespart -->
+    <g fill="none" stroke="#FAF4E6" stroke-width="24" stroke-linecap="round">
+      <path d="M0,-74 C0,-108 -2,-142 0,-174"/>
+    </g>
+    <path d="M-4,-104 C-30,-108 -54,-124 -60,-146 C-36,-142 -12,-124 -4,-104 Z"
+          fill="#FAF4E6"/>
+    <path d="M4,-134 C30,-138 52,-154 58,-174 C36,-170 12,-152 4,-134 Z"
+          fill="#FAF4E6"/>
   </g>
 </svg>

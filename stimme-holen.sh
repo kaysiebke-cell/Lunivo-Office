@@ -95,4 +95,4 @@ done
 
 echo
 echo "Fertig. Zu finden unter Einstellungen ▸ Vorlesen (Schreibhilfe)"
-echo "beziehungsweise Schreibhilfe ▸ Vorlesen ▸ Stimme und Tempo (Schreibprogramm)."
+echo "beziehungsweise Schreibhilfe ▸ Vorlesen ▸ Stimme und Tempo (Lunivo-Office)."

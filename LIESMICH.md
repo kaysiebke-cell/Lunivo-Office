@@ -1,4 +1,6 @@
-# Schreibprogramm
+# Lunivo-Office
+
+*Ein Raum für Worte.*
 
 Ein Schreibprogramm wie LibreOffice Writer oder Word — mit einem
 Unterschied: Die Schreibhilfe sitzt fest an der Seite und sucht die Fehler,
@@ -17,7 +19,8 @@ auf dem eigenen Rechner.
     ./starten.sh
 
 Das legt beim ersten Mal auch den Menüeintrag an. Danach steht
-*Schreibprogramm* im Startmenü unter „Büro".
+*Lunivo-Office* im Startmenü unter „Büro". Einen alten Eintrag
+*Schreibprogramm* räumt der Start still mit weg.
 
 Gebraucht wird dafür GTK mit WebKit:
 
@@ -232,7 +235,7 @@ deren Kasten fünfmal stehen blieb — der Nachname, ein Wort aus der Gegend —
 werden künftig in Ruhe gelassen. Was gelernt wurde, steht in den
 Einstellungen und lässt sich einzeln nachsehen und wieder vergessen.
 
-**Sichern und Einspielen.** Handy, App und Schreibprogramm lernen jedes für
+**Sichern und Einspielen.** Handy, App und Lunivo-Office lernen jedes für
 sich. Der Sicherungs-Text ist die Brücke: hier kopieren, dort einsetzen.
 Er hat dasselbe Format wie in der Schreibhilfe-App — was dort gelernt wurde,
 kommt hier an. Eingespielt wird zusammengeführt, nicht ersetzt. Der Schlüssel

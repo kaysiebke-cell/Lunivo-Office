@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# starten.sh — startet das Schreibprogramm als eigenes Fenster.
+# starten.sh — startet Lunivo-Office als eigenes Fenster.
 #
 # Der Menüeintrag wird bei JEDEM Start frisch geschrieben. Eine .desktop-Datei
 # braucht feste Pfade, und Pfade ändern sich — verschiebt man den Ordner,
@@ -13,8 +13,16 @@
 
 set -euo pipefail
 HIER="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"     # der Projektordner
-EINTRAG="$HOME/.local/share/applications/schreibprogramm.desktop"
+EINTRAG="$HOME/.local/share/applications/lunivo-office.desktop"
 SYMBOLE="$HOME/.local/share/icons/hicolor"
+
+# Wie der Eintrag hieß, bevor das Programm Lunivo-Office wurde. Er wird bei
+# jedem Start mit weggeräumt — sonst stünde die alte Fassung noch einmal im
+# Menü, zeigte auf denselben Ordner und niemand wüsste, welche der beiden
+# die richtige ist.
+ALT_EINTRAG="$HOME/.local/share/applications/schreibprogramm.desktop"
+ALT_NAME="schreibprogramm"
+NAME="lunivo-office"
 
 # Das Symbol in allen Größen ablegen.
 #
@@ -28,10 +36,12 @@ symbole_ablegen() {
     ORDNER="$SYMBOLE/${G}x${G}/apps"
     [ -f "$HIER/symbole/icon-$G.png" ] || continue
     mkdir -p "$ORDNER"
-    cp -f "$HIER/symbole/icon-$G.png" "$ORDNER/schreibprogramm.png" 2>/dev/null || true
+    cp -f "$HIER/symbole/icon-$G.png" "$ORDNER/$NAME.png" 2>/dev/null || true
+    rm -f "$ORDNER/$ALT_NAME.png"
   done
   mkdir -p "$SYMBOLE/scalable/apps"
-  cp -f "$HIER/icon.svg" "$SYMBOLE/scalable/apps/schreibprogramm.svg" 2>/dev/null || true
+  cp -f "$HIER/icon.svg" "$SYMBOLE/scalable/apps/$NAME.svg" 2>/dev/null || true
+  rm -f "$SYMBOLE/scalable/apps/$ALT_NAME.svg" "$ALT_EINTRAG"
 }
 
 eintrag_schreiben() {
@@ -41,16 +51,16 @@ eintrag_schreiben() {
 [Desktop Entry]
 Version=1.0
 Type=Application
-Name=Schreibprogramm
+Name=Lunivo-Office
 GenericName=Textverarbeitung
-Comment=Schreiben wie in LibreOffice — mit der Schreibhilfe fest an der Seite
+Comment=Ein Raum für Worte — schreiben wie in LibreOffice, mit der Schreibhilfe fest an der Seite
 Exec="$HIER/starten.sh"
 Path=$HIER
-Icon=schreibprogramm
-StartupWMClass=schreibprogramm
+Icon=lunivo-office
+StartupWMClass=lunivo-office
 Terminal=false
 Categories=Office;WordProcessor;
-Keywords=Schreiben;Text;Brief;Rechtschreibung;Korrektur;ODT;
+Keywords=Schreiben;Text;Brief;Rechtschreibung;Korrektur;ODT;Lunivo;Schreibprogramm;Textverarbeitung;
 StartupNotify=true
 DESKTOP
   chmod +x "$EINTRAG" "$HIER/start.py"
@@ -59,7 +69,9 @@ DESKTOP
 }
 
 if [ "${1:-}" = "--weg" ]; then
-  rm -f "$EINTRAG" "$SYMBOLE"/*/apps/schreibprogramm.png "$SYMBOLE/scalable/apps/schreibprogramm.svg"
+  rm -f "$EINTRAG" "$ALT_EINTRAG" \
+        "$SYMBOLE"/*/apps/lunivo-office.png "$SYMBOLE/scalable/apps/lunivo-office.svg" \
+        "$SYMBOLE"/*/apps/schreibprogramm.png "$SYMBOLE/scalable/apps/schreibprogramm.svg"
   update-desktop-database "$HOME/.local/share/applications" 2>/dev/null || true
   echo "Menüeintrag entfernt."
   exit 0
@@ -68,7 +80,7 @@ fi
 eintrag_schreiben
 
 if [ "${1:-}" = "--nur-eintrag" ]; then
-  echo "Menüeintrag „Schreibprogramm“ zeigt jetzt auf: $HIER"
+  echo "Menüeintrag „Lunivo-Office“ zeigt jetzt auf: $HIER"
   exit 0
 fi
 

@@ -38,7 +38,7 @@ const verbinde = (neue) => { griffe = Object.assign(griffe, neue); };
    Zusätzliche. Wer den Writer kennt, sucht nicht zweimal.
    ------------------------------------------------------------ */
 const BEREICHE = [
-  ['programm', 'Schreibprogramm', [
+  ['programm', 'Lunivo-Office', [
     ['benutzer',  'Benutzerdaten'],
     ['ansicht',   'Ansicht'],
     ['schriften', 'Schriftarten'],
@@ -99,7 +99,7 @@ function baumBauen() {
     zweig.appendChild(document.createTextNode(zweigName));
 
     /* Ein Klick auf den Zweig klappt auf und zu. Er wählt selbst nichts aus:
-       Hinter „Schreibprogramm" liegt keine Seite, sondern fünf. */
+       Hinter „Lunivo-Office" liegt keine Seite, sondern fünf. */
     zweig.addEventListener('click', () => {
       if (offeneZweige.has(zweigKennung)) offeneZweige.delete(zweigKennung);
       else offeneZweige.add(zweigKennung);
@@ -625,7 +625,7 @@ function verdrahten() {
     pfadZeigen();
   });
 
-  $('einst-fassung').textContent = 'Schreibprogramm 1.2 · Prüfung und Wortschatz '
+  $('einst-fassung').textContent = 'Lunivo-Office 1.2 · Prüfung und Wortschatz '
     + 'aus der Schreibhilfe';
 
   /* Die Wellenlinien gelten ab dem Start, nicht erst nach einem Besuch hier. */

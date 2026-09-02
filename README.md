@@ -1,4 +1,11 @@
-# Schreibprogramm
+<p align="center">
+  <img src="bilder/lunivo-office.png" width="560"
+       alt="Lunivo-Office — eine Schreibfeder, deren Kopf eine Glühbirne ist, und darin wächst ein Trieb">
+</p>
+
+# Lunivo-Office
+
+**Ein Raum für Worte.**
 
 Ein Schreibprogramm wie LibreOffice Writer oder Word — mit einem Unterschied:
 Die **Schreibhilfe** sitzt fest an der Seite und sucht die Fehler, die ein
@@ -12,7 +19,15 @@ Rechtschreibprüfer **nicht** finden kann.
 Gebaut für Menschen mit Legasthenie. Kein Konto, keine Anmeldung, kein
 Internet nötig. Was geschrieben wird, bleibt auf dem eigenen Rechner.
 
-![Das Schreibprogramm mit einem Brief im Blatt und der Schreibhilfe rechts an der Seite](bilder/uebersicht.png)
+![Lunivo-Office mit einem Brief im Blatt und der Schreibhilfe rechts an der Seite](bilder/uebersicht.png)
+
+> **Zum Zeichen.** Eine Schreibfeder, deren Kopf eine Glühbirne ist, und
+> darin wächst ein Trieb. Der Einfall ist ja da — er scheitert nur am
+> Aufschreiben. Genau an dieser Stelle steht dieses Programm.
+>
+> Die Adresse auf GitHub bleibt `…/schreibprogramm` — eine neue würde jeden
+> Link brechen, der schon irgendwo steht. Und wer nach „Schreibprogramm"
+> sucht, soll es weiter finden.
 
 
 ## Mach mit
@@ -165,7 +180,9 @@ Verbrauch und alles zur Darstellung.
     ./starten.sh
 
 Das legt beim ersten Mal auch den Menüeintrag an; danach steht
-*Schreibprogramm* im Startmenü unter „Büro".
+*Lunivo-Office* im Startmenü unter „Büro". Wer noch den alten Eintrag
+*Schreibprogramm* hat: Der wird beim Start still mit weggeräumt, damit
+nicht beide nebeneinander stehen.
 
 Gebraucht wird GTK mit WebKit:
 
@@ -174,7 +191,9 @@ Gebraucht wird GTK mit WebKit:
 ## Was zusätzlich geholt wird
 
 Zwei Dinge liegen **nicht** in diesem Verzeichnis, weil sie zu groß sind, und
-werden bei Bedarf nach `~/.local/share/schreibprogramm/` gelegt:
+werden bei Bedarf nach `~/.local/share/schreibprogramm/` gelegt — der
+Ordner behält seinen alten Namen mit Absicht, denn dort liegt auch alles
+Geschriebene und Gelernte:
 
 | | wofür | Größe | nötig? |
 |---|---|---|---|
@@ -189,7 +208,7 @@ Schreiben, Prüfen, Vorlesen und die ODF-Formate gehen ohne beides.
 
 ## Eine Hilfe, kein Ersatz
 
-> Das Schreibprogramm ist eine Hilfe und kein Ersatz für eine Kontrolle durch
+> Lunivo-Office ist eine Hilfe und kein Ersatz für eine Kontrolle durch
 > eine andere Person. Es kann nicht garantieren, dass der Text oder sein Inhalt
 > am Ende vollständig korrekt ist.
 >

@@ -1332,7 +1332,7 @@ body.gesperrt .werkzeugleiste2 .wz{opacity:.5}
   overflow-y:auto;
 }
 /* Der Zweig: die Überschrift mit dem Pfeil. Er wählt nichts aus — hinter
-   „Schreibprogramm" liegt keine Seite, sondern fünf. */
+   „Lunivo-Office" liegt keine Seite, sondern fünf. */
 .optionen__zweig{
   display:flex;align-items:center;gap:6px;
   width:100%;text-align:left;

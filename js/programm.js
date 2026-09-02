@@ -11,8 +11,11 @@
 const $ = (id) => document.getElementById(id);
 const feld = Dokument.feld;
 
-/* Der Speicher hängt an eigenen Schlüsseln. Das Schreibprogramm ist ein
-   eigenes Programm; es fasst nichts an, was der App gehört. */
+/* Der Speicher hängt an eigenen Schlüsseln („sp.", von Schreibprogramm —
+   der Name von früher, und er bleibt: Wer ihn jetzt änderte, nähme jedem
+   beim ersten Start nach dem Update seinen Text und seine Einstellungen
+   weg. Lunivo-Office ist ein eigenes Programm; es fasst nichts an, was
+   der App gehört. */
 const Speicher = {
   lies(name, ersatz) {
     try { const w = localStorage.getItem('sp.' + name); return w === null ? ersatz : JSON.parse(w); }
@@ -5275,9 +5278,10 @@ B.erweiterungen = async () => {
 };
 
 B.ueber = () => {
-  fenster('Über das Schreibprogramm', [
+  fenster('Über Lunivo-Office', [
     { art: 'satz', text:
-        'Schreibprogramm 1.2\n\n'
+        'Lunivo-Office 1.2\n'
+      + 'Ein Raum für Worte\n\n'
       + 'Die Prüfung und der Wortschatz stammen aus der Schreibhilfe.\n'
       + 'Word-Dateien und PDF macht LibreOffice im Hintergrund.\n\n'
       + 'Was geschrieben wird, bleibt auf diesem Rechner.' },
@@ -5740,7 +5744,7 @@ const MENUES = [
     { name: 'LibreOffice-Handbuch', tun: B.handbuch },
     { name: 'Tastenkombinationen…', tun: B.tastenHilfe },
     strich,
-    { name: 'Über das Schreibprogramm…', tun: B.ueber },
+    { name: 'Über Lunivo-Office…', tun: B.ueber },
   ]],
 ];
 
@@ -7279,7 +7283,7 @@ function empfaengerBauen() {
    ============================================================ */
 
 function titelSetzen() {
-  document.title = dateiname + (geaendert ? ' *' : '') + ' — Schreibhilfe';
+  document.title = dateiname + (geaendert ? ' *' : '') + ' — Lunivo-Office';
   Speicher.schreib('dateiname', dateiname);
 }
 
