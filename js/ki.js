@@ -13,7 +13,7 @@
                          Rechner nicht. Bezahlt wird in Wartezeit.
 
    Alles, was hier gespeichert wird, hängt an eigenen Schlüsseln („sp."):
-   Das Schreibprogramm fasst nichts an, was der Schreibhilfe-App gehört.
+   Lunivo-Office fasst nichts an, was der Schreibhilfe-App gehört.
    Wer sein Gelerntes herüberholen will, nimmt „Einspielen" in den
    Einstellungen — das ist der bewusste Weg statt eines stillen Zugriffs.
    ============================================================ */
@@ -713,7 +713,7 @@ async function synonyme(wort, umgebung) {
 /* ============================================================
    8. Die Sicherung — die Brücke zwischen den Geräten
 
-   Handy, App und Schreibprogramm lernen jedes für sich. „Sichern" legt
+   Handy, App und Lunivo-Office lernen jedes für sich. „Sichern" legt
    alles Gelernte als Text ab, „Einspielen" nimmt ihn anderswo wieder auf.
 
    Zwei Dinge bleiben bewusst draußen:

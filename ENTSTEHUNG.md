@@ -1,6 +1,6 @@
-# Die Entstehung meiner Schreibhilfe und des Schreibprogramms
+# Die Entstehung meiner Schreibhilfe und von Lunivo-Office
 
-*Von Kay Siebke, September 2026. Geschrieben im Schreibprogramm selbst.*
+*Von Kay Siebke, September 2026. Geschrieben in Lunivo-Office selbst.*
 
 Die Idee für die Schreibhilfe entstand aus dem Wunsch, mein Handy besser zum
 Schreiben nutzen zu können. Dabei ist mir aufgefallen, dass die vorhandenen
@@ -25,7 +25,7 @@ zu integrieren. Texte sollten möglichst einfach aus anderen Anwendungen
 Schreibhilfe mit anderen Apps zusammenarbeiten können, ohne dass dafür ständig
 umständliche Umwege notwendig sind.
 
-Aus dieser Entwicklung entstand schließlich das Schreibprogramm. Da sich die
+Aus dieser Entwicklung entstand schließlich Lunivo-Office. Da sich die
 Schreibhilfe nicht so in andere Schreibprogramme wie LibreOffice integrieren
 ließ, wie ich es mir vorgestellt hatte, entstand die Idee, ein eigenes
 Schreibprogramm darum herum aufzubauen. Dadurch konnte ich die Schreibhilfe
@@ -51,7 +51,7 @@ voneinander getrennt und aufeinander abgestimmt werden müssen.
 
 ## Eine Hilfe, kein Ersatz
 
-Dabei ist mir auch wichtig, deutlich zu machen, dass das Schreibprogramm eine
+Dabei ist mir auch wichtig, deutlich zu machen, dass Lunivo-Office eine
 Hilfe und kein Ersatz für eine Kontrolle durch eine andere Person ist. Das
 Programm soll beim Schreiben unterstützen und helfen, Fehler zu erkennen und zu
 verbessern. Es kann jedoch nicht garantieren, dass der Text oder sein Inhalt am
@@ -66,7 +66,7 @@ unabhängig gegenlesen und auf Fehler oder Unklarheiten aufmerksam machen.
 ## Zum Text selbst
 
 Der Text hier dient dabei auch als praktischer Test für mein eigenes
-Schreibprogramm. Ich habe ihn mit dem von mir entwickelten Programm
+Programm. Ich habe ihn mit dem von mir entwickelten Programm
 geschrieben, um Fehler zu finden und anschließend zu verbessern. So kann ich
 die Funktionen nicht nur technisch testen, sondern gleichzeitig feststellen,
 wie gut sie mich beim tatsächlichen Schreiben unterstützen.
@@ -74,7 +74,7 @@ wie gut sie mich beim tatsächlichen Schreiben unterstützen.
 Inhaltlich stammt dieser Text von mir und beschreibt meine eigenen Erfahrungen,
 Ideen und die Entwicklung meines Programms. Für den sprachlichen Feinschliff
 und eine bessere Lesbarkeit wurde ChatGPT verwendet. Die eigentliche Idee und
-die Entwicklung der Schreibhilfe und des Schreibprogramms stammen von mir.
+die Entwicklung der Schreibhilfe und von Lunivo-Office stammen von mir.
 
 ---
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Das Schreibprogramm als eigenes Fenster — ohne Browser drumherum.
+"""Lunivo-Office als eigenes Fenster — ohne Browser drumherum.
 
 Ein Fenster, eine Anzeigefläche, die Dateien aus diesem Ordner. Dazwischen
 ein winziger Webserver, und der hat einen Grund:
@@ -39,7 +39,7 @@ gi.require_version("Gtk", "3.0")
 gi.require_version("WebKit2", "4.1")
 from gi.repository import GLib, Gtk, WebKit2                # noqa: E402
 
-GLib.set_prgname("schreibprogramm")
+GLib.set_prgname("lunivo-office")
 
 HIER = os.path.dirname(os.path.abspath(__file__))
 
@@ -47,6 +47,18 @@ HIER = os.path.dirname(os.path.abspath(__file__))
 # Ein wechselnder Port hieße jedes Mal ein leeres Fenster.
 PORT = 8322
 
+# Wo alles liegt, was das Programm behält.
+#
+# Der Ordner heißt weiter „schreibprogramm", obwohl das Programm inzwischen
+# Lunivo-Office heißt. Das ist Absicht und kein Übersehen: DATEN ist zugleich
+# das base_data_directory von WebKit (siehe unten), und darin steckt der
+# localStorage — der geschriebene Text, der Schlüssel für die KI, die
+# gelernten Wörter, jede Einstellung. Ein anderer Ordnername hieße: beim
+# ersten Start nach dem Update steht alles leer da, und die 700 MB
+# LibreOffice und 400 MB LanguageTool wären ein zweites Mal zu laden.
+#
+# Ein Ordnername ist nichts, was jemand zu sehen bekommt. Der Preis wäre
+# also hoch und der Gewinn keiner.
 DATEN = os.path.expanduser("~/.local/share/schreibprogramm")
 ZWISCHEN = os.path.expanduser("~/.cache/schreibprogramm")
 
@@ -110,7 +122,7 @@ LESEZIEL = {"pfad": None}
 # Gestartet wird es erst beim ersten Gebrauch. Wer die gründliche Prüfung
 # nie anrührt, bekommt auch keinen Java-Prozess.
 # ============================================================
-LT_ORDNER = os.path.expanduser("~/.local/share/schreibprogramm/languagetool")
+LT_ORDNER = os.path.join(DATEN, "languagetool")
 LT_PORT = 8081
 LT = {"lauf": None}
 
@@ -201,7 +213,7 @@ VORLESER = {"lauf": None}
 # Gesucht wird an zwei Stellen. Die Schreibhilfe holt dieselbe Stimme, und
 # 90 MB ein zweites Mal zu laden wäre nur, um den Ordner passend zu benennen.
 PIPER_ORTE = [
-    os.path.expanduser("~/.local/share/schreibprogramm/piper"),
+    os.path.join(DATEN, "piper"),
     os.path.expanduser("~/.local/share/schreibhilfe/piper"),
 ]
 
@@ -563,7 +575,7 @@ def bildschirmfoto(was):
         raise FileNotFoundError(
             "Auf diesem Rechner ist kein Werkzeug für Bildschirmfotos installiert.")
 
-    with tempfile.TemporaryDirectory(prefix="schreibprogramm-bild-") as ordner:
+    with tempfile.TemporaryDirectory(prefix="lunivo-office-bild-") as ordner:
         ziel = os.path.join(ordner, "foto.png")
 
         if werkzeug == "gnome-screenshot":
@@ -740,7 +752,11 @@ def fenster_lesen():
         if len(teile) < 4:
             continue
         kennung, titel = teile[0], teile[3]
-        if "Schreibprogramm" in titel or "Schreibhilfe" in titel:
+        # Drei Namen, weil drei Fassungen unterwegs sein können: das
+        # Fenster dieser Fassung, eines der Fassung vor der Umbenennung,
+        # und die Schreibhilfe daneben.
+        if any(name in titel for name in
+               ("Lunivo-Office", "Schreibprogramm", "Schreibhilfe")):
             fenstern.append({"kennung": kennung, "titel": titel})
     return fenstern
 
@@ -827,8 +843,7 @@ GROESSTE_DATEI = 80 * 1024 * 1024
 # Der eigene Motor, ausgepackt neben den übrigen Daten des Programms. Er
 # wird bevorzugt: Dann hängt das Programm nicht davon ab, was auf dem Rechner
 # gerade installiert ist — und ein Update des Systems nimmt ihm nichts weg.
-EIGENER_MOTOR = os.path.expanduser(
-    "~/.local/share/schreibprogramm/libreoffice/opt")
+EIGENER_MOTOR = os.path.join(DATEN, "libreoffice", "opt")
 
 
 def motor_finden():
@@ -861,7 +876,7 @@ def umwandeln(rohdaten, von, nach):
     if not soffice:
         raise FileNotFoundError("LibreOffice ist nicht installiert.")
 
-    with tempfile.TemporaryDirectory(prefix="schreibprogramm-") as ordner:
+    with tempfile.TemporaryDirectory(prefix="lunivo-office-") as ordner:
         quelle = os.path.join(ordner, "dokument." + von)
         with open(quelle, "wb") as datei:
             datei.write(rohdaten)
@@ -1314,7 +1329,7 @@ def main():
     einst = ansicht.get_settings()
     einst.set_enable_developer_extras(False)
     einst.set_enable_write_console_messages_to_stdout(False)
-    einst.set_user_agent(einst.get_user_agent() + " Schreibprogramm/1.0")
+    einst.set_user_agent(einst.get_user_agent() + " Lunivo-Office/1.0")
 
     # Ohne das darf JavaScript die Zwischenablage nicht anfassen — und die
     # Vorgabe ist „nicht". Strg+C und Strg+V macht WebKit dann zwar selbst,
@@ -1326,18 +1341,18 @@ def main():
 
     rechtschreibung_einschalten(umgebung)
 
-    fenster = Gtk.Window(title="Schreibprogramm")
+    fenster = Gtk.Window(title="Lunivo-Office")
     fenster.set_default_size(1280, 860)
 
     # Erst über den Namen: Dann sucht sich der Arbeitsplatz aus dem
     # Symbol-Ordner selbst die passende Größe heraus — 16 Bildpunkte für die
     # Fensterleiste, 48 für den Umschalter. Eine feste Datei müsste er für
     # jede Stelle herunterrechnen, und klein sähe das nach nichts aus.
-    fenster.set_icon_name("schreibprogramm")
+    fenster.set_icon_name("lunivo-office")
 
     # Solange der Menüeintrag noch nicht geschrieben wurde, kennt der
     # Arbeitsplatz den Namen nicht. Dann tut es die Datei aus dem Ordner.
-    if not Gtk.IconTheme.get_default().has_icon("schreibprogramm"):
+    if not Gtk.IconTheme.get_default().has_icon("lunivo-office"):
         for groesse in ("symbole/icon-256.png", "symbole/icon-128.png", "icon-512.png"):
             symbol = os.path.join(HIER, groesse)
             if os.path.isfile(symbol):
