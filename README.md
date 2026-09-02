@@ -1,6 +1,9 @@
 <p align="center">
-  <img src="bilder/lunivo-office.png" width="420"
-       alt="Lunivo-Office — eine Schreibfeder, deren Kopf eine Glühbirne ist, und darin wächst ein Trieb">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="bilder/lunivo-office-dunkel.png">
+    <img src="bilder/lunivo-office.png" width="420"
+         alt="Lunivo-Office — eine Schreibfeder, deren Kopf eine Glühbirne ist, und darin wächst ein Trieb">
+  </picture>
 </p>
 
 # Lunivo-Office
