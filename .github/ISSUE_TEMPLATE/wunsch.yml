@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Bevor du schreibst, ein Blick in [RICHTUNG.md](../blob/main/RICHTUNG.md) —
+        Bevor du schreibst, ein Blick in [RICHTUNG.md](../blob/main/doku/RICHTUNG.md) —
         dann reden wir über dasselbe. Besonders Punkt 2:
         **Lieber eine Lücke als ein falscher Alarm.**
   - type: textarea

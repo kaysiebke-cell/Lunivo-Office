@@ -159,23 +159,28 @@ Leiste und Seitenleiste — und über „In Datei drucken" wird daraus ein PDF.
 
 ## Was wo liegt
 
-    index.html        die Oberfläche
-    css/programm.css  das Aussehen
-    js/programm.js    Menüs, Werkzeuge, Seitenleiste, Statuszeile
-    js/dokument.js    das Dokument: lesen, zeigen, ersetzen, formatieren
-    js/dateien.js     öffnen und speichern — .odt, .fodt, .docx, .doc,
-                      .rtf, .pdf, .epub, .html, .txt
-    js/pruefung.js    die Prüfung selbst
-    js/ki.js          Claude und Ollama, das Gedächtnis, die Sicherung
-    js/einstellungen.js  die Einstellungsseite
-    daten/regeln.js   der Wortschatz der Prüfung
-    daten/woerter.txt die deutsche Wörterliste (355.322 Wörter)
     start.py          das Fenster (GTK + WebKit), der kleine Server,
                       die Schriftliste und der Weg zu LibreOffice
-    icon.svg          das Symbol des Programms
+    starten.sh        startet es und schreibt den Menüeintrag neu
+
+    oberflaeche/      alles, was im Fenster zu sehen ist — und nur das
+                      liefert der kleine Server aus
+      index.html      die Oberfläche
+      css/programm.css  das Aussehen
+      js/programm.js  Menüs, Werkzeuge, Seitenleiste, Statuszeile
+      js/dokument.js  das Dokument: lesen, zeigen, ersetzen, formatieren
+      js/dateien.js   öffnen und speichern — .odt, .fodt, .docx, .doc,
+                      .rtf, .pdf, .epub, .html, .txt
+      js/pruefung.js  die Prüfung selbst
+      js/ki.js        Claude und Ollama, das Gedächtnis, die Sicherung
+      js/einstellungen.js  die Einstellungsseite
+      daten/regeln.js   der Wortschatz der Prüfung
+      daten/woerter.txt die deutsche Wörterliste (355.322 Wörter)
+
+    symbole/icon.svg  das Symbol des Programms
     symbole/          dasselbe in allen Größen (16 bis 512)
     bilder/marke.png  das freigestellte Zeichen, aus dem sie gerechnet sind
-    starten.sh        startet es und schreibt den Menüeintrag neu
+    doku/             diese Seite, ENTSTEHUNG und RICHTUNG
 
 ## Das Symbol
 

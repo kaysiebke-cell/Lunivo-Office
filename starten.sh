@@ -40,7 +40,7 @@ symbole_ablegen() {
     rm -f "$ORDNER/$ALT_NAME.png"
   done
   mkdir -p "$SYMBOLE/scalable/apps"
-  cp -f "$HIER/icon.svg" "$SYMBOLE/scalable/apps/$NAME.svg" 2>/dev/null || true
+  cp -f "$HIER/symbole/icon.svg" "$SYMBOLE/scalable/apps/$NAME.svg" 2>/dev/null || true
   rm -f "$SYMBOLE/scalable/apps/$ALT_NAME.svg" "$ALT_EINTRAG"
 }
 

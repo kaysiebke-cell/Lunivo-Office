@@ -42,6 +42,7 @@ from gi.repository import GLib, Gtk, WebKit2                # noqa: E402
 GLib.set_prgname("lunivo-office")
 
 HIER = os.path.dirname(os.path.abspath(__file__))
+OBERFLAECHE = os.path.join(HIER, "oberflaeche")     # was der Server ausliefert
 
 # Fester Port, damit die Adresse gleich bleibt: An ihr hängt der Speicher.
 # Ein wechselnder Port hieße jedes Mal ein leeres Fenster.
@@ -966,6 +967,19 @@ class Leise(http.server.SimpleHTTPRequestHandler):
         self.send_header("Expires", "0")
         super().end_headers()
 
+    def translate_path(self, path):
+        """Das Fenstersymbol liegt bei den anderen Symbolen, nicht bei der
+        Oberfläche — es ist dasselbe Bild, das auch im Menü des Arbeitsplatzes
+        steht. Ausgeliefert wird sonst nur der Oberflächen-Ordner; für diese
+        eine Datei geht ein Weg daneben hinaus. Eine zweite Kopie im
+        Oberflächen-Ordner wäre der einfachere Weg gewesen und ginge beim
+        nächsten Wechsel des Logos schief: Dann stimmte eine von beiden nicht
+        mehr, und niemand wüsste welche.
+        """
+        if path.split("?")[0] == "/icon.svg":
+            return os.path.join(HIER, "symbole", "icon.svg")
+        return super().translate_path(path)
+
     def do_GET(self):                                       # noqa: N802
         """Eine einzige Auskunft neben den Dateien: die Schriftliste.
 
@@ -1273,7 +1287,7 @@ def server_starten():
     liefert, und bliebe leer zurück. Deshalb ein paar Anläufe über zwei
     Sekunden: Wer wirklich liefert, ist auch dann noch da.
     """
-    aufgabe = functools.partial(Leise, directory=HIER)
+    aufgabe = functools.partial(Leise, directory=OBERFLAECHE)
     for _versuch in range(10):
         try:
             server = http.server.ThreadingHTTPServer(("127.0.0.1", PORT), aufgabe)
@@ -1311,7 +1325,9 @@ def speichern_fragen(_umgebung, ladung):
 
 
 def main():
-    for noetig in ("index.html", "js/pruefung.js", "daten/regeln.js", "daten/woerter.txt", "icon.svg"):
+    for noetig in ("oberflaeche/index.html", "oberflaeche/js/pruefung.js",
+                   "oberflaeche/daten/regeln.js", "oberflaeche/daten/woerter.txt",
+                   "symbole/icon.svg"):
         if not os.path.isfile(os.path.join(HIER, noetig)):
             print("Es fehlt: %s" % noetig, file=sys.stderr)
             return 1
@@ -1353,7 +1369,7 @@ def main():
     # Solange der Menüeintrag noch nicht geschrieben wurde, kennt der
     # Arbeitsplatz den Namen nicht. Dann tut es die Datei aus dem Ordner.
     if not Gtk.IconTheme.get_default().has_icon("lunivo-office"):
-        for groesse in ("symbole/icon-256.png", "symbole/icon-128.png", "icon-512.png"):
+        for groesse in ("symbole/icon-256.png", "symbole/icon-128.png", "symbole/icon-512.png"):
             symbol = os.path.join(HIER, groesse)
             if os.path.isfile(symbol):
                 fenster.set_icon_from_file(symbol)

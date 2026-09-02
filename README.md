@@ -50,9 +50,9 @@ Gebraucht wird außerdem: Regeln für die Prüfung (samt der Frage, wann sie
 falsch wären), Ausprobieren auf anderen Linux-Systemen, ein Flatpak oder
 AppImage, und andere Sprachen von Leuten, die sie sprechen.
 
-* [**RICHTUNG.md**](RICHTUNG.md) — wohin das gehen soll, und was es *nicht* wird
-* [MITMACHEN](CONTRIBUTING.md) — wie, im Einzelnen
-* [Der Ton hier](CODE_OF_CONDUCT.md) — eine Seite statt fünf
+* [**RICHTUNG.md**](doku/RICHTUNG.md) — wohin das gehen soll, und was es *nicht* wird
+* [MITMACHEN](.github/CONTRIBUTING.md) — wie, im Einzelnen
+* [Der Ton hier](.github/CODE_OF_CONDUCT.md) — eine Seite statt fünf
 
 ## Warum noch ein Schreibprogramm?
 
@@ -233,7 +233,7 @@ Bei den meisten wäre der Aufwand groß und der Nutzen für einen Brief gering.
 ## Herkunft
 
 **Wie das alles entstanden ist**, steht in
-[ENTSTEHUNG.md](ENTSTEHUNG.md) — vom zu kleinen Textfeld auf dem Handy bis
+[ENTSTEHUNG.md](doku/ENTSTEHUNG.md) — vom zu kleinen Textfeld auf dem Handy bis
 zu diesem Programm, aufgeschrieben von dem, der es gebaut hat.
 
 Die Prüfung und der Wortschatz stammen aus der
@@ -241,30 +241,33 @@ Die Prüfung und der Wortschatz stammen aus der
 über viele Fassungen gewachsen. Sie liegen hier als eigene Kopie: Dieses
 Programm ist eigenständig und braucht jenes Projekt nicht, um zu laufen.
 
-Die Wörterliste (`daten/woerter.txt`, 355.321 Wörter) ist über viele Sitzungen
+Die Wörterliste (`oberflaeche/daten/woerter.txt`, 355.321 Wörter) ist über viele Sitzungen
 selbst aufgebaut worden. Sie stammt aus keiner fremden Quelle und steht
 deshalb wie der übrige Code unter MIT.
 
 ## Aufbau
 
-    index.html           die Oberfläche
-    css/programm.css     das Aussehen
-    js/programm.js       Menüs, Werkzeuge, Seitenleiste, Statuszeile
-    js/dokument.js       das Dokument: lesen, zeigen, ersetzen, formatieren
-    js/dateien.js        öffnen und speichern
-    js/pruefung.js       die Prüfung, Phonetik, Wortvorhersage
-    js/ki.js             Claude und Ollama, Gedächtnis, Sicherung
-    js/einstellungen.js  die Einstellungsseite
-    ENTSTEHUNG.md        wie es dazu kam
-    RICHTUNG.md          wohin das Projekt geht, und was es nicht wird
-    CONTRIBUTING.md      wie man mitmacht
-    daten/regeln.js      der Wortschatz der Prüfung
-    daten/woerter.txt    355.321 deutsche Wörter
     start.py             Fenster, Server, Schriften, LibreOffice, Vorlesen
     starten.sh           startet es und schreibt den Menüeintrag
-    stimme-holen.sh      holt Piper und die Stimme „Thorsten" (freiwillig)
+    stimme-holen.sh      holt Piper und die Stimme „Thorsten“ (freiwillig)
 
-Ausführlicher steht alles in [LIESMICH.md](LIESMICH.md).
+    oberflaeche/         alles, was im Fenster zu sehen ist
+      index.html         die Oberfläche
+      css/programm.css   das Aussehen
+      js/programm.js     Menüs, Werkzeuge, Seitenleiste, Statuszeile
+      js/dokument.js     das Dokument: lesen, zeigen, ersetzen, formatieren
+      js/dateien.js      öffnen und speichern
+      js/pruefung.js     die Prüfung, Phonetik, Wortvorhersage
+      js/ki.js           Claude und Ollama, Gedächtnis, Sicherung
+      js/einstellungen.js  die Einstellungsseite
+      daten/regeln.js    der Wortschatz der Prüfung
+      daten/woerter.txt  355.321 deutsche Wörter
+
+    doku/                ENTSTEHUNG, RICHTUNG und das ausführliche LIESMICH
+    symbole/             das Symbol als SVG und in allen Größen
+    bilder/              Logo, Marke und die Bildschirmfotos
+
+Ausführlicher steht alles in [LIESMICH.md](doku/LIESMICH.md).
 
 ## Lizenz
 

@@ -73,7 +73,7 @@ Der Stand ändert sich; das hier ist die Richtung, nicht der Plan.
 
 ## Wenn du das hier liest und etwas beitragen willst
 
-Steht in [MITMACHEN](CONTRIBUTING.md). Die kürzeste Antwort: **Erzähl,
+Steht in [MITMACHEN](../.github/CONTRIBUTING.md). Die kürzeste Antwort: **Erzähl,
 woran du hängengeblieben bist.** Ein Satz darüber, was dich beim Schreiben
 aufhält, ist mehr wert als der schönste Quelltext — weil niemand ein
 Werkzeug bauen kann für eine Not, von der er nichts weiß.

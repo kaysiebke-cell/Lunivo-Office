@@ -79,4 +79,4 @@ die Entwicklung der Schreibhilfe und von Lunivo-Office stammen von mir.
 ---
 
 Wohin es von hier aus gehen soll, steht in [RICHTUNG.md](RICHTUNG.md).
-Wie man mitmachen kann, in [CONTRIBUTING.md](CONTRIBUTING.md).
+Wie man mitmachen kann, in [CONTRIBUTING.md](../.github/CONTRIBUTING.md).
