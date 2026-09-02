@@ -1,109 +1,43 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <!-- Das Zeichen von Lunivo-Office: Glühbirne, Federspitze, ein Trieb.
+  <!-- Das Symbol des Schreibprogramms: Blatt, Buchstabe, Stift.
 
-       Die Feder sagt, was man hier tut. Die Glühbirne sagt, wofür das
-       Programm da ist — nicht fürs Tippen, sondern für den Einfall, der
-       sonst am Schreiben scheitert. Der Trieb darin ist das, was daraus
-       wird, wenn ihn niemand vorher abschneidet.
+       Der Buchstabe sagt, welches Programm es ist — ein „S" für
+       Schreibprogramm, und damit von Weitem vom „Aa" der Schreibhilfe zu
+       unterscheiden. Der Stift sagt, was man damit tut.
 
-       Beides ist EINE Form, nicht zwei nebeneinander: Der Schaft der Feder
-       ist zugleich der Sockel der Birne. Deshalb liegt das Ganze schräg —
-       so, wie eine Feder in der Hand liegt.
+       Das „S" liegt als Pfad vor, nicht als Text. Ein <text> würde mit
+       irgendeiner Schrift gesetzt, die auf dem Rechner gerade da ist — auf
+       einem anderen sähe das Symbol dann anders aus. Die Form stammt aus
+       Liberation Serif Bold und ist hier fest eingezeichnet.
 
-       Die Farben laufen von unten nach oben durch: Marineblau an der
-       Spitze, Türkis in der Mitte, Gold ganz oben am Glas. Der Verlauf
-       steht in Werkzeug-Koordinaten (userSpaceOnUse) und dreht sich
-       deshalb mit — die Spitze bleibt dunkel, egal wie das Zeichen liegt.
+       Wenige, große Formen mit Absicht: Bei 16 Bildpunkten in der
+       Fensterleiste bleibt von Feinheiten nichts übrig. -->
 
-       Für 16 bis 24 Bildpunkte gibt es eine eigene, gröbere Zeichnung:
-       symbole/icon-klein.svg. -->
+  <rect width="512" height="512" rx="104" fill="#2F6FB5"/>
 
-  <defs>
-    <radialGradient id="tafel" cx="0.5" cy="0.40" r="0.78">
-      <stop offset="0"    stop-color="#FFFDF8"/>
-      <stop offset="1"    stop-color="#F2EADA"/>
-    </radialGradient>
+  <!-- Das Blatt mit umgeknickter Ecke -->
+  <path d="M96 66h180l68 68v300a18 18 0 0 1-18 18H96a18 18 0 0 1-18-18V84a18 18 0 0 1 18-18z"
+        fill="#FFFFFF"/>
+  <path d="M276 66l68 68h-50a18 18 0 0 1-18-18z" fill="#C3D5E8"/>
 
-    <!-- Der durchgehende Verlauf. y=182 ist die Federspitze, y=-212 das
-         obere Ende des Glases. -->
-    <linearGradient id="strich" gradientUnits="userSpaceOnUse" x1="0" y1="182" x2="0" y2="-212">
-      <stop offset="0"    stop-color="#123566"/>
-      <stop offset="0.30" stop-color="#1A62A0"/>
-      <stop offset="0.58" stop-color="#2E9FBC"/>
-      <stop offset="0.80" stop-color="#63BFA8"/>
-      <stop offset="1"    stop-color="#DCA93F"/>
-    </linearGradient>
+  <!-- Zwei Zeilen als Andeutung von Text -->
+  <g stroke="#B4C4D2" stroke-width="17" stroke-linecap="round">
+    <path d="M120 392h130"/>
+    <path d="M120 430h94"/>
+  </g>
 
-    <linearGradient id="glas" gradientUnits="userSpaceOnUse" x1="-60" y1="-60" x2="70" y2="-200">
-      <stop offset="0"    stop-color="#E6F4FA"/>
-      <stop offset="0.55" stop-color="#F8FBFD"/>
-      <stop offset="1"    stop-color="#FDF2D6"/>
-    </linearGradient>
+  <!-- Das „S" -->
+  <g transform="translate(126.48 318.00) scale(0.12207 -0.12207)">
+    <path d="M109 411H197L242 196Q284 147 369.0 114.0Q454 81 545 81Q832 81 832 317Q832 391 777.5 442.0Q723 493 606 533Q434 590 358.5 625.5Q283 661 231.0 709.0Q179 757 148.0 825.5Q117 894 117 994Q117 1171 237.5 1263.5Q358 1356 590 1356Q758 1356 962 1313V994H873L828 1178Q726 1252 590 1252Q467 1252 401.0 1206.5Q335 1161 335 1067Q335 1000 390.0 952.5Q445 905 562 868Q791 793 876.5 737.5Q962 682 1007.0 600.0Q1052 518 1052 407Q1052 -20 549 -20Q434 -20 314.5 -0.5Q195 19 109 51Z" fill="#2F6FB5"/>
+  </g>
 
-    <linearGradient id="feder" gradientUnits="userSpaceOnUse" x1="0" y1="182" x2="0" y2="-10">
-      <stop offset="0"    stop-color="#E4EFF6"/>
-      <stop offset="1"    stop-color="#FFFFFF"/>
-    </linearGradient>
-  </defs>
-
-  <rect width="512" height="512" rx="104" fill="url(#tafel)"/>
-  <rect x="1.5" y="1.5" width="509" height="509" rx="102.5"
-        fill="none" stroke="#E4D8C0" stroke-width="3"/>
-
-  <!-- Aufrecht gezeichnet, dann als Ganzes gekippt. Das ist der Grund für
-       die negativen y-Werte: Der Nullpunkt sitzt am Übergang von Glas zu
-       Feder, das Glas liegt darüber, die Spitze darunter. -->
-  <g transform="translate(256,256) rotate(38) scale(1.0) translate(0,16)"
-     stroke-linejoin="round" stroke-linecap="round">
-
-    <!-- Das Glas -->
-    <path d="M-40,-54 C-72,-76 -86,-104 -86,-130
-             C-86,-178 -48,-212 0,-212
-             C48,-212 86,-178 86,-130
-             C86,-104 72,-76 40,-54 Z"
-          fill="url(#glas)" stroke="url(#strich)" stroke-width="14"/>
-
-    <!-- Der Trieb: Stiel und zwei Blätter -->
-    <path d="M0,-56 C0,-96 -2,-136 0,-168"
-          fill="none" stroke="url(#strich)" stroke-width="12"/>
-    <path d="M0,-96 C-26,-100 -48,-116 -54,-136 C-32,-132 -10,-116 0,-96 Z"
-          fill="#C9E8D9" stroke="url(#strich)" stroke-width="11"/>
-    <path d="M0,-124 C24,-128 44,-144 50,-162 C30,-158 10,-142 0,-124 Z"
-          fill="#CFEBD3" stroke="url(#strich)" stroke-width="11"/>
-
-    <!-- Der Glanz auf dem Glas: ein Bogen und ein Punkt, wie man Glas
-         zeichnet, seit es Zeichnungen von Glas gibt. -->
-    <path d="M-46,-176 A58,58 0 0 1 -16,-198"
-          fill="none" stroke="#8ED2E4" stroke-width="11"/>
-    <circle cx="10" cy="-196" r="7" fill="#8ED2E4"/>
-
-    <!-- Das Band. Es deckt den Übergang zu und ist deshalb deckend. -->
-    <rect x="-43" y="-58" width="86" height="54" rx="12" fill="url(#strich)"/>
-    <path d="M-33,-31 H33" fill="none" stroke="#FFFFFF" stroke-width="6" opacity="0.30"/>
-
-    <!-- Die Feder.
-
-         Vier Dinge machen sie zu einer Feder und nicht zu einem Dreieck,
-         und alle vier sind fein:
-
-           · Die Feder ist BREITER als das Band. Sie hat Schultern: vom
-             Band aus geht sie erst nach aussen, und erst danach zur
-             Spitze. Eine Feder, die vom Band an nur schmaler wird, ist
-             kein Federhalter, sondern ein Dolch.
-           · Der Umriss ist dünn. Ein dicker Strich frisst das Weiß auf, das
-             die Feder ausmacht.
-           · Innen läuft eine zweite Linie mit — die Kanten der beiden
-             Zinken. Ohne sie bleibt es eine leere Fläche.
-           · Das Luftloch ist ein kleiner voller Punkt, kein Ring. Ein Ring
-             ist bei dieser Größe ein Loch mit Rand um nichts herum. -->
-    <path d="M-40,-6 C-50,2 -53,14 -51,30
-             C-38,76 -21,130 0,180
-             C21,130 38,76 51,30
-             C53,14 50,2 40,-6 Z"
-          fill="url(#feder)" stroke="url(#strich)" stroke-width="9"/>
-    <path d="M-38,42 C-31,84 -17,136 0,170 C17,136 31,84 38,42"
-          fill="none" stroke="url(#strich)" stroke-width="5" opacity="0.45"/>
-    <circle cx="0" cy="20" r="8" fill="url(#strich)"/>
-    <path d="M0,34 L0,172" fill="none" stroke="url(#strich)" stroke-width="5"/>
+  <!-- Der Stift, schräg über die untere rechte Ecke.
+       Erst der Schaft, dann Band und Kappe, zuletzt die dunkle Spitze —
+       in dieser Reihenfolge, damit die Spitze obenauf liegt. -->
+  <g>
+    <path d="M324.0 359.2 L360.8 396.0 L466.9 289.9 L430.1 253.1 Z" fill="#D9A441"/>
+    <path d="M341.0 342.2 L377.8 379.0 L392.0 364.8 L355.2 328.0 Z" fill="#A8752A"/>
+    <path d="M430.1 253.1 L466.9 289.9 L487.0 269.8 L450.2 233.0 Z" fill="#B07C2A"/>
+    <path d="M300 420 L360.8 396.0 L324.0 359.2 Z" fill="#3C4A57"/>
   </g>
 </svg>

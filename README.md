@@ -1,7 +1,9 @@
-<p align="center">
-  <img src="bilder/lunivo-office.png" width="560"
-       alt="Lunivo-Office — eine Schreibfeder, deren Kopf eine Glühbirne ist, und darin wächst ein Trieb">
-</p>
+<!-- Hierhin kommt der Schriftzug, sobald das Bild im Verzeichnis liegt:
+     <p align="center">
+       <img src="bilder/lunivo-office.png" width="560"
+            alt="Lunivo-Office — eine Schreibfeder, deren Kopf eine Glühbirne ist, und darin wächst ein Trieb">
+     </p>
+     Die Datei muss bilder/lunivo-office.png heißen, dann stimmt der Verweis. -->
 
 # Lunivo-Office
 
@@ -21,10 +23,6 @@ Internet nötig. Was geschrieben wird, bleibt auf dem eigenen Rechner.
 
 ![Lunivo-Office mit einem Brief im Blatt und der Schreibhilfe rechts an der Seite](bilder/uebersicht.png)
 
-> **Zum Zeichen.** Eine Schreibfeder, deren Kopf eine Glühbirne ist, und
-> darin wächst ein Trieb. Der Einfall ist ja da — er scheitert nur am
-> Aufschreiben. Genau an dieser Stelle steht dieses Programm.
->
 > Die Adresse auf GitHub bleibt `…/schreibprogramm` — eine neue würde jeden
 > Link brechen, der schon irgendwo steht. Und wer nach „Schreibprogramm"
 > sucht, soll es weiter finden.
