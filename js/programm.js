@@ -884,61 +884,87 @@ document.addEventListener('keydown', (e) => {
    greifen auf dasselbe zu. Zwei Listen derselben Knöpfe liefen nach der
    dritten Änderung auseinander.
    ------------------------------------------------------------ */
+/* Ein Eintrag ist [Symbol, Name, Befehl] — und mit einem vierten Wert
+   „gross" wird daraus der große Knopf links in der Gruppe, mit Beschriftung
+   darunter. Genau die trägt ein Ribbon: Was man ständig braucht, steht groß
+   und lesbar da, der Rest klein daneben. */
 const REGISTER = [
   ['Datei', [
-    ['Datei', [['neu', 'Neu', () => B.neu()], ['oeffnen', 'Öffnen', () => B.oeffnen()],
-               ['speichern', 'Speichern', () => B.speichern()]]],
-    ['Ausgeben', [['pdf', 'Als PDF', () => B.alsPdf()], ['drucken', 'Drucken', () => B.drucken()],
-                  ['vorschau', 'Seitenansicht', () => B.seitenansicht()]]],
+    ['Neu', [['neu', 'Neu', () => B.neu(), 'gross'],
+             ['oeffnen', 'Öffnen', () => B.oeffnen(), 'gross'],
+             ['speichern', 'Speichern', () => B.speichern(), 'gross']]],
+    ['Ausgeben', [['pdf', 'Als PDF', () => B.alsPdf(), 'gross'],
+                  ['drucken', 'Drucken', () => B.drucken(), 'gross'],
+                  ['vorschau', 'Ansicht', () => B.seitenansicht()],
+                  ['kette', 'Senden', () => B.senden ? B.senden() : B.alsPdf()]]],
+    ['Zuletzt', [['zurueck', 'Rückgängig', () => B.zurueck()],
+                 ['vor', 'Wiederholen', () => B.vor()]]],
   ]],
+
   ['Start', [
-    ['Zwischenablage', [['schere', 'Ausschneiden', () => B.ausschneiden()],
-                        ['kopie', 'Kopieren', () => B.kopieren()],
-                        ['kleben', 'Einfügen', () => B.einfuegen()],
-                        ['pinsel', 'Format übertragen', () => B.formatPinsel()]]],
+    ['Ablage', [['kleben', 'Einfügen', () => B.einfuegen(), 'gross'],
+                ['schere', 'Ausschneiden', () => B.ausschneiden()],
+                ['kopie', 'Kopieren', () => B.kopieren()],
+                ['pinsel', 'Format übertragen', () => B.formatPinsel()]]],
     ['Schrift', [['F', 'Fett', () => B.fett()], ['K', 'Kursiv', () => B.kursiv()],
                  ['U', 'Unterstrichen', () => B.unter()], ['S', 'Durchgestrichen', () => B.durch()],
+                 ['hoch', 'Hochgestellt', () => B.hoch()], ['tief', 'Tiefgestellt', () => B.tief()],
                  ['farbe', 'Schriftfarbe', () => B.schriftfarbe()],
                  ['marker', 'Hervorheben', () => B.hervorheben()],
                  ['radierer', 'Formatierung entfernen', () => B.schlicht()]]],
     ['Absatz', [['links', 'Linksbündig', () => B.links()], ['mitte', 'Zentriert', () => B.mitte()],
                 ['rechts', 'Rechtsbündig', () => B.rechts()], ['block', 'Blocksatz', () => B.block()],
                 ['punkte', 'Aufzählung', () => B.punkte()], ['zahlen', 'Nummerierung', () => B.zahlen()],
+                ['mehr', 'Einzug vergrößern', () => B.einzugMehr()],
+                ['weniger', 'Einzug verkleinern', () => B.einzugWeniger()],
                 ['abstand', 'Zeilenabstand', () => B.zeilenabstand()]]],
-    ['Rückgängig', [['zurueck', 'Rückgängig', () => B.zurueck()], ['vor', 'Wiederholen', () => B.vor()]]],
+    ['Suchen', [['lupe', 'Suchen und Ersetzen', () => B.suchen(), 'gross']]],
   ]],
+
   ['Einfügen', [
-    ['Tabellen und Bilder', [['tabelle', 'Tabelle', () => B.tabelle()], ['bild', 'Bild', () => B.bild()],
-                             ['saeule', 'Diagramm', () => B.diagramm()], ['rahmen', 'Textrahmen', () => B.textrahmen()]]],
-    ['Verweise', [['kette', 'Verknüpfung', () => B.verknuepfung()], ['notiz', 'Kommentar', () => B.kommentar()],
-                  ['omega', 'Sonderzeichen', () => B.sonderzeichen()]]],
-    ['Kopf und Fuß', [['kopfz', 'Kopfzeile', () => B.kopfzeile()], ['fussz', 'Fußzeile', () => B.fusszeile()],
-                      ['zahl', 'Seitenzahl', () => B.seitenzahl()], ['umbruch', 'Seitenumbruch', () => B.seitenumbruch()]]],
+    ['Tabelle', [['tabelle', 'Tabelle', () => B.tabelle(), 'gross']]],
+    ['Bilder', [['bild', 'Bild', () => B.bild(), 'gross'],
+                ['saeule', 'Diagramm', () => B.diagramm(), 'gross'],
+                ['rahmen', 'Textrahmen', () => B.textrahmen()]]],
+    ['Kopf und Fuß', [['kopfz', 'Kopfzeile', () => B.kopfzeile(), 'gross'],
+                      ['fussz', 'Fußzeile', () => B.fusszeile(), 'gross'],
+                      ['zahl', 'Seitenzahl', () => B.seitenzahl()],
+                      ['umbruch', 'Umbruch', () => B.seitenumbruch()]]],
+    ['Sonstiges', [['kette', 'Verknüpfung', () => B.verknuepfung()],
+                   ['notiz', 'Kommentar', () => B.kommentar()],
+                   ['omega', 'Sonderzeichen', () => B.sonderzeichen()]]],
   ]],
+
   ['Layout', [
-    ['Seite', [['A4', 'Seitenformat', () => B.seitenformat()],
-               ['Rand', 'Seitenränder', () => B.seitenraender()],
-               ['Spalten', 'Spalten', () => B.spalten()]]],
-    ['Einzug', [['mehr', 'Einzug vergrößern', () => B.einzugMehr()],
-                ['weniger', 'Einzug verkleinern', () => B.einzugWeniger()]]],
+    ['Seite', [['A4', 'Format', () => B.seitenformat(), 'gross'],
+               ['Rand', 'Ränder', () => B.seitenraender(), 'gross'],
+               ['Spalten', 'Spalten', () => B.spalten(), 'gross']]],
+    ['Absatz', [['mehr', 'Einzug vergrößern', () => B.einzugMehr()],
+                ['weniger', 'Einzug verkleinern', () => B.einzugWeniger()],
+                ['abstand', 'Zeilenabstand', () => B.zeilenabstand()]]],
+    ['Seitenwechsel', [['umbruch', 'Umbruch', () => B.seitenumbruch(), 'gross']]],
   ]],
+
   ['Schreibhilfe', [
-    ['Prüfen', [['haken', 'Prüfen (F7)', () => pruefen()],
-                ['verfolgt', 'Gründlich prüfen', () => B.gruendlichPruefen()],
+    ['Prüfen', [['haken', 'Prüfen', () => pruefen(), 'gross'],
+                ['verfolgt', 'Gründlich', () => B.gruendlichPruefen(), 'gross'],
                 ['stift', 'Alles Eindeutige', () => allesUebernehmen()]]],
-    ['Hören', [['lupe', 'Vorlesen (F4)', () => B.vorlesen()],
+    ['Hören', [['lupe', 'Vorlesen', () => B.vorlesen(), 'gross'],
                ['Stimme', 'Stimme und Tempo', () => B.stimmeWaehlen()]]],
-    ['KI', [['KI', 'KI-Korrektur (F8)', () => kiKorrigieren()],
-            ['Vorschlag', 'Vorschläge', () => kiVorschlaege()],
-            ['Übersetzen', 'Übersetzen', () => kiUebersetzen()]]],
+    ['KI', [['KI', 'Korrektur', () => kiKorrigieren(), 'gross'],
+            ['Vorschlag', 'Vorschläge', () => kiVorschlaege(), 'gross'],
+            ['Übersetzen', 'Übersetzen', () => kiUebersetzen(), 'gross']]],
+    ['Zeigen', [['Tafel', 'Seitenleiste', () => B.tafelZeigen()]]],
   ]],
+
   ['Ansicht', [
-    ['Zoom', [['lupe', 'Vergrößern', () => B.groesser()],
-              ['weniger', 'Verkleinern', () => B.kleiner()],
-              ['100 %', 'Normalgröße', () => B.normal()]]],
+    ['Zoom', [['lupe', 'Vergrößern', () => B.groesser(), 'gross'],
+              ['weniger', 'Verkleinern', () => B.kleiner(), 'gross'],
+              ['100 %', 'Normal', () => B.normal()]]],
     ['Zeigen', [['Lineal', 'Lineal', () => B.linealZeigen()],
-                ['Tafel', 'Seitenleiste (F5)', () => B.tafelZeigen()],
+                ['Tafel', 'Seitenleiste', () => B.tafelZeigen()],
                 ['Hell', 'Hell/Dunkel', () => setzeThema(THEMEN[(THEMEN.indexOf(thema) + 1) % THEMEN.length])()]]],
+    ['Oberfläche', [['mehr', 'Benutzeroberfläche', () => B.benutzeroberflaeche(), 'gross']]],
   ]],
 ];
 
@@ -966,28 +992,58 @@ function registerBauen() {
 
   band.innerHTML = '';
   const gewaehlt = (REGISTER.find(([name]) => name === registerOffen) || REGISTER[1])[1];
+
   for (const [gruppenName, eintraege] of gewaehlt) {
     const gruppe = document.createElement('div');
     gruppe.className = 'register__gruppe';
 
-    const knoepfe = document.createElement('div');
-    knoepfe.className = 'register__knoepfe';
-    for (const [zeichen, titel, tun] of eintraege) {
+    const reihe = document.createElement('div');
+    reihe.className = 'register__reihe';
+
+    /* Die großen zuerst, links, mit Beschriftung. Die kleinen sammeln sich
+       rechts davon in einem Gitter — so entsteht die Form, die ein Ribbon
+       ausmacht: wenige große Ziele und viel Kleines daneben. */
+    const kleineKiste = document.createElement('div');
+    kleineKiste.className = 'register__klein';
+
+    const bauen = (zeichen, titel, tun, gross) => {
       const k = document.createElement('button');
-      k.className = 'wz';
+      k.className = gross ? 'wz register__gross' : 'wz';
       k.type = 'button';
       k.title = titel;
       k.setAttribute('aria-label', titel);
       /* Steht im Vorrat ein Symbol dieses Namens, kommt das Bild; sonst
          das Wort selbst. F, K, U und S sind in deutschen Schreibprogrammen
          Buchstaben, kein Behelf. */
-      if (SYMBOLE[zeichen]) k.appendChild(symbol(zeichen));
-      else k.textContent = zeichen;
+      const hatSymbol = !!SYMBOLE[zeichen];
+      if (hatSymbol) k.appendChild(symbol(zeichen));
+      else if (!gross) {
+        const wort = document.createElement('span');
+        wort.className = 'register__zeichen';
+        wort.textContent = zeichen;
+        k.appendChild(wort);
+      }
+      /* Ein großer Knopf ohne Symbol trägt nur sein Wort. Sonst stünde bei
+         „Übersetzen" zweimal dasselbe untereinander. */
+      if (gross) {
+        const beschriftung = document.createElement('span');
+        beschriftung.className = hatSymbol
+          ? 'register__beschriftung'
+          : 'register__beschriftung register__beschriftung--allein';
+        beschriftung.textContent = titel;
+        k.appendChild(beschriftung);
+      }
       k.addEventListener('mousedown', (e) => e.preventDefault());
       k.addEventListener('click', tun);
-      knoepfe.appendChild(k);
+      return k;
+    };
+
+    for (const [zeichen, titel, tun, gross] of eintraege) {
+      if (gross) reihe.appendChild(bauen(zeichen, titel, tun, true));
+      else kleineKiste.appendChild(bauen(zeichen, titel, tun, false));
     }
-    gruppe.appendChild(knoepfe);
+    if (kleineKiste.childNodes.length) reihe.appendChild(kleineKiste);
+    gruppe.appendChild(reihe);
 
     const name = document.createElement('span');
     name.className = 'register__name';

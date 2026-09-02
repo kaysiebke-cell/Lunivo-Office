@@ -1413,18 +1413,61 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
   color:var(--schrift);font-weight:600;border-bottom-color:var(--blau);
 }
 
+/* Das Band ist hoch, nicht schmal — daran erkennt man ein Ribbon. Zuerst
+   stand hier eine Zeile von 52 Pixeln mit winzigen Symbolen; das war eine
+   Symbolleiste mit Untertiteln, kein Register. */
 .register__band{
-  display:flex;align-items:flex-start;gap:0;
-  padding:6px 8px;overflow-x:auto;min-height:52px;
+  display:flex;align-items:stretch;gap:0;
+  padding:6px 4px 4px;overflow-x:auto;min-height:96px;
 }
 .register__band::-webkit-scrollbar{display:none}
+
 .register__gruppe{
-  display:flex;flex-direction:column;align-items:center;gap:3px;
-  padding:0 10px;border-right:1px solid var(--rand);
+  display:flex;flex-direction:column;justify-content:space-between;
+  gap:4px;padding:0 10px;
+  border-right:1px solid var(--rand);
 }
 .register__gruppe:last-child{border-right:none}
-.register__knoepfe{display:flex;align-items:center;gap:2px;flex-wrap:wrap;justify-content:center}
+
+.register__reihe{display:flex;align-items:stretch;gap:4px;flex:1 1 auto}
+
+/* Der große Knopf: Symbol oben, Wort darunter. Was man ständig braucht,
+   soll man treffen, ohne zu zielen. */
+.register__gross{
+  flex-direction:column;justify-content:center;gap:4px;
+  min-width:56px;max-width:88px;height:auto;padding:6px 8px;
+  white-space:normal;line-height:1.15;
+}
+.register__gross svg{width:26px;height:26px}
+.register__beschriftung{
+  font-size:11px;color:var(--schrift-2);text-align:center;
+  display:block;max-width:76px;
+}
+.register__gross:hover .register__beschriftung{color:var(--schrift)}
+/* Ein Wort statt eines Symbols — „A4", „100 %", „KI". Es soll die Stelle
+   des Symbols einnehmen, nicht die Beschriftung verdrängen. */
+.register__gross .register__zeichen{font-size:15px;font-weight:600}
+
+/* Die kleinen daneben, zwei Reihen hoch, wie im Writer. */
+.register__klein{
+  display:grid;grid-auto-flow:column;
+  grid-template-rows:repeat(2, auto);
+  gap:2px;align-content:center;
+}
+.register__klein .wz{min-width:26px;height:26px;padding:0 7px}
+.register__klein .wz svg{width:17px;height:17px}
+/* Ein Knopf, der ein Wort trägt statt eines Symbols, braucht die Breite
+   dafür — „Lineal" passt nicht in 26 Pixel. */
+.register__klein .register__zeichen{font-size:11.5px;white-space:nowrap}
+
+/* Ein großer Knopf ohne Symbol: das Wort steht mittig und trägt allein. */
+.register__beschriftung--allein{
+  font-size:12.5px;font-weight:600;color:var(--schrift);
+  display:flex;align-items:center;min-height:26px;
+}
+
 .register__name{
-  font-size:10.5px;color:var(--schrift-3);
+  font-size:10.5px;color:var(--schrift-3);text-align:center;
   letter-spacing:.4px;text-transform:uppercase;
+  padding-bottom:1px;
 }
