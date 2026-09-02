@@ -599,24 +599,52 @@ button.wz-wahl--schrift{
 
 /* Kopf- und Fußzeile gehören zur Seite. Die gestrichelte Linie sagt, dass
    hier etwas anderes anfängt als der Fließtext. */
+/* Kopf- und Fußzeile müssen auf den ersten Blick anders aussehen als das
+   Blatt. Vorher waren sie ein dünner gestrichelter Strich und sonst nichts —
+   und ein ganzer Absatz ist in der Fußzeile gelandet, weil sie bei leerem
+   Dokument aussah wie der Schreibbereich.
+
+   Deshalb jetzt ein getöntes Band über die ganze Seitenbreite, mit einem
+   kleinen Schild, das sagt, was es ist. Beides wird nicht mitgedruckt: Auf
+   dem Papier soll nur stehen, was hineingeschrieben wurde. */
 .kopfzeile,.fusszeile{
-  min-height:1.6em;padding:2mm 0;
+  position:relative;
+  min-height:1.6em;
+  /* Über den 2 cm Rand des Blattes hinaus, damit das Band die ganze Seite
+     nimmt — sonst wäre es ein Kasten mitten im Weiß. */
+  margin-left:-2cm;margin-right:-2cm;
+  padding:5mm 2cm 2mm;
+  background:rgba(127,127,127,.055);
   color:var(--blatt-schrift);
   font:10pt/1.4 Georgia,"Liberation Serif",serif;
   outline:none;
 }
-.kopfzeile{border-bottom:1px dashed var(--rand);margin-bottom:4mm}
-.fusszeile{border-top:1px dashed var(--rand);margin-top:4mm}
-/* Solange nichts drinsteht, sagen sie, was sie sind. Ein leeres Feld mit
-   gestrichelter Linie sieht aus wie das Blatt — und wer hineintippt, merkt
-   nicht, dass sein Text nicht im Dokument steht. */
-.kopfzeile:empty::before{content:'Kopfzeile'}
-.fusszeile:empty::before{content:'Fußzeile'}
-.kopfzeile:empty::before,.fusszeile:empty::before{
-  color:var(--marke);font-size:9pt;font-style:italic;
+.kopfzeile{border-bottom:1px dashed var(--marke);margin-bottom:6mm}
+.fusszeile{border-top:1px dashed var(--marke);margin-top:6mm;padding:2mm 2cm 5mm}
+
+/* Das Schild. Es steht immer da, nicht nur solange das Feld leer ist:
+   Wer hineinschreibt, soll auch dann sehen, wo er schreibt. */
+.kopfzeile::before,.fusszeile::before{
+  position:absolute;left:2cm;
+  font:italic 8pt/1 Georgia,"Liberation Serif",serif;
+  letter-spacing:.4px;
+  color:var(--marke);
   pointer-events:none;
 }
-.kopfzeile:focus:empty::before,.fusszeile:focus:empty::before{opacity:.4}
+.kopfzeile::before{content:'Kopfzeile';top:1.5mm}
+.fusszeile::before{content:'Fußzeile';bottom:1.5mm}
+
+/* Beim Hineinschreiben deutlicher: Dann ist es wichtig zu wissen, wo man ist. */
+.kopfzeile:focus,.fusszeile:focus{background:rgba(127,127,127,.10)}
+.kopfzeile:focus::before,.fusszeile:focus::before{color:var(--blau)}
+
+/* Auf dem Papier ist beides weg — Band, Strich und Schild. */
+@media print{
+  .kopfzeile,.fusszeile{
+    background:none;margin-left:0;margin-right:0;padding-left:0;padding-right:0;
+  }
+  .kopfzeile::before,.fusszeile::before{content:none}
+}
 .kopfzeile[hidden],.fusszeile[hidden]{display:none}
 .seitenzahl{color:var(--schrift-3)}
 .seitenzahl::after{content:' –'}
