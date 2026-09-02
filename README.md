@@ -1,9 +1,7 @@
-<!-- Hierhin kommt der Schriftzug, sobald das Bild im Verzeichnis liegt:
-     <p align="center">
-       <img src="bilder/lunivo-office.png" width="560"
-            alt="Lunivo-Office — eine Schreibfeder, deren Kopf eine Glühbirne ist, und darin wächst ein Trieb">
-     </p>
-     Die Datei muss bilder/lunivo-office.png heißen, dann stimmt der Verweis. -->
+<p align="center">
+  <img src="bilder/lunivo-office.png" width="420"
+       alt="Lunivo-Office — eine Schreibfeder, deren Kopf eine Glühbirne ist, und darin wächst ein Trieb">
+</p>
 
 # Lunivo-Office
 
