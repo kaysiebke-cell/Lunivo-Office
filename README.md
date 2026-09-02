@@ -96,6 +96,10 @@ Die Prüfung und der Wortschatz stammen aus der
 über viele Fassungen gewachsen. Sie liegen hier als eigene Kopie: Dieses
 Programm ist eigenständig und braucht jenes Projekt nicht, um zu laufen.
 
+Die Wörterliste (`daten/woerter.txt`, 355.321 Wörter) ist über viele Sitzungen
+selbst aufgebaut worden. Sie stammt aus keiner fremden Quelle und steht
+deshalb wie der übrige Code unter MIT.
+
 ## Aufbau
 
     index.html           die Oberfläche
