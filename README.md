@@ -81,8 +81,14 @@ PDF und EPUB. Word-Dateien öffnen und wieder als Word speichern.
 
 **Zwei Oberflächen.** *Ansicht ▸ Benutzeroberfläche* stellt zwischen
 Symbolleisten (zwei Zeilen, alles sichtbar) und Registern (Reiter wie in
-Word) um. Dieselben Befehle, anders sortiert. Die Menüleiste lässt sich
-ausblenden; die Alt-Taste holt sie zurück. Symbolgröße und die Schrift der
+Word) um. Dieselben Befehle, anders sortiert.
+
+Im Register **tritt die Reiterzeile an die Stelle der Menüleiste** — sie
+kommt nicht dazu. Beides übereinander fräße genau den Platz, den das
+Register gewinnen soll. Das Menü bleibt über das Zeichen ☰ rechts in der
+Reiterzeile erreichbar, oder über die Alt-Taste; Seriendruck, Makros und
+die Verzeichnisse stehen nur dort. In der Symbolleisten-Ansicht lässt sich
+die Menüleiste ebenfalls ausblenden. Symbolgröße und die Schrift der
 Bedienung sind einstellbar — wer die Leisten nicht lesen kann, benutzt sie
 nicht.
 

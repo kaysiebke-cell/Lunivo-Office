@@ -1413,6 +1413,32 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
   color:var(--schrift);font-weight:600;border-bottom-color:var(--blau);
 }
 
+/* „hidden" allein genügt hier nicht: Die Regel .menueleiste{display:flex}
+   steht im eigenen Stylesheet und schlägt damit das display:none, das der
+   Browser dem Attribut mitgibt. Ohne diese Zeile blieb die Menüleiste
+   sichtbar, obwohl das Programm sie längst für verborgen hielt — im
+   Register stand sie über den Reitern, und genau das soll sie nicht. */
+.menueleiste[hidden],
+.werkzeugleiste[hidden]{display:none}
+
+/* Das Menü-Zeichen sitzt ganz rechts und abgesetzt — es ist kein Reiter,
+   sondern der Weg zu allem, was in kein Register passt. */
+.register__reiter .register__menue{
+  margin-left:auto;font-size:16px;line-height:1;
+  padding:6px 12px;border-bottom-color:transparent;
+}
+.register__reiter .register__menue.register--offen{border-bottom-color:var(--blau)}
+
+/* Die Wähler aus der Werkzeugleiste, wenn sie im Register stehen. */
+.register__felder{
+  display:flex;flex-direction:column;gap:4px;
+  justify-content:center;flex:1 1 auto;padding:2px 0;
+}
+.register__felder .wz-wahl{height:26px}
+.register__felder .schriftwahl{display:block}
+.register__felder .wz-wahl--vorlage{min-width:150px}
+.register__felder .wz-wahl--schrift{width:100%;min-width:150px}
+
 /* Das Band ist hoch, nicht schmal — daran erkennt man ein Ribbon. Zuerst
    stand hier eine Zeile von 52 Pixeln mit winzigen Symbolen; das war eine
    Symbolleiste mit Untertiteln, kein Register. */

@@ -849,11 +849,27 @@ B.leistenZeigen = () => { leistenAn = !leistenAn; ansichtExtras(); };
    ------------------------------------------------------------ */
 let menueleisteAn = Speicher.lies('menueleiste', true);
 
+/* In der Register-Ansicht ist die Menüleiste weg — das Register TRITT AN
+   IHRE STELLE, es kommt nicht dazu. Beides übereinander frisst genau den
+   Platz, den das Register gewinnen soll, und niemand baut es so: Weder Word
+   noch der Writer zeigen Menü und Reiter zugleich.
+
+   Erreichbar bleibt sie über das Zeichen ☰ rechts in der Reiterzeile — dort
+   sitzt es auch im Writer. Ein Klick zeigt sie, der nächste nimmt sie weg. */
+let menueImRegister = false;
+
 function menueleisteAnwenden() {
-  $('menueleiste').hidden = !menueleisteAn;
+  const zeigen = flaeche === 'register' ? menueImRegister : menueleisteAn;
+  $('menueleiste').hidden = !zeigen;
 }
 
 B.menueleisteZeigen = () => {
+  if (flaeche === 'register') {
+    menueImRegister = !menueImRegister;
+    menueleisteAnwenden();
+    registerBauen();
+    return;
+  }
   menueleisteAn = !menueleisteAn;
   Speicher.schreib('menueleiste', menueleisteAn);
   menueleisteAnwenden();
@@ -862,14 +878,15 @@ B.menueleisteZeigen = () => {
 };
 
 document.addEventListener('keydown', (e) => {
-  if (e.key !== 'Alt' || e.ctrlKey || e.shiftKey || menueleisteAn) return;
+  const schonDa = flaeche === 'register' ? menueImRegister : menueleisteAn;
+  if (e.key !== 'Alt' || e.ctrlKey || e.shiftKey || schonDa) return;
   e.preventDefault();
   $('menueleiste').hidden = false;
   /* Nur so lange, wie sie gebraucht wird: Wer daneben klickt, wollte sie
      nicht dauerhaft. Wer im Menü auf „Menüleiste" geht, schaltet sie an. */
   const wiederWeg = (ereignis) => {
     if ($('menueleiste').contains(ereignis.target)) return;
-    if (!menueleisteAn) $('menueleiste').hidden = true;
+    menueleisteAnwenden();
     document.removeEventListener('mousedown', wiederWeg, true);
   };
   document.addEventListener('mousedown', wiederWeg, true);
@@ -893,19 +910,24 @@ const REGISTER = [
     ['Neu', [['neu', 'Neu', () => B.neu(), 'gross'],
              ['oeffnen', 'Öffnen', () => B.oeffnen(), 'gross'],
              ['speichern', 'Speichern', () => B.speichern(), 'gross']]],
-    ['Ausgeben', [['pdf', 'Als PDF', () => B.alsPdf(), 'gross'],
+    ['Ausgeben', [['pdf', 'Als PDF', () => B.speichernPdf(), 'gross'],
                   ['drucken', 'Drucken', () => B.drucken(), 'gross'],
-                  ['vorschau', 'Ansicht', () => B.seitenansicht()],
-                  ['kette', 'Senden', () => B.senden ? B.senden() : B.alsPdf()]]],
-    ['Zuletzt', [['zurueck', 'Rückgängig', () => B.zurueck()],
-                 ['vor', 'Wiederholen', () => B.vor()]]],
+                  ['vorschau', 'Ansicht', () => B.vorschau()],
+                  ['kette', 'Umschlag', () => B.umschlag()]]],
+    ['Zuletzt', [['zurueck', 'Rückgängig', () => B.rueckgaengig()],
+                 ['vor', 'Wiederholen', () => B.wiederholen()]]],
   ]],
 
   ['Start', [
+    /* „felder" statt einer Knopfliste: Hier ziehen die Wähler aus der
+       Werkzeugleiste ein — Vorlage, Schrift, Größe. Sie werden NICHT noch
+       einmal gebaut, sondern verschoben. Ein zweiter Schriftwähler hätte
+       einen zweiten Stand, und dann zeigen zwei Kästen verschiedenes an. */
+    ['Formatvorlage', 'felder'],
     ['Ablage', [['kleben', 'Einfügen', () => B.einfuegen(), 'gross'],
                 ['schere', 'Ausschneiden', () => B.ausschneiden()],
                 ['kopie', 'Kopieren', () => B.kopieren()],
-                ['pinsel', 'Format übertragen', () => B.formatPinsel()]]],
+                ['pinsel', 'Format übertragen', () => B.formatUebertragen()]]],
     ['Schrift', [['F', 'Fett', () => B.fett()], ['K', 'Kursiv', () => B.kursiv()],
                  ['U', 'Unterstrichen', () => B.unter()], ['S', 'Durchgestrichen', () => B.durch()],
                  ['hoch', 'Hochgestellt', () => B.hoch()], ['tief', 'Tiefgestellt', () => B.tief()],
@@ -917,31 +939,31 @@ const REGISTER = [
                 ['punkte', 'Aufzählung', () => B.punkte()], ['zahlen', 'Nummerierung', () => B.zahlen()],
                 ['mehr', 'Einzug vergrößern', () => B.einzugMehr()],
                 ['weniger', 'Einzug verkleinern', () => B.einzugWeniger()],
-                ['abstand', 'Zeilenabstand', () => B.zeilenabstand()]]],
-    ['Suchen', [['lupe', 'Suchen und Ersetzen', () => B.suchen(), 'gross']]],
+                ['abstand', 'Zeilenabstand 1,5', () => zeilenabstand('1.5')()]]],
+    ['Suchen', [['lupe', 'Suchen und Ersetzen', () => sucheZeigen(true), 'gross']]],
   ]],
 
   ['Einfügen', [
     ['Tabelle', [['tabelle', 'Tabelle', () => B.tabelle(), 'gross']]],
     ['Bilder', [['bild', 'Bild', () => B.bild(), 'gross'],
                 ['saeule', 'Diagramm', () => B.diagramm(), 'gross'],
-                ['rahmen', 'Textrahmen', () => B.textrahmen()]]],
+                ['rahmen', 'Textrahmen', () => B.textfeld()]]],
     ['Kopf und Fuß', [['kopfz', 'Kopfzeile', () => B.kopfzeile(), 'gross'],
                       ['fussz', 'Fußzeile', () => B.fusszeile(), 'gross'],
-                      ['zahl', 'Seitenzahl', () => B.seitenzahl()],
+                      ['zahl', 'Seitenzahl', () => B.seitennummer()],
                       ['umbruch', 'Umbruch', () => B.seitenumbruch()]]],
-    ['Sonstiges', [['kette', 'Verknüpfung', () => B.verknuepfung()],
+    ['Sonstiges', [['kette', 'Verknüpfung', () => B.hyperlink()],
                    ['notiz', 'Kommentar', () => B.kommentar()],
                    ['omega', 'Sonderzeichen', () => B.sonderzeichen()]]],
   ]],
 
   ['Layout', [
-    ['Seite', [['A4', 'Format', () => B.seitenformat(), 'gross'],
+    ['Seite', [['A4', 'Hoch/Quer', () => B.querformat(), 'gross'],
                ['Rand', 'Ränder', () => B.seitenraender(), 'gross'],
                ['Spalten', 'Spalten', () => B.spalten(), 'gross']]],
     ['Absatz', [['mehr', 'Einzug vergrößern', () => B.einzugMehr()],
                 ['weniger', 'Einzug verkleinern', () => B.einzugWeniger()],
-                ['abstand', 'Zeilenabstand', () => B.zeilenabstand()]]],
+                ['abstand', 'Zeilenabstand 1,5', () => zeilenabstand('1.5')()]]],
     ['Seitenwechsel', [['umbruch', 'Umbruch', () => B.seitenumbruch(), 'gross']]],
   ]],
 
@@ -990,12 +1012,46 @@ function registerBauen() {
     reiter.appendChild(knopf);
   }
 
+  /* Ganz rechts, abgesetzt: der Weg zu allem, was in kein Register passt.
+     Ohne ihn wäre die Register-Ansicht eine Sackgasse — Seriendruck,
+     Makros und die Verzeichnisse stehen nur im Menü. */
+  const menueKnopf = document.createElement('button');
+  menueKnopf.type = 'button';
+  menueKnopf.className = 'register__menue' + (menueImRegister ? ' register--offen' : '');
+  menueKnopf.textContent = '☰';
+  menueKnopf.title = 'Menüleiste zeigen (auch mit der Alt-Taste)';
+  menueKnopf.setAttribute('aria-label', 'Menüleiste zeigen');
+  menueKnopf.addEventListener('click', () => {
+    menueImRegister = !menueImRegister;
+    menueleisteAnwenden();
+    registerBauen();
+  });
+  reiter.appendChild(menueKnopf);
+
   band.innerHTML = '';
   const gewaehlt = (REGISTER.find(([name]) => name === registerOffen) || REGISTER[1])[1];
 
   for (const [gruppenName, eintraege] of gewaehlt) {
     const gruppe = document.createElement('div');
     gruppe.className = 'register__gruppe';
+
+    /* Die Wähler wandern aus der Werkzeugleiste hierher. Beim Zurückschalten
+       baut werkzeugeBauen() sie ohnehin neu — es geht also nichts verloren. */
+    if (eintraege === 'felder') {
+      const kiste = document.createElement('div');
+      kiste.className = 'register__felder';
+      if (wzVorlage) kiste.appendChild(wzVorlage);
+      if (wzSchrift && wzSchrift.parentNode) kiste.appendChild(wzSchrift.parentNode);
+      if (wzGroesse) kiste.appendChild(wzGroesse);
+      gruppe.appendChild(kiste);
+
+      const name = document.createElement('span');
+      name.className = 'register__name';
+      name.textContent = gruppenName;
+      gruppe.appendChild(name);
+      band.appendChild(gruppe);
+      continue;
+    }
 
     const reihe = document.createElement('div');
     reihe.className = 'register__reihe';
@@ -1061,7 +1117,21 @@ let flaeche = Speicher.lies('flaeche', 'leisten');
 
 function flaecheAnwenden() {
   document.body.classList.toggle('flaeche--register', flaeche === 'register');
-  if (flaeche === 'register') registerBauen();
+  menueleisteAnwenden();
+  if (flaeche === 'register') {
+    registerBauen();
+  } else {
+    /* Das Band leeren, BEVOR die Leisten neu gebaut werden. Sonst bleiben die
+       alten Wähler im ausgeblendeten Register stehen, während daneben neue
+       entstehen — dann gibt es zwei Schriftwähler mit zwei Ständen, und der
+       im Blatt sichtbare ist nicht der, den man anklickt. */
+    const band = $('register-band');
+    const reiter = $('register-reiter');
+    if (band) band.innerHTML = '';
+    if (reiter) reiter.innerHTML = '';
+    werkzeugeBauen();
+    werkzeugeAuffrischen();
+  }
 }
 
 B.benutzeroberflaeche = () => {
