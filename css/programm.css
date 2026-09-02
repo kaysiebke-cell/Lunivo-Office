@@ -820,7 +820,20 @@ button.wz-wahl--schrift{
 }
 .fundmarke--fehler{ text-decoration-color:#C0392B }   /* sicher falsch */
 .fundmarke--tipp{   text-decoration-color:#2F6FB5 }   /* kommt drauf an */
-.fundmarke--hinweis{text-decoration-color:#C08A2E }   /* zum Nachdenken */
+
+/* Ein Hinweis betrifft den ganzen Satz — „27 Wörter, zwei kürzere lesen sich
+   leichter". Mit derselben Wellenlinie wie ein Fehler unterstreicht er dann
+   178 Zeichen am Stück, und der Absatz sieht aus, als sei alles daran falsch.
+   Er ist aber kein Fehler, sondern ein Gedanke.
+
+   Deshalb keine Welle, sondern eine ruhige Linie unter dem Satz — sichtbar,
+   wenn man hinsieht, und still, wenn man schreibt. */
+.fundmarke--hinweis{
+  text-decoration:underline solid;
+  text-decoration-color:rgba(192,138,46,.55);
+  text-decoration-thickness:1px;
+  text-underline-offset:4px;
+}
 .fundmarke:hover{ background:rgba(47,111,181,.10) }
 
 /* ============================================================

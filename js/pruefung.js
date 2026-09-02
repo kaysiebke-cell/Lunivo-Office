@@ -185,8 +185,38 @@ const Pruefung = (() => {
   const istAbkuerzung = (text, punkt) => ABKUERZUNG.test(text.slice(Math.max(0, punkt - 9), punkt + 1));
 
   /* Web- und E-Mail-Adressen haben ihre eigenen Punkte. */
-  const istAdresse = (text, stelle) =>
-    /[@]|https?:|www\.|\.(de|com|org|net|eu)\b/i.test(text.slice(Math.max(0, stelle - 25), stelle + 25));
+  /* Adressen, Pfade und Namen aus Programmen sind kein Fließtext.
+
+     Vorher stand hier nur eine Suche nach „@", „http" und Endungen wie „.de".
+     „kaysiebke-cell/schreibhilfe. Git." fiel durch das Raster: Der Punkt in
+     der Mitte sah nach Satzende aus, und das „k" danach bekam „Satzanfang
+     großschreiben" — zweimal in einem Absatz.
+
+     Ein Schrägstrich zwischen zwei Wörtern ist ein sicheres Zeichen, ebenso
+     ein Bindestrich-Name ohne Leerzeichen. Beides kommt in deutschen Sätzen
+     so gut wie nie vor, in Adressen dauernd. */
+  /* Gefragt wird das WORT an dieser Stelle, nicht die Nachbarschaft.
+
+     Zuerst stand hier ein Fenster von dreißig Zeichen. Damit verschwand
+     zwar der falsche Fund in „kaysiebke-cell/schreibhilfe" — aber gleich
+     mit ihm der richtige drei Wörter weiter: „helfe mir mein beitrag"
+     gehört großgeschrieben, und der Schrägstrich davor hatte damit nichts
+     zu tun. Eine Regel, die zu viel wegschneidet, ist so falsch wie eine,
+     die zu viel anstreicht. */
+  const wortUm = (text, stelle) => {
+    let a = stelle;
+    let b = stelle;
+    while (a > 0 && !/\s/.test(text[a - 1])) a--;
+    while (b < text.length && !/\s/.test(text[b])) b++;
+    return text.slice(a, b);
+  };
+
+  const istAdresse = (text, stelle) => {
+    const wort = wortUm(text, stelle);
+    return /[@]|https?:|^www\./i.test(wort)
+        || /[A-Za-zÄÖÜäöü0-9_-]\/[A-Za-zÄÖÜäöü0-9_-]/.test(wort)
+        || /\.(de|com|org|net|eu|git|io|dev)\b/i.test(wort);
+  };
 
   /* Folgt hinter dem Treffer ein großgeschriebenes Wort?
      Muss außerhalb des Musters stehen: Regeln mit „i“ sehen den Unterschied
@@ -269,9 +299,13 @@ const Pruefung = (() => {
        Auslassungspunkte („warte … dann“) sind ebenfalls kein Satzende. */
     { muster:/([.!?]+["»›)]?\s+)([a-zäöüß])/g, gruppe:2,
       bau:(m, vor, b) => b.toUpperCase(),
+      /* Geprüft wird das Wort, das mit dem gefundenen Buchstaben ANFÄNGT —
+         nicht das davor. „treffer.index" zeigt auf den Punkt, und dort steht
+         „Umwege."; die Adresse ist das Wort dahinter. Mit der falschen Stelle
+         blieb „kaysiebke-cell/schreibhilfe" unerkannt. */
       pruefe:(treffer, text) => !/^\.{2,}/.test(treffer[1])
                              && !istAbkuerzung(text, treffer.index)
-                             && !istAdresse(text, treffer.index),
+                             && !istAdresse(text, treffer.index + treffer[1].length),
       grund:'Satzanfang großschreiben' },
     // „beim schreiben“ → „beim Schreiben“. Folgt ein großgeschriebenes Wort,
     // ist das -en-Wort ein Eigenschaftswort davor („zum neuen Haus“) — Finger weg.
@@ -641,7 +675,20 @@ const Pruefung = (() => {
 
     const treffer = [];
     for (const kandidat of nachbarWoerter(w)) {
-      if (WOERTERBUCH_GROSS.has(kandidat)) treffer.push(kandidat);
+      if (!WOERTERBUCH_GROSS.has(kandidat)) continue;
+      /* Zwei Vorschläge, die nie einer sind:
+
+         Erstens der Stummel. „Apps" steht nicht in der Liste, „pps" schon —
+         also wurde aus einem richtigen Wort ein Nichtwort. Ein Vorschlag
+         unter vier Buchstaben für ein längeres Wort ist kein Tippfehler,
+         sondern ein Fund in einer Liste, die auch Bruchstücke enthält.
+
+         Zweitens der abgeschnittene Anfang. Den ersten Buchstaben verfehlt
+         man beim Tippen kaum — die Hand liegt bereit, wenn das Wort
+         anfängt. Wer „Apps" schreibt, meinte nicht „pps". */
+      if (kandidat.length < 4 && w.length >= 4) continue;
+      if (kandidat === w.slice(1)) continue;
+      treffer.push(kandidat);
     }
     if (!treffer.length) return null;
 
@@ -958,6 +1005,8 @@ const Pruefung = (() => {
       const wort = treffer[0];
       // Was eine andere Regel schon anfasst, bleibt hier außen vor.
       if (WOERTERBUCH[wort.toLowerCase()] || trenneZusammen(wort)) continue;
+      // In Adressen und Pfaden steht kein Deutsch — dort nichts vorschlagen.
+      if (istAdresse(text, treffer.index)) continue;
       const vorschlag = tippfehlerVorschlag(wort);
       if (!vorschlag) continue;
       const neu = /^[A-ZÄÖÜ]/.test(wort)
