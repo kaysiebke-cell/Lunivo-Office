@@ -292,18 +292,92 @@ B.rueckgaengig = () => Dokument.befehl('undo');
 B.wiederholen  = () => Dokument.befehl('redo');
 B.ausschneiden = () => Dokument.befehl('cut');
 B.kopieren     = () => Dokument.befehl('copy');
-B.einfuegen    = async () => {
-  /* Strg+V macht der Browser selbst. Über das Menü geht es nur mit der
-     Zwischenablage-Erlaubnis — klappt sie nicht, sagen wir das auch. */
-  try {
-    const text = await navigator.clipboard.readText();
-    feld.focus();
-    document.execCommand('insertText', false, text);
-  } catch (e) {
-    melde('Einfügen geht hier nur mit Strg+V.');
+B.einfuegen    = () => { feld.focus(); document.execCommand('paste'); };
+
+/* „Einfügen ohne Formatierung" war bisher dasselbe wie „Einfügen" — zwei
+   Menüpunkte, ein Verhalten. Jetzt merkt sich der Einfügen-Griff, dass
+   diesmal nur der nackte Text gewollt war. */
+let nurText = false;
+B.einfuegenOhne = () => { nurText = true; feld.focus(); document.execCommand('paste'); };
+
+/* ------------------------------------------------------------
+   Was beim Einfügen ankommt
+
+   Text aus einer Webseite bringt alles mit: Farben, Schriftgrößen,
+   Klassennamen, manchmal ganze Gerüste aus <div> und <span>. Ungefiltert
+   eingesetzt sieht der Absatz danach aus wie die Webseite und nicht wie
+   das Dokument — und die Schriftwahl in der Werkzeugleiste greift nicht
+   mehr, weil an jedem Wort schon eine eigene steht.
+
+   Deshalb kommt nur durch, was ein Dokument braucht: Absätze,
+   Überschriften, Listen, Tabellen, fett/kursiv/unterstrichen, Verweise.
+   Farben und Schriften bleiben draußen — die stellt man hier ein.
+   ------------------------------------------------------------ */
+const EINFUEGEN_ERLAUBT = new Set([
+  'P', 'BR', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6',
+  'UL', 'OL', 'LI', 'BLOCKQUOTE', 'PRE', 'HR',
+  'STRONG', 'B', 'EM', 'I', 'U', 'S', 'STRIKE', 'SUP', 'SUB', 'CODE',
+  'TABLE', 'THEAD', 'TBODY', 'TR', 'TH', 'TD', 'A',
+]);
+
+function eingefuegtesSaeubern(html) {
+  const hilfe = document.createElement('div');
+  hilfe.innerHTML = html;
+
+  for (const weg of hilfe.querySelectorAll('script,style,meta,link,head,title')) {
+    weg.remove();
   }
-};
-B.einfuegenOhne = B.einfuegen;
+
+  /* Rückwärts durch alle Elemente: Wer ein Elternteil auflöst, während er
+     noch in ihm steht, verliert den Rest der Liste. */
+  const alle = [...hilfe.querySelectorAll('*')].reverse();
+  for (const el of alle) {
+    if (!EINFUEGEN_ERLAUBT.has(el.tagName)) {
+      /* Nicht wegwerfen — auflösen. Der Text darin ist das, was gewollt war;
+         nur der Kasten drumherum gehört nicht hierher. */
+      el.replaceWith(...el.childNodes);
+      continue;
+    }
+    for (const name of [...el.getAttributeNames()]) {
+      const behalten = (el.tagName === 'A' && name === 'href')
+                    || (el.tagName === 'TD' && (name === 'colspan' || name === 'rowspan'))
+                    || (el.tagName === 'TH' && (name === 'colspan' || name === 'rowspan'));
+      if (!behalten) el.removeAttribute(name);
+    }
+  }
+  return hilfe.innerHTML;
+}
+
+/* Reiner Text wird zu Absätzen: Eine Leerzeile trennt, eine einfache
+   Zeilenschaltung bleibt eine Zeilenschaltung. Ohne das käme ein ganzer
+   Aufsatz als ein Klumpen an. */
+function textAlsAbsaetze(text) {
+  const schutz = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return text.split(/\n\s*\n/)
+    .map((teil) => teil.trim())
+    .filter(Boolean)
+    .map((teil) => '<p>' + schutz(teil).replace(/\n/g, '<br>') + '</p>')
+    .join('') || '<p><br></p>';
+}
+
+for (const teil of [feld, $('kopfzeile'), $('fusszeile')]) {
+  if (!teil) continue;
+  teil.addEventListener('paste', (e) => {
+    const daten = e.clipboardData;
+    if (!daten) return;                       // dann macht es WebKit selbst
+    e.preventDefault();
+
+    const roh = nurText ? '' : daten.getData('text/html');
+    nurText = false;
+    const html = roh
+      ? eingefuegtesSaeubern(roh)
+      : textAlsAbsaetze(daten.getData('text/plain') || '');
+
+    /* Über execCommand, damit Strg+Z es zurücknimmt. */
+    document.execCommand('insertHTML', false, html);
+    document.dispatchEvent(new CustomEvent('dokument:geaendert'));
+  });
+}
 B.allesMarkieren = () => { feld.focus(); document.execCommand('selectAll'); };
 
 /* ---- Format ---- */

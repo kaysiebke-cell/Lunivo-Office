@@ -1316,6 +1316,14 @@ def main():
     einst.set_enable_write_console_messages_to_stdout(False)
     einst.set_user_agent(einst.get_user_agent() + " Schreibprogramm/1.0")
 
+    # Ohne das darf JavaScript die Zwischenablage nicht anfassen — und die
+    # Vorgabe ist „nicht". Strg+C und Strg+V macht WebKit dann zwar selbst,
+    # aber „Ausschneiden", „Kopieren" und „Einfügen" im Menü, im Ribbon und
+    # im Rechtsklick liefen ins Leere: Sie rufen execCommand, und das tut
+    # ohne diese Erlaubnis nichts. Ein Menüpunkt, der beim Anklicken
+    # schweigt, ist schlimmer als keiner.
+    einst.set_javascript_can_access_clipboard(True)
+
     rechtschreibung_einschalten(umgebung)
 
     fenster = Gtk.Window(title="Schreibprogramm")
