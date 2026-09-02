@@ -408,12 +408,12 @@ const zeichen = (z) => () => Dokument.einfuegen(z === ' ' ? '&nbsp;' : z);
    Titel, Verfasser, Stichwörter — braucht es einen Kasten, in dem man sie
    nebeneinander sieht und die Eingabe auch abbrechen kann.
    ============================================================ */
-function fenster(titel, felder, beiOk, knopfName = 'Übernehmen') {
+function fenster(titel, felder, beiOk, knopfName = 'Übernehmen', breit = false) {
   const grund = document.createElement('div');
   grund.className = 'dialoggrund';
 
   const kasten = document.createElement('div');
-  kasten.className = 'dialog';
+  kasten.className = breit ? 'dialog dialog--breit' : 'dialog';
   kasten.innerHTML = '<h3 class="dialog__titel"></h3>';
   kasten.querySelector('.dialog__titel').textContent = titel;
 
@@ -424,6 +424,12 @@ function fenster(titel, felder, beiOk, knopfName = 'Übernehmen') {
       p.className = 'dialog__satz';
       p.textContent = feldChen.text;
       kasten.appendChild(p);
+      continue;
+    }
+    /* Ein fertig gebauter Block. Für Seiten, die mehr sind als ein Absatz —
+       die Hilfe etwa, die eine Treppe zeichnet statt einen Satz zu schreiben. */
+    if (feldChen.art === 'knoten') {
+      kasten.appendChild(feldChen.knoten);
       continue;
     }
     const zeile = document.createElement('label');
@@ -4272,6 +4278,181 @@ B.tastenHilfe = () => {
   ], () => {}, 'Schließen');
 };
 
+/* ============================================================
+   Welche Hilfe wann
+   ------------------------------------------------------------
+   Die Hilfen sind nicht gleichwertig, sie sind gestuft: oben steht,
+   was sofort und umsonst geschieht, unten, was Zeit, ein Programm
+   oder Geld kostet. Wer das weiß, geht nur so weit hinunter, wie er
+   muss. Deshalb steht es hier und nicht in einer Anleitung, die
+   niemand aufmacht.
+   ============================================================ */
+
+const HILFE_STUFEN = [
+  ['1', 'Rote Wellenlinien', '', 'Gibt es das Wort überhaupt?',
+   'sofort beim Tippen'],
+  ['1', 'Wortvorhersage', '', 'Wie ging das Wort weiter?',
+   'ab drei Buchstaben'],
+  ['2', 'Rechtsklick auf ein Wort', '', 'Welches Wort war gemeint?',
+   'sucht auch nach dem Klang'],
+  ['3', 'Prüfen', 'F7', 'Ist es das richtige Wort? das/dass, wider/wieder',
+   'die Schreibhilfe rechts'],
+  ['4', 'Vorlesen', 'F4', 'Klingt der Satz rund?',
+   'Stimmen aus dem System'],
+  ['5', 'Gründlich prüfen', '', 'Stimmt die Grammatik?',
+   'LanguageTool, einmal 400 MB'],
+  ['6', 'KI-Korrektur', 'F8', 'Versteht das jemand? Passt der Ton?',
+   'Internet und Guthaben'],
+];
+
+/* Die drei Etiketten sind dieselben, die auch auf den Karten stehen —
+   deshalb dieselben Klassen: Wer sie hier sieht, erkennt sie dort wieder. */
+const HILFE_SORTEN = [
+  ['fehler',  'Sicher falsch',   'Da ist kein Zweifel.',        'blind übernehmen'],
+  ['tipp',    'Kommt drauf an',  'Hängt vom Satz ab.',          'kurz hinschauen'],
+  ['hinweis', 'Zum Nachdenken',  'Nur ein Anstoß, keine Regel.', 'oft übergehen'],
+];
+
+const HILFE_WEG = [
+  'Schreiben, ohne auf die Wellenlinien zu achten.',
+  'F7 drücken und „Alles Eindeutige übernehmen“ wählen.',
+  'Die übrigen Karten einzeln durchgehen.',
+  'F4 — einmal vorlesen lassen. Da fällt auf, was keine Regel findet.',
+  'Nur wenn der Text sitzen muss: F8.',
+];
+
+function hilfeSeiteBauen() {
+  const seite = document.createElement('div');
+  seite.className = 'hilfeseite';
+
+  const oben = document.createElement('p');
+  oben.className = 'hilfeseite__satz';
+  oben.textContent = 'Jede Stufe ist langsamer als die darüber und klüger '
+    + 'als sie. Fang oben an und geh nur so weit hinunter, wie du musst. '
+    + 'Die Stufen 1 bis 5 brauchen kein Internet und kein Konto.';
+  seite.appendChild(oben);
+
+  const t1 = document.createElement('h4');
+  t1.className = 'hilfeseite__titel';
+  t1.textContent = 'Welche Hilfe wann';
+  seite.appendChild(t1);
+
+  const treppe = document.createElement('div');
+  treppe.className = 'stufen';
+  for (const [zahl, name, taste, frage, dazu] of HILFE_STUFEN) {
+    const zeile = document.createElement('div');
+    zeile.className = 'stufe';
+
+    const nr = document.createElement('span');
+    nr.className = 'stufe__zahl';
+    nr.textContent = zahl;
+    zeile.appendChild(nr);
+
+    const mitte = document.createElement('div');
+    mitte.className = 'stufe__mitte';
+
+    const kopf = document.createElement('div');
+    kopf.className = 'stufe__name';
+    kopf.appendChild(document.createTextNode(name));
+    if (taste) {
+      const k = document.createElement('span');
+      k.className = 'stufe__taste';
+      k.textContent = taste;
+      kopf.appendChild(k);
+    }
+    mitte.appendChild(kopf);
+
+    const f = document.createElement('div');
+    f.className = 'stufe__frage';
+    f.textContent = frage;
+    mitte.appendChild(f);
+
+    zeile.appendChild(mitte);
+
+    const rechts = document.createElement('span');
+    rechts.className = 'stufe__dazu';
+    rechts.textContent = dazu;
+    zeile.appendChild(rechts);
+
+    treppe.appendChild(zeile);
+  }
+  seite.appendChild(treppe);
+
+  const t2 = document.createElement('h4');
+  t2.className = 'hilfeseite__titel';
+  t2.textContent = 'Wie sicher ein Fund ist';
+  seite.appendChild(t2);
+
+  const zwei = document.createElement('p');
+  zwei.className = 'hilfeseite__satz';
+  zwei.textContent = 'Auch innerhalb von F7 gibt es Stufen. Jede Karte in '
+    + 'der Seitenleiste trägt eins von drei Etiketten.';
+  seite.appendChild(zwei);
+
+  const sorten = document.createElement('div');
+  sorten.className = 'stufen';
+  for (const [art, name, was, tun] of HILFE_SORTEN) {
+    const zeile = document.createElement('div');
+    zeile.className = 'stufe stufe--sorte fund--' + art;
+
+    const marke = document.createElement('span');
+    marke.className = 'fund__sorte';
+    marke.textContent = name;
+    zeile.appendChild(marke);
+
+    const mitte = document.createElement('div');
+    mitte.className = 'stufe__mitte';
+    const f = document.createElement('div');
+    f.className = 'stufe__frage';
+    f.textContent = was;
+    mitte.appendChild(f);
+    zeile.appendChild(mitte);
+
+    const rechts = document.createElement('span');
+    rechts.className = 'stufe__dazu';
+    rechts.textContent = tun;
+    zeile.appendChild(rechts);
+
+    sorten.appendChild(zeile);
+  }
+  seite.appendChild(sorten);
+
+  const drei = document.createElement('p');
+  drei.className = 'hilfeseite__satz';
+  drei.textContent = '„Alles Eindeutige übernehmen“ fasst nur die erste '
+    + 'Sorte an und lässt die anderen beiden in Ruhe. Wenn es eilt, ist das '
+    + 'der eine Klick, den du brauchst.';
+  seite.appendChild(drei);
+
+  const t3 = document.createElement('h4');
+  t3.className = 'hilfeseite__titel';
+  t3.textContent = 'Ein Weg durch einen Brief';
+  seite.appendChild(t3);
+
+  const liste = document.createElement('ol');
+  liste.className = 'hilfeseite__weg';
+  for (const schritt of HILFE_WEG) {
+    const li = document.createElement('li');
+    li.textContent = schritt;
+    liste.appendChild(li);
+  }
+  seite.appendChild(liste);
+
+  const vier = document.createElement('p');
+  vier.className = 'hilfeseite__satz';
+  vier.textContent = 'Für einen Zettel an die Tür reicht Stufe 1. '
+    + 'Für den Widerspruch ans Amt geht man bis 6.';
+  seite.appendChild(vier);
+
+  return seite;
+}
+
+B.welcheHilfe = () => {
+  fenster('Welche Hilfe wann',
+    [{ art: 'knoten', knoten: hilfeSeiteBauen() }],
+    () => {}, 'Schließen', true);
+};
+
 B.ueber = () => {
   fenster('Über das Schreibprogramm', [
     { art: 'satz', text:
@@ -4708,6 +4889,7 @@ const MENUES = [
     { name: 'Übersetzen', tun: () => kiUebersetzen() },
     strich,
     { name: 'Seitenleiste zeigen', tun: B.tafelZeigen, haken: () => tafelOffen },
+    { name: 'Welche Hilfe wann…', tun: B.welcheHilfe },
     { name: 'Einstellungen…', tun: () => Einstellungen.oeffnen(), taste: 'F9' },
     strich,
     { name: 'Was die Schreibhilfe sucht…', tun: () => melde(
@@ -4728,6 +4910,8 @@ const MENUES = [
   ]],
 
   ['Hilfe', [
+    { name: 'Welche Hilfe wann…', tun: B.welcheHilfe },
+    strich,
     { name: 'LibreOffice-Handbuch', tun: B.handbuch },
     { name: 'Tastenkombinationen…', tun: B.tastenHilfe },
     strich,
