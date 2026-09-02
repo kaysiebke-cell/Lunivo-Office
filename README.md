@@ -83,6 +83,15 @@ PDF und EPUB. Word-Dateien öffnen und wieder als Word speichern.
 Symbolleisten (zwei Zeilen, alles sichtbar) und Registern (Reiter wie in
 Word) um. Dieselben Befehle, anders sortiert.
 
+Das Register hat acht Reiter — Datei, Start, Einfügen, Layout, Referenzen,
+Überprüfen, Schreibhilfe, Ansicht — und einen neunten, der nur da ist, wenn
+er etwas zu sagen hat: **Tabelle** erscheint, sobald der Zeiger in einer
+Tabelle steht, und verschwindet wieder. Auf *Start* steht der
+**Formatvorlagen-Katalog**: Er zeigt die Vorlage, statt sie zu benennen.
+Wo eine Gruppe nicht alles zeigt, was es gibt, steht unten rechts ein
+**Pfeil ⭨** zum vollen Dialog. Ein **Doppelklick auf den Reiter** klappt
+das Band weg und wieder auf.
+
 Im Register **tritt die Reiterzeile an die Stelle der Menüleiste** — sie
 kommt nicht dazu. Beides übereinander fräße genau den Platz, den das
 Register gewinnen soll. Das Menü bleibt über das Zeichen ☰ rechts in der

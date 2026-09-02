@@ -1497,3 +1497,55 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
   letter-spacing:.4px;text-transform:uppercase;
   padding-bottom:1px;
 }
+
+/* ============================================================
+   Formatvorlagen-Katalog, Kontextreiter, Dialogpfeile, Einklappen
+   ============================================================ */
+
+/* Der Katalog zeigt die Vorlage, statt sie zu benennen. Wer mit Schrift
+   kämpft, erkennt eine Form schneller, als er einen Namen liest. */
+.katalog{display:flex;gap:4px;align-items:stretch;flex:1 1 auto}
+.katalog__stueck{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2px;min-width:52px;padding:3px 6px;
+  background:var(--blatt);border:1px solid var(--rand);border-radius:5px;
+  cursor:pointer;
+}
+.katalog__stueck:hover{border-color:var(--blau)}
+.katalog__probe{
+  color:var(--blatt-schrift);line-height:1.1;
+  font-family:Georgia,"Liberation Serif",serif;
+}
+.katalog__name{font-size:9.5px;color:var(--schrift-3);white-space:nowrap}
+.katalog__stueck:hover .katalog__name{color:var(--schrift-2)}
+
+/* Jede Probe trägt die Form, die sie setzt — sonst wäre der Katalog acht
+   gleiche Kästchen mit verschiedenen Wörtern darunter. */
+.kat--p{font-size:13px}
+.kat--h1{font-size:19px;font-weight:700}
+.kat--h2{font-size:16px;font-weight:700}
+.kat--h3{font-size:14px;font-weight:700}
+.kat--titel{font-size:20px;font-weight:700;letter-spacing:.5px}
+.kat--untertitel{font-size:14px;color:var(--schrift-2)!important;font-style:italic}
+.kat--zitat{font-size:13px;font-style:italic;color:var(--schrift-2)!important}
+
+/* Der Reiter, der nur da ist, solange er etwas zu sagen hat. */
+.register__reiter button.register__zusatz{
+  color:var(--blau-hell);font-weight:600;
+}
+.register__reiter button.register__zusatz.register--offen{
+  color:var(--schrift);border-bottom-color:var(--blau-hell);
+}
+
+/* Der Fuß der Gruppe: links der Name, rechts der Pfeil zum vollen Dialog. */
+.register__fuss{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.register__starter{
+  background:none;border:none;padding:0 2px;cursor:pointer;
+  color:var(--schrift-3);font-size:11px;line-height:1;
+}
+.register__starter:hover{color:var(--blau-hell)}
+
+/* Eingeklappt bleibt nur die Reiterzeile stehen. */
+.register__band[hidden]{display:none}

@@ -905,6 +905,13 @@ document.addEventListener('keydown', (e) => {
    „gross" wird daraus der große Knopf links in der Gruppe, mit Beschriftung
    darunter. Genau die trägt ein Ribbon: Was man ständig braucht, steht groß
    und lesbar da, der Rest klein daneben. */
+/* Ein Eintrag ist [Symbol, Name, Befehl] — mit einem vierten Wert „gross"
+   wird daraus der große Knopf links in der Gruppe, mit Beschriftung darunter.
+
+   Eine Gruppe ist [Name, Einträge] — mit einem dritten Wert bekommt sie unten
+   rechts den kleinen Pfeil, der den vollen Dialog öffnet. Word nennt ihn
+   Dialogfeldstarter; er ist das Versprechen, dass die Gruppe nicht alles
+   zeigt, was es gibt. */
 const REGISTER = [
   ['Datei', [
     ['Neu', [['neu', 'Neu', () => B.neu(), 'gross'],
@@ -913,58 +920,114 @@ const REGISTER = [
     ['Ausgeben', [['pdf', 'Als PDF', () => B.speichernPdf(), 'gross'],
                   ['drucken', 'Drucken', () => B.drucken(), 'gross'],
                   ['vorschau', 'Ansicht', () => B.vorschau()],
-                  ['kette', 'Umschlag', () => B.umschlag()]]],
+                  ['kette', 'Umschlag', () => B.umschlag()]], () => B.speichernUnter()],
     ['Zuletzt', [['zurueck', 'Rückgängig', () => B.rueckgaengig()],
                  ['vor', 'Wiederholen', () => B.wiederholen()]]],
+    ['Dokument', [['notiz', 'Eigenschaften', () => B.eigenschaften()]]],
   ]],
 
   ['Start', [
-    /* „felder" statt einer Knopfliste: Hier ziehen die Wähler aus der
-       Werkzeugleiste ein — Vorlage, Schrift, Größe. Sie werden NICHT noch
-       einmal gebaut, sondern verschoben. Ein zweiter Schriftwähler hätte
-       einen zweiten Stand, und dann zeigen zwei Kästen verschiedenes an. */
-    ['Formatvorlage', 'felder'],
+    ['Formatvorlagen', 'katalog'],
+    ['Schrift und Größe', 'felder'],
     ['Ablage', [['kleben', 'Einfügen', () => B.einfuegen(), 'gross'],
                 ['schere', 'Ausschneiden', () => B.ausschneiden()],
                 ['kopie', 'Kopieren', () => B.kopieren()],
-                ['pinsel', 'Format übertragen', () => B.formatUebertragen()]]],
+                ['pinsel', 'Format übertragen', () => B.formatUebertragen()]],
+     () => B.einfuegenOhne()],
     ['Schrift', [['F', 'Fett', () => B.fett()], ['K', 'Kursiv', () => B.kursiv()],
                  ['U', 'Unterstrichen', () => B.unter()], ['S', 'Durchgestrichen', () => B.durch()],
                  ['hoch', 'Hochgestellt', () => B.hoch()], ['tief', 'Tiefgestellt', () => B.tief()],
                  ['farbe', 'Schriftfarbe', () => B.schriftfarbe()],
                  ['marker', 'Hervorheben', () => B.hervorheben()],
-                 ['radierer', 'Formatierung entfernen', () => B.schlicht()]]],
+                 ['radierer', 'Formatierung entfernen', () => B.schlicht()]],
+     () => B.effekt()],
     ['Absatz', [['links', 'Linksbündig', () => B.links()], ['mitte', 'Zentriert', () => B.mitte()],
                 ['rechts', 'Rechtsbündig', () => B.rechts()], ['block', 'Blocksatz', () => B.block()],
                 ['punkte', 'Aufzählung', () => B.punkte()], ['zahlen', 'Nummerierung', () => B.zahlen()],
                 ['mehr', 'Einzug vergrößern', () => B.einzugMehr()],
                 ['weniger', 'Einzug verkleinern', () => B.einzugWeniger()],
-                ['abstand', 'Zeilenabstand 1,5', () => zeilenabstand('1.5')()]]],
+                ['abstand', 'Zeilenabstand 1,5', () => zeilenabstand('1.5')()]],
+     () => B.absatzabstand()],
     ['Suchen', [['lupe', 'Suchen und Ersetzen', () => sucheZeigen(true), 'gross']]],
   ]],
 
   ['Einfügen', [
-    ['Tabelle', [['tabelle', 'Tabelle', () => B.tabelle(), 'gross']]],
+    ['Tabelle', [['tabelle', 'Tabelle', () => B.tabelle(), 'gross'],
+                 ['schnelltabelle', 'Vorlage', () => B.schnelltabelle()]]],
     ['Bilder', [['bild', 'Bild', () => B.bild(), 'gross'],
                 ['saeule', 'Diagramm', () => B.diagramm(), 'gross'],
-                ['rahmen', 'Textrahmen', () => B.textfeld()]]],
+                ['rahmen', 'Textfeld', () => B.textfeld()],
+                ['zeichnen', 'Form', () => B.zeichnen()],
+                ['smartart', 'SmartArt', () => B.smartart()]]],
     ['Kopf und Fuß', [['kopfz', 'Kopfzeile', () => B.kopfzeile(), 'gross'],
                       ['fussz', 'Fußzeile', () => B.fusszeile(), 'gross'],
                       ['zahl', 'Seitenzahl', () => B.seitennummer()],
                       ['umbruch', 'Umbruch', () => B.seitenumbruch()]]],
     ['Sonstiges', [['kette', 'Verknüpfung', () => B.hyperlink()],
                    ['notiz', 'Kommentar', () => B.kommentar()],
-                   ['omega', 'Sonderzeichen', () => B.sonderzeichen()]]],
+                   ['omega', 'Sonderzeichen', () => B.sonderzeichen()],
+                   ['datum', 'Datum', () => B.datum()],
+                   ['formel', 'Formel', () => B.formel()]]],
   ]],
 
   ['Layout', [
     ['Seite', [['A4', 'Hoch/Quer', () => B.querformat(), 'gross'],
                ['Rand', 'Ränder', () => B.seitenraender(), 'gross'],
-               ['Spalten', 'Spalten', () => B.spalten(), 'gross']]],
+               ['Spalten', 'Spalten', () => B.spalten(), 'gross']],
+     () => B.seitenraender()],
     ['Absatz', [['mehr', 'Einzug vergrößern', () => B.einzugMehr()],
                 ['weniger', 'Einzug verkleinern', () => B.einzugWeniger()],
-                ['abstand', 'Zeilenabstand 1,5', () => zeilenabstand('1.5')()]]],
-    ['Seitenwechsel', [['umbruch', 'Umbruch', () => B.seitenumbruch(), 'gross']]],
+                ['abstand', 'Absatzabstand', () => B.absatzabstand()],
+                ['Genau', 'Einzug genau', () => B.einzugGenau()]],
+     () => B.absatzabstand()],
+    ['Seitenwechsel', [['umbruch', 'Umbruch', () => B.seitenumbruch(), 'gross'],
+                       ['Abschnitt', 'Abschnitt', () => B.abschnittsumbruch()],
+                       ['Spalte', 'Spalte', () => B.spaltenumbruch()]]],
+    ['Seite gestalten', [['Farbe', 'Seitenfarbe', () => B.seitenfarbe()],
+                         ['Rahmen', 'Seitenrahmen', () => B.seitenrahmen()],
+                         ['Wasser', 'Wasserzeichen', () => B.wasserzeichen()],
+                         ['Trennung', 'Silbentrennung', () => B.silbentrennung()]]],
+  ]],
+
+  ['Referenzen', [
+    ['Verzeichnisse', [['Inhalt', 'Inhaltsverzeichnis', () => B.inhaltsverzeichnis(), 'gross'],
+                       ['Abb.', 'Abbildungen', () => B.abbildungsverzeichnis()],
+                       ['Stichwort', 'Stichwörter', () => B.stichwortverzeichnis()],
+                       ['Literatur', 'Literatur', () => B.literaturverzeichnis()],
+                       ['Auffrischen', 'Aktualisieren', () => B.verzeichnisseAktualisieren()]]],
+    ['Fußnoten', [['Fußnote', 'Fußnote', () => B.fussnote(), 'gross'],
+                  ['Endnote', 'Endnote', () => B.endnote(), 'gross'],
+                  ['Weiter', 'Nächste Note', () => B.noteWeiter()],
+                  ['Zurück', 'Vorige Note', () => B.noteZurueck()]]],
+    ['Quellen', [['Zitat', 'Zitat', () => B.zitat(), 'gross'],
+                 ['Neu', 'Quelle anlegen', () => B.quelleNeu()],
+                 ['Verwalten', 'Quellen verwalten', () => B.quellenVerwalten()]],
+     () => B.zitierweise()],
+    ['Verweise', [['Querverweis', 'Querverweis', () => B.querverweis()],
+                  ['Beschriftung', 'Beschriftung', () => B.beschriftung()],
+                  ['Textmarke', 'Textmarke', () => B.textmarke()],
+                  ['Eintrag', 'Indexeintrag', () => B.indexEintrag()]]],
+  ]],
+
+  ['Überprüfen', [
+    ['Rechtschreibung', [['haken', 'Prüfen', () => pruefen(), 'gross'],
+                         ['verfolgt', 'Gründlich', () => B.gruendlichPruefen(), 'gross'],
+                         ['Thesaurus', 'Wörter für…', () => B.thesaurus()],
+                         ['Zählen', 'Wörter zählen', () => B.woerterZaehlen()],
+                         ['Barriere', 'Barrierefreiheit', () => B.barrierefrei()]],
+     () => B.pruefsprache()],
+    ['Kommentare', [['notiz', 'Neuer Kommentar', () => B.kommentar(), 'gross'],
+                    ['Weiter', 'Nächster', () => B.kommentarWeiter()],
+                    ['Zurück', 'Voriger', () => B.kommentarZurueck()],
+                    ['Löschen', 'Löschen', () => B.kommentarWeg()]]],
+    ['Änderungen', [['stift', 'Verfolgen', () => B.verfolgen(), 'gross'],
+                    ['Annehmen', 'Annehmen', () => B.aenderungAnnehmen()],
+                    ['Ablehnen', 'Ablehnen', () => B.aenderungAblehnen()],
+                    ['Weiter', 'Nächste', () => B.aenderungWeiter()],
+                    ['Zurück', 'Vorige', () => B.aenderungZurueck()],
+                    ['Markup', 'Markup zeigen', () => B.markupUmschalten()]],
+     () => B.ueberarbeitungsbereich()],
+    ['Schützen', [['Sperren', 'Bearbeitung sperren', () => B.bearbeitungSperren()]]],
   ]],
 
   ['Schreibhilfe', [
@@ -972,25 +1035,109 @@ const REGISTER = [
                 ['verfolgt', 'Gründlich', () => B.gruendlichPruefen(), 'gross'],
                 ['stift', 'Alles Eindeutige', () => allesUebernehmen()]]],
     ['Hören', [['lupe', 'Vorlesen', () => B.vorlesen(), 'gross'],
-               ['Stimme', 'Stimme und Tempo', () => B.stimmeWaehlen()]]],
+               ['Stimme', 'Stimme und Tempo', () => B.stimmeWaehlen()],
+               ['Ab hier', 'Ab hier vorlesen', () => B.vorlesenAbSatz()],
+               ['Halt', 'Anhalten', () => B.vorlesenStopp()]]],
     ['KI', [['KI', 'Korrektur', () => kiKorrigieren(), 'gross'],
             ['Vorschlag', 'Vorschläge', () => kiVorschlaege(), 'gross'],
             ['Übersetzen', 'Übersetzen', () => kiUebersetzen(), 'gross']]],
-    ['Zeigen', [['Tafel', 'Seitenleiste', () => B.tafelZeigen()]]],
+    ['Zeigen', [['Tafel', 'Seitenleiste', () => B.tafelZeigen()],
+                ['Hilfe', 'Welche Hilfe wann', () => B.welcheHilfe()]]],
   ]],
 
   ['Ansicht', [
     ['Zoom', [['lupe', 'Vergrößern', () => B.groesser(), 'gross'],
               ['weniger', 'Verkleinern', () => B.kleiner(), 'gross'],
-              ['100 %', 'Normal', () => B.normal()]]],
+              ['100 %', 'Normal', () => B.normal()],
+              ['Breite', 'Seitenbreite', () => B.zoomBreite()]],
+     () => B.zoomStufe()],
     ['Zeigen', [['Lineal', 'Lineal', () => B.linealZeigen()],
                 ['Tafel', 'Seitenleiste', () => B.tafelZeigen()],
+                ['Zeichen', 'Steuerzeichen', () => B.steuerzeichenZeigen()],
                 ['Hell', 'Hell/Dunkel', () => setzeThema(THEMEN[(THEMEN.indexOf(thema) + 1) % THEMEN.length])()]]],
+    ['Fenster', [['Neu', 'Neues Fenster', () => B.neuesFenster()],
+                 ['Ordnen', 'Nebeneinander', () => B.fensterNebeneinander()]]],
     ['Oberfläche', [['mehr', 'Benutzeroberfläche', () => B.benutzeroberflaeche(), 'gross']]],
   ]],
 ];
 
+/* Kontextabhängige Reiter: Sie stehen nur da, wenn sie etwas zu sagen haben.
+   Word blendet „Tabellentools" ein, sobald der Zeiger in einer Tabelle steht,
+   und wieder aus, sobald er heraus ist. Ein Reiter, dessen Knöpfe ins Leere
+   griffen, wäre schlimmer als keiner. */
+const REGISTER_IM_ZUSAMMENHANG = [
+  {
+    name: 'Tabelle',
+    gilt: () => !!zelleJetzt(),
+    gruppen: [
+      ['Zeilen', [['Oben', 'Zeile darüber', () => B.zeileOben(), 'gross'],
+                  ['Unten', 'Zeile darunter', () => B.zeileUnten(), 'gross'],
+                  ['Weg', 'Zeile löschen', () => B.zeileWeg()]]],
+      ['Spalten', [['Links', 'Spalte links', () => B.spalteLinks(), 'gross'],
+                   ['Rechts', 'Spalte rechts', () => B.spalteRechts(), 'gross'],
+                   ['Weg', 'Spalte löschen', () => B.spalteWeg()]]],
+      ['Tabelle', [['Kopfzeile', 'Erste Zeile als Kopf', () => B.kopfzeileTabelle()],
+                   ['Rahmen', 'Rahmen ein/aus', () => B.tabelleRahmen()],
+                   ['Sortieren', 'Sortieren', () => B.sortieren()],
+                   ['Löschen', 'Ganze Tabelle', () => B.tabelleWeg()]]],
+    ],
+  },
+];
+
+function zusammenhangReiter() {
+  return REGISTER_IM_ZUSAMMENHANG.filter((r) => {
+    try { return r.gilt(); } catch (e) { return false; }
+  });
+}
+
+/* ------------------------------------------------------------
+   Der Formatvorlagen-Katalog
+
+   Ein Auswahlfeld sagt „Überschrift 1"; der Katalog ZEIGT sie. Wer mit
+   Schrift kämpft, erkennt eine Form schneller, als er einen Namen liest —
+   und genau darum baut Word ihn seit zwanzig Jahren so.
+   ------------------------------------------------------------ */
+const KATALOG = [
+  ['Standard',     'Aa', () => absatz('p'),                        'kat--p'],
+  ['Überschrift 1','Aa', () => absatz('h1'),                       'kat--h1'],
+  ['Überschrift 2','Aa', () => absatz('h2'),                       'kat--h2'],
+  ['Überschrift 3','Aa', () => absatz('h3'),                       'kat--h3'],
+  ['Titel',        'Aa', () => vorlageSetzen('h1', 'titel'),       'kat--titel'],
+  ['Untertitel',   'Aa', () => vorlageSetzen('h2', 'untertitel'),  'kat--untertitel'],
+  ['Zitat',        'Aa', () => absatz('blockquote'),               'kat--zitat'],
+  ['Kein Abstand', 'Aa', () => vorlageSetzen('p', 'ohne-abstand'), 'kat--p'],
+];
+
+function katalogBauen() {
+  const kiste = document.createElement('div');
+  kiste.className = 'katalog';
+  for (const [name, probe, tun, klasse] of KATALOG) {
+    const k = document.createElement('button');
+    k.type = 'button';
+    k.className = 'katalog__stueck';
+    k.title = name;
+    k.setAttribute('aria-label', name);
+
+    const bild = document.createElement('span');
+    bild.className = 'katalog__probe ' + klasse;
+    bild.textContent = probe;
+    const wort = document.createElement('span');
+    wort.className = 'katalog__name';
+    wort.textContent = name;
+
+    k.append(bild, wort);
+    k.addEventListener('mousedown', (e) => e.preventDefault());
+    k.addEventListener('click', tun);
+    kiste.appendChild(k);
+  }
+  return kiste;
+}
+
 let registerOffen = Speicher.lies('register', 'Start');
+/* Eingeklappt zeigt das Register nur die Reiterzeile — wie in Word, wo ein
+   Doppelklick auf den Reiter das Band wegräumt. Auf einem kleinen Bildschirm
+   sind hundert Pixel viel. */
+let registerEingeklappt = Speicher.lies('registerZu', false);
 
 function registerBauen() {
   const reiter = $('register-reiter');
@@ -998,15 +1145,39 @@ function registerBauen() {
   if (!reiter || !band) return;
 
   reiter.innerHTML = '';
-  for (const [name] of REGISTER) {
+
+  const zusatz = zusammenhangReiter();
+  const alle = REGISTER.map(([name]) => [name, false])
+    .concat(zusatz.map((r) => [r.name, true]));
+
+  /* Steht der Zeiger nicht mehr in der Tabelle, ist der Reiter weg — und mit
+     ihm der offene Bereich. Dann zurück auf Start, statt auf einen Reiter zu
+     zeigen, den es nicht mehr gibt. */
+  if (!alle.some(([name]) => name === registerOffen)) registerOffen = 'Start';
+
+  for (const [name, imZusammenhang] of alle) {
     const knopf = document.createElement('button');
     knopf.type = 'button';
     knopf.textContent = name;
     knopf.setAttribute('role', 'tab');
-    if (name === registerOffen) knopf.className = 'register--offen';
+    knopf.className = (name === registerOffen ? 'register--offen ' : '')
+                    + (imZusammenhang ? 'register__zusatz' : '');
+    if (imZusammenhang) knopf.title = 'Nur da, solange der Zeiger in einer Tabelle steht';
     knopf.addEventListener('click', () => {
+      /* Ein Klick auf den offenen Reiter klappt wieder auf, wenn eingeklappt
+         war. So kommt man an das Band, ohne die Einstellung zu ändern. */
+      if (name === registerOffen && registerEingeklappt) {
+        registerEingeklappt = false;
+        Speicher.schreib('registerZu', false);
+      }
       registerOffen = name;
-      Speicher.schreib('register', name);
+      if (!imZusammenhang) Speicher.schreib('register', name);
+      registerBauen();
+    });
+    /* Doppelklick klappt ein und aus — wie in Word. */
+    knopf.addEventListener('dblclick', () => {
+      registerEingeklappt = !registerEingeklappt;
+      Speicher.schreib('registerZu', registerEingeklappt);
       registerBauen();
     });
     reiter.appendChild(knopf);
@@ -1028,12 +1199,30 @@ function registerBauen() {
   });
   reiter.appendChild(menueKnopf);
 
+  band.hidden = registerEingeklappt;
+  document.body.classList.toggle('register--zu', registerEingeklappt);
   band.innerHTML = '';
-  const gewaehlt = (REGISTER.find(([name]) => name === registerOffen) || REGISTER[1])[1];
+  if (registerEingeklappt) return;
 
-  for (const [gruppenName, eintraege] of gewaehlt) {
+  const ausZusatz = zusatz.find((r) => r.name === registerOffen);
+  const gewaehlt = ausZusatz
+    ? ausZusatz.gruppen
+    : (REGISTER.find(([name]) => name === registerOffen) || REGISTER[1])[1];
+
+  for (const [gruppenName, eintraege, oeffner] of gewaehlt) {
     const gruppe = document.createElement('div');
     gruppe.className = 'register__gruppe';
+
+    /* Der Katalog zeigt die Formatvorlagen, statt sie zu benennen. */
+    if (eintraege === 'katalog') {
+      gruppe.appendChild(katalogBauen());
+      const name = document.createElement('span');
+      name.className = 'register__name';
+      name.textContent = gruppenName;
+      gruppe.appendChild(name);
+      band.appendChild(gruppe);
+      continue;
+    }
 
     /* Die Wähler wandern aus der Werkzeugleiste hierher. Beim Zurückschalten
        baut werkzeugeBauen() sie ohnehin neu — es geht also nichts verloren. */
@@ -1101,14 +1290,47 @@ function registerBauen() {
     if (kleineKiste.childNodes.length) reihe.appendChild(kleineKiste);
     gruppe.appendChild(reihe);
 
+    /* Der Fuß trägt den Namen — und rechts den Pfeil, wenn es mehr gibt,
+       als in die Gruppe passt. */
+    const fuss = document.createElement('div');
+    fuss.className = 'register__fuss';
+
     const name = document.createElement('span');
     name.className = 'register__name';
     name.textContent = gruppenName;
-    gruppe.appendChild(name);
+    fuss.appendChild(name);
 
+    if (typeof oeffner === 'function') {
+      const pfeil = document.createElement('button');
+      pfeil.type = 'button';
+      pfeil.className = 'register__starter';
+      pfeil.textContent = '⭨';
+      pfeil.title = gruppenName + ' — alle Einstellungen';
+      pfeil.setAttribute('aria-label', gruppenName + ' — alle Einstellungen');
+      pfeil.addEventListener('mousedown', (e) => e.preventDefault());
+      pfeil.addEventListener('click', oeffner);
+      fuss.appendChild(pfeil);
+    }
+
+    gruppe.appendChild(fuss);
     band.appendChild(gruppe);
   }
 }
+
+/* Der Kontextreiter muss kommen und gehen, während der Zeiger wandert. Neu
+   gebaut wird aber nur, wenn sich wirklich etwas ändert — bei jedem
+   Tastendruck das ganze Band neu zu zeichnen wäre beim Schreiben zu spüren. */
+let zusammenhangStand = '';
+
+function zusammenhangPruefen() {
+  if (flaeche !== 'register') return;
+  const jetzt = zusammenhangReiter().map((r) => r.name).join(',');
+  if (jetzt === zusammenhangStand) return;
+  zusammenhangStand = jetzt;
+  registerBauen();
+}
+
+document.addEventListener('selectionchange', zusammenhangPruefen);
 
 /* ------------------------------------------------------------
    Symbolleisten oder Register
