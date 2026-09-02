@@ -5839,12 +5839,31 @@ function wortErsetzen(stelle, ersatz) {
   geaendertMelden();
 }
 
+/* Die Wortliste ist durchgehend kleingeschrieben — sie weiß von Hauptwörtern
+   nichts. Für einen Teil davon braucht sie es auch nicht: Diese Endungen sind
+   im Deutschen ausnahmslos Hauptwörter. Das ist keine Schätzung, sondern
+   Wortbildung — es gibt kein Eigenschaftswort auf -ung, -keit oder -schaft.
+
+   Die Mindestlänge muss sein: „jung" endet auf -ung und ist keines. Ab sieben
+   Buchstaben bleibt von den kurzen Ausreißern nichts übrig.
+
+   Das deckt Qualität, Berechnung, Zahlung, Bestätigung ab — nicht Bescheid,
+   Unterlagen, Widerspruch. Dafür bräuchte es eine Hauptwortliste, die es hier
+   nicht gibt. Bei denen bleibt es beim Muster des Ersetzten, und das trifft
+   meistens: Wer „Kwalität" schreibt, hat den großen Buchstaben schon. */
+const HAUPTWORT_ENDE =
+  /(ung|ungen|heit|heiten|keit|keiten|schaft|schaften|tion|tionen|tät|täten|nis|nisse|tum|ismus|ment|mente)$/;
+
+const istHauptwort = (wort) => wort.length >= 7 && HAUPTWORT_ENDE.test(wort);
+
 /* „hallo" statt „Hallo" wäre am Satzanfang wieder falsch. Also übernimmt der
    Vorschlag die Schreibweise des Wortes, das er ersetzt. */
 function wieGeschrieben(alt, neu) {
   if (!alt || !neu) return neu;
   if (alt === alt.toUpperCase() && alt.length > 1) return neu.toUpperCase();
   if (alt[0] === alt[0].toUpperCase()) return neu[0].toUpperCase() + neu.slice(1);
+  if (neu[0] === neu[0].toUpperCase()) return neu;      // bringt sie schon mit
+  if (istHauptwort(neu)) return neu[0].toUpperCase() + neu.slice(1);
   return neu;
 }
 
