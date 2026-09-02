@@ -26,11 +26,11 @@ NAME="lunivo-office"
 
 # Das Symbol in allen Größen ablegen.
 #
-# Eine einzige große Datei würde überall herunterskaliert — und bei 16
-# Bildpunkten in der Fensterleiste bliebe davon ein Fleck. Deshalb liegt für
-# jede Größe eine eigene Datei bereit, für die kleinen sogar eine eigens
-# vereinfachte Zeichnung. Dazu die SVG-Fassung: Aus ihr rechnet sich der
-# Arbeitsplatz jede Größe selbst, die hier nicht steht.
+# Eine einzige große Datei würde überall herunterskaliert — und was bei 16
+# Bildpunkten in der Fensterleiste dabei herauskommt, hängt davon ab, wer
+# rechnet. Deshalb liegt für jede Größe eine eigene Datei bereit. Dazu die
+# SVG-Fassung: Aus ihr rechnet sich der Arbeitsplatz jede Größe selbst, die
+# hier nicht steht.
 symbole_ablegen() {
   for G in 16 22 24 32 48 64 128 256 512; do
     ORDNER="$SYMBOLE/${G}x${G}/apps"

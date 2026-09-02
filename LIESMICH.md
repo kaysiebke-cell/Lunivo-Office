@@ -173,25 +173,29 @@ Leiste und Seitenleiste — und über „In Datei drucken" wird daraus ein PDF.
     start.py          das Fenster (GTK + WebKit), der kleine Server,
                       die Schriftliste und der Weg zu LibreOffice
     icon.svg          das Symbol des Programms
-    symbole/          dasselbe in allen Größen (16 bis 512),
-                      für 16–24 als eigene, vereinfachte Zeichnung
+    symbole/          dasselbe in allen Größen (16 bis 512)
+    bilder/marke.png  das freigestellte Zeichen, aus dem sie gerechnet sind
     starten.sh        startet es und schreibt den Menüeintrag neu
 
 ## Das Symbol
 
-Ein Blatt mit einem großen „S" und einem Stift daneben. Der Buchstabe sagt,
-welches Programm es ist, und unterscheidet es vom „Aa" der Schreibhilfe; der
-Stift sagt, wozu es da ist.
+Die Glühbirne mit der Federspitze aus dem Logo, freigestellt, auf einer
+dunkelblauen Kachel — dasselbe Zeichen, das auch den Schriftzug trägt.
 
-Der Buchstabe liegt als Pfad in der Datei, nicht als Text. Ein `<text>` würde
-mit irgendeiner Schrift gesetzt, die auf dem Rechner gerade da ist — auf einem
-anderen sähe das Symbol dann anders aus.
+Die Kachel ist nicht Zierde. Die Linien des Zeichens sind hell, und auf einer
+hellen Fensterleiste bliebe bei 16 Bildpunkten davon kaum etwas übrig. Auf dem
+Dunkelblau des Schriftzugs bleiben sie sichtbar, gleich ob die Leiste hell oder
+dunkel ist, und das Symbol sieht überall gleich aus.
+
+Das Zeichen liegt als Bild in der Datei, nicht als Pfade. Das Logo ist gemalt,
+nicht konstruiert — es in Kurven nachzubauen hieße, es neu zu erfinden. Die
+freigestellte Vorlage liegt als `bilder/marke.png` dabei; daraus lässt sich der
+ganze Satz jederzeit neu rechnen.
 
 Es liegt in neun Größen bereit statt nur in einer. Eine große Datei würde
-überall heruntergerechnet, und bei 16 Bildpunkten in der Fensterleiste bliebe
-davon ein Fleck. Für 16 bis 24 Bildpunkte gibt es deshalb eine eigene,
-vereinfachte Zeichnung mit weniger Zeilen und dickeren Strichen
-(`symbole/icon-klein.svg`).
+überall heruntergerechnet, und was bei 16 Bildpunkten dabei herauskommt, hängt
+davon ab, wer rechnet. Die neun Dateien sind einmal sauber gerechnet und bleiben
+überall dieselben.
 
 `./starten.sh` legt alle Größen unter `~/.local/share/icons/hicolor/` ab.
 `./starten.sh --weg` räumt sie wieder fort.
