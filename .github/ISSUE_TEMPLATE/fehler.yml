@@ -1,0 +1,33 @@
+name: Etwas geht nicht
+description: Ein Knopf tut nichts, das Fenster bleibt leer, eine Datei lässt sich nicht öffnen.
+title: "Geht nicht: "
+labels: ["fehler"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Rechtschreibung ist hier egal — schreib es, wie es dir einfällt.
+  - type: textarea
+    id: was
+    attributes:
+      label: Was hast du gemacht, und was ist passiert?
+      placeholder: |
+        Ich habe im Menü auf „Speichern unter" geklickt. Es kam kein Fenster.
+    validations:
+      required: true
+  - type: textarea
+    id: erwartet
+    attributes:
+      label: Was hättest du erwartet?
+      placeholder: Dass der Ordner aufgeht und ich das Format wählen kann.
+  - type: input
+    id: system
+    attributes:
+      label: Welches System?
+      placeholder: Linux Mint 22, Ubuntu 24.04, Fedora 41 …
+  - type: textarea
+    id: meldung
+    attributes:
+      label: Steht eine Fehlermeldung im Fenster oder im Terminal? (freiwillig)
+      description: Wenn du es aus dem Terminal gestartet hast, steht dort oft etwas.
+      render: text

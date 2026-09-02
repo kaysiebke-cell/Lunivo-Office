@@ -15,6 +15,31 @@ Internet nötig. Was geschrieben wird, bleibt auf dem eigenen Rechner.
 ![Das Schreibprogramm mit einem Brief im Blatt und der Schreibhilfe rechts an der Seite](bilder/uebersicht.png)
 
 
+## Mach mit
+
+Dieses Projekt sucht Leute — **nicht in erster Linie Programmierer.**
+
+Wenn dir Schreiben schwerfällt, bist du hier die wichtigste Person. Nicht
+weil das nett klingt, sondern weil niemand ein Werkzeug bauen kann für eine
+Not, von der er nichts weiß. Ein Satz darüber, woran du hängenbleibst, ist
+mehr wert als der schönste Quelltext.
+
+> [**Erzähl, woran du hängenbleibst**](../../issues/new?template=erfahrung.yml)
+> · [Etwas geht nicht](../../issues/new?template=fehler.yml)
+> · [Etwas fehlt](../../issues/new?template=wunsch.yml)
+> · [Reden statt melden](../../discussions)
+
+**Rechtschreibung ist dabei egal.** Wirklich — ausgerechnet hier wird
+niemand darauf angesprochen.
+
+Gebraucht wird außerdem: Regeln für die Prüfung (samt der Frage, wann sie
+falsch wären), Ausprobieren auf anderen Linux-Systemen, ein Flatpak oder
+AppImage, und andere Sprachen von Leuten, die sie sprechen.
+
+* [**RICHTUNG.md**](RICHTUNG.md) — wohin das gehen soll, und was es *nicht* wird
+* [MITMACHEN](CONTRIBUTING.md) — wie, im Einzelnen
+* [Der Ton hier](CODE_OF_CONDUCT.md) — eine Seite statt fünf
+
 ## Warum noch ein Schreibprogramm?
 
 Weil die vorhandenen an der falschen Stelle helfen. Ein Rechtschreibprüfer
@@ -187,6 +212,8 @@ deshalb wie der übrige Code unter MIT.
     js/pruefung.js       die Prüfung, Phonetik, Wortvorhersage
     js/ki.js             Claude und Ollama, Gedächtnis, Sicherung
     js/einstellungen.js  die Einstellungsseite
+    RICHTUNG.md          wohin das Projekt geht, und was es nicht wird
+    CONTRIBUTING.md      wie man mitmacht
     daten/regeln.js      der Wortschatz der Prüfung
     daten/woerter.txt    355.321 deutsche Wörter
     start.py             Fenster, Server, Schriften, LibreOffice, Vorlesen

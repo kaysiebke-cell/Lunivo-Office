@@ -1,0 +1,35 @@
+name: Etwas fehlt
+description: Eine Regel für die Prüfung, eine Funktion, eine Erleichterung.
+title: "Fehlt: "
+labels: ["wunsch"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Bevor du schreibst, ein Blick in [RICHTUNG.md](../blob/main/RICHTUNG.md) —
+        dann reden wir über dasselbe. Besonders Punkt 2:
+        **Lieber eine Lücke als ein falscher Alarm.**
+  - type: textarea
+    id: was
+    attributes:
+      label: Was fehlt?
+      placeholder: |
+        „scheinbar" statt „anscheinend" wird nicht gefunden.
+    validations:
+      required: true
+  - type: textarea
+    id: warum
+    attributes:
+      label: Wem hilft das, und wobei?
+      placeholder: Mir passiert das in jedem zweiten Brief.
+  - type: textarea
+    id: falsch
+    attributes:
+      label: Wann wäre es falsch?
+      description: |
+        Die wichtigste Frage bei jeder neuen Regel. Fällt dir ein richtiger
+        Satz ein, den sie fälschlich anmeckern würde? Wenn ja, welcher?
+      placeholder: |
+        „Die Sonne schien bar jeder Wolke" — da wäre die Regel falsch.
+    validations:
+      required: true
