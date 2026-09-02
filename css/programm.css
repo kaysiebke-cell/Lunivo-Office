@@ -1504,16 +1504,26 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 
 /* Der Katalog zeigt die Vorlage, statt sie zu benennen. Wer mit Schrift
    kämpft, erkennt eine Form schneller, als er einen Namen liest. */
-.katalog{display:flex;gap:4px;align-items:stretch;flex:1 1 auto}
+.katalog{display:flex;gap:3px;align-items:stretch;flex:1 1 auto}
+
+/* Erst stand hier Papierweiß — die Vorschau sollte aussehen wie auf dem
+   Blatt. Im dunklen Fenster wurden daraus acht grelle Kästen, die mit dem
+   übrigen Programm nichts zu tun hatten.
+   Word kann sich das leisten, weil dort das ganze Ribbon hell ist. Hier
+   nehmen die Kacheln die Farben der Leiste — was sie zeigen sollen, ist
+   die FORM der Vorlage, nicht die Farbe des Papiers. */
 .katalog__stueck{
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:2px;min-width:52px;padding:3px 6px;
-  background:var(--blatt);border:1px solid var(--rand);border-radius:5px;
-  cursor:pointer;
+  gap:1px;min-width:46px;padding:2px 6px;
+  background:none;border:1px solid transparent;border-radius:5px;
+  color:var(--schrift);cursor:pointer;
 }
-.katalog__stueck:hover{border-color:var(--blau)}
+.katalog__stueck:hover{
+  background:rgba(127,127,127,.12);
+  border-color:var(--rand);
+}
 .katalog__probe{
-  color:var(--blatt-schrift);line-height:1.1;
+  color:inherit;line-height:1.05;
   font-family:Georgia,"Liberation Serif",serif;
 }
 .katalog__name{font-size:9.5px;color:var(--schrift-3);white-space:nowrap}
@@ -1526,8 +1536,8 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 .kat--h2{font-size:16px;font-weight:700}
 .kat--h3{font-size:14px;font-weight:700}
 .kat--titel{font-size:20px;font-weight:700;letter-spacing:.5px}
-.kat--untertitel{font-size:14px;color:var(--schrift-2)!important;font-style:italic}
-.kat--zitat{font-size:13px;font-style:italic;color:var(--schrift-2)!important}
+.kat--untertitel{font-size:14px;color:var(--schrift-2);font-style:italic}
+.kat--zitat{font-size:13px;font-style:italic;color:var(--schrift-2)}
 
 /* Der Reiter, der nur da ist, solange er etwas zu sagen hat. */
 .register__reiter button.register__zusatz{
