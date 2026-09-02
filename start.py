@@ -206,19 +206,75 @@ PIPER_ORTE = [
 ]
 
 
-def piper_finden():
-    """Der Ordner, in dem Programm UND Stimme liegen — oder nichts."""
+# Wie die Dateinamen auf Deutsch heißen. Wer „de_DE-eva_k-x_low" liest, weiß
+# nicht, ob das eine Frau ist — und genau danach sucht man in einer Liste.
+PIPER_NAMEN = {
+    "de_DE-thorsten-medium":  "Thorsten (männlich)",
+    "de_DE-thorsten-high":    "Thorsten, feiner (männlich)",
+    "de_DE-thorsten-low":     "Thorsten, gröber (männlich)",
+    "de_DE-karlsson-low":     "Karlsson (männlich)",
+    "de_DE-pavoque-low":      "Pavoque (männlich)",
+    "de_DE-kerstin-low":      "Kerstin (weiblich)",
+    "de_DE-ramona-low":       "Ramona (weiblich)",
+    "de_DE-eva_k-x_low":      "Eva (weiblich)",
+    "de_DE-mls-medium":       "Gemischt (mehrere Sprecher)",
+    "de_DE-thorsten_emotional-medium": "Thorsten mit Gefühl (männlich)",
+}
+
+
+def piper_programm():
+    """Das Piper-Programm, wo immer es liegt — oder nichts."""
     for ort in PIPER_ORTE:
         programm = os.path.join(ort, "piper", "piper")
-        stimme = os.path.join(ort, "de_DE-thorsten-medium.onnx")
-        if (os.path.isfile(programm) and os.access(programm, os.X_OK)
-                and os.path.isfile(stimme)):
-            return programm, stimme
+        if os.path.isfile(programm) and os.access(programm, os.X_OK):
+            return programm, ort
     return None, None
 
 
+def piper_stimmen():
+    """Die eingerichteten Stimmen, mit lesbarem Namen. Beste zuerst.
+
+    „high" vor „medium" vor „low": Die Stufe steckt im Dateinamen und sagt,
+    wie fein das Modell rechnet. Wer die Liste aufklappt, soll oben das
+    Beste finden und nicht die Reihenfolge des Alphabets.
+    """
+    programm, ort = piper_programm()
+    if not programm:
+        return []
+
+    stufe = {"high": 0, "medium": 1, "low": 2, "x_low": 3}
+    gefunden = []
+    for datei in sorted(os.listdir(ort)):
+        if not datei.endswith(".onnx"):
+            continue
+        kennung = datei[:-len(".onnx")]
+        rang = stufe.get(kennung.rsplit("-", 1)[-1], 9)
+        gefunden.append((rang, kennung,
+                         PIPER_NAMEN.get(kennung, kennung.replace("de_DE-", ""))))
+
+    gefunden.sort(key=lambda e: (e[0], e[2]))
+    return [{"kennung": k, "name": n} for _, k, n in gefunden]
+
+
+def piper_finden(kennung=""):
+    """Programm und Stimmdatei — zur gewünschten Stimme oder zur ersten besten."""
+    programm, ort = piper_programm()
+    if not programm:
+        return None, None
+
+    if kennung:
+        pfad = os.path.join(ort, kennung + ".onnx")
+        if os.path.isfile(pfad):
+            return programm, pfad
+
+    stimmen = piper_stimmen()
+    if not stimmen:
+        return None, None
+    return programm, os.path.join(ort, stimmen[0]["kennung"] + ".onnx")
+
+
 def piper_da():
-    """Ist die gute Stimme eingerichtet — und lässt sie sich abspielen?"""
+    """Ist eine gute Stimme eingerichtet — und lässt sie sich abspielen?"""
     programm, _ = piper_finden()
     return bool(programm and (shutil.which("paplay") or shutil.which("aplay")))
 
@@ -233,7 +289,7 @@ def piper_tempo(tempo):
     return 1.0 - t * (0.4 / 100) if t > 0 else 1.0 - t * (0.5 / 100)
 
 
-def vorlesen_mit_piper(text, tempo):
+def vorlesen_mit_piper(text, tempo, kennung=""):
     """Piper schreibt rohen Ton, das Abspielprogramm nimmt ihn direkt entgegen.
 
     Über eine Zwischendatei zu gehen hieße: erst den ganzen Brief rechnen, dann
@@ -247,7 +303,9 @@ def vorlesen_mit_piper(text, tempo):
         abspielen = ["aplay", "-q", "-r", rate, "-f", "S16_LE", "-c", "1",
                      "-t", "raw", "-"]
 
-    programm, stimme = piper_finden()
+    programm, stimme = piper_finden(kennung)
+    if not programm:
+        return False
     sprechen = subprocess.Popen(
         [programm, "--model", stimme, "--output_raw",
          "--length_scale", "%.2f" % piper_tempo(tempo)],
@@ -293,8 +351,11 @@ def vorlesen(text, stimme, tempo):
     if not text:
         return False
 
-    # Die gute Stimme zuerst. „stimme" meint eine von espeak; wer sich dort
-    # ausdrücklich eine ausgesucht hat, bekommt sie auch.
+    # Die guten Stimmen tragen ihre Kennung mit: „piper:de_DE-kerstin-low".
+    # Ohne Angabe nimmt Piper seine erste — und wer eine espeak-Stimme
+    # ausgesucht hat, bekommt die.
+    if stimme.startswith("piper:"):
+        return vorlesen_mit_piper(text, tempo, stimme[len("piper:"):])
     if piper_da() and not stimme:
         return vorlesen_mit_piper(text, tempo)
 
@@ -782,7 +843,7 @@ class Leise(http.server.SimpleHTTPRequestHandler):
 
         if self.path.split("?")[0] == "/stimmen":
             ladung = json.dumps({
-                "gut": piper_da(),        # ist die natürliche Stimme da?
+                "gut": piper_stimmen(),   # die natürlichen, beste zuerst
                 "stimmen": stimmen_lesen(),
             }).encode("utf-8")
             self.send_response(200)

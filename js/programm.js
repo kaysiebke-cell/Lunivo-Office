@@ -4034,45 +4034,54 @@ B.vorlesenStopp = async () => {
 };
 
 B.stimmeWaehlen = async () => {
-  let stimmen = [];
-  let gut = false;
+  let stimmen = [];          // die des Systems (espeak)
+  let gut = [];              // die aufgenommenen (Piper)
   try {
     const antwort = await fetch('stimmen');
     if (antwort.ok) {
       const daten = await antwort.json();
       stimmen = daten.stimmen || [];
-      gut = !!daten.gut;
+      gut = daten.gut || [];
     }
   } catch (e) { /* kein eigenes Fenster */ }
 
-  if (!stimmen.length && !gut) {
+  if (!stimmen.length && !gut.length) {
     melde('Es sind keine deutschen Stimmen eingerichtet.');
     return;
   }
 
-  /* Die erste Wahl ist keine unter vielen. Ist Piper eingerichtet, ist sie die
-     einzige, die nicht nach Maschine klingt — das gehört dazugeschrieben, sonst
-     probiert man sich durch hundert espeak-Varianten und wundert sich. */
-  const ersteWahl = gut
-    ? ['', 'Thorsten — natürliche Stimme']
-    : ['', 'Voreinstellung'];
+  /* Die aufgenommenen zuerst, und mit Abstand. Sie stehen nicht gleichrangig
+     neben den espeak-Stimmen: Ein Formantsynthesizer klingt zwangsläufig nach
+     Maschine, und wer das nicht weiß, probiert sich durch hundert Varianten
+     und wundert sich, dass keine besser wird. */
+  const auswahl = gut.map((s) => ['piper:' + s.kennung, s.name]);
+  if (gut.length && stimmen.length) auswahl.push(['', '— aus dem System —']);
+  for (const n of stimmen) auswahl.push([n, n]);
+  if (!gut.length) auswahl.unshift(['', 'Voreinstellung']);
+
+  const erklaerung = gut.length
+    ? (gut.length === 1 ? 'Eine aufgenommene Stimme steht bereit'
+                        : gut.length + ' aufgenommene Stimmen stehen bereit')
+      + ' (Piper). Die ' + stimmen.length + ' darunter kommen von espeak und '
+      + 'klingen zwangsläufig blechern — sie lohnen nur, wenn eine der oberen '
+      + 'ein bestimmtes Wort falsch betont.\n\n'
+      + 'Weitere holt ./stimme-holen.sh.'
+    : stimmen.length + ' deutsche Stimmen stehen zur Wahl. Alle kommen von '
+      + 'espeak und klingen nach Maschine. ./stimme-holen.sh holt eine '
+      + 'aufgenommene.';
 
   fenster('Stimme und Tempo', [
-    { art: 'satz', text: gut
-        ? 'Thorsten spricht mit einer aufgenommenen Stimme (Piper). Die '
-          + stimmen.length + ' anderen kommen von espeak und klingen '
-          + 'zwangsläufig blechern — sie sind nur dann die bessere Wahl, wenn '
-          + 'Thorsten ein Wort falsch betont.'
-        : stimmen.length + ' deutsche Stimmen stehen zur Wahl.' },
+    { art: 'satz', text: erklaerung },
     { schluessel: 'stimme', name: 'Stimme', art: 'auswahl',
-      werte: [ersteWahl].concat(stimmen.map((n) => [n, n])),
-      wert: Speicher.lies('stimme', '') },
+      werte: auswahl, wert: Speicher.lies('stimme', '') },
     { schluessel: 'tempo', name: 'Tempo (−100 bis 100)', art: 'number',
       wert: String(Speicher.lies('lesetempo', 0)), schritt: '10' },
   ], (werte) => {
     Speicher.schreib('stimme', werte.stimme);
     Speicher.schreib('lesetempo', Math.max(-100, Math.min(100, parseInt(werte.tempo, 10) || 0)));
-    melde('Gemerkt. Zum Hören einmal vorlesen lassen.');
+    /* Gleich hören statt „gemerkt" lesen: Bei einer Stimme ist die Probe die
+       Antwort, nicht die Bestätigung. */
+    vorlesenLassen('Guten Tag. So klingt diese Stimme.');
   });
 };
 
