@@ -185,6 +185,10 @@ body{
   box-shadow:0 1px 3px rgba(0,0,0,.4),0 12px 32px rgba(0,0,0,.28);
   padding:2cm;
   transform-origin:top center;
+  /* Ein Blatt malt nichts außerhalb seiner selbst. Was über den Rand
+     hinausragen wollte — ein Band, eine zu breite Tabelle —, wird
+     abgeschnitten statt in die graue Fläche zu laufen. */
+  overflow:hidden;
   /* Damit das Dokument die Seite ausfüllt. Vorher stand am Dokument
      „min-height:100%" — das läuft ins Leere, weil das Blatt keine feste
      Höhe hat, sondern nur eine Mindesthöhe. Also war das Schreibfeld bei
@@ -611,7 +615,17 @@ button.wz-wahl--schrift{
   position:relative;
   min-height:1.6em;
   /* Über den 2 cm Rand des Blattes hinaus, damit das Band die ganze Seite
-     nimmt — sonst wäre es ein Kasten mitten im Weiß. */
+     nimmt — sonst wäre es ein Kasten mitten im Weiß.
+
+     Die Breite steht ausdrücklich da und wird nicht ausgerechnet. Vorher
+     ergab sie sich aus negativen Rändern allein: Das Blatt ist seit der
+     Reparatur der Seitenhöhe eine Spalte (flex), und dort entscheidet die
+     Umgebung, wie ein gedehntes Kind mit negativen Rändern breit wird.
+     Das Ergebnis fiel je nach Fenster anders aus — hier passte es, auf
+     seinem Rechner lief das Band rechts über den Blattrand hinaus.
+     Mit „width" gibt es nichts mehr zu entscheiden. */
+  box-sizing:border-box;
+  width:calc(100% + 4cm);
   margin-left:-2cm;margin-right:-2cm;
   padding:5mm 2cm 2mm;
   background:rgba(127,127,127,.055);
