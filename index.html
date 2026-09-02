@@ -39,6 +39,15 @@
 <div class="werkzeugleiste" id="werkzeugleiste" role="toolbar" aria-label="Standard"></div>
 <div class="werkzeugleiste werkzeugleiste--zwei" id="werkzeugleiste2" role="toolbar" aria-label="Format"></div>
 
+<!-- Dieselben Befehle noch einmal, nur in Reitern statt in zwei Zeilen. Wer
+     von Word kommt, sucht die Reiter; wer sie nicht mag, bleibt bei den
+     Symbolleisten. Sichtbar ist immer nur eines von beidem — welches, sagt
+     Ansicht ▸ Benutzeroberfläche. -->
+<div class="register" id="register" role="toolbar" aria-label="Register">
+  <div class="register__reiter" id="register-reiter" role="tablist"></div>
+  <div class="register__band" id="register-band"></div>
+</div>
+
 <!-- Das Lineal zeigt, wo der Satzspiegel anfängt und aufhört. -->
 <div class="lineal" id="lineal" hidden aria-hidden="true"></div>
 
@@ -297,6 +306,38 @@
                sollen. -->
           <p class="schriftprobe" id="einst-probe">So groß schreibst du.</p>
           <p class="hinweis" id="einst-zoom-stand"></p>
+        </div>
+
+        <!-- Das Blatt und die Bedienung sind zweierlei. A+ macht den Text
+             größer; wer die Knöpfe nicht lesen kann, ist damit nicht
+             geholfen. -->
+        <div class="feld">
+          <label class="feld__name" for="einst-symbolgroesse">Größe der Symbole</label>
+          <em class="feld__satz">Gilt für die Leisten, nicht für den Text.</em>
+          <select id="einst-symbolgroesse">
+            <option value="klein">Klein</option>
+            <option value="mittel">Mittel</option>
+            <option value="gross">Groß</option>
+            <option value="riesig">Extra groß</option>
+          </select>
+        </div>
+
+        <div class="feld">
+          <label class="feld__name" for="einst-skalierung">Schrift der Bedienung</label>
+          <em class="feld__satz">Menüs, Leisten und die Statuszeile.</em>
+          <div class="reihe">
+            <input id="einst-skalierung" type="range" min="80" max="180" step="10" value="100">
+            <span class="hinweis" id="einst-skalierung-stand">100 %</span>
+          </div>
+        </div>
+
+        <div class="feld">
+          <label class="feld__name" for="einst-flaeche">Benutzeroberfläche</label>
+          <em class="feld__satz">Dieselben Befehle, anders sortiert.</em>
+          <select id="einst-flaeche">
+            <option value="leisten">Symbolleisten</option>
+            <option value="register">In Registern</option>
+          </select>
         </div>
       </div>
     </div>

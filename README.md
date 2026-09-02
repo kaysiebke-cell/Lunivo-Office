@@ -79,6 +79,13 @@ korrigiert als eine Nachricht an einen Freund.
 **Speichern.** `.odt`, `.docx`, `.doc`, `.rtf`, `.fodt`, `.html`, `.txt`,
 PDF und EPUB. Word-Dateien öffnen und wieder als Word speichern.
 
+**Zwei Oberflächen.** *Ansicht ▸ Benutzeroberfläche* stellt zwischen
+Symbolleisten (zwei Zeilen, alles sichtbar) und Registern (Reiter wie in
+Word) um. Dieselben Befehle, anders sortiert. Die Menüleiste lässt sich
+ausblenden; die Alt-Taste holt sie zurück. Symbolgröße und die Schrift der
+Bedienung sind einstellbar — wer die Leisten nicht lesen kann, benutzt sie
+nicht.
+
 **Optionen** (F9). Wie im Writer: links ein Baum, rechts der Bereich.
 Benutzerdaten, Ansicht, Schriftarten, Pfade, Sprache, Prüfung und KI,
 Gedächtnis — und unter *Erweitert*, was zusätzlich geholt wurde und ob es

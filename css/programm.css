@@ -1354,3 +1354,77 @@ body.gesperrt .werkzeugleiste2 .wz{opacity:.5}
   }
   .optionen__ast::before{display:none}
 }
+
+/* ============================================================
+   Wie groß die Bedienung ist
+   ------------------------------------------------------------
+   Symbolgröße und Skalierung stehen im Writer unter Optionen ▸ Ansicht,
+   und sie sind keine Spielerei: Wer die Leisten nicht lesen kann, benutzt
+   sie nicht. Alles hängt an drei Werten, die das Programm setzt — so ist
+   es eine Stellschraube und nicht dreißig.
+   ============================================================ */
+:root{
+  --symbolgroesse:20px;
+  --bedienschrift:13px;
+  --bedienskala:1;
+}
+
+.wz svg,.menue__punkt svg{width:var(--symbolgroesse);height:var(--symbolgroesse)}
+.wz{
+  min-width:calc(var(--symbolgroesse) + 10px);
+  height:calc(var(--symbolgroesse) + 8px);
+}
+.menueleiste,.werkzeugleiste,.wz-wahl,.menue__titel,.menue__punkt,.statuszeile{
+  font-size:var(--bedienschrift);
+}
+.wz-wahl{height:calc(var(--symbolgroesse) + 8px)}
+
+/* ============================================================
+   Die Register-Ansicht
+
+   Im Writer heißt sie „In Registern" und sieht aus wie Word. Wer von dort
+   kommt, sucht die Reiter — und wer sie nicht mag, bleibt bei den
+   Symbolleisten. Beides ist dieselbe Sache, nur anders sortiert: Die
+   Knöpfe kommen aus denselben Befehlen.
+   ============================================================ */
+.register{
+  display:none;
+  background:var(--leiste);
+  border-bottom:1px solid var(--rand);
+}
+body.flaeche--register .register{display:block}
+body.flaeche--register .werkzeugleiste,
+body.flaeche--register .werkzeugleiste--zwei{display:none}
+
+.register__reiter{
+  display:flex;align-items:stretch;gap:2px;
+  padding:0 6px;border-bottom:1px solid var(--rand);
+  overflow-x:auto;
+}
+.register__reiter::-webkit-scrollbar{display:none}
+.register__reiter button{
+  background:none;border:none;color:var(--schrift-2);
+  font:inherit;font-size:var(--bedienschrift);
+  padding:8px 14px;cursor:pointer;white-space:nowrap;
+  border-bottom:2px solid transparent;
+}
+.register__reiter button:hover{color:var(--schrift)}
+.register__reiter button.register--offen{
+  color:var(--schrift);font-weight:600;border-bottom-color:var(--blau);
+}
+
+.register__band{
+  display:flex;align-items:flex-start;gap:0;
+  padding:6px 8px;overflow-x:auto;min-height:52px;
+}
+.register__band::-webkit-scrollbar{display:none}
+.register__gruppe{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:0 10px;border-right:1px solid var(--rand);
+}
+.register__gruppe:last-child{border-right:none}
+.register__knoepfe{display:flex;align-items:center;gap:2px;flex-wrap:wrap;justify-content:center}
+.register__name{
+  font-size:10.5px;color:var(--schrift-3);
+  letter-spacing:.4px;text-transform:uppercase;
+}

@@ -301,6 +301,7 @@ function oeffnen(bereich) {
   schriftenZeigen();
   spracheZeigen();
   pfadZeigen();
+  bedienungZeigen();
   teileZeigen();
 
   $('einst-schluessel').value = KI.schluesselLies();
@@ -377,6 +378,19 @@ function schriftenZeigen() {
     if (Number(punkte) === griffe.groesseJetzt()) o.selected = true;
     gr.appendChild(o);
   }
+}
+
+/* Größe der Bedienung und die Wahl der Oberfläche. */
+function bedienungZeigen() {
+  const gr = $('einst-symbolgroesse');
+  if (gr) gr.value = griffe.symbolgroesseJetzt();
+  const skala = $('einst-skalierung');
+  if (skala) {
+    skala.value = String(griffe.skalierungJetzt());
+    $('einst-skalierung-stand').textContent = skala.value + ' %';
+  }
+  const fl = $('einst-flaeche');
+  if (fl) fl.value = griffe.flaecheJetzt();
 }
 
 function spracheZeigen() {
@@ -581,6 +595,18 @@ function verdrahten() {
   $('einst-schriftgroesse').addEventListener('change', () => {
     griffe.grundschriftSetzen(undefined, $('einst-schriftgroesse').value);
   });
+  $('einst-symbolgroesse').addEventListener('change', () => {
+    griffe.bedienungSetzen($('einst-symbolgroesse').value, undefined);
+  });
+  $('einst-skalierung').addEventListener('input', () => {
+    const wert = $('einst-skalierung').value;
+    $('einst-skalierung-stand').textContent = wert + ' %';
+    griffe.bedienungSetzen(undefined, wert);
+  });
+  $('einst-flaeche').addEventListener('change', () => {
+    griffe.flaecheSetzen($('einst-flaeche').value);
+  });
+
   $('einst-pruefsprache').addEventListener('change', () => {
     griffe.pruefspracheSetzen($('einst-pruefsprache').value);
   });

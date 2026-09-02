@@ -840,6 +840,212 @@ B.linealZeigen = () => { lineal = !lineal; ansichtExtras(); };
 B.steuerzeichenZeigen = () => { steuerzeichen = !steuerzeichen; ansichtExtras(); };
 B.leistenZeigen = () => { leistenAn = !leistenAn; ansichtExtras(); };
 
+/* ------------------------------------------------------------
+   Menüleiste ein und aus
+
+   Im Writer geht sie weg, und die Alt-Taste holt sie zurück. Ohne diesen
+   Rückweg wäre der Menüpunkt eine Falle: Wer die Leiste ausblendet, hat
+   damit auch den Menüpunkt ausgeblendet, mit dem er sie wiederholt.
+   ------------------------------------------------------------ */
+let menueleisteAn = Speicher.lies('menueleiste', true);
+
+function menueleisteAnwenden() {
+  $('menueleiste').hidden = !menueleisteAn;
+}
+
+B.menueleisteZeigen = () => {
+  menueleisteAn = !menueleisteAn;
+  Speicher.schreib('menueleiste', menueleisteAn);
+  menueleisteAnwenden();
+  if (!menueleisteAn) melde('Menüleiste aus. Die Alt-Taste holt sie zurück.');
+  menueBauen();
+};
+
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Alt' || e.ctrlKey || e.shiftKey || menueleisteAn) return;
+  e.preventDefault();
+  $('menueleiste').hidden = false;
+  /* Nur so lange, wie sie gebraucht wird: Wer daneben klickt, wollte sie
+     nicht dauerhaft. Wer im Menü auf „Menüleiste" geht, schaltet sie an. */
+  const wiederWeg = (ereignis) => {
+    if ($('menueleiste').contains(ereignis.target)) return;
+    if (!menueleisteAn) $('menueleiste').hidden = true;
+    document.removeEventListener('mousedown', wiederWeg, true);
+  };
+  document.addEventListener('mousedown', wiederWeg, true);
+});
+
+/* ------------------------------------------------------------
+   Die Register-Ansicht („In Registern")
+
+   Dieselben Befehle wie in den Symbolleisten, nur in Reitern statt in zwei
+   Zeilen. Sie werden hier NICHT neu geschrieben, sondern verwiesen: Jeder
+   Eintrag nennt ein Symbol und einen Befehl aus B, und beide Ansichten
+   greifen auf dasselbe zu. Zwei Listen derselben Knöpfe liefen nach der
+   dritten Änderung auseinander.
+   ------------------------------------------------------------ */
+const REGISTER = [
+  ['Datei', [
+    ['Datei', [['neu', 'Neu', () => B.neu()], ['oeffnen', 'Öffnen', () => B.oeffnen()],
+               ['speichern', 'Speichern', () => B.speichern()]]],
+    ['Ausgeben', [['pdf', 'Als PDF', () => B.alsPdf()], ['drucken', 'Drucken', () => B.drucken()],
+                  ['vorschau', 'Seitenansicht', () => B.seitenansicht()]]],
+  ]],
+  ['Start', [
+    ['Zwischenablage', [['schere', 'Ausschneiden', () => B.ausschneiden()],
+                        ['kopie', 'Kopieren', () => B.kopieren()],
+                        ['kleben', 'Einfügen', () => B.einfuegen()],
+                        ['pinsel', 'Format übertragen', () => B.formatPinsel()]]],
+    ['Schrift', [['F', 'Fett', () => B.fett()], ['K', 'Kursiv', () => B.kursiv()],
+                 ['U', 'Unterstrichen', () => B.unter()], ['S', 'Durchgestrichen', () => B.durch()],
+                 ['farbe', 'Schriftfarbe', () => B.schriftfarbe()],
+                 ['marker', 'Hervorheben', () => B.hervorheben()],
+                 ['radierer', 'Formatierung entfernen', () => B.schlicht()]]],
+    ['Absatz', [['links', 'Linksbündig', () => B.links()], ['mitte', 'Zentriert', () => B.mitte()],
+                ['rechts', 'Rechtsbündig', () => B.rechts()], ['block', 'Blocksatz', () => B.block()],
+                ['punkte', 'Aufzählung', () => B.punkte()], ['zahlen', 'Nummerierung', () => B.zahlen()],
+                ['abstand', 'Zeilenabstand', () => B.zeilenabstand()]]],
+    ['Rückgängig', [['zurueck', 'Rückgängig', () => B.zurueck()], ['vor', 'Wiederholen', () => B.vor()]]],
+  ]],
+  ['Einfügen', [
+    ['Tabellen und Bilder', [['tabelle', 'Tabelle', () => B.tabelle()], ['bild', 'Bild', () => B.bild()],
+                             ['saeule', 'Diagramm', () => B.diagramm()], ['rahmen', 'Textrahmen', () => B.textrahmen()]]],
+    ['Verweise', [['kette', 'Verknüpfung', () => B.verknuepfung()], ['notiz', 'Kommentar', () => B.kommentar()],
+                  ['omega', 'Sonderzeichen', () => B.sonderzeichen()]]],
+    ['Kopf und Fuß', [['kopfz', 'Kopfzeile', () => B.kopfzeile()], ['fussz', 'Fußzeile', () => B.fusszeile()],
+                      ['zahl', 'Seitenzahl', () => B.seitenzahl()], ['umbruch', 'Seitenumbruch', () => B.seitenumbruch()]]],
+  ]],
+  ['Layout', [
+    ['Seite', [['A4', 'Seitenformat', () => B.seitenformat()],
+               ['Rand', 'Seitenränder', () => B.seitenraender()],
+               ['Spalten', 'Spalten', () => B.spalten()]]],
+    ['Einzug', [['mehr', 'Einzug vergrößern', () => B.einzugMehr()],
+                ['weniger', 'Einzug verkleinern', () => B.einzugWeniger()]]],
+  ]],
+  ['Schreibhilfe', [
+    ['Prüfen', [['haken', 'Prüfen (F7)', () => pruefen()],
+                ['verfolgt', 'Gründlich prüfen', () => B.gruendlichPruefen()],
+                ['stift', 'Alles Eindeutige', () => allesUebernehmen()]]],
+    ['Hören', [['lupe', 'Vorlesen (F4)', () => B.vorlesen()],
+               ['Stimme', 'Stimme und Tempo', () => B.stimmeWaehlen()]]],
+    ['KI', [['KI', 'KI-Korrektur (F8)', () => kiKorrigieren()],
+            ['Vorschlag', 'Vorschläge', () => kiVorschlaege()],
+            ['Übersetzen', 'Übersetzen', () => kiUebersetzen()]]],
+  ]],
+  ['Ansicht', [
+    ['Zoom', [['lupe', 'Vergrößern', () => B.groesser()],
+              ['weniger', 'Verkleinern', () => B.kleiner()],
+              ['100 %', 'Normalgröße', () => B.normal()]]],
+    ['Zeigen', [['Lineal', 'Lineal', () => B.linealZeigen()],
+                ['Tafel', 'Seitenleiste (F5)', () => B.tafelZeigen()],
+                ['Hell', 'Hell/Dunkel', () => setzeThema(THEMEN[(THEMEN.indexOf(thema) + 1) % THEMEN.length])()]]],
+  ]],
+];
+
+let registerOffen = Speicher.lies('register', 'Start');
+
+function registerBauen() {
+  const reiter = $('register-reiter');
+  const band = $('register-band');
+  if (!reiter || !band) return;
+
+  reiter.innerHTML = '';
+  for (const [name] of REGISTER) {
+    const knopf = document.createElement('button');
+    knopf.type = 'button';
+    knopf.textContent = name;
+    knopf.setAttribute('role', 'tab');
+    if (name === registerOffen) knopf.className = 'register--offen';
+    knopf.addEventListener('click', () => {
+      registerOffen = name;
+      Speicher.schreib('register', name);
+      registerBauen();
+    });
+    reiter.appendChild(knopf);
+  }
+
+  band.innerHTML = '';
+  const gewaehlt = (REGISTER.find(([name]) => name === registerOffen) || REGISTER[1])[1];
+  for (const [gruppenName, eintraege] of gewaehlt) {
+    const gruppe = document.createElement('div');
+    gruppe.className = 'register__gruppe';
+
+    const knoepfe = document.createElement('div');
+    knoepfe.className = 'register__knoepfe';
+    for (const [zeichen, titel, tun] of eintraege) {
+      const k = document.createElement('button');
+      k.className = 'wz';
+      k.type = 'button';
+      k.title = titel;
+      k.setAttribute('aria-label', titel);
+      /* Steht im Vorrat ein Symbol dieses Namens, kommt das Bild; sonst
+         das Wort selbst. F, K, U und S sind in deutschen Schreibprogrammen
+         Buchstaben, kein Behelf. */
+      if (SYMBOLE[zeichen]) k.appendChild(symbol(zeichen));
+      else k.textContent = zeichen;
+      k.addEventListener('mousedown', (e) => e.preventDefault());
+      k.addEventListener('click', tun);
+      knoepfe.appendChild(k);
+    }
+    gruppe.appendChild(knoepfe);
+
+    const name = document.createElement('span');
+    name.className = 'register__name';
+    name.textContent = gruppenName;
+    gruppe.appendChild(name);
+
+    band.appendChild(gruppe);
+  }
+}
+
+/* ------------------------------------------------------------
+   Symbolleisten oder Register
+   ------------------------------------------------------------ */
+let flaeche = Speicher.lies('flaeche', 'leisten');
+
+function flaecheAnwenden() {
+  document.body.classList.toggle('flaeche--register', flaeche === 'register');
+  if (flaeche === 'register') registerBauen();
+}
+
+B.benutzeroberflaeche = () => {
+  fenster('Benutzeroberfläche', [
+    { art: 'satz', text:
+        'Dieselben Befehle, anders sortiert. Die Symbolleisten stehen in '
+      + 'zwei Zeilen immer alle da; die Register zeigen weniger auf einmal, '
+      + 'dafür mit Namen daneben.\n\n'
+      + 'Die Menüleiste bleibt in beiden Fällen — sie ist der Weg zu allem, '
+      + 'was in keine Leiste passt.' },
+    { schluessel: 'wahl', name: 'Ansicht', art: 'auswahl',
+      werte: [['leisten', 'Symbolleisten (wie bisher)'],
+              ['register', 'In Registern (wie Word)']],
+      wert: flaeche },
+  ], (werte) => {
+    flaeche = werte.wahl === 'register' ? 'register' : 'leisten';
+    Speicher.schreib('flaeche', flaeche);
+    flaecheAnwenden();
+    menueBauen();
+  });
+};
+
+/* ------------------------------------------------------------
+   Wie groß die Symbole und die Schrift der Leisten sind
+
+   Steht im Writer unter Optionen ▸ Ansicht, und es ist keine Spielerei:
+   Wer die Leisten nicht lesen kann, benutzt sie nicht.
+   ------------------------------------------------------------ */
+const SYMBOLGROESSEN = [['klein', 16], ['mittel', 20], ['gross', 24], ['riesig', 30]];
+
+function bedienungAnwenden() {
+  const marke = Speicher.lies('symbolgroesse', 'mittel');
+  const paar = SYMBOLGROESSEN.find(([m]) => m === marke) || SYMBOLGROESSEN[1];
+  const skala = Math.max(80, Math.min(180, Number(Speicher.lies('skalierung', 100)) || 100));
+  const wurzel = document.documentElement;
+  wurzel.style.setProperty('--symbolgroesse', paar[1] + 'px');
+  wurzel.style.setProperty('--bedienschrift', (13 * skala / 100).toFixed(1) + 'px');
+  wurzel.style.setProperty('--bedienskala', String(skala / 100));
+}
+
 B.vorschau = () => {
   /* Die Druckvorschau ist der Druckdialog selbst: Er zeigt das Blatt so, wie
      es auf Papier kommt. Ein eigener Nachbau daneben wiche irgendwann davon
@@ -4664,6 +4870,9 @@ const MENUES = [
       { name: 'Gliederung', tun: B.gliederung, haken: () => gliederung },
     ] },
     { name: 'Anzeigen', unter: [
+      { name: 'Benutzeroberfläche…', tun: B.benutzeroberflaeche },
+      strich,
+      { name: 'Menüleiste', tun: B.menueleisteZeigen, haken: () => menueleisteAn },
       { name: 'Symbolleisten', tun: B.leistenZeigen, haken: () => leistenAn },
       { name: 'Lineal', tun: B.linealZeigen, haken: () => lineal },
       { name: 'Steuerzeichen', tun: B.steuerzeichenZeigen, haken: () => steuerzeichen },
@@ -6671,6 +6880,21 @@ Einstellungen.verbinde({
   schriftJetzt: () => Speicher.lies('grundschrift', ''),
   groesseJetzt: () => Number(Speicher.lies('grundgroesse', 12)),
   grundschriftSetzen: (name, groesse) => grundschriftAnwenden(name, groesse),
+  symbolgroessen: () => SYMBOLGROESSEN.map(([marke]) => marke),
+  symbolgroesseJetzt: () => Speicher.lies('symbolgroesse', 'mittel'),
+  skalierungJetzt: () => Number(Speicher.lies('skalierung', 100)) || 100,
+  bedienungSetzen: (marke, skala) => {
+    if (marke !== undefined) Speicher.schreib('symbolgroesse', marke);
+    if (skala !== undefined) Speicher.schreib('skalierung', Number(skala) || 100);
+    bedienungAnwenden();
+  },
+  flaecheJetzt: () => flaeche,
+  flaecheSetzen: (wahl) => {
+    flaeche = wahl === 'register' ? 'register' : 'leisten';
+    Speicher.schreib('flaeche', flaeche);
+    flaecheAnwenden();
+    menueBauen();
+  },
   pruefspracheJetzt: () => Speicher.lies('pruefsprache', 'de'),
   pruefspracheSetzen: (kennung) => {
     Speicher.schreib('pruefsprache', kennung);
@@ -6724,6 +6948,12 @@ setzeZoom(zoom);
 titelSetzen();
 zahlenAuffrischen();
 werkzeugeAuffrischen();
+
+/* Ganz zuletzt: Beide brauchen SYMBOLE und symbol(), und die stehen weiter
+   unten in der Datei. Weiter oben aufgerufen liefe das Register ins Leere. */
+menueleisteAnwenden();
+bedienungAnwenden();
+flaecheAnwenden();
 
 
 })();
