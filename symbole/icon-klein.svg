@@ -4,8 +4,12 @@
        Bei dieser Größe ist ein Strich ein halber Bildpunkt breit. Umriss,
        Schlitz, Luftloch und der Glanz auf dem Glas verschwämmen zu einem
        Fleck. Also bleibt nur, was die Sache ausmacht: eine runde Birne,
-       eine Spitze — ausgefüllt statt umrandet — und ein Trieb darin,
-       grob genug, dass er noch etwas ist.
+       eine Feder — ausgefüllt statt umrandet — und ein Trieb darin, grob
+       genug, dass er noch etwas ist.
+
+       Die Schultern bleiben auch hier, aber nur angedeutet. Sie sind das,
+       woran man eine Feder erkennt — stehen sie zu weit heraus, wird aus
+       der Feder ein Ballon.
 
        Auch das Band fällt weg. Es wäre breiter als die Feder und breiter
        als der Hals der Birne, und seine Ecken stünden nach beiden Seiten
@@ -35,7 +39,10 @@
              C-90,-180 -50,-214 0,-214
              C50,-214 90,-180 90,-132
              C90,-106 76,-78 44,-54 Z"/>
-    <path d="M-44,-56 C-41,44 -28,124 0,182 C28,124 41,44 44,-56 Z"/>
+    <path d="M-44,-56 C-48,-36 -49,-18 -47,-2
+             C-39,62 -21,133 0,180
+             C21,133 39,62 47,-2
+             C49,-18 48,-36 44,-56 Z"/>
 
     <!-- Der Trieb, in der Farbe der Fläche ausgespart -->
     <g fill="none" stroke="#FAF4E6" stroke-width="24" stroke-linecap="round">

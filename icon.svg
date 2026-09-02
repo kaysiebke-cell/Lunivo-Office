@@ -81,11 +81,29 @@
     <rect x="-43" y="-58" width="86" height="54" rx="12" fill="url(#strich)"/>
     <path d="M-33,-31 H33" fill="none" stroke="#FFFFFF" stroke-width="6" opacity="0.30"/>
 
-    <!-- Die Feder. Der Schlitz und das Luftloch machen sie erst zu einer
-         Feder — ohne sie wäre es ein Dreieck. -->
-    <path d="M-36,-6 C-34,58 -26,124 0,182 C26,124 34,58 36,-6 Z"
-          fill="url(#feder)" stroke="url(#strich)" stroke-width="14"/>
-    <circle cx="0" cy="36" r="11" fill="none" stroke="url(#strich)" stroke-width="9"/>
-    <path d="M0,54 L0,168" fill="none" stroke="url(#strich)" stroke-width="9"/>
+    <!-- Die Feder.
+
+         Vier Dinge machen sie zu einer Feder und nicht zu einem Dreieck,
+         und alle vier sind fein:
+
+           · Die Feder ist BREITER als das Band. Sie hat Schultern: vom
+             Band aus geht sie erst nach aussen, und erst danach zur
+             Spitze. Eine Feder, die vom Band an nur schmaler wird, ist
+             kein Federhalter, sondern ein Dolch.
+           · Der Umriss ist dünn. Ein dicker Strich frisst das Weiß auf, das
+             die Feder ausmacht.
+           · Innen läuft eine zweite Linie mit — die Kanten der beiden
+             Zinken. Ohne sie bleibt es eine leere Fläche.
+           · Das Luftloch ist ein kleiner voller Punkt, kein Ring. Ein Ring
+             ist bei dieser Größe ein Loch mit Rand um nichts herum. -->
+    <path d="M-40,-6 C-50,2 -53,14 -51,30
+             C-38,76 -21,130 0,180
+             C21,130 38,76 51,30
+             C53,14 50,2 40,-6 Z"
+          fill="url(#feder)" stroke="url(#strich)" stroke-width="9"/>
+    <path d="M-38,42 C-31,84 -17,136 0,170 C17,136 31,84 38,42"
+          fill="none" stroke="url(#strich)" stroke-width="5" opacity="0.45"/>
+    <circle cx="0" cy="20" r="8" fill="url(#strich)"/>
+    <path d="M0,34 L0,172" fill="none" stroke="url(#strich)" stroke-width="5"/>
   </g>
 </svg>
