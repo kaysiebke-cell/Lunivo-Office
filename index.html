@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Unbenannt 1 — Schreibhilfe</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/programm.css">
+<script>
+  // Hell oder dunkel VOR dem Zeichnen setzen, sonst blitzt beim Start die
+  // falsche Farbe auf. Eigener Schlüssel: Das Schreibprogramm ist ein
+  // eigenes Programm und soll die Einstellungen der App nicht anfassen.
+  //
+  // Der Wert steht als JSON im Speicher — also mit Anführungszeichen um das
+  // Wort herum. Wer ihn roh vergleicht, prüft "dark" gegen dark und bekommt
+  // nie eine Übereinstimmung: Die Wahl war gespeichert, beim nächsten Start
+  // stand trotzdem alles wieder hell da. Deshalb wird hier ausgepackt.
+  try {
+    var roh = localStorage.getItem('sp.thema');
+    var wahl = 'auto';
+    if (roh) {
+      try { wahl = JSON.parse(roh); }
+      catch (e) { wahl = roh; }          // aus einer Zeit vor dem JSON
+    }
+    var dunkel = wahl === 'dark'
+      || (wahl === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
+    document.documentElement.dataset.theme = dunkel ? 'dark' : 'light';
+  } catch (e) { document.documentElement.dataset.theme = 'dark'; }
+</script>
+</head>
+<body>
+
+<!-- Die Menüleiste wird aus einer Liste gebaut (js/programm.js). Sie hier
+     von Hand hinzuschreiben hieße, jeden Menüpunkt zweimal zu pflegen. -->
+<div class="menueleiste" id="menueleiste" role="menubar"></div>
+
+<!-- Zwei Leisten, wie im Writer: oben die Datei und das Dokument, darunter
+     alles, was den Text selbst betrifft. Beide baut js/programm.js. -->
+<div class="werkzeugleiste" id="werkzeugleiste" role="toolbar" aria-label="Standard"></div>
+<div class="werkzeugleiste werkzeugleiste--zwei" id="werkzeugleiste2" role="toolbar" aria-label="Format"></div>
+
+<!-- Das Lineal zeigt, wo der Satzspiegel anfängt und aufhört. -->
+<div class="lineal" id="lineal" hidden aria-hidden="true"></div>
+
+<div class="suchleiste" id="suchleiste" hidden>
+  <label>Suchen <input id="suche-was" type="search" placeholder="Wonach?"></label>
+  <label>Ersetzen durch <input id="suche-womit" type="text" placeholder="Wodurch?"></label>
+  <button class="knopf" id="suche-weiter">Weiter</button>
+  <button class="knopf" id="suche-ersetze">Ersetzen</button>
+  <button class="knopf" id="suche-alle">Alle ersetzen</button>
+  <span id="suche-meldung"></span>
+  <button class="knopf suchleiste__ende" id="suche-zu">Schließen</button>
+</div>
+
+<div class="mitte">
+  <!-- Der Navigationsbereich: die Überschriften als Liste zum Anspringen.
+       Bei einem langen Schreiben der schnellste Weg zur richtigen Stelle. -->
+  <aside class="navigation" id="navigation" hidden aria-label="Navigationsbereich"></aside>
+
+  <div class="arbeitsflaeche" id="arbeitsflaeche">
+    <div class="blatt" id="blatt">
+      <!-- Die vier Ecken zeigen, wo der bedruckbare Bereich beginnt. -->
+      <div class="blatt__marken" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+
+      <!-- Kopf- und Fußzeile sind eigene Felder, nicht Teil des Fließtextes:
+           Sie gehören zur Seite, nicht zum Absatz, und dürfen beim Schreiben
+           nicht mitwandern. -->
+      <div class="kopfzeile" id="kopfzeile" contenteditable="true" hidden
+           spellcheck="false" aria-label="Kopfzeile"></div>
+
+      <div class="dokument" id="dokument" contenteditable="true"
+           spellcheck="true" lang="de" role="textbox" aria-multiline="true"
+           aria-label="Dokument"><p><br></p></div>
+
+      <div class="fusszeile" id="fusszeile" contenteditable="true" hidden
+           spellcheck="false" aria-label="Fußzeile"></div>
+    </div>
+  </div>
+
+  <div class="griff" id="griff" role="separator" aria-orientation="vertical"
+       title="Breite der Seitenleiste ziehen"></div>
+
+  <aside class="tafel" id="tafel" aria-label="Schreibhilfe">
+    <div class="tafel__kopf">
+      <h1 class="tafel__name">Schreib <span>|</span> hilfe</h1>
+      <p class="tafel__satz">Sucht die Fehler, die ein Rechtschreibprüfer nicht finden kann.</p>
+      <button class="knopf" id="btn-pruefen">Prüfen</button>
+    </div>
+
+    <div class="tafel__funde" id="funde" role="region" aria-live="polite" aria-label="Gefundene Stellen"></div>
+
+    <div class="tafel__fuss">
+      <div class="tafel__ueberschrift">Für wen?</div>
+      <div class="marken" id="empfaenger"></div>
+      <input class="zettel" id="zettel" type="text" placeholder="Worum geht’s? (freiwillig)"
+             aria-label="Worum geht’s? (freiwillig)">
+      <div class="ki">
+        <button class="knopf" id="btn-ki" disabled>KI-Korrektur</button>
+        <button class="knopf" id="btn-vorschlaege" disabled>Vorschläge</button>
+        <button class="knopf" id="btn-uebersetzen" disabled>Übersetzen</button>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<!-- ============================================================
+     Die Einstellungen.
+
+     Eine eigene Seite, die sich über das Blatt legt — kein Fensterchen
+     mittendrin. Der Schlüssel, das Modell und das Gedächtnis sind nichts,
+     was man nebenbei im Vorbeigehen einstellt; hier ist Platz dafür, und
+     jede Zeile sagt selbst, wozu sie da ist.
+
+     Gruppen mit Überschrift statt einer einzigen langen Liste, in der
+     Schlüssel, Schriftgröße und Gedächtnis gleich viel wögen.
+     ============================================================ -->
+<section class="seite" id="einstellungen" hidden aria-label="Einstellungen">
+  <div class="seite__kopf">
+    <button class="seite__zurueck" id="einst-zu" aria-label="Zurück zum Text">←</button>
+    <h2>Einstellungen</h2>
+  </div>
+
+  <div class="seite__inhalt">
+
+    <div class="gruppe">
+      <span class="gruppe__titel">KI-Werkzeuge</span>
+      <div class="karte">
+
+        <div class="feld">
+          <label class="feld__name" for="einst-schluessel">API-Schlüssel</label>
+          <em class="feld__satz">für Korrigieren, Vorschläge und Übersetzen</em>
+          <!-- Punkte statt Zeichen. Ohne die Zeile darunter sähe niemand,
+               ob überhaupt etwas gespeichert ist. -->
+          <input id="einst-schluessel" type="password" placeholder="sk-ant-…" autocomplete="off">
+          <div class="zeile">
+            <p class="hinweis" id="einst-schluessel-stand"></p>
+            <a class="verweis" href="https://platform.claude.com/settings/keys"
+               target="_blank" rel="noopener">Schlüssel erstellen ↗</a>
+          </div>
+          <!-- Um den Schlüssel auf ein zweites Gerät zu bekommen, muss man ihn
+               sehen oder kopieren können. „Anzeigen" blendet ihn nur kurz auf
+               und verbirgt ihn von selbst wieder. -->
+          <div class="reihe">
+            <button class="knopf" id="einst-zeigen" type="button">👁 Anzeigen</button>
+            <button class="knopf" id="einst-kopieren" type="button">⧉ Kopieren</button>
+          </div>
+        </div>
+
+        <!-- EINE Liste für alles: oben die drei von Claude, darunter das, was
+             auf diesem Rechner liegt — das trägt einstellungen.js beim Öffnen
+             nach, denn was installiert ist, weiß nur der Rechner selbst. Zwei
+             getrennte Fragen („woher?" und „welches?") wären eine zu viel. -->
+        <div class="feld">
+          <label class="feld__name" for="einst-modell">KI-Modell</label>
+          <select id="einst-modell">
+            <optgroup label="Claude im Netz — braucht Schlüssel und Guthaben">
+              <option value="claude-opus-5">Beste Qualität · Opus 5</option>
+              <option value="claude-sonnet-5">Mittelweg · Sonnet 5</option>
+              <option value="claude-haiku-4-5">Günstig &amp; schnell · Haiku 4.5</option>
+            </optgroup>
+            <optgroup label="Auf diesem Rechner — kostenlos, ohne Internet" id="einst-modell-lokal"></optgroup>
+          </select>
+          <em class="feld__satz" id="einst-modell-hinweis"></em>
+        </div>
+
+        <!-- „Für wen?" stand früher hier. Es ist jetzt die Frage in der
+             Seitenleiste — dort, wo gleich danach auf „KI-Korrektur" gedrückt
+             wird. Hier sah es niemand, und eine Wahl, die man nicht sieht,
+             wirkt wie eine Laune der Maschine. Bleibt der Hinweis, damit
+             niemand an dieser Stelle sucht. -->
+        <div class="feld">
+          <span class="feld__name">Für wen der Text ist</span>
+          <em class="feld__satz">Steht in der Seitenleiste: „Für wen?" und der Zettel
+            „Worum geht’s?" unter den Funden.</em>
+        </div>
+
+        <!-- Was bisher verbraucht wurde. Zählt das Programm selbst mit, aus den
+             Angaben, die jede Antwort mitliefert — der Blick ins Dashboard
+             bleibt einem damit erspart. -->
+        <div class="feld">
+          <span class="feld__name">Verbrauch</span>
+          <div class="zeile">
+            <p class="hinweis" id="einst-kosten-stand"></p>
+            <button class="knopf" id="einst-kosten-weg" type="button" hidden>zurücksetzen</button>
+          </div>
+          <a class="verweis" href="https://platform.claude.com/settings/billing"
+             target="_blank" rel="noopener">Guthaben aufladen ↗</a>
+        </div>
+
+        <div class="feld">
+          <label class="feld__name" for="einst-sprache">Übersetzen</label>
+          <em class="feld__satz">Der Knopf steht in der Seitenleiste. Hier steht,
+            wohin übersetzt wird.</em>
+          <select id="einst-sprache"></select>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="gruppe">
+      <span class="gruppe__titel">Beim Schreiben</span>
+      <div class="karte">
+        <label class="feld feld--schalter">
+          <span class="feld__name">Textbegrenzungen
+            <em class="feld__satz">Die vier Ecken zeigen, wo der bedruckbare Bereich beginnt.</em>
+          </span>
+          <input id="einst-marken" type="checkbox">
+        </label>
+
+        <label class="feld feld--schalter">
+          <span class="feld__name">Rote Wellenlinien
+            <em class="feld__satz">Die Rechtschreibprüfung des Systems. Die Schreibhilfe
+              arbeitet davon unabhängig weiter.</em>
+          </span>
+          <input id="einst-wellen" type="checkbox">
+        </label>
+      </div>
+    </div>
+
+    <div class="gruppe">
+      <span class="gruppe__titel">Gedächtnis</span>
+      <div class="karte">
+        <!-- Was das Programm sich gemerkt hat. Sichtbar, weil niemand ein
+             Gedächtnis über sich haben sollte, in das er nicht hineinsehen
+             kann — und weil eine falsch gelernte Schreibweise sonst für
+             immer bliebe. -->
+        <div class="feld">
+          <span class="feld__name">Gelernte Schreibweisen</span>
+          <em class="feld__satz">bleiben auf diesem Rechner</em>
+          <div class="zeile">
+            <p class="hinweis" id="einst-gelernt-stand"></p>
+            <button class="knopf" id="einst-gelernt-weg" type="button" hidden>vergessen</button>
+          </div>
+          <!-- Handy, App und Schreibprogramm lernen getrennt. Der
+               Sicherungs-Text ist die Brücke: hier kopieren, dort einsetzen.
+               Der API-Schlüssel bleibt bewusst draußen — ein Schlüssel gehört
+               nicht in einen Text, den man durch die Gegend schickt. -->
+          <div class="reihe">
+            <button class="knopf" id="einst-sichern" type="button">⧉ Sichern</button>
+            <button class="knopf" id="einst-einspielen" type="button">⤓ Einspielen</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="gruppe">
+      <span class="gruppe__titel">Darstellung</span>
+      <div class="karte">
+        <div class="feld">
+          <span class="feld__name">Schrift und Helligkeit</span>
+          <div class="reihe">
+            <button class="knopf" id="einst-kleiner" type="button">A− kleiner</button>
+            <button class="knopf" id="einst-groesser" type="button">A+ größer</button>
+            <button class="knopf" id="einst-thema" type="button">◐ Hell/Dunkel</button>
+          </div>
+          <!-- Die Knöpfe wirken auf das Blatt — und das ist von hier aus nicht
+               zu sehen. Ohne diese Probezeile drückt man A+ und nichts
+               passiert; die Knöpfe wirken kaputt, obwohl sie tun, was sie
+               sollen. -->
+          <p class="schriftprobe" id="einst-probe">So groß schreibst du.</p>
+          <p class="hinweis" id="einst-zoom-stand"></p>
+        </div>
+      </div>
+    </div>
+
+    <p class="hinweis" id="einst-fassung"></p>
+
+    <div class="seite__fuss">
+      <button class="knopf" id="einst-schluessel-weg" type="button">Schlüssel löschen</button>
+      <button class="knopf knopf--haupt" id="einst-fertig" type="button">Fertig</button>
+    </div>
+  </div>
+</section>
+
+<div class="statuszeile">
+  <span id="status-pruefung">Noch nicht geprüft.</span>
+  <span class="statuszeile__rechts">
+    <span id="status-zahl">0 Wörter, 0 Zeichen</span>
+    <span id="status-seiten">Seite 1 von 1</span>
+    <span id="status-zoom">100 %</span>
+  </span>
+</div>
+
+<!-- Der Wortschatz zuerst: Die Prüfung liest ihn beim Anlegen. -->
+<script src="daten/regeln.js"></script>
+<script src="js/pruefung.js"></script>
+<!-- Die KI-Ebene kennt das Gedächtnis und gibt es der Prüfung weiter. Sie
+     muss deshalb vor dem Programm stehen, das beides benutzt. -->
+<script src="js/ki.js"></script>
+<script src="js/dokument.js"></script>
+<script src="js/dateien.js"></script>
+<script src="js/einstellungen.js"></script>
+<script src="js/programm.js"></script>
+</body>
+</html>

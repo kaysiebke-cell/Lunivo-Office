@@ -1,0 +1,21 @@
+# Was beim Arbeiten nebenbei entsteht
+*.odt
+*.fodt
+*.docx
+*.doc
+*.rtf
+*.pdf
+*.epub
+*.pyc
+__pycache__/
+.DS_Store
+
+# Was das Programm sich zur Laufzeit holt und was nicht ins Verzeichnis gehört:
+# LibreOffice (rund 700 MB) und LanguageTool (rund 400 MB) liegen unter
+# ~/.local/share/schreibprogramm/ und werden bei Bedarf dorthin gelegt.
+libreoffice/
+languagetool/
+
+# Persönliches
+*.local
+geheim*

@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Das Symbol des Schreibprogramms: Blatt, Buchstabe, Stift.
+
+       Der Buchstabe sagt, welches Programm es ist — ein „S" für
+       Schreibprogramm, und damit von Weitem vom „Aa" der Schreibhilfe zu
+       unterscheiden. Der Stift sagt, was man damit tut.
+
+       Das „S" liegt als Pfad vor, nicht als Text. Ein <text> würde mit
+       irgendeiner Schrift gesetzt, die auf dem Rechner gerade da ist — auf
+       einem anderen sähe das Symbol dann anders aus. Die Form stammt aus
+       Liberation Serif Bold und ist hier fest eingezeichnet.
+
+       Wenige, große Formen mit Absicht: Bei 16 Bildpunkten in der
+       Fensterleiste bleibt von Feinheiten nichts übrig. -->
+
+  <rect width="512" height="512" rx="104" fill="#2F6FB5"/>
+
+  <!-- Das Blatt mit umgeknickter Ecke -->
+  <path d="M96 66h180l68 68v300a18 18 0 0 1-18 18H96a18 18 0 0 1-18-18V84a18 18 0 0 1 18-18z"
+        fill="#FFFFFF"/>
+  <path d="M276 66l68 68h-50a18 18 0 0 1-18-18z" fill="#C3D5E8"/>
+
+  <!-- Zwei Zeilen als Andeutung von Text -->
+  <g stroke="#B4C4D2" stroke-width="17" stroke-linecap="round">
+    <path d="M120 392h130"/>
+    <path d="M120 430h94"/>
+  </g>
+
+  <!-- Das „S" -->
+  <g transform="translate(126.48 318.00) scale(0.12207 -0.12207)">
+    <path d="M109 411H197L242 196Q284 147 369.0 114.0Q454 81 545 81Q832 81 832 317Q832 391 777.5 442.0Q723 493 606 533Q434 590 358.5 625.5Q283 661 231.0 709.0Q179 757 148.0 825.5Q117 894 117 994Q117 1171 237.5 1263.5Q358 1356 590 1356Q758 1356 962 1313V994H873L828 1178Q726 1252 590 1252Q467 1252 401.0 1206.5Q335 1161 335 1067Q335 1000 390.0 952.5Q445 905 562 868Q791 793 876.5 737.5Q962 682 1007.0 600.0Q1052 518 1052 407Q1052 -20 549 -20Q434 -20 314.5 -0.5Q195 19 109 51Z" fill="#2F6FB5"/>
+  </g>
+
+  <!-- Der Stift, schräg über die untere rechte Ecke.
+       Erst der Schaft, dann Band und Kappe, zuletzt die dunkle Spitze —
+       in dieser Reihenfolge, damit die Spitze obenauf liegt. -->
+  <g>
+    <path d="M324.0 359.2 L360.8 396.0 L466.9 289.9 L430.1 253.1 Z" fill="#D9A441"/>
+    <path d="M341.0 342.2 L377.8 379.0 L392.0 364.8 L355.2 328.0 Z" fill="#A8752A"/>
+    <path d="M430.1 253.1 L466.9 289.9 L487.0 269.8 L450.2 233.0 Z" fill="#B07C2A"/>
+    <path d="M300 420 L360.8 396.0 L324.0 359.2 Z" fill="#3C4A57"/>
+  </g>
+</svg>
