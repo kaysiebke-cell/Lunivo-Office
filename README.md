@@ -12,6 +12,9 @@ Rechtschreibprüfer **nicht** finden kann.
 Gebaut für Menschen mit Legasthenie. Kein Konto, keine Anmeldung, kein
 Internet nötig. Was geschrieben wird, bleibt auf dem eigenen Rechner.
 
+![Das Schreibprogramm mit einem Brief im Blatt und der Schreibhilfe rechts an der Seite](bilder/uebersicht.png)
+
+
 ## Warum noch ein Schreibprogramm?
 
 Weil die vorhandenen an der falschen Stelle helfen. Ein Rechtschreibprüfer
@@ -35,6 +38,8 @@ Zitate mit Quellenverwaltung, Seriendruck, Umschläge, Etiketten.
 Seitenleiste und zieht im Text eine Wellenlinie darunter. Rechtsklick auf
 ein angestrichenes Wort zeigt die Vorschläge — wie in Word.
 
+![Rechtsklick auf ein angestrichenes Wort: darüber steht die Erklärung, darunter der Vorschlag „glaube, dass“ zum Übernehmen](bilder/rechtsklick.png)
+
 **Vorlesen** (F4). Über einen Fehler liest das Auge hinweg; das Ohr stolpert
 darüber. 60 deutsche Stimmen, Tempo einstellbar.
 
@@ -52,6 +57,28 @@ korrigiert als eine Nachricht an einen Freund.
 
 **Speichern.** `.odt`, `.docx`, `.doc`, `.rtf`, `.fodt`, `.html`, `.txt`,
 PDF und EPUB. Word-Dateien öffnen und wieder als Word speichern.
+
+## So sieht es aus
+
+Die Menüs sind nach Themen geordnet und haben Untermenüs, damit keine Liste
+länger wird als der Bildschirm.
+
+![Das Menü Format ist offen, daneben das Untermenü Schrift mit Fett, Kursiv, Schriftfarbe und Effekten](bilder/menues.png)
+
+Die Schriftauswahl zeigt jede Schrift in sich selbst — oben die vier für
+Fließtext, darunter alles, was auf dem Rechner liegt.
+
+![Die Schriftliste mit Suchfeld; jeder Name ist in seiner eigenen Schrift gesetzt](bilder/schriften.png)
+
+Hell oder dunkel, je nachdem, was den Augen bekommt. Das Blatt bleibt weiß —
+Papier ist weiß.
+
+![Dasselbe Fenster im dunklen Modus](bilder/dunkel.png)
+
+Auf der Einstellungsseite stehen der Schlüssel für die KI, das Modell, der
+Verbrauch und alles zur Darstellung.
+
+![Die Einstellungsseite mit API-Schlüssel, KI-Modell, Verbrauch und Übersetzen](bilder/einstellungen.png)
 
 ## Starten
 
