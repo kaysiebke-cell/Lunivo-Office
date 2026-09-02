@@ -4649,7 +4649,13 @@ B.stimmeWaehlen = async () => {
    Angeboten wird nur, wo es hilft: mitten im Wort, nicht dahinter, und
    nicht bei etwas, das ohnehin schon richtig ist.
    ============================================================ */
-let vorhersageAn = Speicher.lies('vorhersage', false);
+/* An, nicht aus. Sie stand auf „aus", und damit fand sie niemand: Wer
+   Wortvorhersage braucht, sucht sie nicht in einem Untermenü — er merkt
+   nur, dass sie nicht kommt. Sie ist eine der Hilfen, für die es dieses
+   Programm gibt; sie gehört nicht hinter einen Schalter.
+
+   Abschalten geht weiterhin: Extras ▸ Beim Schreiben ▸ Wortvorhersage. */
+let vorhersageAn = Speicher.lies('vorhersage', true);
 let vorhersageKasten = null;
 let vorhersageStelle = null;
 let vorhersageUhr = null;
@@ -6750,7 +6756,60 @@ function kiKnoepfeAuffrischen() {
         + 'Drücken führt zu den Einstellungen (F9).';
   }
   $('btn-uebersetzen').textContent = 'Nach ' + sprache;
+  kiHinweisZeigen(geht);
   menueBauen();
+}
+
+/* Warum die drei Knöpfe grau sind — und was dagegen hilft.
+
+   Bisher stand der Grund nur im Tooltip. Wer drei blasse Knöpfe sieht,
+   fährt aber nicht mit der Maus darüber und wartet; er hält sie für
+   kaputt. Also steht es jetzt darunter.
+
+   Und wenn auf diesem Rechner Ollama läuft, ist der Weg kein Kauf,
+   sondern ein Klick: Die Modelle liegen schon da. */
+let ollamaGesehen = null;          // null = noch nicht nachgesehen
+
+async function kiHinweisZeigen(geht) {
+  const zeile = $('ki-hinweis');
+  if (!zeile) return;
+  if (geht) { zeile.hidden = true; zeile.innerHTML = ''; return; }
+
+  if (ollamaGesehen === null) {
+    ollamaGesehen = [];
+    try { ollamaGesehen = (await KI.ollamaModelle()) || []; }
+    catch (e) { ollamaGesehen = []; }
+    /* Zwischendurch kann ein Schlüssel eingetragen worden sein. */
+    if (KI.verfuegbar()) { zeile.hidden = true; return; }
+  }
+
+  zeile.hidden = false;
+  zeile.innerHTML = '';
+
+  const satz = document.createElement('span');
+  const knopf = document.createElement('button');
+  knopf.type = 'button';
+  knopf.className = 'knopf knopf--klein';
+
+  if (ollamaGesehen.length) {
+    const modell = ollamaGesehen[0];
+    satz.textContent = 'Die drei Knöpfe sind grau, weil kein KI-Schlüssel '
+      + 'gespeichert ist. Auf diesem Rechner läuft aber Ollama — damit gehen '
+      + 'sie ohne Schlüssel und ohne Geld.';
+    knopf.textContent = modell + ' nehmen';
+    knopf.addEventListener('click', () => {
+      KI.modellSetzen(KI.OLLAMA_MARKE + modell);
+      kiKnoepfeAuffrischen();
+      melde('KI läuft jetzt über ' + modell + ' auf diesem Rechner.');
+    });
+  } else {
+    satz.textContent = 'Die drei Knöpfe brauchen einen KI-Schlüssel — oder '
+      + 'Ollama auf diesem Rechner, dann kosten sie nichts.';
+    knopf.textContent = 'Einrichten';
+    knopf.addEventListener('click', () => Einstellungen.oeffnen('ki'));
+  }
+
+  zeile.append(satz, knopf);
 }
 
 /* Ein Absatz wird in Wörter zerlegt — mitsamt den Leerzeichen dazwischen,

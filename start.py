@@ -496,6 +496,58 @@ def ordner_waehlen():
     return antwort.get("ordner", "")
 
 
+def rechtschreibsprachen():
+    """Die Sprachen, für die auf diesem Rechner ein Wörterbuch liegt.
+
+    Gefragt wird enchant — dieselbe Schicht, die auch WebKit benutzt. Wer
+    hunspell-de-de installiert hat, bekommt „de_DE"; wer nicht, bekommt eine
+    leere Liste, und dann wird gar nicht erst eingeschaltet.
+    """
+    werkzeug = shutil.which("enchant-lsmod-2") or shutil.which("enchant-lsmod")
+    if not werkzeug:
+        return ["de_DE"]          # da ist etwas, es sagt nur keiner welches
+    try:
+        lauf = subprocess.run([werkzeug, "-list-dicts"], capture_output=True,
+                              encoding="utf-8", errors="replace", timeout=10)
+    except (OSError, subprocess.SubprocessError):
+        return ["de_DE"]
+
+    alle = [zeile.split()[0] for zeile in lauf.stdout.splitlines() if zeile.strip()]
+    # Deutsch zuerst, der Rest hinterher — die Reihenfolge entscheidet, welches
+    # Wörterbuch WebKit bevorzugt.
+    deutsch = [s for s in alle if s.startswith("de")]
+    andere = [s for s in alle if not s.startswith("de")]
+    for lieber in ("de_DE_frami", "de_DE"):
+        if lieber in deutsch:
+            deutsch.remove(lieber)
+            deutsch.insert(0, lieber)
+    return deutsch + andere
+
+
+def rechtschreibung_einschalten(umgebung):
+    """Rote Wellenlinien unter unbekannten Wörtern — im Fenster.
+
+    Das Attribut spellcheck="true" im HTML genügt NICHT. WebKitGTK prüft
+    von sich aus gar nicht; es muss am Kontext eingeschaltet und mit
+    Sprachen versorgt werden. Ohne diese beiden Zeilen unterringelt das
+    Fenster nichts, während dieselbe Seite in Chrome ringelt — ein
+    Unterschied, den man lange sucht.
+
+    Die Wörterbücher kommen aus dem System (hunspell über enchant). Fehlen
+    sie, bleibt es aus: Eingeschaltet ohne Wörterbuch würde WebKit jedes
+    zweite Wort anstreichen.
+    """
+    sprachen = rechtschreibsprachen()
+    if not sprachen:
+        return False
+    try:
+        umgebung.set_spell_checking_languages(sprachen)
+        umgebung.set_spell_checking_enabled(True)
+        return True
+    except Exception:                                   # noqa: BLE001
+        return False
+
+
 def bildschirmfoto(was):
     """Nimmt den Bildschirm auf und gibt das Bild zurück.
 
@@ -1263,6 +1315,8 @@ def main():
     einst.set_enable_developer_extras(False)
     einst.set_enable_write_console_messages_to_stdout(False)
     einst.set_user_agent(einst.get_user_agent() + " Schreibprogramm/1.0")
+
+    rechtschreibung_einschalten(umgebung)
 
     fenster = Gtk.Window(title="Schreibprogramm")
     fenster.set_default_size(1280, 860)
