@@ -97,6 +97,7 @@ B.oeffnen = async () => {
         throw new Error(grund);
       }
       await dateiUebernehmen(new File([await daten.blob()], wahl.name || 'Dokument'));
+      await zuletztHolen();
     } catch (grund) {
       melde('Die Datei ließ sich nicht öffnen: ' + grund.message);
     }
@@ -111,6 +112,57 @@ B.oeffnen = async () => {
     if (datei) await dateiUebernehmen(datei);
   });
   waehler.click();
+};
+
+/* Die zuletzt geöffneten Dateien.
+
+   Die Liste selbst führt der Server; hier steht nur eine Abschrift. Der
+   Grund ist die Bauart des Menüs: Es wird im Augenblick des Aufklappens
+   gezeichnet und kann dabei nicht auf eine Antwort warten. Also wird die
+   Abschrift nachgeführt, sobald sich etwas geändert haben kann — beim
+   Start, nach jedem Öffnen, nach jedem Speichern.
+
+   Geöffnet wird über die Nummer in der Liste, nicht über den Pfad. Die
+   Seite erfährt gar nicht, wo die Datei liegt; das weiß der Server. */
+let zuletztListe = [];
+
+async function zuletztHolen() {
+  try {
+    const antwort = await fetch('zuletzt');
+    zuletztListe = antwort.ok ? await antwort.json() : [];
+  } catch (e) {
+    zuletztListe = [];                 /* kein eigenes Fenster, kein Server */
+  }
+}
+
+function zuletztPunkte() {
+  if (!zuletztListe.length) {
+    return [{ name: 'Noch nichts geöffnet', tun: () => {} }];
+  }
+  return zuletztListe.map((eintrag, nr) => ({
+    name: eintrag.name,
+    tun: () => B.zuletztOeffnen(nr),
+  }));
+}
+
+B.zuletztOeffnen = async (nr) => {
+  try {
+    const antwort = await fetch('zuletzt-oeffnen?nr=' + nr, { method: 'POST' });
+    if (!antwort.ok) {
+      let grund = 'Fehler ' + antwort.status;
+      try { grund = (await antwort.json()).fehler || grund; } catch (e) { /* egal */ }
+      throw new Error(grund);
+    }
+    const wahl = await antwort.json();
+    const daten = await fetch('lesen');
+    if (!daten.ok) throw new Error('Fehler ' + daten.status);
+    await dateiUebernehmen(new File([await daten.blob()], wahl.name || 'Dokument'));
+  } catch (grund) {
+    melde('Die Datei ließ sich nicht öffnen: ' + grund.message);
+  }
+  /* In beiden Fällen: Ist die Datei inzwischen weg, fällt sie beim
+     Nachfragen aus der Liste und steht beim nächsten Aufklappen nicht mehr da. */
+  await zuletztHolen();
 };
 
 /* Eine Datei ins Blatt holen — gleich, ob sie aus dem Dialog des Systems
@@ -247,6 +299,7 @@ B.speichernUnter = async () => {
     if (endung !== 'pdf' && endung !== 'epub') Speicher.schreib('endung', endung);
     geaendert = false;
     titelSetzen();
+    await zuletztHolen();
     melde('Gespeichert: ' + wahl.pfad);
   } catch (grund) {
     melde('Das ging nicht: ' + grund.message);
@@ -5339,6 +5392,7 @@ const MENUES = [
   ['Datei', [
     { name: 'Neu', tun: B.neu, taste: 'Strg+N' },
     { name: 'Öffnen…', tun: B.oeffnen, taste: 'Strg+O' },
+    { name: 'Zuletzt verwendet', unter: zuletztPunkte },
     strich,
     { name: 'Speichern', tun: B.speichern, taste: 'Strg+S' },
     { name: 'Speichern unter…', tun: B.speichernUnter, taste: 'Strg+Umschalt+S' },
@@ -5796,7 +5850,17 @@ function punkteBauen(klappe, punkte) {
       const unterklappe = document.createElement('div');
       unterklappe.className = 'menue__klappe menue__klappe--unter';
       unterklappe.setAttribute('role', 'menu');
-      punkteBauen(unterklappe, punkt.unter);
+
+      /* Steht statt der Liste eine Funktion da, wird sie beim Aufklappen
+         gefragt — für Einträge, die sich ändern, während das Fenster steht.
+         Die zuletzt benutzten Dateien sind der Fall dafür: Einmal beim Bauen
+         gezeichnet, zeigte das Menü bis zum Neustart den Stand von damals. */
+      const fuellen = () => {
+        unterklappe.innerHTML = '';
+        punkteBauen(unterklappe,
+                    typeof punkt.unter === 'function' ? punkt.unter() : punkt.unter);
+      };
+      fuellen();
       huelle.appendChild(unterklappe);
 
       /* Auf- und zugeklappt wird von Hand, nicht über „:hover" im Stilblatt.
@@ -5805,6 +5869,7 @@ function punkteBauen(klappe, punkte) {
          Stilblatt ist sie das im Augenblick des Ereignisses noch nicht.
          So ist die Reihenfolge festgelegt: erst zeigen, dann messen. */
       huelle.addEventListener('mouseenter', () => {
+        if (typeof punkt.unter === 'function') fuellen();
         for (const andere of huelle.parentNode.querySelectorAll('.untermenue--offen')) {
           andere.classList.remove('untermenue--offen');
         }
@@ -7530,6 +7595,7 @@ netzAnwenden();
 feld.lang = Speicher.lies('pruefsprache', 'de');
 feld.classList.toggle('dokument--verfolgt', verfolgenAn);
 schriftenNachtragen();
+zuletztHolen();
 setzeZoom(zoom);
 titelSetzen();
 zahlenAuffrischen();

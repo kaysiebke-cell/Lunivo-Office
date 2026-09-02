@@ -124,6 +124,11 @@ korrigiert als eine Nachricht an einen Freund.
 **Speichern.** `.odt`, `.docx`, `.doc`, `.rtf`, `.fodt`, `.html`, `.txt`,
 PDF und EPUB. Word-Dateien öffnen und wieder als Word speichern.
 
+**Zuletzt verwendet.** Unter *Datei* stehen die letzten zehn Dokumente mit
+Namen — ein Klick, und das Blatt ist wieder da. Wer eine Datei inzwischen
+verschoben oder weggeworfen hat, findet sie nicht mehr in der Liste: Geprüft
+wird beim Aufklappen, nicht beim Merken.
+
 **Zwei Oberflächen.** *Ansicht ▸ Benutzeroberfläche* stellt zwischen
 Symbolleisten (zwei Zeilen, alles sichtbar) und Registern (Reiter wie in
 Word) um. Dieselben Befehle, anders sortiert.

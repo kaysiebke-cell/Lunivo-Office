@@ -109,6 +109,49 @@ LETZTER_ORDNER = {"weg": None}
 # Was zuletzt gelesen werden durfte — dieselbe Vorsorge wie beim Schreiben.
 LESEZIEL = {"pfad": None}
 
+# Die zuletzt geöffneten und gespeicherten Dateien.
+#
+# Die Liste liegt hier und nicht in der Seite, und das ist eine Frage der
+# Vorsicht. Läge sie dort, müsste die Seite dem Server einen Pfad nennen
+# dürfen, um eine Datei zu öffnen — und dann könnte sie jeden Pfad nennen,
+# auch einen, der sie nichts angeht. So kennt die Seite nur Nummern: Der
+# Server sagt, was in seiner Liste steht, und nimmt zurück nur eine Nummer
+# daraus entgegen.
+ZULETZT_DATEI = os.path.join(DATEN, "zuletzt.json")
+ZULETZT_VIELE = 10
+
+
+def zuletzt_lesen():
+    """Die Liste, ohne das, was es nicht mehr gibt.
+
+    Wer eine Datei verschiebt oder wegwirft, soll sie nicht weiter im Menü
+    stehen sehen und sich beim Klick einen Fehler abholen. Geprüft wird
+    deshalb beim Lesen, nicht beim Schreiben — dazwischen kann alles
+    passieren.
+    """
+    try:
+        with open(ZULETZT_DATEI, encoding="utf-8") as datei:
+            liste = json.load(datei)
+    except (OSError, ValueError):
+        return []
+    if not isinstance(liste, list):
+        return []
+    return [weg for weg in liste
+            if isinstance(weg, str) and os.path.isfile(weg)][:ZULETZT_VIELE]
+
+
+def zuletzt_merken(pfad):
+    """Nach vorn, und nur einmal in der Liste."""
+    pfad = os.path.abspath(pfad)
+    liste = [weg for weg in zuletzt_lesen() if weg != pfad]
+    liste.insert(0, pfad)
+    try:
+        os.makedirs(DATEN, exist_ok=True)
+        with open(ZULETZT_DATEI, "w", encoding="utf-8") as datei:
+            json.dump(liste[:ZULETZT_VIELE], datei, ensure_ascii=False)
+    except OSError:
+        pass                    # Die Liste ist keine, für die man abbricht.
+
 
 # ============================================================
 # LanguageTool als zweite Meinung
@@ -1006,6 +1049,13 @@ class Leise(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(ladung)
             return
 
+        # Die zuletzt benutzten Dateien — Namen und Ordner, keine ganzen Wege.
+        if self.path.split("?")[0] == "/zuletzt":
+            self.auskunft([{"name": os.path.basename(weg),
+                            "ordner": os.path.dirname(weg)}
+                           for weg in zuletzt_lesen()])
+            return
+
         if self.path.split("?")[0] == "/teile":
             self.auskunft(teile_lesen())
             return
@@ -1176,6 +1226,26 @@ class Leise(http.server.SimpleHTTPRequestHandler):
                 return
             LESEZIEL["pfad"] = pfad
             LETZTER_ORDNER["weg"] = os.path.dirname(pfad)
+            zuletzt_merken(pfad)
+            self.auskunft({"pfad": pfad, "name": os.path.basename(pfad)})
+            return
+
+        # Einen Eintrag aus der Liste öffnen. Herein kommt eine Nummer, nie
+        # ein Pfad — und die Nummer gilt nur, solange sie in die Liste passt.
+        if adresse.path == "/zuletzt-oeffnen":
+            liste = zuletzt_lesen()
+            try:
+                nummer = int((urllib.parse.parse_qs(adresse.query)
+                              .get("nr") or ["-1"])[0])
+            except ValueError:
+                nummer = -1
+            if nummer < 0 or nummer >= len(liste):
+                LESEZIEL["pfad"] = None
+                self.fehler_melden(404, "Die Datei steht nicht mehr in der Liste.")
+                return
+            pfad = liste[nummer]
+            LESEZIEL["pfad"] = pfad
+            LETZTER_ORDNER["weg"] = os.path.dirname(pfad)
             self.auskunft({"pfad": pfad, "name": os.path.basename(pfad)})
             return
 
@@ -1214,6 +1284,7 @@ class Leise(http.server.SimpleHTTPRequestHandler):
             except OSError as grund:
                 self.fehler_melden(500, str(grund))
                 return
+            zuletzt_merken(ziel)
             self.auskunft({"pfad": ziel})
             return
 
