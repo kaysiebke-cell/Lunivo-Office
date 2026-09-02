@@ -187,6 +187,21 @@ als **eigener Prozess** — seine LGPL-Lizenz berührt dieses Programm nicht.
 
 Schreiben, Prüfen, Vorlesen und die ODF-Formate gehen ohne beides.
 
+## Eine Hilfe, kein Ersatz
+
+> Das Schreibprogramm ist eine Hilfe und kein Ersatz für eine Kontrolle durch
+> eine andere Person. Es kann nicht garantieren, dass der Text oder sein Inhalt
+> am Ende vollständig korrekt ist.
+>
+> Gerade für Menschen mit Legasthenie ist eine zusätzliche Kontrolle durch eine
+> zweite Person wichtig. Eigene Fehler werden beim späteren Lesen nicht immer
+> erkannt, weil das Gehirn das Geschriebene teilweise so wahrnimmt, wie es
+> gemeint war.
+
+Deshalb gibt es *Vorlesen* (F4): Über einen Fehler liest das Auge hinweg, das
+Ohr stolpert darüber. Es ersetzt die zweite Person nicht — es kommt ihr nur am
+nächsten, wenn gerade niemand da ist.
+
 ## Was nicht drin ist
 
 SmartArt in Word-Qualität, 3D-Modelle, eingebettete Tabellenkalkulation,
@@ -198,6 +213,10 @@ Fenster teilen mit Synchronscrollen.
 Bei den meisten wäre der Aufwand groß und der Nutzen für einen Brief gering.
 
 ## Herkunft
+
+**Wie das alles entstanden ist**, steht in
+[ENTSTEHUNG.md](ENTSTEHUNG.md) — vom zu kleinen Textfeld auf dem Handy bis
+zu diesem Programm, aufgeschrieben von dem, der es gebaut hat.
 
 Die Prüfung und der Wortschatz stammen aus der
 [Schreibhilfe](https://github.com/kaysiebke-cell/schreibhilfe) und sind dort
@@ -218,6 +237,7 @@ deshalb wie der übrige Code unter MIT.
     js/pruefung.js       die Prüfung, Phonetik, Wortvorhersage
     js/ki.js             Claude und Ollama, Gedächtnis, Sicherung
     js/einstellungen.js  die Einstellungsseite
+    ENTSTEHUNG.md        wie es dazu kam
     RICHTUNG.md          wohin das Projekt geht, und was es nicht wird
     CONTRIBUTING.md      wie man mitmacht
     daten/regeln.js      der Wortschatz der Prüfung

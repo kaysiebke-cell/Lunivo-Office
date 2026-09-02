@@ -5,6 +5,8 @@ und beide sind besser darin, Word zu sein, als es dieses Projekt je wäre.
 
 Es gibt aber etwas, das beide nicht tun.
 
+Wie es dazu kam, steht in [ENTSTEHUNG.md](ENTSTEHUNG.md).
+
 ## Das Problem
 
 Ein Rechtschreibprüfer findet Wörter, die es nicht gibt. Er findet nicht
