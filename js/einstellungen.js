@@ -31,6 +31,112 @@ let griffe = {
 const verbinde = (neue) => { griffe = Object.assign(griffe, neue); };
 
 /* ------------------------------------------------------------
+   Der Baum links
+
+   Die Reihenfolge ist die des Writers, soweit es hier etwas dazu gibt:
+   erst wer schreibt, dann womit, dann wie es aussieht, zuletzt das
+   Zusätzliche. Wer den Writer kennt, sucht nicht zweimal.
+   ------------------------------------------------------------ */
+const BEREICHE = [
+  ['programm', 'Schreibprogramm', [
+    ['benutzer',  'Benutzerdaten'],
+    ['ansicht',   'Ansicht'],
+    ['schriften', 'Schriftarten'],
+    ['pfade',     'Pfade'],
+    ['erweitert', 'Erweitert'],
+  ]],
+  ['pruefung', 'Sprache und Prüfung', [
+    ['sprache',   'Sprache'],
+    ['schreiben', 'Beim Schreiben'],
+  ]],
+  ['hilfe', 'Schreibhilfe', [
+    ['ki',          'Prüfung und KI'],
+    ['gedaechtnis', 'Gedächtnis'],
+  ]],
+];
+
+let bereichJetzt = 'benutzer';
+/* Welche Zweige offen stehen. Alle drei zu Anfang: Wer die Optionen zum
+   ersten Mal aufmacht, soll sehen, was es gibt, statt drei zugeklappte
+   Wörter zu finden und raten zu müssen, was darunter liegt. */
+const offeneZweige = new Set(BEREICHE.map(([kennung]) => kennung));
+
+function bereichZeigen(kennung) {
+  bereichJetzt = kennung;
+  for (const gruppe of document.querySelectorAll('#einst-bereiche .gruppe[data-bereich]')) {
+    gruppe.classList.toggle('gruppe--offen', gruppe.dataset.bereich === kennung);
+  }
+  for (const ast of document.querySelectorAll('.optionen__ast')) {
+    const gewaehlt = ast.dataset.bereich === kennung;
+    ast.classList.toggle('optionen__ast--offen', gewaehlt);
+    ast.setAttribute('aria-selected', gewaehlt ? 'true' : 'false');
+  }
+  /* „Schlüssel löschen" gehört zur KI und sonst nirgendwohin. Unter den
+     Benutzerdaten stehend liest er sich, als lösche er die Adresse. */
+  $('einst-schluessel-weg').hidden = kennung !== 'ki';
+
+  /* Beim Wechsel wieder nach oben: Wer von „Erweitert" nach
+     „Benutzerdaten" springt, säße sonst mitten im neuen Bereich. */
+  $('einst-bereiche').scrollTop = 0;
+}
+
+function baumBauen() {
+  const baum = $('einst-baum');
+  baum.innerHTML = '';
+
+  for (const [zweigKennung, zweigName, blaetter] of BEREICHE) {
+    const offen = offeneZweige.has(zweigKennung);
+
+    const zweig = document.createElement('button');
+    zweig.type = 'button';
+    zweig.className = 'optionen__zweig';
+    zweig.setAttribute('aria-expanded', offen ? 'true' : 'false');
+
+    const pfeil = document.createElement('span');
+    pfeil.className = 'optionen__pfeil';
+    pfeil.textContent = offen ? '▾' : '▸';
+    zweig.appendChild(pfeil);
+    zweig.appendChild(document.createTextNode(zweigName));
+
+    /* Ein Klick auf den Zweig klappt auf und zu. Er wählt selbst nichts aus:
+       Hinter „Schreibprogramm" liegt keine Seite, sondern fünf. */
+    zweig.addEventListener('click', () => {
+      if (offeneZweige.has(zweigKennung)) offeneZweige.delete(zweigKennung);
+      else offeneZweige.add(zweigKennung);
+      baumBauen();
+    });
+    baum.appendChild(zweig);
+
+    const kasten = document.createElement('div');
+    kasten.className = 'optionen__blaetter';
+    kasten.hidden = !offen;
+
+    for (const [kennung, name] of blaetter) {
+      const ast = document.createElement('button');
+      ast.type = 'button';
+      ast.className = 'optionen__ast';
+      ast.dataset.bereich = kennung;
+      ast.textContent = name;
+      ast.setAttribute('role', 'tab');
+      ast.addEventListener('click', () => bereichZeigen(kennung));
+      kasten.appendChild(ast);
+    }
+    baum.appendChild(kasten);
+  }
+
+  bereichZeigen(bereichJetzt);
+}
+
+/* Zu welchem Zweig gehört ein Blatt? Wird gebraucht, wenn ein Menüpunkt
+   geradewegs in einen Bereich springt, dessen Zweig zugeklappt ist. */
+function zweigVon(blatt) {
+  for (const [zweigKennung, , blaetter] of BEREICHE) {
+    if (blaetter.some(([kennung]) => kennung === blatt)) return zweigKennung;
+  }
+  return null;
+}
+
+/* ------------------------------------------------------------
    Der Schlüssel
    ------------------------------------------------------------ */
 let schluesselSichtbar = false;
@@ -180,9 +286,22 @@ function darstellungZeigen() {
    ------------------------------------------------------------ */
 let offen = false;
 
-function oeffnen() {
+function oeffnen(bereich) {
   $('einstellungen').hidden = false;
   offen = true;
+
+  if (bereich) {
+    bereichJetzt = bereich;
+    const zweig = zweigVon(bereich);
+    if (zweig) offeneZweige.add(zweig);
+  }
+  baumBauen();
+
+  benutzerZeigen();
+  schriftenZeigen();
+  spracheZeigen();
+  pfadZeigen();
+  teileZeigen();
 
   $('einst-schluessel').value = KI.schluesselLies();
   $('einst-modell').value = KI.modellJetzt();
@@ -196,7 +315,148 @@ function oeffnen() {
   lokaleModelleNachtragen();
 }
 
+/* ------------------------------------------------------------
+   Benutzerdaten
+
+   Sie stehen im Writer ganz oben, und das aus gutem Grund: Umschlag,
+   Etiketten, Seriendruck und der Verfasser eines Dokuments fragen alle
+   nach demselben. Wer sie hier einträgt, tippt sie nirgends noch einmal.
+   ------------------------------------------------------------ */
+const BENUTZER_FELDER = ['vorname', 'nachname', 'firma', 'strasse',
+                         'plz', 'ort', 'telefon', 'email'];
+
+function benutzerLies() {
+  return KI.Speicher.lies('benutzer', {});
+}
+
+function benutzerZeigen() {
+  const daten = benutzerLies();
+  for (const name of BENUTZER_FELDER) {
+    const feld = $('einst-' + name);
+    if (feld) feld.value = daten[name] || '';
+  }
+}
+
+function benutzerMerken() {
+  const daten = {};
+  for (const name of BENUTZER_FELDER) {
+    const feld = $('einst-' + name);
+    if (feld && feld.value.trim()) daten[name] = feld.value.trim();
+  }
+  KI.Speicher.schreib('benutzer', daten);
+}
+
+/* ------------------------------------------------------------
+   Schriftarten und Sprache
+   ------------------------------------------------------------ */
+function schriftenZeigen() {
+  const wahl = $('einst-schrift');
+  const alle = griffe.schriften();
+  const jetzt = griffe.schriftJetzt();
+
+  wahl.innerHTML = '';
+  /* „Wie im Blatt" statt eines Namens: Wer nie etwas eingestellt hat, soll
+     nicht raten müssen, welche der 900 Schriften gerade gilt. */
+  const grund = document.createElement('option');
+  grund.value = '';
+  grund.textContent = 'Wie voreingestellt (Georgia)';
+  wahl.appendChild(grund);
+  for (const name of alle) {
+    const o = document.createElement('option');
+    o.value = name; o.textContent = name;
+    if (name === jetzt) o.selected = true;
+    wahl.appendChild(o);
+  }
+  if (!jetzt) grund.selected = true;
+
+  const gr = $('einst-schriftgroesse');
+  gr.innerHTML = '';
+  for (const punkte of griffe.groessen()) {
+    const o = document.createElement('option');
+    o.value = String(punkte); o.textContent = punkte + ' pt';
+    if (Number(punkte) === griffe.groesseJetzt()) o.selected = true;
+    gr.appendChild(o);
+  }
+}
+
+function spracheZeigen() {
+  const wahl = $('einst-pruefsprache');
+  const jetzt = griffe.pruefspracheJetzt();
+  wahl.innerHTML = '';
+  for (const [kennung, name] of griffe.pruefsprachen()) {
+    const o = document.createElement('option');
+    o.value = kennung; o.textContent = name;
+    if (kennung === jetzt) o.selected = true;
+    wahl.appendChild(o);
+  }
+}
+
+/* ------------------------------------------------------------
+   Pfade
+   ------------------------------------------------------------ */
+function pfadZeigen() {
+  const feld = $('einst-ordner');
+  const gemerkt = KI.Speicher.lies('ordner', '');
+  feld.value = gemerkt || '';
+  feld.placeholder = gemerkt ? '' : 'Zuletzt benutzter Ordner';
+}
+
+/* ------------------------------------------------------------
+   Was zusätzlich geholt wurde
+
+   Der Writer nennt diesen Bereich „Erweitert" und meint Java. Hier ist
+   gemeint, was außerhalb des Programms liegt, weil es zu groß ist. Ob es
+   da ist, kann nur der Rechner sagen — die Seite fragt ihn.
+   ------------------------------------------------------------ */
+async function teileZeigen() {
+  const kasten = $('einst-teile');
+  if (!kasten) return;
+  kasten.innerHTML = '<p class="hinweis">Wird nachgesehen …</p>';
+
+  let teile = [];
+  try {
+    const antwort = await fetch('teile');
+    if (antwort.ok) teile = await antwort.json();
+  } catch (e) { /* im Browser gibt es diese Adresse nicht */ }
+
+  if (!teile.length) {
+    kasten.innerHTML = '<p class="hinweis">Nur im eigenen Fenster zu sehen — '
+      + 'im Browser weiß die Seite nichts über den Rechner.</p>';
+    return;
+  }
+
+  kasten.innerHTML = '';
+  for (const teil of teile) {
+    const zeile = document.createElement('div');
+    zeile.className = 'teil' + (teil.da ? ' teil--da' : '');
+
+    const stand = document.createElement('span');
+    stand.className = 'teil__stand';
+    stand.textContent = teil.da ? 'da' : 'fehlt';
+    zeile.appendChild(stand);
+
+    const mitte = document.createElement('div');
+    mitte.className = 'teil__mitte';
+    const name = document.createElement('span');
+    name.className = 'teil__name';
+    name.textContent = teil.name;
+    const satz = document.createElement('em');
+    satz.className = 'teil__satz';
+    satz.textContent = teil.da ? teil.wofuer : teil.wofuer + ' — ' + teil.holen;
+    mitte.append(name, satz);
+    zeile.appendChild(mitte);
+
+    const groesse = document.createElement('span');
+    groesse.className = 'teil__groesse';
+    groesse.textContent = teil.groesse;
+    zeile.appendChild(groesse);
+
+    kasten.appendChild(zeile);
+  }
+}
+
 function schliessen() {
+  benutzerMerken();
   /* Was im Schlüsselfeld steht, gilt beim Zumachen — ein eigener
      „Speichern"-Knopf für ein einzelnes Feld wäre eine Falle: Wer ihn
      übersieht, hat den Schlüssel eingetippt und trotzdem keinen. */
@@ -308,7 +568,38 @@ function verdrahten() {
   $('einst-groesser').addEventListener('click', () => { griffe.zoomSetzen(griffe.zoom() + 10); darstellungZeigen(); });
   $('einst-thema').addEventListener('click', () => { griffe.themaWeiter(); darstellungZeigen(); });
 
-  $('einst-fassung').textContent = 'Schreibprogramm 1.1 · Prüfung und Wortschatz '
+  /* Benutzerdaten beim Verlassen des Feldes merken — ein eigener
+     Speichern-Knopf für acht Felder wäre eine Falle. */
+  for (const name of BENUTZER_FELDER) {
+    const feld = $('einst-' + name);
+    if (feld) feld.addEventListener('change', benutzerMerken);
+  }
+
+  $('einst-schrift').addEventListener('change', () => {
+    griffe.grundschriftSetzen($('einst-schrift').value, undefined);
+  });
+  $('einst-schriftgroesse').addEventListener('change', () => {
+    griffe.grundschriftSetzen(undefined, $('einst-schriftgroesse').value);
+  });
+  $('einst-pruefsprache').addEventListener('change', () => {
+    griffe.pruefspracheSetzen($('einst-pruefsprache').value);
+  });
+
+  $('einst-ordner-waehlen').addEventListener('click', async () => {
+    try {
+      const antwort = await fetch('ordner-waehlen', { method: 'POST' });
+      if (!antwort.ok) return;
+      const weg = (await antwort.json()).ordner || '';
+      if (weg) KI.Speicher.schreib('ordner', weg);
+      pfadZeigen();
+    } catch (e) { /* nur im eigenen Fenster */ }
+  });
+  $('einst-ordner-weg').addEventListener('click', () => {
+    KI.Speicher.loesch ? KI.Speicher.loesch('ordner') : KI.Speicher.schreib('ordner', '');
+    pfadZeigen();
+  });
+
+  $('einst-fassung').textContent = 'Schreibprogramm 1.2 · Prüfung und Wortschatz '
     + 'aus der Schreibhilfe';
 
   /* Die Wellenlinien gelten ab dem Start, nicht erst nach einem Besuch hier. */

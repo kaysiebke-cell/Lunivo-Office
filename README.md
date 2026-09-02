@@ -79,6 +79,12 @@ korrigiert als eine Nachricht an einen Freund.
 **Speichern.** `.odt`, `.docx`, `.doc`, `.rtf`, `.fodt`, `.html`, `.txt`,
 PDF und EPUB. Word-Dateien öffnen und wieder als Word speichern.
 
+**Optionen** (F9). Wie im Writer: links ein Baum, rechts der Bereich.
+Benutzerdaten, Ansicht, Schriftarten, Pfade, Sprache, Prüfung und KI,
+Gedächtnis — und unter *Erweitert*, was zusätzlich geholt wurde und ob es
+da ist. Unter *Extras ▸ Erweiterungsverwaltung* steht dasselbe noch einmal
+als eigenes Fenster.
+
 ## So sieht es aus
 
 Die Menüs sind nach Themen geordnet und haben Untermenüs, damit keine Liste

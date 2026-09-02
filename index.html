@@ -117,13 +117,51 @@
 <section class="seite" id="einstellungen" hidden aria-label="Einstellungen">
   <div class="seite__kopf">
     <button class="seite__zurueck" id="einst-zu" aria-label="Zurück zum Text">←</button>
-    <h2>Einstellungen</h2>
+    <h2>Optionen</h2>
   </div>
 
-  <div class="seite__inhalt">
+  <!-- Links der Baum, rechts der gewählte Bereich — wie im Writer. Zuvor
+       standen alle Gruppen untereinander auf einer Rolle; das ging, solange
+       es vier waren. Mit Benutzerdaten, Schriften, Sprache und Pfaden wären
+       es neun, und dann sucht man. -->
+  <div class="optionen">
+    <nav class="optionen__baum" id="einst-baum" role="tablist" aria-label="Bereiche"></nav>
 
-    <div class="gruppe">
-      <span class="gruppe__titel">KI-Werkzeuge</span>
+  <div class="seite__inhalt" id="einst-bereiche">
+
+    <!-- Benutzerdaten. Sie stehen im Writer ganz oben, und das aus gutem
+         Grund: Umschlag, Etiketten, Seriendruck und der Verfasser eines
+         Dokuments fragen alle nach demselben, und niemand tippt seine
+         Adresse gern zum vierten Mal. -->
+    <div class="gruppe" data-bereich="benutzer">
+      <span class="gruppe__titel">Benutzerdaten</span>
+      <div class="karte">
+        <div class="feld">
+          <span class="feld__name">Wer schreibt</span>
+          <em class="feld__satz">Steht als Verfasser im Dokument und füllt
+            Umschlag, Etiketten und Seriendruck vor.</em>
+          <div class="reihe">
+            <input id="einst-vorname" type="text" placeholder="Vorname" autocomplete="off">
+            <input id="einst-nachname" type="text" placeholder="Nachname" autocomplete="off">
+          </div>
+          <input id="einst-firma" type="text" placeholder="Firma (freiwillig)" autocomplete="off">
+          <input id="einst-strasse" type="text" placeholder="Straße und Hausnummer" autocomplete="off">
+          <div class="reihe">
+            <input id="einst-plz" type="text" placeholder="PLZ" autocomplete="off">
+            <input id="einst-ort" type="text" placeholder="Ort" autocomplete="off">
+          </div>
+          <div class="reihe">
+            <input id="einst-telefon" type="text" placeholder="Telefon" autocomplete="off">
+            <input id="einst-email" type="text" placeholder="E-Mail" autocomplete="off">
+          </div>
+          <p class="hinweis">Bleibt auf diesem Rechner und geht nie mit einem
+            Text an die KI.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="gruppe" data-bereich="ki">
+      <span class="gruppe__titel">Prüfung und KI</span>
       <div class="karte">
 
         <div class="feld">
@@ -197,7 +235,7 @@
       </div>
     </div>
 
-    <div class="gruppe">
+    <div class="gruppe" data-bereich="schreiben">
       <span class="gruppe__titel">Beim Schreiben</span>
       <div class="karte">
         <label class="feld feld--schalter">
@@ -217,7 +255,7 @@
       </div>
     </div>
 
-    <div class="gruppe">
+    <div class="gruppe" data-bereich="gedaechtnis">
       <span class="gruppe__titel">Gedächtnis</span>
       <div class="karte">
         <!-- Was das Programm sich gemerkt hat. Sichtbar, weil niemand ein
@@ -243,8 +281,8 @@
       </div>
     </div>
 
-    <div class="gruppe">
-      <span class="gruppe__titel">Darstellung</span>
+    <div class="gruppe" data-bereich="ansicht">
+      <span class="gruppe__titel">Ansicht</span>
       <div class="karte">
         <div class="feld">
           <span class="feld__name">Schrift und Helligkeit</span>
@@ -263,12 +301,71 @@
       </div>
     </div>
 
+    <div class="gruppe" data-bereich="schriften">
+      <span class="gruppe__titel">Schriftarten</span>
+      <div class="karte">
+        <div class="feld">
+          <label class="feld__name" for="einst-schrift">Schrift für neuen Text</label>
+          <em class="feld__satz">Gilt für ein neues Dokument. Ein geöffnetes
+            bringt seine eigene mit.</em>
+          <select id="einst-schrift"></select>
+        </div>
+        <div class="feld">
+          <label class="feld__name" for="einst-schriftgroesse">Größe</label>
+          <select id="einst-schriftgroesse"></select>
+        </div>
+      </div>
+    </div>
+
+    <div class="gruppe" data-bereich="sprache">
+      <span class="gruppe__titel">Sprache</span>
+      <div class="karte">
+        <div class="feld">
+          <label class="feld__name" for="einst-pruefsprache">Sprache für die Prüfung</label>
+          <em class="feld__satz">Danach richten sich die roten Wellenlinien
+            und die gründliche Prüfung.</em>
+          <select id="einst-pruefsprache"></select>
+        </div>
+      </div>
+    </div>
+
+    <div class="gruppe" data-bereich="pfade">
+      <span class="gruppe__titel">Pfade</span>
+      <div class="karte">
+        <div class="feld">
+          <span class="feld__name">Ordner zum Speichern</span>
+          <em class="feld__satz">Damit „Speichern unter" dort aufgeht, wo die
+            Briefe liegen — und nicht jedes Mal im Persönlichen Ordner.</em>
+          <div class="reihe">
+            <input id="einst-ordner" type="text" placeholder="Zuletzt benutzter Ordner" readonly>
+            <button class="knopf" id="einst-ordner-waehlen" type="button">Wählen…</button>
+            <button class="knopf" id="einst-ordner-weg" type="button">Zurücksetzen</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- „Erweitert" heißt im Writer: Java und Experimentelles. Hier heißt es
+         das, was zusätzlich geholt wird und nicht im Programm steckt. -->
+    <div class="gruppe" data-bereich="erweitert">
+      <span class="gruppe__titel">Erweitert</span>
+      <div class="karte">
+        <div class="feld">
+          <span class="feld__name">Was zusätzlich geholt wurde</span>
+          <em class="feld__satz">Drei Dinge liegen außerhalb des Programms,
+            weil sie zu groß sind. Ohne sie läuft alles Übrige weiter.</em>
+          <div class="teile" id="einst-teile"></div>
+        </div>
+      </div>
+    </div>
+
     <p class="hinweis" id="einst-fassung"></p>
 
     <div class="seite__fuss">
       <button class="knopf" id="einst-schluessel-weg" type="button">Schlüssel löschen</button>
       <button class="knopf knopf--haupt" id="einst-fertig" type="button">Fertig</button>
     </div>
+  </div>
   </div>
 </section>
 

@@ -4479,6 +4479,71 @@ B.welcheHilfe = () => {
     () => {}, 'Schließen', true);
 };
 
+/* ------------------------------------------------------------
+   Erweiterungsverwaltung
+
+   Im Writer stehen hier Erweiterungen von fremder Hand. Hier gibt es keine
+   — dieses Programm nimmt keine an, und ein leerer Kasten mit einem
+   „Hinzufügen"-Knopf, der nichts hinzufügt, wäre Kulisse.
+
+   Was es aber gibt, ist dasselbe in der Sache: Teile, die nicht im Programm
+   stecken, einzeln kommen und gehen, und über die man wissen will, ob sie da
+   sind. Genau die stehen hier.
+   ------------------------------------------------------------ */
+B.erweiterungen = async () => {
+  let teile = [];
+  try {
+    const antwort = await fetch('teile');
+    if (antwort.ok) teile = await antwort.json();
+  } catch (e) { /* im Browser gibt es diese Adresse nicht */ }
+
+  if (!teile.length) {
+    melde('Nur im eigenen Fenster zu sehen — im Browser weiß die Seite '
+        + 'nichts über den Rechner.');
+    return;
+  }
+
+  const kasten = document.createElement('div');
+  kasten.className = 'teile';
+  for (const teil of teile) {
+    const zeile = document.createElement('div');
+    zeile.className = 'teil' + (teil.da ? ' teil--da' : '');
+
+    const stand = document.createElement('span');
+    stand.className = 'teil__stand';
+    stand.textContent = teil.da ? 'da' : 'fehlt';
+
+    const mitte = document.createElement('div');
+    mitte.className = 'teil__mitte';
+    const name = document.createElement('span');
+    name.className = 'teil__name';
+    name.textContent = teil.name;
+    const satz = document.createElement('em');
+    satz.className = 'teil__satz';
+    satz.textContent = teil.da ? teil.wofuer : teil.wofuer + ' — ' + teil.holen;
+    mitte.append(name, satz);
+
+    const groesse = document.createElement('span');
+    groesse.className = 'teil__groesse';
+    groesse.textContent = teil.groesse;
+
+    zeile.append(stand, mitte, groesse);
+    kasten.appendChild(zeile);
+  }
+
+  fenster('Erweiterungen', [
+    { art: 'satz', text:
+        'Drei Teile liegen außerhalb des Programms, weil sie zu groß sind. '
+      + 'Sie werden geholt, wenn sie zum ersten Mal gebraucht werden — und '
+      + 'ohne sie läuft alles Übrige weiter: Schreiben, Prüfen, ODF.' },
+    { art: 'knoten', knoten: kasten },
+    { art: 'satz', text:
+        'Erweiterungen von fremder Hand nimmt dieses Programm nicht an. Was '
+      + 'es kann, steckt im Programm — und was nicht, steht in der Liste der '
+      + 'Lücken im LIESMICH.' },
+  ], () => {}, 'Schließen', true);
+};
+
 B.ueber = () => {
   fenster('Über das Schreibprogramm', [
     { art: 'satz', text:
@@ -4894,7 +4959,8 @@ const MENUES = [
     { name: 'Überarbeitungsbereich', tun: B.ueberarbeitungsbereich },
     { name: 'Bearbeitung sperren', tun: B.bearbeitungSperren, haken: () => gesperrt },
     strich,
-    { name: 'Einstellungen…', tun: () => Einstellungen.oeffnen(), taste: 'F9' },
+    { name: 'Erweiterungsverwaltung…', tun: B.erweiterungen },
+    { name: 'Optionen…', tun: () => Einstellungen.oeffnen(), taste: 'F9' },
   ]],
 
   ['Schreibhilfe', [
@@ -4916,7 +4982,7 @@ const MENUES = [
     strich,
     { name: 'Seitenleiste zeigen', tun: B.tafelZeigen, haken: () => tafelOffen },
     { name: 'Welche Hilfe wann…', tun: B.welcheHilfe },
-    { name: 'Einstellungen…', tun: () => Einstellungen.oeffnen(), taste: 'F9' },
+    { name: 'Optionen…', tun: () => Einstellungen.oeffnen('ki'), taste: 'F9' },
     strich,
     { name: 'Was die Schreibhilfe sucht…', tun: () => melde(
       'Gesucht wird, was ein Rechtschreibprüfer nicht finden kann: das/dass, '
@@ -5180,6 +5246,31 @@ function auswahlZurueck() {
 }
 let alleSchriften = SCHRIFTEN.slice();
 let schriftJetzt = Speicher.lies('schrift', SCHRIFTEN[0]);
+
+/* ------------------------------------------------------------
+   Die Grundschrift des Blattes
+
+   Die Schrift in der Werkzeugleiste färbt das Markierte. Was ein neu
+   angefangener Text bekommt, stand bisher nur im Stylesheet — 12pt Georgia,
+   für jeden gleich. Wer immer in 14pt schreibt, stellte es bei jedem
+   Dokument von Hand ein.
+
+   Gesetzt wird am Element, nicht als Regel: Ein <span> mit eigener Schrift
+   im Text bleibt davon unberührt, und beim Speichern nach ODF wandert die
+   Grundschrift als Absatzvorlage mit.
+   ------------------------------------------------------------ */
+function grundschriftAnwenden(name, groesse) {
+  if (name !== undefined) Speicher.schreib('grundschrift', name || '');
+  if (groesse !== undefined) Speicher.schreib('grundgroesse', Number(groesse) || 12);
+
+  const schrift = Speicher.lies('grundschrift', '');
+  const punkte = Number(Speicher.lies('grundgroesse', 12)) || 12;
+  for (const teil of [feld, $('kopfzeile'), $('fusszeile')]) {
+    if (!teil) continue;
+    teil.style.fontFamily = schrift ? '"' + schrift + '"' : '';
+    teil.style.fontSize = punkte + 'pt';
+  }
+}
 
 function schriftKnopfBauen() {
   const huelle = document.createElement('span');
@@ -6567,10 +6658,30 @@ Einstellungen.verbinde({
   marken: () => marken,
   markenSetzen: (an) => { if (an !== marken) B.markenZeigen(); },
   neuZeichnen: kiKnoepfeAuffrischen,
+
+  /* Die Optionenseite füllt jetzt auch Listen, die das Programm führt. Sie
+     hier zu reichen ist richtiger, als sie ein zweites Mal zu schreiben:
+     Zwei Listen derselben Sache laufen irgendwann auseinander. */
+  /* „alleSchriften" trägt die des Rechners, sobald sie da sind — SCHRIFTEN
+     ist nur die kurze Startliste, mit der das Fenster aufgeht. In den
+     Optionen stünden sonst zehn statt neunhundert. */
+  schriften: () => (alleSchriften && alleSchriften.length ? alleSchriften : SCHRIFTEN),
+  groessen: () => GROESSEN,
+  pruefsprachen: () => SPRACHEN_PRUEFUNG,
+  schriftJetzt: () => Speicher.lies('grundschrift', ''),
+  groesseJetzt: () => Number(Speicher.lies('grundgroesse', 12)),
+  grundschriftSetzen: (name, groesse) => grundschriftAnwenden(name, groesse),
+  pruefspracheJetzt: () => Speicher.lies('pruefsprache', 'de'),
+  pruefspracheSetzen: (kennung) => {
+    Speicher.schreib('pruefsprache', kennung);
+    feld.lang = kennung;
+    feld.blur(); feld.focus();
+  },
 });
 
 /* Das Zuletztgeschriebene zurückholen — wie in der App. Ein Fenster, das
    beim Öffnen leer ist, obwohl gestern etwas drinstand, ist ein Verlust. */
+grundschriftAnwenden();
 Dateien.stileSetzen(Speicher.lies('importstil', ''));
 Dokument.setzeInhalt(Speicher.lies('inhalt', '<p><br></p>'));
 $('kopfzeile').innerHTML = Speicher.lies('kopfinhalt', '');

@@ -412,6 +412,90 @@ def stimmen_lesen():
     return stimmen[:60]
 
 
+def teile_lesen():
+    """Was zusätzlich geholt wurde und ob es da ist.
+
+    Drei Dinge liegen außerhalb des Programms, weil sie zu groß sind. Nur
+    der Rechner weiß, ob sie eingerichtet sind — die Seite kann in keinen
+    Ordner sehen, und das ist auch gut so.
+    """
+    def groesse_von(*wege):
+        summe = 0
+        for weg in wege:
+            if not weg or not os.path.exists(weg):
+                continue
+            if os.path.isfile(weg):
+                summe += os.path.getsize(weg)
+                continue
+            for wurzel, _, dateien in os.walk(weg):
+                for datei in dateien:
+                    try:
+                        summe += os.path.getsize(os.path.join(wurzel, datei))
+                    except OSError:
+                        pass
+        return summe
+
+    def lesbar(zahl):
+        if zahl <= 0:
+            return "—"
+        if zahl >= 1024 ** 3:
+            return "%.1f GB" % (zahl / 1024 ** 3)
+        return "%d MB" % round(zahl / 1024 ** 2)
+
+    stimmen = piper_stimmen()
+    _, piper_ort = piper_programm()
+
+    return [
+        {
+            "name": "LibreOffice",
+            "wofuer": "Word-Dateien, PDF und EPUB",
+            "holen": "wird beim ersten Bedarf geholt",
+            "da": bool(motor_finden()),
+            "groesse": lesbar(groesse_von(EIGENER_MOTOR)) if os.path.isdir(EIGENER_MOTOR)
+                       else ("im System" if shutil.which("soffice") else "~700 MB"),
+        },
+        {
+            "name": "LanguageTool",
+            "wofuer": "„Gründlich prüfen\" — Grammatik über die eigenen Regeln hinaus",
+            "holen": ("wird beim ersten Aufruf geholt" if shutil.which("java")
+                      else "braucht Java — das fehlt auf diesem Rechner"),
+            "da": os.path.isdir(LT_ORDNER) and bool(shutil.which("java")),
+            "groesse": lesbar(groesse_von(LT_ORDNER)) if os.path.isdir(LT_ORDNER)
+                       else "~400 MB",
+        },
+        {
+            "name": "Stimmen zum Vorlesen"
+                    + (" (%d)" % len(stimmen) if stimmen else ""),
+            "wofuer": "aufgenommene Stimmen statt der blechernen des Systems",
+            "holen": "./stimme-holen.sh",
+            "da": bool(stimmen),
+            "groesse": lesbar(groesse_von(piper_ort)) if piper_ort else "~90 MB",
+        },
+    ]
+
+
+def ordner_waehlen():
+    """Fragt nach einem Ordner — für „Pfade" in den Optionen."""
+    antwort = {}
+    fertig = threading.Event()
+
+    def zeigen():
+        dialog = Gtk.FileChooserDialog(title="Ordner zum Speichern",
+                                       action=Gtk.FileChooserAction.SELECT_FOLDER)
+        dialog.add_buttons("Abbrechen", Gtk.ResponseType.CANCEL,
+                           "Wählen", Gtk.ResponseType.ACCEPT)
+        dialog.set_current_folder(LETZTER_ORDNER["weg"] or os.path.expanduser("~"))
+        if dialog.run() == Gtk.ResponseType.ACCEPT:
+            antwort["ordner"] = dialog.get_filename() or ""
+        dialog.destroy()
+        fertig.set()
+        return False
+
+    GLib.idle_add(zeigen)
+    fertig.wait(300)
+    return antwort.get("ordner", "")
+
+
 def bildschirmfoto(was):
     """Nimmt den Bildschirm auf und gibt das Bild zurück.
 
@@ -841,6 +925,10 @@ class Leise(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(ladung)
             return
 
+        if self.path.split("?")[0] == "/teile":
+            self.auskunft(teile_lesen())
+            return
+
         if self.path.split("?")[0] == "/stimmen":
             ladung = json.dumps({
                 "gut": piper_stimmen(),   # die natürlichen, beste zuerst
@@ -953,6 +1041,10 @@ class Leise(http.server.SimpleHTTPRequestHandler):
                 self.fehler_melden(500, str(grund))
                 return
             self.auskunft({"spricht": lief})
+            return
+
+        if adresse.path == "/ordner-waehlen":
+            self.auskunft({"ordner": ordner_waehlen()})
             return
 
         if adresse.path == "/vorlesen-stopp":
