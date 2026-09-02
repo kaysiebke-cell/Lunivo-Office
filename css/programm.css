@@ -185,7 +185,21 @@ body{
   box-shadow:0 1px 3px rgba(0,0,0,.4),0 12px 32px rgba(0,0,0,.28);
   padding:2cm;
   transform-origin:top center;
+  /* Damit das Dokument die Seite ausfüllt. Vorher stand am Dokument
+     „min-height:100%" — das läuft ins Leere, weil das Blatt keine feste
+     Höhe hat, sondern nur eine Mindesthöhe. Also war das Schreibfeld bei
+     leerem Dokument eine Zeile hoch, und die restlichen 28 cm weiße Seite
+     gehörten zum Rand.
+
+     Ein Klick mitten auf die Seite landete damit NICHT im Text. Stand die
+     Fußzeile an, landete er in ihr — und die sieht bei leerem Dokument aus
+     wie das Dokument. Genau so ist ein ganzer Absatz in der Fußzeile
+     gelandet, und die Prüfung meldete „Es steht noch kein Text da." */
+  display:flex;flex-direction:column;
 }
+/* Die Ecken hängen über dem Blatt, nicht darin — sonst wären sie im
+   Flusslayout ein Kasten, der Platz nimmt. */
+.blatt__marken{position:absolute;inset:0;pointer-events:none}
 
 /* Die vier Ecken, die zeigen, wo der Text aufhört — genau wie die
    „Textbegrenzungen" in LibreOffice. Sie werden nicht mitgedruckt. */
@@ -200,7 +214,7 @@ body{
 .blatt--ohne-marken .blatt__marken{display:none}
 
 .dokument{
-  outline:0;min-height:100%;
+  outline:0;flex:1 1 auto;
   font:12pt/1.55 Georgia,"Liberation Serif","Times New Roman",serif;
   white-space:pre-wrap;word-wrap:break-word;
 }
@@ -593,6 +607,16 @@ button.wz-wahl--schrift{
 }
 .kopfzeile{border-bottom:1px dashed var(--rand);margin-bottom:4mm}
 .fusszeile{border-top:1px dashed var(--rand);margin-top:4mm}
+/* Solange nichts drinsteht, sagen sie, was sie sind. Ein leeres Feld mit
+   gestrichelter Linie sieht aus wie das Blatt — und wer hineintippt, merkt
+   nicht, dass sein Text nicht im Dokument steht. */
+.kopfzeile:empty::before{content:'Kopfzeile'}
+.fusszeile:empty::before{content:'Fußzeile'}
+.kopfzeile:empty::before,.fusszeile:empty::before{
+  color:var(--marke);font-size:9pt;font-style:italic;
+  pointer-events:none;
+}
+.kopfzeile:focus:empty::before,.fusszeile:focus:empty::before{opacity:.4}
 .kopfzeile[hidden],.fusszeile[hidden]{display:none}
 .seitenzahl{color:var(--schrift-3)}
 .seitenzahl::after{content:' –'}
