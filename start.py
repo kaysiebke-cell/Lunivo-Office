@@ -187,6 +187,89 @@ def languagetool_fragen(text):
 # und nicht danebenreden.
 VORLESER = {"lauf": None}
 
+# Eine Stimme, die nicht nach Maschine klingt.
+#
+# speech-dispatcher spricht auf den meisten Rechnern über espeak-ng, und das
+# ist ein Formantsynthesizer: Er rechnet Laute zusammen, statt sie aus
+# Aufnahmen zu setzen. Er KANN nicht menschlich klingen — das ist Bauart, nicht
+# Einstellung, und seine hundert „Stimmen" ändern nur die Klangfarbe.
+#
+# Wer sich seinen Brief vorlesen lässt, um Fehler zu hören, hört bei espeak vor
+# allem espeak. Piper ist ein neuronaler Synthesizer, läuft offline auf der CPU
+# und braucht für viereinhalb Sekunden Ton eine Viertelsekunde. Liegt er da,
+# spricht er; sonst bleibt es bei spd-say.
+# Gesucht wird an zwei Stellen. Die Schreibhilfe holt dieselbe Stimme, und
+# 90 MB ein zweites Mal zu laden wäre nur, um den Ordner passend zu benennen.
+PIPER_ORTE = [
+    os.path.expanduser("~/.local/share/schreibprogramm/piper"),
+    os.path.expanduser("~/.local/share/schreibhilfe/piper"),
+]
+
+
+def piper_finden():
+    """Der Ordner, in dem Programm UND Stimme liegen — oder nichts."""
+    for ort in PIPER_ORTE:
+        programm = os.path.join(ort, "piper", "piper")
+        stimme = os.path.join(ort, "de_DE-thorsten-medium.onnx")
+        if (os.path.isfile(programm) and os.access(programm, os.X_OK)
+                and os.path.isfile(stimme)):
+            return programm, stimme
+    return None, None
+
+
+def piper_da():
+    """Ist die gute Stimme eingerichtet — und lässt sie sich abspielen?"""
+    programm, _ = piper_finden()
+    return bool(programm and (shutil.which("paplay") or shutil.which("aplay")))
+
+
+def piper_tempo(tempo):
+    """Das Tempo von spd-say (−100 bis 100) in Pipers Maß übersetzen.
+
+    Piper rechnet umgekehrt: „length_scale" ist die Länge eines Lautes, größer
+    heißt langsamer. 0 bleibt 1,0; −100 wird zu 1,5 und +100 zu 0,6.
+    """
+    t = max(-100, min(100, int(tempo or 0)))
+    return 1.0 - t * (0.4 / 100) if t > 0 else 1.0 - t * (0.5 / 100)
+
+
+def vorlesen_mit_piper(text, tempo):
+    """Piper schreibt rohen Ton, das Abspielprogramm nimmt ihn direkt entgegen.
+
+    Über eine Zwischendatei zu gehen hieße: erst den ganzen Brief rechnen, dann
+    anfangen. So beginnt der Ton nach dem ersten Satz.
+    """
+    rate = "22050"      # steht so in de_DE-thorsten-medium.onnx.json
+    if shutil.which("paplay"):
+        abspielen = ["paplay", "--raw", "--rate=" + rate,
+                     "--format=s16le", "--channels=1"]
+    else:
+        abspielen = ["aplay", "-q", "-r", rate, "-f", "S16_LE", "-c", "1",
+                     "-t", "raw", "-"]
+
+    programm, stimme = piper_finden()
+    sprechen = subprocess.Popen(
+        [programm, "--model", stimme, "--output_raw",
+         "--length_scale", "%.2f" % piper_tempo(tempo)],
+        stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL, start_new_session=True)
+    ton = subprocess.Popen(abspielen, stdin=sprechen.stdout,
+                           stderr=subprocess.DEVNULL, start_new_session=True)
+    # Sonst bekäme piper kein SIGPIPE, wenn das Abspielen abbricht.
+    sprechen.stdout.close()
+
+    def fuettern():
+        try:
+            sprechen.stdin.write(text.encode("utf-8"))
+            sprechen.stdin.close()
+        except (OSError, ValueError):
+            pass
+
+    threading.Thread(target=fuettern, daemon=True).start()
+    VORLESER["lauf"] = ton
+    VORLESER["rechner"] = sprechen
+    return True
+
 
 def vorlesen(text, stimme, tempo):
     """Liest den Text vor — über den Sprachdienst des Systems.
@@ -199,7 +282,7 @@ def vorlesen(text, stimme, tempo):
     """
     vorlesen_beenden()
 
-    if not shutil.which("spd-say"):
+    if not piper_da() and not shutil.which("spd-say"):
         raise FileNotFoundError(
             "Auf diesem Rechner ist keine Sprachausgabe eingerichtet "
             "(es fehlt speech-dispatcher).")
@@ -209,6 +292,11 @@ def vorlesen(text, stimme, tempo):
     text = text.strip()[:20000]
     if not text:
         return False
+
+    # Die gute Stimme zuerst. „stimme" meint eine von espeak; wer sich dort
+    # ausdrücklich eine ausgesucht hat, bekommt sie auch.
+    if piper_da() and not stimme:
+        return vorlesen_mit_piper(text, tempo)
 
     befehl = ["spd-say", "-l", "de", "-w"]
     if stimme:
@@ -223,13 +311,20 @@ def vorlesen(text, stimme, tempo):
 
 def vorlesen_beenden():
     """Hält das Vorlesen an — auch das, was noch in der Warteschlange steht."""
-    lauf = VORLESER["lauf"]
-    VORLESER["lauf"] = None
-    if lauf and lauf.poll() is None:
-        try:
-            lauf.terminate()
-        except OSError:
-            pass
+    # Bei Piper sind es zwei Prozesse: einer rechnet, einer spielt ab. Nur den
+    # zweiten anzuhalten hieße, dass der erste weiterrechnet und in ein totes
+    # Rohr schreibt.
+    for schluessel in ("lauf", "rechner"):
+        vorgang = VORLESER.get(schluessel)
+        VORLESER[schluessel] = None
+        if vorgang and vorgang.poll() is None:
+            try:
+                vorgang.terminate()
+                # Abholen, sonst bleibt ein Zombie stehen, bis zufällig das
+                # nächste Vorlesen ihn einsammelt.
+                vorgang.wait(timeout=2)
+            except (OSError, subprocess.SubprocessError):
+                pass
     if shutil.which("spd-say"):
         try:
             subprocess.run(["spd-say", "-C"], timeout=5)     # Warteschlange leeren
@@ -686,7 +781,10 @@ class Leise(http.server.SimpleHTTPRequestHandler):
             return
 
         if self.path.split("?")[0] == "/stimmen":
-            ladung = json.dumps(stimmen_lesen()).encode("utf-8")
+            ladung = json.dumps({
+                "gut": piper_da(),        # ist die natürliche Stimme da?
+                "stimmen": stimmen_lesen(),
+            }).encode("utf-8")
             self.send_response(200)
             self.send_header("Content-Type", "application/json; charset=utf-8")
             self.send_header("Content-Length", str(len(ladung)))
@@ -948,15 +1046,24 @@ def server_starten():
 
     Ein Versuch, den Port zu belegen, beantwortet beide Fragen auf einmal:
     Klappt es, liefern wir selbst. Klappt es nicht, liefert wirklich jemand.
+
+    Ein einziger Versuch reicht dafür aber nicht. Wer das Fenster schließt und
+    gleich wieder öffnet, trifft den Port noch belegt — vom eigenen, gerade
+    sterbenden Vorgänger. Dieses Fenster hielte ihn für ein anderes, das
+    liefert, und bliebe leer zurück. Deshalb ein paar Anläufe über zwei
+    Sekunden: Wer wirklich liefert, ist auch dann noch da.
     """
     aufgabe = functools.partial(Leise, directory=HIER)
-    try:
-        server = http.server.ThreadingHTTPServer(("127.0.0.1", PORT), aufgabe)
-    except OSError:
-        return PORT                                     # ein anderes Fenster liefert
+    for _versuch in range(10):
+        try:
+            server = http.server.ThreadingHTTPServer(("127.0.0.1", PORT), aufgabe)
+        except OSError:
+            time.sleep(0.2)
+            continue
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        return PORT
 
-    threading.Thread(target=server.serve_forever, daemon=True).start()
-    return PORT
+    return PORT                                         # ein anderes Fenster liefert
 
 
 def speichern_fragen(_umgebung, ladung):

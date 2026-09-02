@@ -4035,20 +4035,37 @@ B.vorlesenStopp = async () => {
 
 B.stimmeWaehlen = async () => {
   let stimmen = [];
+  let gut = false;
   try {
     const antwort = await fetch('stimmen');
-    if (antwort.ok) stimmen = await antwort.json();
+    if (antwort.ok) {
+      const daten = await antwort.json();
+      stimmen = daten.stimmen || [];
+      gut = !!daten.gut;
+    }
   } catch (e) { /* kein eigenes Fenster */ }
 
-  if (!stimmen.length) {
+  if (!stimmen.length && !gut) {
     melde('Es sind keine deutschen Stimmen eingerichtet.');
     return;
   }
 
+  /* Die erste Wahl ist keine unter vielen. Ist Piper eingerichtet, ist sie die
+     einzige, die nicht nach Maschine klingt — das gehört dazugeschrieben, sonst
+     probiert man sich durch hundert espeak-Varianten und wundert sich. */
+  const ersteWahl = gut
+    ? ['', 'Thorsten — natürliche Stimme']
+    : ['', 'Voreinstellung'];
+
   fenster('Stimme und Tempo', [
-    { art: 'satz', text: stimmen.length + ' deutsche Stimmen stehen zur Wahl.' },
+    { art: 'satz', text: gut
+        ? 'Thorsten spricht mit einer aufgenommenen Stimme (Piper). Die '
+          + stimmen.length + ' anderen kommen von espeak und klingen '
+          + 'zwangsläufig blechern — sie sind nur dann die bessere Wahl, wenn '
+          + 'Thorsten ein Wort falsch betont.'
+        : stimmen.length + ' deutsche Stimmen stehen zur Wahl.' },
     { schluessel: 'stimme', name: 'Stimme', art: 'auswahl',
-      werte: [['', 'Voreinstellung']].concat(stimmen.map((n) => [n, n])),
+      werte: [ersteWahl].concat(stimmen.map((n) => [n, n])),
       wert: Speicher.lies('stimme', '') },
     { schluessel: 'tempo', name: 'Tempo (−100 bis 100)', art: 'number',
       wert: String(Speicher.lies('lesetempo', 0)), schritt: '10' },

@@ -41,7 +41,19 @@ ein angestrichenes Wort zeigt die Vorschläge — wie in Word.
 ![Rechtsklick auf ein angestrichenes Wort: darüber steht die Erklärung, darunter der Vorschlag „glaube, dass“ zum Übernehmen](bilder/rechtsklick.png)
 
 **Vorlesen** (F4). Über einen Fehler liest das Auge hinweg; das Ohr stolpert
-darüber. 60 deutsche Stimmen, Tempo einstellbar.
+darüber. Tempo einstellbar.
+
+Die Stimmen des Systems (espeak-ng) klingen dabei zwangsläufig blechern — das
+ist Bauart, nicht Einstellung: Sie rechnen Laute zusammen, statt sie aus
+Aufnahmen zu setzen. Wer sich einen ganzen Brief anhören will, hört sonst vor
+allem espeak. Ein Aufruf holt deshalb eine aufgenommene Stimme:
+
+    ./stimme-holen.sh
+
+Das lädt Piper und die deutsche Stimme „Thorsten" nach `~/.local/share/` —
+90 MB, offline, kostenlos, nichts im System und nichts im Projekt. Danach
+spricht sie von selbst; die espeak-Stimmen bleiben unter *Stimme und Tempo*
+zur Wahl. Zum Entfernen genügt es, den Ordner zu löschen.
 
 **Wortvorhersage.** Ab drei Buchstaben stehen passende Wörter zur Wahl.
 Wiedererkennen ist leichter als Erinnern.
@@ -100,6 +112,7 @@ werden bei Bedarf nach `~/.local/share/schreibprogramm/` gelegt:
 |---|---|---|---|
 | LibreOffice | Word-Dateien, PDF, EPUB | ~700 MB | nur dafür |
 | [LanguageTool](https://languagetool.org/) | „Gründlich prüfen" | ~400 MB | nein, freiwillig |
+| [Piper](https://github.com/rhasspy/piper) + Thorsten | eine Stimme, die nicht nach Maschine klingt | ~90 MB | nein, `./stimme-holen.sh` |
 
 Ist LibreOffice im System installiert, genügt das auch. LanguageTool läuft
 als **eigener Prozess** — seine LGPL-Lizenz berührt dieses Programm nicht.
@@ -141,6 +154,7 @@ deshalb wie der übrige Code unter MIT.
     daten/woerter.txt    355.321 deutsche Wörter
     start.py             Fenster, Server, Schriften, LibreOffice, Vorlesen
     starten.sh           startet es und schreibt den Menüeintrag
+    stimme-holen.sh      holt Piper und die Stimme „Thorsten" (freiwillig)
 
 Ausführlicher steht alles in [LIESMICH.md](LIESMICH.md).
 
