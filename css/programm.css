@@ -1622,3 +1622,56 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 }
 .ki__hinweis[hidden]{display:none}
 .knopf--klein{padding:4px 10px;font-size:11.5px}
+
+/* ============================================================
+   Schnellzugriff auf die Stufen — unter dem Prüfen-Knopf
+   ------------------------------------------------------------
+   Drei Schalter lagen in Extras ▸ Beim Schreiben. Wer sie nicht kennt,
+   findet sie dort nie. Hier stehen sie, wo man beim Schreiben hinsieht.
+   ============================================================ */
+.schnell{
+  display:flex;flex-wrap:wrap;align-items:center;gap:5px;
+  margin-top:9px;
+}
+.schnell__marke{
+  padding:3px 9px;border-radius:11px;
+  border:1px solid var(--rand);background:none;
+  color:var(--schrift-3);font:inherit;font-size:11px;
+  cursor:pointer;
+}
+.schnell__marke:hover{color:var(--schrift);border-color:var(--schrift-3)}
+/* An heißt an — grün und gefüllt. Eine Marke, die sich nur in der
+   Randfarbe unterscheidet, liest man nicht im Vorbeigehen. */
+.schnell__marke--an{
+  background:var(--gruen);border-color:var(--gruen);
+  color:#fff;font-weight:600;
+}
+.schnell__marke--an:hover{color:#fff}
+.schnell__mehr{
+  margin-left:auto;padding:3px 2px;
+  background:none;border:none;
+  color:var(--blau-hell);font:inherit;font-size:11px;
+  cursor:pointer;text-decoration:underline;
+}
+
+/* Dieselben Schalter auf der Seite „Welche Hilfe wann" — dort ist Platz
+   für das Wort statt nur für die Farbe. */
+.stufe__schalter{
+  flex:0 0 auto;min-width:46px;
+  padding:3px 10px;border-radius:11px;
+  border:1px solid var(--rand);background:none;
+  color:var(--schrift-3);font:inherit;font-size:11px;
+  cursor:pointer;
+}
+.stufe__schalter--an{
+  background:var(--gruen);border-color:var(--gruen);
+  color:#fff;font-weight:600;
+}
+.stufe__jetzt{
+  flex:0 0 auto;min-width:46px;
+  padding:3px 10px;border-radius:11px;
+  border:1px solid var(--blau);background:none;
+  color:var(--blau-hell);font:inherit;font-size:11px;cursor:pointer;
+}
+.stufe__jetzt:hover{background:var(--blau);color:#fff}
+.stufe__leer{flex:0 0 auto;min-width:46px}

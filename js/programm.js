@@ -4859,10 +4859,60 @@ B.tastenHilfe = () => {
       + 'Strg+U  Unterstrichen Strg+F  Suchen\n'
       + 'Strg++  Größer        Strg+−  Kleiner\n'
       + 'Strg+Enter  Seitenumbruch\n'
-      + 'F5  Seitenleiste      F7  Prüfen\n'
+      + 'F5  Seitenleiste      F6  Welche Hilfe wann\n'
+      + 'F4  Vorlesen          F7  Prüfen\n'
       + 'F8  KI-Korrektur      F9  Einstellungen' },
   ], () => {}, 'Schließen');
 };
+
+/* ------------------------------------------------------------
+   Schnellzugriff auf die Stufen
+
+   Drei Hilfen lassen sich an- und ausschalten, und alle drei lagen in
+   Extras ▸ Beim Schreiben. Wer sie nicht kennt, findet sie dort nie — und
+   genau das ist passiert: Die Wortvorhersage stand ab Werk auf aus, und
+   niemand konnte wissen, dass es sie überhaupt gibt.
+
+   Jetzt stehen sie unter dem Prüfen-Knopf, wo man beim Schreiben ohnehin
+   hinsieht. Ein Klick schaltet, die Farbe sagt den Stand.
+   ------------------------------------------------------------ */
+const SCHNELL = [
+  { name: 'Wellen',     lang: 'Rote Wellenlinien unter unbekannten Wörtern',
+    an: () => feld.spellcheck,      tun: () => B.rechtschreibung() },
+  { name: 'Vorhersage', lang: 'Wortvorhersage ab drei Buchstaben',
+    an: () => vorhersageAn,         tun: () => B.vorhersage() },
+  { name: 'AutoKorr',   lang: 'AutoKorrektur beim Tippen',
+    an: () => autokorrekturAn,      tun: () => B.autokorrektur() },
+];
+
+function schnellzugriffBauen() {
+  const kiste = $('hilfe-schnell');
+  if (!kiste) return;
+  kiste.innerHTML = '';
+
+  for (const stufe of SCHNELL) {
+    const k = document.createElement('button');
+    k.type = 'button';
+    const an = !!stufe.an();
+    k.className = 'schnell__marke' + (an ? ' schnell__marke--an' : '');
+    k.textContent = stufe.name;
+    k.title = stufe.lang + (an ? ' — an' : ' — aus');
+    k.setAttribute('aria-pressed', an ? 'true' : 'false');
+    k.addEventListener('mousedown', (e) => e.preventDefault());
+    k.addEventListener('click', () => { stufe.tun(); schnellzugriffBauen(); });
+    kiste.appendChild(k);
+  }
+
+  /* Und der Weg zur ganzen Erklärung — für den, der wissen will, was die
+     drei Wörter bedeuten und was es sonst noch gibt. */
+  const mehr = document.createElement('button');
+  mehr.type = 'button';
+  mehr.className = 'schnell__mehr';
+  mehr.textContent = 'Welche Hilfe wann?';
+  mehr.title = 'Alle sechs Stufen erklärt (F6)';
+  mehr.addEventListener('click', () => B.welcheHilfe());
+  kiste.appendChild(mehr);
+}
 
 /* ============================================================
    Welche Hilfe wann
@@ -4874,21 +4924,29 @@ B.tastenHilfe = () => {
    niemand aufmacht.
    ============================================================ */
 
+/* Ein sechster Wert macht die Zeile schaltbar: {an, tun}. Die Seite
+   erklärt die Stufen ohnehin — dann soll man sie hier auch umlegen können,
+   statt sich die Erklärung zu merken und danach ins Menü zu gehen. */
 const HILFE_STUFEN = [
   ['1', 'Rote Wellenlinien', '', 'Gibt es das Wort überhaupt?',
-   'sofort beim Tippen'],
+   'sofort beim Tippen',
+   { an: () => feld.spellcheck, tun: () => B.rechtschreibung() }],
   ['1', 'Wortvorhersage', '', 'Wie ging das Wort weiter?',
-   'ab drei Buchstaben'],
+   'ab drei Buchstaben',
+   { an: () => vorhersageAn, tun: () => B.vorhersage() }],
+  ['1', 'AutoKorrektur', '', 'Bessert das Offensichtliche beim Tippen',
+   'zum Beispiel „dass" nach Komma',
+   { an: () => autokorrekturAn, tun: () => B.autokorrektur() }],
   ['2', 'Rechtsklick auf ein Wort', '', 'Welches Wort war gemeint?',
    'sucht auch nach dem Klang'],
   ['3', 'Prüfen', 'F7', 'Ist es das richtige Wort? das/dass, wider/wieder',
-   'die Schreibhilfe rechts'],
+   'die Schreibhilfe rechts', { jetzt: () => pruefen() }],
   ['4', 'Vorlesen', 'F4', 'Klingt der Satz rund?',
-   'Stimmen aus dem System'],
+   'Stimmen aus dem System', { jetzt: () => B.vorlesen() }],
   ['5', 'Gründlich prüfen', '', 'Stimmt die Grammatik?',
-   'LanguageTool, einmal 400 MB'],
+   'LanguageTool, einmal 400 MB', { jetzt: () => B.gruendlichPruefen() }],
   ['6', 'KI-Korrektur', 'F8', 'Versteht das jemand? Passt der Ton?',
-   'Internet und Guthaben'],
+   'Internet und Guthaben', { jetzt: () => kiKorrigieren() }],
 ];
 
 /* Die drei Etiketten sind dieselben, die auch auf den Karten stehen —
@@ -4925,7 +4983,7 @@ function hilfeSeiteBauen() {
 
   const treppe = document.createElement('div');
   treppe.className = 'stufen';
-  for (const [zahl, name, taste, frage, dazu] of HILFE_STUFEN) {
+  for (const [zahl, name, taste, frage, dazu, schalter] of HILFE_STUFEN) {
     const zeile = document.createElement('div');
     zeile.className = 'stufe';
 
@@ -4959,6 +5017,44 @@ function hilfeSeiteBauen() {
     rechts.className = 'stufe__dazu';
     rechts.textContent = dazu;
     zeile.appendChild(rechts);
+
+    /* Was sich schalten lässt, bekommt eine Marke; was man nur auslösen
+       kann, einen Knopf. Eine Stufe wie „Rechtsklick auf ein Wort" hat
+       beides nicht — die ist einfach da. */
+    if (schalter && schalter.an) {
+      const marke = document.createElement('button');
+      marke.type = 'button';
+      const an = !!schalter.an();
+      marke.className = 'stufe__schalter' + (an ? ' stufe__schalter--an' : '');
+      marke.textContent = an ? 'an' : 'aus';
+      marke.setAttribute('aria-pressed', an ? 'true' : 'false');
+      marke.title = name + (an ? ' ausschalten' : ' einschalten');
+      marke.addEventListener('click', () => {
+        schalter.tun();
+        marke.className = 'stufe__schalter' + (schalter.an() ? ' stufe__schalter--an' : '');
+        marke.textContent = schalter.an() ? 'an' : 'aus';
+        marke.setAttribute('aria-pressed', schalter.an() ? 'true' : 'false');
+      });
+      zeile.appendChild(marke);
+    } else if (schalter && schalter.jetzt) {
+      const knopf = document.createElement('button');
+      knopf.type = 'button';
+      knopf.className = 'stufe__jetzt';
+      knopf.textContent = 'jetzt';
+      knopf.title = name + ' jetzt ausführen';
+      knopf.addEventListener('click', () => {
+        /* Das Fenster zumachen, sonst liegt die Erklärung über dem, was
+           sie gerade ausgelöst hat. */
+        const grund = knopf.closest('.dialoggrund');
+        if (grund) grund.remove();
+        schalter.jetzt();
+      });
+      zeile.appendChild(knopf);
+    } else {
+      const leer = document.createElement('span');
+      leer.className = 'stufe__leer';
+      zeile.appendChild(leer);
+    }
 
     treppe.appendChild(zeile);
   }
@@ -5706,6 +5802,10 @@ function messenUndKippen(klappe) {
 }
 
 function menueBauen() {
+  /* Die drei Schalter stehen an zwei Stellen — im Menü und in der
+     Seitenleiste. Wer einen im Menü umlegt, soll die Marke daneben
+     wechseln sehen; sonst widersprechen sich die beiden. */
+  schnellzugriffBauen();
   const leiste = $('menueleiste');
   leiste.innerHTML = '';
   for (const [titel, punkte] of MENUES) {
@@ -7171,6 +7271,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'F5') { e.preventDefault(); B.tafelZeigen(); return; }
   if (e.key === 'Escape' && lesemodus) { B.lesemodus(); return; }
   if (e.key === 'Escape' && Einstellungen.offen()) { Einstellungen.schliessen(); return; }
+  if (e.key === 'F6') { e.preventDefault(); B.welcheHilfe(); return; }
   if (e.key === 'Escape' && !$('suchleiste').hidden) { sucheZeigen(false); return; }
   if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
 

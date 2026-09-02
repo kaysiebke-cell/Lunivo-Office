@@ -59,6 +59,12 @@ Tabellen, Bilder, Diagramme, Formen, Formeln, Kopf- und Fußzeilen,
 Fußnoten, Endnoten, Inhalts-, Abbildungs- und Stichwortverzeichnis,
 Zitate mit Quellenverwaltung, Seriendruck, Umschläge, Etiketten.
 
+**Schnellzugriff.** Unter dem Prüfen-Knopf stehen drei Marken — Wellen,
+Vorhersage, AutoKorrektur. Grün heißt an, ein Klick schaltet. Sie lagen
+vorher in *Extras ▸ Beim Schreiben*, wo sie niemand fand. Daneben führt
+**Welche Hilfe wann?** (F6) auf die Seite, die alle sechs Stufen erklärt —
+und dort lässt sich jede auch gleich umlegen oder auslösen.
+
 **Prüfen.** Der Knopf *Prüfen* (F7) legt jeden Fund als Karte in die
 Seitenleiste und zieht im Text eine Wellenlinie darunter. Rechtsklick auf
 ein angestrichenes Wort zeigt die Vorschläge — wie in Word.
