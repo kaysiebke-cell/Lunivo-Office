@@ -8334,14 +8334,24 @@ const SCHRIFT_HAPPEN = 40;
 let schriftTreffer = [];      // die gefilterte Liste, flach: Gruppen und Namen
 let schriftGezeigt = 0;
 
+/* Schriften, die eigens fürs leichtere Lesen gemacht sind. Sie liegen
+   nicht im Projekt — ./schrift-holen.sh holt sie. Steht eine davon auf dem
+   Rechner, gehört sie ganz nach oben: Wer sie geholt hat, sucht sie, und
+   zwischen neunhundert anderen findet man sie nicht. */
+const LESESCHRIFTEN = ['OpenDyslexic', 'Lexend', 'Atkinson Hyperlegible'];
+
 function schriftListeBauen(suche = '') {
   const wort = suche.trim().toLowerCase();
   const passt = (name) => !wort || name.toLowerCase().includes(wort);
-  const bewaehrt = SCHRIFTEN.filter((s) => alleSchriften.includes(s));
-  const uebrige = alleSchriften.filter((s) => !bewaehrt.includes(s));
+  const lesbar = LESESCHRIFTEN.filter((s) => alleSchriften.includes(s));
+  const bewaehrt = SCHRIFTEN.filter(
+    (s) => alleSchriften.includes(s) && !lesbar.includes(s));
+  const uebrige = alleSchriften.filter(
+    (s) => !bewaehrt.includes(s) && !lesbar.includes(s));
 
   schriftTreffer = [];
-  for (const [titel, namen] of [['Für Fließtext', bewaehrt.length ? bewaehrt : SCHRIFTEN],
+  for (const [titel, namen] of [['Leichter zu lesen', lesbar],
+                                ['Für Fließtext', bewaehrt.length ? bewaehrt : SCHRIFTEN],
                                 ['Alle Schriften auf diesem Rechner', uebrige]]) {
     const treffer = namen.filter(passt);
     if (!treffer.length) continue;

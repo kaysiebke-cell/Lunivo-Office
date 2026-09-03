@@ -117,6 +117,8 @@ oben steht, an einer Stelle: kein reines Weiß, sondern ein Papierton für den
 Bildschirm — Creme, Sandgrau, Blassgelb, Blassblau, Blassgrün oder Blassrosa.
 Dazu mehr Luft zwischen Buchstaben, Wörtern und Zeilen, in vier Stufen. Und
 ein **Zeilenfokus**, der die Zeile hinterlegt, in der der Zeiger steht.
+Passend dazu holt `./schrift-holen.sh` drei Schriften, die eigens fürs
+leichtere Lesen gemacht sind (siehe unten).
 
 Das alles ändert das Dokument **nicht**. Kein Buchstabe der Datei wird davon
 anders, und auf dem Papier steht nachher, was dort stehen soll. Das ist der
@@ -270,11 +272,29 @@ Geschriebene und Gelernte:
 | LibreOffice | Word-Dateien, PDF, EPUB | ~700 MB | nur dafür |
 | [LanguageTool](https://languagetool.org/) | „Gründlich prüfen" | ~400 MB | nein, freiwillig |
 | [Piper](https://github.com/rhasspy/piper) + Thorsten | eine Stimme, die nicht nach Maschine klingt | ~90 MB | nein, `./stimme-holen.sh` |
+| Schriften zum leichteren Lesen | OpenDyslexic, Lexend, Atkinson Hyperlegible | ~4 MB | nein, `./schrift-holen.sh` |
 
 Ist LibreOffice im System installiert, genügt das auch. LanguageTool läuft
 als **eigener Prozess** — seine LGPL-Lizenz berührt dieses Programm nicht.
 
-Schreiben, Prüfen, Vorlesen und die ODF-Formate gehen ohne beides.
+Schreiben, Prüfen, Vorlesen und die ODF-Formate gehen ohne alles davon.
+
+**Die Schriften** landen unter `~/.local/share/fonts/lunivo-office` und
+stehen danach oben in der Schriftliste unter *Leichter zu lesen*:
+
+    ./schrift-holen.sh                  OpenDyslexic
+    ./schrift-holen.sh lexend atkinson  weitere dazu
+    ./schrift-holen.sh --alle           alle drei (~4 MB)
+    ./schrift-holen.sh --liste          zeigen, was es gibt
+    ./schrift-holen.sh --weg            wieder entfernen
+
+**OpenDyslexic** macht die Buchstaben unten schwerer als oben. Das gibt
+ihnen ein Gewicht, und ein Gewicht hat eine Richtung — b und d, p und q
+lassen sich dann nicht mehr so leicht verwechseln. **Lexend** ist nicht
+gegen das Verwechseln gemacht, sondern für das Tempo: weite Buchstaben,
+viel Luft dazwischen. **Atkinson Hyperlegible** kommt vom Braille Institute
+und unterscheidet, was einander ähnelt — I, l und 1; O und 0. Alle drei
+stehen unter der SIL Open Font License.
 
 ## Eine Hilfe, kein Ersatz
 
@@ -321,6 +341,7 @@ deshalb wie der übrige Code unter MIT.
     start.py             Fenster, Server, Schriften, LibreOffice, Vorlesen
     starten.sh           startet es und schreibt den Menüeintrag
     stimme-holen.sh      holt Piper und die Stimme „Thorsten“ (freiwillig)
+    schrift-holen.sh     holt Schriften zum leichteren Lesen (freiwillig)
 
     oberflaeche/         alles, was im Fenster zu sehen ist
       index.html         die Oberfläche

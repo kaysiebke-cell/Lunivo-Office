@@ -469,6 +469,26 @@ def stimmen_lesen():
     return stimmen[:60]
 
 
+SCHRIFTORDNER = os.path.expanduser("~/.local/share/fonts/lunivo-office")
+LESESCHRIFTEN = ("OpenDyslexic", "Lexend", "Atkinson Hyperlegible")
+
+
+def leseschriften_da():
+    """Welche der drei Leseschriften auf diesem Rechner liegen.
+
+    Gefragt wird fontconfig und nicht der Ordner: Wer eine davon schon
+    vorher aus der Paketverwaltung hatte, soll sie nicht ein zweites Mal
+    holen müssen.
+    """
+    try:
+        lauf = subprocess.run(["fc-list", ":", "family"], capture_output=True,
+                              timeout=10, encoding="utf-8", errors="replace")
+    except (OSError, subprocess.SubprocessError):
+        return []
+    vorhanden = lauf.stdout.lower()
+    return [name for name in LESESCHRIFTEN if name.lower() in vorhanden]
+
+
 def teile_lesen():
     """Was zusätzlich geholt wurde und ob es da ist.
 
@@ -501,6 +521,7 @@ def teile_lesen():
 
     stimmen = piper_stimmen()
     _, piper_ort = piper_programm()
+    leseschriften = leseschriften_da()
 
     return [
         {
@@ -527,6 +548,15 @@ def teile_lesen():
             "holen": "./stimme-holen.sh",
             "da": bool(stimmen),
             "groesse": lesbar(groesse_von(piper_ort)) if piper_ort else "~90 MB",
+        },
+        {
+            "name": "Schriften zum leichteren Lesen"
+                    + (" (%d)" % len(leseschriften) if leseschriften else ""),
+            "wofuer": "OpenDyslexic, Lexend, Atkinson Hyperlegible",
+            "holen": "./schrift-holen.sh",
+            "da": bool(leseschriften),
+            "groesse": lesbar(groesse_von(SCHRIFTORDNER))
+                       if os.path.isdir(SCHRIFTORDNER) else "~4 MB",
         },
     ]
 
