@@ -8327,7 +8327,14 @@ B.ueber = () => {
       + 'Ein Raum für Worte\n\n'
       + 'Die Prüfung und der Wortschatz stammen aus der Schreibhilfe.\n'
       + 'Word-Dateien und PDF macht LibreOffice im Hintergrund.\n\n'
-      + 'Was geschrieben wird, bleibt auf diesem Rechner.' },
+      /* Der Satz ist ein Versprechen, also muss er in jedem Fall stimmen.
+         Die drei KI-Knöpfe können den Text an einen Dienst im Netz geben —
+         aber nur, wenn dafür ein Schlüssel hinterlegt wurde. Ohne Schlüssel
+         und mit einem Modell auf diesem Rechner geht nichts hinaus. Genau
+         das sagt der zweite Halbsatz, und ohne ihn wäre der erste zu
+         großzügig. */
+      + 'Was geschrieben wird, bleibt auf diesem Rechner.\n'
+      + 'Nichts geht hinaus, ohne dass du es selbst schickst.' },
   ], () => {}, 'Schließen');
 };
 
