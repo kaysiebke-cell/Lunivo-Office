@@ -20,7 +20,8 @@ Rechtschreibprüfer **nicht** finden kann.
     zusammengetippte Wörter, doppelte Wörter, Satzanfänge
 
 Gebaut für Menschen mit Legasthenie. Kein Konto, keine Anmeldung, kein
-Internet nötig. Was geschrieben wird, bleibt auf dem eigenen Rechner.
+Internet nötig. Was geschrieben wird, bleibt auf dem eigenen Rechner —
+nichts geht hinaus, ohne dass man es selbst schickt.
 
 ![Lunivo-Office mit einem Brief im Blatt und der Schreibhilfe rechts an der Seite](bilder/uebersicht.png)
 

@@ -12,7 +12,8 @@ die ein Rechtschreibprüfer **nicht** finden kann.
     zusammengetippte Wörter, doppelte Wörter, Satzanfänge
 
 Kein Konto, keine Anmeldung, kein Internet. Was geschrieben wird, bleibt
-auf dem eigenen Rechner.
+auf dem eigenen Rechner — nichts geht hinaus, ohne dass man es selbst
+schickt.
 
 ## Starten
 
