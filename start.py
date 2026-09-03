@@ -763,6 +763,32 @@ def dialog_oeffnen(nur=""):
 SPEICHERZIEL = {"pfad": None, "merken": True}
 
 
+def vorlagen_schnellzugriff(dialog):
+    """Legt den Vorlagenordner als Lesezeichen in die Seitenleiste.
+
+    Nicht als Startordner — das bleibt der zuletzt benutzte. Der Dialog
+    darf nicht im Vorlagenordner aufgehen: Wer dort landet, ohne es zu
+    wollen, speichert seinen dritten Brief über die Vorlage, mit der er
+    ihn angefangen hat. Ein Lesezeichen dagegen führt nur dorthin, wer
+    hinwill — und das kommt vor, denn eine eigene Vorlage abzulegen ist
+    eine ganz gewöhnliche Absicht.
+
+    Gibt es den Ordner noch nicht, wird er hier nicht angelegt: Ein
+    Lesezeichen ist kein Gebrauch. Er entsteht beim ersten „Dieses
+    Dokument als Vorlage behalten".
+    """
+    ordner = vorlagen_ordner_eigen()
+    if not os.path.isdir(ordner):
+        return
+    try:
+        dialog.add_shortcut_folder(ordner)
+    except Exception:                   # noqa: BLE001
+        # Steht er schon in der Seitenleiste — auf manchen Arbeitsplätzen
+        # kennt die Dateiverwaltung ihn als Lesezeichen —, dann ist nichts
+        # zu tun. Ein Dialog ohne Lesezeichen ist immer noch ein Dialog.
+        pass
+
+
 def dialog_speichern(name, endung):
     """Zeigt den Speichern-Dialog mit Formatauswahl.
 
@@ -785,6 +811,7 @@ def dialog_speichern(name, endung):
         dialog.set_do_overwrite_confirmation(True)
         dialog.set_current_folder(LETZTER_ORDNER["weg"] or os.path.expanduser("~"))
         dialog.set_current_name((name or "Unbenannt") + "." + endung)
+        vorlagen_schnellzugriff(dialog)
 
         wahl = Gtk.ComboBoxText()
         for kuerzel, beschriftung in FORMAT_LISTE:
@@ -2158,6 +2185,7 @@ def speichern_fragen(_umgebung, ladung):
         dialog.set_do_overwrite_confirmation(True)
         dialog.set_current_name(vorschlag or "Unbenannt.odt")
         dialog.set_current_folder(os.path.expanduser("~"))
+        vorlagen_schnellzugriff(dialog)
 
         if dialog.run() == Gtk.ResponseType.ACCEPT:
             ladung.set_destination("file://" + dialog.get_filename())

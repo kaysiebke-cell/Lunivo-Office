@@ -452,6 +452,56 @@
      eigener Seitenzahl. Der Umbruch wird gerechnet, nicht geraten —
      js/programm.js, Abschnitt „Die Druckvorschau".
      ============================================================ -->
+<!-- ============================================================
+     Die Seite „Neu" — Vorlagen als Blätter
+
+     Sie legt sich über alles, wie die Druckvorschau darunter. Was darin
+     steht, baut js/vorlagen.js; hier steht nur der Rahmen, damit die
+     Datei beim Start etwas vorfindet.
+     ============================================================ -->
+<section class="neuseite" id="neuseite" hidden aria-label="Neu aus Vorlage">
+  <div class="neuseite__kopf">
+    <button class="neuseite__zurueck" id="neuseite-zurueck" type="button">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+           stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M19 12H5 M12 19 l-7-7 7-7"/>
+      </svg>
+      Zurück zum Blatt
+    </button>
+    <h1 class="neuseite__titel">Neu</h1>
+    <!-- Ein Reiter je Ordner. Bei einem einzigen Ordner bleibt die Zeile
+         leer und versteckt — js/vorlagen.js entscheidet das. -->
+    <div class="neuseite__reiter" id="neuseite-reiter" role="tablist" hidden></div>
+  </div>
+
+  <div class="neuseite__suchzeile" id="neuseite-suchzeile" hidden>
+    <div class="neusuche">
+      <input id="neuseite-suche" type="search" placeholder="Vorlage suchen"
+             autocomplete="off" aria-label="Vorlage suchen">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" aria-hidden="true">
+        <path d="M3 11a8 8 0 1 0 16 0a8 8 0 1 0 -16 0 M21 21L16.65 16.65"/>
+      </svg>
+    </div>
+  </div>
+
+  <div class="neuseite__feld" id="neuseite-feld"></div>
+
+  <!-- Die beiden Wege in die Sammlung hinein. Sie stehen hier und nicht
+       nur in der leeren Ansicht: Sonst gäbe es ab der ersten Vorlage keine
+       Möglichkeit mehr, eine zweite anzulegen. -->
+  <div class="neuseite__fuss">
+    <span class="neuseite__fuss-satz">
+      <b>Geöffnet wird immer eine Abschrift.</b>
+      Die Vorlage selbst bleibt, wie sie ist — auch nach dem dritten Brief.
+    </span>
+    <span class="neuseite__fuss-wege">
+      <button class="knopf knopf--klein" id="neuseite-behalten" type="button">Dieses Dokument als Vorlage behalten…</button>
+      <button class="knopf knopf--klein" id="neuseite-ordner" type="button">Vorlagenordner öffnen</button>
+    </span>
+  </div>
+</section>
+
 <section class="vorschau" id="vorschau" hidden aria-label="Druckvorschau">
   <div class="vorschau__leiste" role="toolbar" aria-label="Druckvorschau">
     <button class="knopf knopf--klein knopf--haupt" id="vorschau-drucken" type="button">Drucken…</button>
@@ -758,6 +808,10 @@
      Knopf hinzufügen will, schreibt dort eine Zeile. Vor dem Programm, das
      sie baut. -->
 <script src="daten/register.js"></script>
+<!-- Die mitgelieferten Gerüste: Brief, Bewerbung, Widerspruch und die
+     übrigen. Eine Liste, kein Programm — wer den Text eines Musters
+     ändern will, ändert dort Text. Vor der Seite, die sie zeichnet. -->
+<script src="daten/vorlagenmuster.js"></script>
 <script src="js/pruefung.js"></script>
 <!-- Die KI-Ebene kennt das Gedächtnis und gibt es der Prüfung weiter. Sie
      muss deshalb vor dem Programm stehen, das beides benutzt. -->
@@ -765,6 +819,9 @@
 <script src="js/dokument.js"></script>
 <script src="js/dateien.js"></script>
 <script src="js/einstellungen.js"></script>
+<!-- Die Seite „Neu". Wie die Einstellungen: eigene Fläche, eigene Datei.
+     Vor dem Programm, das ihr beim Start seine Griffe reicht. -->
+<script src="js/vorlagen.js"></script>
 <script src="js/programm.js"></script>
 </body>
 </html>

@@ -2467,3 +2467,228 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
   .dokument .absatz--fokus{transform:none}
   .dokument--fokus > *{opacity:1}
 }
+
+/* ============================================================
+   Die Seite „Neu" — Vorlagen als Blätter
+
+   Dieselbe Bauart wie die Druckvorschau darüber: eine eigene Fläche über
+   allem, nicht ein Fensterchen in der Mitte. Zwölf Blätter passen in kein
+   Fensterchen, und beim dreizehnten scrollt es.
+
+   Die Farben sind die des Programms. Nichts Eigenes, nichts Erfundenes —
+   wer das helle Thema einstellt, bekommt dieselbe Seite in Hell, ohne dass
+   hier ein zweiter Satz Farben stünde.
+   ============================================================ */
+.neuseite{
+  position:fixed;inset:0;z-index:66;
+  background:var(--grund);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+}
+.neuseite[hidden]{display:none}
+
+/* ---------- Kopf: zurück, Titel, Reiter ---------- */
+.neuseite__kopf{flex:0 0 auto;padding:12px 30px 0}
+.neuseite__zurueck{
+  display:inline-flex;align-items:center;gap:8px;
+  background:none;border:0;color:var(--schrift-2);
+  font:inherit;font-size:12.5px;padding:6px 10px 6px 6px;
+  border-radius:6px;cursor:pointer;margin-left:-6px;
+}
+.neuseite__zurueck:hover{background:rgba(255,255,255,.09);color:var(--schrift)}
+:root[data-theme="light"] .neuseite__zurueck:hover{background:rgba(0,0,0,.08)}
+.neuseite__titel{margin:4px 0 10px;font-size:28px;font-weight:600;letter-spacing:-.4px}
+
+/* Die Reiter liegen auf der Trennlinie, wie im Band. Bei einem einzigen
+   Ordner sind sie versteckt — dann trägt die Linie den Titel allein. */
+.neuseite__reiter{display:flex;gap:22px;border-bottom:1px solid var(--rand)}
+.neuseite__reiter[hidden]{display:none}
+.neuseite__reiter button{
+  background:none;border:0;border-bottom:2px solid transparent;
+  color:var(--schrift-3);font:inherit;font-size:14px;
+  padding:0 2px 9px;margin-bottom:-1px;cursor:pointer;
+}
+.neuseite__reiter button:hover{color:var(--schrift)}
+.neuseite__reiter button[aria-selected="true"]{
+  color:var(--schrift);border-bottom-color:var(--blau-hell);
+}
+.neuseite__zahl{color:var(--schrift-3);font-size:12px;margin-left:5px}
+
+/* ---------- Suche ---------- */
+.neuseite__suchzeile{flex:0 0 auto;padding:13px 30px 0}
+.neuseite__suchzeile[hidden]{display:none}
+.neusuche{position:relative;max-width:520px}
+.neusuche input{
+  width:100%;
+  background-color:var(--grund);color:var(--schrift);
+  border:1px solid var(--rand);border-radius:6px;
+  padding:9px 34px 9px 12px;font:inherit;
+}
+.neusuche input:focus{outline:none;border-color:var(--blau-hell)}
+.neusuche svg{
+  position:absolute;right:10px;top:50%;transform:translateY(-50%);
+  width:15px;height:15px;color:var(--schrift-3);pointer-events:none;
+}
+
+/* ---------- Die Fläche mit den Blättern ---------- */
+.neuseite__feld{flex:1 1 auto;min-height:0;overflow-y:auto;padding:17px 30px 30px}
+.kacheln{
+  display:grid;gap:20px 16px;
+  grid-template-columns:repeat(auto-fill,minmax(148px,1fr));
+}
+.nichtsgefunden{color:var(--schrift-2);padding:30px 0;text-align:center}
+
+/* ---------- Eine Kachel ---------- */
+.kachel{
+  position:relative;display:flex;flex-direction:column;gap:8px;
+  background:none;border:0;padding:0;color:inherit;font:inherit;
+  text-align:center;cursor:pointer;
+  /* Ohne das wird die Spalte so breit wie das Blatt in der Miniatur:
+     „transform: scale" verkleinert das Bild, nicht den Platz, den das
+     Element im Layout beansprucht — und ein Gitterfeld ist von sich aus
+     mindestens so breit wie sein Inhalt. */
+  min-width:0;
+}
+/* Nicht das DIN-Verhältnis: Bei 1:1,414 stand auf dem Schirm mehr Weiß als
+   Gitter, und in eine Reihe passten drei Blätter statt sechs. Erkennbar
+   bleibt es trotzdem als Hochformat. */
+.kachel__blatt{
+  position:relative;aspect-ratio:1/1.3;
+  background:var(--blatt);color:var(--blatt-schrift);
+  border:1px solid var(--rand);border-radius:2px;
+  box-shadow:var(--schatten);
+  overflow:hidden;
+  transition:box-shadow .12s,transform .12s;
+}
+.kachel:hover .kachel__blatt,.kachel:focus-visible .kachel__blatt{
+  box-shadow:0 0 0 2px var(--blau-hell),0 6px 16px rgba(0,0,0,.4);
+  transform:translateY(-2px);
+}
+.kachel:focus-visible{outline:none}
+.kachel__name{font-size:12.5px;line-height:1.35;color:var(--schrift);overflow-wrap:anywhere}
+.kachel__wo{display:block;color:var(--schrift-3);font-size:11px;margin-top:2px}
+
+/* Die Nadel: erscheint beim Überfahren. Wer angeheftet hat, sieht sie
+   immer — sonst wüsste niemand, warum diese Vorlage vorne steht. */
+.kachel__nadel{
+  position:absolute;right:6px;bottom:6px;
+  width:26px;height:26px;display:grid;place-items:center;
+  background:rgba(31,34,37,.72);color:#fff;
+  border:0;border-radius:5px;cursor:pointer;
+  opacity:0;transition:opacity .12s;
+}
+.kachel:hover .kachel__nadel,.kachel__nadel:focus-visible{opacity:1}
+.kachel__nadel:focus-visible{outline:2px solid var(--blau-hell);outline-offset:1px}
+.kachel--fest .kachel__nadel{opacity:1;background:var(--blau)}
+
+/* ---------- Was auf dem Miniaturblatt liegt ---------- */
+/* Keine Abbildung des Inhalts: der Name und graue Striche. Genau so zeigt
+   Word die eigenen Vorlagen — und eine echte Abbildung hieße, LibreOffice
+   bei jedem Aufklappen zwölfmal laufen zu lassen. */
+.mini{position:absolute;inset:0;padding:13% 12%;display:flex;flex-direction:column;gap:5px}
+.mini__balken{height:7%;background:var(--blau);margin:-13% -12% 9% -12%}
+.mini__balken--gruen{background:var(--gruen)}
+.mini__balken--warm{background:var(--warm)}
+.mini__kopf{
+  font-size:8px;font-weight:700;color:#111417;line-height:1.2;
+  margin-bottom:4px;text-align:left;overflow:hidden;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+}
+.mini__strich{height:2px;background:#D9DDE1;border-radius:1px}
+.mini__strich--kurz{width:58%}
+.mini__strich--halb{width:76%}
+.mini__luft{height:7px}
+
+/* Das leere Blatt trägt nur das Zeichen für „neu" — wie „Leeres Dokument"
+   bei Word an derselben Stelle, ganz vorn. */
+.mini--leer{display:grid;place-items:center;padding:0;color:#B6BCC2}
+.mini--leer svg{width:30px;height:30px}
+
+/* Die Endung unten links sagt, was für eine Datei das ist: eine .docx
+   verhält sich beim Speichern anders als eine .odt. */
+.kachel__art{
+  position:absolute;left:0;bottom:0;
+  background:rgba(17,20,23,.62);color:#fff;
+  font-size:9px;letter-spacing:.5px;text-transform:uppercase;
+  padding:2px 6px;border-radius:0 4px 0 0;
+}
+
+/* ---------- Wenn noch nichts da ist ---------- */
+/* Die Ansicht, die zuerst und am längsten zu sehen ist: Die Bibliothek
+   fängt leer an und füllt sich erst mit der Zeit. Sie darf deshalb nicht
+   wie ein Fehler aussehen, sondern muss den Weg hinein zeigen. */
+.leerfeld{
+  max-width:560px;margin:40px auto 0;text-align:center;
+  display:flex;flex-direction:column;align-items:center;gap:14px;
+}
+.leerfeld__blatt{
+  width:120px;aspect-ratio:1/1.414;
+  background:var(--blatt);border:1px solid var(--rand);border-radius:2px;
+  box-shadow:var(--schatten);
+  display:grid;place-items:center;color:#C3C9CE;
+}
+.leerfeld__blatt svg{width:34px;height:34px}
+.leerfeld h3{margin:4px 0 0;font-size:17px;font-weight:600}
+.leerfeld p{margin:0;color:var(--schrift-2);font-size:13px;line-height:1.65;max-width:460px}
+.leerfeld code{
+  background:var(--karte);border:1px solid var(--rand);border-radius:4px;
+  padding:1px 6px;font-size:12px;
+}
+.leerfeld__wege{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:6px}
+.leerfeld__wege .knopf{width:auto;padding:8px 16px}
+
+/* ---------- Der Satz unten ---------- */
+/* Er steht hier, weil er die eine Frage beantwortet, die vor dem Klick
+   aufkommt: Was passiert mit meiner Vorlage? Im Menü stand er nirgends. */
+.neuseite__fuss{
+  flex:0 0 auto;border-top:1px solid var(--rand);background:var(--leiste);
+  padding:9px 30px;color:var(--schrift-3);font-size:12px;
+  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+}
+.neuseite__fuss b{color:var(--schrift-2);font-weight:600}
+.neuseite__fuss-satz{flex:1 1 240px;min-width:0}
+.neuseite__fuss-wege{display:flex;gap:8px;flex-wrap:wrap}
+.neuseite__fuss-wege .knopf{width:auto}
+
+/* ---------- Die Miniatur eines mitgelieferten Gerüsts ----------
+   Kein Nachbau, sondern das Blatt selbst: derselbe HTML-Text, der beim
+   Klick ins Dokument wandert, nur klein gerechnet. Deshalb „scale" und
+   keine kleine Schriftgröße — unter fünf Punkten setzt WebKit die Zeilen
+   nicht mehr sauber, und aus dem Brief würde Grieß. */
+.mini--echt{position:absolute;inset:0;padding:0;display:block;overflow:hidden}
+/* Breite in Prozent und der passende Kehrwert als Maßstab: So sieht die
+   Miniatur in jeder Kachelbreite gleich aus. Eine feste Pixelbreite ließe
+   bei schmalen Kacheln einen weißen Streifen und bei breiten einen
+   Überstand. 420 % und 1 : 4,2 ergeben rund achtzig Zeichen je Zeile —
+   etwa so viele wie auf dem wirklichen Blatt. */
+.mini__seite{
+  width:420%;
+  transform:scale(.2381);transform-origin:0 0;
+  padding:40px 36px;
+  font:12px/1.5 Georgia,"Times New Roman",serif;
+  color:#111417;
+  text-align:left;
+}
+.mini__seite p{margin:0 0 3px}
+.mini__seite h1{font-size:20px;font-weight:700;margin:0 0 8px}
+/* Die Lücken sollen auch in der Miniatur als Lücken zu erkennen sein —
+   daran sieht man auf einen Blick, dass das Gerüst leer ist und nicht ein
+   fertiger Brief. */
+.mini__seite .platzhalter{
+  background:rgba(47,111,181,.16);
+  border-bottom:1px dashed rgba(47,111,181,.45);
+}
+
+/* ---------- Die Zeile unter dem Gitter ----------
+   Solange nur die Gerüste da sind, weiß niemand, dass es auch eigene
+   Vorlagen geben kann. Ein Satz genügt; die große leere Ansicht wäre hier
+   falsch, weil ja etwas da ist. */
+.neuseite__hinweis{
+  margin:26px 0 0;padding-top:16px;
+  border-top:1px solid var(--rand);
+  color:var(--schrift-3);font-size:12.5px;line-height:1.6;
+}
+.neuseite__hinweis code{
+  background:var(--karte);border:1px solid var(--rand);border-radius:4px;
+  padding:1px 6px;font-size:12px;
+}
