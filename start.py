@@ -17,6 +17,8 @@ und er läuft nur, solange das Fenster offen ist.
 
 import base64
 import functools
+import glob
+import html
 import http.server
 import json
 import math
@@ -882,6 +884,169 @@ def schriften_lesen():
     return sorted(familien, key=lambda n: n.casefold())
 
 
+# ---------------------------------------------------------------------------
+# Die Textbausteine von LibreOffice
+#
+# LibreOffice liefert fertige Bausteine mit — Kündigung, Anfrage, „Sehr
+# geehrte Damen und Herren". Sie liegen in .bau-Dateien: ein ZIP mit einer
+# BlockList.xml (Name und Kürzel jedes Bausteins) und je Baustein entweder
+# reinem Text oder einem kleinen ODF-Dokument.
+#
+# Gelesen wird hier und nicht im Fenster: Eine Seite kommt an Dateien auf der
+# Platte nicht heran, und das ist auch richtig so. Der Server liegt ohnehin
+# auf diesem Rechner und reicht nur weiter, was LibreOffice mitbringt.
+#
+# WO GESUCHT WIRD. Zuerst beim mitgelieferten LibreOffice, dann beim des
+# Systems, zuletzt im Benutzerprofil — dort liegt, was jemand sich selbst
+# angelegt hat, und das soll die mitgelieferten überschreiben dürfen.
+#
+# Deutsche zuerst. Das mitgelieferte LibreOffice trägt nur die englischen bei
+# sich; die deutschen kommen vom System. Findet sich keine deutsche Sammlung,
+# bleibt die Liste leer — englische Bausteine in einem deutschen Brief wären
+# keine Hilfe, sondern eine zweite Aufgabe.
+AUTOTEXT_ORTE = [
+    os.path.join(DATEN, "libreoffice", "opt", "libreoffice*", "share", "autotext"),
+    "/usr/lib/libreoffice/share/autotext",
+    "/usr/lib64/libreoffice/share/autotext",
+    "/opt/libreoffice*/share/autotext",
+    os.path.expanduser("~/.config/libreoffice/4/user/autotext"),
+]
+
+# Was die Bausteine an Feldern mitbringen. In der Datei stehen sie als
+# einfacher Text mitten im Satz — „<field:company>" —, hier bekommen sie den
+# Namen, unter dem ein Mensch sie erkennt.
+AUTOTEXT_FELDER = {
+    "company": "Firma",
+    "sender": "Absender",
+    "title": "Titel",
+    "firstname": "Vorname",
+    "lastname": "Nachname",
+    "street": "Straße",
+    "city": "Ort",
+    "postalcode": "Postleitzahl",
+    "date": "Datum",
+}
+
+# „<placeholder:"Zeitung":"Platzhalter anklicken und überschreiben">" und
+# „<field:company>" — beide stehen als gewöhnlicher Text in der Datei.
+AUTOTEXT_PLATZ = re.compile(
+    r"<placeholder:\"(?P<was>[^\"]*)\"(?::\"[^\"]*\")?>"
+    r"|<field:(?P<feld>[a-zA-Z]+)>")
+
+
+def _bau_absaetze(roh):
+    """Aus einem Baustein die Absätze machen — Text und Platzhalter getrennt.
+
+    Die Auszeichnung des Bausteins (fett, Schriftgröße, Einzug) fällt dabei
+    weg. Das ist Absicht: Sie stammt aus einer LibreOffice-Vorlage mit
+    eigenen Rändern und Schriften und säße im fremden Dokument schief. Was
+    zählt, ist der Satzbau — die Form gibt das Dokument, in das er kommt.
+    """
+    körper = re.split(r"<office:body[^>]*>", roh, maxsplit=1)
+    inhalt = körper[1] if len(körper) > 1 else roh
+
+    # Eingabefelder sind dasselbe wie Platzhalter, nur anders geschrieben:
+    # ein eigenes Element statt Text mitten im Satz. Vor dem Abstreifen der
+    # Auszeichnung werden sie in die gleiche Form gebracht — sonst bliebe von
+    # „Geben Sie hier den Tagesordnungspunkt ein" gewöhnlicher Text übrig,
+    # den man beim Ausfüllen übersieht.
+    inhalt = re.sub(
+        r"<text:text-input[^>]*>(.*?)</text:text-input>",
+        lambda t: '<placeholder:"%s">' % html.unescape(
+            re.sub(r"<[^>]+>", "", t.group(1))).strip("<> ").replace('"', "'"),
+        inhalt, flags=re.S)
+
+    absätze = []
+    for stück in re.findall(r"<text:p[^>]*>(.*?)</text:p>|<text:p[^>]*/>",
+                            inhalt, re.S):
+        text = html.unescape(re.sub(r"<[^>]+>", "", stück or ""))
+        teile = []
+        rest = 0
+        for treffer in AUTOTEXT_PLATZ.finditer(text):
+            if treffer.start() > rest:
+                teile.append({"text": text[rest:treffer.start()]})
+            name = treffer.group("was")
+            if name is None:
+                feld = treffer.group("feld") or ""
+                name = AUTOTEXT_FELDER.get(feld.lower(), feld)
+            teile.append({"platz": name})
+            rest = treffer.end()
+        if rest < len(text):
+            teile.append({"text": text[rest:]})
+        absätze.append(teile)
+
+    # Leerabsätze am Ende sind Beiwerk der Vorlage, nicht des Textes.
+    while absätze and not any(t.get("text", "").strip() or t.get("platz")
+                              for t in absätze[-1]):
+        absätze.pop()
+    return absätze
+
+
+def _bau_lesen(pfad):
+    """Eine .bau-Datei: ihr Name und ihre Bausteine."""
+    import zipfile
+    try:
+        with zipfile.ZipFile(pfad) as archiv:
+            namen = set(archiv.namelist())
+            if "BlockList.xml" not in namen:
+                return None
+            liste = archiv.read("BlockList.xml").decode("utf-8", "replace")
+            gruppe = html.unescape(
+                (re.search(r'list-name="([^"]*)"', liste) or [None, ""])[1])
+
+            bausteine = []
+            for kurz, paket, name in re.findall(
+                    r'abbreviated-name="([^"]*)"\s+block-list:package-name="([^"]*)"'
+                    r'\s+block-list:name="([^"]*)"', liste):
+                quelle = next((q for q in (paket + "/" + paket + ".xml",
+                                           paket + "/content.xml") if q in namen), None)
+                if not quelle:
+                    continue
+                absätze = _bau_absaetze(archiv.read(quelle).decode("utf-8", "replace"))
+                if not absätze:
+                    continue
+                bausteine.append({
+                    "kurz": html.unescape(kurz),
+                    "name": html.unescape(name),
+                    "absaetze": absätze,
+                })
+    except (OSError, KeyError, ValueError, zipfile.BadZipFile):
+        return None
+    return {"gruppe": gruppe or os.path.basename(pfad), "bausteine": bausteine} \
+        if bausteine else None
+
+
+def bausteine_lesen():
+    """Alle deutschen Textbausteine, die auf diesem Rechner liegen.
+
+    Gleichnamige Gruppen aus späteren Orten ersetzen frühere: Was jemand sich
+    selbst angelegt hat, gilt vor dem, was mitgeliefert wurde.
+    """
+    gefunden = {}
+    for ort in AUTOTEXT_ORTE:
+        for ordner in sorted(glob.glob(ort)):
+            # „de" für die mitgelieferten Sammlungen, der Ordner selbst für
+            # das Benutzerprofil — dort liegen die .bau-Dateien ohne Sprache.
+            for wo in (os.path.join(ordner, "de"), ordner):
+                if not os.path.isdir(wo):
+                    continue
+                for datei in sorted(glob.glob(os.path.join(wo, "*.bau"))):
+                    gelesen = _bau_lesen(datei)
+                    if gelesen:
+                        # „standard.bau" sind die Briefbausteine — Kündigung,
+                        # Anfrage, die Grußformeln. Sie gehören nach oben.
+                        # Alphabetisch stünden die Kopfzeilen einer
+                        # Newsletter-Vorlage davor, und wer das Fenster
+                        # aufmacht, sähe zuerst, was er am seltensten
+                        # braucht.
+                        gelesen["rang"] = 0 if os.path.basename(datei) == "standard.bau" else 1
+                        gefunden[gelesen["gruppe"]] = gelesen
+                break
+
+    return sorted(gefunden.values(),
+                  key=lambda g: (g["rang"], g["gruppe"].casefold()))
+
+
 # Wohin die Umwandlung ihre Zwischendateien legt und welches eigene Profil
 # LibreOffice dabei benutzt. Das Profil ist wichtig: Läuft nebenher ein
 # normales LibreOffice-Fenster, weigert sich ein zweiter Aufruf, mitzuarbeiten
@@ -1343,6 +1508,18 @@ class Leise(http.server.SimpleHTTPRequestHandler):
         # Welche Drucker das System kennt und was sie können.
         if self.path.split("?")[0] == "/drucker":
             self.auskunft(drucker_lesen())
+            return
+
+        # Die Textbausteine, die LibreOffice mitbringt. Wie die Schriftliste
+        # bei jedem Start frisch: Wer sich in LibreOffice einen eigenen
+        # Baustein anlegt, findet ihn beim nächsten Start auch hier.
+        if self.path.split("?")[0] == "/bausteine.json":
+            ladung = json.dumps(bausteine_lesen()).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(ladung)))
+            self.end_headers()
+            self.wfile.write(ladung)
             return
 
         if self.path.split("?")[0] == "/schriften.json":

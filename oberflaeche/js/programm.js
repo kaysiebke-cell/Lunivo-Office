@@ -541,9 +541,21 @@ const zeichen = (z) => () => Dokument.einfuegen(z === ' ' ? '&nbsp;' : z);
    offen stand, muss beim Abbrechen zurückgenommen werden. Ohne diesen Griff
    stünde neben einer sofort wirkenden Einstellung ein Knopf „Abbrechen",
    der nichts abbricht — und das ist schlimmer als kein Knopf. */
-function fenster(titel, felder, beiOk, knopfName = 'Übernehmen', breit = false, beiAb = null) {
+/* „beiWechsel" ist der Blick nach draußen: Ein Fenster, das damit gebaut
+   wird, wendet jede Änderung sofort an, während es offen steht. Wer eine
+   Farbe wählt, sieht sie — er muss nicht auf „Übernehmen" drücken und
+   hoffen.
+
+   Das ist mehr als bequem. Ein Fenster, das erst am Ende wirkt, hat genau
+   einen Griff, an dem alles hängt, und daneben liegt der graue Grund: Ein
+   Klick zwei Finger breit neben dem Knopf schließt es, ohne etwas zu tun,
+   und es sieht aus, als täte die Einstellung nichts. Was schon gewirkt hat,
+   kann so nicht verloren gehen — und „Abbrechen" nimmt es über „beiAb"
+   zurück. */
+function fenster(titel, felder, beiOk, knopfName = 'Übernehmen', breit = false, beiAb = null,
+                 beiWechsel = null) {
   const grund = document.createElement('div');
-  grund.className = 'dialoggrund';
+  grund.className = beiWechsel ? 'dialoggrund dialoggrund--schaut' : 'dialoggrund';
 
   const kasten = document.createElement('div');
   kasten.className = breit ? 'dialog dialog--breit' : 'dialog';
@@ -594,6 +606,20 @@ function fenster(titel, felder, beiOk, knopfName = 'Übernehmen', breit = false,
     eingaben[feldChen.schluessel] = eingabe;
   }
 
+  const werteLesen = () => {
+    const werte = {};
+    for (const [name, eingabe] of Object.entries(eingaben)) werte[name] = eingabe.value;
+    return werte;
+  };
+
+  if (beiWechsel) {
+    const gewechselt = () => beiWechsel(werteLesen());
+    for (const eingabe of Object.values(eingaben)) {
+      eingabe.addEventListener('change', gewechselt);
+      eingabe.addEventListener('input', gewechselt);
+    }
+  }
+
   const knoepfe = document.createElement('div');
   knoepfe.className = 'dialog__knoepfe';
   const ab = document.createElement('button');
@@ -610,14 +636,15 @@ function fenster(titel, felder, beiOk, knopfName = 'Übernehmen', breit = false,
   ab.addEventListener('click', zurueckNehmen);
   grund.addEventListener('mousedown', (e) => { if (e.target === grund) zurueckNehmen(); });
   ok.addEventListener('click', () => {
-    const werte = {};
-    for (const [name, eingabe] of Object.entries(eingaben)) werte[name] = eingabe.value;
+    const werte = werteLesen();
     zu();
     beiOk(werte);
   });
   document.addEventListener('keydown', function flucht(e) {
     if (!document.body.contains(grund)) { document.removeEventListener('keydown', flucht); return; }
-    if (e.key === 'Escape') { e.preventDefault(); zu(); }
+    /* Escape ist derselbe Weg wie „Abbrechen" — sonst bliebe stehen, was das
+       Fenster schon angewandt hat, und der Rückweg wäre verbaut. */
+    if (e.key === 'Escape') { e.preventDefault(); zurueckNehmen(); }
     if (e.key === 'Enter' && e.target.tagName === 'INPUT') { e.preventDefault(); ok.click(); }
   });
 
@@ -1407,6 +1434,7 @@ const REGISTER = [
                     ['fussz', 'Fußzeile', () => B.fusszeile(), 'gross'],
                     ['zahl', 'Seitenzahl', () => B.seitennummer()]]],
     ['Text', [['textrahmen', 'Textfeld', () => B.textfeld(), 'gross'],
+                    ['baustein', 'Textbaustein…', () => B.textbausteine(), 'gross'],
                     ['baustein', 'Schnellbaustein…', () => B.schnellbaustein()],
                     ['initiale', 'Initiale', () => B.initiale()],
                     ['datum', 'Datum', () => B.datum()],
@@ -5351,6 +5379,388 @@ B.lesemodus = () => {
 };
 
 /* ============================================================
+   Textbausteine
+
+   LibreOffice bringt fertige Absätze mit — Kündigung, Anfrage, „Sehr
+   geehrte Damen und Herren". Sie liegen in .bau-Dateien auf der Platte;
+   start.py macht sie auf und reicht sie unter „bausteine.json" herein.
+
+   Der Gewinn ist nicht die Sammlung, es sind die PLATZHALTER darin:
+
+     hiermit kündige ich «Abonnement o.ä.» zum nächstmöglichen Termin.
+
+   Ein benanntes Feld mitten im Satz, das sagt, was dort hingehört. Wer vor
+   einem leeren Blatt sitzt, muss den Satz nicht erfinden — er muss eine
+   Lücke füllen, und die Lücke sagt ihm, womit. Genau das ist der
+   Unterschied, der jemandem hilft, dem das Schreiben schwerfällt.
+
+   Deshalb ist der Platzhalter hier kein Text, sondern ein Stück mit
+   Auszeichnung: Ein Klick nimmt ihn ganz, Tab springt zum nächsten, und was
+   man tippt, ersetzt ihn im Ganzen statt sich dazwischenzuschieben.
+   ============================================================ */
+let bausteine = null;          // null = noch nicht geholt, [] = keine da
+let bausteinGewaehlt = null;
+
+/* ---- Die eigenen ----
+   Die mitgelieferten Bausteine stammen aus LibreOffice und sind aus
+   Firmensicht geschrieben — Angebot, Bestellung, Mahnung. Wer an sein Amt
+   oder seine Versicherung schreibt, braucht andere, und die kennt nur er
+   selbst.
+
+   Sie liegen im Speicher des Programms und nicht in der .bau-Datei von
+   LibreOffice. Das ist Absicht: In dessen Profil zu schreiben hieße, an
+   einem fremden Programm zu hantieren, das nebenher läuft — und wenn dabei
+   etwas schiefgeht, ist nicht ein Baustein weg, sondern seine Einstellungen.
+   Der Preis ist, dass die eigenen Bausteine in LibreOffice nicht auftauchen. */
+let eigeneBausteine = Speicher.lies('bausteine', []);
+
+const EIGENE_GRUPPE = 'Meine Bausteine';
+
+async function bausteineHolen() {
+  if (!bausteine) {
+    try {
+      const antwort = await fetch('bausteine.json');
+      bausteine = antwort.ok ? await antwort.json() : [];
+    } catch (e) {
+      /* Im Browser statt im eigenen Fenster gibt es den Server nicht. Dann
+         bleibt die Liste leer — kein Fehler, nur nichts anzubieten. */
+      bausteine = [];
+    }
+  }
+  /* Die eigenen ganz oben: Wer sich einen angelegt hat, sucht ihn zuerst. */
+  return (eigeneBausteine.length
+    ? [{ gruppe: EIGENE_GRUPPE, eigen: true, bausteine: eigeneBausteine }]
+    : []).concat(bausteine);
+}
+
+/* ---- Aus einer Markierung einen Baustein ----
+   Genommen wird der Text, nicht die Auszeichnung: Fett und Schriftgröße
+   gehören dem Dokument, aus dem er stammt, und säßen im nächsten schief.
+
+   Die spitzen Anführungszeichen sind die Lücken. Das ist kein Zufall,
+   sondern dieselbe Schreibweise, in der das Programm sie anzeigt: Was man
+   als «Betrag» in den Text schreibt, ist beim nächsten Einsetzen eine
+   Lücke. Und ein Baustein, der aus einem eingesetzten Baustein entsteht,
+   behält dessen Lücken von selbst. */
+function bausteinAusText(text) {
+  return text.split(/\r?\n/).map((zeile) => {
+    const teile = [];
+    let rest = 0;
+    for (const treffer of zeile.matchAll(/«([^»]*)»/g)) {
+      if (treffer.index > rest) teile.push({ text: zeile.slice(rest, treffer.index) });
+      teile.push({ platz: treffer[1] });
+      rest = treffer.index + treffer[0].length;
+    }
+    if (rest < zeile.length) teile.push({ text: zeile.slice(rest) });
+    return teile;
+  });
+}
+
+/* Der Text einer Markierung mit Absatzgrenzen. „bereich.toString()" kennt
+   die nicht — aus zwei Absätzen wird dort eine Zeile, und der Baustein
+   klebt später zusammen. „innerText" kennt sie, verlangt dafür aber, dass
+   das Stück im Dokument hängt; darum der kurze Umweg über eine Hilfe, die
+   niemand sieht. */
+function auswahlAlsText(bereich) {
+  if (!bereich) return '';
+  const hilfe = document.createElement('div');
+  hilfe.appendChild(bereich.cloneContents());
+  hilfe.style.cssText = 'position:fixed;left:-9999px;top:0;white-space:pre-wrap';
+  document.body.appendChild(hilfe);
+  const text = hilfe.innerText;
+  hilfe.remove();
+  return text.replace(/\u00a0/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+}
+
+function eigeneSichern() {
+  Speicher.schreib('bausteine', eigeneBausteine);
+}
+
+/* Aus den Teilen eines Bausteins das Stück Dokument. Der Platzhalter wird
+   ein <span>, und zwar mit „contenteditable=false" nicht: Er soll ja
+   überschrieben werden. Die Auszeichnung genügt. */
+function bausteinAlsHtml(absaetze) {
+  const sicher = (t) => alsSicher(t);
+  return absaetze.map((teile) => {
+    const inhalt = teile.map((teil) => (teil.platz !== undefined
+      ? '<span class="platzhalter">«' + sicher(teil.platz) + '»</span>'
+      : sicher(teil.text || ''))).join('');
+    return '<p>' + (inhalt || '<br>') + '</p>';
+  }).join('');
+}
+
+/* Der erste Platzhalter wird gleich genommen — man soll tippen können, ohne
+   vorher zu zielen. */
+function platzhalterNehmen(welcher) {
+  if (!welcher) return false;
+  const bereich = document.createRange();
+  bereich.selectNodeContents(welcher);
+  feld.focus();
+  Dokument.waehle(bereich);
+  welcher.scrollIntoView({ block: 'nearest' });
+  return true;
+}
+
+/** Zum nächsten Platzhalter nach der Schreibstelle — oder zum ersten. */
+function platzhalterWeiter(rueckwaerts = false) {
+  const alle = [...feld.querySelectorAll('.platzhalter')];
+  if (!alle.length) return false;
+
+  const auswahl = window.getSelection();
+  let jetzt = -1;
+  if (auswahl.rangeCount) {
+    let knoten = auswahl.anchorNode;
+    while (knoten && knoten !== feld && !(knoten.classList && knoten.classList.contains('platzhalter'))) {
+      knoten = knoten.parentNode;
+    }
+    jetzt = alle.indexOf(knoten);
+  }
+  const naechster = rueckwaerts
+    ? alle[(jetzt <= 0 ? alle.length : jetzt) - 1]
+    : alle[(jetzt + 1) % alle.length];
+  return platzhalterNehmen(naechster);
+}
+
+function bausteinEinfuegen(baustein) {
+  if (!baustein) return;
+  Dokument.einfuegen(bausteinAlsHtml(baustein.absaetze));
+  /* Nach dem Einsetzen gleich in die erste Lücke. */
+  setTimeout(() => {
+    const erster = feld.querySelector('.platzhalter');
+    if (erster) {
+      platzhalterNehmen(erster);
+      melde('Eingesetzt. Tab springt zur nächsten Lücke, Tippen ersetzt sie.');
+    } else {
+      melde('„' + baustein.name + '" eingesetzt.');
+    }
+  }, 0);
+}
+
+/* ---- Das Fenster ----
+   Zwei Spalten wie in LibreOffice: links die Liste, rechts der Text, den man
+   bekommt. Ohne die Vorschau wählt man nach dem Namen — und „Anlage" oder
+   „Zahlungsbedingung" sagt einem nichts, bevor man es einmal eingesetzt
+   hat. */
+B.textbausteine = async () => {
+  auswahlMerken();
+  const gruppen = await bausteineHolen();
+
+  const grund = document.createElement('div');
+  grund.className = 'dialoggrund';
+  const kasten = document.createElement('div');
+  kasten.className = 'dialog dialog--breit baustein';
+  kasten.innerHTML =
+    '<h3 class="dialog__titel">Textbausteine</h3>'
+    + '<div class="baustein__kopf">'
+    + '<span>Name:</span><input class="baustein__name" readonly>'
+    + '<span>Kürzel:</span><input class="baustein__kurz" readonly>'
+    + '</div>'
+    + '<div class="baustein__mitte">'
+    + '<div class="baustein__liste" tabindex="0"></div>'
+    + '<div class="baustein__vorschau"></div>'
+    + '</div>'
+    + '<p class="baustein__fuss">Eigene kommen aus dem Markierten, die '
+    + 'übrigen aus LibreOffice. '
+    + '«So gesetzte Stellen» sind Lücken: Tab springt von einer zur nächsten, '
+    + 'Tippen ersetzt sie.</p>';
+
+  const liste = kasten.querySelector('.baustein__liste');
+  const vorschau = kasten.querySelector('.baustein__vorschau');
+  const nameFeld = kasten.querySelector('.baustein__name');
+  const kurzFeld = kasten.querySelector('.baustein__kurz');
+
+  /* „Löschen" gilt nur für die eigenen. Die mitgelieferten liegen in einer
+     Datei von LibreOffice; die zu ändern steht diesem Programm nicht zu.
+     Der Knopf entsteht weiter unten, die Liste braucht ihn aber schon —
+     darum vorerst ein Handgriff, der nichts tut. */
+  let loeschbar = () => {};
+
+  const zeigen = (baustein, knopf, eigen) => {
+    bausteinGewaehlt = baustein;
+    loeschbar(!!eigen);
+    nameFeld.value = baustein ? baustein.name : '';
+    kurzFeld.value = baustein ? (baustein.kurz || '') : '';
+    vorschau.innerHTML = baustein ? bausteinAlsHtml(baustein.absaetze) : '';
+    for (const anderer of liste.querySelectorAll('.baustein__eintrag--an')) {
+      anderer.classList.remove('baustein__eintrag--an');
+    }
+    if (knopf) {
+      knopf.classList.add('baustein__eintrag--an');
+      /* Sonst steht die gewählte Zeile außerhalb des Bildes und das Fenster
+         sieht aus, als hätte es sich nichts gemerkt. */
+      knopf.scrollIntoView({ block: 'nearest' });
+    }
+  };
+
+  /* Die Liste wird neu gebaut, sooft sich die eigenen Bausteine ändern —
+     angelegt, gelöscht. Ohne das müsste man das Fenster zumachen und wieder
+     aufmachen, um zu sehen, dass etwas angekommen ist. */
+  const listeFuellen = async (auswaehlen) => {
+    const alle = await bausteineHolen();
+    liste.innerHTML = '';
+    if (!alle.length) {
+      liste.innerHTML = '<p class="baustein__leer">Noch keine Bausteine. '
+        + 'Markiere im Text, was du behalten willst, und drücke unten auf '
+        + '„Aus Markierung".<br><br>Die mitgelieferten gehören zu LibreOffice — '
+        + 'fehlen sie, bringt sie „sudo apt install libreoffice-writer" mit.</p>';
+    }
+    let ersterKnopf = null;
+    let zuWaehlen = null;
+    for (const gruppe of alle) {
+      const titel = document.createElement('div');
+      titel.className = 'baustein__gruppe';
+      titel.textContent = gruppe.gruppe;
+      liste.appendChild(titel);
+      for (const baustein of gruppe.bausteine) {
+        const knopf = document.createElement('button');
+        knopf.type = 'button';
+        knopf.className = 'baustein__eintrag';
+        knopf.textContent = baustein.name;
+        knopf.addEventListener('click', () => zeigen(baustein, knopf, !!gruppe.eigen));
+        knopf.addEventListener('dblclick', () => { zu(); bausteinEinfuegen(baustein); });
+        liste.appendChild(knopf);
+        if (!ersterKnopf) ersterKnopf = knopf;
+        if (auswaehlen && baustein.name === auswaehlen) zuWaehlen = knopf;
+      }
+    }
+    const nehmen = zuWaehlen || ersterKnopf;
+    if (nehmen) nehmen.click();
+    else zeigen(null, null, false);
+  };
+
+  const knoepfe = document.createElement('div');
+  knoepfe.className = 'dialog__knoepfe dialog__knoepfe--zweiseitig';
+
+  /* Links das Anlegen und Wegnehmen, rechts das Verlassen und Einsetzen —
+     wie im Fenster von LibreOffice. Was den Bestand ändert, steht nicht
+     neben dem Knopf, den man am häufigsten drückt. */
+  const links = document.createElement('div');
+  links.className = 'dialog__knoepfe-links';
+  const neu = document.createElement('button');
+  neu.className = 'knopf'; neu.textContent = 'Aus Markierung…';
+  neu.title = 'Das im Text Markierte als eigenen Baustein behalten';
+  const weg = document.createElement('button');
+  weg.className = 'knopf'; weg.textContent = 'Löschen';
+  weg.disabled = true;
+  links.append(neu, weg);
+
+  const ab = document.createElement('button');
+  ab.className = 'knopf'; ab.textContent = 'Schließen';
+  const ok = document.createElement('button');
+  ok.className = 'knopf knopf--haupt'; ok.textContent = 'Einfügen';
+  const rechts = document.createElement('div');
+  rechts.className = 'dialog__knoepfe-rechts';
+  rechts.append(ab, ok);
+
+  knoepfe.append(links, rechts);
+  kasten.appendChild(knoepfe);
+  grund.appendChild(kasten);
+  document.body.appendChild(grund);
+
+  loeschbar = (eigen) => { weg.disabled = !eigen; };
+  loeschbar(bausteinGewaehlt && eigeneBausteine.includes(bausteinGewaehlt));
+
+  const zu = () => { grund.remove(); auswahlZurueck(); };
+  ab.addEventListener('click', zu);
+  grund.addEventListener('mousedown', (e) => { if (e.target === grund) zu(); });
+  ok.addEventListener('click', () => {
+    if (!bausteinGewaehlt) { melde('Erst einen Baustein in der Liste wählen.'); return; }
+    const gewaehlt = bausteinGewaehlt;
+    zu();
+    bausteinEinfuegen(gewaehlt);
+  });
+
+  neu.addEventListener('click', () => {
+    const text = auswahlAlsText(gemerkteAuswahl);
+    if (!text.trim()) {
+      melde('Erst im Text markieren, was der Baustein enthalten soll — dann hierher.');
+      return;
+    }
+    bausteinAnlegen(text, (angelegt) => listeFuellen(angelegt.name));
+  });
+
+  weg.addEventListener('click', () => {
+    const gewaehlt = bausteinGewaehlt;
+    if (!gewaehlt || !eigeneBausteine.includes(gewaehlt)) return;
+    eigeneBausteine = eigeneBausteine.filter((b) => b !== gewaehlt);
+    eigeneSichern();
+    listeFuellen();
+    melde('„' + gewaehlt.name + '" gelöscht.');
+  });
+
+  document.addEventListener('keydown', function flucht(e) {
+    if (!document.body.contains(grund)) { document.removeEventListener('keydown', flucht); return; }
+    if (e.key === 'Escape') { e.preventDefault(); zu(); }
+  });
+
+  listeFuellen();
+};
+
+/* Name und Kürzel erfragen und den Baustein behalten. Das Kürzel wird
+   vorgeschlagen — es ist der schnelle Weg (tippen und F3), aber niemand
+   denkt sich beim Anlegen eines aus. */
+function bausteinAnlegen(text, danach) {
+  const erstesWort = (text.trim().split(/\s+/)[0] || 'Baustein').replace(/[^\wÄÖÜäöüß]/g, '');
+  const vorschlag = erstesWort.slice(0, 4).toUpperCase() || 'BST';
+
+  fenster('Baustein behalten', [
+    { art: 'satz', text: 'Aus dem Markierten wird ein Baustein. Schreib «so etwas» '
+                       + 'hinein, wo später eine Lücke zum Ausfüllen sein soll.' },
+    { schluessel: 'name', name: 'Name', art: 'text', wert: '' },
+    { schluessel: 'kurz', name: 'Kürzel', art: 'text', wert: vorschlag },
+  ], (werte) => {
+    const name = (werte.name || '').trim();
+    if (!name) { melde('Ohne Namen findet man ihn nicht wieder — nichts behalten.'); return; }
+    const kurz = (werte.kurz || '').trim();
+
+    /* Gleicher Name heißt ersetzen, nicht danebenlegen: Wer denselben
+       Baustein noch einmal anlegt, hat ihn verbessert. */
+    eigeneBausteine = eigeneBausteine.filter((b) => b.name !== name);
+    const angelegt = { name, kurz, absaetze: bausteinAusText(text) };
+    eigeneBausteine.push(angelegt);
+    eigeneBausteine.sort((a, b) => a.name.localeCompare(b.name, 'de'));
+    eigeneSichern();
+    melde('„' + name + '" behalten' + (kurz ? ' — ' + kurz + ' und F3 setzt ihn ein.' : '.'));
+    if (danach) danach(angelegt);
+  }, 'Behalten');
+}
+
+/* ---- Der kurze Weg: Kürzel tippen, F3 drücken ----
+   Wie in LibreOffice. Wer „KÜ" schreibt und F3 drückt, hat die Kündigung
+   stehen. Für die tägliche Arbeit ist das der Weg; das Fenster ist zum
+   Suchen da, nicht zum Einsetzen. */
+async function bausteinUeberKuerzel() {
+  const auswahl = window.getSelection();
+  if (!auswahl.rangeCount || !auswahl.isCollapsed) return false;
+  const knoten = auswahl.anchorNode;
+  if (!knoten || knoten.nodeType !== Node.TEXT_NODE || !feld.contains(knoten)) return false;
+
+  const bis = auswahl.anchorOffset;
+  const text = knoten.data;
+  let von = bis;
+  while (von > 0 && /[\wÄÖÜäöüß]/.test(text[von - 1])) von--;
+  const kuerzel = text.slice(von, bis);
+  if (!kuerzel) return false;
+
+  const gruppen = await bausteineHolen();
+  let treffer = null;
+  for (const gruppe of gruppen) {
+    for (const baustein of gruppe.bausteine) {
+      if ((baustein.kurz || '').toLowerCase() === kuerzel.toLowerCase()) treffer = baustein;
+    }
+  }
+  if (!treffer) return false;
+
+  const bereich = document.createRange();
+  bereich.setStart(knoten, von);
+  bereich.setEnd(knoten, bis);
+  feld.focus();
+  Dokument.waehle(bereich);
+  bausteinEinfuegen(treffer);
+  return true;
+}
+
+/* ============================================================
    Lesehilfe — was das Lesen am Bildschirm erleichtert
 
    Vier Dinge, die in jedem Ratgeber für Legasthenie ganz oben stehen:
@@ -5419,10 +5829,27 @@ function lesehilfeAnwenden() {
      absichtlich blau gefärbt hat, soll es blau sehen. */
   blatt.style.background = seitenfarbe || (ton ? ton[2] : '') || '';
 
+  /* Die drei Abstände hingen bisher am Feld und wurden vererbt. Vererbung
+     ist aber das Schwächste, was es gibt: Ein Absatz, dem die Leiste
+     „Zeilen 1,5" mitgegeben hat, trägt seinen eigenen Zeilenabstand im
+     style-Attribut — und der schlägt jede Vererbung. Dieselbe Falle stellt
+     jedes eingefügte Dokument, das seine Abstände mitbringt.
+
+     Wer am Bildschirm mehr Luft braucht, hat sie dann genau dort nicht, wo
+     der Text schon einmal angefasst wurde, und die Einstellung sieht aus,
+     als täte sie nichts. Deshalb geht sie jetzt über eine Regel mit
+     „!important" an die Absätze selbst — die schlägt auch das
+     style-Attribut. Das Dokument bleibt unangetastet: Die Regel greift nur,
+     solange die Auszeichnung am Feld hängt, und die steht in keiner Datei. */
   const stufe = (marke) => (ABSTUFUNG.find(([m]) => m === marke) || ABSTUFUNG[0])[2];
-  feld.style.letterSpacing = stufe(lesehilfe.zeichen) ? (stufe(lesehilfe.zeichen) * 0.03) + 'em' : '';
-  feld.style.wordSpacing = stufe(lesehilfe.wort) ? (stufe(lesehilfe.wort) * 0.12) + 'em' : '';
-  feld.style.lineHeight = stufe(lesehilfe.zeilen) ? (1.55 + stufe(lesehilfe.zeilen) * 0.22).toFixed(2) : '';
+  feld.style.setProperty('--lese-zeichen',
+    stufe(lesehilfe.zeichen) ? (stufe(lesehilfe.zeichen) * 0.03) + 'em' : 'normal');
+  feld.style.setProperty('--lese-wort',
+    stufe(lesehilfe.wort) ? (stufe(lesehilfe.wort) * 0.12) + 'em' : 'normal');
+  feld.style.setProperty('--lese-zeilen',
+    stufe(lesehilfe.zeilen) ? (1.55 + stufe(lesehilfe.zeilen) * 0.22).toFixed(2) : '1.55');
+  feld.classList.toggle('dokument--abstaende',
+    !!(stufe(lesehilfe.zeichen) || stufe(lesehilfe.wort) || stufe(lesehilfe.zeilen)));
 
   const wachstum = (VERGROESSERN.find(([m]) => m === lesehilfe.groesser)
                     || VERGROESSERN[0])[2];
@@ -5431,7 +5858,9 @@ function lesehilfeAnwenden() {
   const blasse = (ZURUECKNEHMEN.find(([m]) => m === lesehilfe.zurueck)
                   || ZURUECKNEHMEN[0])[2];
   feld.style.setProperty('--rest-blaesse', blasse);
-  feld.classList.toggle('dokument--fokus', blasse < 1);
+  /* Ob wirklich zurückgetreten wird, entscheidet absatzFokusSetzen(): Es
+     weiß als Einziges, ob es überhaupt etwas gibt, wovor der Rest
+     zurücktreten könnte. */
 
   document.body.classList.toggle('lesehilfe--fokus', !!lesehilfe.fokus);
   if (!lesehilfe.fokus) fokusBalkenWeg();
@@ -5493,18 +5922,32 @@ function fokusBalkenSetzen() {
 /* ---- Der Absatz, in dem geschrieben wird ----
    Er bekommt eine Auszeichnung, das Stilblatt macht daraus die Größe.
    Gesucht wird das Kind von „feld", in dem der Zeiger steht — nicht das
-   innerste Element: Ein fett gesetztes Wort ist kein Absatz. */
+   innerste Element: Ein fett gesetztes Wort ist kein Absatz.
+
+   Ein leerer Absatz zählt nicht. In einer leeren Zeile gibt es nichts zu
+   vergrößern, und wenn trotzdem der ganze übrige Text zurückträte, bliebe
+   von der Einstellung nur eines übrig: Alles ist blasser geworden und
+   nichts steht hervor. Genau so sah es aus, als wäre die Lesehilfe kaputt.
+   Deshalb entscheidet sich hier — und nicht schon beim Anwenden —, ob
+   zurückgetreten wird: Zurücktreten gibt es nur, wo auch etwas hervortritt. */
 function absatzFokusSetzen() {
   const vorher = feld.querySelector('.absatz--fokus');
-  const an = (lesehilfe.groesser && lesehilfe.groesser !== 'keine')
-          || (lesehilfe.zurueck && lesehilfe.zurueck !== 'keine');
-  if (!an) { if (vorher) vorher.classList.remove('absatz--fokus'); return; }
+  const blasse = (ZURUECKNEHMEN.find(([m]) => m === lesehilfe.zurueck)
+                  || ZURUECKNEHMEN[0])[2];
+  const an = (lesehilfe.groesser && lesehilfe.groesser !== 'keine') || blasse < 1;
+  if (!an) {
+    if (vorher) vorher.classList.remove('absatz--fokus');
+    feld.classList.remove('dokument--fokus');
+    return;
+  }
 
   const auswahl = window.getSelection();
   let knoten = auswahl.rangeCount ? auswahl.anchorNode : null;
   while (knoten && knoten.parentNode !== feld) knoten = knoten.parentNode;
-  const absatz = (knoten && knoten.nodeType === Node.ELEMENT_NODE) ? knoten : null;
+  let absatz = (knoten && knoten.nodeType === Node.ELEMENT_NODE) ? knoten : null;
+  if (absatz && !absatz.textContent.trim()) absatz = null;
 
+  feld.classList.toggle('dokument--fokus', blasse < 1 && !!absatz);
   if (vorher === absatz) return;
   if (vorher) vorher.classList.remove('absatz--fokus');
   if (absatz) absatz.classList.add('absatz--fokus');
@@ -5523,7 +5966,40 @@ function fokusAuffrischen() {
   }, 0);
 }
 
+/* Was gerade gilt, in einem Satz. „Gesetzt" allein sagte nur, dass ein Knopf
+   gedrückt wurde — nicht, ob überhaupt etwas eingestellt ist. Wer alle sieben
+   Felder auf „normal" stehen lässt und dann nichts sieht, soll lesen können,
+   woran es liegt. */
+function lesehilfeSatz() {
+  const nameVon = (liste, marke) => {
+    const eintrag = liste.find(([m]) => m === marke);
+    return eintrag ? eintrag[1] : '';
+  };
+  const teile = [];
+  if (lesehilfe.ton && lesehilfe.ton !== 'weiss') teile.push(nameVon(PAPIERTOENE, lesehilfe.ton));
+  if (lesehilfe.zeichen !== 'keine') teile.push('Buchstaben ' + nameVon(ABSTUFUNG, lesehilfe.zeichen));
+  if (lesehilfe.wort !== 'keine') teile.push('Wörter ' + nameVon(ABSTUFUNG, lesehilfe.wort));
+  if (lesehilfe.zeilen !== 'keine') teile.push('Zeilen ' + nameVon(ABSTUFUNG, lesehilfe.zeilen));
+  if (lesehilfe.fokus) teile.push('Zeilenfokus');
+  if (lesehilfe.groesser !== 'keine') teile.push('Absatz ' + nameVon(VERGROESSERN, lesehilfe.groesser));
+  if (lesehilfe.zurueck !== 'keine') teile.push('übriger Text ' + nameVon(ZURUECKNEHMEN, lesehilfe.zurueck));
+  return teile.length
+    ? 'Lesehilfe: ' + teile.join(' · ') + '. Nur am Bildschirm.'
+    : 'Lesehilfe: alles steht auf „normal" — am Bildschirm ändert sich dadurch nichts.';
+}
+
 B.lesehilfe = () => {
+  /* Der Stand von vorher, für den Rückweg. */
+  const vorher = Object.assign({}, lesehilfe);
+  const setzen = (werte) => {
+    lesehilfe = {
+      ton: werte.ton, zeichen: werte.zeichen, wort: werte.wort,
+      zeilen: werte.zeilen, fokus: werte.fokus === 'ja',
+      groesser: werte.groesser, zurueck: werte.zurueck,
+    };
+    lesehilfeAnwenden();
+  };
+
   fenster('Lesehilfe', [
     { art: 'satz', text: 'Erleichtert das Lesen am Bildschirm. Das Dokument bleibt, wie es ist —\n'
                        + 'auf dem Papier steht nachher nichts davon.' },
@@ -5545,14 +6021,13 @@ B.lesehilfe = () => {
       werte: ZURUECKNEHMEN.map(([marke, name]) => [marke, name]),
       wert: lesehilfe.zurueck },
   ], (werte) => {
-    lesehilfe = {
-      ton: werte.ton, zeichen: werte.zeichen, wort: werte.wort,
-      zeilen: werte.zeilen, fokus: werte.fokus === 'ja',
-      groesser: werte.groesser, zurueck: werte.zurueck,
-    };
-    lesehilfeAnwenden();
-    melde('Lesehilfe gesetzt — sie gilt nur am Bildschirm.');
-  }, 'Übernehmen');
+    setzen(werte);
+    melde(lesehilfeSatz());
+  }, 'Übernehmen', false,
+  /* Abbrechen, Escape, Klick daneben: zurück auf den Stand von vorher. */
+  () => { lesehilfe = vorher; lesehilfeAnwenden(); },
+  /* Und während das Fenster steht, wirkt jede Wahl sofort. */
+  setzen);
 };
 
 B.zeilenfokus = () => {
@@ -7808,6 +8283,7 @@ const MENUES = [
     { name: 'Text', unter: [
       { name: 'Schmuckschrift…', tun: B.wordart },
       { name: 'Initiale', tun: B.initiale },
+      { name: 'Textbaustein…', tun: B.textbausteine, taste: 'F3' },
       { name: 'Text aus Datei…', tun: B.textAusDatei },
       { name: 'Schnellbaustein…', tun: B.schnellbaustein },
       strich,
@@ -9618,6 +10094,19 @@ function zeichneVorschlaege() {
 
 const EMPFAENGER = Object.keys(KI.EMPFAENGER);
 
+/* Die Marke sagt nicht nur der KI, in welchem Ton sie schreiben soll — sie
+   sagt auch der Wortvorhersage, worum es geht. Wer „Amt" gewählt hat und
+   „bes" tippt, bekommt „Bescheid" vor „besonders".
+
+   Die Listen stehen in daten/themenwoerter.js. Fehlt eine, passiert nichts
+   Schlimmes: Dann sortiert die Vorhersage wie bisher. */
+function themaAnwenden() {
+  const liste = (typeof THEMENWOERTER === 'object' && THEMENWOERTER)
+    ? THEMENWOERTER[KI.empfaengerLies()]
+    : null;
+  Pruefung.themaSetzen(liste || []);
+}
+
 function empfaengerBauen() {
   const kasten = $('empfaenger');
   const gewaehlt = KI.empfaengerLies();
@@ -9628,10 +10117,12 @@ function empfaengerBauen() {
     marke.textContent = name;
     marke.addEventListener('click', () => {
       KI.Speicher.schreib('empfaenger', name);
+      themaAnwenden();
       empfaengerBauen();
     });
     kasten.appendChild(marke);
   }
+  themaAnwenden();
 }
 
 /* ============================================================
@@ -9698,6 +10189,19 @@ const KUERZEL = {
 document.addEventListener('keydown', (e) => {
   if (e.key === 'F4') { e.preventDefault(); B.vorlesen(); return; }
   if (e.key === 'F7') { e.preventDefault(); pruefen(); return; }
+  /* Kürzel tippen, F3 drücken — wie in LibreOffice. Findet sich kein
+     Baustein zu dem Wort, passiert nichts; F3 ist sonst nicht belegt. */
+  if (e.key === 'F3' && !document.querySelector('.dialoggrund')) {
+    e.preventDefault(); bausteinUeberKuerzel(); return;
+  }
+  /* Tab springt von Lücke zu Lücke — aber nur, solange welche da sind.
+     Sind keine mehr offen, gehört Tab wieder dem Einzug. */
+  if (e.key === 'Tab' && !e.ctrlKey && !e.altKey
+      && !document.querySelector('.dialoggrund')
+      && feld.contains(document.activeElement === feld ? feld : document.activeElement)
+      && feld.querySelector('.platzhalter')) {
+    if (platzhalterWeiter(e.shiftKey)) { e.preventDefault(); return; }
+  }
   /* Strg und eine Ziffer nimmt einen Vorschlag der Wortvorhersage — so
      bleibt die Hand auf der Tastatur. */
   if ((e.ctrlKey || e.metaKey) && vorhersageKasten && /^[1-6]$/.test(e.key)) {
@@ -9768,6 +10272,14 @@ feld.addEventListener('input', () => {
   clearTimeout(vorhersageUhr);
   vorhersageUhr = setTimeout(vorhersageZeigen, 180);
 });
+/* Ein Klick in eine Lücke nimmt sie ganz. Sonst stünde der Zeiger mitten in
+   «Abonnement o.ä.», und das Tippen schöbe sich zwischen die Buchstaben —
+   man müsste erst löschen, was einem eigentlich helfen sollte. */
+feld.addEventListener('click', (e) => {
+  const platz = e.target.closest && e.target.closest('.platzhalter');
+  if (platz && feld.contains(platz)) setTimeout(() => platzhalterNehmen(platz), 0);
+});
+
 feld.addEventListener('blur', () => setTimeout(vorhersageWeg, 200));
 document.addEventListener('selectionchange', () => { if (vorhersageKasten) vorhersageWeg(); });
 
