@@ -7941,13 +7941,21 @@ B.fensterListe = async () => {
   }, 'Hinwechseln');
 };
 
+/* Das Handbuch ist unser eigenes und liegt als handbuch.html neben der
+   Oberfläche. Vorher zeigte dieser Punkt auf die Hilfeseite von
+   LibreOffice — der bequeme Weg und der falsche: Sie beschreibt ein
+   anderes Programm, mit Knöpfen, die es hier nicht gibt, und ohne die, die
+   es hier gibt. */
 B.handbuch = async () => {
   try {
     const antwort = await fetch('handbuch', { method: 'POST' });
     if (!antwort.ok) throw new Error('Fehler ' + antwort.status);
     melde('Das Handbuch öffnet sich im Browser.');
   } catch (e) {
-    melde('Das Handbuch steht unter help.libreoffice.org/latest/de/text/swriter/main0000.html');
+    /* Ohne eigenes Fenster gibt es keinen, der eine Datei öffnen könnte —
+       dann tut es der Weg, den die Seite selbst kennt. */
+    window.open('handbuch.html', '_blank');
+    melde('Das Handbuch steht in handbuch.html neben dem Programm.');
   }
 };
 
@@ -8787,7 +8795,7 @@ const MENUES = [
   ['Hilfe', [
     { name: 'Welche Hilfe wann…', tun: B.welcheHilfe },
     strich,
-    { name: 'LibreOffice-Handbuch', tun: B.handbuch },
+    { name: 'Handbuch', tun: B.handbuch },
     { name: 'Tastenkombinationen…', tun: B.tastenHilfe },
     strich,
     { name: 'Über Lunivo-Office…', tun: B.ueber },

@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Handbuch — Lunivo-Office</title>
+<style>
+/* Eigenes Blatt, eigenes Stilblatt: Das Handbuch wird auch dann gelesen,
+   wenn es aus dem Ordner heraus im Browser geöffnet wird. Deshalb hängt es
+   an keiner Datei des Programms. */
+:root{
+  --grund:#fbfaf7; --karte:#fff; --schrift:#1b1f23; --schrift-2:#4a5158;
+  --schrift-3:#6b737b; --linie:#e2ded6; --blau:#2b6cb0; --blau-hell:#3182ce;
+  --code-grund:#f2efe9;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --grund:#16191c; --karte:#1d2126; --schrift:#e8eaed; --schrift-2:#b6bcc3;
+    --schrift-3:#8b939b; --linie:#2c3138; --blau:#63a4e0; --blau-hell:#8fc1ee;
+    --code-grund:#23282e;
+  }
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--grund); color:var(--schrift);
+  font:16px/1.65 Georgia,"Liberation Serif",serif;
+}
+.rahmen{max-width:1180px;margin:0 auto;padding:0 24px 96px;display:flex;gap:40px}
+nav{
+  flex:0 0 232px; position:sticky; top:0; align-self:flex-start;
+  max-height:100vh; overflow-y:auto; padding:32px 0;
+  font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+nav b{display:block;margin:18px 0 6px;color:var(--schrift-3);
+  font-size:11px;letter-spacing:.09em;text-transform:uppercase;font-weight:600}
+nav b:first-child{margin-top:0}
+nav a{display:block;padding:3px 0;color:var(--schrift-2);text-decoration:none}
+nav a:hover{color:var(--blau)}
+main{flex:1 1 auto;min-width:0;padding:32px 0}
+h1{font-size:34px;line-height:1.2;margin:0 0 4px;letter-spacing:-.4px}
+.unterzeile{margin:0 0 6px;color:var(--schrift-2);font-size:18px}
+.stand{margin:0 0 40px;color:var(--schrift-3);font-size:13px;
+  font-family:system-ui,-apple-system,sans-serif}
+h2{font-size:24px;margin:52px 0 4px;padding-top:20px;border-top:1px solid var(--linie);
+  letter-spacing:-.2px}
+h2:first-of-type{border-top:none;padding-top:0}
+h3{font-size:18px;margin:30px 0 6px}
+p{margin:0 0 14px;color:var(--schrift)}
+.dazu{color:var(--schrift-2)}
+ul,ol{margin:0 0 16px;padding-left:22px}
+li{margin:0 0 7px}
+a{color:var(--blau)}
+kbd{
+  display:inline-block;padding:1px 6px;border:1px solid var(--linie);
+  border-bottom-width:2px;border-radius:4px;background:var(--code-grund);
+  font:13px/1.5 ui-monospace,"DejaVu Sans Mono",monospace;color:var(--schrift);
+  white-space:nowrap;
+}
+code{background:var(--code-grund);padding:1px 5px;border-radius:4px;
+  font:14px/1.5 ui-monospace,"DejaVu Sans Mono",monospace}
+.weg{
+  display:inline-block;background:var(--code-grund);border:1px solid var(--linie);
+  border-radius:5px;padding:1px 8px;
+  font:14px/1.6 system-ui,-apple-system,sans-serif;white-space:nowrap;
+}
+table{border-collapse:collapse;width:100%;margin:0 0 20px;
+  font:15px/1.5 system-ui,-apple-system,sans-serif}
+th,td{text-align:left;padding:8px 12px 8px 0;border-bottom:1px solid var(--linie);
+  vertical-align:top}
+th{color:var(--schrift-3);font-size:12px;letter-spacing:.06em;text-transform:uppercase;
+  font-weight:600}
+td:first-child{white-space:nowrap;width:1%;padding-right:24px}
+.merk{
+  margin:0 0 20px;padding:14px 18px;background:var(--karte);
+  border:1px solid var(--linie);border-left:3px solid var(--blau);border-radius:6px;
+}
+.merk p:last-child{margin-bottom:0}
+.merk b{font-family:system-ui,-apple-system,sans-serif;font-size:14px}
+.tafel{overflow-x:auto}
+footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--linie);
+  color:var(--schrift-3);font:14px/1.6 system-ui,-apple-system,sans-serif}
+@media (max-width:860px){
+  .rahmen{display:block;padding:0 20px 64px}
+  nav{position:static;max-height:none;flex:none;
+    padding:24px 0 8px;border-bottom:1px solid var(--linie);
+    columns:2;column-gap:28px}
+  nav b:first-child{margin-top:0}
+}
+</style>
+</head>
+<body>
+<div class="rahmen">
+
+<nav>
+  <b>Anfangen</b>
+  <a href="#erstes">Das erste Blatt</a>
+  <a href="#oberflaeche">Die Oberfläche einrichten</a>
+  <b>Schreiben</b>
+  <a href="#schreiben">Text und Gestaltung</a>
+  <a href="#vorlagenstile">Formatvorlagen</a>
+  <a href="#seite">Die Seite</a>
+  <b>Was hilft</b>
+  <a href="#schreibhilfe">Die Schreibhilfe</a>
+  <a href="#fuerwen">Für wen? — Themenwörter</a>
+  <a href="#lesehilfe">Die Lesehilfe</a>
+  <a href="#vorlesen">Vorlesen</a>
+  <b>Bausteine</b>
+  <a href="#bausteine">Textbausteine</a>
+  <a href="#eigene">Eigene Bausteine</a>
+  <a href="#vorlagen">Vorlagen</a>
+  <b>Heraus</b>
+  <a href="#speichern">Speichern</a>
+  <a href="#drucken">Drucken</a>
+  <b>Nachschlagen</b>
+  <a href="#tasten">Tastenkürzel</a>
+  <a href="#orte">Wo was liegt</a>
+  <a href="#wenndochmal">Wenn etwas klemmt</a>
+</nav>
+
+<main>
+
+<h1>Lunivo-Office</h1>
+<p class="unterzeile">Ein Raum für Worte — das Handbuch</p>
+<p class="stand">Version 1.2</p>
+
+<p>Dieses Programm ist zum Schreiben da. Es öffnet ein leeres Blatt, und
+alles andere steht bereit, ohne sich vorzudrängen. Was hier geschrieben
+wird, bleibt auf diesem Rechner.</p>
+
+<p class="dazu">Dieses Handbuch beschreibt Lunivo-Office und sonst nichts.
+Es nennt die Wege, die es hier wirklich gibt, mit den Namen, die hier
+wirklich draufstehen.</p>
+
+
+<h2 id="erstes">Das erste Blatt</h2>
+
+<p>Beim Start liegt ein leeres Blatt da, und die Schreibstelle blinkt. Man
+kann sofort tippen. Es muss nichts angelegt, benannt oder gewählt werden.</p>
+
+<p>Das Blatt wird laufend gemerkt: Wer das Programm schließt und wieder
+öffnet, findet seinen Text wieder — auch ohne gespeichert zu haben. Das
+ersetzt kein Speichern, aber es rettet den Nachmittag.</p>
+
+<h3>Neu, Öffnen, Weitermachen</h3>
+
+<table>
+<tr><td><span class="weg">Datei → Neu</span></td>
+    <td>Ein leeres Blatt. Steht schon eines da, sagt die Statuszeile das —
+        ein leeres Blatt noch einmal zu leeren ändert nichts.</td></tr>
+<tr><td><span class="weg">Datei → Öffnen…</span></td>
+    <td>Eine vorhandene Datei. Gelesen werden <code>.odt</code>,
+        <code>.ott</code>, <code>.fodt</code>, <code>.docx</code>,
+        <code>.dotx</code>, <code>.doc</code>, <code>.dot</code>,
+        <code>.rtf</code>, <code>.html</code>, <code>.txt</code> und
+        <code>.md</code>.</td></tr>
+<tr><td><span class="weg">Datei → Zuletzt verwendet</span></td>
+    <td>Die letzten zehn Dateien.</td></tr>
+<tr><td><span class="weg">Datei → Neu aus Vorlage</span></td>
+    <td>Eine eigene Vorlage als Abschrift öffnen. Siehe <a href="#vorlagen">Vorlagen</a>.</td></tr>
+</table>
+
+<p>Steht ungesicherte Arbeit im Blatt, fragt das Programm nach, bevor sie
+weggeht. <b>Abbrechen</b> ist dabei die Vorgabe: Wer auf <kbd>Enter</kbd>
+haut, ohne zu lesen, verliert nichts.</p>
+
+
+<h2 id="oberflaeche">Die Oberfläche einrichten</h2>
+
+<p>Dieselben Befehle, anders sortiert — unter
+<span class="weg">Ansicht → Benutzeroberfläche…</span>:</p>
+
+<ul>
+<li><b>Symbolleisten</b> — zwei Zeilen, in denen alles immer dasteht.</li>
+<li><b>In Registern</b> — Reiter wie Datei, Start, Einfügen, Layout. Zeigt
+weniger auf einmal, dafür mit Namen neben den Zeichen.</li>
+</ul>
+
+<p>Die <b>Menüleiste</b> ganz oben bleibt in beiden Fällen. Sie ist der Weg
+zu allem, was in keine Leiste passt — wenn ein Befehl in der Leiste nicht zu
+finden ist, steht er dort.</p>
+
+<p>Weiter unter <span class="weg">Ansicht</span>: die Seitenleiste
+<b>Schreibhilfe</b> (<kbd>F5</kbd>), das <b>Lineal</b>,
+<b>Textbegrenzungen</b>, <b>Steuerzeichen</b>, der
+<b>Navigationsbereich</b>, der <b>Lesemodus</b> und die <b>Gliederung</b>.
+Unter <span class="weg">Ansicht → Register anpassen…</span> lässt sich die
+Reihenfolge der Gruppen im Band ändern; unter
+<span class="weg">Symbol austauschen…</span> das Aussehen einzelner Zeichen.</p>
+
+<p>Hell oder dunkel: <span class="weg">Ansicht → Wie das System</span>,
+<b>Immer hell</b> oder <b>Immer dunkel</b>.</p>
+
+
+<h2 id="schreiben">Text und Gestaltung</h2>
+
+<p>Fett, kursiv, unterstrichen, hoch- und tiefgestellt, Farbe, Marker —
+alles unter <span class="weg">Format</span> und in der Leiste. Die
+gewohnten Kürzel gelten: <kbd>Strg</kbd>+<kbd>B</kbd>,
+<kbd>Strg</kbd>+<kbd>I</kbd>, <kbd>Strg</kbd>+<kbd>U</kbd>.</p>
+
+<p>Absätze: Ausrichtung, Zeilenabstand, Einzug, Aufzählungen und
+Nummerierungen, Rahmen und Schattierung. Das <b>Lineal</b> zieht Einzüge mit
+der Maus.</p>
+
+<h3>Was sich einfügen lässt</h3>
+<p>Unter <span class="weg">Einfügen</span>: Tabellen (auch fertige
+Schnelltabellen und eingebettete Tabellenblätter), Bilder, Bildschirmfotos,
+Diagramme, Formen, Piktogramme, Kopf- und Fußzeile, Seitennummern,
+Hyperlinks, Textmarken, Querverweise, Kommentare, Initialen, Formeln,
+Sonderzeichen, Datum und Uhrzeit.</p>
+
+<h3>Änderungen verfolgen</h3>
+<p><span class="weg">Bearbeiten → Änderungen</span> zeichnet auf, was
+geändert wurde, und zeigt es farbig. Einzelne Änderungen lassen sich
+annehmen oder ablehnen — nützlich, wenn jemand anders gegenliest.</p>
+
+
+<h2 id="vorlagenstile">Formatvorlagen</h2>
+
+<p>Eine Formatvorlage ist ein Name für ein Aussehen: <b>Fließtext</b>,
+<b>Überschrift 1</b>, <b>Zitat</b>. Wer sie benutzt statt jeden Absatz
+einzeln anzufassen, kann später einmal etwas ändern — und es gilt überall,
+wo diese Vorlage steht.</p>
+
+<p>Unter <span class="weg">Formatvorlagen</span> stehen außerdem fertige
+Sätze: <b>Amtlich</b>, <b>Klassisch</b>, <b>Modern</b>, <b>Warm</b>,
+<b>Ruhig</b> ändern Schriften und Farben aller Vorlagen auf einmal;
+<b>Eng</b>, <b>Normal</b>, <b>Luftig</b>, <b>Groß</b> die Größen und
+Abstände. <span class="weg">Vorlagen zurücksetzen</span> stellt den
+Ausgangszustand wieder her.</p>
+
+
+<h2 id="seite">Die Seite</h2>
+
+<p>Unter <span class="weg">Layout</span>: Papiergröße (A4, A5, A3, Letter,
+Legal), Hoch- oder Querformat, Ränder, Spalten, Seitenfarbe, Wasserzeichen
+und Seitenrahmen.</p>
+
+<div class="merk">
+<p><b>Kopf- und Fußzeile liegen im Rand.</b> Die Kopfzeile endet genau dort,
+wo der Text anfängt, die Fußzeile beginnt dort, wo er aufhört. Der Text
+beginnt beim eingestellten Rand — ob Kopf- und Fußzeile eingeblendet sind
+oder nicht.</p>
+</div>
+
+<p>Das getönte Band und das Schild „Kopfzeile" sind nur am Bildschirm da.
+Auf dem Papier steht nur, was hineingeschrieben wurde.</p>
+
+
+<h2 id="schreibhilfe">Die Schreibhilfe</h2>
+
+<p>Die Seitenleiste rechts (<kbd>F5</kbd>). Sie sucht die Fehler, die ein
+Rechtschreibprüfer nicht finden kann — Wörter, die richtig geschrieben, aber
+falsch gewählt sind.</p>
+
+<table>
+<tr><td><b>Prüfen</b> (<kbd>F7</kbd>)</td>
+    <td>Geht den Text durch und zeigt, was auffällt.</td></tr>
+<tr><td><b>Wellen</b></td>
+    <td>Rote Wellenlinien unter unbekannten Wörtern.</td></tr>
+<tr><td><b>Vorhersage</b></td>
+    <td>Schlägt beim Tippen Wörter vor. <kbd>Strg</kbd>+<kbd>1</kbd> bis
+        <kbd>Strg</kbd>+<kbd>6</kbd> nimmt einen Vorschlag, ohne die Hand
+        von der Tastatur zu nehmen.</td></tr>
+<tr><td><b>AutoKorr</b></td>
+    <td>Bessert beim Schreiben stillschweigend aus, was eindeutig ist.</td></tr>
+</table>
+
+<p>Das Programm lernt mit: Was einmal ausgebessert wurde, wird beim nächsten
+Mal zuerst vorgeschlagen.</p>
+
+<p>Die drei Knöpfe <b>KI-Korrektur</b>, <b>Vorschläge</b> und
+<b>Nach Englisch</b> sind freiwillig. Sie sind grau, solange kein Schlüssel
+hinterlegt ist. Läuft auf dem Rechner ein eigenes Modell (Ollama), gehen sie
+auch ohne Schlüssel und ohne Geld — dann verlässt der Text den Rechner
+nicht.</p>
+
+
+<h2 id="fuerwen">Für wen? — Themenwörter</h2>
+
+<p>Ein Brief ans Amt benutzt andere Wörter als eine Nachricht an einen
+Freund. Nicht andere Grammatik, nicht mehr Wörter — andere.</p>
+
+<p>Die Marken unten in der Schreibhilfe — <b>egal</b>, <b>Amt</b>,
+<b>Arbeit</b>, <b>Freunde</b>, <b>Forum</b>, <b>Bewerbung</b> — sagen dem
+Programm, worum es gerade geht. Das tut zweierlei:</p>
+
+<ul>
+<li><b>Es sortiert.</b> Mit „Bewerbung" wird aus <code>bew</code> nicht mehr
+<i>bewegen</i>, sondern <i>Bewerbung</i>; aus <code>leben</code> wird
+<i>Lebenslauf</i>. Mit „Freunde" wird aus <code>wochen</code>
+<i>Wochenende</i>.</li>
+<li><b>Es ergänzt.</b> <i>Widerspruchsfrist</i>, <i>Rechtsbehelf</i>,
+<i>Deckungszusage</i> stehen in der großen Wortliste gar nicht. Ohne die
+Themenliste wurden sie nicht vorgeschlagen <i>und</i> als Fehler
+unterringelt — ausgerechnet die Wörter, auf die es in so einem Brief
+ankommt.</li>
+</ul>
+
+<p>„egal" lenkt nicht. Wer nichts wählt, bekommt die normale Reihenfolge.</p>
+
+
+<h2 id="lesehilfe">Die Lesehilfe</h2>
+
+<p><span class="weg">Ansicht → Lesehilfe…</span>. Sie ändert, wie der Text
+<i>aussieht</i>, ohne das Dokument anzufassen: Nichts davon steht in der
+Datei, nichts davon wird gedruckt. Wer sie ausschaltet, hat denselben Text
+wie vorher.</p>
+
+<table>
+<tr><td><b>Papierton</b></td><td>Ein ruhigerer Grund als reines Weiß.</td></tr>
+<tr><td><b>Zeichenabstand</b></td><td>Mehr Luft zwischen den Buchstaben.</td></tr>
+<tr><td><b>Wortabstand</b></td><td>Mehr Luft zwischen den Wörtern.</td></tr>
+<tr><td><b>Zeilenluft</b></td><td>Mehr Abstand zwischen den Zeilen.</td></tr>
+<tr><td><b>Zeilenfokus</b></td><td>Ein Balken hinter der Zeile, in der man schreibt.</td></tr>
+<tr><td><b>Übriger Text blasser</b></td><td>Der Absatz, an dem gearbeitet
+    wird, tritt hervor; der Rest tritt zurück.</td></tr>
+</table>
+
+<p>Das Fenster zeigt jede Änderung sofort im Blatt. <b>Abbrechen</b> oder
+<kbd>Esc</kbd> stellt den Stand von vorher wieder her.</p>
+
+
+<h2 id="vorlesen">Vorlesen</h2>
+
+<p><kbd>F4</kbd> oder <span class="weg">Schreibhilfe → Vorlesen</span> liest
+den Text vor. <b>Ab hier vorlesen</b> beginnt an der Schreibstelle.
+<span class="weg">Stimme und Tempo…</span> wählt die Stimme.</p>
+
+<p>Vorlesen ist nicht nur für die Ohren: Ein Satz, über den die Stimme
+stolpert, stolpert auch beim Lesen.</p>
+
+
+<h2 id="bausteine">Textbausteine</h2>
+
+<p><span class="weg">Einfügen → Textbaustein…</span> oder <kbd>F3</kbd>.
+Ein Baustein ist ein Stück Text, das man immer wieder braucht — eine
+Grußformel, ein Betreff, ein Absatz, der jedes Mal gleich anfängt.</p>
+
+<p>Das Fenster hat zwei Spalten: links die Liste nach Gruppen, rechts der
+Text, den man bekommt. Ohne die Vorschau wählt man nach dem Namen — und
+„Anlage" sagt einem nichts, bevor man es einmal eingesetzt hat.</p>
+
+<h3>Lücken</h3>
+<p>Text in <b>«spitzen Anführungszeichen»</b> ist eine Lücke zum Ausfüllen.
+Nach dem Einsetzen ist die erste gleich markiert: Tippen ersetzt sie,
+<kbd>Tab</kbd> springt zur nächsten.</p>
+
+<h3>Der kurze Weg</h3>
+<p>Jeder Baustein hat ein Kürzel. Kürzel tippen, <kbd>F3</kbd> drücken — und
+der Baustein steht da, ohne dass ein Fenster aufgeht. Für die tägliche
+Arbeit ist das der Weg; das Fenster ist zum Suchen da.</p>
+
+
+<h2 id="eigene">Eigene Bausteine</h2>
+
+<p>Die mitgelieferten Bausteine sind aus Firmensicht geschrieben — Angebot,
+Bestellung, Mahnung. Wer an sein Amt oder seine Versicherung schreibt,
+braucht andere, und die kennt nur er selbst.</p>
+
+<ol>
+<li>Im Text markieren, was der Baustein enthalten soll.</li>
+<li><span class="weg">Einfügen → Textbaustein…</span>, dann unten links
+    <b>Aus Markierung…</b></li>
+<li>Namen und Kürzel eintragen, <b>Behalten</b>.</li>
+</ol>
+
+<p>Absatzgrenzen kommen mit. Wer beim Schreiben <code>«Betrag»</code>
+hineinschreibt, hat beim nächsten Einsetzen dort eine Lücke.
+<b>Löschen</b> gilt nur für die eigenen — die mitgelieferten bleiben, wie
+sie sind.</p>
+
+<div class="merk">
+<p><b>Baustein oder Vorlage?</b> Ein Baustein ist ein <i>Stück</i> Text und
+nimmt absichtlich keine Gestaltung mit: Im neuen Dokument soll dessen
+Aussehen gelten. Eine ganze Seite mit Briefkopf und Rändern ist keine
+Sache für einen Baustein, sondern für eine <a href="#vorlagen">Vorlage</a>.</p>
+</div>
+
+
+<h2 id="vorlagen">Vorlagen</h2>
+
+<p>Eine Vorlage ist ein ganzes Dokument: Briefkopf, Ränder, Schriften,
+Aufbau. Ein fertiges Muster aus dem Internet gehört hierher, nicht in einen
+Baustein.</p>
+
+<h3>Eine Vorlage hinzufügen</h3>
+<ol>
+<li><span class="weg">Datei → Neu aus Vorlage → Vorlagenordner öffnen</span>
+    — im Register-Band steht dasselbe unter <span class="weg">Datei</span>.
+    Die Dateiverwaltung geht auf.</li>
+<li>Die Datei hineinziehen. Erkannt werden <code>.odt</code>,
+    <code>.ott</code>, <code>.fodt</code>, <code>.docx</code>,
+    <code>.dotx</code>, <code>.doc</code>, <code>.dot</code>,
+    <code>.rtf</code>, <code>.html</code>, <code>.txt</code> und
+    <code>.md</code>.</li>
+<li>Fertig. Sie steht sofort im Menü — kein Neustart nötig.</li>
+</ol>
+
+<p>Der Ordner ist <code>~/Vorlagen</code> im eigenen Verzeichnis. Es ist
+derselbe, den die Dateiverwaltung als Vorlagenordner kennt.</p>
+
+<h3>Das Blatt als Vorlage behalten</h3>
+<p><span class="weg">Datei → Neu aus Vorlage → Dieses Dokument als Vorlage
+behalten…</span> legt ab, was gerade im Blatt steht — mit Briefkopf,
+Rändern und Schriften.</p>
+
+<div class="merk">
+<p><b>Geöffnet wird immer eine Abschrift.</b> Die Vorlage selbst wird nur
+gelesen. Sie wandert nicht in „Zuletzt verwendet", und der
+Speichern-Dialog steht nicht in ihrem Ordner. Eine Vorlage, die beim
+dritten Brief überschrieben ist, war keine.</p>
+</div>
+
+
+<h2 id="speichern">Speichern</h2>
+
+<table>
+<tr><td><kbd>Strg</kbd>+<kbd>S</kbd></td>
+    <td>Speichern — in dem Format, in dem die Datei kam.</td></tr>
+<tr><td><kbd>Strg</kbd>+<kbd>Umschalt</kbd>+<kbd>S</kbd></td>
+    <td>Speichern unter. Ort und Format an einer Stelle.</td></tr>
+</table>
+
+<p>Geschrieben werden <code>.odt</code>, <code>.fodt</code>,
+<code>.docx</code>, <code>.doc</code>, <code>.rtf</code>,
+<code>.html</code>, <code>.txt</code>, <code>.pdf</code> und
+<code>.epub</code>.</p>
+
+<p>Wer einen Word-Brief öffnet, etwas ändert und speichert, bekommt wieder
+eine Word-Datei — und nicht eine <code>.odt</code>, die sein Gegenüber
+womöglich gar nicht aufbekommt.</p>
+
+<p class="dazu">PDF ist kein Format zum Weiterschreiben. Es wird ausgegeben,
+nicht gespeichert, und deshalb merkt sich das Programm es auch nicht als die
+Art, in der künftig gesichert wird.</p>
+
+
+<h2 id="drucken">Drucken</h2>
+
+<p><kbd>Strg</kbd>+<kbd>P</kbd>. Vorher zeigt
+<span class="weg">Datei → Druckvorschau</span>, was auf das Papier kommt.
+Unter <span class="weg">Druckereinstellungen…</span> stehen die
+Möglichkeiten des angeschlossenen Druckers — Papierfach, beidseitig,
+Auflösung.</p>
+
+<p>Gedruckt wird das Dokument, nicht der Bildschirm: Textbegrenzungen,
+Lineal, Zeilenfokus, Papierton und die Bänder von Kopf- und Fußzeile
+bleiben draußen.</p>
+
+
+<h2 id="tasten">Tastenkürzel</h2>
+
+<div class="tafel">
+<table>
+<tr><th>Taste</th><th>Was sie tut</th></tr>
+<tr><td><kbd>Strg</kbd>+<kbd>N</kbd></td><td>Neues Blatt</td></tr>
+<tr><td><kbd>Strg</kbd>+<kbd>O</kbd></td><td>Öffnen</td></tr>
+<tr><td><kbd>Strg</kbd>+<kbd>S</kbd></td><td>Speichern</td></tr>
+<tr><td><kbd>Strg</kbd>+<kbd>Umschalt</kbd>+<kbd>S</kbd></td><td>Speichern unter</td></tr>
+<tr><td><kbd>Strg</kbd>+<kbd>P</kbd></td><td>Drucken</td></tr>
+<tr><td><kbd>Strg</kbd>+<kbd>Z</kbd> / <kbd>Strg</kbd>+<kbd>Y</kbd></td>
+    <td>Rückgängig / Wiederholen</td></tr>
+<tr><td><kbd>Strg</kbd>+<kbd>B</kbd> / <kbd>I</kbd> / <kbd>U</kbd></td>
+    <td>Fett / Kursiv / Unterstrichen</td></tr>
+<tr><td><kbd>Strg</kbd>+<kbd>Enter</kbd></td><td>Seitenumbruch</td></tr>
+<tr><td><kbd>Strg</kbd>+<kbd>+</kbd> / <kbd>−</kbd> / <kbd>0</kbd></td>
+    <td>Größer / Kleiner / Normalgröße</td></tr>
+<tr><td><kbd>Strg</kbd>+<kbd>1</kbd> … <kbd>6</kbd></td>
+    <td>Vorschlag der Wortvorhersage nehmen</td></tr>
+<tr><td><kbd>F3</kbd></td><td>Textbaustein zum getippten Kürzel einsetzen</td></tr>
+<tr><td><kbd>Tab</kbd></td><td>Zur nächsten Lücke «…» springen</td></tr>
+<tr><td><kbd>F4</kbd></td><td>Vorlesen</td></tr>
+<tr><td><kbd>F5</kbd></td><td>Seitenleiste Schreibhilfe</td></tr>
+<tr><td><kbd>F7</kbd></td><td>Prüfen</td></tr>
+<tr><td><kbd>Esc</kbd></td><td>Fenster schließen, ohne zu übernehmen</td></tr>
+</table>
+</div>
+
+<p class="dazu">Die vollständige Liste steht auch im Programm unter
+<span class="weg">Hilfe → Tastenkombinationen…</span></p>
+
+
+<h2 id="orte">Wo was liegt</h2>
+
+<table>
+<tr><td><code>~/Vorlagen</code></td>
+    <td>Eigene Dokumentvorlagen. Sichtbar im eigenen Verzeichnis.</td></tr>
+<tr><td><code>~/.local/share/schreibprogramm/</code></td>
+    <td>Was dem Programm gehört: Einstellungen, gelernte Wörter, der
+        gerettete Text, Hilfsprogramme.</td></tr>
+</table>
+
+<p>Eigene Textbausteine liegen im Speicher des Programms, nicht in einer
+Datei anderer Programme. Das ist Absicht: In einem fremden Profil zu
+schreiben hieße, an einem Programm zu hantieren, das nebenher läuft — und
+wenn dabei etwas schiefgeht, sind nicht ein Baustein, sondern dessen
+Einstellungen weg.</p>
+
+
+<h2 id="wenndochmal">Wenn etwas klemmt</h2>
+
+<h3>Ein Menüpunkt scheint nichts zu tun</h3>
+<p>Die <b>Statuszeile unten links</b> ist die Stelle, an der das Programm
+antwortet. Dort steht, was zuletzt geschehen ist — auch dann, wenn im Blatt
+nichts zu sehen war, weil es nichts zu tun gab.</p>
+
+<h3>Word-Dateien oder PDF gehen nicht</h3>
+<p>Diese Formate werden im Hintergrund umgewandelt. Fehlt das Hilfsprogramm
+dafür, meldet das Programm es. Für <code>.odt</code> hat es einen eigenen
+Schreiber und kommt ohne aus — dann eben ohne Tabellen.</p>
+
+<h3>Eine Vorlage taucht nicht auf</h3>
+<p>Der Ordner wird bei jedem Öffnen des Menüs neu gelesen; ein Neustart ist
+nicht nötig. Erkannt werden nur die oben genannten Endungen, und versteckte
+Dateien werden übergangen.</p>
+
+<h3>Etwas ist verlorengegangen</h3>
+<p><kbd>Strg</kbd>+<kbd>Z</kbd> geht weit zurück. Der zuletzt geschriebene
+Text wird außerdem laufend gemerkt und beim nächsten Start wieder
+hingelegt.</p>
+
+<footer>
+<p>Lunivo-Office 1.2 — ein Raum für Worte.<br>
+Was geschrieben wird, bleibt auf diesem Rechner.</p>
+</footer>
+
+</main>
+</div>
+</body>
+</html>
