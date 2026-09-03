@@ -475,8 +475,11 @@ B.speichernPdf   = () => speichereAls('pdf');
 
 B.umbenennen = () => {
   const neu = prompt('Wie soll das Dokument heißen?', dateiname);
-  if (neu === null) return;
-  dateiname = neu.trim() || 'Unbenannt 1';
+  /* Leer heißt: nichts tun. Nicht „Unbenannt 1" — ein Dokument umzubenennen,
+     ohne einen Namen zu nennen, ist kein Wunsch, sondern ein Abbruch. Und im
+     eigenen Fenster kommt ein Abbruch als leerer Text an, nicht als null. */
+  if (!neu || !neu.trim()) return;
+  dateiname = neu.trim();
   titelSetzen();
 };
 

@@ -2022,6 +2022,86 @@ def server_starten():
     return PORT                                         # ein anderes Fenster liefert
 
 
+def seiten_dialog(ansicht, dialog):
+    """confirm(), prompt() und alert() aus der Seite als Fenster des Systems.
+
+    Ohne diese Behandlung zeigt WebKit gar nichts — und lässt die Seite auf
+    eine Antwort warten, die nie kommt. Sichtbar wurde das an „Datei → Neu":
+    Bevor das Blatt geleert wird, fragt die Seite nach, ob ungesicherte
+    Änderungen weg dürfen. Diese Frage blieb unsichtbar hängen, und der
+    Menüpunkt tat scheinbar nichts. Dasselbe traf „Öffnen", „Umbenennen"
+    und „Tabelle einfügen".
+
+    Der Dialog wird an das Fenster gehängt, zu dem er gehört: Sonst legt er
+    sich irgendwohin, womöglich hinter das Programm, und man sucht eine
+    Frage, die man nicht sieht.
+    """
+    art = dialog.get_dialog_type()
+    eltern = ansicht.get_toplevel()
+    if not isinstance(eltern, Gtk.Window):
+        eltern = None
+
+    if art == WebKit2.ScriptDialogType.ALERT:
+        kasten = Gtk.MessageDialog(transient_for=eltern, modal=True,
+                                   message_type=Gtk.MessageType.INFO,
+                                   buttons=Gtk.ButtonsType.OK,
+                                   text=dialog.get_message())
+        kasten.set_title("Lunivo-Office")
+        kasten.run()
+        kasten.destroy()
+        return True
+
+    if art in (WebKit2.ScriptDialogType.CONFIRM,
+               WebKit2.ScriptDialogType.BEFORE_UNLOAD_CONFIRM):
+        # Beim Schließen des Fensters schickt die Seite keinen eigenen Satz
+        # mit — dann muss hier einer stehen, sonst steht der Mensch vor
+        # einem leeren Kasten mit zwei Knöpfen.
+        satz = dialog.get_message() if art == WebKit2.ScriptDialogType.CONFIRM else ""
+        kasten = Gtk.MessageDialog(
+            transient_for=eltern, modal=True,
+            message_type=Gtk.MessageType.QUESTION,
+            buttons=Gtk.ButtonsType.NONE,
+            text=satz or "Das Dokument ist nicht gespeichert. Trotzdem schließen?")
+        kasten.set_title("Lunivo-Office")
+        kasten.add_buttons("Abbrechen", Gtk.ResponseType.CANCEL,
+                           "Weiter", Gtk.ResponseType.OK)
+        # Die Vorgabe ist „Abbrechen": Wer auf Enter haut, ohne zu lesen,
+        # soll nicht seinen Text verlieren.
+        kasten.set_default_response(Gtk.ResponseType.CANCEL)
+        antwort = kasten.run()
+        kasten.destroy()
+        dialog.confirm_set_confirmed(antwort == Gtk.ResponseType.OK)
+        return True
+
+    if art == WebKit2.ScriptDialogType.PROMPT:
+        kasten = Gtk.MessageDialog(transient_for=eltern, modal=True,
+                                   message_type=Gtk.MessageType.QUESTION,
+                                   buttons=Gtk.ButtonsType.NONE,
+                                   text=dialog.get_message())
+        kasten.set_title("Lunivo-Office")
+        kasten.add_buttons("Abbrechen", Gtk.ResponseType.CANCEL,
+                           "Übernehmen", Gtk.ResponseType.OK)
+        kasten.set_default_response(Gtk.ResponseType.OK)
+
+        zeile = Gtk.Entry()
+        zeile.set_text(dialog.prompt_get_default_text() or "")
+        zeile.set_activates_default(True)       # Enter genügt
+        kasten.get_content_area().pack_start(zeile, False, False, 6)
+        kasten.show_all()
+
+        antwort = kasten.run()
+        wert = zeile.get_text()
+        kasten.destroy()
+        # „Abbrechen" wäre in JavaScript null. Das lässt sich hier nicht
+        # sagen: prompt_set_text nimmt nur eine Zeichenkette, kein None.
+        # Herüber kommt deshalb der leere Text — und die Seite behandelt ihn
+        # wie einen Abbruch, statt mit ihm zu rechnen.
+        dialog.prompt_set_text(wert if antwort == Gtk.ResponseType.OK else "")
+        return True
+
+    return False
+
+
 def speichern_fragen(_umgebung, ladung):
     """„Speichern" im Menü schickt die Datei an den Rechner. In einem
     Browser landet sie im Download-Ordner; ein eigenes Fenster hat keinen.
@@ -2100,6 +2180,9 @@ def main():
             if os.path.isfile(symbol):
                 fenster.set_icon_from_file(symbol)
                 break
+    # Ohne das bleiben confirm() und prompt() der Seite unsichtbar hängen.
+    ansicht.connect("script-dialog", seiten_dialog)
+
     fenster.add(ansicht)
     fenster.connect("destroy", Gtk.main_quit)
 
