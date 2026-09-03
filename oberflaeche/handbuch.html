@@ -112,6 +112,7 @@ footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--linie);
   <a href="#speichern">Speichern</a>
   <a href="#drucken">Drucken</a>
   <b>Nachschlagen</b>
+  <a href="#herkunft">Woher es kommt</a>
   <a href="#tasten">Tastenkürzel</a>
   <a href="#orte">Wo was liegt</a>
   <a href="#wenndochmal">Wenn etwas klemmt</a>
@@ -447,6 +448,40 @@ Auflösung.</p>
 <p>Gedruckt wird das Dokument, nicht der Bildschirm: Textbegrenzungen,
 Lineal, Zeilenfokus, Papierton und die Bänder von Kopf- und Fußzeile
 bleiben draußen.</p>
+
+
+<h2 id="herkunft">Woher dieses Programm kommt</h2>
+
+<p><b>LibreOffice Writer war das Vorbild.</b> Beim Bauen wurde daran Maß
+genommen: welche Menüs es gibt und wie sie heißen, was unter welchem Punkt
+steht, wie ein Serienbrief abläuft, wie Formatvorlagen gedacht sind. Wer aus
+LibreOffice kommt, findet sich hier zurecht — das ist Absicht und kein
+Zufall.</p>
+
+<p>Genommen wurde das Vorbild, nicht der Bauplan. Lunivo-Office ist ein
+eigenes Programm mit eigenem Code, und es hat Dinge, die es dort nicht gibt:
+die Schreibhilfe, die Themenwörter, die Lesehilfe. Umgekehrt kann
+LibreOffice vieles, was hier fehlt.</p>
+
+<h3>Wo LibreOffice mitarbeitet</h3>
+
+<p>An zwei Stellen ist es mehr als ein Vorbild:</p>
+
+<ul>
+<li><b>Beim Umwandeln.</b> Word-Dateien, RTF, PDF und EPUB gehen durch
+LibreOffice, das im Hintergrund läuft. Ist es nicht da, schreibt dieses
+Programm <code>.odt</code> selbst — gröber, ohne Tabellen —, aber
+<code>.docx</code> und PDF gehen dann nicht.</li>
+<li><b>Bei den mitgelieferten Textbausteinen.</b> Sie stammen aus den
+AutoText-Dateien von LibreOffice und werden von dort nur <i>gelesen</i>.
+Geschrieben wird dort nie: Eigene Bausteine liegen im Speicher dieses
+Programms. In einem fremden Profil zu hantieren, das nebenher läuft, hieße
+im Zweifel dessen Einstellungen zu verlieren.</li>
+</ul>
+
+<p class="dazu">LibreOffice ist freie Software der Document Foundation und
+ein eigenständiges Programm. Dieses Handbuch beschreibt Lunivo-Office; für
+LibreOffice gilt dessen eigene Hilfe.</p>
 
 
 <h2 id="tasten">Tastenkürzel</h2>
