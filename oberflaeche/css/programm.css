@@ -2281,3 +2281,46 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
   padding:4px 9px;display:inline-flex;align-items:center;
 }
 .fund__hoeren svg{width:15px;height:15px}
+
+/* ---------- Der Absatz, in dem geschrieben wird ----------
+   Ein Farbband sagt „hier", macht aber nichts lesbarer. Wer in einem
+   Textblock schreibt, will die Stelle auch GRÖSSER sehen.
+
+   Vergrößert wird mit „transform" und nicht mit einer größeren Schrift:
+   Eine größere Schrift bricht anders um — die Zeile wird eine andere, der
+   Zeiger springt, und beim Tippen schaukelt sich das auf. Eine Verzerrung
+   verschiebt nichts, sie zeichnet nur größer.
+
+   Aus der Mitte heraus, damit der Text in die leeren Seitenränder wächst
+   und nicht über den Blattrand: bei 2 cm Rand und 5 % Wachstum gut 4 mm
+   je Seite.
+
+   „z-index" hebt ihn über seine Nachbarn — ein hoher Absatz wächst oben
+   und unten ein paar Punkte in sie hinein. Und der Übergang ist kurz:
+   Ohne ihn zuckt es bei jedem Absatzwechsel, mit ihm gleitet es. */
+.dokument .absatz--fokus{
+  transform:scale(var(--fokus-wachstum,1));
+  transform-origin:50% 50%;
+  position:relative;z-index:1;
+  transition:transform .12s ease-out;
+}
+/* Und die Gegenrichtung: Was gerade nicht bearbeitet wird, tritt zurück.
+   Hervorheben wirkt erst dadurch — ein Absatz, der fünf Prozent größer
+   ist, fällt zwischen zwanzig gleich lauten kaum auf, zwischen zwanzig
+   leisen sofort.
+
+   Blasser, nicht ausgeblendet: Man soll noch sehen, wo man herkommt und
+   wohin es weitergeht. Und die Überschriften bleiben mit dabei — sie
+   sind das Gerüst, an dem man sich im Text festhält. */
+.dokument--fokus > *{
+  opacity:var(--rest-blaesse,1);
+  transition:opacity .18s ease-out;
+}
+.dokument--fokus > .absatz--fokus{opacity:1}
+
+/* Auf dem Papier ist davon nichts. Gedruckt wird ohnehin der Bogen, und
+   dort steht die Auszeichnung nicht mehr — doppelt hält besser. */
+@media print{
+  .dokument .absatz--fokus{transform:none}
+  .dokument--fokus > *{opacity:1}
+}

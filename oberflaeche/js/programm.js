@@ -5382,8 +5382,35 @@ const ABSTUFUNG = [
 ];
 
 let lesehilfe = Object.assign(
-  { ton: 'weiss', zeichen: 'keine', wort: 'keine', zeilen: 'keine', fokus: false },
+  { ton: 'weiss', zeichen: 'keine', wort: 'keine', zeilen: 'keine',
+    fokus: false, groesser: 'keine', zurueck: 'keine' },
   Speicher.lies('lesehilfe', {}));
+
+/* Wie stark der Absatz wächst, in dem der Zeiger steht. Vergrößert wird
+   mit „transform" und nicht mit einer größeren Schrift: Eine größere
+   Schrift bricht anders um, die Zeile wird eine andere, der Zeiger
+   springt — und das schaukelt sich beim Tippen auf. Eine Verzerrung
+   verschiebt nichts; sie zeichnet nur größer.
+
+   Gewachsen wird aus der Mitte heraus. Der Text ragt dann links und
+   rechts in den Seitenrand, und der ist leer: Bei 2 cm Rand und 5 %
+   Wachstum sind das gut 4 mm je Seite — es bleibt auf dem Blatt. */
+const VERGROESSERN = [
+  ['keine', 'nicht vergrößern', 1],
+  ['etwas', 'etwas größer', 1.05],
+  ['deutlich', 'deutlich größer', 1.10],
+];
+
+/* Hervorheben wirkt erst, wenn das Übrige zurücktritt. Ein Absatz, der
+   fünf Prozent größer ist, fällt zwischen zwanzig gleich lauten kaum auf;
+   zwischen zwanzig leisen sofort. Deshalb die Gegenrichtung: Was gerade
+   nicht bearbeitet wird, wird blasser — lesbar bleibt es, aber es drängt
+   sich nicht mehr vor. */
+const ZURUECKNEHMEN = [
+  ['keine', 'gleich lassen', 1],
+  ['etwas', 'etwas blasser', 0.62],
+  ['deutlich', 'deutlich blasser', 0.38],
+];
 
 function lesehilfeAnwenden() {
   const blatt = $('blatt');
@@ -5397,9 +5424,19 @@ function lesehilfeAnwenden() {
   feld.style.wordSpacing = stufe(lesehilfe.wort) ? (stufe(lesehilfe.wort) * 0.12) + 'em' : '';
   feld.style.lineHeight = stufe(lesehilfe.zeilen) ? (1.55 + stufe(lesehilfe.zeilen) * 0.22).toFixed(2) : '';
 
+  const wachstum = (VERGROESSERN.find(([m]) => m === lesehilfe.groesser)
+                    || VERGROESSERN[0])[2];
+  feld.style.setProperty('--fokus-wachstum', wachstum);
+
+  const blasse = (ZURUECKNEHMEN.find(([m]) => m === lesehilfe.zurueck)
+                  || ZURUECKNEHMEN[0])[2];
+  feld.style.setProperty('--rest-blaesse', blasse);
+  feld.classList.toggle('dokument--fokus', blasse < 1);
+
   document.body.classList.toggle('lesehilfe--fokus', !!lesehilfe.fokus);
   if (!lesehilfe.fokus) fokusBalkenWeg();
   else fokusBalkenSetzen();
+  absatzFokusSetzen();
 
   Speicher.schreib('lesehilfe', lesehilfe);
   menueBauen();
@@ -5453,10 +5490,37 @@ function fokusBalkenSetzen() {
   fokusBalken.style.height = (kasten.height / skala + 4) + 'px';
 }
 
+/* ---- Der Absatz, in dem geschrieben wird ----
+   Er bekommt eine Auszeichnung, das Stilblatt macht daraus die Größe.
+   Gesucht wird das Kind von „feld", in dem der Zeiger steht — nicht das
+   innerste Element: Ein fett gesetztes Wort ist kein Absatz. */
+function absatzFokusSetzen() {
+  const vorher = feld.querySelector('.absatz--fokus');
+  const an = (lesehilfe.groesser && lesehilfe.groesser !== 'keine')
+          || (lesehilfe.zurueck && lesehilfe.zurueck !== 'keine');
+  if (!an) { if (vorher) vorher.classList.remove('absatz--fokus'); return; }
+
+  const auswahl = window.getSelection();
+  let knoten = auswahl.rangeCount ? auswahl.anchorNode : null;
+  while (knoten && knoten.parentNode !== feld) knoten = knoten.parentNode;
+  const absatz = (knoten && knoten.nodeType === Node.ELEMENT_NODE) ? knoten : null;
+
+  if (vorher === absatz) return;
+  if (vorher) vorher.classList.remove('absatz--fokus');
+  if (absatz) absatz.classList.add('absatz--fokus');
+}
+
 let fokusUhr = null;
 function fokusAuffrischen() {
-  if (!lesehilfe.fokus || fokusUhr) return;
-  fokusUhr = setTimeout(() => { fokusUhr = null; fokusBalkenSetzen(); }, 0);
+  if (fokusUhr) return;
+  if (!lesehilfe.fokus
+      && (!lesehilfe.groesser || lesehilfe.groesser === 'keine')
+      && (!lesehilfe.zurueck || lesehilfe.zurueck === 'keine')) return;
+  fokusUhr = setTimeout(() => {
+    fokusUhr = null;
+    absatzFokusSetzen();
+    fokusBalkenSetzen();
+  }, 0);
 }
 
 B.lesehilfe = () => {
@@ -5474,10 +5538,17 @@ B.lesehilfe = () => {
     { schluessel: 'fokus', name: 'Zeilenfokus', art: 'auswahl',
       werte: [['nein', 'aus'], ['ja', 'die Zeile hervorheben']],
       wert: lesehilfe.fokus ? 'ja' : 'nein' },
+    { schluessel: 'groesser', name: 'Absatz beim Schreiben', art: 'auswahl',
+      werte: VERGROESSERN.map(([marke, name]) => [marke, name]),
+      wert: lesehilfe.groesser },
+    { schluessel: 'zurueck', name: 'Übriger Text', art: 'auswahl',
+      werte: ZURUECKNEHMEN.map(([marke, name]) => [marke, name]),
+      wert: lesehilfe.zurueck },
   ], (werte) => {
     lesehilfe = {
       ton: werte.ton, zeichen: werte.zeichen, wort: werte.wort,
       zeilen: werte.zeilen, fokus: werte.fokus === 'ja',
+      groesser: werte.groesser, zurueck: werte.zurueck,
     };
     lesehilfeAnwenden();
     melde('Lesehilfe gesetzt — sie gilt nur am Bildschirm.');
@@ -8893,13 +8964,20 @@ function markiereFunde() {
 
 /* Was gespeichert wird, darf die Markierungen nicht enthalten. */
 function ohneMarken(html) {
-  if (html.indexOf('fundmarke') === -1) return html;
+  if (html.indexOf('fundmarke') === -1 && html.indexOf('absatz--fokus') === -1) return html;
   const hilfe = document.createElement('div');
   hilfe.innerHTML = html;
   for (const marke of hilfe.querySelectorAll('span.fundmarke')) {
     const eltern = marke.parentNode;
     while (marke.firstChild) eltern.insertBefore(marke.firstChild, marke);
     marke.remove();
+  }
+  /* Die Auszeichnung des Absatzes, in dem gerade geschrieben wird, gehört
+     zur Ansicht und nicht zum Text. In der Datei hätte sie nichts zu
+     suchen, und auf dem Papier wäre ein Absatz größer als die anderen. */
+  for (const absatz of hilfe.querySelectorAll('.absatz--fokus')) {
+    absatz.classList.remove('absatz--fokus');
+    if (!absatz.getAttribute('class')) absatz.removeAttribute('class');
   }
   return hilfe.innerHTML;
 }
