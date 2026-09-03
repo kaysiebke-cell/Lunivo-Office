@@ -1510,7 +1510,7 @@ const REGISTER = [
     ['Beim Schreiben', [['wellen', 'Rechtschreibprüfung', () => B.rechtschreibpruefung()],
                     ['Vorhersage', 'Wortvorhersage', () => B.vorhersage()],
                     ['autokorr', 'AutoKorrektur', () => B.autokorrektur()]]],
-    ['Vorlesen', [['lupe', 'Vorlesen', () => B.vorlesen(), 'gross'],
+    ['Vorlesen', [['vorlesen', 'Vorlesen', () => B.vorlesen(), 'gross'],
                     ['abhier', 'Ab hier vorlesen', () => B.vorlesenAbSatz()],
                     ['halt', 'Anhalten', () => B.vorlesenStopp()],
                     ['stimme', 'Stimme und Tempo…', () => B.stimmeWaehlen()]]],
@@ -1549,7 +1549,9 @@ const REGISTER = [
                     ['navigation', 'Navigationsbereich', () => B.navigation()],
                     ['steuerzeichen', 'Steuerzeichen', () => B.steuerzeichenZeigen()],
                     ['ecken', 'Textbegrenzungen', () => B.markenZeigen()],
-                    ['tafel', 'Seitenleiste Schreibhilfe', () => B.tafelZeigen()]]],
+                    ['tafel', 'Seitenleiste Schreibhilfe', () => B.tafelZeigen()],
+                   ['brille', 'Lesehilfe…', () => B.lesehilfe(), 'gross'],
+                   ['zeile', 'Zeilenfokus', () => B.zeilenfokus()]], () => B.lesehilfe()],
     ['Zoom', [['lupe', 'Vergrößern', () => B.groesser(), 'gross'],
                     ['kleinerLupe', 'Verkleinern', () => B.kleiner(), 'gross'],
                     ['100 %', 'Normalgröße', () => B.normal()],
@@ -4750,8 +4752,12 @@ B.silbentrennung = () => {
 let seitenfarbe = Speicher.lies('seitenfarbe', '');
 
 function seitenfarbeAnwenden() {
-  $('blatt').style.background = seitenfarbe || '';
   Speicher.schreib('seitenfarbe', seitenfarbe);
+  /* Welche Farbe das Blatt am Ende trägt, entscheidet lesehilfeAnwenden():
+     Die Seitenfarbe gehört dem Dokument und geht mit aufs Papier, der
+     Papierton nur an den Bildschirm. Zwei Stellen, die dieselbe
+     Eigenschaft setzen, löschen sich sonst gegenseitig. */
+  lesehilfeAnwenden();
 }
 
 B.seitenfarbe = () => {
@@ -5342,6 +5348,146 @@ B.lesemodus = () => {
   feld.contentEditable = lesemodus ? 'false' : 'true';
   melde(lesemodus ? 'Lesemodus — Escape beendet ihn.' : 'Lesemodus beendet.');
   menueBauen();
+};
+
+/* ============================================================
+   Lesehilfe — was das Lesen am Bildschirm erleichtert
+
+   Vier Dinge, die in jedem Ratgeber für Legasthenie ganz oben stehen:
+   kein reines Weiß, mehr Luft zwischen Buchstaben und Wörtern, mehr Luft
+   zwischen den Zeilen, und eine Hervorhebung der Zeile, in der man gerade
+   ist.
+
+   Sie ändern das Dokument NICHT. Kein Buchstabe der Datei wird davon
+   anders, und auf dem Papier steht nachher, was dort stehen soll — der
+   Ausdruck wird aus dem Text gebaut, nicht aus dieser Ansicht. Das ist der
+   Unterschied zu „Seitenfarbe": Die färbt das Papier und kostet Tinte.
+   Hier wird nur der Schirm freundlicher.
+   ============================================================ */
+const PAPIERTOENE = [
+  ['weiss', 'Weiß', ''],
+  ['creme', 'Creme', '#FBF6EC'],
+  ['sand', 'Sandgrau', '#F2EFE9'],
+  ['gelb', 'Blassgelb', '#FCF8DC'],
+  ['blau', 'Blassblau', '#EDF4FA'],
+  ['gruen', 'Blassgrün', '#EEF6EE'],
+  ['rosa', 'Blassrosa', '#FBF0F2'],
+];
+
+const ABSTUFUNG = [
+  ['keine', 'normal', 0],
+  ['etwas', 'etwas mehr', 1],
+  ['mehr', 'deutlich mehr', 2],
+  ['viel', 'sehr viel', 3],
+];
+
+let lesehilfe = Object.assign(
+  { ton: 'weiss', zeichen: 'keine', wort: 'keine', zeilen: 'keine', fokus: false },
+  Speicher.lies('lesehilfe', {}));
+
+function lesehilfeAnwenden() {
+  const blatt = $('blatt');
+  const ton = PAPIERTOENE.find(([m]) => m === lesehilfe.ton);
+  /* Die Seitenfarbe gehört dem Dokument und hat Vorrang: Wer sein Blatt
+     absichtlich blau gefärbt hat, soll es blau sehen. */
+  blatt.style.background = seitenfarbe || (ton ? ton[2] : '') || '';
+
+  const stufe = (marke) => (ABSTUFUNG.find(([m]) => m === marke) || ABSTUFUNG[0])[2];
+  feld.style.letterSpacing = stufe(lesehilfe.zeichen) ? (stufe(lesehilfe.zeichen) * 0.03) + 'em' : '';
+  feld.style.wordSpacing = stufe(lesehilfe.wort) ? (stufe(lesehilfe.wort) * 0.12) + 'em' : '';
+  feld.style.lineHeight = stufe(lesehilfe.zeilen) ? (1.55 + stufe(lesehilfe.zeilen) * 0.22).toFixed(2) : '';
+
+  document.body.classList.toggle('lesehilfe--fokus', !!lesehilfe.fokus);
+  if (!lesehilfe.fokus) fokusBalkenWeg();
+  else fokusBalkenSetzen();
+
+  Speicher.schreib('lesehilfe', lesehilfe);
+  menueBauen();
+}
+
+/* ---- Der Zeilenfokus ----
+   Eine Zeile ist im Fließtext kein Element — sie entsteht erst beim
+   Umbrechen. Deshalb wird sie nicht eingefärbt, sondern ein Balken
+   dahintergelegt: Aus den Rechtecken des Absatzes wird das gesucht, in dem
+   der Zeiger steht.
+
+   Der Balken liegt im Blatt und nicht im Text. Im Text stünde er in der
+   Datei, sobald jemand speichert. */
+let fokusBalken = null;
+
+function fokusBalkenWeg() {
+  if (fokusBalken) { fokusBalken.remove(); fokusBalken = null; }
+}
+
+function fokusBalkenSetzen() {
+  if (!lesehilfe.fokus) return;
+  const auswahl = window.getSelection();
+  if (!auswahl.rangeCount || !feld.contains(auswahl.anchorNode)) { fokusBalkenWeg(); return; }
+
+  const bereich = auswahl.getRangeAt(0).cloneRange();
+  bereich.collapse(true);
+  let kasten = bereich.getClientRects()[0];
+  if (!kasten) {
+    /* Am Zeilenanfang und in leeren Absätzen liefert ein
+       zusammengeklappter Bereich kein Rechteck. Dann fragen wir den
+       Absatz, in dem wir stehen. */
+    let knoten = auswahl.anchorNode;
+    while (knoten && knoten.nodeType !== Node.ELEMENT_NODE) knoten = knoten.parentNode;
+    if (!knoten || knoten === feld) { fokusBalkenWeg(); return; }
+    kasten = knoten.getClientRects()[0];
+    if (!kasten) { fokusBalkenWeg(); return; }
+  }
+
+  const blatt = $('blatt');
+  if (!fokusBalken) {
+    fokusBalken = document.createElement('div');
+    fokusBalken.className = 'fokusbalken';
+    fokusBalken.setAttribute('aria-hidden', 'true');
+    blatt.appendChild(fokusBalken);
+  }
+  const rBlatt = blatt.getBoundingClientRect();
+  /* Das Blatt kann vergrößert sein; die Rechtecke kommen in Bildpunkten
+     des Schirms, der Balken sitzt im vergrößerten Blatt. */
+  const skala = zoom / 100;
+  fokusBalken.style.top = ((kasten.top - rBlatt.top) / skala - 2) + 'px';
+  fokusBalken.style.height = (kasten.height / skala + 4) + 'px';
+}
+
+let fokusUhr = null;
+function fokusAuffrischen() {
+  if (!lesehilfe.fokus || fokusUhr) return;
+  fokusUhr = setTimeout(() => { fokusUhr = null; fokusBalkenSetzen(); }, 0);
+}
+
+B.lesehilfe = () => {
+  fenster('Lesehilfe', [
+    { art: 'satz', text: 'Erleichtert das Lesen am Bildschirm. Das Dokument bleibt, wie es ist —\n'
+                       + 'auf dem Papier steht nachher nichts davon.' },
+    { schluessel: 'ton', name: 'Papierton', art: 'auswahl',
+      werte: PAPIERTOENE.map(([marke, name]) => [marke, name]), wert: lesehilfe.ton },
+    { schluessel: 'zeichen', name: 'Buchstabenabstand', art: 'auswahl',
+      werte: ABSTUFUNG.map(([marke, name]) => [marke, name]), wert: lesehilfe.zeichen },
+    { schluessel: 'wort', name: 'Wortabstand', art: 'auswahl',
+      werte: ABSTUFUNG.map(([marke, name]) => [marke, name]), wert: lesehilfe.wort },
+    { schluessel: 'zeilen', name: 'Zeilenluft', art: 'auswahl',
+      werte: ABSTUFUNG.map(([marke, name]) => [marke, name]), wert: lesehilfe.zeilen },
+    { schluessel: 'fokus', name: 'Zeilenfokus', art: 'auswahl',
+      werte: [['nein', 'aus'], ['ja', 'die Zeile hervorheben']],
+      wert: lesehilfe.fokus ? 'ja' : 'nein' },
+  ], (werte) => {
+    lesehilfe = {
+      ton: werte.ton, zeichen: werte.zeichen, wort: werte.wort,
+      zeilen: werte.zeilen, fokus: werte.fokus === 'ja',
+    };
+    lesehilfeAnwenden();
+    melde('Lesehilfe gesetzt — sie gilt nur am Bildschirm.');
+  }, 'Übernehmen');
+};
+
+B.zeilenfokus = () => {
+  lesehilfe.fokus = !lesehilfe.fokus;
+  lesehilfeAnwenden();
+  melde(lesehilfe.fokus ? 'Zeilenfokus an.' : 'Zeilenfokus aus.');
 };
 
 /* ---- Netzlinien ---- */
@@ -7420,6 +7566,7 @@ function setzeZoom(wert) {
   $('status-zoom').textContent = zoom + ' %';
   Speicher.schreib('zoom', zoom);
   linealAuffrischen();
+  fokusAuffrischen();
 }
 B.groesser = () => setzeZoom(zoom + 10);
 B.kleiner  = () => setzeZoom(zoom - 10);
@@ -7525,6 +7672,9 @@ const MENUES = [
     ] },
     { name: 'Anzeigen', unter: [
       { name: 'Benutzeroberfläche…', tun: B.benutzeroberflaeche },
+      { name: 'Lesehilfe…', tun: B.lesehilfe },
+      { name: 'Zeilenfokus', tun: B.zeilenfokus, haken: () => lesehilfe.fokus },
+      strich,
       { name: 'Register anpassen…', tun: B.registerAnpassen },
       { name: 'Symbol austauschen…', tun: () => B.symbolTauschen() },
       strich,
@@ -8657,6 +8807,24 @@ function zeichneFunde() {
       knoepfe.appendChild(aendern);
     }
 
+    /* Anhören. Wer zwischen „das" und „dass" nicht sicher ist, hört den
+       Unterschied oft schneller, als er ihn sieht — vorausgesetzt, der
+       Satz wird mitgesprochen. Deshalb wird nicht das nackte Wort
+       vorgelesen, sondern der Vorschlag samt Begründung. */
+    const hoeren = document.createElement('button');
+    hoeren.className = 'knopf knopf--klein fund__hoeren';
+    hoeren.type = 'button';
+    hoeren.title = 'Vorschlag vorlesen';
+    hoeren.setAttribute('aria-label', 'Vorschlag vorlesen');
+    hoeren.appendChild(symbol('hoeren'));
+    hoeren.addEventListener('click', () => {
+      const satz = fund.art === 'hinweis'
+        ? fund.grund
+        : (fund.zeigeNeu || fund.neu || '') + '. ' + (fund.grund || '');
+      vorlesenLassen(satz.trim());
+    });
+    knoepfe.appendChild(hoeren);
+
     karte.appendChild(knoepfe);
     liste.appendChild(karte);
   }
@@ -9528,6 +9696,11 @@ document.addEventListener('selectionchange', werkzeugeAuffrischen);
 /* Die Einzugsmarken zeigen den Absatz, in dem der Zeiger steht — also
    müssen sie ihm folgen. */
 document.addEventListener('selectionchange', linealAuffrischen);
+/* Der Zeilenfokus folgt dem Zeiger — und dem Blatt, wenn es sich bewegt. */
+document.addEventListener('selectionchange', fokusAuffrischen);
+feld.addEventListener('input', fokusAuffrischen);
+$('arbeitsflaeche').addEventListener('scroll', fokusAuffrischen);
+window.addEventListener('resize', fokusAuffrischen);
 window.addEventListener('resize', linealAuffrischen);
 $('arbeitsflaeche').addEventListener('scroll', linealAuffrischen);
 /* Der Pinsel wartet auf die nächste Markierung. Beim Loslassen der Maus
@@ -9648,6 +9821,7 @@ papierAnwenden();
 zeilennummernAnwenden();
 trennungAnwenden();
 seitenfarbeAnwenden();
+lesehilfeAnwenden();
 wasserzeichenAnwenden();
 seitenrahmenAnwenden();
 markupAnwenden();

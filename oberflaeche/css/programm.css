@@ -2247,3 +2247,37 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
   color:var(--schrift-3);font-size:13px;
 }
 .tausch__fuss{display:flex;gap:10px;flex-wrap:wrap}
+
+
+/* ---------- Lesehilfe: der Zeilenfokus ----------
+   Ein Balken hinter der Zeile, in der der Zeiger steht. Er liegt im Blatt
+   und nicht im Text — im Text stünde er in der Datei, sobald jemand
+   speichert.
+
+   Gedämpft, nicht grell: Er soll die Zeile finden helfen, nicht von ihr
+   ablenken. Und er liegt UNTER dem Text (z-index 0 gegen 1), sonst läge
+   ein Schleier über den Buchstaben. */
+.fokusbalken{
+  position:absolute;left:0;right:0;
+  background:rgba(74,143,216,.13);
+  border-top:1px solid rgba(74,143,216,.22);
+  border-bottom:1px solid rgba(74,143,216,.22);
+  pointer-events:none;z-index:0;
+}
+:root[data-theme="light"] .fokusbalken{
+  background:rgba(47,111,181,.10);
+  border-top-color:rgba(47,111,181,.20);
+  border-bottom-color:rgba(47,111,181,.20);
+}
+/* Beim Drucken ist er nicht dabei — gedruckt wird ohnehin der Bogen, aber
+   doppelt hält besser. */
+@media print{ .fokusbalken{display:none} }
+
+/* Der Lautsprecher auf der Fundkarte: schmal, weil er nur ein Zeichen
+   trägt, und rechts abgesetzt — er ist die dritte Möglichkeit, nicht die
+   erste. */
+.fund__hoeren{
+  width:auto;flex:0 0 auto;margin-left:auto;
+  padding:4px 9px;display:inline-flex;align-items:center;
+}
+.fund__hoeren svg{width:15px;height:15px}

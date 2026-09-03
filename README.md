@@ -81,7 +81,10 @@ und dort lässt sich jede auch gleich umlegen oder auslösen.
 
 **Prüfen.** Der Knopf *Prüfen* (F7) legt jeden Fund als Karte in die
 Seitenleiste und zieht im Text eine Wellenlinie darunter. Rechtsklick auf
-ein angestrichenes Wort zeigt die Vorschläge — wie in Word.
+ein angestrichenes Wort zeigt die Vorschläge — wie in Word. Auf jeder Karte
+steht ein **Ohr**: Es liest den Vorschlag samt Begründung vor. Wer zwischen
+„das" und „dass" unsicher ist, hört den Unterschied oft schneller, als er
+ihn sieht.
 
 ![Rechtsklick auf ein angestrichenes Wort: darüber steht die Erklärung, darunter der Vorschlag „glaube, dass“ zum Übernehmen](bilder/rechtsklick.png)
 
@@ -108,6 +111,17 @@ Es gibt sieben deutsche Stimmen, männlich und weiblich:
 Nach jedem Laden kommt eine Probe. Gewählt wird unter *Schreibhilfe ▸
 Vorlesen ▸ Stimme und Tempo*; die espeak-Stimmen bleiben darunter stehen.
 Zum Entfernen genügt es, die `.onnx`-Datei zu löschen.
+
+**Lesehilfe** (*Ansicht ▸ Lesehilfe*). Was in jedem Ratgeber zu Legasthenie
+oben steht, an einer Stelle: kein reines Weiß, sondern ein Papierton für den
+Bildschirm — Creme, Sandgrau, Blassgelb, Blassblau, Blassgrün oder Blassrosa.
+Dazu mehr Luft zwischen Buchstaben, Wörtern und Zeilen, in vier Stufen. Und
+ein **Zeilenfokus**, der die Zeile hinterlegt, in der der Zeiger steht.
+
+Das alles ändert das Dokument **nicht**. Kein Buchstabe der Datei wird davon
+anders, und auf dem Papier steht nachher, was dort stehen soll. Das ist der
+Unterschied zu *Seitenfarbe*: Die färbt das Papier und kostet Tinte. Hier
+wird nur der Schirm freundlicher.
 
 **Wortvorhersage.** Ab drei Buchstaben stehen passende Wörter zur Wahl.
 Wiedererkennen ist leichter als Erinnern.
