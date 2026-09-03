@@ -124,6 +124,32 @@ korrigiert als eine Nachricht an einen Freund.
 **Speichern.** `.odt`, `.docx`, `.doc`, `.rtf`, `.fodt`, `.html`, `.txt`,
 PDF und EPUB. Word-Dateien öffnen und wieder als Word speichern.
 
+**Drucken.** Das Programm rechnet den Seitenumbruch selbst aus, statt ihn
+dem Browser zu überlassen: Es füllt ein Blatt, bis es voll ist, und fängt
+ein neues an. Kopfzeile, Fußzeile und die *wirkliche* Seitenzahl stehen
+deshalb auf jeder Seite. Die **Druckvorschau** zeigt den ganzen Stapel zum
+Durchblättern — eine, zwei oder vier Seiten nebeneinander, oder als
+aufgeschlagenes Buch.
+
+Das **Druckfenster** ist aufgeteilt wie im Writer: links das Blatt, rechts
+in drei Reitern die Einstellungen, unten die Knöpfe. Seitenbereich („1-3,
+5"), Kopien, Sortieren, nur gerade oder ungerade Blattseiten, Seiten pro
+Blatt. Dazu, was auf das Papier kommt: Seitenhintergrund, Bilder,
+Formularfelder, Kommentare, Text schwarz drucken, leere Seiten.
+
+Im dritten Reiter steht der **Drucker** selbst — Name, Zustand, Typ, Ort,
+mit Papierformat, beidseitigem Druck, Schacht und Auflösung. Diese Angaben
+sind nicht erfunden: Sie kommen von CUPS, dem Druckerdienst des Systems,
+derselben Quelle, aus der auch LibreOffice sie hat. Meldet ein Drucker
+keine Duplexeinheit, bleibt der Schalter dafür grau. Gedruckt wird direkt
+über den Druckerdienst; ist keiner eingerichtet, öffnet das Fenster des
+Systems.
+
+**Das Lineal** misst wirklich: Zentimeter mit Zahlen, vom Satzspiegel aus
+gezählt wie im Writer, und drei Marken für die Einzüge, die sich ziehen
+lassen — erste Zeile, links, rechts. Das helle Band zeigt, wo Text steht,
+und wandert beim Ziehen mit.
+
 **Zuletzt verwendet.** Unter *Datei* stehen die letzten zehn Dokumente mit
 Namen — ein Klick, und das Blatt ist wieder da. Wer eine Datei inzwischen
 verschoben oder weggeworfen hat, findet sie nicht mehr in der Liste: Geprüft
@@ -133,10 +159,13 @@ wird beim Aufklappen, nicht beim Merken.
 Symbolleisten (zwei Zeilen, alles sichtbar) und Registern (Reiter wie in
 Word) um. Dieselben Befehle, anders sortiert.
 
-Das Register hat acht Reiter — Datei, Start, Einfügen, Layout, Referenzen,
-Überprüfen, Schreibhilfe, Ansicht — und einen neunten, der nur da ist, wenn
-er etwas zu sagen hat: **Tabelle** erscheint, sobald der Zeiger in einer
-Tabelle steht, und verschwindet wieder. Auf *Start* steht der
+Das Register hat neun Reiter — Datei, Start, Einfügen, Layout, Referenzen,
+Überprüfen, Schreibhilfe, Sendungen, Ansicht — und einen zehnten, der nur
+da ist, wenn er etwas zu sagen hat: **Tabelle** erscheint, sobald der
+Zeiger in einer Tabelle steht, und verschwindet wieder. Die Gruppen folgen
+dem Menüband von Word: *Start* trägt Zwischenablage, Schriftart, Absatz,
+Formatvorlagen und Bearbeiten, *Ansicht* beginnt mit den Ansichten und
+nicht mit dem Zoom. Jeder der 185 Befehle ist von dort erreichbar. Auf *Start* steht der
 **Formatvorlagen-Katalog**: Er zeigt die Vorlage, statt sie zu benennen.
 Wo eine Gruppe nicht alles zeigt, was es gibt, steht unten rechts ein
 **Pfeil ⭨** zum vollen Dialog. Ein **Doppelklick auf den Reiter** klappt
@@ -145,11 +174,23 @@ das Band weg und wieder auf.
 Im Register **tritt die Reiterzeile an die Stelle der Menüleiste** — sie
 kommt nicht dazu. Beides übereinander fräße genau den Platz, den das
 Register gewinnen soll. Das Menü bleibt über das Zeichen ☰ rechts in der
-Reiterzeile erreichbar, oder über die Alt-Taste; Seriendruck, Makros und
-die Verzeichnisse stehen nur dort. In der Symbolleisten-Ansicht lässt sich
+Reiterzeile erreichbar, oder über die Alt-Taste. In der Symbolleisten-Ansicht lässt sich
 die Menüleiste ebenfalls ausblenden. Symbolgröße und die Schrift der
 Bedienung sind einstellbar — wer die Leisten nicht lesen kann, benutzt sie
 nicht.
+
+**Das Register anpassen.** Rechtsklick auf eine freie Stelle im Band, oder
+*Ansicht ▸ Oberfläche ▸ Anpassen*: Die Gruppen eines Reiters lassen sich
+umsortieren und einzeln ausblenden. Verschoben wird mit zwei Pfeilen und
+nicht mit der Maus — Ziehen und Ablegen verlangt eine ruhige Hand, ein
+Pfeil nach oben trifft immer. Ausgeblendetes bleibt blass in der Liste
+stehen, damit man es zurückholen kann.
+
+**Ein Symbol austauschen.** Rechtsklick auf einen Knopf — im Band wie in
+den Symbolleisten. Ein Fenster zeigt, wo die Zeichnung überall benutzt
+wird, dazu ein Suchfeld und **1801 Zeichnungen** zur Wahl. Ein Klick, und
+sie ist getauscht; „Zurücksetzen" holt die alte zurück. LibreOffice kann
+das für seine Symbolleisten, für sein Symbolband nicht — hier geht beides.
 
 **Optionen** (F9). Wie im Writer: links ein Baum, rechts der Bereich.
 Benutzerdaten, Ansicht, Schriftarten, Pfade, Sprache, Prüfung und KI,
@@ -267,6 +308,13 @@ deshalb wie der übrige Code unter MIT.
       js/einstellungen.js  die Einstellungsseite
       daten/regeln.js    der Wortschatz der Prüfung
       daten/woerter.txt  355.321 deutsche Wörter
+      daten/symbole.js   die 150 Zeichnungen der Knöpfe
+      daten/symbolkatalog.js  1801 Zeichnungen zur Auswahl (erst bei Bedarf geladen)
+
+    werkzeug/            nichts davon lädt das Programm — Werkzeug für die Werkstatt
+      symbole.html       den Symbolkatalog durchsehen, im Browser öffnen
+      katalog-bauen.py   baut den Katalog aus einem Ordner voller .svg neu
+      svg-zu-pfad.py     rechnet <circle>, <rect>, <line> in einen Pfad um
 
     doku/                ENTSTEHUNG, RICHTUNG und das ausführliche LIESMICH
     symbole/             das Symbol als SVG und in allen Größen
@@ -281,3 +329,9 @@ gewerblich. Der Urhebervermerk muss mitgehen.
 
 LanguageTool und LibreOffice stehen unter eigenen Lizenzen (LGPL-2.1 und
 MPL-2.0) und werden als eigene Prozesse aufgerufen, nicht eingebunden.
+
+Die Zeichnungen der Knöpfe stammen größtenteils aus
+[Lucide](https://lucide.dev) und stehen unter der ISC-Lizenz; der
+Lizenztext liegt in [doku/LIZENZ-LUCIDE.txt](doku/LIZENZ-LUCIDE.txt).
+Ein paar sind von Hand gezeichnet — Kopfzeile, Fußzeile, Seitenzahl,
+Textbegrenzungen: die kennt nur ein Schreibprogramm.
