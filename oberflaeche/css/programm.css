@@ -170,16 +170,36 @@ body{
 /* ---------- Mitte: Arbeitsfläche und Tafel ---------- */
 .mitte{display:flex;flex:1 1 auto;min-height:0}
 
+/* Lineal und Fläche übereinander, zusammen so breit wie der Platz, der
+   nach Navigationsbereich und Schreibhilfe übrig bleibt. */
+.werkbank{
+  flex:1 1 auto;min-width:0;min-height:0;
+  display:flex;flex-direction:column;
+}
+
 .arbeitsflaeche{
-  flex:1 1 auto;min-width:0;overflow:auto;
+  flex:1 1 auto;min-width:0;min-height:0;overflow:auto;
   padding:28px 24px 64px;
-  display:flex;justify-content:center;align-items:flex-start;
+  /* „justify-content:center" stand hier einmal — und war der Grund, warum
+     das Blatt bei starker Vergrößerung schmaler wurde statt zu scrollen:
+     Ein zentriertes Kind, das nicht mehr hineinpasst, wird links
+     abgeschnitten und ist nicht mehr erreichbar. Mit „flex-start" und
+     automatischen Rändern am Blatt steht es genauso in der Mitte, bleibt
+     aber ganz da. */
+  display:flex;justify-content:flex-start;align-items:flex-start;
 }
 
 /* Das Blatt: A4 mit echtem Rand. Die Zahl 21cm ist kein Geschmack,
    sie ist das Papier, das nachher aus dem Drucker kommt. */
 .blatt{
   position:relative;
+  /* Das Blatt gibt nicht nach. Ohne diese Zeile drückt der Flusskasten es
+     zusammen, sobald es breiter ist als die Fläche — bei 150 % war ein
+     A4-Blatt dann 150 mm breit statt 210. Der Text brach an anderen
+     Stellen um als auf dem Papier, und die Seitenzahl in der Statuszeile
+     stimmte nicht mehr. Jetzt wird gerollt, so wie es sein soll. */
+  flex:0 0 auto;
+  margin-left:auto;margin-right:auto;
   width:21cm;min-height:29.7cm;
   background:var(--blatt);color:var(--blatt-schrift);
   box-shadow:0 1px 3px rgba(0,0,0,.4),0 12px 32px rgba(0,0,0,.28);
@@ -585,21 +605,95 @@ button.wz-wahl--schrift{
 
 /* Das Lineal: Der helle Teil ist der Satzspiegel, die dunklen Enden sind
    der Rand. Mehr braucht es nicht, um zu sehen, wo der Text anfängt. */
+/* ---------- Das Lineal ----------
+   Vorher war es ein weißer Streifen mit zwei blauen Kanten: Man sah, dass
+   dort etwas ist, aber nicht, dass es ein Lineal ist. Es hatte keine
+   Skala, keine Zahlen, keine Marken — und wusste nicht einmal, wie breit
+   das Papier ist: 17 cm standen fest im Stilblatt, auch auf A5.
+
+   Dann maß es zwar richtig, war aber ein grelles weißes Band quer durch
+   eine dunkle Oberfläche. Im Writer gehört das Lineal zur Leiste und
+   nicht zum Blatt: gedämpfte Farben, kleine Striche, blasse Zahlen. Nur
+   die Marken dürfen auffallen — die soll man ja greifen.
+
+   Der Aufbau von oben nach unten: 5 Punkte für die Marke der ersten
+   Zeile, darunter das Band mit Zahlen und Strichen, unten 6 Punkte für
+   die Marken des Absatzes. So liegt nichts übereinander. */
 .lineal{
-  height:18px;flex:0 0 auto;
-  background:var(--grund);
+  height:27px;flex:0 0 auto;
+  background:var(--leiste);
   border-bottom:1px solid var(--rand);
-  position:relative;
-}
-.lineal::after{
-  content:'';position:absolute;top:4px;bottom:4px;
-  left:50%;width:17cm;transform:translateX(-50%);
-  background:var(--blatt);
-  border-left:2px solid var(--blau);border-right:2px solid var(--blau);
-  border-radius:2px;
-  max-width:calc(100% - 40px);
+  position:relative;overflow:hidden;
+  user-select:none;
 }
 .lineal[hidden]{display:none}
+
+/* Die Bahn liegt genau über dem Blatt. Wie breit und wo, rechnet
+   linealZeichnen() aus dem wirklichen Blatt aus; was darüber hinausragt,
+   schneidet das Lineal ab (overflow oben). Weil das Lineal jetzt in der
+   Werkbank sitzt, ist es genau so breit wie die Arbeitsfläche — es kann
+   gar nicht mehr über die Schreibhilfe laufen. */
+.lineal__bahn{position:absolute;top:0;bottom:0}
+
+/* Das Lineal ist durchgehend in einer Farbe. Hier standen erst zwei
+   dunkle Streifen links und rechts für die Seitenränder — die sahen aus
+   wie eine Aussage, waren aber starr: Wer den Einzug zog, verschob das
+   Dreieck, und der Streifen blieb stehen. Ein Zeichen, das sich nicht
+   mitbewegt, behauptet etwas Falsches.
+
+   Jetzt gibt es nur noch das helle Band, und das zeigt genau den Bereich,
+   in dem Text steht — vom linken Einzug bis zum rechten. Zieht man eine
+   Marke, wandert das Band mit. Ohne Einzüge liegt es auf dem
+   Satzspiegel; das ist derselbe Anblick wie vorher, nur stimmt er jetzt
+   auch, wenn eingerückt wird. */
+.lineal__feld{
+  position:absolute;top:5px;bottom:6px;
+  background:var(--karte);
+  border:1px solid var(--rand);border-radius:2px;
+  z-index:1;
+}
+
+.lineal__strich{
+  position:absolute;bottom:8px;width:1px;height:4px;
+  background:var(--schrift-3);opacity:.85;z-index:2;
+}
+.lineal__strich--klein{height:2px;opacity:.55}
+.lineal__zahl{
+  position:absolute;top:7px;
+  transform:translateX(-50%);
+  font-size:10px;line-height:1;color:var(--schrift-2);
+  font-variant-numeric:tabular-nums;
+  z-index:2;pointer-events:none;
+}
+.lineal__zahl--rand{color:var(--schrift-3)}
+
+/* Die drei Marken. Sie liegen über und unter dem Band, nicht darin —
+   sonst deckten sie die Zahlen zu. Gedämpft wie alles hier, und erst
+   beim Anfassen blau: Was man greifen kann, darf man sehen. */
+.lineal__marke{
+  position:absolute;width:0;height:0;
+  margin-left:-5px;
+  border-left:5px solid transparent;border-right:5px solid transparent;
+  cursor:ew-resize;z-index:3;
+}
+.lineal__marke--erste{top:0;border-top:6px solid var(--schrift-2)}
+.lineal__marke--links,.lineal__marke--rechts{
+  bottom:1px;border-bottom:6px solid var(--schrift-2);
+}
+.lineal__marke--erste:hover,.lineal__marke--erste.lineal__marke--zieht{
+  border-top-color:var(--blau-hell);
+}
+.lineal__marke--links:hover,.lineal__marke--rechts:hover,
+.lineal__marke--links.lineal__marke--zieht,.lineal__marke--rechts.lineal__marke--zieht{
+  border-bottom-color:var(--blau-hell);
+}
+/* Eine gezogene Marke bekommt eine Linie, damit man sieht, wohin sie
+   zielt — ohne sie rät man, wo der Text landet. */
+.lineal__lot{
+  position:absolute;top:0;bottom:0;width:1px;
+  background:var(--blau-hell);z-index:4;pointer-events:none;
+}
+.lineal__lot[hidden]{display:none}
 
 /* Kopf- und Fußzeile gehören zur Seite. Die gestrichelte Linie sagt, dass
    hier etwas anderes anfängt als der Fließtext. */
@@ -1521,16 +1615,41 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 /* Das Band ist hoch, nicht schmal — daran erkennt man ein Ribbon. Zuerst
    stand hier eine Zeile von 52 Pixeln mit winzigen Symbolen; das war eine
    Symbolleiste mit Untertiteln, kein Register. */
+/* Das Band rollt, wenn mehr Gruppen da sind, als hineinpassen. Weil die
+   Rollleiste ausgeblendet ist, braucht es dafür sichtbare Pfeile — sonst
+   wären die rechten Gruppen mit der Maus nicht zu erreichen. Sie
+   erscheinen nur, wenn wirklich etwas übersteht (siehe registerPfeile). */
+.register__streifen{position:relative}
 .register__band{
   display:flex;align-items:stretch;gap:0;
   padding:6px 4px 4px;overflow-x:auto;min-height:96px;
+  scroll-behavior:smooth;
 }
 .register__band::-webkit-scrollbar{display:none}
+
+.register__pfeil{
+  position:absolute;top:0;bottom:0;width:26px;z-index:3;
+  display:flex;align-items:center;justify-content:center;
+  border:0;cursor:pointer;
+  color:var(--schrift);font:inherit;font-size:15px;
+  background:var(--leiste);
+}
+.register__pfeil--links{left:0;box-shadow:6px 0 8px -4px rgba(0,0,0,.45)}
+.register__pfeil--rechts{right:0;box-shadow:-6px 0 8px -4px rgba(0,0,0,.45)}
+.register__pfeil:hover{background:var(--karte)}
+.register__pfeil[hidden]{display:none}
 
 .register__gruppe{
   display:flex;flex-direction:column;justify-content:space-between;
   gap:4px;padding:0 10px;
   border-right:1px solid var(--rand);
+  /* Eine Gruppe gibt nicht nach. Ohne diese Zeile drückt der Flusskasten
+     sie zusammen, sobald mehr Gruppen da sind als Platz — die Wörter
+     schoben sich dann ineinander („SortiereSchattierung"). Jetzt behält
+     jede Gruppe ihre Breite, und das Band rollt stattdessen; die Pfeile
+     an den Rändern führen hin. Derselbe Fehler wie beim Blatt, das bei
+     starker Vergrößerung schmaler wurde statt zu rollen. */
+  flex:0 0 auto;
 }
 .register__gruppe:last-child{border-right:none}
 
@@ -1544,31 +1663,47 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
   white-space:normal;line-height:1.15;
 }
 .register__gross svg{width:26px;height:26px}
+/* Alle Beschriftungen im Band sehen gleich aus — eine Größe, ein
+   Schnitt, eine Farbe. Vorher gab es zwei: Knöpfe mit Symbol trugen ihr
+   Wort in 11 Punkt mager und grau, Knöpfe ohne Symbol in 12,5 Punkt fett
+   und hell. In einer Reihe standen die beiden dann abwechselnd
+   nebeneinander — „Vergrößern" mager, „Verkleinern" fett —, und das
+   Auge stolpert bei jedem Wechsel. Ob ein Knopf ein Bild hat, ist kein
+   Grund, sein Wort anders zu setzen. */
 .register__beschriftung{
-  font-size:11px;color:var(--schrift-2);text-align:center;
-  display:block;max-width:76px;
+  font-size:11.5px;font-weight:400;color:var(--schrift);text-align:center;
+  display:block;max-width:76px;line-height:1.25;
 }
-.register__gross:hover .register__beschriftung{color:var(--schrift)}
-/* Ein Wort statt eines Symbols — „A4", „100 %", „KI". Es soll die Stelle
-   des Symbols einnehmen, nicht die Beschriftung verdrängen. */
-.register__gross .register__zeichen{font-size:15px;font-weight:600}
 
 /* Die kleinen daneben, zwei Reihen hoch, wie im Writer. */
 .register__klein{
   display:grid;grid-auto-flow:column;
   grid-template-rows:repeat(2, auto);
   gap:2px;align-content:center;
+  flex:0 0 auto;
 }
 .register__klein .wz{min-width:26px;height:26px;padding:0 7px}
 .register__klein .wz svg{width:17px;height:17px}
 /* Ein Knopf, der ein Wort trägt statt eines Symbols, braucht die Breite
    dafür — „Lineal" passt nicht in 26 Pixel. */
 .register__klein .register__zeichen{font-size:11.5px;white-space:nowrap}
+/* Ein Knopf im Band ist flach — Rahmen und Fläche kommen erst beim
+   Darüberfahren. So halten es Word und der Writer, und aus gutem Grund:
+   Zwanzig gerahmte Kästchen nebeneinander sind kein Werkzeugband mehr,
+   sondern ein Flickenteppich.
+
+   Hier standen kurz Rahmen um jeden Wort-Knopf, weil auf einem
+   verkleinerten Bildschirmfoto „Unterart" und „Aa" zusammenzulaufen
+   schienen. In Wirklichkeit lagen 16 Bildpunkte dazwischen — der Fehler
+   war das Foto, nicht das Band. Was bleibt, ist etwas mehr Luft. */
+.register__klein .wz--wort{padding:0 9px}
 
 /* Ein großer Knopf ohne Symbol: das Wort steht mittig und trägt allein. */
+/* Ein großer Knopf ohne Symbol: Das Wort steht allein, also mittig auf
+   der Höhe, die sonst Bild und Wort zusammen einnehmen. Größe, Schnitt
+   und Farbe bleiben dieselben wie überall. */
 .register__beschriftung--allein{
-  font-size:12.5px;font-weight:600;color:var(--schrift);
-  display:flex;align-items:center;min-height:26px;
+  display:flex;align-items:center;justify-content:center;min-height:26px;
 }
 
 .register__name{
@@ -1702,3 +1837,413 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 }
 .stufe__jetzt:hover{background:var(--blau);color:#fff}
 .stufe__leer{flex:0 0 auto;min-width:46px}
+
+/* ============================================================
+   Die Druckvorschau
+
+   Eine eigene Seite über allem, wie die Einstellungen — nur liegen darin
+   nicht Felder, sondern Blätter. Sie werden nicht nachgeahmt: Es ist
+   dasselbe Papierformat, derselbe Rand, dieselbe Schrift wie im
+   Schreibblatt. Was hier steht, kommt so aus dem Drucker.
+   ============================================================ */
+.vorschau{
+  position:fixed;inset:0;z-index:65;
+  background:var(--grund);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+}
+.vorschau[hidden]{display:none}
+
+/* Beim Drucken aus dem Schreibblatt heraus werden die Blätter gebraucht,
+   aber nicht gezeigt. „visibility" statt „display" ist hier der Punkt:
+   Ein Kasten ohne Anzeige hat keine Höhe, und ohne Höhe lässt sich nicht
+   messen, wann eine Seite voll ist. */
+.vorschau--still{visibility:hidden}
+
+.vorschau__leiste{
+  display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+  background:var(--leiste);border-bottom:1px solid var(--rand);
+  padding:7px 10px;flex:0 0 auto;
+}
+.vorschau__leiste .knopf{width:auto}
+.vorschau__trenner{width:1px;height:20px;background:var(--rand);margin:0 5px}
+.vorschau__zahl{
+  width:58px;text-align:center;
+  background:var(--karte);border:1px solid var(--rand);border-radius:5px;
+  color:var(--schrift);font:inherit;padding:4px 6px;
+}
+.vorschau__zahl:focus{outline:none;border-color:var(--blau-hell)}
+.vorschau__von,.vorschau__stufe{color:var(--schrift-2);font-size:12px}
+.vorschau__stufe{min-width:48px;text-align:center}
+.vorschau__ende{margin-left:auto}
+
+.vorschau__flaeche{
+  flex:1 1 auto;min-height:0;overflow:auto;
+  padding:20px;
+  display:flex;justify-content:center;align-items:flex-start;
+}
+
+/* Die Blätter stehen in einem Raster. Wie viele nebeneinander, sagt
+   „--vorschau-spalten"; die Buchansicht schiebt die erste Seite in die
+   rechte Spalte, damit die Zwei neben der Drei steht und nicht neben der
+   Eins — so liegt ein aufgeschlagenes Buch. */
+.vorschau__blaetter{
+  display:grid;
+  grid-template-columns:repeat(var(--vorschau-spalten,1),max-content);
+  gap:20px;
+  align-content:start;justify-content:center;
+}
+.vorschau__blaetter--buch > .vorschau__fach:first-child{grid-column:2}
+
+/* Ein Fach ist ein Blatt und die Zahl darunter. Die Zahl steht außerhalb
+   des Blattes: Auf dem Papier hat sie nichts zu suchen, und im Blatt
+   selbst wäre sie abgeschnitten — das schneidet ab, was übersteht. */
+.vorschau__fach{position:relative}
+
+.vorschau__seite{
+  position:relative;
+  background:var(--blatt);color:var(--blatt-schrift);
+  box-shadow:0 1px 3px rgba(0,0,0,.4),0 12px 32px rgba(0,0,0,.28);
+  display:flex;flex-direction:column;
+  /* Was nicht auf die Seite passt, gehört auf die nächste. Ohne diese
+     Zeile liefe der Rest über den Blattrand in die graue Fläche — und
+     stünde damit an einer Stelle, die es auf Papier nicht gibt. */
+  overflow:hidden;
+}
+
+/* Der Textkörper einer Seite. „min-height:0" ist nicht Kosmetik: In einer
+   Spalte darf ein Kind sonst nicht kleiner werden als sein Inhalt, und
+   dann wäre jede Seite so hoch wie der ganze Text — gemessen würde immer,
+   dass alles passt, und es gäbe nie eine zweite Seite. */
+.vorschau__koerper{
+  flex:1 1 auto;min-height:0;overflow:hidden;
+}
+
+/* „Text schwarz drucken": Farbige Überschriften und Verweise kommen in
+   Schwarz heraus. Das spart Farbe und ist auf getöntem Papier lesbarer —
+   im Dokument selbst bleibt alles, wie es war. */
+.vorschau__koerper--schwarz,
+.vorschau__koerper--schwarz *{color:#000 !important}
+
+/* Kopf- und Fußzeile ohne das getönte Band und ohne das Schild: Auf dem
+   Papier steht nur, was hineingeschrieben wurde. */
+.vorschau__zeile{
+  width:auto;margin:0;padding:0;
+  background:none;border:0;
+  flex:0 0 auto;
+}
+.vorschau__zeile::before{content:none}
+.vorschau__zeile.kopfzeile{margin-bottom:6mm}
+.vorschau__zeile.fusszeile{margin-top:6mm}
+/* Die Seitenzahl ist hier keine Platzhaltermarke mehr, sondern eine Zahl. */
+.vorschau__zeile .seitenzahl{color:inherit}
+.vorschau__zeile .seitenzahl::after{content:none}
+
+/* Die Nummer unter dem Blatt — beim Blättern der einzige Halt, wenn vier
+   Seiten gleichzeitig dastehen. */
+.vorschau__nummer{
+  position:absolute;left:0;right:0;bottom:-17px;
+  text-align:center;font-size:11px;color:var(--schrift-3);
+  pointer-events:none;
+}
+.vorschau__seite--hier{outline:2px solid var(--blau-hell);outline-offset:2px}
+
+.vorschau__leer{
+  color:var(--schrift-3);padding:40px;font-size:13px;
+}
+
+/* ============================================================
+   Das Druckfenster
+
+   Links das Blatt, rechts die Einstellungen, unten die drei Knöpfe — die
+   Aufteilung aus dem Writer. Es liegt über allem und ist deshalb das
+   Einzige, was Klicks annimmt: Ein halb sichtbarer Kasten, durch den man
+   noch danebengreifen kann, ist schlimmer als gar keiner.
+   ============================================================ */
+.druckfenster{
+  /* Über der Vorschau (65), aber unter dem Rückfrage-Kasten (70): Sonst
+     ginge „Hilfe" hinter dem Druckfenster auf, und man sähe nur, dass es
+     dunkler wird. */
+  position:fixed;inset:0;z-index:68;
+  background:rgba(0,0,0,.45);
+  display:flex;align-items:center;justify-content:center;
+  padding:20px;
+}
+.druckfenster[hidden]{display:none}
+
+.druckfenster__kasten{
+  background:var(--leiste);
+  border:1px solid var(--rand);border-radius:10px;
+  box-shadow:var(--schatten);
+  width:min(940px,96vw);
+  /* Feste Höhe, nicht mitwachsend: Sonst springt der Kasten beim Wechsel
+     zwischen den beiden Reitern, und das Blatt links wird kleiner, sobald
+     die Liste rechts kürzer ist. */
+  /* So hoch, dass der längste der drei Reiter („Standard") ganz
+     hineinpasst, und keinen Fingerbreit höher. Gemessen: er braucht 478
+     Bildpunkte, Kopf, Reiterleiste und Fuß zusammen 123 — der Rest ist
+     Luft für den Fall, dass eine Schrift auf einem anderen Rechner etwas
+     größer ausfällt. Reicht es doch einmal nicht — ein Drucker mit sehr
+     vielen Einstellungen —, wird gerollt statt geklemmt. */
+  height:min(620px,94vh);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.druckfenster__titel{
+  flex:0 0 auto;text-align:center;
+  font-size:14px;font-weight:600;
+  padding:8px 14px;border-bottom:1px solid var(--rand);
+}
+.druckfenster__mitte{flex:1 1 auto;min-height:0;display:flex}
+
+/* ---- Links: das Blatt ---- */
+.druckfenster__links{
+  flex:0 0 320px;min-width:0;
+  display:flex;flex-direction:column;gap:10px;
+  padding:14px;border-right:1px solid var(--rand);
+}
+.druckblick{
+  position:relative;flex:1 1 auto;min-height:200px;
+  padding:18px 0 0 34px;
+}
+/* Die Maße stehen am Blatt wie im Writer: oben die Breite, links die Höhe.
+   Sie sagen mehr als ein Formatname — 216 mm sieht man an, dass es nicht
+   A4 ist. */
+.druckblick__mass{
+  position:absolute;top:0;left:34px;right:0;
+  text-align:center;font-size:11px;color:var(--schrift-3);
+}
+.druckblick__hoehe{
+  position:absolute;left:0;top:18px;bottom:0;width:22px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;color:var(--schrift-3);
+  writing-mode:vertical-rl;transform:rotate(180deg);
+}
+.druckblick__buehne{
+  position:relative;width:100%;height:100%;overflow:hidden;
+}
+/* Eine Zeile, nicht zwei: Bricht das Blättern um, steht der Sprung ans
+   Ende unter dem Blatt und sieht aus, als gehörte er nicht dazu. */
+.druckblick__leiste{
+  flex:0 0 auto;display:flex;align-items:center;gap:3px;flex-wrap:nowrap;
+}
+.druckblick__leiste .wz{min-width:26px;padding:0 4px}
+.druckblick__leiste .vorschau__zahl{width:46px;padding:4px 2px}
+.druckblick__an{
+  display:flex;align-items:center;gap:5px;
+  font-size:11.5px;color:var(--schrift-2);margin-right:auto;white-space:nowrap;
+}
+
+/* ---- Rechts: die Einstellungen ---- */
+.druckfenster__rechts{
+  flex:1 1 auto;min-width:0;
+  display:flex;flex-direction:column;min-height:0;
+}
+.druckreiter{
+  flex:0 0 auto;display:flex;gap:2px;
+  padding:8px 14px 0;border-bottom:1px solid var(--rand);
+}
+.druckreiter__knopf{
+  background:none;border:1px solid transparent;border-bottom:0;
+  border-radius:6px 6px 0 0;
+  color:var(--schrift-3);font:inherit;font-size:12.5px;
+  padding:6px 14px;cursor:pointer;margin-bottom:-1px;
+}
+.druckreiter__knopf:hover{color:var(--schrift)}
+.druckreiter__knopf--an{
+  background:var(--grund);border-color:var(--rand);
+  color:var(--schrift);font-weight:600;
+}
+.druckfenster__blatt{
+  flex:1 1 auto;min-height:0;overflow-y:auto;
+  padding:12px 16px 14px;
+}
+.druckfenster__blatt[hidden]{display:none}
+
+.druckgruppe{display:block;margin-bottom:15px}
+.druckgruppe__titel{
+  display:block;margin-bottom:7px;
+  font-size:10.5px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;
+  color:var(--schrift-3);
+}
+/* Eine Zeile ist ein Schalter und sein Wort — mehr nicht. Erklärungen
+   standen hier einmal als kleine kursive Sätze darunter; sie machten die
+   Liste doppelt so lang und waren für den, der sie am nötigsten braucht,
+   am schlechtesten zu lesen. Was zu erklären ist, steht hinter „Hilfe“.
+
+   Deshalb auch die Größe: 14 Bildpunkte, aufrecht, mit Luft zwischen den
+   Zeilen. Kursiv und klein ist bei Legasthenie das Gegenteil von Hilfe. */
+.druckzeile{
+  display:flex;align-items:center;gap:9px;
+  margin-bottom:7px;font-size:14px;line-height:1.45;
+}
+.druckzeile__wort{flex:0 0 auto}
+/* Bei den Angaben zum Drucker steht links das Wort, rechts der Wert. Eine
+   feste Spalte dafür: Sonst fängt jeder Wert an einer anderen Stelle an,
+   und die Liste franst aus. */
+.druckzeile__wort--fest{flex:0 0 96px}
+.druckzeile__wert{
+  flex:1 1 auto;min-width:0;color:var(--schrift-2);
+  overflow:hidden;text-overflow:ellipsis;
+}
+/* Der Name des Druckers nimmt den Platz, den er braucht — er steht nicht
+   am rechten Rand wie ein Schalter, sondern gleich hinter seinem Wort. */
+.druckzeile .wz-wahl.druckwahl--breit{
+  flex:1 1 auto;margin-left:0;max-width:none;min-width:0;
+}
+/* Groß genug zum Treffen — die Vorgabe des Systems ist an einem
+   Schreibtisch mit Maus zu klein. */
+.druckzeile input[type="radio"],
+.druckzeile input[type="checkbox"]{
+  flex:0 0 auto;margin:0;width:15px;height:15px;accent-color:var(--blau);
+}
+.druckzeile .wz-wahl{margin-left:auto;max-width:230px;font-size:13.5px}
+.druckzeile input:disabled + .druckzeile__wort{color:var(--schrift-3)}
+.druckfeld{
+  background:var(--grund);color:var(--schrift);
+  border:1px solid var(--rand);border-radius:5px;
+  font:inherit;font-size:13.5px;padding:5px 9px;
+  min-width:0;flex:1 1 auto;
+}
+.druckfeld--zahl{flex:0 0 70px;text-align:right}
+.druckfeld:focus{outline:none;border-color:var(--blau-hell)}
+
+.druckfenster__fuss{
+  flex:0 0 auto;display:flex;align-items:center;gap:10px;
+  padding:10px 16px;border-top:1px solid var(--rand);
+}
+.druckfenster__ab{margin-left:auto}
+
+/* Der Stapel, aus dem der Blick nach links seine Seite holt. Er muss
+   gesetzt werden, damit sich messen lässt, wann ein Blatt voll ist — also
+   nicht „display:none", sondern aus dem Bild geschoben. */
+.druckfenster__stapel{
+  position:fixed;left:-10000px;top:0;
+  width:auto;pointer-events:none;
+}
+
+/* ============================================================
+   Was wirklich an den Drucker geht
+
+   Auf dem Bildschirm nie zu sehen; beim Drucken das Einzige, was zu sehen
+   ist. Solange „druckt" am Körper steht, ist das Dokument diese Blätter
+   und sonst nichts.
+   ============================================================ */
+.druckbogen{display:none}
+.druckbogen__blatt{
+  display:grid;background:#fff;
+  break-inside:avoid;page-break-inside:avoid;
+}
+.druckbogen__fach{position:relative;overflow:hidden}
+
+@media print{
+  body.druckt > *:not(.druckbogen){display:none !important}
+  body.druckt .druckbogen{display:block !important;background:#fff}
+
+  body.druckt .vorschau__seite{box-shadow:none;outline:0}
+  body.druckt .vorschau__nummer{display:none}
+
+  /* Ein Blatt ist eine Papierseite. Bei „Seiten pro Blatt" ist das Blatt
+     der Bogen, auf dem mehrere Seiten verkleinert stehen. */
+  body.druckt .druckbogen > .vorschau__seite,
+  body.druckt .druckbogen > .druckbogen__blatt{
+    break-after:page;page-break-after:always;
+  }
+  /* Sonst schöbe das letzte Blatt ein leeres hinterher. */
+  body.druckt .druckbogen > .vorschau__seite:last-child,
+  body.druckt .druckbogen > .druckbogen__blatt:last-child{
+    break-after:auto;page-break-after:auto;
+  }
+}
+
+
+/* ---------- Das Register anpassen ----------
+   Eine Liste, kein Ziehfeld. Zwei Pfeile treffen immer; Ziehen und Ablegen
+   verlangt eine ruhige Hand und ist genau dann im Weg, wenn man es eilig
+   hat. Ausgeblendete Gruppen bleiben lesbar stehen — man soll sehen, was
+   man abgeschaltet hat, und es zurückholen können. */
+.anpassen{display:flex;flex-direction:column;gap:12px}
+.anpassen__kopf{display:flex;align-items:center;gap:12px}
+.anpassen__kopf span{flex:0 0 auto;font-size:13px}
+.anpassen__kopf select{flex:1 1 auto;min-width:0}
+
+.anpassen__liste{
+  display:flex;flex-direction:column;gap:4px;
+  max-height:46vh;overflow-y:auto;
+  border:1px solid var(--rand);border-radius:8px;
+  padding:6px;background:var(--grund);
+}
+.anpassen__zeile{
+  display:flex;align-items:center;gap:10px;
+  padding:5px 8px;border-radius:6px;
+  background:var(--karte);border:1px solid var(--rand);
+}
+.anpassen__zeile--aus{opacity:.55}
+.anpassen__zeile input[type="checkbox"]{
+  flex:0 0 auto;width:15px;height:15px;margin:0;accent-color:var(--blau);
+}
+.anpassen__name{
+  flex:1 1 auto;min-width:0;font-size:14px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;
+}
+.anpassen__zeile .wz{flex:0 0 auto;min-width:28px;height:26px}
+.anpassen__zeile .wz:disabled{opacity:.3}
+.anpassen__fuss{display:flex;gap:10px;flex-wrap:wrap}
+
+
+/* ---------- Ein Bandknopf mit Klappe ----------
+   Der kleine Pfeil sagt, dass mehr dahintersteckt. Die Klappe selbst hängt
+   am Körper und nicht im Band: Dort wird abgeschnitten, was übersteht, und
+   eine Klappe im Knopf wäre nach zwei Zeilen weg. */
+.wz__pfeil{
+  font-size:9px;line-height:1;color:var(--schrift-3);
+  margin-top:-2px;
+}
+.register__gross .wz__pfeil{margin-top:0}
+.wz--klappe:hover .wz__pfeil{color:var(--schrift)}
+
+.register__klappe{
+  position:fixed;z-index:80;
+  min-width:200px;width:max-content;max-width:min(360px,90vw);
+  background:var(--leiste);border:1px solid var(--rand);border-radius:6px;
+  box-shadow:var(--schatten);padding:5px;
+}
+
+
+/* ---------- Symbol austauschen ----------
+   Oben, welche Zeichnung gemeint ist und woran sie hängt; darunter die
+   Suche und das Gitter mit dem Katalog. Nicht alle 1800 auf einmal — das
+   Gitter zeigt höchstens 240 und sagt, wenn mehr passen. */
+.tausch{display:flex;flex-direction:column;gap:12px}
+.tausch__kopf{
+  display:flex;align-items:center;gap:14px;
+  padding:10px 12px;border-radius:8px;
+  background:var(--grund);border:1px solid var(--rand);
+}
+.tausch__jetzt{
+  flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+  width:38px;height:38px;border-radius:7px;
+  background:var(--karte);border:1px solid var(--rand);color:var(--schrift);
+}
+.tausch__jetzt svg{width:22px;height:22px}
+.tausch__wort{
+  flex:1 1 auto;min-width:0;font-size:13px;color:var(--schrift-2);line-height:1.45;
+}
+.tausch__suche{flex:0 0 auto}
+.tausch__gitter{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(46px,1fr));
+  gap:5px;max-height:44vh;overflow-y:auto;
+  padding:8px;border-radius:8px;
+  background:var(--grund);border:1px solid var(--rand);
+}
+.tausch__feld{
+  display:flex;align-items:center;justify-content:center;
+  height:42px;border-radius:6px;cursor:pointer;
+  background:var(--karte);border:1px solid var(--rand);color:var(--schrift);
+}
+.tausch__feld:hover{border-color:var(--blau-hell);background:var(--grund)}
+.tausch__feld:focus-visible{outline:2px solid var(--blau-hell);outline-offset:1px}
+.tausch__leer{
+  grid-column:1 / -1;margin:0;padding:14px 4px;text-align:center;
+  color:var(--schrift-3);font-size:13px;
+}
+.tausch__fuss{display:flex;gap:10px;flex-wrap:wrap}

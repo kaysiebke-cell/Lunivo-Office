@@ -45,11 +45,14 @@
      Ansicht ▸ Benutzeroberfläche. -->
 <div class="register" id="register" role="toolbar" aria-label="Register">
   <div class="register__reiter" id="register-reiter" role="tablist"></div>
-  <div class="register__band" id="register-band"></div>
+  <div class="register__streifen">
+    <button class="register__pfeil register__pfeil--links" id="register-links"
+            type="button" hidden aria-label="Weiter nach links">‹</button>
+    <div class="register__band" id="register-band"></div>
+    <button class="register__pfeil register__pfeil--rechts" id="register-rechts"
+            type="button" hidden aria-label="Weiter nach rechts">›</button>
+  </div>
 </div>
-
-<!-- Das Lineal zeigt, wo der Satzspiegel anfängt und aufhört. -->
-<div class="lineal" id="lineal" hidden aria-hidden="true"></div>
 
 <div class="suchleiste" id="suchleiste" hidden>
   <label>Suchen <input id="suche-was" type="search" placeholder="Wonach?"></label>
@@ -65,6 +68,22 @@
   <!-- Der Navigationsbereich: die Überschriften als Liste zum Anspringen.
        Bei einem langen Schreiben der schnellste Weg zur richtigen Stelle. -->
   <aside class="navigation" id="navigation" hidden aria-label="Navigationsbereich"></aside>
+
+  <!-- Die Werkbank: das Lineal und darunter die Fläche, auf der das Blatt
+       liegt. Beide gehören zusammen und sind gleich breit. Das Lineal
+       stand einmal über dem ganzen Fenster — dann lief es bei schmalem
+       Fenster als grauer Balken über die Schreibhilfe, und ein Lineal
+       über fremdem Gebiet misst nichts mehr. -->
+  <div class="werkbank">
+
+    <!-- Es zeigt nicht nur, wo der Satzspiegel anfängt und aufhört,
+         sondern misst: Zentimeter, Zahlen, und drei Marken für die
+         Einzüge, die sich ziehen lassen. Alles darin baut
+         js/programm.js — es hängt von Papierformat, Rand und
+         Vergrößerung ab und kann deshalb nicht hier stehen. -->
+    <div class="lineal" id="lineal" hidden aria-label="Lineal">
+      <div class="lineal__bahn" id="lineal-bahn"></div>
+    </div>
 
   <div class="arbeitsflaeche" id="arbeitsflaeche">
     <div class="blatt" id="blatt">
@@ -84,6 +103,7 @@
       <div class="fusszeile" id="fusszeile" contenteditable="true" hidden
            spellcheck="false" aria-label="Fußzeile"></div>
     </div>
+  </div>
   </div>
 
   <div class="griff" id="griff" role="separator" aria-orientation="vertical"
@@ -423,6 +443,301 @@
   </div>
 </section>
 
+<!-- ============================================================
+     Die Druckvorschau.
+
+     Wie die Einstellungen eine eigene Seite, die sich über alles legt.
+     Darin steht nicht das Schreibblatt, sondern das, was der Drucker
+     ausgibt: einzelne Blätter, jedes mit eigener Kopf- und Fußzeile und
+     eigener Seitenzahl. Der Umbruch wird gerechnet, nicht geraten —
+     js/programm.js, Abschnitt „Die Druckvorschau".
+     ============================================================ -->
+<section class="vorschau" id="vorschau" hidden aria-label="Druckvorschau">
+  <div class="vorschau__leiste" role="toolbar" aria-label="Druckvorschau">
+    <button class="knopf knopf--klein knopf--haupt" id="vorschau-drucken" type="button">Drucken…</button>
+
+    <span class="vorschau__trenner"></span>
+
+    <!-- Blättern. Dieselbe Reihenfolge wie unter jedem Vorschaufenster:
+         an den Anfang, eine zurück, die Zahl, eine vor, ans Ende. -->
+    <button class="wz" id="vorschau-erste" type="button" title="Erste Seite" aria-label="Erste Seite">⏮</button>
+    <button class="wz" id="vorschau-zurueck" type="button" title="Eine Seite zurück" aria-label="Eine Seite zurück">◀</button>
+    <input class="vorschau__zahl" id="vorschau-nummer" type="number" min="1" value="1" aria-label="Seite">
+    <span class="vorschau__von" id="vorschau-von">/ 1</span>
+    <button class="wz" id="vorschau-vor" type="button" title="Eine Seite vor" aria-label="Eine Seite vor">▶</button>
+    <button class="wz" id="vorschau-letzte" type="button" title="Letzte Seite" aria-label="Letzte Seite">⏭</button>
+
+    <span class="vorschau__trenner"></span>
+
+    <select class="wz-wahl wz-wahl--vorlage" id="vorschau-reihe"
+            aria-label="Wie viele Seiten nebeneinander"></select>
+
+    <span class="vorschau__trenner"></span>
+
+    <button class="wz" id="vorschau-kleiner" type="button" title="Kleiner" aria-label="Kleiner">−</button>
+    <span class="vorschau__stufe" id="vorschau-stufe">100 %</span>
+    <button class="wz" id="vorschau-groesser" type="button" title="Größer" aria-label="Größer">+</button>
+    <button class="knopf knopf--klein" id="vorschau-einpassen" type="button">Einpassen</button>
+
+    <button class="knopf knopf--klein vorschau__ende" id="vorschau-zu" type="button">Vorschau schließen</button>
+  </div>
+
+  <div class="vorschau__flaeche" id="vorschau-flaeche">
+    <div class="vorschau__blaetter" id="vorschau-blaetter"></div>
+  </div>
+</section>
+
+<!-- ============================================================
+     Das Druckfenster.
+
+     Aufgeteilt wie im Writer: links das Blatt, wie es aus dem Drucker
+     kommt, rechts in zwei Reitern die Einstellungen, unten die drei
+     Knöpfe. Was hier eingestellt wird, entscheidet das Programm selbst —
+     den Drucker, die Schublade und den beidseitigen Druck wählt das
+     Fenster des Systems, das danach kommt.
+     ============================================================ -->
+<div class="druckfenster" id="druckfenster" hidden role="dialog" aria-modal="true"
+     aria-label="Drucken">
+  <div class="druckfenster__kasten">
+    <div class="druckfenster__titel">Drucken</div>
+
+    <div class="druckfenster__mitte">
+      <!-- Links: ein Blatt und darunter das Blättern. -->
+      <div class="druckfenster__links">
+        <div class="druckblick">
+          <div class="druckblick__mass" id="druck-mass"></div>
+          <div class="druckblick__hoehe" id="druck-hoehe"></div>
+          <div class="druckblick__buehne" id="druck-buehne"></div>
+        </div>
+        <div class="druckblick__leiste">
+          <label class="druckblick__an">
+            <input type="checkbox" id="druck-vorschau-an" checked> Vorschau
+          </label>
+          <button class="wz" id="druck-erste" type="button" title="Erste Seite" aria-label="Erste Seite">⏮</button>
+          <button class="wz" id="druck-zurueck" type="button" title="Zurück" aria-label="Eine Seite zurück">◀</button>
+          <input class="vorschau__zahl" id="druck-nummer" type="number" min="1" value="1" aria-label="Seite">
+          <span class="vorschau__von" id="druck-von">/ 1</span>
+          <button class="wz" id="druck-vor" type="button" title="Vor" aria-label="Eine Seite vor">▶</button>
+          <button class="wz" id="druck-letzte" type="button" title="Letzte Seite" aria-label="Letzte Seite">⏭</button>
+        </div>
+      </div>
+
+      <!-- Rechts: die Einstellungen, in zwei Reitern. -->
+      <div class="druckfenster__rechts">
+        <div class="druckreiter" role="tablist">
+          <button class="druckreiter__knopf druckreiter__knopf--an" type="button"
+                  role="tab" aria-selected="true" data-blatt="standard">Standard</button>
+          <button class="druckreiter__knopf" type="button"
+                  role="tab" aria-selected="false" data-blatt="inhalt">Lunivo-Office</button>
+          <button class="druckreiter__knopf" type="button"
+                  role="tab" aria-selected="false" data-blatt="drucker">Drucker</button>
+        </div>
+
+        <div class="druckfenster__blatt" data-blatt="standard">
+          <div class="druckgruppe">
+            <span class="druckgruppe__titel">Drucker</span>
+            <div class="druckzeile">
+              <span class="druckzeile__wort druckzeile__wort--fest">Name</span>
+              <select class="wz-wahl druckwahl--breit" id="druck-name"
+                      aria-label="Drucker"></select>
+              <!-- Derselbe Knopf wie im Writer, und er tut dasselbe: Er
+                   führt zu den Eigenschaften. Nur liegen die hier im
+                   Fenster nebenan statt in einem eigenen. -->
+              <button class="knopf knopf--klein" id="druck-eigenschaften"
+                      type="button">Eigenschaften…</button>
+            </div>
+            <div class="druckzeile">
+              <span class="druckzeile__wort druckzeile__wort--fest">Status:</span>
+              <span class="druckzeile__wert" id="druck-status">wird gelesen …</span>
+            </div>
+          </div>
+
+          <div class="druckgruppe">
+            <span class="druckgruppe__titel">Bereich und Kopien</span>
+            <label class="druckzeile">
+              <input type="radio" name="druckbereich" id="druck-bereich-alle" value="alle" checked>
+              <span class="druckzeile__wort">Alle Seiten</span>
+            </label>
+            <!-- „Auswahl" ist grau, solange nichts markiert ist: Es gäbe sonst
+                 einen Knopf, der nichts druckt und nicht sagt, warum. -->
+            <label class="druckzeile">
+              <input type="radio" name="druckbereich" id="druck-bereich-auswahl" value="auswahl">
+              <span class="druckzeile__wort">Auswahl</span>
+            </label>
+            <label class="druckzeile">
+              <input type="radio" name="druckbereich" id="druck-bereich-seiten" value="seiten">
+              <span class="druckzeile__wort">Seiten:</span>
+              <input class="druckfeld" id="druck-seiten" type="text" placeholder="1-3, 5"
+                     aria-label="Welche Seiten">
+            </label>
+            <label class="druckzeile">
+              <span class="druckzeile__wort">Anzahl der Kopien</span>
+              <input class="druckfeld druckfeld--zahl" id="druck-kopien" type="number"
+                     min="1" max="99" value="1">
+            </label>
+            <label class="druckzeile">
+              <input type="checkbox" id="druck-sortieren" checked>
+              <span class="druckzeile__wort">Sortieren</span>
+            </label>
+            <label class="druckzeile">
+              <span class="druckzeile__wort">Blattseiten</span>
+              <select class="wz-wahl" id="druck-blattseiten">
+                <option value="alle">Alle Seiten</option>
+                <option value="ungerade">Nur ungerade Seiten</option>
+                <option value="gerade">Nur gerade Seiten</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="druckgruppe">
+            <span class="druckgruppe__titel">Seitenlayout</span>
+            <label class="druckzeile">
+              <span class="druckzeile__wort">Papiergröße</span>
+              <select class="wz-wahl" id="druck-papier"></select>
+            </label>
+            <label class="druckzeile">
+              <span class="druckzeile__wort">Ausrichtung</span>
+              <select class="wz-wahl" id="druck-quer">
+                <option value="hoch">Hochformat</option>
+                <option value="quer">Querformat</option>
+              </select>
+            </label>
+            <label class="druckzeile">
+              <span class="druckzeile__wort">Seiten pro Blatt</span>
+              <select class="wz-wahl" id="druck-problatt">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="4">4</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <div class="druckfenster__blatt" data-blatt="inhalt" hidden>
+          <div class="druckgruppe">
+            <span class="druckgruppe__titel">Inhalt</span>
+            <label class="druckzeile">
+              <input type="checkbox" id="druck-hintergrund" checked>
+              <span class="druckzeile__wort">Seitenhintergrund</span>
+            </label>
+            <label class="druckzeile">
+              <input type="checkbox" id="druck-bilder" checked>
+              <span class="druckzeile__wort">Bilder und andere Grafikobjekte</span>
+            </label>
+            <label class="druckzeile">
+              <input type="checkbox" id="druck-platzhalter">
+              <span class="druckzeile__wort">Textplatzhalter</span>
+            </label>
+            <label class="druckzeile">
+              <input type="checkbox" id="druck-steuer" checked>
+              <span class="druckzeile__wort">Steuerelemente</span>
+            </label>
+            <label class="druckzeile">
+              <span class="druckzeile__wort">Kommentare</span>
+              <select class="wz-wahl" id="druck-kommentare">
+                <option value="keine">Keine (nur das Dokument)</option>
+                <option value="ende">Am Ende des Dokuments</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="druckgruppe">
+            <span class="druckgruppe__titel">Farbe</span>
+            <label class="druckzeile">
+              <input type="checkbox" id="druck-schwarz">
+              <span class="druckzeile__wort">Text schwarz drucken</span>
+            </label>
+          </div>
+
+          <div class="druckgruppe">
+            <span class="druckgruppe__titel">Seiten</span>
+            <label class="druckzeile">
+              <input type="checkbox" id="druck-leere" checked>
+              <span class="druckzeile__wort">Leere Seiten mitdrucken</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Was der Drucker selbst kann. Die Angaben kommen von CUPS, dem
+             Druckerdienst des Systems — dieselbe Quelle, aus der auch
+             LibreOffice sie hat. Geraten wird hier nichts: Ein Drucker
+             ohne Duplexeinheit bekommt keinen Schalter dafür. -->
+        <div class="druckfenster__blatt" data-blatt="drucker" hidden>
+          <div class="druckgruppe">
+            <span class="druckgruppe__titel">Drucker</span>
+            <div class="druckzeile">
+              <span class="druckzeile__wort druckzeile__wort--fest">Name:</span>
+              <span class="druckzeile__wert" id="druck-e-name">—</span>
+            </div>
+            <div class="druckzeile">
+              <span class="druckzeile__wort druckzeile__wort--fest">Status:</span>
+              <span class="druckzeile__wert" id="druck-e-status">—</span>
+            </div>
+            <div class="druckzeile">
+              <span class="druckzeile__wort druckzeile__wort--fest">Typ:</span>
+              <span class="druckzeile__wert" id="druck-e-typ">—</span>
+            </div>
+            <div class="druckzeile">
+              <span class="druckzeile__wort druckzeile__wort--fest">Ort:</span>
+              <span class="druckzeile__wert" id="druck-e-ort">—</span>
+            </div>
+            <div class="druckzeile">
+              <span class="druckzeile__wort druckzeile__wort--fest">Kommentar:</span>
+              <span class="druckzeile__wert" id="druck-e-kommentar">—</span>
+            </div>
+          </div>
+
+          <div class="druckgruppe">
+            <span class="druckgruppe__titel">Papier</span>
+            <label class="druckzeile">
+              <span class="druckzeile__wort druckzeile__wort--fest">Papiergröße</span>
+              <select class="wz-wahl" id="druck-e-papier"></select>
+            </label>
+            <label class="druckzeile">
+              <span class="druckzeile__wort druckzeile__wort--fest">Ausrichtung</span>
+              <select class="wz-wahl" id="druck-e-quer">
+                <option value="hoch">Hochformat</option>
+                <option value="quer">Querformat</option>
+              </select>
+            </label>
+            <label class="druckzeile">
+              <span class="druckzeile__wort druckzeile__wort--fest">Beidseitig</span>
+              <select class="wz-wahl" id="druck-duplex">
+                <option value="einseitig">Aus</option>
+                <option value="lange">Ein — lange Kante wenden</option>
+                <option value="kurze">Ein — kurze Kante wenden</option>
+              </select>
+            </label>
+          </div>
+
+          <!-- Papierschacht, Farbe, Auflösung: Was hier steht, hängt am
+               Drucker. Deshalb wird die Gruppe gebaut und nicht
+               hingeschrieben. -->
+          <div class="druckgruppe">
+            <span class="druckgruppe__titel">Gerät</span>
+            <div id="druck-geraet"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="druckfenster__fuss">
+      <button class="knopf knopf--klein" id="druck-hilfe" type="button">Hilfe</button>
+      <button class="knopf knopf--klein druckfenster__ab" id="druck-ab" type="button">Abbrechen</button>
+      <button class="knopf knopf--klein knopf--haupt" id="druck-los" type="button">Drucken</button>
+    </div>
+  </div>
+
+  <!-- Der Stapel, aus dem der Blick nach links seine Seite holt. Er wird
+       gebraucht, aber nicht gezeigt: Gemessen werden kann nur, was der
+       Browser auch setzt — deshalb steht er da und ist nur unsichtbar. -->
+  <div class="druckfenster__stapel" id="druck-stapel" aria-hidden="true"></div>
+</div>
+
+<!-- Was wirklich an den Drucker geht. Auf dem Bildschirm ist der Kasten nie
+     zu sehen; beim Drucken ist er das Einzige, was zu sehen ist. -->
+<div class="druckbogen" id="druckbogen" hidden aria-hidden="true"></div>
+
 <div class="statuszeile">
   <span id="status-pruefung">Noch nicht geprüft.</span>
   <span class="statuszeile__rechts">
@@ -433,6 +748,8 @@
 </div>
 
 <!-- Der Wortschatz zuerst: Die Prüfung liest ihn beim Anlegen. -->
+<!-- Die Zeichnungen der Knöpfe. Vor dem Programm, das sie benutzt. -->
+<script src="daten/symbole.js"></script>
 <script src="daten/regeln.js"></script>
 <script src="js/pruefung.js"></script>
 <!-- Die KI-Ebene kennt das Gedächtnis und gibt es der Prüfung weiter. Sie

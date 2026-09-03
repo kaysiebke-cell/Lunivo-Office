@@ -242,11 +242,12 @@ const speichereAls = async (endung) => {
 };
 
 B.speichern      = () => speichereAls(Speicher.lies('endung', 'odt'));
-B.speichernOdt   = () => { Speicher.schreib('endung', 'odt');  speichereAls('odt'); };
-B.speichernFodt  = () => { Speicher.schreib('endung', 'fodt'); speichereAls('fodt'); };
-B.speichernHtml  = () => { Speicher.schreib('endung', 'html'); speichereAls('html'); };
-B.speichernTxt   = () => { Speicher.schreib('endung', 'txt');  speichereAls('txt'); };
-B.speichernDocx  = () => { Speicher.schreib('endung', 'docx'); speichereAls('docx'); };
+
+/* Für jedes Format ein eigener Befehl — das stand hier einmal, acht Stück,
+   und im Band acht Knöpfe dazu. Das Format gehört aber dorthin, wo man
+   ohnehin den Ordner und den Namen wählt: in den Speichern-Dialog, der
+   sein Klappmenü „Dateityp" mitbringt. Ein zweiter Weg zur selben Sache
+   kostet Platz und stiftet Zweifel, welcher der richtige ist. */
 
 /* ------------------------------------------------------------
    „Speichern unter…"
@@ -323,13 +324,10 @@ function formatFragen() {
     speichereAls(werte.endung);
   }, 'Speichern');
 }
-B.speichernDoc   = () => { Speicher.schreib('endung', 'doc');  speichereAls('doc'); };
-B.speichernRtf   = () => { Speicher.schreib('endung', 'rtf');  speichereAls('rtf'); };
 /* PDF ist kein Format zum Weiterschreiben — es wird ausgegeben, nicht
    gespeichert. Deshalb merkt es sich das Programm auch nicht als die Art,
    in der künftig gesichert wird. */
 B.speichernPdf   = () => speichereAls('pdf');
-B.speichernEpub  = () => speichereAls('epub');
 
 B.umbenennen = () => {
   const neu = prompt('Wie soll das Dokument heißen?', dateiname);
@@ -338,7 +336,8 @@ B.umbenennen = () => {
   titelSetzen();
 };
 
-B.drucken = () => window.print();
+/* „Drucken…“ öffnet das Druckfenster — siehe den Abschnitt
+   „Drucken: die Vorschau und das Druckfenster“ weiter unten. */
 
 B.beenden = () => { if (darfVerwerfen()) window.close(); };
 
@@ -538,7 +537,11 @@ const zeichen = (z) => () => Dokument.einfuegen(z === ' ' ? '&nbsp;' : z);
    Titel, Verfasser, Stichwörter — braucht es einen Kasten, in dem man sie
    nebeneinander sieht und die Eingabe auch abbrechen kann.
    ============================================================ */
-function fenster(titel, felder, beiOk, knopfName = 'Übernehmen', breit = false) {
+/* „beiAb" ist der Rückweg: Was ein Fenster schon angewandt hat, während es
+   offen stand, muss beim Abbrechen zurückgenommen werden. Ohne diesen Griff
+   stünde neben einer sofort wirkenden Einstellung ein Knopf „Abbrechen",
+   der nichts abbricht — und das ist schlimmer als kein Knopf. */
+function fenster(titel, felder, beiOk, knopfName = 'Übernehmen', breit = false, beiAb = null) {
   const grund = document.createElement('div');
   grund.className = 'dialoggrund';
 
@@ -603,8 +606,9 @@ function fenster(titel, felder, beiOk, knopfName = 'Übernehmen', breit = false)
   document.body.appendChild(grund);
 
   const zu = () => { grund.remove(); auswahlZurueck(); };
-  ab.addEventListener('click', zu);
-  grund.addEventListener('mousedown', (e) => { if (e.target === grund) zu(); });
+  const zurueckNehmen = () => { if (beiAb) beiAb(); zu(); };
+  ab.addEventListener('click', zurueckNehmen);
+  grund.addEventListener('mousedown', (e) => { if (e.target === grund) zurueckNehmen(); });
   ok.addEventListener('click', () => {
     const werte = {};
     for (const [name, eingabe] of Object.entries(eingaben)) werte[name] = eingabe.value;
@@ -819,6 +823,7 @@ function seiteAnwenden() {
   feld.style.columnGap = spalten > 1 ? '8mm' : '';
   Speicher.schreib('seitenrand', seitenrand);
   Speicher.schreib('spalten', spalten);
+  linealAuffrischen();
 }
 
 B.seitenraender = () => {
@@ -958,6 +963,9 @@ let leistenAn = Speicher.lies('leisten', true);
 
 function ansichtExtras() {
   $('lineal').hidden = !lineal;
+  /* Erst sichtbar machen, dann zeichnen: Ein verstecktes Lineal hat keine
+     Breite, und ohne Breite lässt sich nichts ausmessen. */
+  if (lineal) linealZeichnen();
   feld.classList.toggle('dokument--steuerzeichen', steuerzeichen);
   $('werkzeugleiste').hidden = !leistenAn;
   $('werkzeugleiste2').hidden = !leistenAn;
@@ -967,6 +975,264 @@ function ansichtExtras() {
   menueBauen();
 }
 B.linealZeigen = () => { lineal = !lineal; ansichtExtras(); };
+
+/* ------------------------------------------------------------
+   Das Lineal
+
+   Es war bisher ein weißer Streifen mit zwei blauen Kanten — 17 cm breit,
+   fest im Stilblatt eingetragen. Auf A5 log es, im Querformat auch, und
+   messen konnte man damit ohnehin nichts.
+
+   Jetzt rechnet es mit dem wirklichen Blatt: Es legt sich genau darüber,
+   folgt der Vergrößerung und dem Papierformat, zeigt den Satzspiegel hell
+   und die Ränder grau. Die Zahlen zählen vom Satzspiegel aus nach beiden
+   Seiten — so steht es im Writer und in Word, und deshalb sucht dort auch
+   niemand die Null am Blattrand.
+
+   Und es tut etwas: Die drei Marken verschieben die Einzüge des Absatzes,
+   in dem der Zeiger steht. Ein Lineal, an dem man nichts einstellen kann,
+   ist ein Bild von einem Lineal.
+   ------------------------------------------------------------ */
+const MM = CM / 10;
+
+/* Der Absatz, in dem der Zeiger gerade steht. */
+function absatzJetzt() {
+  let knoten = window.getSelection().anchorNode;
+  while (knoten && knoten !== feld) {
+    if (knoten.parentNode === feld) return knoten.nodeType === Node.ELEMENT_NODE ? knoten : null;
+    knoten = knoten.parentNode;
+  }
+  return feld.firstElementChild;
+}
+
+function einzugLesen() {
+  const absatz = absatzJetzt();
+  if (!absatz || absatz.nodeType !== Node.ELEMENT_NODE) return { links: 0, rechts: 0, erste: 0 };
+  const stil = getComputedStyle(absatz);
+  return {
+    links: (parseFloat(stil.marginLeft) || 0) / MM,
+    rechts: (parseFloat(stil.marginRight) || 0) / MM,
+    erste: (parseFloat(stil.textIndent) || 0) / MM,
+  };
+}
+
+let linealUhr = null;
+function linealAuffrischen() {
+  /* Beim Tippen wandert der Zeiger bei jedem Anschlag. Das Lineal jedes
+     Mal neu zu zeichnen wäre zu spüren — einmal am Ende reicht.
+
+     Hier stand erst requestAnimationFrame. Das war falsch: Ein Fenster im
+     Hintergrund zeichnet keine Bilder, der Aufruf blieb liegen, und das
+     Lineal zeigte hinterher noch A4, während längst A5 quer eingestellt
+     war. setTimeout kommt auch dann. */
+  if (linealUhr) return;
+  linealUhr = setTimeout(() => { linealUhr = null; linealZeichnen(); }, 0);
+}
+
+/* Das Lineal hängt am Blatt, nicht an einer Liste von Stellen, die daran
+   denken müssen. Ändert sich das Blatt — anderes Papier, andere Ränder,
+   andere Vergrößerung, anderes Fenster —, zeichnet es sich neu. */
+if (typeof ResizeObserver === 'function') {
+  const wache = new ResizeObserver(linealAuffrischen);
+  wache.observe($('blatt'));
+  /* Die Arbeitsfläche wird auch schmaler, wenn jemand die Schreibhilfe
+     breiter zieht — das Blatt bleibt dabei gleich groß. */
+  wache.observe($('arbeitsflaeche'));
+  /* Auch die Werkbank selbst: Sie ist es, die schmaler wird, wenn die
+     Schreibhilfe wächst. */
+  const werkbank = document.querySelector('.werkbank');
+  if (werkbank) wache.observe(werkbank);
+}
+
+function linealZeichnen() {
+  const balken = $('lineal');
+  if (balken.hidden) return;
+  const bahn = $('lineal-bahn');
+  const blatt = $('blatt');
+
+  const masse = PAPIERE[papier] || PAPIERE.a4;
+  const breiteMm = quer ? masse.hoehe : masse.breite;
+
+  const rBalken = balken.getBoundingClientRect();
+  const rBlatt = blatt.getBoundingClientRect();
+  if (!rBlatt.width) return;
+
+  bahn.style.left = (rBlatt.left - rBalken.left) + 'px';
+  bahn.style.width = rBlatt.width + 'px';
+
+  /* Nicht mit CM rechnen, sondern mit dem, was das Blatt wirklich misst:
+     Die Vergrößerung steckt schon darin. */
+  const proMm = rBlatt.width / breiteMm;
+  const feldVon = seitenrand.links * proMm;
+  const feldBis = (breiteMm - seitenrand.rechts) * proMm;
+
+  bahn.textContent = '';
+
+  const band = document.createElement('div');
+  band.className = 'lineal__feld';
+  bahn.appendChild(band);
+
+  for (let mm = 0; mm <= breiteMm + 0.01; mm += 5) {
+    const x = mm * proMm;
+    const abCm = (mm - seitenrand.links) / 10;
+    const ganz = Math.abs(abCm - Math.round(abCm)) < 0.01;
+
+    const strich = document.createElement('span');
+    strich.className = 'lineal__strich' + (ganz ? '' : ' lineal__strich--klein');
+    strich.style.left = x + 'px';
+    bahn.appendChild(strich);
+
+    /* Am äußersten Rand keine Zahl: Sie stünde halb außerhalb des Blattes
+       und würde abgeschnitten — im Writer steht dort auch keine. */
+    const platz = x > 9 && x < rBlatt.width - 9;
+    if (ganz && Math.round(abCm) !== 0 && platz) {
+      const zahl = document.createElement('span');
+      const draussen = mm < seitenrand.links - 0.01 || mm > breiteMm - seitenrand.rechts + 0.01;
+      zahl.className = 'lineal__zahl' + (draussen ? ' lineal__zahl--rand' : '');
+      zahl.style.left = x + 'px';
+      zahl.textContent = String(Math.abs(Math.round(abCm)));
+      bahn.appendChild(zahl);
+    }
+  }
+
+  const einzug = einzugLesen();
+  const stellen = [
+    ['erste',  'Erste Zeile',    feldVon + (einzug.links + einzug.erste) * proMm],
+    ['links',  'Linker Einzug',  feldVon + einzug.links * proMm],
+    ['rechts', 'Rechter Einzug', feldBis - einzug.rechts * proMm],
+  ];
+  for (const [welche, name, x] of stellen) {
+    const marke = document.createElement('span');
+    marke.className = 'lineal__marke lineal__marke--' + welche;
+    marke.style.left = x + 'px';
+    marke.dataset.welche = welche;
+    marke.title = name + ' — ziehen zum Verschieben';
+    bahn.appendChild(marke);
+  }
+
+  const lot = document.createElement('span');
+  lot.className = 'lineal__lot';
+  lot.id = 'lineal-lot';
+  lot.hidden = true;
+  bahn.appendChild(lot);
+
+  linealBandSetzen();
+}
+
+/* Das helle Band spannt sich zwischen den Marken auf. Es liest ihre
+   Stellung aus dem Lineal selbst — dann stimmt es auch mitten im Ziehen,
+   wo der Absatz seinen neuen Einzug noch gar nicht kennt.
+
+   Links zählt die weiter außen stehende der beiden oberen Marken: Hängt
+   die erste Zeile heraus, steht dort Text, und das Band muss ihn
+   einschließen. */
+function linealBandSetzen() {
+  const bahn = $('lineal-bahn');
+  const band = bahn.querySelector('.lineal__feld');
+  if (!band) return;
+  const breite = bahn.getBoundingClientRect().width;
+  const stelle = (welche, ersatz) => {
+    const marke = bahn.querySelector('.lineal__marke--' + welche);
+    const wert = marke ? parseFloat(marke.style.left) : NaN;
+    return isNaN(wert) ? ersatz : wert;
+  };
+  const von = Math.max(0, Math.min(stelle('links', 0), stelle('erste', 0)));
+  const bis = Math.min(breite, stelle('rechts', breite));
+  band.style.left = von + 'px';
+  band.style.width = Math.max(0, bis - von) + 'px';
+}
+
+/* ---- Die Marken ziehen ----
+   Gerechnet wird in Millimetern und auf einen halben gerundet: Feiner
+   trifft die Maus ohnehin nicht, und krumme Werte wie 24,3178 mm stünden
+   nachher im Dialog „Einzug". */
+(() => {
+  let zieht = null;
+
+  const mmAusX = (seitenX) => {
+    const bahn = $('lineal-bahn');
+    const masse = PAPIERE[papier] || PAPIERE.a4;
+    const breiteMm = quer ? masse.hoehe : masse.breite;
+    const r = bahn.getBoundingClientRect();
+    if (!r.width) return 0;
+    const mm = (seitenX - r.left) / (r.width / breiteMm);
+    return Math.max(0, Math.min(breiteMm, Math.round(mm * 2) / 2));
+  };
+
+  $('lineal').addEventListener('mousedown', (e) => {
+    const marke = e.target.closest('.lineal__marke');
+    if (!marke) return;
+    e.preventDefault();
+    const erste = $('lineal-bahn').querySelector('.lineal__marke--erste');
+    zieht = {
+      welche: marke.dataset.welche,
+      marke,
+      erste,
+      /* Wer den ganzen Absatz verschiebt, nimmt die erste Zeile mit — sie
+         behält ihren Abstand zum Rest. Ohne das bliebe ihre Marke beim
+         Ziehen stehen, und das helle Band rührte sich erst beim
+         Loslassen. */
+      vonX: parseFloat(marke.style.left) || 0,
+      ersteX: erste ? (parseFloat(erste.style.left) || 0) : 0,
+    };
+    marke.classList.add('lineal__marke--zieht');
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (!zieht) return;
+    const bahn = $('lineal-bahn');
+    const r = bahn.getBoundingClientRect();
+    const x = Math.max(0, Math.min(r.width, e.clientX - r.left));
+    zieht.marke.style.left = x + 'px';
+    if (zieht.welche === 'links' && zieht.erste) {
+      zieht.erste.style.left = (zieht.ersteX + (x - zieht.vonX)) + 'px';
+    }
+    const lot = document.getElementById('lineal-lot');
+    if (lot) { lot.hidden = false; lot.style.left = x + 'px'; }
+    /* Damit man schon beim Ziehen sieht, wie breit der Text wird. */
+    linealBandSetzen();
+  });
+
+  window.addEventListener('mouseup', (e) => {
+    if (!zieht) return;
+    const welche = zieht.welche;
+    zieht.marke.classList.remove('lineal__marke--zieht');
+    zieht = null;
+    const lot = document.getElementById('lineal-lot');
+    if (lot) lot.hidden = true;
+
+    const masse = PAPIERE[papier] || PAPIERE.a4;
+    const breiteMm = quer ? masse.hoehe : masse.breite;
+    const stelle = mmAusX(e.clientX);
+    const alt = einzugLesen();
+
+    if (welche === 'links') {
+      const wert = Math.max(0, stelle - seitenrand.links);
+      /* Der Erstzeileneinzug hängt am linken: Wer den ganzen Absatz
+         verschiebt, will die erste Zeile nicht zurücklassen. */
+      einzugSetzen({ links: wert });
+      melde('Linker Einzug: ' + wert.toFixed(1).replace('.', ',') + ' mm.');
+    } else if (welche === 'rechts') {
+      const wert = Math.max(0, (breiteMm - seitenrand.rechts) - stelle);
+      einzugSetzen({ rechts: wert });
+      melde('Rechter Einzug: ' + wert.toFixed(1).replace('.', ',') + ' mm.');
+    } else {
+      const wert = stelle - seitenrand.links - alt.links;
+      einzugSetzen({ erste: wert });
+      melde('Erste Zeile: ' + wert.toFixed(1).replace('.', ',') + ' mm.');
+    }
+    linealZeichnen();
+  });
+
+  function einzugSetzen(was) {
+    aufAbsaetze((el) => {
+      if (was.links !== undefined) el.style.marginLeft = was.links + 'mm';
+      if (was.rechts !== undefined) el.style.marginRight = was.rechts + 'mm';
+      if (was.erste !== undefined) el.style.textIndent = was.erste + 'mm';
+    });
+  }
+})();
+
 B.steuerzeichenZeigen = () => { steuerzeichen = !steuerzeichen; ansichtExtras(); };
 B.leistenZeigen = () => { leistenAn = !leistenAn; ansichtExtras(); };
 
@@ -1045,150 +1311,269 @@ document.addEventListener('keydown', (e) => {
 const REGISTER = [
   ['Datei', [
     ['Neu', [['neu', 'Neu', () => B.neu(), 'gross'],
-             ['oeffnen', 'Öffnen', () => B.oeffnen(), 'gross'],
-             ['speichern', 'Speichern', () => B.speichern(), 'gross']]],
-    ['Ausgeben', [['pdf', 'Als PDF', () => B.speichernPdf(), 'gross'],
-                  ['drucken', 'Drucken', () => B.drucken(), 'gross'],
-                  ['vorschau', 'Ansicht', () => B.vorschau()],
-                  ['kette', 'Umschlag', () => B.umschlag()]], () => B.speichernUnter()],
-    ['Zuletzt', [['zurueck', 'Rückgängig', () => B.rueckgaengig()],
-                 ['vor', 'Wiederholen', () => B.wiederholen()]]],
-    ['Dokument', [['notiz', 'Eigenschaften', () => B.eigenschaften()]]],
+                    ['oeffnen', 'Öffnen', () => B.oeffnen(), 'gross'],
+                    ['zuletzt', 'Zuletzt geöffnet', () => B.zuletztOeffnen()]]],
+    /* Hier standen einmal acht Knöpfe für acht Dateiformate — lose
+       nebeneinander, und obendrein doppelt: Der Speichern-Dialog des
+       Systems bringt dieselbe Auswahl als Klappmenü „Dateityp" mit, samt
+       Ordnern und Lesezeichen. Zwei Wege zur selben Sache, und der
+       schlechtere nahm den meisten Platz.
+
+       Jetzt zwei Knöpfe, wie im Writer und in Word: speichern, oder
+       speichern unter — und dort das Format wählen. Im Menü „Datei"
+       stehen die einzelnen Formate weiterhin, für den, der geradewegs
+       dorthin will. */
+    ['Speichern', [['speichern', 'Speichern', () => B.speichern(), 'gross'],
+                    ['unter', 'Speichern unter…', () => B.speichernUnter(), 'gross']],
+                  () => B.speichernUnter()],
+    ['Drucken', [['drucken', 'Drucken', () => B.drucken(), 'gross'],
+                    ['pdf', 'Als PDF', () => B.speichernPdf(), 'gross'],
+                    ['vorschau', 'Druckvorschau', () => B.vorschau()],
+                    ['drucker2', 'Druckereinstellungen…', () => B.druckerEinrichten()]], () => B.druckerEinrichten()],
+    ['Informationen', [['notiz', 'Eigenschaften', () => B.eigenschaften(), 'gross'],
+                    ['umbenennen', 'Umbenennen…', () => B.umbenennen()],
+                    ['woerter', 'Wörter zählen', () => B.woerterZaehlen()],
+                    ['sperren', 'Bearbeitung sperren', () => B.bearbeitungSperren()]]],
+    ['Schließen', [['neuesfenster', 'Neues Fenster', () => B.neuesFenster()],
+                    ['beenden', 'Beenden', () => B.beenden()]]],
+    ['Hilfe', [['handbuch', 'Handbuch', () => B.handbuch(), 'gross'],
+                    ['tasten', 'Tastenkürzel', () => B.tastenHilfe()],
+                    ['Teile', 'Was zusätzlich geholt wurde', () => B.erweiterungen()],
+                    ['ueberprog', 'Über Lunivo-Office', () => B.ueber()]]],
   ]],
 
   ['Start', [
+    ['Zwischenablage', [['kleben', 'Einfügen', () => B.einfuegen(), 'gross'],
+                    ['schere', 'Ausschneiden', () => B.ausschneiden()],
+                    ['kopie', 'Kopieren', () => B.kopieren()],
+                    ['pinsel', 'Format übertragen', () => B.formatUebertragen()],
+                    ['ohneformat', 'Einfügen ohne Format', () => B.einfuegenOhne()],
+                    ['zurueck', 'Rückgängig', () => B.rueckgaengig()],
+                    ['vor', 'Wiederholen', () => B.wiederholen()]]],
+    ['Schriftart', ['felder',
+                    ['F', 'Fett', () => B.fett()],
+                    ['K', 'Kursiv', () => B.kursiv()],
+                    ['U', 'Unterstrichen', () => B.unter()],
+                    ['S', 'Durchgestrichen', () => B.durch()],
+                    ['groesserA', 'Größer', () => B.schriftGroesser()],
+                    ['kleinerA', 'Kleiner', () => B.schriftKleiner()],
+                    ['X²', 'Hochgestellt', () => B.hoch()],
+                    ['X₂', 'Tiefgestellt', () => B.tief()],
+                    ['farbe', 'Schriftfarbe', () => B.schriftfarbe()],
+                    ['marker', 'Hervorheben', () => B.hervorheben()],
+                    ['Aa', 'Groß- und Kleinschreibung', () => B.schreibweise()],
+                    ['unterart', 'Art der Unterstreichung…', () => B.unterstrichArt()],
+                    ['texteffekt', 'Texteffekt…', () => B.effekt()],
+                    ['radierer', 'Format entfernen', () => B.schlicht()]], () => B.effekt()],
+    ['Absatz', [['punkte', 'Aufzählung', () => B.punkte()],
+                    ['zahlen', 'Nummerierung', () => B.zahlen()],
+                    ['ebeneHoch', 'Listenebene höher', () => B.ebeneHoeher()],
+                    ['ebeneTief', 'Listenebene tiefer', () => B.ebeneTiefer()],
+                    ['links', 'Linksbündig', () => B.links()],
+                    ['mitte', 'Zentriert', () => B.mitte()],
+                    ['rechts', 'Rechtsbündig', () => B.rechts()],
+                    ['block', 'Blocksatz', () => B.block()],
+                    ['weniger', 'Einzug verkleinern', () => B.einzugWeniger()],
+                    ['mehr', 'Einzug vergrößern', () => B.einzugMehr()],
+                    ['abstand', 'Zeilenabstand', () => B.absatzabstand()],
+                    ['rahmen', 'Absatzrahmen…', () => B.absatzRahmen()],
+                    ['toenung', 'Schattierung…', () => B.absatzSchattierung()],
+                    ['sortieren', 'Sortieren…', () => B.sortieren()],
+                    ['¶', 'Steuerzeichen', () => B.steuerzeichenZeigen()]], () => B.einzugGenau()],
     ['Formatvorlagen', 'katalog'],
-    ['Schrift und Größe', 'felder'],
-    ['Ablage', [['kleben', 'Einfügen', () => B.einfuegen(), 'gross'],
-                ['schere', 'Ausschneiden', () => B.ausschneiden()],
-                ['kopie', 'Kopieren', () => B.kopieren()],
-                ['pinsel', 'Format übertragen', () => B.formatUebertragen()]],
-     () => B.einfuegenOhne()],
-    ['Schrift', [['F', 'Fett', () => B.fett()], ['K', 'Kursiv', () => B.kursiv()],
-                 ['U', 'Unterstrichen', () => B.unter()], ['S', 'Durchgestrichen', () => B.durch()],
-                 ['hoch', 'Hochgestellt', () => B.hoch()], ['tief', 'Tiefgestellt', () => B.tief()],
-                 ['farbe', 'Schriftfarbe', () => B.schriftfarbe()],
-                 ['marker', 'Hervorheben', () => B.hervorheben()],
-                 ['radierer', 'Formatierung entfernen', () => B.schlicht()]],
-     () => B.effekt()],
-    ['Absatz', [['links', 'Linksbündig', () => B.links()], ['mitte', 'Zentriert', () => B.mitte()],
-                ['rechts', 'Rechtsbündig', () => B.rechts()], ['block', 'Blocksatz', () => B.block()],
-                ['punkte', 'Aufzählung', () => B.punkte()], ['zahlen', 'Nummerierung', () => B.zahlen()],
-                ['mehr', 'Einzug vergrößern', () => B.einzugMehr()],
-                ['weniger', 'Einzug verkleinern', () => B.einzugWeniger()],
-                ['abstand', 'Zeilenabstand 1,5', () => zeilenabstand('1.5')()]],
-     () => B.absatzabstand()],
-    ['Suchen', [['lupe', 'Suchen und Ersetzen', () => sucheZeigen(true), 'gross']]],
+    ['Bearbeiten', [['lupe', 'Suchen und Ersetzen', () => sucheZeigen(true), 'gross'],
+                    ['allesmark', 'Alles markieren', () => B.allesMarkieren()],
+                    ['objekte', 'Objekte wählen', () => B.objekteWaehlen()]]],
   ]],
 
   ['Einfügen', [
-    ['Tabelle', [['tabelle', 'Tabelle', () => B.tabelle(), 'gross'],
-                 ['schnelltabelle', 'Vorlage', () => B.schnelltabelle()]]],
-    ['Bilder', [['bild', 'Bild', () => B.bild(), 'gross'],
-                ['saeule', 'Diagramm', () => B.diagramm(), 'gross'],
-                ['rahmen', 'Textfeld', () => B.textfeld()],
-                ['zeichnen', 'Form', () => B.zeichnen()],
-                ['smartart', 'SmartArt', () => B.smartart()]]],
-    ['Kopf und Fuß', [['kopfz', 'Kopfzeile', () => B.kopfzeile(), 'gross'],
-                      ['fussz', 'Fußzeile', () => B.fusszeile(), 'gross'],
-                      ['zahl', 'Seitenzahl', () => B.seitennummer()],
-                      ['umbruch', 'Umbruch', () => B.seitenumbruch()]]],
-    ['Sonstiges', [['kette', 'Verknüpfung', () => B.hyperlink()],
-                   ['notiz', 'Kommentar', () => B.kommentar()],
-                   ['omega', 'Sonderzeichen', () => B.sonderzeichen()],
-                   ['datum', 'Datum', () => B.datum()],
-                   ['formel', 'Formel', () => B.formel()]]],
+    ['Seiten', [['deckblatt', 'Deckblatt…', () => B.deckblatt(), 'gross'],
+                    ['leereseite', 'Leere Seite', () => B.leereSeite()],
+                    ['umbruch', 'Seitenumbruch', () => B.seitenumbruch()]]],
+    ['Tabellen', [['tabelle', 'Tabelle', () => B.tabelle(), 'gross'],
+                    ['schnelltab', 'Schnelltabelle…', () => B.schnelltabelle()],
+                    ['tabellenblatt', 'Tabellenblatt…', () => B.tabellenblatt()]]],
+    ['Illustrationen', [['bild', 'Bild', () => B.bild(), 'gross'],
+                    ['stift', 'Zeichnen', () => B.zeichnen(), 'gross'],
+                    ['saeule', 'Diagramm', () => B.diagramm()],
+                    ['bildfoto', 'Bildschirmfoto…', () => B.screenshot()],
+                    ['smartart', 'SmartArt…', () => B.smartart()],
+                    ['piktogramm', 'Piktogramm…', () => B.piktogramm()],
+                    ['wordart', 'WordArt…', () => B.wordart()]]],
+    ['Links', [['kette', 'Hyperlink', () => B.hyperlink(), 'gross'],
+                    ['textmarke', 'Textmarke…', () => B.textmarke()],
+                    ['querverweis', 'Querverweis…', () => B.querverweis()]]],
+    ['Kopf- und Fußzeile', [['kopfz', 'Kopfzeile', () => B.kopfzeile(), 'gross'],
+                    ['fussz', 'Fußzeile', () => B.fusszeile(), 'gross'],
+                    ['zahl', 'Seitenzahl', () => B.seitennummer()]]],
+    ['Text', [['textrahmen', 'Textfeld', () => B.textfeld(), 'gross'],
+                    ['baustein', 'Schnellbaustein…', () => B.schnellbaustein()],
+                    ['initiale', 'Initiale', () => B.initiale()],
+                    ['datum', 'Datum', () => B.datum()],
+                    ['uhrzeit', 'Uhrzeit', () => B.uhrzeit()],
+                    ['ausdatei', 'Text aus Datei…', () => B.textAusDatei()]]],
+    ['Symbole', [['omega', 'Sonderzeichen', () => B.sonderzeichen(), 'gross'],
+                    ['formel', 'Formel…', () => B.formel()]]],
   ]],
 
   ['Layout', [
-    ['Seite', [['A4', 'Hoch/Quer', () => B.querformat(), 'gross'],
-               ['Rand', 'Ränder', () => B.seitenraender(), 'gross'],
-               ['Spalten', 'Spalten', () => B.spalten(), 'gross']],
-     () => B.seitenraender()],
-    ['Absatz', [['mehr', 'Einzug vergrößern', () => B.einzugMehr()],
-                ['weniger', 'Einzug verkleinern', () => B.einzugWeniger()],
-                ['abstand', 'Absatzabstand', () => B.absatzabstand()],
-                ['Genau', 'Einzug genau', () => B.einzugGenau()]],
-     () => B.absatzabstand()],
-    ['Seitenwechsel', [['umbruch', 'Umbruch', () => B.seitenumbruch(), 'gross'],
-                       ['Abschnitt', 'Abschnitt', () => B.abschnittsumbruch()],
-                       ['Spalte', 'Spalte', () => B.spaltenumbruch()]]],
-    ['Seite gestalten', [['Farbe', 'Seitenfarbe', () => B.seitenfarbe()],
-                         ['Rahmen', 'Seitenrahmen', () => B.seitenrahmen()],
-                         ['Wasser', 'Wasserzeichen', () => B.wasserzeichen()],
-                         ['Trennung', 'Silbentrennung', () => B.silbentrennung()]]],
+    /* Wie im Menüband von Word: „Seitenränder", „Ausrichtung", „Größe" und
+       „Umbrüche" sind je ein Knopf mit Klappe, nicht je vier bis fünf
+       Knöpfe nebeneinander. Was gerade gilt, trägt in der Klappe einen
+       Haken — sonst wüsste man nicht, ob man schon auf A5 steht. */
+    ['Seite einrichten', [
+                    ['raender', 'Seitenränder', [
+                      ['Normal (2,5 cm)', () => setzeRandVorgabe('normal')()],
+                      ['Schmal (1,3 cm)', () => setzeRandVorgabe('schmal')()],
+                      ['Mittel', () => setzeRandVorgabe('mittel')()],
+                      ['Breit', () => setzeRandVorgabe('breit')()],
+                      ['-'],
+                      ['Eigene Ränder…', () => B.seitenraender()],
+                    ], 'gross'],
+                    ['ausrichtung', 'Ausrichtung', [
+                      ['Hochformat', () => { if (quer) B.querformat(); }, () => !quer],
+                      ['Querformat', () => { if (!quer) B.querformat(); }, () => quer],
+                    ], 'gross'],
+                    ['papiergroesse', 'Papierformat', [
+                      ['A4 (21 × 29,7 cm)', () => setzePapier('a4')(), () => papier === 'a4'],
+                      ['A5 (14,8 × 21 cm)', () => setzePapier('a5')(), () => papier === 'a5'],
+                      ['A3 (29,7 × 42 cm)', () => setzePapier('a3')(), () => papier === 'a3'],
+                      ['Letter (21,6 × 27,9 cm)', () => setzePapier('letter')(), () => papier === 'letter'],
+                      ['Legal (21,6 × 35,6 cm)', () => setzePapier('legal')(), () => papier === 'legal'],
+                    ], 'gross'],
+                    ['umbruch', 'Umbrüche', [
+                      ['Seitenumbruch', () => B.seitenumbruch()],
+                      ['Spaltenumbruch', () => B.spaltenumbruch()],
+                      ['Abschnittsumbruch', () => B.abschnittsumbruch()],
+                    ], 'gross'],
+                    ['spalten', 'Spalten…', () => B.spalten()]], () => B.seitenraender()],
+    ['Absatz', [['einzug', 'Einzug genau…', () => B.einzugGenau(), 'gross'],
+                    ['abstand', 'Absatzabstand', () => B.absatzabstand()],
+                    ['zeilennr', 'Zeilennummern', () => B.zeilennummern()],
+                    ['trennung', 'Silbentrennung', () => B.silbentrennung()]], () => B.einzugGenau()],
+    ['Seitenhintergrund', [['farbe', 'Seitenfarbe…', () => B.seitenfarbe(), 'gross'],
+                    ['wasserzeichen', 'Wasserzeichen…', () => B.wasserzeichen()],
+                    ['rahmen', 'Seitenrahmen…', () => B.seitenrahmen()]]],
+    ['Anordnen', [['anordnen', 'Bild anordnen…', () => B.anordnen(), 'gross']]],
   ]],
 
   ['Referenzen', [
-    ['Verzeichnisse', [['Inhalt', 'Inhaltsverzeichnis', () => B.inhaltsverzeichnis(), 'gross'],
-                       ['Abb.', 'Abbildungen', () => B.abbildungsverzeichnis()],
-                       ['Stichwort', 'Stichwörter', () => B.stichwortverzeichnis()],
-                       ['Literatur', 'Literatur', () => B.literaturverzeichnis()],
-                       ['Auffrischen', 'Aktualisieren', () => B.verzeichnisseAktualisieren()]]],
-    ['Fußnoten', [['Fußnote', 'Fußnote', () => B.fussnote(), 'gross'],
-                  ['Endnote', 'Endnote', () => B.endnote(), 'gross'],
-                  ['Weiter', 'Nächste Note', () => B.noteWeiter()],
-                  ['Zurück', 'Vorige Note', () => B.noteZurueck()]]],
-    ['Quellen', [['Zitat', 'Zitat', () => B.zitat(), 'gross'],
-                 ['Neu', 'Quelle anlegen', () => B.quelleNeu()],
-                 ['Verwalten', 'Quellen verwalten', () => B.quellenVerwalten()]],
-     () => B.zitierweise()],
-    ['Verweise', [['Querverweis', 'Querverweis', () => B.querverweis()],
-                  ['Beschriftung', 'Beschriftung', () => B.beschriftung()],
-                  ['Textmarke', 'Textmarke', () => B.textmarke()],
-                  ['Eintrag', 'Indexeintrag', () => B.indexEintrag()]]],
+    ['Inhaltsverzeichnis', [['inhalt', 'Inhaltsverzeichnis…', () => B.inhaltsverzeichnis(), 'gross'],
+                    ['haken', 'Verzeichnisse auffrischen', () => B.verzeichnisseAktualisieren()]]],
+    ['Fußnoten', [['fussnote', 'Fußnote', () => B.fussnote(), 'gross'],
+                    ['endnote', 'Endnote', () => B.endnote(), 'gross'],
+                    ['vor', 'Nächste Note', () => B.noteWeiter()],
+                    ['zurueck', 'Vorige Note', () => B.noteZurueck()],
+                    ['Zeigen', 'Notenbereich zeigen', () => B.notenZeigen()]]],
+    ['Zitate und Literatur', [['zitat', 'Zitat einfügen…', () => B.zitat(), 'gross'],
+                    ['Neu', 'Neue Quelle…', () => B.quelleNeu()],
+                    ['Verwalten', 'Quellen verwalten…', () => B.quellenVerwalten()],
+                    ['Stil', 'Zitierweise', () => B.zitierweise()],
+                    ['Literatur', 'Literaturverzeichnis', () => B.literaturverzeichnis()]]],
+    ['Beschriftungen', [['beschriftung', 'Beschriftung…', () => B.beschriftung(), 'gross'],
+                    ['Abb.', 'Abbildungsverzeichnis…', () => B.abbildungsverzeichnis()],
+                    ['querverweis', 'Querverweis…', () => B.querverweis()]]],
+    ['Index', [['eintrag', 'Indexeintrag…', () => B.indexEintrag(), 'gross'],
+                    ['Stichwort', 'Stichwortverzeichnis…', () => B.stichwortverzeichnis()]]],
   ]],
 
   ['Überprüfen', [
-    ['Rechtschreibung', [['haken', 'Prüfen', () => pruefen(), 'gross'],
-                         ['verfolgt', 'Gründlich', () => B.gruendlichPruefen(), 'gross'],
-                         ['Thesaurus', 'Wörter für…', () => B.thesaurus()],
-                         ['Zählen', 'Wörter zählen', () => B.woerterZaehlen()],
-                         ['Barriere', 'Barrierefreiheit', () => B.barrierefrei()]],
-     () => B.pruefsprache()],
+    ['Dokumentprüfung', [['haken', 'Prüfen', () => pruefen(), 'gross'],
+                    ['gruendlich', 'Gründlich prüfen', () => B.gruendlichPruefen(), 'gross'],
+                    ['Duden', 'Rechtschreibung des Systems', () => B.rechtschreibung()],
+                    ['thesaurus', 'Thesaurus…', () => B.thesaurus()],
+                    ['woerter', 'Wörter zählen', () => B.woerterZaehlen()]]],
+    ['Sprache', [['sprache', 'Sprache für Korrekturhilfen…', () => B.pruefsprache(), 'gross'],
+                    ['uebersetzen', 'Übersetzen', () => kiUebersetzen()]]],
+    ['Barrierefreiheit', [['barrierefrei', 'Barrierefreiheit prüfen', () => B.barrierefrei(), 'gross']]],
     ['Kommentare', [['notiz', 'Neuer Kommentar', () => B.kommentar(), 'gross'],
-                    ['Weiter', 'Nächster', () => B.kommentarWeiter()],
-                    ['Zurück', 'Voriger', () => B.kommentarZurueck()],
-                    ['Löschen', 'Löschen', () => B.kommentarWeg()]]],
-    ['Änderungen', [['stift', 'Verfolgen', () => B.verfolgen(), 'gross'],
-                    ['Annehmen', 'Annehmen', () => B.aenderungAnnehmen()],
-                    ['Ablehnen', 'Ablehnen', () => B.aenderungAblehnen()],
-                    ['Weiter', 'Nächste', () => B.aenderungWeiter()],
-                    ['Zurück', 'Vorige', () => B.aenderungZurueck()],
-                    ['Markup', 'Markup zeigen', () => B.markupUmschalten()]],
-     () => B.ueberarbeitungsbereich()],
-    ['Schützen', [['Sperren', 'Bearbeitung sperren', () => B.bearbeitungSperren()]]],
+                    ['vor', 'Nächster', () => B.kommentarWeiter()],
+                    ['zurueck', 'Voriger', () => B.kommentarZurueck()],
+                    ['kommentarweg', 'Kommentar löschen', () => B.kommentarWeg()],
+                    ['kommentareweg', 'Alle Kommentare löschen', () => B.kommentareAlleWeg()]]],
+    ['Nachverfolgung', [['verfolgt', 'Änderungen verfolgen', () => B.verfolgen(), 'gross'],
+                    ['markup', 'Markup zeigen', () => B.markupUmschalten()],
+                    ['bereich', 'Überarbeitungsbereich', () => B.ueberarbeitungsbereich()]]],
+    ['Änderungen', [['annehmen', 'Änderung annehmen', () => B.aenderungAnnehmen(), 'gross'],
+                    ['ablehnen', 'Änderung ablehnen', () => B.aenderungAblehnen(), 'gross'],
+                    ['vor', 'Nächste Änderung', () => B.aenderungWeiter()],
+                    ['zurueck', 'Vorige Änderung', () => B.aenderungZurueck()],
+                    ['alleAn', 'Alle annehmen', () => B.aenderungenUebernehmen()],
+                    ['alleAb', 'Alle verwerfen', () => B.aenderungenVerwerfen()]]],
+    ['Schützen', [['sperren', 'Bearbeitung sperren', () => B.bearbeitungSperren(), 'gross']]],
   ]],
 
   ['Schreibhilfe', [
     ['Prüfen', [['haken', 'Prüfen', () => pruefen(), 'gross'],
-                ['verfolgt', 'Gründlich', () => B.gruendlichPruefen(), 'gross'],
-                ['stift', 'Alles Eindeutige', () => allesUebernehmen()]]],
-    ['Hören', [['lupe', 'Vorlesen', () => B.vorlesen(), 'gross'],
-               ['Stimme', 'Stimme und Tempo', () => B.stimmeWaehlen()],
-               ['Ab hier', 'Ab hier vorlesen', () => B.vorlesenAbSatz()],
-               ['Halt', 'Anhalten', () => B.vorlesenStopp()]]],
-    ['KI', [['KI', 'Korrektur', () => kiKorrigieren(), 'gross'],
-            ['Vorschlag', 'Vorschläge', () => kiVorschlaege(), 'gross'],
-            ['Übersetzen', 'Übersetzen', () => kiUebersetzen(), 'gross']]],
-    ['Zeigen', [['Tafel', 'Seitenleiste', () => B.tafelZeigen()],
-                ['Hilfe', 'Welche Hilfe wann', () => B.welcheHilfe()]]],
+                    ['gruendlich', 'Gründlich prüfen', () => B.gruendlichPruefen(), 'gross'],
+                    ['Welche Hilfe', 'Welche Hilfe wann…', () => B.welcheHilfe()]]],
+    ['Beim Schreiben', [['wellen', 'Rechtschreibprüfung', () => B.rechtschreibpruefung()],
+                    ['Vorhersage', 'Wortvorhersage', () => B.vorhersage()],
+                    ['autokorr', 'AutoKorrektur', () => B.autokorrektur()]]],
+    ['Vorlesen', [['lupe', 'Vorlesen', () => B.vorlesen(), 'gross'],
+                    ['abhier', 'Ab hier vorlesen', () => B.vorlesenAbSatz()],
+                    ['halt', 'Anhalten', () => B.vorlesenStopp()],
+                    ['stimme', 'Stimme und Tempo…', () => B.stimmeWaehlen()]]],
+    ['KI', [['ki', 'KI-Korrektur', () => kiKorrigieren(), 'gross'],
+                    ['vorschlag', 'Vorschläge holen', () => kiVorschlaege(), 'gross'],
+                    ['uebersetzen', 'Übersetzen', () => kiUebersetzen()]]],
+    ['Anzeigen', [['tafel', 'Seitenleiste Schreibhilfe', () => B.tafelZeigen(), 'gross'],
+                    ['optionen', 'Optionen…', () => Einstellungen.oeffnen()]]],
+  ]],
+
+  ['Sendungen', [
+    ['Erstellen', [['kette', 'Umschlag…', () => B.umschlag(), 'gross'],
+                    ['etiketten', 'Etiketten…', () => B.etiketten(), 'gross']]],
+    ['Seriendruck starten', [['serie', 'Seriendruck-Assistent…', () => B.seriendruck(), 'gross']]],
+    ['Felder schreiben', [['seriefeld', 'Seriendruckfeld…', () => B.seriendruckfeld(), 'gross'],
+                    ['adressblock', 'Adressblock', () => B.adressblock()],
+                    ['Regel', 'Regel…', () => B.seriendruckregel()]]],
+    ['Vorschau', [['vorschau', 'Vorschau auf Ergebnisse…', () => B.serienVorschau(), 'gross']]],
+    ['Formular', [['formfeld', 'Textfeld', () => B.formTextfeld(), 'gross'],
+                    ['kaestchen', 'Kontrollkästchen', () => B.formKasten()],
+                    ['formknopf', 'Schaltfläche', () => B.formKnopf()]]],
+    ['Makros', [['aufnahme', 'Aufzeichnen', () => B.makroAufnahme(), 'gross'],
+                    ['aufnahmeende', 'Aufnahme beenden', () => B.makroBeenden()],
+                    ['abspielen', 'Abspielen…', () => B.makroAbspielen()],
+                    ['Verwalten', 'Verwalten…', () => B.makrosVerwalten()]]],
   ]],
 
   ['Ansicht', [
+    ['Ansichten', [['blattansicht', 'Blatt (Druckbild)', () => setzeLayout('blatt')(), 'gross'],
+                    ['lesen', 'Lesemodus', () => B.lesemodus(), 'gross'],
+                    ['zweiblatt', 'Zwei Blätter nebeneinander', () => setzeLayout('doppelt')()],
+                    ['fortlaufend', 'Fortlaufend (ohne Rand)', () => setzeLayout('web')()],
+                    ['gliederung', 'Gliederung', () => B.gliederung()]]],
+    ['Anzeigen', [['linealIcon', 'Lineal', () => B.linealZeigen()],
+                    ['netz', 'Netzlinien', () => B.netzlinien()],
+                    ['navigation', 'Navigationsbereich', () => B.navigation()],
+                    ['steuerzeichen', 'Steuerzeichen', () => B.steuerzeichenZeigen()],
+                    ['ecken', 'Textbegrenzungen', () => B.markenZeigen()],
+                    ['tafel', 'Seitenleiste Schreibhilfe', () => B.tafelZeigen()]]],
     ['Zoom', [['lupe', 'Vergrößern', () => B.groesser(), 'gross'],
-              ['weniger', 'Verkleinern', () => B.kleiner(), 'gross'],
-              ['100 %', 'Normal', () => B.normal()],
-              ['Breite', 'Seitenbreite', () => B.zoomBreite()]],
-     () => B.zoomStufe()],
-    ['Zeigen', [['Lineal', 'Lineal', () => B.linealZeigen()],
-                ['Tafel', 'Seitenleiste', () => B.tafelZeigen()],
-                ['Zeichen', 'Steuerzeichen', () => B.steuerzeichenZeigen()],
-                ['Hell', 'Hell/Dunkel', () => setzeThema(THEMEN[(THEMEN.indexOf(thema) + 1) % THEMEN.length])()]]],
-    ['Fenster', [['Neu', 'Neues Fenster', () => B.neuesFenster()],
-                 ['Ordnen', 'Nebeneinander', () => B.fensterNebeneinander()]]],
-    ['Oberfläche', [['mehr', 'Benutzeroberfläche', () => B.benutzeroberflaeche(), 'gross']]],
+                    ['kleinerLupe', 'Verkleinern', () => B.kleiner(), 'gross'],
+                    ['100 %', 'Normalgröße', () => B.normal()],
+                    ['seitenbreite', 'Seitenbreite', () => B.zoomBreite()],
+                    ['eineSeite', 'Eine Seite', () => B.zoomSeite()],
+                    ['Prozent', 'In Prozent…', () => B.zoomStufe()]], () => B.zoomStufe()],
+    ['Fenster', [['neuesfenster', 'Neues Fenster', () => B.neuesFenster(), 'gross'],
+                    ['Ordnen', 'Anordnen…', () => B.anordnen()],
+                    ['fensterNeben', 'Nebeneinander', () => B.fensterNebeneinander()],
+                    ['fensterUnter', 'Untereinander', () => B.fensterUntereinander()],
+                    ['kacheln', 'Kacheln', () => B.fensterKacheln()],
+                    ['fensterliste', 'Fensterliste', () => B.fensterListe()]]],
+    ['Helligkeit', [['automatisch', 'Wie das System', () => setzeThema('auto')()],
+                    ['hell', 'Immer hell', () => setzeThema('light')()],
+                    ['dunkel', 'Immer dunkel', () => setzeThema('dark')()]]],
+    ['Oberfläche', [['anpassen', 'Register anpassen…', () => B.registerAnpassen(), 'gross'],
+                    ['piktogramm', 'Symbol austauschen…', () => B.symbolTauschen()],
+                    ['Oberfläche', 'Benutzeroberfläche…', () => B.benutzeroberflaeche()],
+                    ['menueleiste', 'Menüleiste', () => B.menueleisteZeigen()],
+                    ['leisten', 'Symbolleisten', () => B.leistenZeigen()],
+                    ['Vorlagen', 'Formatvorlagen verwalten…', () => B.vorlagenVerwalten()],
+                    ['Zurück', 'Vorlagen zurücksetzen', () => B.vorlagenZurueck()]], () => B.registerAnpassen()],
   ]],
+
 ];
 
 /* Kontextabhängige Reiter: Sie stehen nur da, wenn sie etwas zu sagen haben.
@@ -1269,6 +1654,18 @@ let registerOffen = Speicher.lies('register', 'Start');
    sind hundert Pixel viel. */
 let registerEingeklappt = Speicher.lies('registerZu', false);
 
+/* Die drei Wähler — Formatvorlage, Schrift, Größe. Sie stehen bei Word in
+   der Gruppe „Schriftart", zusammen mit F, K und U; hier ebenso. Deshalb
+   sind sie ein Baustein und keine eigene Gruppe mehr. */
+function felderKiste() {
+  const kiste = document.createElement('div');
+  kiste.className = 'register__felder';
+  if (wzVorlage) kiste.appendChild(wzVorlage);
+  if (wzSchrift && wzSchrift.parentNode) kiste.appendChild(wzSchrift.parentNode);
+  if (wzGroesse) kiste.appendChild(wzGroesse);
+  return kiste;
+}
+
 function registerBauen() {
   const reiter = $('register-reiter');
   const band = $('register-band');
@@ -1332,12 +1729,13 @@ function registerBauen() {
   band.hidden = registerEingeklappt;
   document.body.classList.toggle('register--zu', registerEingeklappt);
   band.innerHTML = '';
-  if (registerEingeklappt) return;
+  if (registerEingeklappt) { registerPfeile(); return; }
 
   const ausZusatz = zusatz.find((r) => r.name === registerOffen);
   const gewaehlt = ausZusatz
     ? ausZusatz.gruppen
-    : (REGISTER.find(([name]) => name === registerOffen) || REGISTER[1])[1];
+    : registerGruppenFuer(registerOffen,
+        (REGISTER.find(([name]) => name === registerOffen) || REGISTER[1])[1]);
 
   for (const [gruppenName, eintraege, oeffner] of gewaehlt) {
     const gruppe = document.createElement('div');
@@ -1357,12 +1755,7 @@ function registerBauen() {
     /* Die Wähler wandern aus der Werkzeugleiste hierher. Beim Zurückschalten
        baut werkzeugeBauen() sie ohnehin neu — es geht also nichts verloren. */
     if (eintraege === 'felder') {
-      const kiste = document.createElement('div');
-      kiste.className = 'register__felder';
-      if (wzVorlage) kiste.appendChild(wzVorlage);
-      if (wzSchrift && wzSchrift.parentNode) kiste.appendChild(wzSchrift.parentNode);
-      if (wzGroesse) kiste.appendChild(wzGroesse);
-      gruppe.appendChild(kiste);
+      gruppe.appendChild(felderKiste());
 
       const name = document.createElement('span');
       name.className = 'register__name';
@@ -1396,7 +1789,19 @@ function registerBauen() {
         const wort = document.createElement('span');
         wort.className = 'register__zeichen';
         wort.textContent = zeichen;
+        /* F, K, U und S sind in deutschen Schreibprogrammen Buchstaben,
+           kein Behelf — und sie zeigen ihre Wirkung an sich selbst: das F
+           fett, das K kursiv, das U unterstrichen, das S durchgestrichen.
+           So steht es in der Symbolleiste, und so gehört es auch hier. */
+        const wieDasWort = { 'F': 'wz--fett', 'K': 'wz--kursiv',
+                             'U': 'wz--unter', 'S': 'wz--durch' }[zeichen];
+        if (wieDasWort) k.classList.add(wieDasWort);
         k.appendChild(wort);
+        /* Ein Knopf, der ein Wort trägt, bekommt einen eigenen Rand.
+           Ohne ihn standen „Unterart" und „Aa" nebeneinander und lasen
+           sich als ein Wort — für jemanden mit Legasthenie die
+           unnötigste aller Hürden. */
+        k.classList.add('wz--wort');
       }
       /* Ein großer Knopf ohne Symbol trägt nur sein Wort. Sonst stünde bei
          „Übersetzen" zweimal dasselbe untereinander. */
@@ -1409,11 +1814,27 @@ function registerBauen() {
         k.appendChild(beschriftung);
       }
       k.addEventListener('mousedown', (e) => e.preventDefault());
-      k.addEventListener('click', tun);
+      /* Ist statt eines Befehls eine Liste angegeben, klappt der Knopf sie
+         auf — wie „Größe" oder „Seitenränder" im Menüband von Word. Fünf
+         Papierformate nebeneinander sind fünf Knöpfe; einer mit Klappe ist
+         einer, und man sieht trotzdem, welches gerade gilt. */
+      if (Array.isArray(tun)) {
+        k.classList.add('wz--klappe');
+        const pfeil = document.createElement('span');
+        pfeil.className = 'wz__pfeil';
+        pfeil.textContent = '▾';
+        k.appendChild(pfeil);
+        k.addEventListener('click', () => registerKlappe(k, tun));
+      } else {
+        k.addEventListener('click', tun);
+      }
       return k;
     };
 
-    for (const [zeichen, titel, tun, gross] of eintraege) {
+    for (const eintrag of eintraege) {
+      /* Ein 'felder' mitten in der Liste heißt: hier stehen die Wähler. */
+      if (eintrag === 'felder') { reihe.appendChild(felderKiste()); continue; }
+      const [zeichen, titel, tun, gross] = eintrag;
       if (gross) reihe.appendChild(bauen(zeichen, titel, tun, true));
       else kleineKiste.appendChild(bauen(zeichen, titel, tun, false));
     }
@@ -1445,6 +1866,313 @@ function registerBauen() {
     gruppe.appendChild(fuss);
     band.appendChild(gruppe);
   }
+
+  registerPfeile();
+}
+
+/* ------------------------------------------------------------
+   Ein Symbol austauschen
+
+   LibreOffice kann das für seine Symbolleisten (Anpassen ▸ Symbolleisten ▸
+   Ändern ▸ Symbol austauschen), für sein Symbolband aber nicht — dort
+   lassen sich nur Befehle an- und abwählen. Hier geht beides.
+
+   Getauscht wird die Zeichnung, nicht der Knopf: Wer „notiz" ersetzt,
+   ändert sie überall, wo sie benutzt wird. Das Fenster sagt deshalb dazu,
+   welche Befehle daran hängen.
+
+   Der Katalog mit 1800 Zeichnungen wird erst geholt, wenn dieses Fenster
+   aufgeht. Beim Start wären 300 KB für etwas, das man selten braucht, zu
+   spüren.
+   ------------------------------------------------------------ */
+let symbolWahl = Speicher.lies('symbole', {});
+let katalogGeladen = false;
+
+/* Der Pfad, der wirklich gezeichnet wird: die eigene Wahl, sonst der
+   Auslieferungszustand. */
+function symbolPfad(name) {
+  return (symbolWahl && symbolWahl[name]) || SYMBOLE[name];
+}
+
+function katalogHolen() {
+  if (katalogGeladen || typeof SYMBOLKATALOG !== 'undefined') { katalogGeladen = true; return Promise.resolve(true); }
+  return new Promise((fertig) => {
+    const stueck = document.createElement('script');
+    stueck.src = 'daten/symbolkatalog.js';
+    stueck.onload = () => { katalogGeladen = true; fertig(true); };
+    stueck.onerror = () => fertig(false);
+    document.head.appendChild(stueck);
+  });
+}
+
+/* Welche Befehle hängen an dieser Zeichnung? Das beantwortet die Frage
+   „was ändere ich hier eigentlich?", bevor man sie ändert.
+
+   Gesucht wird an zwei Stellen, und beide sind nötig: im Register stehen
+   alle Reiter, auch die gerade nicht sichtbaren — dort hilft die Liste.
+   Die Symbolleisten dagegen werden gebaut, nicht aufgelistet; sie kennt
+   nur der Baum. Ohne den zweiten Blick hieß es bei „Hochgestellt", es
+   werde nirgends benutzt, während der Knopf danebenstand. */
+function symbolBefehle(name) {
+  const namen = [];
+  const merken = (wort) => {
+    const sauber = (wort || '').replace(/\s*\([^)]*\)\s*$/, '').trim();
+    if (sauber && !namen.includes(sauber)) namen.push(sauber);
+  };
+
+  for (const [, gruppen] of REGISTER) {
+    for (const [, eintraege] of gruppen) {
+      if (!Array.isArray(eintraege)) continue;
+      for (const eintrag of eintraege) {
+        if (Array.isArray(eintrag) && eintrag[0] === name) merken(eintrag[1]);
+      }
+    }
+  }
+
+  const pfad = symbolPfad(name);
+  for (const knopf of document.querySelectorAll('.werkzeugleiste .wz')) {
+    const strich = knopf.querySelector('svg path');
+    if (strich && strich.getAttribute('d') === pfad) merken(knopf.title);
+  }
+  return namen;
+}
+
+function symbolNeuZeichnen() {
+  Speicher.schreib('symbole', symbolWahl);
+  werkzeugeBauen();
+  registerBauen();
+  werkzeugeAuffrischen();
+}
+
+/* Welches Symbol steckt in dem Knopf, auf den geklickt wurde? Gesucht wird
+   über den gezeichneten Pfad — der Knopf selbst trägt seinen Namen nicht,
+   und ihn überall mitzuschreiben wäre eine zweite Buchführung. */
+function symbolUnter(ziel) {
+  const knopf = ziel && ziel.closest && ziel.closest('.wz');
+  const strich = knopf && knopf.querySelector('svg path');
+  if (!strich) return null;
+  const d = strich.getAttribute('d');
+  return Object.keys(SYMBOLE).find((n) => symbolPfad(n) === d) || null;
+}
+
+/* Dieselbe Bedienung an den klassischen Symbolleisten. Wer von dort kommt,
+   soll nicht erst ins Register wechseln müssen, um ein Bild zu tauschen. */
+(() => {
+  for (const leiste of ['werkzeugleiste', 'werkzeugleiste2']) {
+    const kasten = $(leiste);
+    if (!kasten) continue;
+    kasten.addEventListener('contextmenu', (e) => {
+      const name = symbolUnter(e.target);
+      if (!name) return;                 /* daneben: nichts abfangen */
+      e.preventDefault();
+      B.symbolTauschen(name);
+    });
+  }
+})();
+
+B.symbolTauschen = async (vorgabe) => {
+  const da = await katalogHolen();
+  if (!da) { melde('Der Symbolkatalog ließ sich nicht laden.'); return; }
+
+  const knoten = document.createElement('div');
+  knoten.className = 'tausch';
+
+  /* Oben: welches Symbol gerade gemeint ist. */
+  const kopf = document.createElement('div');
+  kopf.className = 'tausch__kopf';
+  const jetztBild = document.createElement('span');
+  jetztBild.className = 'tausch__jetzt';
+  const jetztWort = document.createElement('div');
+  jetztWort.className = 'tausch__wort';
+  kopf.append(jetztBild, jetztWort);
+  knoten.appendChild(kopf);
+
+  const suchfeld = document.createElement('input');
+  suchfeld.className = 'feld tausch__suche';
+  suchfeld.type = 'search';
+  suchfeld.placeholder = 'Zeichnung suchen … (englisch: table, clock, save)';
+  knoten.appendChild(suchfeld);
+
+  const gitter = document.createElement('div');
+  gitter.className = 'tausch__gitter';
+  knoten.appendChild(gitter);
+
+  const fuss = document.createElement('div');
+  fuss.className = 'tausch__fuss';
+  const zurueck = document.createElement('button');
+  zurueck.type = 'button';
+  zurueck.className = 'knopf knopf--klein';
+  zurueck.textContent = 'Dieses zurücksetzen';
+  const alleZurueck = document.createElement('button');
+  alleZurueck.type = 'button';
+  alleZurueck.className = 'knopf knopf--klein';
+  alleZurueck.textContent = 'Alle zurücksetzen';
+  fuss.append(zurueck, alleZurueck);
+  knoten.appendChild(fuss);
+
+  /* Welches Symbol wird bearbeitet. Ohne Vorgabe das erste des Registers. */
+  let welches = vorgabe && SYMBOLE[vorgabe] ? vorgabe : Object.keys(SYMBOLE)[0];
+
+  const kopfZeigen = () => {
+    jetztBild.textContent = '';
+    jetztBild.appendChild(symbol(welches));
+    const befehle = symbolBefehle(welches);
+    jetztWort.textContent = befehle.length
+      ? befehle.slice(0, 4).join(', ') + (befehle.length > 4 ? ' und weitere' : '')
+      : 'Wird zurzeit nirgends im Register benutzt.';
+    zurueck.disabled = !symbolWahl[welches];
+  };
+
+  const GRENZE = 240;
+  const gitterZeigen = () => {
+    const wort = suchfeld.value.trim().toLowerCase();
+    gitter.textContent = '';
+    let gezeigt = 0, gefunden = 0;
+    for (const [name, pfad] of Object.entries(SYMBOLKATALOG)) {
+      if (wort && name.toLowerCase().indexOf(wort) === -1) continue;
+      gefunden++;
+      if (gezeigt >= GRENZE) continue;
+      gezeigt++;
+      const feld = document.createElement('button');
+      feld.type = 'button';
+      feld.className = 'tausch__feld';
+      feld.title = name;
+      const bild = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      bild.setAttribute('viewBox', '0 0 24 24');
+      bild.setAttribute('width', '24'); bild.setAttribute('height', '24');
+      bild.setAttribute('fill', 'none'); bild.setAttribute('stroke', 'currentColor');
+      bild.setAttribute('stroke-width', '1.7');
+      bild.setAttribute('stroke-linecap', 'round');
+      bild.setAttribute('stroke-linejoin', 'round');
+      const strich = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      strich.setAttribute('d', pfad);
+      bild.appendChild(strich);
+      feld.appendChild(bild);
+      feld.addEventListener('click', () => {
+        symbolWahl[welches] = pfad;
+        symbolNeuZeichnen();
+        kopfZeigen();
+        melde('Symbol getauscht: ' + name + '.');
+      });
+      gitter.appendChild(feld);
+    }
+    if (!gefunden) {
+      const leer = document.createElement('p');
+      leer.className = 'tausch__leer';
+      leer.textContent = 'Keine Zeichnung mit diesem Namen.';
+      gitter.appendChild(leer);
+    } else if (gefunden > GRENZE) {
+      const mehr = document.createElement('p');
+      mehr.className = 'tausch__leer';
+      mehr.textContent = gefunden + ' gefunden, ' + GRENZE
+        + ' gezeigt — die Suche genauer machen.';
+      gitter.appendChild(mehr);
+    }
+  };
+
+  suchfeld.addEventListener('input', gitterZeigen);
+  zurueck.addEventListener('click', () => {
+    delete symbolWahl[welches];
+    symbolNeuZeichnen();
+    kopfZeigen();
+    melde('Zurückgesetzt.');
+  });
+  alleZurueck.addEventListener('click', () => {
+    symbolWahl = {};
+    symbolNeuZeichnen();
+    kopfZeigen();
+    melde('Alle Symbole wieder wie ausgeliefert.');
+  });
+
+  kopfZeigen();
+  gitterZeigen();
+
+  fenster('Symbol austauschen', [
+    { art: 'satz', text: 'Getauscht wird die Zeichnung, nicht der Knopf — sie ändert sich\n'
+                       + 'überall, wo sie benutzt wird. Oben steht, wo das ist.' },
+    { art: 'knoten', knoten },
+  ], null, 'Fertig', true);
+};
+
+/* ---- Die Klappe eines Bandknopfes ----
+   Sie hängt am Körper, nicht am Knopf: Im Band wird abgeschnitten, was
+   übersteht, und eine Klappe im Knopf wäre nach zwei Zeilen weg. Deshalb
+   steht sie fest im Fenster und wird an die Stelle des Knopfes gerechnet.
+
+   Ein Haken zeigt, was gerade gilt — sonst müsste man raten, ob man schon
+   auf A5 steht. */
+let klappeOffen = null;
+
+function klappeSchliessen() {
+  if (!klappeOffen) return;
+  klappeOffen.remove();
+  klappeOffen = null;
+}
+
+function registerKlappe(knopf, punkte) {
+  const warOffen = klappeOffen && klappeOffen.dataset.von === knopf.title;
+  klappeSchliessen();
+  if (warOffen) return;                    /* zweiter Klick schließt wieder */
+
+  const klappe = document.createElement('div');
+  klappe.className = 'register__klappe';
+  klappe.dataset.von = knopf.title;
+
+  for (const [name, tun, haken] of punkte) {
+    if (name === '-') {
+      const strichEl = document.createElement('div');
+      strichEl.className = 'menue__strich';
+      klappe.appendChild(strichEl);
+      continue;
+    }
+    const zeile = document.createElement('button');
+    zeile.type = 'button';
+    zeile.className = 'menue__punkt';
+
+    const marke = document.createElement('span');
+    marke.className = 'haken';
+    let gilt = false;
+    try { gilt = typeof haken === 'function' && haken(); } catch (e) { gilt = false; }
+    marke.textContent = gilt ? '✓' : '';
+    zeile.appendChild(marke);
+
+    const wort = document.createElement('span');
+    wort.textContent = name;
+    zeile.appendChild(wort);
+
+    zeile.addEventListener('mousedown', (e) => e.preventDefault());
+    zeile.addEventListener('click', () => { klappeSchliessen(); tun(); });
+    klappe.appendChild(zeile);
+  }
+
+  document.body.appendChild(klappe);
+  const r = knopf.getBoundingClientRect();
+  klappe.style.left = Math.min(r.left, window.innerWidth - klappe.offsetWidth - 8) + 'px';
+  klappe.style.top = r.bottom + 2 + 'px';
+  klappeOffen = klappe;
+}
+
+document.addEventListener('mousedown', (e) => {
+  if (klappeOffen && !klappeOffen.contains(e.target) && !e.target.closest('.wz--klappe')) {
+    klappeSchliessen();
+  }
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') klappeSchliessen(); });
+
+/* ---- Der Weg zu dem, was nicht mehr hineinpasst ----
+   Bei „Start" sind es sieben Gruppen; in ein schmales Fenster passen die
+   nicht. Die Rollleiste ist ausgeblendet, weil sie unter einem Band
+   hässlich aussieht — also zwei Pfeile, und die nur dann, wenn wirklich
+   etwas übersteht. Ein Pfeil, der ins Leere zeigt, ist schlimmer als
+   keiner. */
+function registerPfeile() {
+  const band = $('register-band');
+  const links = $('register-links');
+  const rechts = $('register-rechts');
+  if (!band || !links || !rechts) return;
+  const ueber = band.scrollWidth > band.clientWidth + 2;
+  links.hidden = !ueber || band.scrollLeft < 4;
+  rechts.hidden = !ueber || band.scrollLeft + band.clientWidth > band.scrollWidth - 4;
 }
 
 /* Der Kontextreiter muss kommen und gehen, während der Zeiger wandert. Neu
@@ -1507,6 +2235,219 @@ B.benutzeroberflaeche = () => {
 };
 
 /* ------------------------------------------------------------
+   Das Register anpassen
+
+   Word nennt es „Menüband anpassen", der Writer „Symbolleisten anpassen".
+   Beide können dasselbe: die Reihenfolge der Gruppen ändern und einzelne
+   ausblenden. Wer die Ansicht zuerst nach der Oberfläche sortiert haben
+   will und den Zoom zuletzt, soll das einstellen können — es ist seine
+   Arbeit, nicht meine.
+
+   Verschoben wird mit zwei Knöpfen, nicht mit der Maus. Ziehen und Ablegen
+   sieht moderner aus, verlangt aber eine ruhige Hand und trifft schlecht;
+   ein Pfeil nach oben trifft immer.
+   ------------------------------------------------------------ */
+let registerOrdnung = Speicher.lies('registerOrdnung', {});
+
+/* Die Gruppen eines Reiters in der eingestellten Reihenfolge, ohne die
+   ausgeblendeten. Was seit der letzten Einstellung dazugekommen ist,
+   hängt sich hinten an: Ein neuer Befehl soll nicht unsichtbar bleiben,
+   nur weil die Einstellung ihn noch nicht kennt. */
+function registerGruppenFuer(name, gruppen) {
+  const wunsch = registerOrdnung[name];
+  if (!Array.isArray(wunsch) || !wunsch.length) return gruppen;
+  const uebrig = new Map(gruppen.map((g) => [g[0], g]));
+  const raus = [];
+  for (const eintrag of wunsch) {
+    const gruppe = uebrig.get(eintrag && eintrag.name);
+    if (!gruppe) continue;
+    uebrig.delete(eintrag.name);
+    if (eintrag.an !== false) raus.push(gruppe);
+  }
+  for (const gruppe of uebrig.values()) raus.push(gruppe);
+  return raus;
+}
+
+/* Dieselbe Liste, aber vollständig — auch die ausgeblendeten. Sie ist es,
+   die im Anpassen-Fenster steht. */
+function registerListeFuer(name) {
+  const gefunden = REGISTER.find(([n]) => n === name);
+  const roh = gefunden ? gefunden[1] : [];
+  const wunsch = Array.isArray(registerOrdnung[name]) ? registerOrdnung[name] : [];
+  const uebrig = new Map(roh.map((g) => [g[0], g]));
+  const liste = [];
+  for (const eintrag of wunsch) {
+    if (!eintrag || !uebrig.has(eintrag.name)) continue;
+    uebrig.delete(eintrag.name);
+    liste.push({ name: eintrag.name, an: eintrag.an !== false });
+  }
+  for (const gruppenName of uebrig.keys()) liste.push({ name: gruppenName, an: true });
+  return liste;
+}
+
+B.registerAnpassen = () => {
+  const knoten = document.createElement('div');
+  knoten.className = 'anpassen';
+
+  /* Welcher Reiter. Voreingestellt der, der gerade offen ist — meistens
+     will man genau den ändern, den man vor sich hat. */
+  const kopf = document.createElement('label');
+  kopf.className = 'anpassen__kopf';
+  const kopfWort = document.createElement('span');
+  kopfWort.textContent = 'Reiter';
+  const wahl = document.createElement('select');
+  wahl.className = 'wz-wahl';
+  for (const [name] of REGISTER) {
+    const punkt = document.createElement('option');
+    punkt.value = name;
+    punkt.textContent = name;
+    wahl.appendChild(punkt);
+  }
+  wahl.value = REGISTER.some(([n]) => n === registerOffen) ? registerOffen : 'Start';
+  kopf.append(kopfWort, wahl);
+  knoten.appendChild(kopf);
+
+  const kasten = document.createElement('div');
+  kasten.className = 'anpassen__liste';
+  knoten.appendChild(kasten);
+
+  const fuss = document.createElement('div');
+  fuss.className = 'anpassen__fuss';
+  const zurueck = document.createElement('button');
+  zurueck.type = 'button';
+  zurueck.className = 'knopf knopf--klein';
+  zurueck.textContent = 'Diesen Reiter zurücksetzen';
+  const alleZurueck = document.createElement('button');
+  alleZurueck.type = 'button';
+  alleZurueck.className = 'knopf knopf--klein';
+  alleZurueck.textContent = 'Alle zurücksetzen';
+  fuss.append(zurueck, alleZurueck);
+  knoten.appendChild(fuss);
+
+  let liste = [];
+
+  const sichern = () => {
+    registerOrdnung[wahl.value] = liste.map(({ name, an }) => ({ name, an }));
+    Speicher.schreib('registerOrdnung', registerOrdnung);
+    registerBauen();
+  };
+
+  const zeichnen = () => {
+    kasten.textContent = '';
+    liste.forEach((eintrag, i) => {
+      const zeile = document.createElement('div');
+      zeile.className = 'anpassen__zeile' + (eintrag.an ? '' : ' anpassen__zeile--aus');
+
+      const schalter = document.createElement('input');
+      schalter.type = 'checkbox';
+      schalter.checked = eintrag.an;
+      schalter.id = 'anpassen-' + i;
+      schalter.addEventListener('change', () => {
+        eintrag.an = schalter.checked;
+        sichern();
+        zeichnen();
+      });
+
+      const name = document.createElement('label');
+      name.className = 'anpassen__name';
+      name.htmlFor = schalter.id;
+      name.textContent = eintrag.name;
+
+      const hoch = document.createElement('button');
+      hoch.type = 'button';
+      hoch.className = 'wz';
+      hoch.textContent = '▲';
+      hoch.title = eintrag.name + ' nach oben';
+      hoch.setAttribute('aria-label', eintrag.name + ' nach oben');
+      hoch.disabled = i === 0;
+      hoch.addEventListener('click', () => {
+        [liste[i - 1], liste[i]] = [liste[i], liste[i - 1]];
+        sichern();
+        zeichnen();
+      });
+
+      const runter = document.createElement('button');
+      runter.type = 'button';
+      runter.className = 'wz';
+      runter.textContent = '▼';
+      runter.title = eintrag.name + ' nach unten';
+      runter.setAttribute('aria-label', eintrag.name + ' nach unten');
+      runter.disabled = i === liste.length - 1;
+      runter.addEventListener('click', () => {
+        [liste[i + 1], liste[i]] = [liste[i], liste[i + 1]];
+        sichern();
+        zeichnen();
+      });
+
+      zeile.append(schalter, name, hoch, runter);
+      kasten.appendChild(zeile);
+    });
+  };
+
+  const laden = () => { liste = registerListeFuer(wahl.value); zeichnen(); };
+
+  wahl.addEventListener('change', () => {
+    /* Beim Wechsel gleich mitgehen: Wer den Reiter im Fenster wählt, will
+       ihn auch dahinter sehen. */
+    registerOffen = wahl.value;
+    Speicher.schreib('register', registerOffen);
+    registerBauen();
+    laden();
+  });
+  zurueck.addEventListener('click', () => {
+    delete registerOrdnung[wahl.value];
+    Speicher.schreib('registerOrdnung', registerOrdnung);
+    registerBauen();
+    laden();
+  });
+  alleZurueck.addEventListener('click', () => {
+    registerOrdnung = {};
+    Speicher.schreib('registerOrdnung', registerOrdnung);
+    registerBauen();
+    laden();
+  });
+
+  laden();
+
+  /* Der Stand beim Öffnen, für den Fall, dass jemand doch nur schauen
+     wollte. Eine flache Kopie reichte nicht: Die Listen darin werden
+     ersetzt, nicht verändert — aber sicher ist sicher. */
+  const vorher = JSON.parse(JSON.stringify(registerOrdnung));
+
+  fenster('Register anpassen', [
+    { art: 'satz', text: 'Die Reihenfolge der Gruppen und was davon zu sehen ist.\n'
+                       + '„Fertig" behält die Änderungen, „Abbrechen" nimmt sie zurück.' },
+    { art: 'knoten', knoten },
+  ], null, 'Fertig', false, () => {
+    registerOrdnung = vorher;
+    Speicher.schreib('registerOrdnung', registerOrdnung);
+    registerBauen();
+  });
+};
+
+/* Die Pfeile werden einmal angeschlossen — registerBauen() leert nur das
+   Band, nicht den Streifen darum. */
+(() => {
+  const band = $('register-band');
+  const rollen = (weite) => { band.scrollLeft += weite; setTimeout(registerPfeile, 350); };
+  $('register-links').addEventListener('click', () => rollen(-Math.round(band.clientWidth * 0.7)));
+  $('register-rechts').addEventListener('click', () => rollen(Math.round(band.clientWidth * 0.7)));
+  band.addEventListener('scroll', registerPfeile);
+  window.addEventListener('resize', registerPfeile);
+  /* Rechtsklick auf das Band führt zum Anpassen — so kennt man es aus
+     Word, und man sucht es genau dort. */
+  band.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    /* Auf einem Knopf ist das Symbol gemeint, daneben die Anordnung — so
+       hält es der Writer auch, nur dass er es beim Symbolband gar nicht
+       anbietet. */
+    const name = symbolUnter(e.target);
+    if (name) { B.symbolTauschen(name); return; }
+    B.registerAnpassen();
+  });
+})();
+
+/* ------------------------------------------------------------
    Wie groß die Symbole und die Schrift der Leisten sind
 
    Steht im Writer unter Optionen ▸ Ansicht, und es ist keine Spielerei:
@@ -1524,13 +2465,1141 @@ function bedienungAnwenden() {
   wurzel.style.setProperty('--bedienskala', String(skala / 100));
 }
 
-B.vorschau = () => {
-  /* Die Druckvorschau ist der Druckdialog selbst: Er zeigt das Blatt so, wie
-     es auf Papier kommt. Ein eigener Nachbau daneben wiche irgendwann davon
-     ab — und dann wüsste niemand, welcher der beiden stimmt. */
-  melde('Die Vorschau steht im Druckfenster.');
-  window.print();
+/* ============================================================
+   Drucken: die Vorschau und das Druckfenster
+
+   Bisher war beides ein Aufruf: window.print(). Der Browser bekam ein
+   einziges, sehr langes Blatt und schnitt es in Streifen. Kopfzeile und
+   Fußzeile standen deshalb genau einmal da statt auf jeder Seite, die
+   Seitenzahl blieb der Platzhalter, der sie im Text ist, und wo der Text
+   umbricht, erfuhr man erst auf dem Papier.
+
+   Jetzt rechnet das Programm den Umbruch selbst: Es füllt ein Blatt, bis es
+   voll ist, und fängt ein neues an. Der alte Einwand gegen einen eigenen
+   Nachbau — dass er irgendwann vom Ausdruck abwiche — ist damit erledigt,
+   denn es ist kein Nachbau: Gedruckt werden genau diese Blätter.
+
+   Darauf setzen zwei Fenster auf, wie im Writer:
+     • die Druckvorschau — der ganze Stapel, zum Durchblättern;
+     • das Druckfenster — links dasselbe Blatt, rechts die Einstellungen.
+   Beide rechnen mit derselben Funktion, also zeigen sie dasselbe.
+
+   Was das Programm NICHT kann: den Drucker aussuchen, die Papierschublade
+   wählen, beidseitig einstellen. Das gehört dem System, und danach fragt
+   sein eigenes Fenster, sobald gedruckt wird. Hier steht deshalb keine
+   erfundene Druckerliste — nur das, was wirklich hier entschieden wird.
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   Was gedruckt wird und wie. Die Vorgaben sind die des Writers.
+   ------------------------------------------------------------ */
+const DRUCK_VORGABE = {
+  bereich: 'alle',          /* alle | auswahl | seiten */
+  seiten: '',               /* „1-3, 5" */
+  kopien: 1,
+  sortieren: true,
+  blattseiten: 'alle',      /* alle | ungerade | gerade */
+  proBlatt: 1,
+  hintergrund: true,
+  bilder: true,
+  platzhalter: false,
+  steuerelemente: true,
+  kommentare: 'keine',      /* keine | ende */
+  schwarz: false,
+  leere: true,
 };
+let druckWahl = Object.assign({}, DRUCK_VORGABE, Speicher.lies('druck', {}));
+/* Was beim Öffnen des Druckfensters markiert war. Der Griff danach muss
+   sofort passieren: Sobald der Kasten aufgeht, ist die Markierung weg. */
+let druckAuswahl = '';
+
+/* Was das System über seine Drucker sagt. Es wird beim ersten Öffnen des
+   Druckfensters geholt und danach gemerkt: Ein Drucker kommt nicht alle
+   paar Sekunden dazu, und die Auskunft kostet ein paar Aufrufe von lpstat. */
+let druckerListe = [];
+let druckerSelbst = false;      /* ob das Programm selbst drucken kann */
+let druckerName = Speicher.lies('drucker', '');
+let druckerDuplex = Speicher.lies('druckerduplex', 'einseitig');
+let druckerGeraet = Speicher.lies('druckergeraet', {});
+
+function druckWahlSichern() {
+  Speicher.schreib('druck', druckWahl);
+}
+
+/* Was zum einzelnen Auftrag gehört, fängt jedes Mal von vorn an: der
+   Bereich, die Zahl der Kopien, die Blattseiten, die Seiten pro Blatt.
+   Wer gestern die ungeraden Seiten gedruckt hat, will heute nicht wieder
+   nur die ungeraden bekommen — und würde es erst am Stapel merken.
+
+   Was zur Vorliebe gehört, bleibt: ob Bilder mitkommen, ob der Text
+   schwarz wird, was mit den Kommentaren geschieht. Das entscheidet man
+   einmal und nicht bei jedem Ausdruck neu. */
+function druckAuftragZuruecksetzen() {
+  for (const feldname of ['bereich', 'seiten', 'kopien', 'sortieren', 'blattseiten', 'proBlatt']) {
+    druckWahl[feldname] = DRUCK_VORGABE[feldname];
+  }
+}
+
+/* ------------------------------------------------------------
+   Das Papier
+   ------------------------------------------------------------ */
+function vorschauMasse() {
+  const masse = PAPIERE[papier] || PAPIERE.a4;
+  return quer ? { breite: masse.hoehe, hoehe: masse.breite }
+              : { breite: masse.breite, hoehe: masse.hoehe };
+}
+
+/* ------------------------------------------------------------
+   Die Vorlage: der Text, so wie er gedruckt werden soll
+
+   Hier fällt weg, was laut Einstellung nicht mit aufs Papier soll. Es
+   geschieht an einer Kopie — im Dokument selbst wird nichts angefasst.
+   ------------------------------------------------------------ */
+function druckQuelle(wahl) {
+  const quelle = document.createElement('div');
+  const roh = (wahl.bereich === 'auswahl' && druckAuswahl) ? druckAuswahl : feld.innerHTML;
+  quelle.innerHTML = ohneMarken(roh);
+
+  /* Eine Markierung fängt selten am Absatzanfang an. Was dabei als nackter
+     Text herausfällt, bekommt hier einen Absatz — sonst hätte die Seite ein
+     Kind, das kein Element ist, und der Umbruch zählt nur Elemente. */
+  for (const knoten of Array.from(quelle.childNodes)) {
+    if (knoten.nodeType !== Node.ELEMENT_NODE) {
+      if (!knoten.textContent.trim()) { knoten.remove(); continue; }
+      const absatz = document.createElement('p');
+      quelle.replaceChild(absatz, knoten);
+      absatz.appendChild(knoten);
+    }
+  }
+
+  if (!wahl.bilder) {
+    for (const bild of quelle.querySelectorAll('img,svg,.diagramm,.zeichnung')) bild.remove();
+  }
+  if (!wahl.platzhalter) {
+    for (const stelle of quelle.querySelectorAll('.seriendruckfeld')) stelle.remove();
+  }
+  if (!wahl.steuerelemente) {
+    for (const stueck of quelle.querySelectorAll('.formfeld,.formknopf,.formkasten')) stueck.remove();
+  }
+
+  /* Die Kommentarmarken stehen mitten im Satz und sollen dort nie
+     mitgedruckt werden. Wer sie braucht, bekommt sie hinten als Liste —
+     durchnummeriert, damit man die Stelle wiederfindet. */
+  const marken = Array.from(quelle.querySelectorAll('.kommentar'));
+  for (const marke of marken) marke.remove();
+  if (wahl.kommentare === 'ende' && marken.length) {
+    const ueber = document.createElement('h3');
+    ueber.textContent = 'Kommentare';
+    ueber.style.pageBreakBefore = 'always';
+    quelle.appendChild(ueber);
+    marken.forEach((marke, i) => {
+      const zeile = document.createElement('p');
+      zeile.textContent = (i + 1) + '. ' + (marke.getAttribute('title') || '');
+      quelle.appendChild(zeile);
+    });
+  }
+  return quelle;
+}
+
+/* ------------------------------------------------------------
+   Ein leeres Blatt in den Maßen der Seite
+   ------------------------------------------------------------ */
+function vorschauBlatt(nummer, wahl) {
+  const { breite, hoehe } = vorschauMasse();
+
+  const fach = document.createElement('div');
+  fach.className = 'vorschau__fach';
+
+  const seite = document.createElement('div');
+  seite.className = 'vorschau__seite';
+  seite.style.width = breite + 'mm';
+  seite.style.height = hoehe + 'mm';
+  seite.style.paddingTop = seitenrand.oben + 'mm';
+  seite.style.paddingBottom = seitenrand.unten + 'mm';
+  seite.style.paddingLeft = seitenrand.links + 'mm';
+  seite.style.paddingRight = seitenrand.rechts + 'mm';
+  if (wahl.hintergrund && seitenfarbe) seite.style.background = seitenfarbe;
+
+  if (wahl.hintergrund && wasserzeichen) {
+    const marke = document.createElement('div');
+    marke.className = 'wasserzeichen';
+    marke.setAttribute('aria-hidden', 'true');
+    marke.textContent = wasserzeichen;
+    seite.appendChild(marke);
+  }
+
+  if (!$('kopfzeile').hidden) seite.appendChild(vorschauZeile('kopfzeile', nummer));
+
+  const koerper = document.createElement('div');
+  koerper.className = 'dokument vorschau__koerper';
+  koerper.lang = 'de';
+  if (zeilennummern) koerper.classList.add('dokument--zeilennummern');
+  if (wahl.schwarz) koerper.classList.add('vorschau__koerper--schwarz');
+  if (spalten > 1) { koerper.style.columnCount = spalten; koerper.style.columnGap = '8mm'; }
+  if (trennung) koerper.style.hyphens = 'auto';
+  seite.appendChild(koerper);
+
+  if (!$('fusszeile').hidden) seite.appendChild(vorschauZeile('fusszeile', nummer));
+
+  fach.appendChild(seite);
+
+  const zahl = document.createElement('span');
+  zahl.className = 'vorschau__nummer';
+  zahl.setAttribute('aria-hidden', 'true');
+  zahl.textContent = String(nummer);
+  fach.appendChild(zahl);
+  return fach;
+}
+
+/* Kopf- und Fußzeile gehören zur Seite, nicht zum Text — also stehen sie
+   auf jedem Blatt, und der Platzhalter „Seite" wird hier zu der Zahl, die
+   dieses Blatt trägt. Vorher blieb er ein Wort, weil niemand wusste, die
+   wievielte Seite gerade gedruckt wird. */
+function vorschauZeile(welche, nummer) {
+  const zeile = document.createElement('div');
+  zeile.className = welche + ' vorschau__zeile';
+  zeile.innerHTML = ohneMarken($(welche).innerHTML);
+  for (const stelle of zeile.querySelectorAll('.seitenzahl')) stelle.textContent = String(nummer);
+  return zeile;
+}
+
+/* ------------------------------------------------------------
+   Der Umbruch
+
+   Gefüllt wird, bis es nicht mehr passt: Jeder Absatz kommt auf das Blatt
+   und wird gemessen. Passt er nicht mehr, wandert er auf das nächste — und
+   wenn er allein schon zu hoch ist, wird er geteilt.
+
+   Gemessen wird am wirklichen Blatt, nicht an einer Rechnung nebenher.
+   Zusammenfallende Ränder, ein Bild, eine Tabelle, eine größere Schrift:
+   Das alles müsste man sonst einzeln nachrechnen und läge doch daneben.
+   ------------------------------------------------------------ */
+function vorschauUmbrechen(ziel, wahl) {
+  ziel.style.zoom = '';                    /* beim Messen nichts verzerren */
+  ziel.textContent = '';
+
+  const quelle = druckQuelle(wahl);
+  const warteschlange = Array.from(quelle.children);
+  /* Eine Notbremse. Sollte eine Teilung wider Erwarten nicht vorankommen,
+     ist eine unvollständige Vorschau immer noch besser als ein Fenster,
+     das steht. */
+  const grenze = warteschlange.length * 4 + 400;
+
+  let koerper = null;
+  const neuesBlatt = () => {
+    const fach = vorschauBlatt(ziel.children.length + 1, wahl);
+    ziel.appendChild(fach);
+    koerper = fach.querySelector('.vorschau__koerper');
+  };
+  neuesBlatt();
+
+  let runden = 0;
+  while (warteschlange.length && ++runden < grenze) {
+    const block = warteschlange.shift();
+
+    /* Der Abschnittsstrich ist eine Marke, kein Inhalt: Er bricht um und
+       wird selbst nicht gedruckt. */
+    if (block.tagName === 'HR' && block.dataset.abschnitt) {
+      if (koerper.childElementCount) neuesBlatt();
+      continue;
+    }
+    if (koerper.childElementCount && vorschauUmbruchDavor(block)) neuesBlatt();
+
+    koerper.appendChild(block);
+    if (vorschauPasst(koerper)) continue;
+
+    if (koerper.childElementCount === 1) {
+      /* Allein auf dem Blatt und trotzdem zu hoch. Ein durchlaufender
+         Absatz wird geteilt; bei einem Bild oder einer Tabelle geht das
+         nicht — die bleibt stehen, und was übersteht, ist ab. Unschön,
+         aber ehrlich: Genauso käme es aus dem Drucker. */
+      const rest = vorschauTeilen(koerper, block);
+      if (!rest) continue;
+      warteschlange.unshift(rest);
+      neuesBlatt();
+      continue;
+    }
+
+    koerper.removeChild(block);
+    neuesBlatt();
+    warteschlange.unshift(block);
+  }
+
+  /* Ein leeres letztes Blatt entsteht, wenn der letzte Absatz gerade eben
+     umgebrochen ist. Es gehört nicht dazu. */
+  while (ziel.children.length > 1 && vorschauLeer(ziel.lastElementChild)) {
+    ziel.lastElementChild.remove();
+  }
+  return ziel.children.length;
+}
+
+function vorschauPasst(koerper) {
+  /* Ein Bildpunkt Luft: Beim Rechnen mit Millimetern bleibt sonst ein Rest
+     übrig, der keiner ist. */
+  return koerper.scrollHeight <= koerper.clientHeight + 1;
+}
+
+function vorschauLeer(fach) {
+  const koerper = fach.querySelector('.vorschau__koerper');
+  return !koerper || !koerper.textContent.trim();
+}
+
+function vorschauUmbruchDavor(block) {
+  const wie = block.style;
+  return wie.pageBreakBefore === 'always' || wie.breakBefore === 'page';
+}
+
+/* ---- Einen zu hohen Absatz teilen ----
+   Wie viel davon passt, weiß nur der Zeichensatz — also wird gesucht statt
+   gerechnet: die Hälfte probieren, dann die Hälfte davon, und so weiter.
+   Bei tausend Zeichen sind das zehn Versuche. */
+function vorschauTeilen(koerper, block) {
+  const urbild = block.cloneNode(true);
+  const text = urbild.textContent;
+  /* Was kein durchlaufender Text ist, lässt sich nicht in der Mitte
+     auseinanderschneiden: eine Tabelle, ein Bild, eine Liste, eine Formel. */
+  if (text.length < 8 || block.querySelector('table,img,svg,math,hr,li')) return null;
+
+  let passend = 0, tief = 1, hoch = text.length;
+  while (tief <= hoch) {
+    const mitte = (tief + hoch) >> 1;
+    vorschauAusschnitt(block, urbild, 0, mitte);
+    if (vorschauPasst(koerper)) { passend = mitte; tief = mitte + 1; }
+    else hoch = mitte - 1;
+  }
+
+  /* Nicht mitten im Wort trennen: zurück bis zum letzten Zwischenraum. */
+  let schnitt = passend;
+  while (schnitt > 0 && !/\s/.test(text.charAt(schnitt))) schnitt--;
+  if (schnitt < 2) { vorschauAusschnitt(block, urbild, 0, text.length); return null; }
+
+  vorschauAusschnitt(block, urbild, 0, schnitt);
+  const rest = urbild.cloneNode(false);       /* dasselbe Element, nur leer */
+  vorschauAusschnitt(rest, urbild, schnitt + 1, text.length);
+  return rest;
+}
+
+/* Setzt in „ziel" den Teil von „urbild", der die Zeichen von…bis enthält —
+   samt allem, was darin ausgezeichnet ist. Zeichen abzuzählen reicht nicht:
+   Ein fett gesetztes Wort in der Mitte muss fett bleiben. */
+function vorschauAusschnitt(ziel, urbild, von, bis) {
+  const stueck = urbild.cloneNode(true);
+  const laeufer = document.createTreeWalker(stueck, NodeFilter.SHOW_TEXT);
+  const weg = [];
+  let gelesen = 0, knoten;
+  while ((knoten = laeufer.nextNode())) {
+    const anfang = gelesen;
+    gelesen += knoten.data.length;
+    const a = Math.max(anfang, von), b = Math.min(gelesen, bis);
+    if (a >= b) { weg.push(knoten); continue; }
+    knoten.data = knoten.data.slice(a - anfang, b - anfang);
+  }
+  for (const knoten of weg) knoten.remove();
+  ziel.innerHTML = stueck.innerHTML;
+}
+
+/* ============================================================
+   Die Druckvorschau — der ganze Stapel zum Durchblättern
+   ============================================================ */
+
+/* Marke, Name, Spalten, Reihen, ob die erste Seite allein steht. */
+const VORSCHAU_REIHEN = [
+  ['eine', 'Eine Seite',  1, 1, false],
+  ['zwei', 'Zwei Seiten', 2, 1, false],
+  ['buch', 'Buchansicht', 2, 1, true],
+  ['vier', 'Vier Seiten', 2, 2, false],
+];
+
+let vorschauReihe = Speicher.lies('vorschaureihe', 'eine');
+/* 0 heißt „einpassen": so groß, dass die gewählte Zahl Blätter ins Fenster
+   passt. Jede andere Zahl ist eine feste Vergrößerung in Prozent. */
+let vorschauStufe = Speicher.lies('vorschaustufe', 0);
+let vorschauSeite = 1;
+let vorschauOffen = false;
+let vorschauBereit = false;
+
+function vorschauArt() {
+  return VORSCHAU_REIHEN.find(([marke]) => marke === vorschauReihe) || VORSCHAU_REIHEN[0];
+}
+
+function vorschauAufbauen() {
+  /* Nur rechnen, wenn die Seite auch gesetzt ist. Ein verstecktes Blatt hat
+     keine Höhe, und ohne Höhe passt alles auf eine Seite — herauskäme eine
+     Vorschau mit einer einzigen, endlos langen Seite. */
+  if ($('vorschau').hidden) return 0;
+  const blaetter = $('vorschau-blaetter');
+  const art = vorschauArt();
+  blaetter.classList.toggle('vorschau__blaetter--buch', art[4]);
+  blaetter.style.setProperty('--vorschau-spalten', String(art[2]));
+  const anzahl = vorschauUmbrechen(blaetter, druckWahl);
+  $('vorschau-von').textContent = '/ ' + anzahl;
+  $('vorschau-nummer').max = String(anzahl);
+  vorschauZoomAnwenden();
+  if (vorschauSeite > anzahl) vorschauSeite = anzahl;
+  vorschauStandZeigen();
+  return anzahl;
+}
+
+function vorschauEinpassung() {
+  const art = vorschauArt();
+  const flaeche = $('vorschau-flaeche');
+  const { breite, hoehe } = vorschauMasse();
+  const luft = 20;                       /* der Abstand zwischen den Blättern */
+  const platzBreit = flaeche.clientWidth - 44 - (art[2] - 1) * luft;
+  const platzHoch = flaeche.clientHeight - 44 - (art[3] - 1) * luft;
+  const skala = Math.min(platzBreit / (art[2] * breite * CM / 10),
+                         platzHoch / (art[3] * hoehe * CM / 10));
+  return Math.max(10, Math.min(400, Math.round(skala * 100)));
+}
+
+function vorschauZoomAnwenden() {
+  const stufe = vorschauStufe || vorschauEinpassung();
+  $('vorschau-blaetter').style.zoom = (stufe / 100).toFixed(3);
+  $('vorschau-stufe').textContent = stufe + ' %';
+}
+
+function vorschauStufeSetzen(schritt) {
+  const jetzt = vorschauStufe || vorschauEinpassung();
+  vorschauStufe = Math.max(20, Math.min(400, jetzt + schritt));
+  Speicher.schreib('vorschaustufe', vorschauStufe);
+  vorschauZoomAnwenden();
+}
+
+function vorschauZuSeite(nummer) {
+  const blaetter = $('vorschau-blaetter');
+  const anzahl = blaetter.children.length;
+  if (!anzahl) return;
+  vorschauSeite = Math.max(1, Math.min(anzahl, Math.round(nummer) || 1));
+  const fach = blaetter.children[vorschauSeite - 1];
+  if (fach) fach.scrollIntoView({ block: 'start' });
+  vorschauStandZeigen();
+}
+
+function vorschauStandZeigen() {
+  const blaetter = $('vorschau-blaetter');
+  $('vorschau-nummer').value = String(vorschauSeite);
+  for (let i = 0; i < blaetter.children.length; i++) {
+    const seite = blaetter.children[i].firstElementChild;
+    if (seite) seite.classList.toggle('vorschau__seite--hier', i === vorschauSeite - 1);
+  }
+}
+
+function vorschauBereitMachen() {
+  if (vorschauBereit) return;
+  vorschauBereit = true;
+
+  const wahl = $('vorschau-reihe');
+  for (const [marke, name] of VORSCHAU_REIHEN) {
+    const punkt = document.createElement('option');
+    punkt.value = marke;
+    punkt.textContent = name;
+    wahl.appendChild(punkt);
+  }
+  wahl.value = vorschauReihe;
+  wahl.addEventListener('change', () => {
+    vorschauReihe = wahl.value;
+    Speicher.schreib('vorschaureihe', vorschauReihe);
+    vorschauAufbauen();
+    vorschauZuSeite(vorschauSeite);
+  });
+
+  $('vorschau-erste').addEventListener('click', () => vorschauZuSeite(1));
+  $('vorschau-zurueck').addEventListener('click', () => vorschauZuSeite(vorschauSeite - 1));
+  $('vorschau-vor').addEventListener('click', () => vorschauZuSeite(vorschauSeite + 1));
+  $('vorschau-letzte').addEventListener('click',
+    () => vorschauZuSeite($('vorschau-blaetter').children.length));
+  $('vorschau-nummer').addEventListener('change',
+    (e) => vorschauZuSeite(parseInt(e.target.value, 10)));
+
+  $('vorschau-kleiner').addEventListener('click', () => vorschauStufeSetzen(-10));
+  $('vorschau-groesser').addEventListener('click', () => vorschauStufeSetzen(10));
+  $('vorschau-einpassen').addEventListener('click', () => {
+    vorschauStufe = 0;
+    Speicher.schreib('vorschaustufe', 0);
+    vorschauZoomAnwenden();
+  });
+
+  $('vorschau-drucken').addEventListener('click', () => B.drucken());
+  $('vorschau-zu').addEventListener('click', () => vorschauSchliessen());
+
+  /* Beim Rollen wandert die Zahl in der Leiste mit — sonst stünde dort
+     „Seite 1", während längst die vierte zu sehen ist. */
+  $('vorschau-flaeche').addEventListener('scroll', () => {
+    const blaetter = $('vorschau-blaetter');
+    const oben = $('vorschau-flaeche').getBoundingClientRect().top;
+    let hier = vorschauSeite;
+    for (let i = 0; i < blaetter.children.length; i++) {
+      if (blaetter.children[i].getBoundingClientRect().bottom > oben + 8) { hier = i + 1; break; }
+    }
+    if (hier !== vorschauSeite) { vorschauSeite = hier; vorschauStandZeigen(); }
+  });
+
+  /* Ändert sich das Fenster, ändert sich auch, was hineinpasst. */
+  window.addEventListener('resize', () => { if (vorschauOffen && !vorschauStufe) vorschauZoomAnwenden(); });
+}
+
+B.vorschau = () => {
+  if (vorschauOffen) { vorschauSchliessen(); return; }
+  vorschauBereitMachen();
+  const seite = $('vorschau');
+  seite.hidden = false;
+  seite.classList.remove('vorschau--still');
+  vorschauOffen = true;
+  vorschauSeite = 1;
+  const anzahl = vorschauAufbauen();
+  $('vorschau-flaeche').scrollTop = 0;
+  melde('Druckvorschau: ' + anzahl + (anzahl === 1 ? ' Seite.' : ' Seiten.'));
+};
+
+function vorschauSchliessen() {
+  if (!vorschauOffen) return;
+  $('vorschau').hidden = true;
+  $('vorschau-blaetter').textContent = '';
+  vorschauOffen = false;
+  feld.focus();
+  melde('Vorschau geschlossen.');
+}
+
+/* ============================================================
+   Das Druckfenster
+
+   Links das Blatt, rechts die Einstellungen, unten die drei Knöpfe — die
+   Aufteilung, die jeder kennt, der schon einmal im Writer gedruckt hat.
+   ============================================================ */
+let druckBereit = false;
+let druckSeite = 1;
+
+function druckLesen() {
+  const w = druckWahl;
+  const gewaehlt = document.querySelector('input[name="druckbereich"]:checked');
+  w.bereich = gewaehlt ? gewaehlt.value : 'alle';
+  w.seiten = $('druck-seiten').value.trim();
+  w.kopien = Math.max(1, Math.min(99, parseInt($('druck-kopien').value, 10) || 1));
+  w.sortieren = $('druck-sortieren').checked;
+  w.blattseiten = $('druck-blattseiten').value;
+  w.proBlatt = parseInt($('druck-problatt').value, 10) || 1;
+  w.hintergrund = $('druck-hintergrund').checked;
+  w.bilder = $('druck-bilder').checked;
+  w.platzhalter = $('druck-platzhalter').checked;
+  w.steuerelemente = $('druck-steuer').checked;
+  w.kommentare = $('druck-kommentare').value;
+  w.schwarz = $('druck-schwarz').checked;
+  w.leere = $('druck-leere').checked;
+  druckWahlSichern();
+}
+
+function druckSchreiben() {
+  const w = druckWahl;
+  for (const knopf of document.querySelectorAll('input[name="druckbereich"]')) {
+    knopf.checked = knopf.value === w.bereich;
+  }
+  $('druck-seiten').value = w.seiten;
+  $('druck-kopien').value = String(w.kopien);
+  $('druck-sortieren').checked = w.sortieren;
+  $('druck-blattseiten').value = w.blattseiten;
+  $('druck-problatt').value = String(w.proBlatt);
+  $('druck-hintergrund').checked = w.hintergrund;
+  $('druck-bilder').checked = w.bilder;
+  $('druck-platzhalter').checked = w.platzhalter;
+  $('druck-steuer').checked = w.steuerelemente;
+  $('druck-kommentare').value = w.kommentare;
+  $('druck-schwarz').checked = w.schwarz;
+  $('druck-leere').checked = w.leere;
+  $('druck-papier').value = papier;
+  $('druck-e-papier').value = papier;
+  $('druck-quer').value = quer ? 'quer' : 'hoch';
+  $('druck-e-quer').value = quer ? 'quer' : 'hoch';
+}
+
+/* ------------------------------------------------------------
+   Die Drucker des Systems
+
+   LibreOffice fragt CUPS, den Druckerdienst des Arbeitsplatzes, und
+   bekommt von dort den Namen, den Zustand und alles, was ein Drucker kann.
+   Hier geschieht dasselbe — start.py fragt für uns, weil eine Seite im
+   Browser nicht an den Druckerdienst herankommt.
+
+   Was zurückkommt, wird nicht ausgeschmückt: Meldet ein Drucker keine
+   Duplexeinheit, bleibt der Schalter dafür grau. Ein Schalter, der nichts
+   bewirkt, ist schlimmer als keiner.
+   ------------------------------------------------------------ */
+async function druckerHolen() {
+  try {
+    const antwort = await fetch('drucker');
+    if (!antwort.ok) throw new Error('Fehler ' + antwort.status);
+    const daten = await antwort.json();
+    druckerListe = daten.drucker || [];
+    druckerSelbst = !!daten.selbst;
+    if (!druckerJetzt() && daten.standard) druckerName = daten.standard;
+    if (!druckerJetzt() && druckerListe.length) druckerName = druckerListe[0].name;
+  } catch (e) {
+    /* Im Browser statt im eigenen Fenster gibt es diesen Weg nicht. Dann
+       druckt der Browser, und sein Fenster fragt nach dem Drucker. */
+    druckerListe = [];
+    druckerSelbst = false;
+  }
+  druckerZeigen();
+}
+
+function druckerJetzt() {
+  return druckerListe.find((d) => d.name === druckerName) || null;
+}
+
+/* Die Optionen des Druckers ohne „Duplex" — das steht als eigene Zeile
+   darüber, weil man es öfter braucht als den Papierschacht. */
+function druckerGeraeteteile(drucker) {
+  return (drucker ? drucker.optionen || [] : []).filter((o) => o.schluessel !== 'Duplex');
+}
+
+function druckerZeigen() {
+  const wahl = $('druck-name');
+  wahl.textContent = '';
+  if (!druckerListe.length) {
+    const punkt = document.createElement('option');
+    punkt.value = '';
+    punkt.textContent = druckerSelbst ? 'Kein Drucker eingerichtet' : 'Über das Fenster des Systems';
+    wahl.appendChild(punkt);
+    wahl.disabled = true;
+  } else {
+    wahl.disabled = false;
+    for (const drucker of druckerListe) {
+      const punkt = document.createElement('option');
+      punkt.value = drucker.name;
+      punkt.textContent = drucker.name + (drucker.standard ? ' (Standard)' : '');
+      wahl.appendChild(punkt);
+    }
+    wahl.value = druckerName;
+  }
+
+  const jetzt = druckerJetzt();
+  const stand = !druckerListe.length
+    ? (druckerSelbst ? 'Kein Drucker eingerichtet — es wird das Fenster des Systems geöffnet.'
+                     : 'Der Browser druckt — sein eigenes Fenster fragt nach dem Drucker.')
+    : (jetzt && jetzt.bereit ? 'Bereit' : 'Nicht bereit')
+      + (jetzt && jetzt.standard ? ' · Standarddrucker' : '');
+  $('druck-status').textContent = stand;
+
+  $('druck-e-name').textContent = jetzt ? jetzt.name : '—';
+  $('druck-e-status').textContent = stand;
+  $('druck-e-typ').textContent = (jetzt && jetzt.typ) || '—';
+  $('druck-e-ort').textContent = (jetzt && jetzt.ort) || '—';
+  $('druck-e-kommentar').textContent = (jetzt && jetzt.kommentar) || '—';
+
+  /* Beidseitig nur, wenn der Drucker es meldet. */
+  const duplex = (jetzt ? jetzt.optionen || [] : []).find((o) => o.schluessel === 'Duplex');
+  $('druck-duplex').disabled = !duplex;
+  $('druck-duplex').value = duplex ? druckerDuplex : 'einseitig';
+
+  druckerGeraetBauen(jetzt);
+}
+
+/* Papierschacht, Farbe, Auflösung — was davon da ist, sagt der Drucker. */
+function druckerGeraetBauen(drucker) {
+  const kasten = $('druck-geraet');
+  kasten.textContent = '';
+  const teile = druckerGeraeteteile(drucker);
+  if (!teile.length) {
+    const zeile = document.createElement('div');
+    zeile.className = 'druckzeile';
+    const wert = document.createElement('span');
+    wert.className = 'druckzeile__wert';
+    wert.textContent = drucker ? 'Dieser Drucker meldet keine weiteren Einstellungen.'
+                               : 'Erst einen Drucker wählen.';
+    zeile.appendChild(wert);
+    kasten.appendChild(zeile);
+    return;
+  }
+
+  for (const teil of teile) {
+    const zeile = document.createElement('label');
+    zeile.className = 'druckzeile';
+    const name = document.createElement('span');
+    name.className = 'druckzeile__wort druckzeile__wort--fest';
+    name.textContent = teil.name;
+    const wahl = document.createElement('select');
+    wahl.className = 'wz-wahl';
+    for (const wert of teil.werte) {
+      const punkt = document.createElement('option');
+      punkt.value = wert;
+      punkt.textContent = wert;
+      wahl.appendChild(punkt);
+    }
+    wahl.value = druckerGeraet[teil.schluessel] || teil.jetzt || teil.werte[0];
+    wahl.addEventListener('change', () => {
+      druckerGeraet[teil.schluessel] = wahl.value;
+      Speicher.schreib('druckergeraet', druckerGeraet);
+    });
+    zeile.appendChild(name);
+    zeile.appendChild(wahl);
+    kasten.appendChild(zeile);
+  }
+}
+
+/* Zu einem der drei Reiter springen — von außen und von „Eigenschaften…". */
+function druckReiterZeigen(marke) {
+  for (const knopf of document.querySelectorAll('.druckreiter__knopf')) {
+    const gemeint = knopf.dataset.blatt === marke;
+    knopf.classList.toggle('druckreiter__knopf--an', gemeint);
+    knopf.setAttribute('aria-selected', String(gemeint));
+  }
+  for (const blatt of document.querySelectorAll('.druckfenster__blatt')) {
+    blatt.hidden = blatt.dataset.blatt !== marke;
+  }
+}
+
+/* ---- Der Blick nach links ----
+   Ein Blatt, so groß wie es der Platz zulässt. Es wird nicht neu gerechnet,
+   sondern aus dem Stapel geholt und verkleinert dargestellt. */
+function druckBlickZeigen() {
+  const buehne = $('druck-buehne');
+  const stapel = $('druck-stapel');
+  const anzahl = stapel.children.length;
+  buehne.textContent = '';
+  if (!$('druck-vorschau-an').checked || !anzahl) {
+    $('druck-von').textContent = '/ ' + anzahl;
+    return;
+  }
+  druckSeite = Math.max(1, Math.min(anzahl, druckSeite));
+
+  const { breite, hoehe } = vorschauMasse();
+  const abbild = stapel.children[druckSeite - 1].firstElementChild.cloneNode(true);
+  abbild.classList.remove('vorschau__seite--hier');
+
+  const platzB = buehne.clientWidth || 280;
+  const platzH = buehne.clientHeight || 380;
+  const skala = Math.min(platzB / (breite * CM / 10), platzH / (hoehe * CM / 10));
+  abbild.style.transform = 'scale(' + skala.toFixed(4) + ')';
+  abbild.style.transformOrigin = 'top left';
+  abbild.style.position = 'absolute';
+  abbild.style.left = Math.max(0, (platzB - breite * CM / 10 * skala) / 2) + 'px';
+  abbild.style.top = '0';
+  buehne.appendChild(abbild);
+
+  $('druck-mass').textContent = breite + ' mm (' + (PAPIERE[papier] || PAPIERE.a4).name.split(' ')[0] + ')';
+  $('druck-hoehe').textContent = hoehe + ' mm';
+  $('druck-nummer').value = String(druckSeite);
+  $('druck-von').textContent = '/ ' + anzahl;
+}
+
+function druckStapelBauen() {
+  druckLesen();
+  const anzahl = vorschauUmbrechen($('druck-stapel'), druckWahl);
+  $('druck-nummer').max = String(anzahl);
+  druckBlickZeigen();
+  return anzahl;
+}
+
+function druckBereitMachen() {
+  if (druckBereit) return;
+  druckBereit = true;
+
+  /* Dieselbe Liste an zwei Stellen: unter „Seitenlayout" und bei den
+     Eigenschaften des Druckers. So hält es der Writer auch — beide Wege
+     führen zu derselben Einstellung, und sie zeigen immer dasselbe an. */
+  for (const feldname of ['druck-papier', 'druck-e-papier']) {
+    for (const marke of Object.keys(PAPIERE)) {
+      const punkt = document.createElement('option');
+      punkt.value = marke;
+      punkt.textContent = PAPIERE[marke].name;
+      $(feldname).appendChild(punkt);
+    }
+  }
+
+  /* Die Reiter. Der zweite heißt im Writer nach dem Programm, weil dort
+     steht, was nur dieses Programm kennt — hier ist es genauso. */
+  for (const knopf of document.querySelectorAll('.druckreiter__knopf')) {
+    knopf.addEventListener('click', () => druckReiterZeigen(knopf.dataset.blatt));
+  }
+
+  /* Jede Änderung wird sofort sichtbar: Wer „Bilder" abschaltet, sieht
+     links, dass sie weg sind — und nicht erst auf dem Papier. */
+  const neuRechnen = ['druck-hintergrund', 'druck-bilder', 'druck-platzhalter',
+                      'druck-steuer', 'druck-kommentare', 'druck-schwarz', 'druck-leere'];
+  for (const name of neuRechnen) {
+    $(name).addEventListener('change', () => { druckStapelBauen(); });
+  }
+  for (const knopf of document.querySelectorAll('input[name="druckbereich"]')) {
+    knopf.addEventListener('change', () => { druckStapelBauen(); });
+  }
+  $('druck-seiten').addEventListener('input', () => {
+    /* Wer eine Seitenzahl eintippt, meint auch „Seiten:" — den Knopf
+       daneben noch einmal anzuklicken ist eine Hürde ohne Grund. */
+    $('druck-bereich-seiten').checked = true;
+    druckLesen();
+  });
+  $('druck-kopien').addEventListener('change', druckLesen);
+  $('druck-sortieren').addEventListener('change', druckLesen);
+  $('druck-blattseiten').addEventListener('change', druckLesen);
+  $('druck-problatt').addEventListener('change', druckLesen);
+
+  for (const feldname of ['druck-papier', 'druck-e-papier']) {
+    $(feldname).addEventListener('change', () => {
+      papier = $(feldname).value;
+      papierAnwenden();
+      druckSchreiben();
+      druckStapelBauen();
+    });
+  }
+  for (const feldname of ['druck-quer', 'druck-e-quer']) {
+    $(feldname).addEventListener('change', () => {
+      quer = $(feldname).value === 'quer';
+      papierAnwenden();
+      druckSchreiben();
+      druckStapelBauen();
+    });
+  }
+
+  /* Der Drucker und was er kann. */
+  $('druck-name').addEventListener('change', () => {
+    druckerName = $('druck-name').value;
+    Speicher.schreib('drucker', druckerName);
+    druckerZeigen();
+  });
+  $('druck-eigenschaften').addEventListener('click', () => druckReiterZeigen('drucker'));
+  $('druck-duplex').addEventListener('change', () => {
+    druckerDuplex = $('druck-duplex').value;
+    Speicher.schreib('druckerduplex', druckerDuplex);
+  });
+
+  $('druck-vorschau-an').addEventListener('change', druckBlickZeigen);
+  $('druck-erste').addEventListener('click', () => { druckSeite = 1; druckBlickZeigen(); });
+  $('druck-zurueck').addEventListener('click', () => { druckSeite--; druckBlickZeigen(); });
+  $('druck-vor').addEventListener('click', () => { druckSeite++; druckBlickZeigen(); });
+  $('druck-letzte').addEventListener('click',
+    () => { druckSeite = $('druck-stapel').children.length; druckBlickZeigen(); });
+  $('druck-nummer').addEventListener('change', (e) => {
+    druckSeite = parseInt(e.target.value, 10) || 1;
+    druckBlickZeigen();
+  });
+
+  $('druck-ab').addEventListener('click', druckFensterSchliessen);
+  /* Der dunkle Grund ringsum ist auch ein Ausgang — so kennt man es
+     von jedem Kasten, der sich über die Arbeit legt. */
+  $('druckfenster').addEventListener('mousedown', (e) => {
+    if (e.target === $('druckfenster')) druckFensterSchliessen();
+  });
+  /* Alles, was erklärt werden muss, steht hier — nicht als kleingedruckte
+     Zeile unter jedem Schalter. Im Fenster selbst bleibt nur das Wort und
+     der Schalter dazu, so wie im Writer. */
+  $('druck-hilfe').addEventListener('click', () => {
+    fenster('Drucken', [
+      { art: 'satz', text:
+        'Links steht das Blatt, wie es aus dem Drucker kommt: mit Kopfzeile,\n'
+      + 'Fußzeile und der Seitenzahl auf jeder einzelnen Seite.\n\n'
+
+      + 'Den Drucker selbst wählst du nicht hier. Das Fenster des Systems\n'
+      + 'fragt danach, sobald du auf „Drucken“ drückst — dort stehen auch\n'
+      + 'die Papierschublade und der beidseitige Druck.\n\n'
+
+      + 'Seiten: Einzelne Zahlen und Bereiche, mit Komma getrennt. „1-3, 5“\n'
+      + 'druckt die ersten drei Seiten und die fünfte.\n\n'
+
+      + 'Sortieren: Bei drei Kopien kommt erst das ganze Schreiben, dann\n'
+      + 'noch einmal das ganze. Ohne Sortieren kommt jede Seite dreimal\n'
+      + 'hintereinander.\n\n'
+
+      + 'Blattseiten: Erst die ungeraden drucken, den Stapel umdrehen, dann\n'
+      + 'die geraden. So druckst du beidseitig auf einem Drucker, der es\n'
+      + 'selbst nicht kann.\n\n'
+
+      + 'Papiergröße und Ausrichtung gehören zum Dokument: Was du hier\n'
+      + 'wählst, gilt auch auf dem Bildschirm weiter.\n\n'
+
+      + 'Seitenhintergrund: die Seitenfarbe und das Wasserzeichen. Beides\n'
+      + 'kostet Farbe — für ein Schreiben ans Amt lieber aus.\n\n'
+
+      + 'Textplatzhalter: die Seriendruckfelder wie {{Name}}. Aus heißt,\n'
+      + 'die Stelle bleibt leer.\n\n'
+
+      + 'Leere Seiten: Eine entsteht, wo ein Seitenumbruch steht und danach\n'
+      + 'nichts mehr kommt. Beim beidseitigen Druck ist sie manchmal\n'
+      + 'gewollt.' },
+    ], null, 'Verstanden');
+  });
+  $('druck-los').addEventListener('click', () => {
+    druckLesen();
+    druckFensterSchliessen();
+    druckAusfuehren();
+  });
+}
+
+B.drucken = () => {
+  druckBereitMachen();
+
+  /* Die Markierung jetzt greifen: Sobald der Kasten aufgeht, ist sie fort. */
+  const auswahl = window.getSelection();
+  druckAuswahl = '';
+  if (auswahl.rangeCount && !auswahl.isCollapsed
+      && feld.contains(auswahl.getRangeAt(0).commonAncestorContainer)) {
+    const hilfe = document.createElement('div');
+    hilfe.appendChild(auswahl.getRangeAt(0).cloneContents());
+    druckAuswahl = hilfe.innerHTML;
+  }
+  druckAuftragZuruecksetzen();
+  $('druck-bereich-auswahl').disabled = !druckAuswahl;
+  /* Ist etwas markiert, ist das fast immer das Gemeinte — so hält es der
+     Writer auch. */
+  if (druckAuswahl) druckWahl.bereich = 'auswahl';
+
+  $('druckfenster').hidden = false;
+  druckReiterZeigen('standard');
+  druckSchreiben();
+  druckSeite = 1;
+  druckStapelBauen();
+  /* Die Druckerliste wird nebenher geholt: Sie kommt aus ein paar Aufrufen
+     an den Druckerdienst, und darauf soll das Fenster nicht warten. */
+  druckerHolen();
+};
+
+/* „Druckereinstellungen…" führt geradewegs zu den Eigenschaften — ohne den
+   Umweg über das Blättern und den Knopf „Eigenschaften…". */
+B.druckerEinrichten = () => {
+  B.drucken();
+  druckReiterZeigen('drucker');
+};
+
+function druckFensterSchliessen() {
+  $('druckfenster').hidden = true;
+  $('druck-stapel').textContent = '';
+  $('druck-buehne').textContent = '';
+}
+
+/* ------------------------------------------------------------
+   Welche Seiten wirklich gedruckt werden
+
+   „1-3, 5" wird zu einer Liste von Nummern. Was außerhalb liegt oder
+   keine Zahl ist, fällt still weg — ein Tippfehler soll den Druck nicht
+   abbrechen, sondern nur nicht mitzählen.
+   ------------------------------------------------------------ */
+function druckBereichLesen(text, anzahl) {
+  const dabei = [];
+  for (const stueck of text.split(/[,;]/)) {
+    const teile = stueck.trim().match(/^(\d+)\s*(?:[-–]\s*(\d+))?$/);
+    if (!teile) continue;
+    const von = parseInt(teile[1], 10);
+    const bis = teile[2] ? parseInt(teile[2], 10) : von;
+    for (let i = Math.min(von, bis); i <= Math.max(von, bis); i++) {
+      if (i >= 1 && i <= anzahl && !dabei.includes(i)) dabei.push(i);
+    }
+  }
+  return dabei;
+}
+
+function druckReihenfolge(anzahl, wahl) {
+  let nummern = [];
+  for (let i = 1; i <= anzahl; i++) nummern.push(i);
+
+  if (wahl.bereich === 'seiten' && wahl.seiten) {
+    const gewaehlt = druckBereichLesen(wahl.seiten, anzahl);
+    if (gewaehlt.length) nummern = gewaehlt;
+  }
+  if (wahl.blattseiten === 'ungerade') nummern = nummern.filter((n) => n % 2 === 1);
+  if (wahl.blattseiten === 'gerade') nummern = nummern.filter((n) => n % 2 === 0);
+
+  const kopien = Math.max(1, wahl.kopien);
+  if (kopien === 1) return nummern;
+
+  /* Sortiert heißt: erst das ganze Schreiben, dann noch einmal das ganze.
+     Unsortiert heißt: jede Seite so oft hintereinander, wie Kopien
+     gewünscht sind — so, wie ein Stapelleger es braucht. */
+  const folge = [];
+  if (wahl.sortieren) {
+    for (let k = 0; k < kopien; k++) folge.push(...nummern);
+  } else {
+    for (const n of nummern) for (let k = 0; k < kopien; k++) folge.push(n);
+  }
+  return folge;
+}
+
+/* ------------------------------------------------------------
+   Drucken
+
+   Der Stapel wird gebaut, die gewünschten Seiten werden herausgeholt und
+   in der gewünschten Reihenfolge in einen eigenen Kasten gelegt. Nur
+   dieser Kasten ist beim Drucken sichtbar — der Browser bekommt also
+   genau die Blätter, die die Vorschau zeigt.
+   ------------------------------------------------------------ */
+/* Was nach dem Drucken wieder wegzuräumen ist. Es steht hier draußen, weil
+   nicht jeder Browser „afterprint" meldet: Ohne diesen Griff bliebe ein
+   unaufgeräumter Druck stehen und sperrte den nächsten. */
+let druckAufraeumen = null;
+
+function druckAusfuehren() {
+  /* Ein zweiter Druck räumt den ersten ab, statt sich abweisen zu lassen.
+     Wer zweimal hintereinander druckt, soll nicht auf eine Uhr warten, von
+     der er nichts weiß. */
+  if (druckAufraeumen) druckAufraeumen();
+  const seite = $('vorschau');
+  const warZu = !vorschauOffen;
+
+  /* Messen lässt sich nur, was der Browser auch setzt. Ist die Vorschau
+     zu, wird sie dafür kurz gebaut — unsichtbar, aber vorhanden. */
+  vorschauBereitMachen();
+  if (warZu) {
+    seite.hidden = false;
+    seite.classList.add('vorschau--still');
+  }
+  const anzahl = vorschauUmbrechen($('vorschau-blaetter'), druckWahl);
+  const folge = druckReihenfolge(anzahl, druckWahl);
+
+  if (!folge.length) {
+    if (warZu) { seite.hidden = true; seite.classList.remove('vorschau--still'); }
+    melde('Dieser Seitenbereich liegt außerhalb des Dokuments — nichts zu drucken.');
+    return;
+  }
+
+  const bogen = $('druckbogen');
+  bogen.textContent = '';
+  druckBogenFuellen(bogen, $('vorschau-blaetter'), folge, druckWahl);
+
+  document.body.classList.add('druckt');
+
+  let fertig = false;
+  const aufraeumen = () => {
+    if (fertig) return;
+    fertig = true;
+    druckAufraeumen = null;
+    document.body.classList.remove('druckt');
+    bogen.textContent = '';
+    window.removeEventListener('afterprint', aufraeumen);
+    if (warZu) {
+      seite.hidden = true;
+      seite.classList.remove('vorschau--still');
+      $('vorschau-blaetter').textContent = '';
+    } else {
+      vorschauZoomAnwenden();
+      vorschauStandZeigen();
+    }
+  };
+  window.addEventListener('afterprint', aufraeumen);
+  druckAufraeumen = aufraeumen;
+
+  druckAbschicken(bogen.children.length, aufraeumen);
+}
+
+/* ------------------------------------------------------------
+   Der Weg zum Drucker
+
+   Zwei Wege, und der erste ist der gute: start.py hängt den Auftrag an
+   dieselbe Ansicht, die gerade die Blätter zeigt, und gibt ihn mit den
+   Einstellungen aus diesem Fenster an den Druckerdienst weiter. Dann
+   kommt kein zweites Fenster mehr, und der Drucker, das Beidseitige und
+   der Papierschacht sind die, die hier eingestellt wurden.
+
+   Geht das nicht — im Browser statt im eigenen Fenster, oder es ist gar
+   kein Drucker eingerichtet —, dann öffnet das Fenster des Systems. Der
+   Ausdruck ist derselbe; nur gefragt wird woanders.
+   ------------------------------------------------------------ */
+async function druckAbschicken(blaetter, aufraeumen) {
+  const wieviel = blaetter + (blaetter === 1 ? ' Blatt' : ' Blätter');
+
+  if (druckerSelbst && druckerName) {
+    melde(wieviel + ' an ' + druckerName + ' …');
+    try {
+      const antwort = await fetch('drucken', {
+        method: 'POST',
+        body: JSON.stringify({
+          drucker: druckerName,
+          /* Die Kopien liegen schon als Blätter im Bogen — der Drucker
+             darf sie nicht ein zweites Mal vervielfachen. */
+          kopien: 1,
+          duplex: $('druck-duplex').disabled ? 'einseitig' : druckerDuplex,
+          optionen: druckerGeraet,
+          breite: druckBogenMass.breite,
+          hoehe: druckBogenMass.hoehe,
+        }),
+      });
+      if (!antwort.ok) {
+        let grund = 'Fehler ' + antwort.status;
+        try { grund = (await antwort.json()).fehler || grund; } catch (e) { /* egal */ }
+        throw new Error(grund);
+      }
+      melde(wieviel + ' an ' + druckerName + ' gegeben.');
+      aufraeumen();
+      return;
+    } catch (grund) {
+      melde('Der Drucker ging nicht: ' + grund.message + ' — es kommt das Fenster des Systems.');
+    }
+  } else {
+    melde(wieviel + ' — das Fenster des Systems fragt nach dem Drucker.');
+  }
+
+  window.print();
+  /* Nicht jeder Browser meldet „afterprint". Nach dem Druckfenster des
+     Systems wird deshalb so oder so aufgeräumt. */
+  setTimeout(aufraeumen, 15000);
+}
+
+/* Seiten pro Blatt: Bei „1" ist ein Blatt eine Seite. Bei „2" oder „4"
+   werden mehrere Seiten verkleinert auf ein Blatt gestellt — wie im
+   Writer unter „Seiten pro Blatt". */
+let druckBogenMass = { breite: 210, hoehe: 297 };
+
+function druckBogenFuellen(bogen, stapel, folge, wahl) {
+  const { breite, hoehe } = vorschauMasse();
+  const proBlatt = [1, 2, 4].includes(wahl.proBlatt) ? wahl.proBlatt : 1;
+
+  const holen = (nummer) => stapel.children[nummer - 1].firstElementChild.cloneNode(true);
+
+  if (proBlatt === 1) {
+    for (const nummer of folge) {
+      const seite = holen(nummer);
+      seite.classList.remove('vorschau__seite--hier');
+      bogen.appendChild(seite);
+    }
+    druckPapierregel(breite, hoehe);
+    druckBogenMass = { breite, hoehe };
+    return;
+  }
+
+  /* Zwei Seiten liegen nebeneinander auf einem quergedrehten Blatt, vier
+     stehen zu zweit übereinander. So macht es der Writer, und so faltet
+     man es hinterher. */
+  const spalten = proBlatt === 2 ? 2 : 2;
+  const reihen = proBlatt === 2 ? 1 : 2;
+  const blattBreite = proBlatt === 2 ? hoehe : breite;
+  const blattHoehe = proBlatt === 2 ? breite : hoehe;
+  const luft = 4;                                   /* Millimeter Rand */
+  const fachBreite = (blattBreite - luft * (spalten + 1)) / spalten;
+  const fachHoehe = (blattHoehe - luft * (reihen + 1)) / reihen;
+  const skala = Math.min(fachBreite / breite, fachHoehe / hoehe);
+
+  for (let i = 0; i < folge.length; i += proBlatt) {
+    const blatt = document.createElement('div');
+    blatt.className = 'druckbogen__blatt';
+    blatt.style.width = blattBreite + 'mm';
+    blatt.style.height = blattHoehe + 'mm';
+    blatt.style.padding = luft + 'mm';
+    blatt.style.gap = luft + 'mm';
+    blatt.style.gridTemplateColumns = 'repeat(' + spalten + ', 1fr)';
+
+    for (let k = 0; k < proBlatt && i + k < folge.length; k++) {
+      const fach = document.createElement('div');
+      fach.className = 'druckbogen__fach';
+      const seite = holen(folge[i + k]);
+      seite.classList.remove('vorschau__seite--hier');
+      seite.style.transform = 'scale(' + skala.toFixed(4) + ')';
+      seite.style.transformOrigin = 'top left';
+      fach.appendChild(seite);
+      blatt.appendChild(fach);
+    }
+    bogen.appendChild(blatt);
+  }
+  /* Mehrere Seiten auf einem Blatt heißt: Das Blatt liegt quer, wenn zwei
+     Hochformatseiten nebeneinanderstehen. Der Drucker muss das wissen. */
+  druckPapierregel(blattBreite, blattHoehe);
+  druckBogenMass = { breite: blattBreite, hoehe: blattHoehe };
+}
+
+function druckPapierregel(breite, hoehe) {
+  let regel = document.getElementById('bogenregel');
+  if (!regel) {
+    regel = document.createElement('style');
+    regel.id = 'bogenregel';
+    document.head.appendChild(regel);
+  }
+  regel.textContent = '@media print{@page{size:' + breite + 'mm ' + hoehe + 'mm;margin:0}}';
+}
 
 /* ---- Tabelle ---- */
 function zelleJetzt() {
@@ -2592,6 +4661,7 @@ function papierAnwenden() {
   Speicher.schreib('quer', quer);
   menueBauen();
   zahlenAuffrischen();
+  linealAuffrischen();
 }
 
 const setzePapier = (art) => () => { papier = art; papierAnwenden(); melde(PAPIERE[art].name + '.'); };
@@ -5349,6 +7419,7 @@ function setzeZoom(wert) {
   $('blatt').style.zoom = (zoom / 100).toFixed(2);
   $('status-zoom').textContent = zoom + ' %';
   Speicher.schreib('zoom', zoom);
+  linealAuffrischen();
 }
 B.groesser = () => setzeZoom(zoom + 10);
 B.kleiner  = () => setzeZoom(zoom - 10);
@@ -5402,6 +7473,7 @@ const MENUES = [
     strich,
     { name: 'Druckvorschau', tun: B.vorschau },
     { name: 'Drucken…', tun: B.drucken, taste: 'Strg+P' },
+    { name: 'Druckereinstellungen…', tun: B.druckerEinrichten },
     strich,
     { name: 'Beenden', tun: B.beenden },
   ]],
@@ -5453,6 +7525,8 @@ const MENUES = [
     ] },
     { name: 'Anzeigen', unter: [
       { name: 'Benutzeroberfläche…', tun: B.benutzeroberflaeche },
+      { name: 'Register anpassen…', tun: B.registerAnpassen },
+      { name: 'Symbol austauschen…', tun: () => B.symbolTauschen() },
       strich,
       { name: 'Menüleiste', tun: B.menueleisteZeigen, haken: () => menueleisteAn },
       { name: 'Symbolleisten', tun: B.leistenZeigen, haken: () => leistenAn },
@@ -6308,49 +8382,10 @@ let wzGroesse = null;
 
 /* Kleine Strichzeichnungen statt Buchstaben-Behelfen. Sie stehen hier im
    Code und nicht als Bilddateien daneben: ein Symbol, eine Zeile. */
-const SYMBOLE = {
-  speichern: 'M4 4h11l5 5v11H4z M8 4v5h6V4 M8 20v-6h8v6',
-  drucken:   'M7 9V4h10v5 M7 17H5a1 1 0 0 1-1-1v-5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1h-2 M7 14h10v6H7z',
-  zurueck:   'M4 10h10a5 5 0 1 1 0 10h-3 M8 6l-4 4 4 4',
-  vor:       'M20 10H10a5 5 0 1 0 0 10h3 M16 6l4 4-4 4',
-  links:     'M4 6h16 M4 11h10 M4 16h16 M4 21h10',
-  mitte:     'M4 6h16 M7 11h10 M4 16h16 M7 21h10',
-  rechts:    'M4 6h16 M10 11h10 M4 16h16 M10 21h10',
-  block:     'M4 6h16 M4 11h16 M4 16h16 M4 21h16',
-  punkte:    'M9 7h11 M9 12h11 M9 17h11 M5 7h.01 M5 12h.01 M5 17h.01',
-  zahlen:    'M10 7h10 M10 12h10 M10 17h10 M4 6h2v4 M4 10h3',
-  mehr:      'M4 6h16 M4 18h16 M10 12h10 M4 12l3-2.5v5z',
-  weniger:   'M4 6h16 M4 18h16 M10 12h10 M7 12L4 9.5v5z',
-  haken:     'M4 12.5l5 5L20 6.5',
-  neu:       'M6 3h8l4 4v14H6z M14 3v5h4',
-  oeffnen:   'M3 7h6l2 2h10v10H3z',
-  pdf:       'M6 3h8l4 4v14H6z M14 3v5h4 M9 14h1.5a1.5 1.5 0 0 0 0-3H9v6 M14 12h3 M14 15h2',
-  vorschau:  'M2 12s4-6 10-6 10 6 10 6-4 6-10 6-10-6-10-6z M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6',
-  schere:    'M6 4l12 12 M18 4L6 16 M6 18a2 2 0 1 0 0 .01 M18 18a2 2 0 1 0 0 .01',
-  kopie:     'M8 8h11v13H8z M5 16H3V3h13v2',
-  kleben:    'M9 3h6v3H9z M6 5h2v2h8V5h2v16H6z',
-  pinsel:    'M4 20h6 M7 20v-5 M5 15h10a3 3 0 0 0 3-3V4H8v8a3 3 0 0 0 3 3',
-  tabelle:   'M3 4h18v16H3z M3 10h18 M3 15h18 M9 4v16 M15 4v16',
-  bild:      'M3 5h18v14H3z M3 15l5-5 4 4 3-3 6 6',
-  rahmen:    'M3 6h18v12H3z M7 10h10 M7 14h6',
-  umbruch:   'M4 7h16 M4 17h16 M9 12h11 M6 12l2-2v4z',
-  kette:     'M10 13a5 5 0 0 0 7 0l2-2a5 5 0 0 0-7-7l-1 1 M14 11a5 5 0 0 0-7 0l-2 2a5 5 0 0 0 7 7l1-1',
-  kopfz:     'M3 4h18v5H3z M5 13h14 M5 17h10',
-  fussz:     'M3 15h18v5H3z M5 7h14 M5 11h10',
-  zahl:      'M3 4h18v11H3z M8 20h8 M12 17v3',
-  notiz:     'M4 4h16v12H9l-5 4z',
-  omega:     'M6 20h4v-2a7 7 0 1 1 4 0v2h4',
-  hoch:      'M4 18l7-11 M11 18L4 7 M16 9h4 M18 7v4',
-  tief:      'M4 16l7-11 M11 16L4 5 M16 19h4 M18 17v4',
-  radierer:  'M7 20h13 M4 15l7-7 6 6-5 5H6z',
-  farbe:     'M6 17h12 M8 14l4-9 4 9 M9.5 11h5',
-  marker:    'M4 20h16 M7 16l8-8 3 3-8 8z M13 6l3 3',
-  abstand:   'M6 4v16 M4 6l2-2 2 2 M4 18l2 2 2-2 M11 7h9 M11 12h9 M11 17h9',
-  lupe:      'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14 M16 16l5 5',
-  saeule:    'M3 20h18 M6 20V11h3v9 M11 20V6h3v14 M16 20v-6h3v6',
-  stift:     'M4 20h4L20 8l-4-4L4 16z M14 6l4 4',
-  verfolgt:  'M5 19h14 M8 15l9-9 3 3-9 9H8z M6 4h5 M8.5 2v4',
-};
+/* Die Zeichnungen stehen in daten/symbole.js — dort beieinander und ohne
+   Programm drumherum. Warum als Pfade und nicht als Dateien, steht dort
+   im Kopf erklärt. */
+
 
 function symbol(name) {
   const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -6364,7 +8399,7 @@ function symbol(name) {
   s.setAttribute('stroke-linejoin', 'round');
   s.setAttribute('aria-hidden', 'true');
   const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  p.setAttribute('d', SYMBOLE[name]);
+  p.setAttribute('d', symbolPfad(name));
   s.appendChild(p);
   return s;
 }
@@ -7412,6 +9447,14 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'F8') { e.preventDefault(); kiKorrigieren(); return; }
   if (e.key === 'F9') { e.preventDefault(); Einstellungen.oeffnen(); return; }
   if (e.key === 'F5') { e.preventDefault(); B.tafelZeigen(); return; }
+  /* Zuerst die Fenster, die über allem liegen: Wer sie nicht mehr
+     zubekommt, kommt an gar nichts mehr heran. Ein Rückfrage-Kasten liegt
+     noch darüber und bringt seinen eigenen Ausgang mit — solange einer
+     offen steht, ist er gemeint und nicht das Fenster darunter. */
+  if (e.key === 'Escape' && !document.querySelector('.dialoggrund')) {
+    if (!$('druckfenster').hidden) { druckFensterSchliessen(); return; }
+    if (vorschauOffen) { vorschauSchliessen(); return; }
+  }
   if (e.key === 'Escape' && lesemodus) { B.lesemodus(); return; }
   if (e.key === 'Escape' && Einstellungen.offen()) { Einstellungen.schliessen(); return; }
   if (e.key === 'F6') { e.preventDefault(); B.welcheHilfe(); return; }
@@ -7439,6 +9482,10 @@ document.addEventListener('keydown', (e) => {
     if (!zieht) return;
     const neu = Math.max(250, Math.min(640, window.innerWidth - e.clientX));
     tafel.style.flexBasis = neu + 'px';
+    /* Die Arbeitsfläche wird dabei schmaler, und das Blatt rutscht — also
+       muss das Lineal mit. Die Größenbeobachtung allein hat das nicht
+       zuverlässig gemeldet; hier weiß das Programm es ohnehin. */
+    linealAuffrischen();
   });
   window.addEventListener('mouseup', () => {
     if (!zieht) return;
@@ -7470,6 +9517,11 @@ feld.addEventListener('keyup', (e) => {
 });
 document.addEventListener('dokument:geaendert', geaendertMelden);
 document.addEventListener('selectionchange', werkzeugeAuffrischen);
+/* Die Einzugsmarken zeigen den Absatz, in dem der Zeiger steht — also
+   müssen sie ihm folgen. */
+document.addEventListener('selectionchange', linealAuffrischen);
+window.addEventListener('resize', linealAuffrischen);
+$('arbeitsflaeche').addEventListener('scroll', linealAuffrischen);
 /* Der Pinsel wartet auf die nächste Markierung. Beim Loslassen der Maus
    steht fest, was sie umfasst — vorher wäre es ein halber Satz. */
 feld.addEventListener('mouseup', () => setTimeout(pinselAnwenden, 0));

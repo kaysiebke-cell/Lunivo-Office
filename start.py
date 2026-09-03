@@ -23,6 +23,7 @@ import math
 import mimetypes
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import tempfile
@@ -990,6 +991,234 @@ def bilder_einbetten(seite, ordner):
     return text.encode("utf-8")
 
 
+
+# ============================================================
+# Der Drucker
+#
+# Bisher ging der Ausdruck über das Druckfenster des Browsers: Das Programm
+# legte die Blätter zurecht, und wohin sie gehen, fragte ein zweites Fenster,
+# das dem System gehört. Zwei Fenster für einen Vorgang — und die Hälfte der
+# Einstellungen lag im zweiten, wo man sie nicht suchte.
+#
+# Hier druckt das Programm selbst. WebKit kann das: Es setzt die Seite so,
+# wie sie beim Drucken aussieht, und gibt sie mit den Einstellungen weiter,
+# die es bekommt. Der Drucker, die Zahl der Kopien, der beidseitige Druck
+# und der Papierschacht stehen damit in unserem eigenen Fenster.
+#
+# Was der Drucker kann, wird nicht geraten: Es steht in seiner Beschreibung,
+# und CUPS gibt sie her. Ein Drucker ohne Duplexeinheit bekommt hier keinen
+# Schalter dafür — ein Schalter, der nichts bewirkt, ist schlimmer als
+# keiner.
+# ============================================================
+
+ANSICHT = {"seite": None}       # die WebKit-Ansicht, sobald sie steht
+DRUCKE = []                     # laufende Druckvorgänge, siehe drucken_los()
+
+
+def drucker_namen():
+    """Die Namen der eingerichteten Drucker und der voreingestellte."""
+    if not shutil.which("lpstat"):
+        return [], ""
+    namen = []
+    try:
+        roh = subprocess.run(["lpstat", "-a"], capture_output=True,
+                             text=True, timeout=5).stdout
+        for zeile in roh.splitlines():
+            erstes = zeile.split(" ", 1)[0].strip()
+            if erstes:
+                namen.append(erstes)
+    except (OSError, subprocess.SubprocessError):
+        return [], ""
+
+    standard = ""
+    try:
+        roh = subprocess.run(["lpstat", "-d"], capture_output=True,
+                             text=True, timeout=5).stdout
+        # „system default destination: HP_LaserJet"
+        if ":" in roh:
+            standard = roh.split(":", 1)[1].strip()
+    except (OSError, subprocess.SubprocessError):
+        pass
+    return namen, standard
+
+
+def drucker_werte(name):
+    """Art, Ort und Kommentar eines Druckers — das, was CUPS über ihn weiß."""
+    werte = {}
+    try:
+        roh = subprocess.run(["lpoptions", "-p", name], capture_output=True,
+                             text=True, timeout=5).stdout
+    except (OSError, subprocess.SubprocessError):
+        return werte
+    # „printer-location='Büro'" — die Werte stehen in Anführungszeichen,
+    # sobald ein Leerzeichen darin vorkommt. shlex nimmt sie richtig
+    # auseinander; ein einfaches split() zerrisse „HP LaserJet 1200".
+    try:
+        stuecke = shlex.split(roh)
+    except ValueError:
+        stuecke = roh.split()
+    for stueck in stuecke:
+        if "=" in stueck:
+            schluessel, wert = stueck.split("=", 1)
+            werte[schluessel] = wert
+    return werte
+
+
+# Was uns von den Druckereigenschaften interessiert, und wie es auf Deutsch
+# heißt. Alles Übrige, was ein Treiber noch mitbringt, gehört in seine
+# eigene Verwaltung und nicht in ein Schreibprogramm.
+DRUCKER_OPTIONEN = [
+    ("Duplex", "Beidseitig"),
+    ("InputSlot", "Papierschacht"),
+    ("ColorModel", "Farbe"),
+    ("Resolution", "Auflösung"),
+    ("MediaType", "Papiersorte"),
+]
+
+
+def drucker_moeglichkeiten(name):
+    """Was dieser Drucker anbietet, mit dem Wert, der gerade gilt.
+
+    „lpoptions -l" gibt Zeilen der Form
+        Duplex/Double-Sided Printing: *None DuplexNoTumble DuplexTumble
+    aus. Vor dem Schrägstrich steht der Schlüssel, hinter dem Doppelpunkt
+    die Auswahl, und der Stern markiert das Eingestellte.
+    """
+    gefunden = {}
+    try:
+        roh = subprocess.run(["lpoptions", "-p", name, "-l"],
+                             capture_output=True, text=True, timeout=5).stdout
+    except (OSError, subprocess.SubprocessError):
+        return []
+    for zeile in roh.splitlines():
+        if ":" not in zeile:
+            continue
+        kopf, rest = zeile.split(":", 1)
+        schluessel = kopf.split("/")[0].strip()
+        werte, jetzt = [], ""
+        for stueck in rest.split():
+            if stueck.startswith("*"):
+                stueck = stueck[1:]
+                jetzt = stueck
+            if stueck:
+                werte.append(stueck)
+        if werte:
+            gefunden[schluessel] = {"werte": werte, "jetzt": jetzt}
+
+    liste = []
+    for schluessel, deutsch in DRUCKER_OPTIONEN:
+        if schluessel in gefunden and len(gefunden[schluessel]["werte"]) > 1:
+            liste.append({"schluessel": schluessel, "name": deutsch,
+                          "werte": gefunden[schluessel]["werte"],
+                          "jetzt": gefunden[schluessel]["jetzt"]})
+    return liste
+
+
+def drucker_lesen():
+    """Die ganze Auskunft für das Druckfenster."""
+    namen, standard = drucker_namen()
+    drucker = []
+    for name in namen:
+        werte = drucker_werte(name)
+        drucker.append({
+            "name": name,
+            "typ": werte.get("printer-make-and-model", ""),
+            "ort": werte.get("printer-location", ""),
+            "kommentar": werte.get("printer-info", ""),
+            "bereit": werte.get("printer-state", "3") == "3",
+            "standard": name == standard,
+            "optionen": drucker_moeglichkeiten(name),
+        })
+    return {"drucker": drucker, "standard": standard,
+            # Ohne eigenes Fenster (im Browser aufgerufen) gibt es keine
+            # WebKit-Ansicht, an die sich ein Druckauftrag hängen ließe.
+            "selbst": ANSICHT["seite"] is not None}
+
+
+DUPLEX = {
+    "einseitig": Gtk.PrintDuplex.SIMPLEX,
+    "lange": Gtk.PrintDuplex.HORIZONTAL,     # Wenden um die lange Kante
+    "kurze": Gtk.PrintDuplex.VERTICAL,
+}
+
+
+def drucken_los(wahl):
+    """Druckt das, was die Ansicht gerade zeigt.
+
+    Das ist kein Umweg: Die Seite steht in diesem Augenblick auf
+    „druckt" — sichtbar sind dann nur die fertigen Blätter, und genau die
+    setzt WebKit für den Drucker noch einmal. Vorschau und Ausdruck kommen
+    damit nicht nur aus derselben Rechnung, sondern aus demselben Bild.
+    """
+    seite = ANSICHT["seite"]
+    if seite is None:
+        raise RuntimeError("Ohne das eigene Fenster kann nur der Browser drucken.")
+
+    fertig = threading.Event()
+    ausgang = {"fehler": None}
+
+    def tun():
+        try:
+            auftrag = WebKit2.PrintOperation.new(seite)
+
+            einst = Gtk.PrintSettings()
+            name = (wahl.get("drucker") or "").strip()
+            if name:
+                einst.set_printer(name)
+            einst.set_n_copies(max(1, min(99, int(wahl.get("kopien") or 1))))
+            einst.set_collate(bool(wahl.get("sortieren", True)))
+            beidseitig = wahl.get("duplex") or "einseitig"
+            einst.set_duplex(DUPLEX.get(beidseitig, Gtk.PrintDuplex.SIMPLEX))
+
+            # Alles, was aus der Beschreibung des Druckers kam, geht
+            # unverändert zurück. Der CUPS-Teil von GTK erkennt es an dem
+            # vorangestellten „cups-".
+            for schluessel, wert in (wahl.get("optionen") or {}).items():
+                if isinstance(schluessel, str) and isinstance(wert, str) and wert:
+                    einst.set("cups-" + schluessel, wert)
+
+            breite = float(wahl.get("breite") or 210)
+            hoehe = float(wahl.get("hoehe") or 297)
+            aufbau = Gtk.PageSetup()
+            aufbau.set_paper_size(Gtk.PaperSize.new_custom(
+                "lunivo", "Lunivo", breite, hoehe, Gtk.Unit.MM))
+            # Den Rand setzt das Blatt selbst — es bringt seinen eigenen mit.
+            for setzen in (aufbau.set_top_margin, aufbau.set_bottom_margin,
+                           aufbau.set_left_margin, aufbau.set_right_margin):
+                setzen(0, Gtk.Unit.MM)
+            aufbau.set_orientation(Gtk.PageOrientation.PORTRAIT)
+
+            auftrag.set_print_settings(einst)
+            auftrag.set_page_setup(aufbau)
+
+            def weg(*_):
+                if auftrag in DRUCKE:
+                    DRUCKE.remove(auftrag)
+                fertig.set()
+
+            def schiefgegangen(_auftrag, grund):
+                ausgang["fehler"] = grund.message if hasattr(grund, "message") else str(grund)
+                weg()
+
+            auftrag.connect("finished", weg)
+            auftrag.connect("failed", schiefgegangen)
+            # Ohne diese Zeile räumt Python den Auftrag weg, bevor der
+            # Drucker ihn hat.
+            DRUCKE.append(auftrag)
+            auftrag.print_()
+        except Exception as grund:                          # noqa: BLE001
+            ausgang["fehler"] = str(grund)
+            fertig.set()
+        return False
+
+    GLib.idle_add(tun)
+    if not fertig.wait(180):
+        raise RuntimeError("Der Drucker hat nicht geantwortet.")
+    if ausgang["fehler"]:
+        raise RuntimeError(ausgang["fehler"])
+    return True
+
+
 class Leise(http.server.SimpleHTTPRequestHandler):
     """Wie der eingebaute Server, nur ohne Zeile für jede Datei."""
 
@@ -1079,6 +1308,11 @@ class Leise(http.server.SimpleHTTPRequestHandler):
             self.send_header("Content-Length", str(len(ladung)))
             self.end_headers()
             self.wfile.write(ladung)
+            return
+
+        # Welche Drucker das System kennt und was sie können.
+        if self.path.split("?")[0] == "/drucker":
+            self.auskunft(drucker_lesen())
             return
 
         if self.path.split("?")[0] == "/schriften.json":
@@ -1176,6 +1410,23 @@ class Leise(http.server.SimpleHTTPRequestHandler):
 
         if adresse.path == "/ordner-waehlen":
             self.auskunft({"ordner": ordner_waehlen()})
+            return
+
+        # Drucken. Die Seite steht in diesem Augenblick auf „druckt" —
+        # WebKit setzt also genau die Blätter, die die Vorschau zeigt.
+        if adresse.path == "/drucken":
+            laenge = int(self.headers.get("Content-Length") or 0)
+            roh = self.rfile.read(laenge).decode("utf-8", "replace") if laenge else "{}"
+            try:
+                wahl = json.loads(roh) or {}
+            except ValueError:
+                wahl = {}
+            try:
+                drucken_los(wahl)
+            except Exception as grund:                      # noqa: BLE001
+                self.fehler_melden(500, str(grund))
+                return
+            self.auskunft({"gedruckt": True})
             return
 
         if adresse.path == "/vorlesen-stopp":
@@ -1427,6 +1678,10 @@ def main():
     einst.set_javascript_can_access_clipboard(True)
 
     rechtschreibung_einschalten(umgebung)
+
+    # Der Druckauftrag hängt sich an diese Ansicht — sie ist das, was
+    # gesetzt wird, und damit das, was auf das Papier kommt.
+    ANSICHT["seite"] = ansicht
 
     fenster = Gtk.Window(title="Lunivo-Office")
     fenster.set_default_size(1280, 860)
