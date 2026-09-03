@@ -1099,7 +1099,19 @@ FORMATE = {"odt", "fodt", "docx", "doc", "rtf", "html", "txt", "pdf", "epub", "o
 # der Dialog nicht in diesem Ordner. Eine Vorlage, die beim dritten Brief
 # überschrieben ist, war keine.
 # ============================================================
-VORLAGEN_EIGEN = os.path.join(DATEN, "vorlagen")
+# Wo die eigenen Vorlagen liegen: ~/Vorlagen.
+#
+# Zuerst stand das unter .local/share, neben den Daten des Programms. Das
+# war falsch herum gedacht. Dort gehört hin, was dem Programm gehört —
+# Vorlagen gehören dem Menschen. Wer eine Datei aus dem Internet dort
+# hineinlegen soll, muss einen versteckten Ordner suchen, und in einer
+# Dateiverwaltung sieht er ihn nicht einmal.
+#
+# ~/Vorlagen dagegen steht im eigenen Verzeichnis, ist der Ordner, den die
+# Dateiverwaltung als Vorlagenordner kennt, und LibreOffice sieht ihn auch.
+# Der alte Ort wird weiter mitgelesen, damit nichts verschwindet, was schon
+# dort liegt.
+VORLAGEN_ALT = os.path.join(DATEN, "vorlagen")
 
 VORLAGEN_ENDUNGEN = (".odt", ".ott", ".fodt", ".docx", ".dotx", ".docm",
                      ".doc", ".dot", ".rtf", ".html", ".htm", ".txt", ".md")
@@ -1140,12 +1152,29 @@ def vorlagen_ordner_system():
     return None
 
 
+def vorlagen_ordner_eigen():
+    """Der Ordner, in den eigene Vorlagen kommen — sichtbar, nicht versteckt.
+
+    Sagt der Arbeitsplatz, wo sein Vorlagenordner liegt, dann dorthin: Dann
+    ist es derselbe für die Dateiverwaltung, für LibreOffice und für dieses
+    Programm. Sagt er nichts, wird ~/Vorlagen genommen und beim ersten
+    Gebrauch angelegt.
+    """
+    return vorlagen_ordner_system() or os.path.expanduser("~/Vorlagen")
+
+
 def vorlagen_orte():
-    """Die eigenen zuerst, danach der Ordner des Arbeitsplatzes."""
-    orte = [(VORLAGEN_EIGEN, "Meine Vorlagen")]
-    system = vorlagen_ordner_system()
-    if system and os.path.abspath(system) != os.path.abspath(VORLAGEN_EIGEN):
-        orte.append((system, os.path.basename(system.rstrip("/")) or "Vorlagen"))
+    """Wo überall nach Vorlagen gesehen wird."""
+    eigen = vorlagen_ordner_eigen()
+    orte = [(eigen, "Meine Vorlagen")]
+    # Der frühere Ort. Er steht nur in der Liste, wenn wirklich etwas darin
+    # liegt — sonst wäre da eine leere Überschrift, die niemand erklärt.
+    if os.path.abspath(VORLAGEN_ALT) != os.path.abspath(eigen):
+        try:
+            if any(not n.startswith(".") for n in os.listdir(VORLAGEN_ALT)):
+                orte.append((VORLAGEN_ALT, "Früher abgelegt"))
+        except OSError:
+            pass
     return orte
 
 
@@ -1861,9 +1890,10 @@ class Leise(http.server.SimpleHTTPRequestHandler):
             name = vorlage_name_saeubern((wahl.get("name") or [""])[0])
             if name.lower().endswith("." + endung):
                 name = name[: -len(endung) - 1]
-            ziel = os.path.join(VORLAGEN_EIGEN, name + "." + endung)
+            eigen = vorlagen_ordner_eigen()
+            ziel = os.path.join(eigen, name + "." + endung)
             try:
-                os.makedirs(VORLAGEN_EIGEN, exist_ok=True)
+                os.makedirs(eigen, exist_ok=True)
             except OSError as grund:
                 self.fehler_melden(500, str(grund))
                 return
@@ -1871,7 +1901,7 @@ class Leise(http.server.SimpleHTTPRequestHandler):
             # Riegel, der von der Sorgfalt einer anderen Funktion abhängt,
             # ist keiner: Hier wird nachgesehen, wo der Weg tatsächlich
             # hinführt.
-            if os.path.dirname(os.path.realpath(ziel)) != os.path.realpath(VORLAGEN_EIGEN):
+            if os.path.dirname(os.path.realpath(ziel)) != os.path.realpath(eigen):
                 self.fehler_melden(400, "Dieser Name führt aus dem Vorlagenordner heraus.")
                 return
             SPEICHERZIEL["pfad"] = ziel
@@ -1885,14 +1915,14 @@ class Leise(http.server.SimpleHTTPRequestHandler):
         # eigenes Fenster zum Verwalten von Dateien zu bauen, wäre eine
         # schlechtere Dateiverwaltung als die, die schon da ist.
         if adresse.path == "/vorlagen-ordner":
+            eigen = vorlagen_ordner_eigen()
             try:
-                os.makedirs(VORLAGEN_EIGEN, exist_ok=True)
-                subprocess.Popen(["xdg-open", VORLAGEN_EIGEN],
-                                 start_new_session=True)
+                os.makedirs(eigen, exist_ok=True)
+                subprocess.Popen(["xdg-open", eigen], start_new_session=True)
             except OSError as grund:
                 self.fehler_melden(500, str(grund))
                 return
-            self.auskunft({"ordner": VORLAGEN_EIGEN})
+            self.auskunft({"ordner": eigen})
             return
 
         # „Speichern unter": Der Dialog fragt nach Ort und Format.

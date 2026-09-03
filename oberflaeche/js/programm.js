@@ -51,18 +51,43 @@ const B = {};
 /* ---- Datei ---- */
 
 B.neu = () => darfVerwerfen(() => {
+  /* War überhaupt etwas da? Ein leeres Blatt noch einmal zu leeren ändert
+     nichts, und genau daran sah „Neu" aus wie ein toter Knopf: Er tat seine
+     Arbeit, aber es gab keine. Wer drückt, soll wenigstens erfahren, woran
+     er ist. */
+  const warLeer = !Dokument.lies().text.trim()
+                && !$('kopfzeile').textContent.trim()
+                && !$('fusszeile').textContent.trim();
+
   /* Ein neues Blatt hat nichts mit der zuletzt geöffneten Datei zu tun —
      ihr Stilblatt muss weg, sonst schriebe man im Format eines fremden
      Briefes weiter. */
   Dateien.stileSetzen('');
   Speicher.schreib('importstil', '');
   Dokument.setzeInhalt('<p><br></p>');
+
+  /* Kopf- und Fußzeile gehören zum Dokument, nicht zum Programm. Wer ein
+     neues Blatt nimmt, will nicht den Briefkopf des letzten darauf. Ob sie
+     angezeigt werden, bleibt dagegen eingestellt, wie es war — das ist
+     seine Gewohnheit, nicht sein Text. */
+  $('kopfzeile').innerHTML = '<br>';
+  $('fusszeile').innerHTML = '<br>';
+  Speicher.schreib('kopfinhalt', '<br>');
+  Speicher.schreib('fussinhalt', '<br>');
+
   dateiname = 'Unbenannt 1';
   geaendert = false;
   leereFunde('Noch nicht geprüft.');
   merkeText();
   titelSetzen();
-  melde('Neues Blatt.');
+
+  /* Die Schreibstelle ins Blatt: Das ist das, was man nach „Neu" will —
+     lostippen können, ohne erst hinzuklicken. Und es ist zu sehen. */
+  feld.focus();
+
+  melde(warLeer
+    ? 'Das Blatt war schon leer — du kannst gleich losschreiben.'
+    : 'Neues, leeres Blatt.');
 });
 
 /* Welches Format beim Speichern genommen wird, wenn eine Datei dieser Art
@@ -239,6 +264,28 @@ B.vorlageOeffnen = (nr) => darfVerwerfen(async () => {
   /* Ist sie inzwischen weggeworfen, fällt sie beim Nachfragen aus der Liste. */
   await vorlagenHolen();
 });
+
+/* Das Band kann keine Liste ausklappen, die sich ändert — es hat Knöpfe,
+   keine Menüs. Also bekommt es ein Fenster mit derselben Liste. Der Weg zu
+   den Vorlagen darf nicht davon abhängen, welche Oberfläche jemand
+   eingestellt hat. */
+B.vorlagenWaehlen = async () => {
+  await vorlagenHolen();
+  if (!vorlagenListe.length) {
+    fenster('Aus Vorlage', [
+      { art: 'satz', text: 'Im Vorlagenordner liegt noch nichts.\n\n'
+                         + 'Lege eine Datei hinein — .odt, .ott, .docx, .dotx, .rtf —, '
+                         + 'dann steht sie hier. „Vorlagenordner öffnen" bringt dich hin.' },
+    ], () => B.vorlagenOrdner(), 'Ordner öffnen');
+    return;
+  }
+  fenster('Aus Vorlage', [
+    { art: 'satz', text: 'Geöffnet wird eine Abschrift. Die Vorlage selbst bleibt, '
+                       + 'wie sie ist.' },
+    { schluessel: 'nr', name: 'Vorlage', art: 'auswahl',
+      werte: vorlagenListe.map((v, nr) => [String(nr), v.name + '  (' + v.gruppe + ')']) },
+  ], (werte) => B.vorlageOeffnen(parseInt(werte.nr, 10) || 0), 'Öffnen');
+};
 
 B.vorlageBehalten = async () => {
   fenster('Als Vorlage behalten', [
@@ -1499,9 +1546,14 @@ document.addEventListener('keydown', (e) => {
    zeigt, was es gibt. */
 const REGISTER = [
   ['Datei', [
+    /* „Aus Vorlage" stand zuerst nur in der Menüleiste. Wer mit dem Band
+       arbeitet, sah davon nichts und suchte einen Ordner, zu dem es keinen
+       Weg gab. Ein Weg, den nur die Hälfte der Oberfläche kennt, ist keiner. */
     ['Neu', [['neu', 'Neu', () => B.neu(), 'gross'],
                     ['oeffnen', 'Öffnen', () => B.oeffnen(), 'gross'],
-                    ['zuletzt', 'Zuletzt geöffnet', () => B.zuletztOeffnen()]]],
+                    ['deckblatt', 'Aus Vorlage…', () => B.vorlagenWaehlen(), 'gross'],
+                    ['zuletzt', 'Zuletzt geöffnet', () => B.zuletztOeffnen()],
+                    ['oeffnen', 'Vorlagenordner öffnen', () => B.vorlagenOrdner()]]],
     /* Hier standen einmal acht Knöpfe für acht Dateiformate — lose
        nebeneinander, und obendrein doppelt: Der Speichern-Dialog des
        Systems bringt dieselbe Auswahl als Klappmenü „Dateityp" mit, samt
