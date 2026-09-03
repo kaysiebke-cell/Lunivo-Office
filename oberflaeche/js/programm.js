@@ -50,8 +50,7 @@ const B = {};
 
 /* ---- Datei ---- */
 
-B.neu = () => {
-  if (!darfVerwerfen()) return;
+B.neu = () => darfVerwerfen(() => {
   /* Ein neues Blatt hat nichts mit der zuletzt geöffneten Datei zu tun —
      ihr Stilblatt muss weg, sonst schriebe man im Format eines fremden
      Briefes weiter. */
@@ -63,7 +62,8 @@ B.neu = () => {
   leereFunde('Noch nicht geprüft.');
   merkeText();
   titelSetzen();
-};
+  melde('Neues Blatt.');
+});
 
 /* Welches Format beim Speichern genommen wird, wenn eine Datei dieser Art
    geöffnet wurde. Was sich nicht zurückschreiben lässt, kommt dem Nächsten
@@ -74,9 +74,7 @@ const SCHREIBBAR = {
   dotx: 'docx', docm: 'docx', odf: 'odt', ott: 'odt', dot: 'doc',
 };
 
-B.oeffnen = async () => {
-  if (!darfVerwerfen()) return;
-
+B.oeffnen = () => darfVerwerfen(async () => {
   /* Erst der Dateibrowser des Systems — der kennt die Ordner des Menschen,
      seine Lesezeichen und die gewohnte Bedienung. Nur wenn es ihn nicht gibt
      (im Browser statt im eigenen Fenster), bleibt der schlichte Dateiwähler. */
@@ -113,7 +111,7 @@ B.oeffnen = async () => {
     if (datei) await dateiUebernehmen(datei);
   });
   waehler.click();
-};
+});
 
 /* Die zuletzt geöffneten Dateien.
 
@@ -146,7 +144,7 @@ function zuletztPunkte() {
   }));
 }
 
-B.zuletztOeffnen = async (nr) => {
+B.zuletztOeffnen = (nr) => darfVerwerfen(async () => {
   try {
     const antwort = await fetch('zuletzt-oeffnen?nr=' + nr, { method: 'POST' });
     if (!antwort.ok) {
@@ -164,7 +162,7 @@ B.zuletztOeffnen = async (nr) => {
   /* In beiden Fällen: Ist die Datei inzwischen weg, fällt sie beim
      Nachfragen aus der Liste und steht beim nächsten Aufklappen nicht mehr da. */
   await zuletztHolen();
-};
+});
 
 /* ------------------------------------------------------------
    Neu aus Vorlage
@@ -221,8 +219,7 @@ function vorlagenPunkte() {
   return punkte;
 }
 
-B.vorlageOeffnen = async (nr) => {
-  if (!darfVerwerfen()) return;
+B.vorlageOeffnen = (nr) => darfVerwerfen(async () => {
   try {
     const antwort = await fetch('vorlage-oeffnen?nr=' + nr, { method: 'POST' });
     if (!antwort.ok) {
@@ -241,7 +238,7 @@ B.vorlageOeffnen = async (nr) => {
   }
   /* Ist sie inzwischen weggeworfen, fällt sie beim Nachfragen aus der Liste. */
   await vorlagenHolen();
-};
+});
 
 B.vorlageBehalten = async () => {
   fenster('Als Vorlage behalten', [
@@ -474,19 +471,23 @@ function formatFragen() {
 B.speichernPdf   = () => speichereAls('pdf');
 
 B.umbenennen = () => {
-  const neu = prompt('Wie soll das Dokument heißen?', dateiname);
-  /* Leer heißt: nichts tun. Nicht „Unbenannt 1" — ein Dokument umzubenennen,
-     ohne einen Namen zu nennen, ist kein Wunsch, sondern ein Abbruch. Und im
-     eigenen Fenster kommt ein Abbruch als leerer Text an, nicht als null. */
-  if (!neu || !neu.trim()) return;
-  dateiname = neu.trim();
-  titelSetzen();
+  fenster('Umbenennen', [
+    { schluessel: 'name', name: 'Name', art: 'text', wert: dateiname },
+  ], (werte) => {
+    /* Leer heißt: nichts tun. Nicht „Unbenannt 1" — ein Dokument
+       umzubenennen, ohne einen Namen zu nennen, ist kein Wunsch. */
+    const neu = (werte.name || '').trim();
+    if (!neu) { melde('Ohne Namen bleibt es, wie es hieß.'); return; }
+    dateiname = neu;
+    titelSetzen();
+    melde('Heißt jetzt „' + neu + '".');
+  }, 'Umbenennen');
 };
 
 /* „Drucken…“ öffnet das Druckfenster — siehe den Abschnitt
    „Drucken: die Vorschau und das Druckfenster“ weiter unten. */
 
-B.beenden = () => { if (darfVerwerfen()) window.close(); };
+B.beenden = () => darfVerwerfen(() => window.close());
 
 /* ---- Bearbeiten ---- */
 
@@ -667,12 +668,26 @@ B.bild = () => {
 };
 
 B.tabelle = () => {
-  const zeilen = parseInt(prompt('Wie viele Zeilen?', '3'), 10);
-  if (!zeilen || zeilen < 1) return;
-  const spalten = parseInt(prompt('Wie viele Spalten?', '3'), 10);
-  if (!spalten || spalten < 1) return;
-  const zeile = '<tr>' + '<td><br></td>'.repeat(Math.min(spalten, 20)) + '</tr>';
-  Dokument.einfuegen('<table>' + zeile.repeat(Math.min(zeilen, 200)) + '</table><p><br></p>');
+  auswahlMerken();
+  /* Zwei Fragen nacheinander waren zwei Fenster. Eines mit zwei Zeilen ist
+     dasselbe in einem Blick — und man kann die erste noch ändern, bevor man
+     die zweite beantwortet hat. */
+  fenster('Tabelle einfügen', [
+    { schluessel: 'zeilen', name: 'Zeilen', art: 'text', wert: '3' },
+    { schluessel: 'spalten', name: 'Spalten', art: 'text', wert: '3' },
+  ], (werte) => {
+    const zeilen = parseInt(werte.zeilen, 10);
+    const spalten = parseInt(werte.spalten, 10);
+    if (!zeilen || zeilen < 1 || !spalten || spalten < 1) {
+      melde('Zeilen und Spalten müssen Zahlen ab 1 sein.');
+      return;
+    }
+    auswahlZurueck();
+    const zeile = '<tr>' + '<td><br></td>'.repeat(Math.min(spalten, 20)) + '</tr>';
+    Dokument.einfuegen('<table>' + zeile.repeat(Math.min(zeilen, 200)) + '</table><p><br></p>');
+    melde('Tabelle mit ' + Math.min(zeilen, 200) + ' Zeilen und '
+        + Math.min(spalten, 20) + ' Spalten eingefügt.');
+  }, 'Einfügen');
 };
 
 const zeichen = (z) => () => Dokument.einfuegen(z === ' ' ? '&nbsp;' : z);
@@ -10313,9 +10328,25 @@ function geaendertMelden() {
   merkeText();
 }
 
-function darfVerwerfen() {
-  if (!geaendert) return true;
-  return confirm('Das Dokument ist nicht gespeichert. Trotzdem weitermachen?');
+/* Die Rückfrage, bevor ungesicherte Arbeit weggeht.
+
+   Sie lief einmal über confirm(). Das ist im eigenen Fenster der falsche
+   Weg: WebKit zeigt dafür nur dann etwas, wenn das Programm den Dialog
+   selbst baut — und was nur mit fremder Hilfe erscheint, kann auch
+   ausbleiben. Genau das geschah: „Neu" tat scheinbar nichts, weil die
+   Frage unsichtbar auf eine Antwort wartete.
+
+   Jetzt fragt das Programm mit seinem eigenen Fenster. Das steht im Blatt,
+   sieht aus wie alles andere und braucht niemanden sonst. Der Preis ist,
+   dass die Antwort später kommt: Wer fragt, bekommt sie als Rückruf statt
+   als Rückgabewert — deshalb nimmt darfVerwerfen jetzt entgegen, was danach
+   geschehen soll. */
+function darfVerwerfen(dann) {
+  if (!geaendert) { dann(); return; }
+  fenster('Nicht gespeichert', [
+    { art: 'satz', text: 'Das Dokument hat Änderungen, die in keiner Datei stehen. '
+                       + 'Wer weitermacht, verliert sie.' },
+  ], () => dann(), 'Trotzdem weiter');
 }
 
 window.addEventListener('beforeunload', (e) => {
