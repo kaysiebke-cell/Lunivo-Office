@@ -511,7 +511,7 @@ const Dateien = (() => {
      einfach in die Seite — es würde auch die Menüs und die Seitenleiste
      umfärben. Deshalb wird jede Regel auf das Blatt eingeschränkt.
      ============================================================ */
-  const UEBER_MOTOR = ['.docx', '.doc', '.rtf', '.odf', '.dotx', '.docm'];
+  const UEBER_MOTOR = ['.docx', '.doc', '.rtf', '.odf', '.dotx', '.docm', '.dot'];
 
   /* Die Seitenränder aus der zuletzt geöffneten Datei — das Programm nebenan
      holt sie sich von hier und stellt das Blatt danach ein. */
@@ -629,7 +629,12 @@ const Dateien = (() => {
       return htmlSaeubern(await fertig.text());
     }
 
-    if (name.endsWith('.odt')) return odfLies(await auspacken(await datei.arrayBuffer(), 'content.xml'));
+    /* „.ott" ist eine ODF-Vorlage — innen dieselbe content.xml wie in einer
+       .odt. Ohne diese Zeile fiel sie durch bis zum Textleser und stand als
+       Zeichensalat im Blatt. */
+    if (name.endsWith('.odt') || name.endsWith('.ott')) {
+      return odfLies(await auspacken(await datei.arrayBuffer(), 'content.xml'));
+    }
     if (name.endsWith('.fodt') || name.endsWith('.xml')) return odfLies(await datei.text());
     if (name.endsWith('.html') || name.endsWith('.htm')) return htmlSaeubern(await datei.text());
     return alsAbsaetze(await datei.text());

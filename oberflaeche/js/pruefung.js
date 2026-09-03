@@ -587,11 +587,45 @@ const Pruefung = (() => {
   /** Wird beim Start im Hintergrund geladen; bis dahin wird nicht getrennt. */
   let WOERTERBUCH_GROSS = null;
 
+  /* ------------------------------------------------------------
+     Die Wörter des Themas
+
+     Welche Wörter gerade vorne stehen sollen, hängt davon ab, an wen der
+     Text geht — das steht in daten/themenwoerter.js. Hier liegt nur, was
+     davon gerade gilt.
+
+     Sie werden auch dem Wörterbuch hinzugefügt, und das ist der wichtigere
+     Teil: „Widerspruchsfrist", „Deckungszusage", „Kostenübernahme" stehen
+     in der großen Liste nicht. Ohne diesen Griff wurden sie nicht nur nie
+     vorgeschlagen, sie bekamen auch noch die rote Wellenlinie — richtig
+     geschrieben und trotzdem als Fehler markiert. Das ist das Gegenteil
+     von Hilfe.
+
+     Einmal aufgenommen, bleiben sie bekannt, auch wenn später ein anderes
+     Thema gewählt wird. Ein deutsches Wort hört nicht auf, eines zu sein,
+     weil man gerade an einen Freund schreibt. */
+  let THEMA = new Set();
+  let THEMA_WARTET = null;
+
+  function themaAufnehmen(woerter) {
+    for (const wort of woerter) WOERTERBUCH_GROSS.add(wort);
+  }
+
+  /** Setzt die Wortliste des gewählten Empfängers. Leer heißt: keine Lenkung. */
+  function themaSetzen(woerter) {
+    THEMA = new Set((woerter || []).filter(Boolean));
+    if (!THEMA.size) return;
+    /* Die Liste kommt aus einer Datei, die vielleicht noch lädt. */
+    if (WOERTERBUCH_GROSS) themaAufnehmen(THEMA);
+    else THEMA_WARTET = THEMA;
+  }
+
   (async () => {
     try {
       const antwort = await fetch('daten/woerter.txt');
       if (!antwort.ok) return;
       WOERTERBUCH_GROSS = new Set((await antwort.text()).split('\n'));
+      if (THEMA_WARTET) { themaAufnehmen(THEMA_WARTET); THEMA_WARTET = null; }
     } catch { /* Ohne Liste entfällt nur das Trennen, alles andere läuft. */ }
   })();
 
@@ -1087,8 +1121,18 @@ const Pruefung = (() => {
        Und gesucht wird durch die ganze Liste: Die frühere Grenze von 400
        Treffern brach die alphabetische Suche mittendrin ab — bei „ver"
        kam sie nie bis „verstehen". */
+    /* Die Reihenfolge, Stufe für Stufe: was dieser Mensch schon einmal
+       gewählt hat, dann was zu dem passt, worüber er gerade schreibt, dann
+       was im Deutschen ohnehin ständig vorkommt, und erst danach die Länge.
+
+       Das Thema steht über der allgemeinen Häufigkeit und unter dem
+       Gelernten. Über der Häufigkeit, weil „Bescheid" in einem Widerspruch
+       wichtiger ist als „besonders", so häufig „besonders" sonst auch sein
+       mag. Unter dem Gelernten, weil kein Thema besser weiß als er selbst,
+       welches Wort er meint. */
     treffer.sort((x, y) =>
       (schonGewaehlt.has(y) ? 1 : 0) - (schonGewaehlt.has(x) ? 1 : 0)
+      || (THEMA.has(y) ? 1 : 0) - (THEMA.has(x) ? 1 : 0)
       || (HAEUFIG.has(y) ? 1 : 0) - (HAEUFIG.has(x) ? 1 : 0)
       || x.length - y.length
       || x.localeCompare(y, 'de'));
@@ -1097,5 +1141,5 @@ const Pruefung = (() => {
   }
 
   return { findeProbleme, Gelernt, vorschlaegeFuer, kennt,
-           klingtWie, koelnerPhonetik, faengtAnMit };
+           klingtWie, koelnerPhonetik, faengtAnMit, themaSetzen };
 })();
