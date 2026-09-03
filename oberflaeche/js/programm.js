@@ -50,20 +50,45 @@ const B = {};
 
 /* ---- Datei ---- */
 
-B.neu = () => {
-  if (!darfVerwerfen()) return;
+B.neu = () => darfVerwerfen(() => {
+  /* War überhaupt etwas da? Ein leeres Blatt noch einmal zu leeren ändert
+     nichts, und genau daran sah „Neu" aus wie ein toter Knopf: Er tat seine
+     Arbeit, aber es gab keine. Wer drückt, soll wenigstens erfahren, woran
+     er ist. */
+  const warLeer = !Dokument.lies().text.trim()
+                && !$('kopfzeile').textContent.trim()
+                && !$('fusszeile').textContent.trim();
+
   /* Ein neues Blatt hat nichts mit der zuletzt geöffneten Datei zu tun —
      ihr Stilblatt muss weg, sonst schriebe man im Format eines fremden
      Briefes weiter. */
   Dateien.stileSetzen('');
   Speicher.schreib('importstil', '');
   Dokument.setzeInhalt('<p><br></p>');
+
+  /* Kopf- und Fußzeile gehören zum Dokument, nicht zum Programm. Wer ein
+     neues Blatt nimmt, will nicht den Briefkopf des letzten darauf. Ob sie
+     angezeigt werden, bleibt dagegen eingestellt, wie es war — das ist
+     seine Gewohnheit, nicht sein Text. */
+  $('kopfzeile').innerHTML = '<br>';
+  $('fusszeile').innerHTML = '<br>';
+  Speicher.schreib('kopfinhalt', '<br>');
+  Speicher.schreib('fussinhalt', '<br>');
+
   dateiname = 'Unbenannt 1';
   geaendert = false;
   leereFunde('Noch nicht geprüft.');
   merkeText();
   titelSetzen();
-};
+
+  /* Die Schreibstelle ins Blatt: Das ist das, was man nach „Neu" will —
+     lostippen können, ohne erst hinzuklicken. Und es ist zu sehen. */
+  feld.focus();
+
+  melde(warLeer
+    ? 'Das Blatt war schon leer — du kannst gleich losschreiben.'
+    : 'Neues, leeres Blatt.');
+});
 
 /* Welches Format beim Speichern genommen wird, wenn eine Datei dieser Art
    geöffnet wurde. Was sich nicht zurückschreiben lässt, kommt dem Nächsten
@@ -74,9 +99,7 @@ const SCHREIBBAR = {
   dotx: 'docx', docm: 'docx', odf: 'odt', ott: 'odt', dot: 'doc',
 };
 
-B.oeffnen = async () => {
-  if (!darfVerwerfen()) return;
-
+B.oeffnen = () => darfVerwerfen(async () => {
   /* Erst der Dateibrowser des Systems — der kennt die Ordner des Menschen,
      seine Lesezeichen und die gewohnte Bedienung. Nur wenn es ihn nicht gibt
      (im Browser statt im eigenen Fenster), bleibt der schlichte Dateiwähler. */
@@ -113,7 +136,7 @@ B.oeffnen = async () => {
     if (datei) await dateiUebernehmen(datei);
   });
   waehler.click();
-};
+});
 
 /* Die zuletzt geöffneten Dateien.
 
@@ -146,7 +169,7 @@ function zuletztPunkte() {
   }));
 }
 
-B.zuletztOeffnen = async (nr) => {
+B.zuletztOeffnen = (nr) => darfVerwerfen(async () => {
   try {
     const antwort = await fetch('zuletzt-oeffnen?nr=' + nr, { method: 'POST' });
     if (!antwort.ok) {
@@ -164,7 +187,7 @@ B.zuletztOeffnen = async (nr) => {
   /* In beiden Fällen: Ist die Datei inzwischen weg, fällt sie beim
      Nachfragen aus der Liste und steht beim nächsten Aufklappen nicht mehr da. */
   await zuletztHolen();
-};
+});
 
 /* ------------------------------------------------------------
    Neu aus Vorlage
@@ -221,8 +244,7 @@ function vorlagenPunkte() {
   return punkte;
 }
 
-B.vorlageOeffnen = async (nr) => {
-  if (!darfVerwerfen()) return;
+B.vorlageOeffnen = (nr) => darfVerwerfen(async () => {
   try {
     const antwort = await fetch('vorlage-oeffnen?nr=' + nr, { method: 'POST' });
     if (!antwort.ok) {
@@ -241,6 +263,28 @@ B.vorlageOeffnen = async (nr) => {
   }
   /* Ist sie inzwischen weggeworfen, fällt sie beim Nachfragen aus der Liste. */
   await vorlagenHolen();
+});
+
+/* Das Band kann keine Liste ausklappen, die sich ändert — es hat Knöpfe,
+   keine Menüs. Also bekommt es ein Fenster mit derselben Liste. Der Weg zu
+   den Vorlagen darf nicht davon abhängen, welche Oberfläche jemand
+   eingestellt hat. */
+B.vorlagenWaehlen = async () => {
+  await vorlagenHolen();
+  if (!vorlagenListe.length) {
+    fenster('Aus Vorlage', [
+      { art: 'satz', text: 'Im Vorlagenordner liegt noch nichts.\n\n'
+                         + 'Lege eine Datei hinein — .odt, .ott, .docx, .dotx, .rtf —, '
+                         + 'dann steht sie hier. „Vorlagenordner öffnen" bringt dich hin.' },
+    ], () => B.vorlagenOrdner(), 'Ordner öffnen');
+    return;
+  }
+  fenster('Aus Vorlage', [
+    { art: 'satz', text: 'Geöffnet wird eine Abschrift. Die Vorlage selbst bleibt, '
+                       + 'wie sie ist.' },
+    { schluessel: 'nr', name: 'Vorlage', art: 'auswahl',
+      werte: vorlagenListe.map((v, nr) => [String(nr), v.name + '  (' + v.gruppe + ')']) },
+  ], (werte) => B.vorlageOeffnen(parseInt(werte.nr, 10) || 0), 'Öffnen');
 };
 
 B.vorlageBehalten = async () => {
@@ -474,16 +518,23 @@ function formatFragen() {
 B.speichernPdf   = () => speichereAls('pdf');
 
 B.umbenennen = () => {
-  const neu = prompt('Wie soll das Dokument heißen?', dateiname);
-  if (neu === null) return;
-  dateiname = neu.trim() || 'Unbenannt 1';
-  titelSetzen();
+  fenster('Umbenennen', [
+    { schluessel: 'name', name: 'Name', art: 'text', wert: dateiname },
+  ], (werte) => {
+    /* Leer heißt: nichts tun. Nicht „Unbenannt 1" — ein Dokument
+       umzubenennen, ohne einen Namen zu nennen, ist kein Wunsch. */
+    const neu = (werte.name || '').trim();
+    if (!neu) { melde('Ohne Namen bleibt es, wie es hieß.'); return; }
+    dateiname = neu;
+    titelSetzen();
+    melde('Heißt jetzt „' + neu + '".');
+  }, 'Umbenennen');
 };
 
 /* „Drucken…“ öffnet das Druckfenster — siehe den Abschnitt
    „Drucken: die Vorschau und das Druckfenster“ weiter unten. */
 
-B.beenden = () => { if (darfVerwerfen()) window.close(); };
+B.beenden = () => darfVerwerfen(() => window.close());
 
 /* ---- Bearbeiten ---- */
 
@@ -664,12 +715,26 @@ B.bild = () => {
 };
 
 B.tabelle = () => {
-  const zeilen = parseInt(prompt('Wie viele Zeilen?', '3'), 10);
-  if (!zeilen || zeilen < 1) return;
-  const spalten = parseInt(prompt('Wie viele Spalten?', '3'), 10);
-  if (!spalten || spalten < 1) return;
-  const zeile = '<tr>' + '<td><br></td>'.repeat(Math.min(spalten, 20)) + '</tr>';
-  Dokument.einfuegen('<table>' + zeile.repeat(Math.min(zeilen, 200)) + '</table><p><br></p>');
+  auswahlMerken();
+  /* Zwei Fragen nacheinander waren zwei Fenster. Eines mit zwei Zeilen ist
+     dasselbe in einem Blick — und man kann die erste noch ändern, bevor man
+     die zweite beantwortet hat. */
+  fenster('Tabelle einfügen', [
+    { schluessel: 'zeilen', name: 'Zeilen', art: 'text', wert: '3' },
+    { schluessel: 'spalten', name: 'Spalten', art: 'text', wert: '3' },
+  ], (werte) => {
+    const zeilen = parseInt(werte.zeilen, 10);
+    const spalten = parseInt(werte.spalten, 10);
+    if (!zeilen || zeilen < 1 || !spalten || spalten < 1) {
+      melde('Zeilen und Spalten müssen Zahlen ab 1 sein.');
+      return;
+    }
+    auswahlZurueck();
+    const zeile = '<tr>' + '<td><br></td>'.repeat(Math.min(spalten, 20)) + '</tr>';
+    Dokument.einfuegen('<table>' + zeile.repeat(Math.min(zeilen, 200)) + '</table><p><br></p>');
+    melde('Tabelle mit ' + Math.min(zeilen, 200) + ' Zeilen und '
+        + Math.min(spalten, 20) + ' Spalten eingefügt.');
+  }, 'Einfügen');
 };
 
 const zeichen = (z) => () => Dokument.einfuegen(z === ' ' ? '&nbsp;' : z);
@@ -1481,9 +1546,14 @@ document.addEventListener('keydown', (e) => {
    zeigt, was es gibt. */
 const REGISTER = [
   ['Datei', [
+    /* „Aus Vorlage" stand zuerst nur in der Menüleiste. Wer mit dem Band
+       arbeitet, sah davon nichts und suchte einen Ordner, zu dem es keinen
+       Weg gab. Ein Weg, den nur die Hälfte der Oberfläche kennt, ist keiner. */
     ['Neu', [['neu', 'Neu', () => B.neu(), 'gross'],
                     ['oeffnen', 'Öffnen', () => B.oeffnen(), 'gross'],
-                    ['zuletzt', 'Zuletzt geöffnet', () => B.zuletztOeffnen()]]],
+                    ['deckblatt', 'Aus Vorlage…', () => B.vorlagenWaehlen(), 'gross'],
+                    ['zuletzt', 'Zuletzt geöffnet', () => B.zuletztOeffnen()],
+                    ['oeffnen', 'Vorlagenordner öffnen', () => B.vorlagenOrdner()]]],
     /* Hier standen einmal acht Knöpfe für acht Dateiformate — lose
        nebeneinander, und obendrein doppelt: Der Speichern-Dialog des
        Systems bringt dieselbe Auswahl als Klappmenü „Dateityp" mit, samt
@@ -10310,9 +10380,25 @@ function geaendertMelden() {
   merkeText();
 }
 
-function darfVerwerfen() {
-  if (!geaendert) return true;
-  return confirm('Das Dokument ist nicht gespeichert. Trotzdem weitermachen?');
+/* Die Rückfrage, bevor ungesicherte Arbeit weggeht.
+
+   Sie lief einmal über confirm(). Das ist im eigenen Fenster der falsche
+   Weg: WebKit zeigt dafür nur dann etwas, wenn das Programm den Dialog
+   selbst baut — und was nur mit fremder Hilfe erscheint, kann auch
+   ausbleiben. Genau das geschah: „Neu" tat scheinbar nichts, weil die
+   Frage unsichtbar auf eine Antwort wartete.
+
+   Jetzt fragt das Programm mit seinem eigenen Fenster. Das steht im Blatt,
+   sieht aus wie alles andere und braucht niemanden sonst. Der Preis ist,
+   dass die Antwort später kommt: Wer fragt, bekommt sie als Rückruf statt
+   als Rückgabewert — deshalb nimmt darfVerwerfen jetzt entgegen, was danach
+   geschehen soll. */
+function darfVerwerfen(dann) {
+  if (!geaendert) { dann(); return; }
+  fenster('Nicht gespeichert', [
+    { art: 'satz', text: 'Das Dokument hat Änderungen, die in keiner Datei stehen. '
+                       + 'Wer weitermacht, verliert sie.' },
+  ], () => dann(), 'Trotzdem weiter');
 }
 
 window.addEventListener('beforeunload', (e) => {
