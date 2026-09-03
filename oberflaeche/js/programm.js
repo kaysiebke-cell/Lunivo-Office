@@ -71,7 +71,7 @@ B.neu = () => {
 const SCHREIBBAR = {
   odt: 'odt', fodt: 'fodt', docx: 'docx', doc: 'doc', rtf: 'rtf',
   html: 'html', htm: 'html', txt: 'txt', md: 'txt',
-  dotx: 'docx', docm: 'docx', odf: 'odt',
+  dotx: 'docx', docm: 'docx', odf: 'odt', ott: 'odt', dot: 'doc',
 };
 
 B.oeffnen = async () => {
@@ -106,7 +106,8 @@ B.oeffnen = async () => {
 
   const waehler = document.createElement('input');
   waehler.type = 'file';
-  waehler.accept = '.odt,.fodt,.docx,.doc,.rtf,.html,.htm,.txt,.md,.xml,text/plain,text/html';
+  waehler.accept = '.odt,.ott,.fodt,.docx,.dotx,.doc,.dot,.rtf,.html,.htm,'
+                 + '.txt,.md,.xml,text/plain,text/html';
   waehler.addEventListener('change', async () => {
     const datei = waehler.files && waehler.files[0];
     if (datei) await dateiUebernehmen(datei);
@@ -163,6 +164,149 @@ B.zuletztOeffnen = async (nr) => {
   /* In beiden Fällen: Ist die Datei inzwischen weg, fällt sie beim
      Nachfragen aus der Liste und steht beim nächsten Aufklappen nicht mehr da. */
   await zuletztHolen();
+};
+
+/* ------------------------------------------------------------
+   Neu aus Vorlage
+
+   Eine ganze Vorlage ist ein Dokument, kein Textbaustein: Der Baustein
+   nimmt nur den Text, und bei einer ganzen Seite käme dabei genau das weg,
+   was sie ausmacht — Briefkopf, Ränder, Schriften.
+
+   Geöffnet wird eine Abschrift. Der Name im Fenster ist der der Vorlage,
+   der Weg zur Datei aber nicht: Strg+S legt wie immer eine neue Datei an,
+   und „Speichern unter" steht im letzten Ordner, in dem gearbeitet wurde,
+   nicht in den Vorlagen. Eine Vorlage, die beim dritten Brief überschrieben
+   ist, war keine.
+
+   Die Liste führt der Server, aus Ordnern. Wer eine Vorlage aus dem
+   Internet hat, legt sie hinein — „Vorlagenordner öffnen" ruft dafür die
+   Dateiverwaltung des Arbeitsplatzes. Ein eigenes Fenster zum Verwalten
+   von Dateien zu bauen hieße, eine schlechtere Dateiverwaltung zu
+   schreiben als die, die schon da ist.
+   ------------------------------------------------------------ */
+let vorlagenListe = [];
+
+async function vorlagenHolen() {
+  try {
+    const antwort = await fetch('vorlagen.json');
+    vorlagenListe = antwort.ok ? await antwort.json() : [];
+  } catch (e) {
+    vorlagenListe = [];                /* kein eigenes Fenster, kein Server */
+  }
+}
+
+/* Das Menü wird im Augenblick des Aufklappens gezeichnet und kann dabei
+   auf keine Antwort warten — also steht hier die Abschrift, und geholt
+   wird sie beim Start und nach jedem Ablegen. */
+function vorlagenPunkte() {
+  const punkte = [];
+  let gruppe = null;
+  for (let nr = 0; nr < vorlagenListe.length; nr++) {
+    const eintrag = vorlagenListe[nr];
+    /* Die Überschrift nur, wenn es mehr als einen Ordner gibt. Bei einem
+       einzigen wäre sie eine Zeile, die nichts unterscheidet. */
+    if (eintrag.gruppe !== gruppe) {
+      if (gruppe !== null) punkte.push(strich);
+      gruppe = eintrag.gruppe;
+    }
+    punkte.push({ name: eintrag.name, tun: ((n) => () => B.vorlageOeffnen(n))(nr) });
+  }
+  if (!punkte.length) {
+    punkte.push({ name: 'Noch keine Vorlage abgelegt', tun: () => {} });
+  }
+  punkte.push(strich);
+  punkte.push({ name: 'Dieses Dokument als Vorlage behalten…', tun: () => B.vorlageBehalten() });
+  punkte.push({ name: 'Vorlagenordner öffnen', tun: () => B.vorlagenOrdner() });
+  return punkte;
+}
+
+B.vorlageOeffnen = async (nr) => {
+  if (!darfVerwerfen()) return;
+  try {
+    const antwort = await fetch('vorlage-oeffnen?nr=' + nr, { method: 'POST' });
+    if (!antwort.ok) {
+      let grund = 'Fehler ' + antwort.status;
+      try { grund = (await antwort.json()).fehler || grund; } catch (e) { /* egal */ }
+      throw new Error(grund);
+    }
+    const wahl = await antwort.json();
+    const daten = await fetch('lesen');
+    if (!daten.ok) throw new Error('Fehler ' + daten.status);
+    await dateiUebernehmen(new File([await daten.blob()], wahl.name || 'Vorlage'));
+    melde('Abschrift von „' + (wahl.name || 'Vorlage') + '" — die Vorlage selbst '
+        + 'bleibt, wie sie ist.');
+  } catch (grund) {
+    melde('Die Vorlage ließ sich nicht öffnen: ' + grund.message);
+  }
+  /* Ist sie inzwischen weggeworfen, fällt sie beim Nachfragen aus der Liste. */
+  await vorlagenHolen();
+};
+
+B.vorlageBehalten = async () => {
+  fenster('Als Vorlage behalten', [
+    { art: 'satz', text: 'Das Dokument wird so, wie es jetzt ist, in den eigenen '
+                       + 'Vorlagenordner gelegt. Danach steht es unter '
+                       + '„Datei → Neu aus Vorlage".' },
+    { schluessel: 'name', name: 'Name', art: 'text', wert: dateiname },
+  ], async (werte) => {
+    const name = (werte.name || '').trim();
+    if (!name) { melde('Ohne Namen findet man sie nicht wieder — nichts abgelegt.'); return; }
+
+    /* Vorlagen werden als ODF abgelegt, gleich in welchem Format gerade
+       gearbeitet wird: Das liest dieses Programm ohne LibreOffice, und eine
+       Vorlage, die nur mit installiertem Motor aufgeht, ist eine Falle. */
+    const endung = 'odt';
+    let wahl;
+    try {
+      const antwort = await fetch('vorlage-ziel?name=' + encodeURIComponent(name)
+                                + '&format=' + endung, { method: 'POST' });
+      if (!antwort.ok) throw new Error('Fehler ' + antwort.status);
+      wahl = await antwort.json();
+    } catch (e) {
+      melde('Ohne das eigene Fenster gibt es keinen Vorlagenordner. '
+          + 'Speichere die Datei stattdessen über „Speichern unter".');
+      return;
+    }
+
+    melde(wahl.ersetzt ? 'Wird abgelegt und ersetzt die bisherige …' : 'Wird abgelegt …');
+    try {
+      const inhalt = ohneMarken(Dokument.inhalt());
+      let datei;
+      try {
+        datei = await Dateien.baueMitMotor(endung, inhalt);
+      } catch (e) {
+        /* Ohne LibreOffice schreibt das Programm die .odt selbst. Das ist
+           gröber — keine Tabellen —, aber eine Vorlage, die nur mit
+           installiertem Motor entsteht, wäre gar keine. */
+        datei = Dateien.baue(endung, inhalt, Dokument.lies().text);
+      }
+      const geschrieben = await fetch('schreiben', { method: 'POST', body: datei });
+      if (!geschrieben.ok) {
+        let grund = 'Fehler ' + geschrieben.status;
+        try { grund = (await geschrieben.json()).fehler || grund; } catch (e) { /* egal */ }
+        throw new Error(grund);
+      }
+      await vorlagenHolen();
+      melde('Als Vorlage „' + name + '" behalten — unter Datei → Neu aus Vorlage.');
+    } catch (grund) {
+      melde('Das ging nicht: ' + grund.message);
+    }
+  }, 'Behalten');
+};
+
+B.vorlagenOrdner = async () => {
+  try {
+    const antwort = await fetch('vorlagen-ordner', { method: 'POST' });
+    if (!antwort.ok) throw new Error('Fehler ' + antwort.status);
+    const wahl = await antwort.json();
+    melde('Vorlagenordner geöffnet: ' + (wahl.ordner || '')
+        + ' — was du hineinlegst, steht danach im Menü.');
+    /* Wer gerade eine Datei hineinlegt, soll sie ohne Neustart finden. */
+    setTimeout(vorlagenHolen, 3000);
+  } catch (e) {
+    melde('Ohne das eigene Fenster lässt sich der Ordner nicht öffnen.');
+  }
 };
 
 /* Eine Datei ins Blatt holen — gleich, ob sie aus dem Dialog des Systems
@@ -8157,6 +8301,7 @@ const MENUES = [
     { name: 'Neu', tun: B.neu, taste: 'Strg+N' },
     { name: 'Öffnen…', tun: B.oeffnen, taste: 'Strg+O' },
     { name: 'Zuletzt verwendet', unter: zuletztPunkte },
+    { name: 'Neu aus Vorlage', unter: vorlagenPunkte },
     strich,
     { name: 'Speichern', tun: B.speichern, taste: 'Strg+S' },
     { name: 'Speichern unter…', tun: B.speichernUnter, taste: 'Strg+Umschalt+S' },
@@ -10430,6 +10575,7 @@ feld.lang = Speicher.lies('pruefsprache', 'de');
 feld.classList.toggle('dokument--verfolgt', verfolgenAn);
 schriftenNachtragen();
 zuletztHolen();
+vorlagenHolen();
 setzeZoom(zoom);
 titelSetzen();
 zahlenAuffrischen();

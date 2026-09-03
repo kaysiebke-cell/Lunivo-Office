@@ -88,10 +88,12 @@ FORMAT_LISTE = [
 # Programm lesen kann. Wer gezielt sucht, schaltet weiter.
 OEFFNEN_FILTER = [
     ("Alle Dokumente, die das Programm lesen kann",
-     ["*.odt", "*.fodt", "*.docx", "*.doc", "*.rtf", "*.html", "*.htm",
-      "*.txt", "*.md", "*.xml", "*.odf", "*.dotx", "*.docm"]),
-    ("Word-Dokumente (.docx, .doc, .rtf)", ["*.docx", "*.doc", "*.rtf", "*.dotx", "*.docm"]),
-    ("ODF-Textdokumente (.odt, .fodt)", ["*.odt", "*.fodt", "*.odf"]),
+     ["*.odt", "*.ott", "*.fodt", "*.docx", "*.doc", "*.rtf", "*.html", "*.htm",
+      "*.txt", "*.md", "*.xml", "*.odf", "*.dotx", "*.docm", "*.dot"]),
+    ("Word-Dokumente (.docx, .doc, .rtf)",
+     ["*.docx", "*.doc", "*.rtf", "*.dotx", "*.docm", "*.dot"]),
+    ("ODF-Textdokumente (.odt, .fodt)", ["*.odt", "*.ott", "*.fodt", "*.odf"]),
+    ("Vorlagen (.ott, .dotx, .dot)", ["*.ott", "*.dotx", "*.dot"]),
     ("Webseiten (.html)", ["*.html", "*.htm"]),
     ("Textdateien (.txt)", ["*.txt", "*.md"]),
     ("Alle Dateien", ["*"]),
@@ -752,7 +754,7 @@ def dialog_oeffnen(nur=""):
 # Wohin zuletzt gespeichert werden durfte. Nur dieser eine Weg wird
 # beschrieben, und nur einmal: Sonst könnte die Seite jede Datei auf dem
 # Rechner überschreiben, indem sie einfach einen Pfad mitschickt.
-SPEICHERZIEL = {"pfad": None}
+SPEICHERZIEL = {"pfad": None, "merken": True}
 
 
 def dialog_speichern(name, endung):
@@ -1074,6 +1076,120 @@ FILTER = {
 # Angabe: Was hier hereinkommt, geht als Dateiname an ein anderes Programm.
 FORMATE = {"odt", "fodt", "docx", "doc", "rtf", "html", "txt", "pdf", "epub", "odf",
            "xlsx", "xls", "ods", "csv", "fods", "dotx", "docm"}
+
+# ============================================================
+# Vorlagen
+#
+# Eine ganze DIN-A4-Vorlage ist ein Dokument, kein Textbaustein. Sie hat
+# einen Briefkopf, Ränder, Schriften — und der Baustein nimmt absichtlich
+# nur den Text. Bei einer ganzen Seite käme dabei genau das weg, was die
+# Vorlage ausmacht.
+#
+# Sie liegen in Ordnern und nicht in einer Datenbank. Wer eine aus dem
+# Internet holt, legt sie hinein; wer sie loswerden will, wirft sie weg.
+# Dafür braucht es kein Fenster in diesem Programm — die Dateiverwaltung
+# des Arbeitsplatzes kann das besser, und „Vorlagenordner öffnen" ruft sie.
+#
+# Genommen wird auch der Vorlagenordner des Arbeitsplatzes (~/Vorlagen).
+# Den kennen die Dateiverwaltung und LibreOffice ebenfalls: Was dort liegt,
+# steht in allen drei Programmen zur Verfügung, ohne es dreimal abzulegen.
+#
+# Geöffnet wird immer eine Abschrift. Das Original wird nur gelesen — die
+# Seite bekommt seinen Pfad gar nicht zu sehen, und beim Speichern steht
+# der Dialog nicht in diesem Ordner. Eine Vorlage, die beim dritten Brief
+# überschrieben ist, war keine.
+# ============================================================
+VORLAGEN_EIGEN = os.path.join(DATEN, "vorlagen")
+
+VORLAGEN_ENDUNGEN = (".odt", ".ott", ".fodt", ".docx", ".dotx", ".docm",
+                     ".doc", ".dot", ".rtf", ".html", ".htm", ".txt", ".md")
+
+
+def vorlagen_ordner_system():
+    """Der Vorlagenordner des Arbeitsplatzes, wie ihn die Dateiverwaltung kennt.
+
+    Wo er liegt und wie er heißt, sagt die XDG-Angabe: Auf einem deutschen
+    System ist es „Vorlagen", auf einem englischen „Templates". Geraten wird
+    erst, wenn sie fehlt.
+    """
+    weg = os.environ.get("XDG_TEMPLATES_DIR")
+    if not weg:
+        try:
+            with open(os.path.expanduser("~/.config/user-dirs.dirs"),
+                      encoding="utf-8") as datei:
+                for zeile in datei:
+                    if zeile.startswith("XDG_TEMPLATES_DIR"):
+                        weg = zeile.split("=", 1)[1].strip().strip('"')
+                        break
+        except OSError:
+            weg = None
+    zuhause = os.path.realpath(os.path.expanduser("~"))
+    if weg:
+        weg = weg.replace("$HOME", os.path.expanduser("~"))
+        weg = os.path.expanduser(os.path.expandvars(weg))
+        # „XDG_TEMPLATES_DIR=$HOME/" ist die übliche Schreibweise für „gibt
+        # es nicht". Wer sie wörtlich nimmt, hält das ganze Benutzer-
+        # verzeichnis für einen Vorlagenordner und stellt jede Datei
+        # darin ins Menü.
+        if os.path.isdir(weg) and os.path.realpath(weg) != zuhause:
+            return weg
+    for name in ("Vorlagen", "Templates"):
+        weg = os.path.expanduser("~/" + name)
+        if os.path.isdir(weg) and os.path.realpath(weg) != zuhause:
+            return weg
+    return None
+
+
+def vorlagen_orte():
+    """Die eigenen zuerst, danach der Ordner des Arbeitsplatzes."""
+    orte = [(VORLAGEN_EIGEN, "Meine Vorlagen")]
+    system = vorlagen_ordner_system()
+    if system and os.path.abspath(system) != os.path.abspath(VORLAGEN_EIGEN):
+        orte.append((system, os.path.basename(system.rstrip("/")) or "Vorlagen"))
+    return orte
+
+
+def vorlagen_lesen():
+    """Was in den Vorlagenordnern liegt.
+
+    Frisch gelesen bei jeder Anfrage, nicht beim Start: Wer eine Datei
+    hineinlegt, während das Programm läuft, soll sie im Menü finden und
+    nicht erst neu starten müssen.
+    """
+    gefunden = []
+    for ordner, marke in vorlagen_orte():
+        try:
+            namen = sorted(os.listdir(ordner), key=str.lower)
+        except OSError:
+            continue                    # Gibt es nicht — dann eben nichts.
+        for name in namen:
+            pfad = os.path.join(ordner, name)
+            # Versteckte Dateien gehören dem System, nicht dem Menschen.
+            if name.startswith(".") or not os.path.isfile(pfad):
+                continue
+            if not name.lower().endswith(VORLAGEN_ENDUNGEN):
+                continue
+            gefunden.append({
+                "name": os.path.splitext(name)[0],
+                "datei": name,
+                "gruppe": marke,
+                "ordner": ordner,
+                "pfad": pfad,
+            })
+    return gefunden
+
+
+def vorlage_name_saeubern(name):
+    """Aus einem Wunschnamen einen Dateinamen, der nur im Ordner landen kann.
+
+    Ein Schrägstrich oder „.." darin hieße, dass die Seite bestimmt, wohin
+    geschrieben wird. Der Name wird deshalb nicht geprüft, sondern auf
+    seinen letzten Bestandteil gekürzt und von Wegzeichen befreit.
+    """
+    name = os.path.basename((name or "").strip()).replace("\\", "")
+    name = re.sub(r"[/\x00-\x1f]", "", name).strip(". ")
+    return (name or "Vorlage")[:120]
+
 
 # Mehr als das schreibt niemand in einem Brief. Die Grenze verhindert, dass
 # ein Versehen den Arbeitsspeicher füllt.
@@ -1522,6 +1638,13 @@ class Leise(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(ladung)
             return
 
+        # Was in den Vorlagenordnern liegt. Name und Ordner, kein ganzer Weg —
+        # geöffnet wird über die Nummer, genau wie bei „Zuletzt verwendet".
+        if self.path.split("?")[0] == "/vorlagen.json":
+            self.auskunft([{k: v for k, v in eintrag.items() if k != "pfad"}
+                           for eintrag in vorlagen_lesen()])
+            return
+
         if self.path.split("?")[0] == "/schriften.json":
             ladung = json.dumps(schriften_lesen()).encode("utf-8")
             self.send_response(200)
@@ -1707,6 +1830,71 @@ class Leise(http.server.SimpleHTTPRequestHandler):
             self.auskunft({"pfad": pfad, "name": os.path.basename(pfad)})
             return
 
+        # „Neu aus Vorlage": Die Vorlage wird gelesen, nie beschrieben. Sie
+        # wandert auch nicht in „Zuletzt verwendet" und setzt nicht den
+        # Ordner für den nächsten Speichern-Dialog — sonst stünde der beim
+        # Sichern in den Vorlagen, und der erste Fehlklick wäre teuer.
+        if adresse.path == "/vorlage-oeffnen":
+            liste = vorlagen_lesen()
+            try:
+                nummer = int((urllib.parse.parse_qs(adresse.query)
+                              .get("nr") or ["-1"])[0])
+            except ValueError:
+                nummer = -1
+            if nummer < 0 or nummer >= len(liste):
+                LESEZIEL["pfad"] = None
+                self.fehler_melden(404, "Die Vorlage liegt nicht mehr im Ordner.")
+                return
+            LESEZIEL["pfad"] = liste[nummer]["pfad"]
+            self.auskunft({"name": liste[nummer]["datei"]})
+            return
+
+        # „Als Vorlage behalten": Das Ziel steht fest, es wird nicht gefragt.
+        # Geschrieben wird nur in den eigenen Vorlagenordner — in den des
+        # Arbeitsplatzes nicht, denn was LibreOffice dort ablegt, gehört
+        # LibreOffice.
+        if adresse.path == "/vorlage-ziel":
+            wahl = urllib.parse.parse_qs(adresse.query)
+            endung = (wahl.get("format") or ["odt"])[0].lower()
+            if "." + endung not in VORLAGEN_ENDUNGEN:
+                endung = "odt"
+            name = vorlage_name_saeubern((wahl.get("name") or [""])[0])
+            if name.lower().endswith("." + endung):
+                name = name[: -len(endung) - 1]
+            ziel = os.path.join(VORLAGEN_EIGEN, name + "." + endung)
+            try:
+                os.makedirs(VORLAGEN_EIGEN, exist_ok=True)
+            except OSError as grund:
+                self.fehler_melden(500, str(grund))
+                return
+            # Zweiter Riegel. Der Name ist oben gereinigt worden, aber ein
+            # Riegel, der von der Sorgfalt einer anderen Funktion abhängt,
+            # ist keiner: Hier wird nachgesehen, wo der Weg tatsächlich
+            # hinführt.
+            if os.path.dirname(os.path.realpath(ziel)) != os.path.realpath(VORLAGEN_EIGEN):
+                self.fehler_melden(400, "Dieser Name führt aus dem Vorlagenordner heraus.")
+                return
+            SPEICHERZIEL["pfad"] = ziel
+            SPEICHERZIEL["merken"] = False
+            self.auskunft({"pfad": ziel, "endung": endung,
+                           "ersetzt": os.path.isfile(ziel)})
+            return
+
+        # Den Vorlagenordner in der Dateiverwaltung zeigen. Das ist der Weg
+        # für ganze Vorlagen aus dem Internet: hineinlegen, fertig. Ein
+        # eigenes Fenster zum Verwalten von Dateien zu bauen, wäre eine
+        # schlechtere Dateiverwaltung als die, die schon da ist.
+        if adresse.path == "/vorlagen-ordner":
+            try:
+                os.makedirs(VORLAGEN_EIGEN, exist_ok=True)
+                subprocess.Popen(["xdg-open", VORLAGEN_EIGEN],
+                                 start_new_session=True)
+            except OSError as grund:
+                self.fehler_melden(500, str(grund))
+                return
+            self.auskunft({"ordner": VORLAGEN_EIGEN})
+            return
+
         # „Speichern unter": Der Dialog fragt nach Ort und Format.
         if adresse.path == "/speichern-dialog":
             wahl = urllib.parse.parse_qs(adresse.query)
@@ -1727,7 +1915,9 @@ class Leise(http.server.SimpleHTTPRequestHandler):
         # Und danach die fertige Datei dorthin schreiben.
         if adresse.path == "/schreiben":
             ziel = SPEICHERZIEL["pfad"]
+            merken = SPEICHERZIEL.get("merken", True)
             SPEICHERZIEL["pfad"] = None          # gilt nur dieses eine Mal
+            SPEICHERZIEL["merken"] = True
             if not ziel:
                 self.fehler_melden(409, "Es wurde kein Ziel gewählt.")
                 return
@@ -1742,7 +1932,10 @@ class Leise(http.server.SimpleHTTPRequestHandler):
             except OSError as grund:
                 self.fehler_melden(500, str(grund))
                 return
-            zuletzt_merken(ziel)
+            # Eine Vorlage ist kein Dokument, an dem man weiterschreibt —
+            # sie hat in „Zuletzt verwendet" nichts zu suchen.
+            if merken:
+                zuletzt_merken(ziel)
             self.auskunft({"pfad": ziel})
             return
 
