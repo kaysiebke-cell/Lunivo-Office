@@ -717,52 +717,75 @@ button.wz-wahl--schrift{
    Deshalb jetzt ein getöntes Band über die ganze Seitenbreite, mit einem
    kleinen Schild, das sagt, was es ist. Beides wird nicht mitgedruckt: Auf
    dem Papier soll nur stehen, was hineingeschrieben wurde. */
-.kopfzeile,.fusszeile{
-  position:relative;
-  min-height:1.6em;
-  /* Über den 2 cm Rand des Blattes hinaus, damit das Band die ganze Seite
-     nimmt — sonst wäre es ein Kasten mitten im Weiß.
+/* Kopf- und Fußzeile sitzen IM Rand, nicht im Text.
 
-     Die Breite steht ausdrücklich da und wird nicht ausgerechnet. Vorher
-     ergab sie sich aus negativen Rändern allein: Das Blatt ist seit der
-     Reparatur der Seitenhöhe eine Spalte (flex), und dort entscheidet die
-     Umgebung, wie ein gedehntes Kind mit negativen Rändern breit wird.
-     Das Ergebnis fiel je nach Fenster anders aus — hier passte es, auf
-     seinem Rechner lief das Band rechts über den Blattrand hinaus.
-     Mit „width" gibt es nichts mehr zu entscheiden. */
+   Vorher liefen sie im Fluss mit: Das Band stand unterhalb des oberen
+   Randes und schob den ganzen Text um seine Höhe nach unten. Die erste
+   Zeile begann damit nicht bei 25 mm, sondern bei 39 mm, und auf dem Blatt
+   sah es aus, als seien Kopf und Fuß vom Rand weggerutscht. In jedem
+   Schreibprogramm liegt die Kopfzeile im oberen Rand — dafür ist der Rand
+   da.
+
+   Also aus dem Fluss heraus und an die Randlinien gehängt: Die Kopfzeile
+   endet genau dort, wo der Text anfängt, die Fußzeile beginnt dort, wo er
+   aufhört. Der Text merkt davon nichts mehr; er beginnt beim eingestellten
+   Rand, ob die Zeilen angezeigt werden oder nicht.
+
+   „bottom:calc(100% - var(--rand-oben))" heißt: Die Unterkante liegt einen
+   oberen Rand von oben. Wächst der Inhalt, wächst das Band nach oben in
+   den Rand hinein — dorthin, wo Platz ist. */
+.kopfzeile,.fusszeile{
+  position:absolute;
+  left:0;right:0;
+  min-height:1.6em;
   box-sizing:border-box;
-  width:calc(100% + 4cm);
-  margin-left:-2cm;margin-right:-2cm;
-  padding:5mm 2cm 2mm;
+  padding:2mm var(--rand-rechts,2cm) 2mm var(--rand-links,2cm);
   background:rgba(127,127,127,.055);
   color:var(--blatt-schrift);
   font:10pt/1.4 Georgia,"Liberation Serif",serif;
   outline:none;
 }
-.kopfzeile{border-bottom:1px dashed var(--marke);margin-bottom:6mm}
-.fusszeile{border-top:1px dashed var(--marke);margin-top:6mm;padding:2mm 2cm 5mm}
+.kopfzeile{
+  bottom:calc(100% - var(--rand-oben,2cm));
+  border-bottom:1px dashed var(--marke);
+  padding-top:4mm;
+}
+.fusszeile{
+  top:calc(100% - var(--rand-unten,2cm));
+  border-top:1px dashed var(--marke);
+  padding-bottom:4mm;
+}
 
 /* Das Schild. Es steht immer da, nicht nur solange das Feld leer ist:
    Wer hineinschreibt, soll auch dann sehen, wo er schreibt. */
 .kopfzeile::before,.fusszeile::before{
-  position:absolute;left:2cm;
+  position:absolute;left:var(--rand-links,2cm);
   font:italic 8pt/1 Georgia,"Liberation Serif",serif;
   letter-spacing:.4px;
   color:var(--marke);
   pointer-events:none;
 }
-.kopfzeile::before{content:'Kopfzeile';top:1.5mm}
-.fusszeile::before{content:'Fußzeile';bottom:1.5mm}
+.kopfzeile::before{content:'Kopfzeile';top:.5mm}
+.fusszeile::before{content:'Fußzeile';bottom:.5mm}
 
 /* Beim Hineinschreiben deutlicher: Dann ist es wichtig zu wissen, wo man ist. */
 .kopfzeile:focus,.fusszeile:focus{background:rgba(127,127,127,.10)}
 .kopfzeile:focus::before,.fusszeile:focus::before{color:var(--blau)}
 
 /* Auf dem Papier ist beides weg — Band, Strich und Schild. */
+/* Auf dem Papier läuft beides wieder im Fluss: Dort setzt der Drucker die
+   Ränder selbst, und ein Band, das am Bildschirmblatt hängt, säße auf der
+   gedruckten Seite an der falschen Stelle. Band, Strich und Schild sind
+   ohnehin weg — auf dem Papier soll nur stehen, was hineingeschrieben
+   wurde. */
 @media print{
   .kopfzeile,.fusszeile{
-    background:none;margin-left:0;margin-right:0;padding-left:0;padding-right:0;
+    position:static;
+    background:none;border:none;
+    margin:0;padding-left:0;padding-right:0;
   }
+  .kopfzeile{padding-top:0;padding-bottom:2mm}
+  .fusszeile{padding-top:2mm;padding-bottom:0}
   .kopfzeile::before,.fusszeile::before{content:none}
 }
 .kopfzeile[hidden],.fusszeile[hidden]{display:none}

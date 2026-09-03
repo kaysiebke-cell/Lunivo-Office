@@ -1055,6 +1055,12 @@ function seiteAnwenden() {
   blatt.style.paddingBottom = seitenrand.unten + 'mm';
   blatt.style.paddingLeft = seitenrand.links + 'mm';
   blatt.style.paddingRight = seitenrand.rechts + 'mm';
+  /* Dieselben Maße noch einmal als Eigenschaften: Kopf- und Fußzeile
+     sitzen im Rand und müssen wissen, wie breit er ist. Aus dem Polster
+     allein lässt sich das im Stilblatt nicht ablesen. */
+  for (const kante of ['oben', 'unten', 'links', 'rechts']) {
+    blatt.style.setProperty('--rand-' + kante, seitenrand[kante] + 'mm');
+  }
   feld.style.columnCount = spalten > 1 ? spalten : '';
   feld.style.columnGap = spalten > 1 ? '8mm' : '';
   Speicher.schreib('seitenrand', seitenrand);
