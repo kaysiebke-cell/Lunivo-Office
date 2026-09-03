@@ -9391,10 +9391,18 @@ function zahlenAuffrischen() {
   const { zeichen: z, woerter } = Dokument.zaehle();
   $('status-zahl').textContent = woerter + (woerter === 1 ? ' Wort, ' : ' Wörter, ')
                                + z + (z === 1 ? ' Zeichen' : ' Zeichen');
-  /* Wie viele Seiten das sind: die Texthöhe geteilt durch das, was auf eine
-     A4-Seite passt (29,7 cm minus 2 cm Rand oben und unten). */
-  const proSeite = 25.7 * CM;
-  const seiten = Math.max(1, Math.ceil(feld.scrollHeight / proSeite));
+  /* Wie viele Seiten das sind. Hier stand einmal fest „29,7 cm minus 2 cm
+     Rand" — das galt für A4 mit den Standardrändern und log auf allem
+     anderen. Jetzt wird mit dem wirklichen Blatt gerechnet.
+
+     Und mit zwei Bildpunkten Nachsicht: Ein Text, der eine Seite genau
+     füllt, ist eine Seite. Ohne das machte ein einziger Punkt Rundung aus
+     einem einseitigen Brief zwei — in der Statuszeile stand „Seite 1 von
+     2", während nur ein Blatt da war. */
+  const masse = PAPIERE[papier] || PAPIERE.a4;
+  const hoeheMm = (quer ? masse.breite : masse.hoehe) - seitenrand.oben - seitenrand.unten;
+  const proSeite = Math.max(1, hoeheMm * CM / 10);
+  const seiten = Math.max(1, Math.ceil((feld.scrollHeight - 2) / proSeite));
   $('status-seiten').textContent = 'Seite 1 von ' + seiten;
 }
 

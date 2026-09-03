@@ -210,6 +210,17 @@ Fließtext, darunter alles, was auf dem Rechner liegt.
 
 ![Die Schriftliste mit Suchfeld; jeder Name ist in seiner eigenen Schrift gesetzt](bilder/schriften.png)
 
+Wer die Reiter aus Word gewohnt ist, stellt unter *Ansicht ▸
+Benutzeroberfläche* um. Über dem Blatt liegt das Lineal mit den
+Einzugsmarken.
+
+![Das Register mit dem Reiter Start: Zwischenablage, Schriftart, Absatz und Formatvorlagen, darüber die Reiterzeile, darunter das Lineal](bilder/register.png)
+
+Gedruckt wird, was die Vorschau zeigt: links das Blatt, rechts die
+Einstellungen in drei Reitern.
+
+![Das Druckfenster: links die Seitenvorschau mit dem Brief, rechts Bereich, Kopien, Blattseiten und Seitenlayout](bilder/drucken.png)
+
 Hell oder dunkel, je nachdem, was den Augen bekommt. Das Blatt bleibt weiß —
 Papier ist weiß.
 
@@ -315,6 +326,7 @@ deshalb wie der übrige Code unter MIT.
       symbole.html       den Symbolkatalog durchsehen, im Browser öffnen
       katalog-bauen.py   baut den Katalog aus einem Ordner voller .svg neu
       svg-zu-pfad.py     rechnet <circle>, <rect>, <line> in einen Pfad um
+      bildschirmfoto.py  nimmt die Bilder für dieses README auf
 
     doku/                ENTSTEHUNG, RICHTUNG und das ausführliche LIESMICH
     symbole/             das Symbol als SVG und in allen Größen
