@@ -207,6 +207,9 @@ B.zuletztOeffnen = (nr) => darfVerwerfen(async () => {
    Dateiverwaltung des Arbeitsplatzes. Ein eigenes Fenster zum Verwalten
    von Dateien zu bauen hieße, eine schlechtere Dateiverwaltung zu
    schreiben als die, die schon da ist.
+
+   Gezeigt wird sie als Fläche mit Miniaturblättern — js/vorlagen.js. Hier
+   steht nur, was mit dem Server zu tun hat: holen, öffnen, ablegen.
    ------------------------------------------------------------ */
 let vorlagenListe = [];
 
@@ -217,31 +220,6 @@ async function vorlagenHolen() {
   } catch (e) {
     vorlagenListe = [];                /* kein eigenes Fenster, kein Server */
   }
-}
-
-/* Das Menü wird im Augenblick des Aufklappens gezeichnet und kann dabei
-   auf keine Antwort warten — also steht hier die Abschrift, und geholt
-   wird sie beim Start und nach jedem Ablegen. */
-function vorlagenPunkte() {
-  const punkte = [];
-  let gruppe = null;
-  for (let nr = 0; nr < vorlagenListe.length; nr++) {
-    const eintrag = vorlagenListe[nr];
-    /* Die Überschrift nur, wenn es mehr als einen Ordner gibt. Bei einem
-       einzigen wäre sie eine Zeile, die nichts unterscheidet. */
-    if (eintrag.gruppe !== gruppe) {
-      if (gruppe !== null) punkte.push(strich);
-      gruppe = eintrag.gruppe;
-    }
-    punkte.push({ name: eintrag.name, tun: ((n) => () => B.vorlageOeffnen(n))(nr) });
-  }
-  if (!punkte.length) {
-    punkte.push({ name: 'Noch keine Vorlage abgelegt', tun: () => {} });
-  }
-  punkte.push(strich);
-  punkte.push({ name: 'Dieses Dokument als Vorlage behalten…', tun: () => B.vorlageBehalten() });
-  punkte.push({ name: 'Vorlagenordner öffnen', tun: () => B.vorlagenOrdner() });
-  return punkte;
 }
 
 B.vorlageOeffnen = (nr) => darfVerwerfen(async () => {
@@ -265,27 +243,68 @@ B.vorlageOeffnen = (nr) => darfVerwerfen(async () => {
   await vorlagenHolen();
 });
 
-/* Das Band kann keine Liste ausklappen, die sich ändert — es hat Knöpfe,
-   keine Menüs. Also bekommt es ein Fenster mit derselben Liste. Der Weg zu
-   den Vorlagen darf nicht davon abhängen, welche Oberfläche jemand
-   eingestellt hat. */
+/* Beide Oberflächen gehen denselben Weg: Das Menü ruft dies, und das Band
+   ruft dies. Vorher hing an der Menüleiste ein Klappmenü mit Namen und am
+   Band ein Auswahlfeld — zwei Wege zur selben Sache, und der eine kannte
+   nicht, was der andere konnte.
+
+   Gezeichnet wird die Seite in js/vorlagen.js. Frisch geholt wird die
+   Liste bei jedem Öffnen: Wer eine Datei hineinlegt, während das Programm
+   läuft, soll sie sehen, ohne neu zu starten. */
 B.vorlagenWaehlen = async () => {
   await vorlagenHolen();
-  if (!vorlagenListe.length) {
-    fenster('Aus Vorlage', [
-      { art: 'satz', text: 'Im Vorlagenordner liegt noch nichts.\n\n'
-                         + 'Lege eine Datei hinein — .odt, .ott, .docx, .dotx, .rtf —, '
-                         + 'dann steht sie hier. „Vorlagenordner öffnen" bringt dich hin.' },
-    ], () => B.vorlagenOrdner(), 'Ordner öffnen');
-    return;
-  }
-  fenster('Aus Vorlage', [
-    { art: 'satz', text: 'Geöffnet wird eine Abschrift. Die Vorlage selbst bleibt, '
-                       + 'wie sie ist.' },
-    { schluessel: 'nr', name: 'Vorlage', art: 'auswahl',
-      werte: vorlagenListe.map((v, nr) => [String(nr), v.name + '  (' + v.gruppe + ')']) },
-  ], (werte) => B.vorlageOeffnen(parseInt(werte.nr, 10) || 0), 'Öffnen');
+  /* Die Nummer ist der Platz in der Liste, die der Server gerade gelesen
+     hat — sie muss die eigene bleiben, auch wenn die Gerüste davorstehen.
+     Deshalb wird sie hier festgeschrieben und nicht in der Fläche gezählt. */
+  const eigene = vorlagenListe.map((v, nr) => Object.assign({ nr }, v));
+  Vorlagen.oeffnen(Vorlagen.musterListe().concat(eigene));
 };
+
+/* Ein mitgeliefertes Gerüst ins Blatt setzen.
+
+   Es wird keine Datei geöffnet und keine angelegt: Das Muster steht in
+   daten/vorlagenmuster.js, wird zu HTML und ersetzt den Inhalt. Von da an
+   ist es ein Dokument wie jedes andere — Strg+S legt eine neue Datei an,
+   und die Gerüste selbst kann niemand überschreiben, weil es sie als Datei
+   gar nicht gibt.
+
+   Der Name im Fenster ist der des Gerüsts. Wer „Bewerbung" öffnet und
+   speichert, bekommt „Bewerbung" vorgeschlagen und muss ihn nicht tippen. */
+B.musterOeffnen = (kennung) => darfVerwerfen(() => {
+  const html = Vorlagen.musterHtml(kennung);
+  if (!html) { melde('Dieses Gerüst gibt es nicht mehr.'); return; }
+  const muster = VORLAGENMUSTER.find((m) => m[0] === kennung);
+
+  /* Wie bei „Neu": Das Stilblatt der zuletzt geöffneten Datei muss weg,
+     sonst schriebe man den Lebenslauf im Format eines fremden Briefes. */
+  Dateien.stileSetzen('');
+  Speicher.schreib('importstil', '');
+  Dokument.setzeInhalt(html);
+  $('kopfzeile').innerHTML = '<br>';
+  $('fusszeile').innerHTML = '<br>';
+  Speicher.schreib('kopfinhalt', '<br>');
+  Speicher.schreib('fussinhalt', '<br>');
+
+  dateiname = muster ? muster[1] : 'Unbenannt 1';
+  geaendert = false;
+  leereFunde('Noch nicht geprüft.');
+  merkeText();
+  titelSetzen();
+
+  /* Gleich in die erste Lücke, wie beim Baustein: Man soll tippen können,
+     ohne vorher zu zielen. */
+  setTimeout(() => {
+    const erster = feld.querySelector('.platzhalter');
+    if (erster) {
+      platzhalterNehmen(erster);
+      melde('„' + (muster ? muster[1] : 'Gerüst') + '" — Tab springt zur nächsten '
+          + 'Lücke, Tippen ersetzt sie.');
+    } else {
+      feld.focus();
+      melde('„' + (muster ? muster[1] : 'Gerüst') + '" steht im Blatt.');
+    }
+  }, 0);
+});
 
 B.vorlageBehalten = async () => {
   fenster('Als Vorlage behalten', [
@@ -8134,7 +8153,7 @@ const MENUES = [
     { name: 'Neu', tun: B.neu, taste: 'Strg+N' },
     { name: 'Öffnen…', tun: B.oeffnen, taste: 'Strg+O' },
     { name: 'Zuletzt verwendet', unter: zuletztPunkte },
-    { name: 'Neu aus Vorlage', unter: vorlagenPunkte },
+    { name: 'Neu aus Vorlage…', tun: () => B.vorlagenWaehlen() },
     strich,
     { name: 'Speichern', tun: B.speichern, taste: 'Strg+S' },
     { name: 'Speichern unter…', tun: B.speichernUnter, taste: 'Strg+Umschalt+S' },
@@ -10214,6 +10233,7 @@ document.addEventListener('keydown', (e) => {
      noch darüber und bringt seinen eigenen Ausgang mit — solange einer
      offen steht, ist er gemeint und nicht das Fenster darunter. */
   if (e.key === 'Escape' && !document.querySelector('.dialoggrund')) {
+    if (Vorlagen.offen()) { Vorlagen.schliessen(); return; }
     if (!$('druckfenster').hidden) { druckFensterSchliessen(); return; }
     if (vorschauOffen) { vorschauSchliessen(); return; }
   }
@@ -10379,6 +10399,20 @@ Einstellungen.verbinde({
     feld.lang = kennung;
     feld.blur(); feld.focus();
   },
+});
+
+/* Die Seite „Neu" kennt das Programm nicht. Sechs Griffe reichen ihr, was
+   sie braucht — mehr ist die Verbindung nicht breit, und man sieht auf
+   einen Blick, woran sie hängt. */
+Vorlagen.verbinde({
+  symbol,
+  oeffneNr: (nr) => B.vorlageOeffnen(nr),
+  leeresDokument: () => B.neu(),
+  ordnerOeffnen: () => B.vorlagenOrdner(),
+  behalten: () => B.vorlageBehalten(),
+  zurueck: () => feld.focus(),
+  oeffneMuster: (kennung) => B.musterOeffnen(kennung),
+  benutzer: () => Speicher.lies('benutzer', {}) || {},
 });
 
 /* Das Zuletztgeschriebene zurückholen — wie in der App. Ein Fenster, das

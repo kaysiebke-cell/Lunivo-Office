@@ -69,6 +69,7 @@ const SYMBOLE = {
   wordart:       'M12 4v16 M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2 M9 20h6',   /* lucide: type */
   textmarke:     'M17 3a2 2 0 0 1 2 2v15a1 1 0 0 1-1.496.868l-4.512-2.578a2 2 0 0 0-1.984 0l-4.512 2.578A1 1 0 0 1 5 20V5a2 2 0 0 1 2-2z',   /* lucide: bookmark */
   querverweis:   'M3 5v14 M21 12H7 M15 18 l6-6-6-6',   /* lucide: arrow-right-from-line */
+  nadel:         'M12 17v5 M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z',   /* lucide: pin */
   baustein:      'M10 22V7a1 1 0 0 0-1-1H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5a1 1 0 0 0-1-1H2 M15 2h6a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-6a1 1 0 0 1 -1 -1v-6a1 1 0 0 1 1 -1z',   /* lucide: blocks */
   initiale:      'M14 3v11 M14 9h-3a3 3 0 0 1 0-6h9 M18 3v11 M22 18H2l4-4 M6 22 l-4-4',   /* lucide: pilcrow-left */
   datum:         'M8 2v3 M16 2v3 M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2z M3 9h18',   /* lucide: calendar */

@@ -70,6 +70,13 @@ th,td{text-align:left;padding:8px 12px 8px 0;border-bottom:1px solid var(--linie
 th{color:var(--schrift-3);font-size:12px;letter-spacing:.06em;text-transform:uppercase;
   font-weight:600}
 td:first-child{white-space:nowrap;width:1%;padding-right:24px}
+/* Eine Lücke, wie sie im Blatt aussieht. Sie zu beschreiben genügt nicht:
+   Wer wissen will, wonach er sucht, muss es einmal gesehen haben. */
+.luecke{
+  background:rgba(47,111,181,.16);
+  border-bottom:1px dashed rgba(47,111,181,.5);
+  border-radius:3px;padding:0 2px;
+}
 .merk{
   margin:0 0 20px;padding:14px 18px;background:var(--karte);
   border:1px solid var(--linie);border-left:3px solid var(--blau);border-radius:6px;
@@ -157,8 +164,9 @@ ersetzt kein Speichern, aber es rettet den Nachmittag.</p>
         <code>.md</code>.</td></tr>
 <tr><td><span class="weg">Datei → Zuletzt verwendet</span></td>
     <td>Die letzten zehn Dateien.</td></tr>
-<tr><td><span class="weg">Datei → Neu aus Vorlage</span></td>
-    <td>Eine eigene Vorlage als Abschrift öffnen. Siehe <a href="#vorlagen">Vorlagen</a>.</td></tr>
+<tr><td><span class="weg">Datei → Neu aus Vorlage…</span></td>
+    <td>Die Seite <b>Neu</b>: alle Vorlagen als Blätter nebeneinander. Siehe
+        <a href="#vorlagen">Vorlagen</a>.</td></tr>
 </table>
 
 <p>Steht ungesicherte Arbeit im Blatt, fragt das Programm nach, bevor sie
@@ -386,26 +394,71 @@ Sache für einen Baustein, sondern für eine <a href="#vorlagen">Vorlage</a>.</p
 Aufbau. Ein fertiges Muster aus dem Internet gehört hierher, nicht in einen
 Baustein.</p>
 
-<h3>Eine Vorlage hinzufügen</h3>
+<p><span class="weg">Datei → Neu aus Vorlage…</span> öffnet die Seite
+<b>Neu</b> — im Register-Band steht sie unter <span class="weg">Datei →
+Aus Vorlage…</span>. Dort liegen alle Vorlagen als Blätter nebeneinander,
+mit einem Suchfeld darüber. Ein Klick auf ein Blatt öffnet die Abschrift,
+die Nadel unten rechts holt eine nach vorn. <kbd>Esc</kbd> führt zurück.</p>
+
+<h3>Die mitgelieferten Gerüste</h3>
+
+<p>Zehn Dokumente liegen von Anfang an da: <b>Brief</b>, <b>Brief an eine
+Behörde</b>, <b>Widerspruch</b>, <b>Bewerbung</b>, <b>Lebenslauf</b>,
+<b>Krankmeldung</b>, <b>Kündigung</b>, <b>Rechnung</b>, <b>Einladung</b>,
+<b>Protokoll</b>. Sie stehen im Reiter <span class="weg">Mitgeliefert</span>.</p>
+
+<p><b>Es steht kein fertiger Text darin.</b> Nur das Gerüst — wo der
+Absender hingehört, wo der Betreff, wo die Anrede — und in jeder Lücke ein
+Wort, das sagt, was dort hinkommt:</p>
+
+<p><span class="luecke">«Aktenzeichen des Bescheids»</span></p>
+
+<p>So eine Lücke ist blau unterlegt. <kbd>Tab</kbd> springt zur nächsten,
+Tippen ersetzt sie, ein Klick hinein nimmt sie ganz. Auf dem Papier ist sie
+nicht zu sehen: Was du stehen lässt, steht dort ohne Kasten.
+Es sind dieselben Lücken wie in den <a href="#bausteine">Textbausteinen</a>.</p>
+
+<p>Stehen unter <span class="weg">Extras → Optionen → Benutzerdaten</span>
+dein Name und deine Anschrift, dann stehen sie im Brief schon oben, und
+Ort und Datum sind das heutige. Sonst sind auch das Lücken.</p>
+
+<div class="merk">
+<p><b>Die Gerüste liegen in keinem Ordner.</b> Sie werden nicht in
+<code>~/Vorlagen</code> geschrieben — der Ordner gehört dir. Ein Gerüst
+wird ins Blatt gesetzt und ist von da an ein Dokument wie jedes andere.
+Überschreiben kannst du es nicht — als Datei gibt es sie gar nicht.</p>
+</div>
+
+<p>Willst du eins ändern und behalten — deinen eigenen Briefkopf statt des
+schlichten —, öffne es, ändere es und nimm unten <span class="weg">Dieses
+Dokument als Vorlage behalten…</span>. Dann steht deine Fassung daneben im
+Reiter <span class="weg">Meine Vorlagen</span>.</p>
+
+<h3>Eine eigene Vorlage hinzufügen</h3>
+
+<p>Der Reiter <span class="weg">Meine Vorlagen</span> ist am Anfang leer.
+Was darin steht, legst du selbst hinein — auf einem von zwei Wegen. Der
+erste geht über den Ordner:</p>
 <ol>
-<li><span class="weg">Datei → Neu aus Vorlage → Vorlagenordner öffnen</span>
-    — im Register-Band steht dasselbe unter <span class="weg">Datei</span>.
-    Die Dateiverwaltung geht auf.</li>
+<li><span class="weg">Vorlagenordner öffnen</span> — der Knopf steht
+    unten auf der Seite <b>Neu</b>, und im Register-Band außerdem unter
+    <span class="weg">Datei</span>. Die Dateiverwaltung geht auf.</li>
 <li>Die Datei hineinziehen. Erkannt werden <code>.odt</code>,
     <code>.ott</code>, <code>.fodt</code>, <code>.docx</code>,
     <code>.dotx</code>, <code>.doc</code>, <code>.dot</code>,
     <code>.rtf</code>, <code>.html</code>, <code>.txt</code> und
     <code>.md</code>.</li>
-<li>Fertig. Sie steht sofort im Menü — kein Neustart nötig.</li>
+<li>Fertig. Sie steht beim nächsten Öffnen der Seite da — kein Neustart
+    nötig.</li>
 </ol>
 
 <p>Der Ordner ist <code>~/Vorlagen</code> im eigenen Verzeichnis. Es ist
 derselbe, den die Dateiverwaltung als Vorlagenordner kennt.</p>
 
 <h3>Das Blatt als Vorlage behalten</h3>
-<p><span class="weg">Datei → Neu aus Vorlage → Dieses Dokument als Vorlage
-behalten…</span> legt ab, was gerade im Blatt steht — mit Briefkopf,
-Rändern und Schriften.</p>
+<p><span class="weg">Dieses Dokument als Vorlage behalten…</span> — der
+Knopf steht unten auf der Seite <b>Neu</b>. Er legt ab, was gerade im Blatt
+steht, mit Briefkopf, Rändern und Schriften.</p>
 
 <div class="merk">
 <p><b>Geöffnet wird immer eine Abschrift.</b> Die Vorlage selbst wird nur
@@ -547,8 +600,8 @@ dafür, meldet das Programm es. Für <code>.odt</code> hat es einen eigenen
 Schreiber und kommt ohne aus — dann eben ohne Tabellen.</p>
 
 <h3>Eine Vorlage taucht nicht auf</h3>
-<p>Der Ordner wird bei jedem Öffnen des Menüs neu gelesen; ein Neustart ist
-nicht nötig. Erkannt werden nur die oben genannten Endungen, und versteckte
+<p>Der Ordner wird bei jedem Öffnen der Seite <b>Neu</b> neu gelesen; ein
+Neustart ist nicht nötig. Erkannt werden nur die oben genannten Endungen, und versteckte
 Dateien werden übergangen.</p>
 
 <h3>Etwas ist verlorengegangen</h3>
