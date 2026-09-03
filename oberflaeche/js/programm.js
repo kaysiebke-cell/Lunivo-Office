@@ -1055,6 +1055,12 @@ function seiteAnwenden() {
   blatt.style.paddingBottom = seitenrand.unten + 'mm';
   blatt.style.paddingLeft = seitenrand.links + 'mm';
   blatt.style.paddingRight = seitenrand.rechts + 'mm';
+  /* Dieselben Maße noch einmal als Eigenschaften: Kopf- und Fußzeile
+     sitzen im Rand und müssen wissen, wie breit er ist. Aus dem Polster
+     allein lässt sich das im Stilblatt nicht ablesen. */
+  for (const kante of ['oben', 'unten', 'links', 'rechts']) {
+    blatt.style.setProperty('--rand-' + kante, seitenrand[kante] + 'mm');
+  }
   feld.style.columnCount = spalten > 1 ? spalten : '';
   feld.style.columnGap = spalten > 1 ? '8mm' : '';
   Speicher.schreib('seitenrand', seitenrand);
@@ -7935,13 +7941,21 @@ B.fensterListe = async () => {
   }, 'Hinwechseln');
 };
 
+/* Das Handbuch ist unser eigenes und liegt als handbuch.html neben der
+   Oberfläche. Vorher zeigte dieser Punkt auf die Hilfeseite von
+   LibreOffice — der bequeme Weg und der falsche: Sie beschreibt ein
+   anderes Programm, mit Knöpfen, die es hier nicht gibt, und ohne die, die
+   es hier gibt. */
 B.handbuch = async () => {
   try {
     const antwort = await fetch('handbuch', { method: 'POST' });
     if (!antwort.ok) throw new Error('Fehler ' + antwort.status);
     melde('Das Handbuch öffnet sich im Browser.');
   } catch (e) {
-    melde('Das Handbuch steht unter help.libreoffice.org/latest/de/text/swriter/main0000.html');
+    /* Ohne eigenes Fenster gibt es keinen, der eine Datei öffnen könnte —
+       dann tut es der Weg, den die Seite selbst kennt. */
+    window.open('handbuch.html', '_blank');
+    melde('Das Handbuch steht in handbuch.html neben dem Programm.');
   }
 };
 
@@ -8313,7 +8327,14 @@ B.ueber = () => {
       + 'Ein Raum für Worte\n\n'
       + 'Die Prüfung und der Wortschatz stammen aus der Schreibhilfe.\n'
       + 'Word-Dateien und PDF macht LibreOffice im Hintergrund.\n\n'
-      + 'Was geschrieben wird, bleibt auf diesem Rechner.' },
+      /* Der Satz ist ein Versprechen, also muss er in jedem Fall stimmen.
+         Die drei KI-Knöpfe können den Text an einen Dienst im Netz geben —
+         aber nur, wenn dafür ein Schlüssel hinterlegt wurde. Ohne Schlüssel
+         und mit einem Modell auf diesem Rechner geht nichts hinaus. Genau
+         das sagt der zweite Halbsatz, und ohne ihn wäre der erste zu
+         großzügig. */
+      + 'Was geschrieben wird, bleibt auf diesem Rechner.\n'
+      + 'Nichts geht hinaus, ohne dass du es selbst schickst.' },
   ], () => {}, 'Schließen');
 };
 
@@ -8781,7 +8802,7 @@ const MENUES = [
   ['Hilfe', [
     { name: 'Welche Hilfe wann…', tun: B.welcheHilfe },
     strich,
-    { name: 'LibreOffice-Handbuch', tun: B.handbuch },
+    { name: 'Handbuch', tun: B.handbuch },
     { name: 'Tastenkombinationen…', tun: B.tastenHilfe },
     strich,
     { name: 'Über Lunivo-Office…', tun: B.ueber },

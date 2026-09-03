@@ -8,7 +8,9 @@
 
 # Lunivo-Office
 
-**Ein Raum für Worte.**
+**Ein Raum für Worte.**  
+Was geschrieben wird, bleibt auf diesem Rechner.  
+Nichts geht hinaus, ohne dass du es selbst schickst.
 
 Ein Schreibprogramm wie LibreOffice Writer oder Word — mit einem Unterschied:
 Die **Schreibhilfe** sitzt fest an der Seite und sucht die Fehler, die ein
@@ -20,7 +22,7 @@ Rechtschreibprüfer **nicht** finden kann.
     zusammengetippte Wörter, doppelte Wörter, Satzanfänge
 
 Gebaut für Menschen mit Legasthenie. Kein Konto, keine Anmeldung, kein
-Internet nötig. Was geschrieben wird, bleibt auf dem eigenen Rechner.
+Internet nötig.
 
 ![Lunivo-Office mit einem Brief im Blatt und der Schreibhilfe rechts an der Seite](bilder/uebersicht.png)
 
