@@ -67,7 +67,13 @@ DATEN = os.path.expanduser("~/.local/share/schreibprogramm")
 ZWISCHEN = os.path.expanduser("~/.cache/schreibprogramm")
 
 
-HANDBUCH = "https://help.libreoffice.org/latest/de/text/swriter/main0000.html"
+# Das Handbuch ist unser eigenes und liegt neben der Oberfläche.
+#
+# Vorher stand hier die Hilfeseite von LibreOffice. Das war der bequeme
+# Weg und der falsche: Sie beschreibt ein anderes Programm — Knöpfe, die
+# es hier nicht gibt, und keinen von denen, die es hier gibt. Wer unter
+# „Hilfe" nachschlägt, sucht Hilfe zu diesem Programm.
+HANDBUCH_SEITE = "handbuch.html"
 
 
 # Die Formate, die im Speichern-Dialog zur Wahl stehen. Reihenfolge ist
@@ -1725,10 +1731,17 @@ class Leise(http.server.SimpleHTTPRequestHandler):
             return
 
         # „Hilfe → Handbuch": im richtigen Browser, nicht in diesem Fenster.
-        # Hier gehört das Dokument hin, nicht eine Webseite.
+        # Hier gehört das Dokument hin, nicht eine Webseite. Geöffnet wird
+        # die Datei unmittelbar, nicht über den eigenen Server: Das Handbuch
+        # soll auch dann aufgehen, wenn dieses Fenster gerade das einzige
+        # ist, das liefert, und man es zumacht.
         if adresse.path == "/handbuch":
+            seite = os.path.join(OBERFLAECHE, HANDBUCH_SEITE)
+            if not os.path.isfile(seite):
+                self.fehler_melden(404, "Das Handbuch wurde nicht gefunden.")
+                return
             try:
-                subprocess.Popen(["xdg-open", HANDBUCH], start_new_session=True)
+                subprocess.Popen(["xdg-open", seite], start_new_session=True)
             except OSError as grund:
                 self.fehler_melden(500, str(grund))
                 return
