@@ -49,6 +49,37 @@ voneinander getrennt und aufeinander abgestimmt werden müssen.
 > Wer einen Fall bemerkt, in dem etwas Richtiges angestrichen wurde: Ein
 > Beispiel dort hilft mehr als alles andere.
 
+## Warum es nicht nur um die Rechtschreibung geht
+
+Wer Legasthenie hat, kennt nicht nur die Schwierigkeit mit den Wörtern. Er
+kennt auch, wie andere darauf reagieren. Man wird auf seine Rechtschreibung
+angesprochen und verbessert, obwohl es gerade um etwas ganz anderes geht.
+Man wird für dumm gehalten, weil ein Satz falsch geschrieben ist. Und
+manchmal wird ein Text gar nicht mehr gelesen, sobald die Form nicht stimmt
+— der Inhalt kommt dann nicht mehr an.
+
+Das ist kein technisches Problem. Ein falsch geschriebenes Wort lässt sich
+verbessern. Vorher schon einsortiert zu werden, lässt sich nicht
+verbessern.
+
+Dazu kommt, dass man damit ziemlich allein dasteht. Wie viele Menschen es
+betrifft, merkt man erst, wenn man selbst dazugehört. Von außen sieht das
+kaum jemand. Und wer nicht gesehen wird, wird auch nicht mitgedacht — dann
+sind Formulare, Briefe und Anträge eben so gebaut, wie sie gebaut sind.
+
+Das ist der Grund für zwei Entscheidungen in diesem Projekt.
+
+Die erste: Rechtschreibung spielt hier keine Rolle, wenn jemand etwas
+schreibt. In Issues und Diskussionen wird niemand darauf angesprochen. Es
+wäre absurd, ausgerechnet hier danach zu fragen.
+
+Die zweite: Unter *Neu aus Vorlage* liegen fertige Gerüste für einen Brief,
+einen Widerspruch, eine Bewerbung. Darin steht kein Text, nur der Aufbau —
+wo der Absender hingehört, wo der Betreff, wo die Anrede. Denn an einem
+Behördenbrief scheitert man selten daran, dass man nicht weiß, was man
+sagen will. Man scheitert an einer Form, die man kennen muss und die einem
+niemand erklärt.
+
 ## Eine Hilfe, kein Ersatz
 
 Dabei ist mir auch wichtig, deutlich zu machen, dass Lunivo-Office eine
@@ -71,10 +102,19 @@ geschrieben, um Fehler zu finden und anschließend zu verbessern. So kann ich
 die Funktionen nicht nur technisch testen, sondern gleichzeitig feststellen,
 wie gut sie mich beim tatsächlichen Schreiben unterstützen.
 
-Inhaltlich stammt dieser Text von mir und beschreibt meine eigenen Erfahrungen,
-Ideen und die Entwicklung meines Programms. Für den sprachlichen Feinschliff
-und eine bessere Lesbarkeit wurde ChatGPT verwendet. Die eigentliche Idee und
-die Entwicklung der Schreibhilfe und von Lunivo-Office stammen von mir.
+Inhaltlich stammt dieser Text von mir und beschreibt meine eigenen
+Erfahrungen, Ideen und die Entwicklung meines Programms. Für den
+sprachlichen Feinschliff habe ich KI benutzt — ChatGPT und Claude.
+
+Das schreibe ich nicht als Eingeständnis dazu, sondern weil es der Punkt
+ist. Genau dafür baue ich dieses Programm: damit der Inhalt ankommt, auch
+wenn die Form Hilfe braucht. Der Inhalt ist meiner. Bei der Form nehme ich
+Hilfe an — so wie sie hier jeder annehmen darf.
+
+Die eigentliche Idee und die Entwicklung der Schreibhilfe und von
+Lunivo-Office stammen von mir.
+
+*Gebaut vom netten Legastheniker aus der Nachbarschaft.*
 
 ---
 
