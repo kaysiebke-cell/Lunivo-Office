@@ -4107,14 +4107,20 @@ B.kommentareAlleWeg = () => {
 /* ---- Einzelne Änderungen annehmen und ablehnen ----
    „Alles übernehmen" gab es schon. Wer eine Überarbeitung durchgeht, will
    aber Stelle für Stelle entscheiden. */
-function aenderungen() {
+/* Hiess einmal „aenderungen". Weiter unten steht aber noch eine Funktion
+   dieses Namens — die Rechnung, die zwei Fassungen vergleicht. Zwei
+   Funktionen gleichen Namens auf derselben Ebene sind in JavaScript kein
+   Fehler: Die spaetere gewinnt stillschweigend. Dadurch riefen „Naechste
+   Aenderung", „Annehmen" und „Ablehnen" die Vergleichsrechnung ohne
+   Argumente auf und warfen jedes Mal. Jetzt heisst jede, was sie tut. */
+function verfolgteStellen() {
   return [...feld.querySelectorAll('ins.verfolgt, del.verfolgt')];
 }
 
 let aenderungStelle = -1;
 
 function aenderungZeigen(stelle) {
-  const alle = aenderungen();
+  const alle = verfolgteStellen();
   if (!alle.length) { melde('Es steht keine Änderung an.'); return null; }
   aenderungStelle = (stelle + alle.length) % alle.length;
   const el = alle[aenderungStelle];
@@ -4130,25 +4136,25 @@ B.aenderungWeiter = () => aenderungZeigen(aenderungStelle + 1);
 B.aenderungZurueck = () => aenderungZeigen(aenderungStelle - 1);
 
 B.aenderungAnnehmen = () => {
-  const alle = aenderungen();
+  const alle = verfolgteStellen();
   if (!alle.length) { melde('Es steht keine Änderung an.'); return; }
   const el = alle[Math.max(0, Math.min(aenderungStelle, alle.length - 1))];
   if (el.tagName === 'INS') el.replaceWith(...el.childNodes);
   else el.remove();
   aenderungStelle = Math.max(-1, aenderungStelle - 1);
   geaendertMelden();
-  melde('Angenommen. Es bleiben ' + aenderungen().length + '.');
+  melde('Angenommen. Es bleiben ' + verfolgteStellen().length + '.');
 };
 
 B.aenderungAblehnen = () => {
-  const alle = aenderungen();
+  const alle = verfolgteStellen();
   if (!alle.length) { melde('Es steht keine Änderung an.'); return; }
   const el = alle[Math.max(0, Math.min(aenderungStelle, alle.length - 1))];
   if (el.tagName === 'INS') el.remove();
   else el.replaceWith(...el.childNodes);
   aenderungStelle = Math.max(-1, aenderungStelle - 1);
   geaendertMelden();
-  melde('Abgelehnt. Es bleiben ' + aenderungen().length + '.');
+  melde('Abgelehnt. Es bleiben ' + verfolgteStellen().length + '.');
 };
 
 /* ---- Markup-Ansicht ----
@@ -5815,7 +5821,7 @@ B.barrierefrei = () => {
    ihn als Leiste daneben; hier steht er in der Seitenleiste der
    Schreibhilfe, wo ohnehin die Funde stehen. */
 B.ueberarbeitungsbereich = () => {
-  const alle = aenderungen();
+  const alle = verfolgteStellen();
   const kommentareAlle = kommentare();
   if (!alle.length && !kommentareAlle.length) {
     leereFunde('Es steht keine Änderung und kein Kommentar an.');
