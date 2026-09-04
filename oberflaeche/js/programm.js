@@ -1896,7 +1896,7 @@ function registerBauen() {
    aufgeht. Beim Start wären 300 KB für etwas, das man selten braucht, zu
    spüren.
    ------------------------------------------------------------ */
-let symbolWahl = Speicher.lies('symbole', {});
+let symbolWahl = Speicher.lies('symbole', {});   /* unten gleich nachgebaut */
 let katalogGeladen = false;
 
 /* Der Pfad, der wirklich gezeichnet wird: die eigene Wahl, sonst der
@@ -1948,6 +1948,136 @@ function symbolBefehle(name) {
   return namen;
 }
 
+/* ---- Eigene Zeichnungen ----
+
+   Der Katalog hat 1800 Zeichnungen, und trotzdem fehlt manchmal genau die
+   eine. Deshalb kann man hier eine eigene hereingeben: eine SVG-Datei, wie
+   sie im Netz steht, oder nur die Pfaddaten.
+
+   Zwei Dinge muessen dabei passieren.
+
+   ERSTENS DAS MASS. Unsere Symbole sitzen in einem Feld von 24 x 24. Eine
+   fremde Zeichnung hat ihr eigenes Mass, oft 16, 32 oder 512. Aus ihrer
+   viewBox wird ausgerechnet, wie sie zu verkleinern und zu ruecken ist,
+   damit sie mittig in unser Feld passt.
+
+   ZWEITENS DIE SICHERHEIT. Was hereingereicht wird, ist fremder Text. Er
+   wird nicht uebernommen, sondern nachgebaut: Aus der eingelesenen
+   Zeichnung werden nur die Formen abgeschrieben, die wir kennen, und von
+   ihnen nur die Masszahlen. Alles andere — Skripte, Verweise, Stile,
+   Ereignisse — bleibt draussen. Was hinterher im Speicher steht, haben wir
+   selbst geschrieben. */
+const SVG_RAUM = 'http://www.w3.org/2000/svg';
+
+const SVG_FORMEN = {
+  path:     ['d'],
+  circle:   ['cx', 'cy', 'r'],
+  ellipse:  ['cx', 'cy', 'rx', 'ry'],
+  rect:     ['x', 'y', 'width', 'height', 'rx', 'ry'],
+  line:     ['x1', 'y1', 'x2', 'y2'],
+  polyline: ['points'],
+  polygon:  ['points'],
+};
+/* Was in einer Masszahl stehen darf — und in Pfaddaten zusaetzlich die
+   Buchstaben der Befehle. Mehr nicht. */
+const NUR_ZAHLEN = /^[0-9eE.,+\-\s]*$/;
+const NUR_PFAD   = /^[0-9eE.,+\-\sMmLlHhVvCcSsQqTtAaZz]*$/;
+
+/** Baut aus fremdem SVG-Text eine eigene Zeichnung fuer unser 24er-Feld.
+    Gibt die Markierung zurueck oder null, wenn nichts Brauchbares drin war. */
+function eigeneZeichnung(roh, gefuellt) {
+  const text = String(roh || '').trim();
+  if (!text) return null;
+
+  /* Nur Pfaddaten, ohne Huelle: Dann ist das Mass schon unseres. */
+  if (text.indexOf('<') === -1) {
+    return NUR_PFAD.test(text) ? text : null;
+  }
+
+  let baum;
+  try {
+    baum = new DOMParser().parseFromString(text, 'image/svg+xml');
+  } catch (e) { return null; }
+  if (!baum || baum.querySelector('parsererror')) return null;
+  const wurzel = baum.documentElement;
+  if (!wurzel || wurzel.localName !== 'svg') return null;
+
+  /* Das Mass der fremden Zeichnung. Fehlt die viewBox, tun es Breite und
+     Hoehe; fehlen auch die, wird 24 angenommen. */
+  let vx = 0, vy = 0, vb = 24, vh = 24;
+  const kasten = (wurzel.getAttribute('viewBox') || '').trim().split(/[\s,]+/).map(Number);
+  if (kasten.length === 4 && kasten.every((z) => Number.isFinite(z)) && kasten[2] > 0 && kasten[3] > 0) {
+    [vx, vy, vb, vh] = kasten;
+  } else {
+    const b = parseFloat(wurzel.getAttribute('width'));
+    const h = parseFloat(wurzel.getAttribute('height'));
+    if (b > 0 && h > 0) { vb = b; vh = h; }
+  }
+
+  const gruppe = document.createElementNS(SVG_RAUM, 'g');
+  let formen = 0;
+  for (const el of wurzel.querySelectorAll(Object.keys(SVG_FORMEN).join(','))) {
+    const art = el.localName;
+    const erlaubt = SVG_FORMEN[art];
+    if (!erlaubt) continue;
+    const neu = document.createElementNS(SVG_RAUM, art);
+    let hatMass = false;
+    for (const eigen of erlaubt) {
+      const wert = el.getAttribute(eigen);
+      if (wert === null) continue;
+      const pruefer = eigen === 'd' ? NUR_PFAD : NUR_ZAHLEN;
+      if (!pruefer.test(wert)) { hatMass = false; break; }
+      neu.setAttribute(eigen, wert.trim());
+      hatMass = true;
+    }
+    if (!hatMass) continue;
+    gruppe.appendChild(neu);
+    formen++;
+  }
+  if (!formen) return null;
+
+  /* Mittig hineinlegen, Seitenverhaeltnis behalten. */
+  const mass = Math.min(24 / vb, 24 / vh);
+  const nachRechts = (24 - vb * mass) / 2 - vx * mass;
+  const nachUnten  = (24 - vh * mass) / 2 - vy * mass;
+  const kurz = (z) => (Math.round(z * 1000) / 1000);
+  gruppe.setAttribute('transform',
+    'translate(' + kurz(nachRechts) + ' ' + kurz(nachUnten) + ') scale(' + kurz(mass) + ')');
+  /* Ein gefuelltes Zeichen als Strich zu malen gaebe eine leere Huelle.
+     Deshalb die Wahl — und die Strichbreite muss dabei mitverkleinert
+     werden, sonst wird sie durch die Skalierung dicker oder duenner als
+     bei allen anderen Symbolen. */
+  if (gefuellt) {
+    gruppe.setAttribute('fill', 'currentColor');
+    gruppe.setAttribute('stroke', 'none');
+  } else {
+    gruppe.setAttribute('stroke-width', String(kurz(1.7 / mass)));
+  }
+  return new XMLSerializer().serializeToString(gruppe);
+}
+
+/* Was aus dem Speicher kommt, wird noch einmal durch denselben Nachbau
+   geschickt. Der Speicher gehoert dem Menschen und niemandem sonst — aber
+   eine Zeichnung, die niemand geprueft hat, wird hier nicht gezeichnet. */
+function wahlSaeubern(wahl) {
+  const rein = {};
+  for (const [name, inhalt] of Object.entries(wahl || {})) {
+    if (typeof inhalt !== 'string') continue;
+    if (inhalt.indexOf('<') === -1) { if (NUR_PFAD.test(inhalt)) rein[name] = inhalt; continue; }
+    const gepruefte = eigeneZeichnung(
+      '<svg xmlns="' + SVG_RAUM + '" viewBox="0 0 24 24">' + inhalt + '</svg>',
+      /fill="currentColor"/.test(inhalt));
+    if (gepruefte) rein[name] = gepruefte;
+  }
+  return rein;
+}
+
+/* Beim Start einmal durch den Nachbau — siehe wahlSaeubern. Das Ergebnis
+   wird gleich zurueckgeschrieben: Was nicht gezeichnet wird, soll auch
+   nicht im Speicher liegen bleiben. */
+symbolWahl = wahlSaeubern(symbolWahl);
+Speicher.schreib('symbole', symbolWahl);
+
 function symbolNeuZeichnen() {
   Speicher.schreib('symbole', symbolWahl);
   werkzeugeBauen();
@@ -1960,7 +2090,14 @@ function symbolNeuZeichnen() {
    und ihn überall mitzuschreiben wäre eine zweite Buchführung. */
 function symbolUnter(ziel) {
   const knopf = ziel && ziel.closest && ziel.closest('.wz');
-  const strich = knopf && knopf.querySelector('svg path');
+  const bild = knopf && knopf.querySelector('svg');
+  if (!bild) return null;
+  /* Seit das Bild seinen Namen traegt, steht er einfach da. Der Weg ueber
+     den Pfad bleibt fuer Knoepfe, die vor dieser Aenderung gezeichnet
+     wurden — und fuer den Fall, dass irgendwo noch einer von Hand gebaut
+     wird. Bei eigenen Zeichnungen gibt es keinen einzelnen Pfad. */
+  if (bild.dataset && bild.dataset.symbol) return bild.dataset.symbol;
+  const strich = bild.querySelector('path');
   if (!strich) return null;
   const d = strich.getAttribute('d');
   return Object.keys(SYMBOLE).find((n) => symbolPfad(n) === d) || null;
@@ -1980,6 +2117,87 @@ function symbolUnter(ziel) {
     });
   }
 })();
+
+/* Das Fenster fuer eine eigene Zeichnung. Die Vorschau zeichnet mit,
+   waehrend getippt wird: Ob eine fremde SVG bei uns brauchbar aussieht,
+   sieht man erst, wenn man sie sieht. */
+function eigeneFragen(welches, danach) {
+  const grund = document.createElement('div');
+  grund.className = 'dialoggrund';
+  const kasten = document.createElement('div');
+  kasten.className = 'dialog dialog--breit';
+  kasten.innerHTML =
+    '<h3 class="dialog__titel">Eigene Zeichnung</h3>'
+    + '<p class="dialog__satz">Eine SVG-Datei hier hineinkopieren — oder nur '
+    + 'die Pfaddaten. Sie wird auf 24 &#215; 24 gebracht und mittig eingepasst.</p>'
+    + '<div class="eigenzeichen">'
+    + '<textarea class="eigenzeichen__feld" spellcheck="false" '
+    + 'placeholder="&lt;svg viewBox=&quot;0 0 24 24&quot;&gt;&#8230;&lt;/svg&gt;"></textarea>'
+    + '<div class="eigenzeichen__schau"><div class="eigenzeichen__bild"></div>'
+    + '<span class="eigenzeichen__wort">Noch nichts</span></div>'
+    + '</div>'
+    + '<label class="eigenzeichen__wahl"><input type="checkbox"> '
+    + 'Gef&#252;llt zeichnen (f&#252;r Zeichnungen aus Fl&#228;chen statt Strichen)</label>';
+
+  const feld     = kasten.querySelector('.eigenzeichen__feld');
+  const bild     = kasten.querySelector('.eigenzeichen__bild');
+  const wort     = kasten.querySelector('.eigenzeichen__wort');
+  const gefuellt = kasten.querySelector('.eigenzeichen__wahl input');
+
+  let fertig = null;
+  const schauen = () => {
+    fertig = eigeneZeichnung(feld.value, gefuellt.checked);
+    bild.textContent = '';
+    if (!fertig) {
+      wort.textContent = feld.value.trim() ? 'Daraus wird keine Zeichnung.' : 'Noch nichts';
+      return;
+    }
+    const s = document.createElementNS(SVG_RAUM, 'svg');
+    s.setAttribute('viewBox', '0 0 24 24');
+    s.setAttribute('width', '48'); s.setAttribute('height', '48');
+    s.setAttribute('fill', 'none'); s.setAttribute('stroke', 'currentColor');
+    s.setAttribute('stroke-width', '1.7');
+    s.setAttribute('stroke-linecap', 'round');
+    s.setAttribute('stroke-linejoin', 'round');
+    if (fertig.indexOf('<') === -1) {
+      const pf = document.createElementNS(SVG_RAUM, 'path');
+      pf.setAttribute('d', fertig);
+      s.appendChild(pf);
+    } else { s.innerHTML = fertig; }
+    bild.appendChild(s);
+    wort.textContent = 'So kommt sie in die Leiste.';
+  };
+  feld.addEventListener('input', schauen);
+  gefuellt.addEventListener('change', schauen);
+
+  const knoepfe = document.createElement('div');
+  knoepfe.className = 'dialog__knoepfe';
+  const ab = document.createElement('button');
+  ab.className = 'knopf'; ab.textContent = 'Abbrechen';
+  const ok = document.createElement('button');
+  ok.className = 'knopf knopf--haupt'; ok.textContent = 'Übernehmen';
+  knoepfe.append(ab, ok);
+  kasten.appendChild(knoepfe);
+  grund.appendChild(kasten);
+  document.body.appendChild(grund);
+  feld.focus();
+
+  const zu = () => grund.remove();
+  ab.addEventListener('click', zu);
+  grund.addEventListener('mousedown', (e) => { if (e.target === grund) zu(); });
+  document.addEventListener('keydown', function flucht(e) {
+    if (!document.body.contains(grund)) { document.removeEventListener('keydown', flucht); return; }
+    if (e.key === 'Escape') { e.preventDefault(); zu(); }
+  });
+  ok.addEventListener('click', () => {
+    if (!fertig) { melde('Daraus wird keine Zeichnung — steht wirklich eine SVG darin?'); return; }
+    symbolWahl[welches] = fertig;
+    zu();
+    if (danach) danach();
+    melde('Eigene Zeichnung übernommen.');
+  });
+  schauen();
+}
 
 B.symbolTauschen = async (vorgabe) => {
   const da = await katalogHolen();
@@ -2018,7 +2236,13 @@ B.symbolTauschen = async (vorgabe) => {
   alleZurueck.type = 'button';
   alleZurueck.className = 'knopf knopf--klein';
   alleZurueck.textContent = 'Alle zurücksetzen';
-  fuss.append(zurueck, alleZurueck);
+  /* Der Katalog hat 1800 Zeichnungen, und trotzdem fehlt manchmal genau
+     die eine. Dann bringt man seine eigene mit. */
+  const eigene = document.createElement('button');
+  eigene.type = 'button';
+  eigene.className = 'knopf knopf--klein';
+  eigene.textContent = 'Eigene Zeichnung…';
+  fuss.append(eigene, zurueck, alleZurueck);
   knoten.appendChild(fuss);
 
   /* Welches Symbol wird bearbeitet. Ohne Vorgabe das erste des Registers. */
@@ -2082,6 +2306,10 @@ B.symbolTauschen = async (vorgabe) => {
   };
 
   suchfeld.addEventListener('input', gitterZeigen);
+  eigene.addEventListener('click', () => eigeneFragen(welches, () => {
+    symbolNeuZeichnen();
+    kopfZeigen();
+  }));
   zurueck.addEventListener('click', () => {
     delete symbolWahl[welches];
     symbolNeuZeichnen();
@@ -7113,9 +7341,20 @@ function symbol(name) {
   s.setAttribute('stroke-linecap', 'round');
   s.setAttribute('stroke-linejoin', 'round');
   s.setAttribute('aria-hidden', 'true');
-  const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  p.setAttribute('d', symbolPfad(name));
-  s.appendChild(p);
+  /* Der Name steht am Bild. Frueher wurde beim Rechtsklick ueber den
+     gezeichneten Pfad zurueckgerechnet, welches Symbol gemeint ist — bei
+     einer eigenen Zeichnung gibt es aber gar keinen einzelnen Pfad mehr. */
+  s.dataset.symbol = name;
+  const inhalt = symbolPfad(name) || '';
+  if (inhalt.indexOf('<') === -1) {
+    const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    p.setAttribute('d', inhalt);
+    s.appendChild(p);
+  } else {
+    /* Eine eigene Zeichnung. Sie wurde beim Anlegen und beim Laden
+       nachgebaut; hier steht nur noch, was wir selbst geschrieben haben. */
+    s.innerHTML = inhalt;
+  }
   return s;
 }
 
