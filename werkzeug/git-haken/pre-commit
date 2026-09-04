@@ -1,0 +1,60 @@
+#!/bin/sh
+#
+# pre-commit — sucht Namensdopplungen, bevor sie im Verlauf stehen.
+#
+# Geprüft wird der Stand, der wirklich committet wird — nicht der, der
+# gerade auf der Platte liegt. Wer nur die Hälfte seiner Änderungen mit
+# „git add" vormerkt, bekäme sonst grünes Licht für etwas, das so nie
+# geprüft wurde.
+#
+# Dafür werden die vorgemerkten Fassungen aller JavaScript-Dateien in
+# einen Ordner nebenan geschrieben und dort geprüft. Die Prüfung über
+# Dateigrenzen braucht ohnehin alle Dateien auf einmal, nicht nur die
+# geänderten.
+#
+# Eingehängt wird das über „core.hooksPath" — siehe werkzeug/haken-an.sh.
+# Dadurch liegt der Haken im Projekt und nicht in .git, das niemand sonst
+# bekommt.
+#
+# Im Notfall: git commit --no-verify
+
+wurzel=$(git rev-parse --show-toplevel) || exit 0
+pruefer="$wurzel/werkzeug/namen-pruefen.py"
+[ -x "$pruefer" ] || exit 0
+
+# Nur wenn überhaupt JavaScript vorgemerkt ist.
+git diff --cached --name-only --diff-filter=ACMR | grep -q '\.js$' || exit 0
+
+behelf=$(mktemp -d) || exit 0
+trap 'rm -rf "$behelf"' EXIT
+
+dateien=""
+for weg in $(git ls-files '*.js'); do
+  mkdir -p "$behelf/$(dirname "$weg")"
+  # Die vorgemerkte Fassung. Fehlt sie (Datei ist im Index gelöscht),
+  # wird die Datei übergangen.
+  git show ":$weg" > "$behelf/$weg" 2>/dev/null || continue
+  dateien="$dateien $behelf/$weg"
+done
+[ -n "$dateien" ] || exit 0
+
+# Erst laufen lassen, dann melden. Bei "befehl | sed" zaehlt der
+# Rueckgabewert von sed -- und der ist immer 0. Der Haken haette den
+# Commit durchgelassen und dabei die Fundstellen ausgedruckt.
+# shellcheck disable=SC2086
+ausgabe=$(python3 "$pruefer" $dateien)
+ergebnis=$?
+printf '%s\n' "$ausgabe" | sed "s#$behelf/##"
+[ "$ergebnis" -eq 0 ] && exit 0
+
+cat <<'ENDE'
+
+Der Commit ist nicht gemacht worden.
+
+Zwei Namen im selben Bereich heißt in JavaScript nicht Fehler, sondern
+stilles Überschreiben: Die spätere Deklaration gewinnt. Genau so waren
+"Nächste Änderung", "Annehmen" und "Ablehnen" monatelang kaputt.
+
+Wenn es Absicht ist:  git commit --no-verify
+ENDE
+exit 1

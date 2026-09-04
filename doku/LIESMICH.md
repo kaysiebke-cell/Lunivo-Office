@@ -186,6 +186,8 @@ Leiste und Seitenleiste — und über „In Datei drucken" wird daraus ein PDF.
 
     werkzeug/         Prüfungen für den Quelltext, nicht für den Text
       namen-pruefen.py  sucht Namen, die zweimal im selben Bereich stehen
+      haken-an.sh       schaltet die Prüfung vor jedem Commit ein
+      git-haken/        die Haken selbst — im Projekt, nicht in .git
 
     symbole/icon.svg  das Symbol des Programms
     symbole/          dasselbe in allen Größen (16 bis 512)
@@ -219,6 +221,27 @@ wenn er etwas findet.
 
 Er kann sich irren, und zwar zugunsten von zu viel: Wer einen Treffer
 nicht versteht, sieht sich die genannten Zeilen an.
+
+### Vor jedem Commit von selbst
+
+    ./werkzeug/haken-an.sh
+
+Danach läuft die Prüfung bei jedem `git commit`. Findet sie etwas, wird
+nicht committet, und die Fundstellen stehen da. Wenn es Absicht ist:
+`git commit --no-verify`. Abschalten mit `./werkzeug/haken-an.sh --weg`.
+
+Geprüft wird der Stand, der **wirklich committet wird** — nicht der, der
+gerade auf der Platte liegt. Wer nur die Hälfte seiner Änderungen mit
+`git add` vormerkt, bekäme sonst grünes Licht für etwas, das so nie
+geprüft wurde.
+
+Der Haken liegt in `werkzeug/git-haken/` und damit im Projekt. Git sucht
+seine Haken sonst in `.git/hooks`, und was dort liegt, hat nur der eine
+Rechner, auf dem es angelegt wurde — deshalb der Umweg über
+`core.hooksPath`. Wer mitarbeitet, ruft `haken-an.sh` einmal auf.
+
+Ein Commit ohne JavaScript kostet nichts: Dann läuft die Prüfung gar
+nicht erst an.
 
 ## Das Symbol
 
