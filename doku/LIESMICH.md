@@ -174,14 +174,51 @@ Leiste und Seitenleiste — und über „In Datei drucken" wird daraus ein PDF.
                       .rtf, .pdf, .epub, .html, .txt
       js/pruefung.js  die Prüfung selbst
       js/ki.js        Claude und Ollama, das Gedächtnis, die Sicherung
+      js/kiteil.js    die KI im Programm: korrigieren, vorschlagen,
+                      übersetzen, die Marken „Für wen?"
+      js/drucken.js   Seitenumbruch, Druckvorschau, Druckfenster
+      js/referenzen.js  Fußnoten, Zitate, Verzeichnisse
+      js/bausteine.js Textbausteine und die Lücken zum Ausfüllen
+      js/vorlagen.js  die Seite „Neu" mit den Vorlagen
       js/einstellungen.js  die Einstellungsseite
       daten/regeln.js   der Wortschatz der Prüfung
       daten/woerter.txt die deutsche Wörterliste (355.322 Wörter)
+
+    werkzeug/         Prüfungen für den Quelltext, nicht für den Text
+      namen-pruefen.py  sucht Namen, die zweimal im selben Bereich stehen
 
     symbole/icon.svg  das Symbol des Programms
     symbole/          dasselbe in allen Größen (16 bis 512)
     bilder/marke.png  das freigestellte Zeichen, aus dem sie gerechnet sind
     doku/             diese Seite, ENTSTEHUNG und RICHTUNG
+
+## Namen prüfen, bevor man sich wundert
+
+    ./werkzeug/namen-pruefen.py
+
+In JavaScript ist das hier kein Fehler, den irgendwer meldet:
+
+    function aenderungen() { ... }          // die Liste der Änderungen
+    function aenderungen(alt, neu) { ... }  // die Rechnung, die vergleicht
+
+Die spätere Deklaration gewinnt stillschweigend. Genau so waren „Nächste
+Änderung", „Annehmen" und „Ablehnen" monatelang kaputt: Sie riefen die
+Vergleichsrechnung ohne Argumente auf, und die warf jedes Mal — in die
+Konsole, wo es niemand sieht.
+
+Bei `const` und `let` fällt so etwas auf, weil das Programm gar nicht
+erst lädt. Bei `function` und `var` nicht. Und über Dateigrenzen hinweg
+fällt gar nichts auf: Klassische Skripte teilen sich einen Namensraum,
+also kann eine Datei einer anderen einen Namen wegnehmen.
+
+Der Prüfer geht den Quelltext Zeichen für Zeichen durch und zählt die
+Klammertiefe mit — Zeichenketten, Kommentare und reguläre Ausdrücke
+werden übersprungen. Er meldet, was zweimal im selben Block steht, und
+sagt dazu, ob es beim Laden auffällt oder eben nicht. Er gibt 1 zurück,
+wenn er etwas findet.
+
+Er kann sich irren, und zwar zugunsten von zu viel: Wer einen Treffer
+nicht versteht, sieht sich die genannten Zeilen an.
 
 ## Das Symbol
 
