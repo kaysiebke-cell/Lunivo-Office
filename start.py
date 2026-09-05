@@ -52,32 +52,13 @@ OBERFLAECHE = os.path.join(HIER, "oberflaeche")     # was der Server ausliefert
 PORT = 8322
 
 # Wo alles liegt, was das Programm behält.
-#
-# Der Ordner heißt weiter „schreibprogramm', obwohl das Programm inzwischen
-# Lunivo-Office heißt. Das ist Absicht und kein Übersehen: DATEN ist zugleich
-# das base_data_directory von WebKit (siehe unten), und darin steckt der
-# localStorage — der geschriebene Text, der Schlüssel für die KI, die
-# gelernten Wörter, jede Einstellung. Ein anderer Ordnername hieße: beim
-# ersten Start nach dem Update steht alles leer da, und die 700 MB
-# LibreOffice und 400 MB LanguageTool wären ein zweites Mal zu laden.
-#
-# Ein Ordnername ist nichts, was jemand zu sehen bekommt. Der Preis wäre
-# also hoch und der Gewinn keiner.
 DATEN = os.path.expanduser("~/.local/share/schreibprogramm")
 ZWISCHEN = os.path.expanduser("~/.cache/schreibprogramm")
 
-
 # Das Handbuch ist unser eigenes und liegt neben der Oberfläche.
-#
-# Vorher stand hier die Hilfeseite von LibreOffice. Das war der bequeme
-# Weg und der falsche: Sie beschreibt ein anderes Programm — Knöpfe, die
-# es hier nicht gibt, und keinen von denen, die es hier gibt. Wer unter
-# „Hilfe' nachschlägt, sucht Hilfe zu diesem Programm.
 HANDBUCH_SEITE = "handbuch.html"
 
-
-# Die Formate, die im Speichern-Dialog zur Wahl stehen. Reihenfolge ist
-# Absicht: oben das eigene Format, dann die von Microsoft, dann der Rest.
+# Die Formate, die im Speichern-Dialog zur Wahl stehen.
 FORMAT_LISTE = [
     ("odt",  "ODF-Textdokument (.odt)"),
     ("docx", "Word-Dokument (.docx)"),
@@ -90,8 +71,7 @@ FORMAT_LISTE = [
     ("epub", "E-Book (.epub)"),
 ]
 
-# Die Filter im Öffnen-Dialog. Oben das Nützlichste: alles, was das
-# Programm lesen kann. Wer gezielt sucht, schaltet weiter.
+# Die Filter im Öffnen-Dialog.
 OEFFNEN_FILTER = [
     ("Alle Dokumente, die das Programm lesen kann",
      ["*.odt", "*.ott", "*.fodt", "*.docx", "*.doc", "*.rtf", "*.html", "*.htm",
@@ -112,34 +92,14 @@ TABELLEN_FILTER = [
     ("Alle Dateien", ["*"]),
 ]
 
-# Der Ordner, in dem zuletzt etwas geöffnet oder gespeichert wurde. Beim
-# nächsten Mal steht der Dialog gleich dort — niemand fängt gern wieder
-# im Persönlichen Ordner an.
 LETZTER_ORDNER = {"weg": None}
-
-# Was zuletzt gelesen werden durfte — dieselbe Vorsorge wie beim Schreiben.
 LESEZIEL = {"pfad": None}
 
-# Die zuletzt geöffneten und gespeicherten Dateien.
-#
-# Die Liste liegt hier und nicht in der Seite, und das ist eine Frage der
-# Vorsicht. Läge sie dort, müsste die Seite dem Server einen Pfad nennen
-# dürfen, um eine Datei zu öffnen — und dann könnte sie jeden Pfad nennen,
-# auch einen, der sie nichts angeht. So kennt die Seite nur Nummern: Der
-# Server sagt, was in seiner Liste steht, und nimmt zurück nur eine Nummer
-# daraus entgegen.
 ZULETZT_DATEI = os.path.join(DATEN, "zuletzt.json")
 ZULETZT_VIELE = 10
 
-
 def zuletzt_lesen():
-    """Die Liste, ohne das, was es nicht mehr gibt.
-
-    Wer eine Datei verschiebt oder wegwirft, soll sie nicht weiter im Menü
-    stehen sehen und sich beim Klick einen Fehler abholen. Geprüft wird
-    deshalb beim Lesen, nicht beim Schreiben — dazwischen kann alles
-    passieren.
-    """
+    """Die Liste, ohne das, was es nicht mehr gibt."""
     try:
         with open(ZULETZT_DATEI, encoding="utf-8") as datei:
             liste = json.load(datei)
@@ -149,7 +109,6 @@ def zuletzt_lesen():
         return []
     return [weg for weg in liste
             if isinstance(weg, str) and os.path.isfile(weg)][:ZULETZT_VIELE]
-
 
 def zuletzt_merken(pfad):
     """Nach vorn, und nur einmal in der Liste."""
@@ -161,32 +120,18 @@ def zuletzt_merken(pfad):
         with open(ZULETZT_DATEI, "w", encoding="utf-8") as datei:
             json.dump(liste[:ZULETZT_VIELE], datei, ensure_ascii=False)
     except OSError:
-        pass                    # Die Liste ist keine, für die man abbricht.
+        pass
 
-
-# ============================================================
 # LanguageTool als zweite Meinung
-#
-# Es läuft als eigener Prozess, nicht als eingebundene Bibliothek. Das hat
-# zwei Gründe. Der eine ist rechtlich: LanguageTool steht unter LGPL-2.1 —
-# ein getrennter Prozess lässt die Lizenz dieses Programms unberührt. Der
-# andere ist praktisch: Es ist in Java geschrieben, und Java startet
-# langsam. Einmal gestartet bleibt es stehen und antwortet in
-# Millisekunden.
-#
-# Gestartet wird es erst beim ersten Gebrauch. Wer die gründliche Prüfung
-# nie anrührt, bekommt auch keinen Java-Prozess.
-# ============================================================
 LT_ORDNER = os.path.join(DATEN, "languagetool")
 LT_PORT = 8081
 LT = {"lauf": None}
-
 
 def languagetool_starten():
     """Startet den LanguageTool-Server, falls er noch nicht läuft."""
     with socket.socket() as probe:
         if probe.connect_ex(("127.0.0.1", LT_PORT)) == 0:
-            return True                                     # läuft schon
+            return True
 
     if not os.path.isdir(LT_ORDNER):
         raise FileNotFoundError(
@@ -211,7 +156,6 @@ def languagetool_starten():
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
         start_new_session=True)
 
-    # Java braucht einen Moment. Kurz warten statt sofort zu scheitern.
     for _ in range(60):
         with socket.socket() as probe:
             if probe.connect_ex(("127.0.0.1", LT_PORT)) == 0:
@@ -219,12 +163,8 @@ def languagetool_starten():
         time.sleep(0.5)
     raise RuntimeError("LanguageTool ist nicht hochgekommen.")
 
-
-# ============================================================
 # Der HTTP-Server — Handshake
-# ============================================================
 ANSICHT = {"seite": None}
-
 
 class Handler(http.server.SimpleHTTPRequestHandler):
     """Behandelt HTTP-Anfragen."""
@@ -233,9 +173,6 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
     def translate_path(self, anfrage):
         """Gibt den Dateipfad für eine Anfrage an."""
-        # Dem übergeordneten Handler genügt nicht ein Ordner; er muss das
-        # Wurzelverzeichnis sein. Wir sagen ihm, das Wurzelverzeichnis sei
-        # der Ordner oberflaeche.
         self.directory = OBERFLAECHE
         return super().translate_path(anfrage)
 
@@ -256,47 +193,32 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
     def log_message(self, *args, **kwargs):
         """Unterbindet die Ausgabe von Anfragen auf der Konsole."""
-        # Der Konsole geben wir nur Fehler, nicht die hundert Anfragen pro
-        # Sekunde, wenn die Seite sich selbst lädt.
-
+        pass
 
 def server_starten():
     """Startet den lokalen HTTP-Server auf einem zufälligen Port."""
-    # Der Server läuft auf localhost, Anfragen von außen können nicht ankommen.
     server = http.server.HTTPServer(("127.0.0.1", PORT), Handler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     return PORT
 
-
 def api_anfrage(handler, weg):
     """Beantwortet Anfragen vom Typ /api/..."""
-    # Das ist die Schnittstelle zwischen der Seite und dem Betriebssystem.
-    # Sicherheit brauchen wir nicht — der Server hört nur auf 127.0.0.1.
-    # Abzuschreiben brauchen wir auch nicht — wer die Seite verändern wollte,
-    # könnte das direkt tun.
-
+    pass
 
 def seiten_dialog(ansicht, dialog):
     """Behandelt confirm() und prompt() der Seite."""
-    # Die Seite darf es versuchen, aber es tut nichts.
     dialog.close_dialog()
-
 
 def speichern_fragen(umgebung, download):
     """Fragt, wo eine heruntergeladene Datei gespeichert werden soll."""
-    # Das ist das Event, das feuert, wenn die Seite etwas herunterladen will.
-    # Es blockt, bis wir download.set_destination aufrufen, oder bis die
-    # Anfrage-Behandlung zu Ende geht — und dann wird sie verworfen.
-
+    pass
 
 def rechtschreibung_einschalten(umgebung):
     """Setzt den Rechtschreibprüfer auf Deutsch."""
+    pass
 
-
-# ============================================================
 # Fenster und Start
-# ============================================================
 
 def main():
     # Ensure symbol exists: if icon.svg is missing, try to create a small placeholder
@@ -310,7 +232,6 @@ def main():
   <circle cx="64" cy="64" r="50" fill="#4a90e2"/>
 </svg>''')
         except OSError:
-            # If we cannot write, fall back to continuing; the later check will report an error
             pass
 
     # Required files check (symbole/icon.svg is ensured above)
@@ -336,38 +257,24 @@ def main():
     einst.set_enable_write_console_messages_to_stdout(False)
     einst.set_user_agent(einst.get_user_agent() + " Lunivo-Office/1.0")
 
-    # Ohne das darf JavaScript die Zwischenablage nicht anfassen — und die
-    # Vorgabe ist „nicht". Strg+C und Strg+V macht WebKit dann zwar selbst,
-    # aber „Ausschneiden", „Kopieren" und „Einfügen" im Menü, im Ribbon und
-    # im Rechtsklick liefen ins Leere: Sie rufen execCommand, und das tut
-    # ohne diese Erlaubnis nichts. Ein Menüpunkt, der beim Anklicken
-    # schweigt, ist schlimmer als keiner.
     einst.set_javascript_can_access_clipboard(True)
 
     rechtschreibung_einschalten(umgebung)
 
-    # Der Druckauftrag hängt sich an diese Ansicht — sie ist das, was
-    # gesetzt wird, und damit das, was auf das Papier kommt.
     ANSICHT["seite"] = ansicht
 
     fenster = Gtk.Window(title="Lunivo-Office")
     fenster.set_default_size(1280, 860)
 
-    # Erst über den Namen: Dann sucht sich der Arbeitsplatz aus dem
-    # Symbol-Ordner selbst die passende Größe heraus — 16 Bildpunkte für die
-    # Fensterleiste, 48 für den Umschalter. Eine feste Datei müsste er für
-    # jede Stelle herunterrechnen, und klein sähe das nach nichts aus.
     fenster.set_icon_name("lunivo-office")
 
-    # Solange der Menüeintrag noch nicht geschrieben wurde, kennt der
-    # Arbeitsplatz den Namen nicht. Dann tut es die Datei aus dem Ordner.
     if not Gtk.IconTheme.get_default().has_icon("lunivo-office"):
         for groesse in ("symbole/icon-256.png", "symbole/icon-128.png", "symbole/icon-512.png"):
             symbol = os.path.join(HIER, groesse)
             if os.path.isfile(symbol):
                 fenster.set_icon_from_file(symbol)
                 break
-    # Ohne das bleiben confirm() und prompt() der Seite unsichtbar hängen.
+    
     ansicht.connect("script-dialog", seiten_dialog)
 
     fenster.add(ansicht)
