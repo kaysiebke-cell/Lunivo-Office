@@ -262,6 +262,168 @@ als eigenes Fenster.
 
 ## So sieht es aus
 
+Die Menüs sind nach Themen geordnet und haben Untermenüs, damit keine Liste
+länger wird als der Bildschirm.
+
 ![Das Menü Format ist offen, daneben das Untermenü Schrift mit Fett, Kursiv, Schriftfarbe und Effekten](bilder/menues.png)
 
-The content is truncated for brevity in the tool input; the full content continues similarly (screenshots, details, license, etc.).
+Die Schriftauswahl zeigt jede Schrift in sich selbst — oben die vier für
+Fließtext, darunter alles, was auf dem Rechner liegt.
+
+![Die Schriftliste mit Suchfeld; jeder Name ist in seiner eigenen Schrift gesetzt](bilder/schriften.png)
+
+Wer die Reiter aus Word gewohnt ist, stellt unter *Ansicht ▸
+Benutzeroberfläche* um. Über dem Blatt liegt das Lineal mit den
+Einzugsmarken.
+
+![Das Register mit dem Reiter Start: Zwischenablage, Schriftart, Absatz und Formatvorlagen, darüber die Reiterzeile, darunter das Lineal](bilder/register.png)
+
+Gedruckt wird, was die Vorschau zeigt: links das Blatt, rechts die
+Einstellungen in drei Reitern.
+
+![Das Druckfenster: links die Seitenvorschau mit dem Brief, rechts Bereich, Kopien, Blattseiten und Seitenlayout](bilder/drucken.png)
+
+Hell oder dunkel, je nachdem, was den Augen bekommt. Das Blatt bleibt weiß —
+Papier ist weiß.
+
+![Dasselbe Fenster im dunklen Modus](bilder/dunkel.png)
+
+Auf der Einstellungsseite stehen der Schlüssel für die KI, das Modell, der
+Verbrauch und alles zur Darstellung.
+
+![Die Einstellungsseite mit API-Schlüssel, KI-Modell, Verbrauch und Übersetzen](bilder/einstellungen.png)
+
+## Starten
+
+    ./starten.sh
+
+Das legt beim ersten Mal auch den Menüeintrag an; danach steht
+*Lunivo-Office* im Startmenü unter „Büro". Wer noch den alten Eintrag
+*Schreibprogramm* hat: Der wird beim Start still mit weggeräumt, damit
+nicht beide nebeneinander stehen.
+
+Gebraucht wird GTK mit WebKit:
+
+    sudo apt install python3-gi gir1.2-webkit2-4.1
+
+## Was zusätzlich geholt wird
+
+Zwei Dinge liegen **nicht** in diesem Verzeichnis, weil sie zu groß sind, und
+werden bei Bedarf nach `~/.local/share/schreibprogramm/` gelegt — der
+Ordner behält seinen alten Namen mit Absicht, denn dort liegt auch alles
+Geschriebene und Gelernte:
+
+| | wofür | Größe | nötig? |
+|---|---|---|---|
+| LibreOffice | Word-Dateien, PDF, EPUB | ~700 MB | nur dafür |
+| [LanguageTool](https://languagetool.org/) | „Gründlich prüfen" | ~400 MB | nein, freiwillig |
+| [Piper](https://github.com/rhasspy/piper) + Thorsten | eine Stimme, die nicht nach Maschine klingt | ~90 MB | nein, `./stimme-holen.sh` |
+| Schriften zum leichteren Lesen | OpenDyslexic, Lexend, Atkinson Hyperlegible | ~4 MB | nein, `./schrift-holen.sh` |
+
+Ist LibreOffice im System installiert, genügt das auch. LanguageTool läuft
+als **eigener Prozess** — seine LGPL-Lizenz berührt dieses Programm nicht.
+
+Schreiben, Prüfen, Vorlesen und die ODF-Formate gehen ohne alles davon.
+
+**Die Schriften** landen unter `~/.local/share/fonts/lunivo-office` und
+stehen danach oben in der Schriftliste unter *Leichter zu lesen*:
+
+    ./schrift-holen.sh                  OpenDyslexic
+    ./schrift-holen.sh lexend atkinson  weitere dazu
+    ./schrift-holen.sh --alle           alle drei (~4 MB)
+    ./schrift-holen.sh --liste          zeigen, was es gibt
+    ./schrift-holen.sh --weg            wieder entfernen
+
+**OpenDyslexic** macht die Buchstaben unten schwerer als oben. Das gibt
+ihnen ein Gewicht, und ein Gewicht hat eine Richtung — b und d, p und q
+lassen sich dann nicht mehr so leicht verwechseln. **Lexend** ist nicht
+gegen das Verwechseln gemacht, sondern für das Tempo: weite Buchstaben,
+viel Luft dazwischen. **Atkinson Hyperlegible** kommt vom Braille Institute
+und unterscheidet, was einander ähnelt — I, l und 1; O und 0. Alle drei
+stehen unter der SIL Open Font License.
+
+## Eine Hilfe, kein Ersatz
+
+> Lunivo-Office ist eine Hilfe und kein Ersatz für eine Kontrolle durch
+> eine andere Person. Es kann nicht garantieren, dass der Text oder sein Inhalt
+> am Ende vollständig korrekt ist.
+>
+> Gerade für Menschen mit Legasthenie ist eine zusätzliche Kontrolle durch eine
+> zweite Person wichtig. Eigene Fehler werden beim späteren Lesen nicht immer
+> erkannt, weil das Gehirn das Geschriebene teilweise so wahrnimmt, wie es
+> gemeint war.
+
+Deshalb gibt es *Vorlesen* (F4): Über einen Fehler liest das Auge hinweg, das
+Ohr stolpert darüber. Es ersetzt die zweite Person nicht — es kommt ihr nur am
+nächsten, wenn gerade niemand da ist.
+
+## Was nicht drin ist
+
+SmartArt in Word-Qualität, 3D-Modelle, eingebettete Tabellenkalkulation,
+Design-Themes, Bildumfluss mit Ebenen, Endnoten-Querverweise nach APA im
+vollen Umfang, Barrierefreiheitsprüfung über das Geprüfte hinaus,
+Dokumentschutz mit Kennwort, Gliederungsansicht zum Verschieben,
+Fenster teilen mit Synchronscrollen.
+
+Bei den meisten wäre der Aufwand groß und der Nutzen für einen Brief gering.
+
+## Herkunft
+
+Wie das alles entstanden ist, steht in
+[ENTSTEHUNG.md](doku/ENTSTEHUNG.md) — siehe oben.
+
+Die Prüfung und der Wortschatz stammen aus der
+[Schreibhilfe](https://github.com/kaysiebke-cell/schreibhilfe) und sind dort
+über viele Fassungen gewachsen. Sie liegen hier als eigene Kopie: Dieses
+Programm ist eigenständig und braucht jenes Projekt nicht, um zu laufen.
+
+Die Wörterliste (`oberflaeche/daten/woerter.txt`, 355.321 Wörter) ist über viele Sitzungen
+selbst aufgebaut worden. Sie stammt aus keiner fremden Quelle und steht
+deshalb wie der übrige Code unter MIT.
+
+## Aufbau
+
+    start.py             Fenster, Server, Schriften, LibreOffice, Vorlesen
+    starten.sh           startet es und schreibt den Menüeintrag
+    stimme-holen.sh      holt Piper und die Stimme „Thorsten“ (freiwillig)
+    schrift-holen.sh     holt Schriften zum leichteren Lesen (freiwillig)
+
+    oberflaeche/         alles, was im Fenster zu sehen ist
+      index.html         die Oberfläche
+      css/programm.css   das Aussehen
+      js/programm.js     Menüs, Werkzeuge, Seitenleiste, Statuszeile
+      js/dokument.js     das Dokument: lesen, zeigen, ersetzen, formatieren
+      js/dateien.js      öffnen und speichern
+      js/pruefung.js     die Prüfung, Phonetik, Wortvorhersage
+      js/ki.js           Claude und Ollama, Gedächtnis, Sicherung
+      js/einstellungen.js  die Einstellungsseite
+      daten/regeln.js    der Wortschatz der Prüfung
+      daten/woerter.txt  355.321 deutsche Wörter
+      daten/symbole.js   die 150 Zeichnungen der Knöpfe
+      daten/symbolkatalog.js  1801 Zeichnungen zur Auswahl (erst bei Bedarf geladen)
+
+    werkzeug/            nichts davon lädt das Programm — Werkzeug für die Werkstatt
+      symbole.html       den Symbolkatalog durchsehen, im Browser öffnen
+      katalog-bauen.py   baut den Katalog aus einem Ordner voller .svg neu
+      svg-zu-pfad.py     rechnet <circle>, <rect>, <line> in einen Pfad um
+      bildschirmfoto.py  nimmt die Bilder für dieses README auf
+
+    doku/                ENTSTEHUNG, RICHTUNG und das ausführliche LIESMICH
+    symbole/             das Symbol als SVG und in allen Größen
+    bilder/              Logo, Marke und die Bildschirmfotos
+
+Ausführlicher steht alles in [LIESMICH.md](doku/LIESMICH.md).
+
+## Lizenz
+
+[MIT](LICENSE) — benutzen, ändern und weitergeben ist erlaubt, auch
+gewerblich. Der Urhebervermerk muss mitgehen.
+
+LanguageTool und LibreOffice stehen unter eigenen Lizenzen (LGPL-2.1 und
+MPL-2.0) und werden als eigene Prozesse aufgerufen, nicht eingebunden.
+
+Die Zeichnungen der Knöpfe stammen größtenteils aus
+[Lucide](https://lucide.dev) und stehen unter der ISC-Lizenz; der
+Lizenztext liegt in [doku/LIZENZ-LUCIDE.txt](doku/LIZENZ-LUCIDE.txt).
+Ein paar sind von Hand gezeichnet — Kopfzeile, Fußzeile, Seitenzahl,
+Textbegrenzungen: die kennt nur ein Schreibprogramm.
