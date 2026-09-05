@@ -7,11 +7,13 @@
   </picture>
 </p>
 
-# 
+<p align="center">
+  <strong>Ein Raum für Worte.</strong><br>
+  Was geschrieben wird, bleibt auf diesem Rechner.<br>
+  Nichts geht hinaus, ohne dass du es selbst schickst.
+</p>
 
-**Ein Raum für Worte.**  
-Was geschrieben wird, bleibt auf diesem Rechner.  
-Nichts geht hinaus, ohne dass du es selbst schickst.
+<hr>
 
 Ein Schreibprogramm wie LibreOffice Writer oder Word — mit einem Unterschied:
 Die **Schreibhilfe** sitzt fest an der Seite und sucht die Fehler, die ein
