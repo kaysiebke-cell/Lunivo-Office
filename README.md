@@ -1,7 +1,8 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="bilder/lunivo-office-dunkel.png">
-    <img src="bilder/lunivo-office.png" style="max-width: 100%; height: auto;"
+    <img src="bilder/lunivo-office.png"
+         style="max-width: 100%; height: auto;"
          alt="Lunivo-Office Logo">
   </picture>
 </p>
