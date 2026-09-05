@@ -45,7 +45,7 @@ Teil der weiteren Entwicklung, da die einzelnen Korrekturstufen noch besser
 voneinander getrennt und aufeinander abgestimmt werden müssen.
 
 > Daran wird gearbeitet — offen als
-> [Issue #6](https://github.com/kaysiebke-cell/schreibprogramm/issues/6).
+> [Issue #6](https://github.com/kaysiebke-cell/Lunivo-Office/issues/6).
 > Wer einen Fall bemerkt, in dem etwas Richtiges angestrichen wurde: Ein
 > Beispiel dort hilft mehr als alles andere.
 
