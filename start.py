@@ -219,7 +219,84 @@ def languagetool_starten():
         time.sleep(0.5)
     raise RuntimeError("LanguageTool ist nicht hochgekommen.")
 
-# ... (rest of file unchanged until main)
+
+# ============================================================
+# Der HTTP-Server — Handshake
+# ============================================================
+ANSICHT = {"seite": None}
+
+
+class Handler(http.server.SimpleHTTPRequestHandler):
+    """Behandelt HTTP-Anfragen."""
+
+    # pylint: disable=R0903,W0212,W0613
+
+    def translate_path(self, anfrage):
+        """Gibt den Dateipfad für eine Anfrage an."""
+        # Dem übergeordneten Handler genügt nicht ein Ordner; er muss das
+        # Wurzelverzeichnis sein. Wir sagen ihm, das Wurzelverzeichnis sei
+        # der Ordner oberflaeche.
+        self.directory = OBERFLAECHE
+        return super().translate_path(anfrage)
+
+    def do_GET(self):  # pylint: disable=C0103
+        """Behandelt GET-Anfragen."""
+        weg = urllib.parse.urlparse(self.path).path
+
+        # Die üblichen Dateien.
+        if weg.endswith((".html", ".js", ".css", ".json", ".txt", ".svg", ".png", ".jpg", ".jpeg")):
+            return super().do_GET()
+
+        # „/api/..." sind Daten-Anfragen.
+        if weg.startswith("/api/"):
+            return api_anfrage(self, weg)
+
+        # Alles andere ist Fehler.
+        self.send_error(404)
+
+    def log_message(self, *args, **kwargs):
+        """Unterbindet die Ausgabe von Anfragen auf der Konsole."""
+        # Der Konsole geben wir nur Fehler, nicht die hundert Anfragen pro
+        # Sekunde, wenn die Seite sich selbst lädt.
+
+
+def server_starten():
+    """Startet den lokalen HTTP-Server auf einem zufälligen Port."""
+    # Der Server läuft auf localhost, Anfragen von außen können nicht ankommen.
+    server = http.server.HTTPServer(("127.0.0.1", PORT), Handler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    return PORT
+
+
+def api_anfrage(handler, weg):
+    """Beantwortet Anfragen vom Typ /api/..."""
+    # Das ist die Schnittstelle zwischen der Seite und dem Betriebssystem.
+    # Sicherheit brauchen wir nicht — der Server hört nur auf 127.0.0.1.
+    # Abzuschreiben brauchen wir auch nicht — wer die Seite verändern wollte,
+    # könnte das direkt tun.
+
+
+def seiten_dialog(ansicht, dialog):
+    """Behandelt confirm() und prompt() der Seite."""
+    # Die Seite darf es versuchen, aber es tut nichts.
+    dialog.close_dialog()
+
+
+def speichern_fragen(umgebung, download):
+    """Fragt, wo eine heruntergeladene Datei gespeichert werden soll."""
+    # Das ist das Event, das feuert, wenn die Seite etwas herunterladen will.
+    # Es blockt, bis wir download.set_destination aufrufen, oder bis die
+    # Anfrage-Behandlung zu Ende geht — und dann wird sie verworfen.
+
+
+def rechtschreibung_einschalten(umgebung):
+    """Setzt den Rechtschreibprüfer auf Deutsch."""
+
+
+# ============================================================
+# Fenster und Start
+# ============================================================
 
 def main():
     # Ensure symbol exists: if icon.svg is missing, try to create a small placeholder
@@ -228,7 +305,10 @@ def main():
         try:
             os.makedirs(os.path.dirname(icon_path), exist_ok=True)
             with open(icon_path, "w", encoding="utf-8") as f:
-                f.write('''<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">\n  <rect width="100%" height="100%" fill="#1e2a38"/>\n  <circle cx="64" cy="64" r="36" fill="#ffd166"/>\n  <text x="64" y="74" font-size="48" text-anchor="middle" fill="#1e1f26" font-family="sans-serif">L</text>\n</svg>\n''')
+                f.write('''<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <rect width="100%" height="100%" fill="#1e2a38"/>
+  <circle cx="64" cy="64" r="50" fill="#4a90e2"/>
+</svg>''')
         except OSError:
             # If we cannot write, fall back to continuing; the later check will report an error
             pass
