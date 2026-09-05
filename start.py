@@ -2199,8 +2199,7 @@ def speichern_fragen(_umgebung, ladung):
 
 def main():
     for noetig in ("oberflaeche/index.html", "oberflaeche/js/pruefung.js",
-                   "oberflaeche/daten/regeln.js", "oberflaeche/daten/woerter.txt",
-                   "symbole/icon.svg"):
+                   "oberflaeche/daten/regeln.js", "oberflaeche/daten/woerter.txt"):
         if not os.path.isfile(os.path.join(HIER, noetig)):
             print("Es fehlt: %s" % noetig, file=sys.stderr)
             return 1
@@ -2241,6 +2240,8 @@ def main():
     # Symbol-Ordner selbst die passende Größe heraus — 16 Bildpunkte für die
     # Fensterleiste, 48 für den Umschalter. Eine feste Datei müsste er für
     # jede Stelle herunterrechnen, und klein sähe das nach nichts aus.
+    # Das Start-/Fenster-Icon ist optional: Wenn es vorhanden ist, wird es
+    # wie bisher verwendet. Fehlt es, startet Lunivo-Office trotzdem.
     fenster.set_icon_name("lunivo-office")
 
     # Solange der Menüeintrag noch nicht geschrieben wurde, kennt der
@@ -2249,7 +2250,10 @@ def main():
         for groesse in ("symbole/icon-256.png", "symbole/icon-128.png", "symbole/icon-512.png"):
             symbol = os.path.join(HIER, groesse)
             if os.path.isfile(symbol):
-                fenster.set_icon_from_file(symbol)
+                try:
+                    fenster.set_icon_from_file(symbol)
+                except Exception:
+                    pass
                 break
     # Ohne das bleiben confirm() und prompt() der Seite unsichtbar hängen.
     ansicht.connect("script-dialog", seiten_dialog)
