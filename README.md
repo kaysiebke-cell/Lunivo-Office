@@ -427,3 +427,4 @@ Die Zeichnungen der Knöpfe stammen größtenteils aus
 Lizenztext liegt in [doku/LIZENZ-LUCIDE.txt](doku/LIZENZ-LUCIDE.txt).
 Ein paar sind von Hand gezeichnet — Kopfzeile, Fußzeile, Seitenzahl,
 Textbegrenzungen: die kennt nur ein Schreibprogramm.
+
