@@ -6,7 +6,7 @@
   </picture>
 </p>
 
-# Lunivo-Office
+# 
 
 **Ein Raum für Worte.**  
 Was geschrieben wird, bleibt auf diesem Rechner.  
