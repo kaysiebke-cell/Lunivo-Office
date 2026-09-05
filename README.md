@@ -27,7 +27,7 @@ Kein Konto, keine Anmeldung, kein Internet nötig.
 
 ![Lunivo-Office mit einem Brief im Blatt und der Schreibhilfe rechts an der Seite](bilder/uebersicht.png)
 
-> Die Adresse auf GitHub bleibt `…/schreibprogramm` — eine neue würde jeden
+> Das Repository wurde in `Lunivo-Office` umbenannt.
 > Link brechen, der schon irgendwo steht. Und wer nach „Schreibprogramm"
 > sucht, soll es weiter finden.
 
