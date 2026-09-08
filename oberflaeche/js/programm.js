@@ -1791,8 +1791,8 @@ function registerBauen() {
   }
 
   /* Ganz rechts, abgesetzt: der Weg zu allem, was in kein Register passt.
-     Ohne ihn wäre die Register-Ansicht eine Sackgasse — Seriendruck,
-     Makros und die Verzeichnisse stehen nur im Menü. */
+     Ohne ihn wäre die Register-Ansicht eine Sackgasse — die Verzeichnisse
+     und einiges andere stehen nur im Menü. */
   const menueKnopf = document.createElement('button');
   menueKnopf.type = 'button';
   menueKnopf.className = 'register__menue' + (menueImRegister ? ' register--offen' : '');
@@ -3395,95 +3395,6 @@ B.aenderungenVerwerfen = () => {
   for (const el of weg) el.replaceWith(...el.childNodes);
   geaendertMelden();
   melde('Alles zurückgenommen: ' + neu.length + ' verworfen, ' + weg.length + ' wiederhergestellt.');
-};
-
-/* ============================================================
-   Makros
-
-   Aufgezeichnet werden die Befehle, die ein Mensch aus dem Menü oder der
-   Leiste auslöst — nicht jeder Tastendruck. Ein Makro ist damit eine Folge
-   von Handgriffen, kein Mitschnitt.
-   ============================================================ */
-let makroLaeuft = null;             // sammelt beim Aufzeichnen
-
-function makroMerken(name) {
-  if (makroLaeuft && name) makroLaeuft.push(name);
-}
-
-/* Zu jedem Namen der Befehl aus den Menüs — beim Abspielen wird darüber
-   nachgeschlagen. */
-function befehlZuName(name) {
-  for (const [, punkte] of MENUES) {
-    for (const punkt of punkte) {
-      if (punkt !== strich && punkt.name === name) return punkt.tun;
-    }
-  }
-  return null;
-}
-
-B.makroAufnahme = () => {
-  if (makroLaeuft) { melde('Es läuft schon eine Aufnahme. „Aufnahme beenden" hält sie an.'); return; }
-  makroLaeuft = [];
-  melde('Aufnahme läuft. Jeder Menüpunkt, den du jetzt wählst, kommt hinein.');
-  menueBauen();
-};
-
-B.makroBeenden = () => {
-  if (!makroLaeuft) { melde('Es läuft keine Aufnahme.'); return; }
-  const schritte = makroLaeuft;
-  makroLaeuft = null;
-  menueBauen();
-
-  if (!schritte.length) { melde('Nichts aufgezeichnet.'); return; }
-
-  fenster('Makro sichern', [
-    { art: 'satz', text: schritte.length + ' Schritte:\n' + schritte.join('\n') },
-    { schluessel: 'name', name: 'Name', wert: 'Mein Makro' },
-  ], (werte) => {
-    const alle = Speicher.lies('makros', {});
-    alle[werte.name.trim() || 'Ohne Namen'] = schritte;
-    Speicher.schreib('makros', alle);
-    melde('Makro „' + werte.name + '" gesichert.');
-    menueBauen();
-  }, 'Sichern');
-};
-
-B.makroAbspielen = () => {
-  const alle = Speicher.lies('makros', {});
-  const namen = Object.keys(alle);
-  if (!namen.length) { melde('Es ist noch kein Makro aufgezeichnet.'); return; }
-
-  fenster('Makro abspielen', [
-    { schluessel: 'name', name: 'Makro', art: 'auswahl', werte: namen.map((n) => [n, n]) },
-  ], (werte) => {
-    const schritte = alle[werte.name] || [];
-    let gelaufen = 0;
-    for (const name of schritte) {
-      const tun = befehlZuName(name);
-      /* Was ein Fenster aufmacht, taugt nicht zum Abspielen — das Makro
-         bliebe beim ersten Kasten stehen und wartete auf eine Eingabe. */
-      if (!tun || /…$/.test(name)) continue;
-      try { tun(); gelaufen++; } catch (e) { /* der nächste Schritt darf es versuchen */ }
-    }
-    melde(gelaufen + ' von ' + schritte.length + ' Schritten ausgeführt.');
-  }, 'Abspielen');
-};
-
-B.makrosVerwalten = () => {
-  const alle = Speicher.lies('makros', {});
-  const namen = Object.keys(alle);
-  if (!namen.length) { melde('Es ist noch kein Makro aufgezeichnet.'); return; }
-  fenster('Makros', [
-    { art: 'satz', text: namen.map((n) => n + ' — ' + alle[n].length + ' Schritte').join('\n') },
-    { schluessel: 'weg', name: 'löschen', art: 'auswahl',
-      werte: [['', '— nichts —']].concat(namen.map((n) => [n, n])) },
-  ], (werte) => {
-    if (!werte.weg) return;
-    delete alle[werte.weg];
-    Speicher.schreib('makros', alle);
-    melde('Makro „' + werte.weg + '" gelöscht.');
-    menueBauen();
-  });
 };
 
 /* ============================================================
@@ -6815,13 +6726,6 @@ const MENUES = [
       { name: 'Kommentar löschen', tun: B.kommentarWeg },
       { name: 'Alle löschen', tun: B.kommentareAlleWeg },
     ] },
-    { name: 'Makros', unter: [
-      { name: 'Aufzeichnen', tun: B.makroAufnahme, haken: () => !!makroLaeuft },
-      { name: 'Aufnahme beenden…', tun: B.makroBeenden },
-      strich,
-      { name: 'Abspielen…', tun: B.makroAbspielen },
-      { name: 'Verwalten…', tun: B.makrosVerwalten },
-    ] },
     strich,
     { name: 'Sendungen', unter: [
       { name: 'Seriendruck-Assistent…', tun: B.seriendruck },
@@ -6893,10 +6797,7 @@ const MENUES = [
 
 let offenesMenue = null;
 
-/* Beim Aufzeichnen eines Makros soll jeder gewählte Menüpunkt seinen Namen
-   hinterlassen. Das geschieht hier an einer Stelle statt in jedem Befehl. */
 function menuePunktTun(punkt) {
-  makroMerken(punkt.name);
   punkt.tun();
 }
 

@@ -276,8 +276,6 @@ function REGISTER_BAUEN(B, w) {
     ['Formular', [['formfeld', 'Textfeld', () => B.formTextfeld(), 'gross'],
                     ['kaestchen', 'Kontrollkästchen', () => B.formKasten()],
                     ['formknopf', 'Schaltfläche', () => B.formKnopf()]]],
-    /* Die Makros stehen im Aufbau nicht. Sie sind deshalb nicht weg —
-       die Menüleiste (☰) führt sie weiter, so wie die Verzeichnisse. */
   ]],
 
   ['Ansicht', [
