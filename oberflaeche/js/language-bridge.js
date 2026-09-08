@@ -40,7 +40,7 @@ const SprachBruecke = (() => {
      hier ein Fehler mit Quelle, Zustand und Fassungsnummer — dieselbe
      Form, in der später auch die KI antwortet.
      ------------------------------------------------------------ */
-  function pruefEngineLauf(text, fassung, laufNr) {
+  function pruefEngineLauf(text, fassung, laufNr, beiFehler) {
     if (typeof Pruefung === 'undefined') return [];
 
     let funde;
@@ -48,8 +48,10 @@ const SprachBruecke = (() => {
       funde = Pruefung.findeProbleme(text) || [];
     } catch (grund) {
       /* Ein Prüfer, der stolpert, darf nicht den ganzen Sprachstand
-         mitreißen. Die KI kann trotzdem noch antworten. */
+         mitreißen (§32). Die KI kann trotzdem noch antworten — der Stand
+         merkt sich nur, dass hier etwas schiefging. */
       console.warn('Die Prüfung ist gestolpert:', grund);
+      if (beiFehler) beiFehler(grund);
       return [];
     }
 
@@ -129,7 +131,8 @@ const SprachBruecke = (() => {
 
       this.fehler = [];
       this.weggewinkt = new Set();    // Fehlerkennungen, die nicht mehr kommen sollen
-      this.stand = 'ruht';            // ruht | fertig | veraltet
+      /* §31: ruht · veraltet · prueft · fertig · fehler */
+      this.stand = 'ruht';
       this.geaendert = null;          // wo sich seit der letzten Prüfung etwas tat
       /* Wird gerufen, wenn sich am Fehlerstand etwas geändert hat —
          etwa weil die KI spät geantwortet hat. Ohne das käme ihre Antwort
@@ -232,11 +235,99 @@ const SprachBruecke = (() => {
       this.stand = 'veraltet';
     }
 
-    /* ---- Wörter: gefragt wird das Gedächtnis, nicht die Brücke ---- */
+    /* ---- Wörter ----
+
+       Gefragt wird das Gedächtnis, nicht die Brücke — dort liegen sie
+       schon, und eine zweite Liste wäre der Fehler, den dieser Umbau
+       abschafft. Aber der WEG dorthin führt jetzt hier durch (§9): Wer
+       ein Wort erlaubt, sagt es der Brücke, und die weiß, dass das
+       Geprüfte damit nicht mehr stimmt. */
 
     kenntWort(wort) {
       if (typeof Pruefung === 'undefined' || !wort) return false;
       return !!(Pruefung.Gelernt.wort(wort) || Pruefung.Gelernt.inRuhe(wort));
+    }
+
+    /* Das Gedächtnis, wenn es da ist. Die Brücke soll auch dann noch
+       arbeiten, wenn ein Teil des Programms fehlt (§32). */
+    gedaechtnis() {
+      if (typeof KI === 'undefined' || !KI.Gedaechtnis) return null;
+      try { return KI.Gedaechtnis; } catch (e) { return null; }
+    }
+
+    benutzerwortHinzufuegen(wort) {
+      if (!wort || !this.gedaechtnis()) return false;
+      const klein = String(wort).toLowerCase();
+      const g = KI.Gedaechtnis.lies();
+      if (g.inRuhe[klein]) return false;
+      g.inRuhe[klein] = true;
+      KI.Gedaechtnis.schreib(g);
+      /* Was jetzt erlaubt ist, darf nicht weiter angestrichen sein. */
+      this.fehler = this.fehler.filter(
+        (f) => String(f.text).toLowerCase() !== klein);
+      this.veralten();
+      this.melden();
+      return true;
+    }
+
+    benutzerwortEntfernen(wort) {
+      if (!wort || !this.gedaechtnis()) return false;
+      const klein = String(wort).toLowerCase();
+      const g = KI.Gedaechtnis.lies();
+      if (!g.inRuhe[klein] && !g.woerter[klein]) return false;
+      delete g.inRuhe[klein];
+      delete g.woerter[klein];
+      KI.Gedaechtnis.schreib(g);
+      this.veralten();
+      return true;
+    }
+
+    benutzerwoerter() {
+      if (!this.gedaechtnis()) return [];
+      const g = KI.Gedaechtnis.lies();
+      return Object.keys(g.inRuhe || {}).concat(Object.keys(g.woerter || {}));
+    }
+
+    /* §26: Einen Vorschlag annehmen heißt bei einem Wortfund zugleich,
+       dass dieses Wort künftig gilt. */
+    annehmen(id) {
+      const fehler = this.fehler.find((f) => f.id === id);
+      if (!fehler) return false;
+      fehler.stand = 'angenommen';
+      if (fehler.fund && fehler.fund.wortEbene && fehler.vorschlaege[0]) {
+        this.benutzerwortHinzufuegen(fehler.vorschlaege[0]);
+      }
+      this.melden();
+      return true;
+    }
+
+    /* §23: Eine Korrektur ist mehr als ein Textaustausch — der Fehler
+       gilt als erledigt, die Fassung steigt, der Bereich wird neu
+       geprüft. Wer nur den Text ändert, lässt den Fehlerstand zurück. */
+    korrekturAnwenden(id, vorschlag, text) {
+      const fehler = this.fehler.find((f) => f.id === id);
+      if (!fehler) return false;
+      fehler.stand = 'erledigt';
+      fehler.genommen = vorschlag;
+      if (typeof text === 'string') this.textSetzen(text);
+      else this.veralten();
+      this.melden();
+      return true;
+    }
+
+    /* §3: Der Sprachkontext, wie ihn der Entwurf beschreibt — ein Bild
+       des Standes, aus dem sich jeder Prüfer bedient. */
+    kontext() {
+      return {
+        sprache: this.sprache,
+        fassung: this.fassung,
+        laufNr: this.laufNr,
+        text: this.text,
+        benutzerwoerter: this.benutzerwoerter(),
+        fehler: this.offeneFehler(),
+        geaendert: this.geaendert,
+        stand: this.stand,
+      };
     }
 
     /* ---- Fehler ---- */
@@ -296,6 +387,7 @@ const SprachBruecke = (() => {
       const fassung = this.fassung;
       const laufNr = this.naechsterLauf++;
       this.laufNr = laufNr;
+      this.stand = 'prueft';
 
       /* Nur den geänderten Bereich neu prüfen, wenn das reicht.
 
@@ -303,11 +395,14 @@ const SprachBruecke = (() => {
          Text von dreißigtausend Wörtern schon: Dort dauert eine volle
          Prüfung mehrere Sekunden, und die lebende Prüfung liefe nach
          jeder Tippause hinein. */
+      let gestolpertGrund = null;
+      const gestolpert = (grund) => { gestolpertGrund = grund; };
+
       const bereich = mitKI ? null : this.pruefbereich();
 
       if (bereich && this.fehler.length) {
         const teil = this.text.slice(bereich.von, bereich.bis);
-        const neueImBereich = pruefEngineLauf(teil, fassung, laufNr)
+        const neueImBereich = pruefEngineLauf(teil, fassung, laufNr, gestolpert)
           .map((f) => Object.assign({}, f, {
             von: f.von + bereich.von,
             bis: f.bis + bereich.von,
@@ -340,13 +435,16 @@ const SprachBruecke = (() => {
         this.fehler = draussen.concat(
           neueImBereich.filter((f) => !this.weggewinkt.has(SprachBrueckeKlasse.kennung(f))));
       } else {
-        const gefunden = pruefEngineLauf(this.text, fassung, laufNr);
+        const gefunden = pruefEngineLauf(this.text, fassung, laufNr, gestolpert);
         this.fehler = gefunden.filter(
           (f) => !this.weggewinkt.has(SprachBrueckeKlasse.kennung(f)));
       }
 
       this.geaendert = null;
-      this.stand = 'fertig';
+      /* §31, §32: Ist ein Prüfer gestolpert, steht das im Stand — die
+         Funde der anderen bleiben trotzdem. */
+      this.stand = gestolpertGrund ? 'fehler' : 'fertig';
+      this.letzterFehler = gestolpertGrund ? String(gestolpertGrund) : null;
 
       /* Die KI wird nicht bei jedem Lauf gefragt.
 

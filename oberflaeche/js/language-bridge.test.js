@@ -161,7 +161,8 @@ console.log('\nEin stolpernder Prüfer');
 
   const funde = b.pruefen('Ein Satz.');
   gleich(funde.length, 0, 'reißt den Sprachstand nicht mit');
-  gleich(b.stand, 'fertig', 'das Programm läuft weiter');
+  gleich(b.stand, 'fehler', 'der Stand sagt, dass etwas schiefging (§31)');
+  stimmt(!!b.letzterFehler, 'und was es war');
 
   global.Pruefung.findeProbleme = heil;
 }
@@ -404,6 +405,58 @@ console.log('\nMit KI wird immer alles geprüft');
   naechsteFunde = [fund(0, 5, 'weiss', 'weiß')];
   b.pruefen(undefined, true);
   gleich(b.offeneFehler().length, 1, 'die volle Prüfung bleibt möglich');
+}
+
+console.log('\nDie Griffe aus §4');
+{
+  const b = new SprachBruecke();
+  const gedaechtnis = { woerter: {}, inRuhe: {} };
+  global.KI = { verfuegbar: () => false,
+                Gedaechtnis: { lies: () => gedaechtnis, schreib: (g) => Object.assign(gedaechtnis, g) } };
+  naechsteFunde = [fund(0, 6, 'Lunivo', 'Luniva')];
+  b.pruefen('Lunivo ist gut.');
+  gleich(b.offeneFehler().length, 1, 'erst wird das Wort bemängelt');
+
+  stimmt(b.benutzerwortHinzufuegen('Lunivo'), 'es lässt sich erlauben (§9)');
+  gleich(b.offeneFehler().length, 0, 'dann ist es nicht mehr angestrichen');
+  stimmt(b.benutzerwoerter().includes('lunivo'), 'und steht bei den erlaubten');
+  gleich(b.stand, 'veraltet', 'das Geprüfte gilt nicht mehr');
+
+  stimmt(b.benutzerwortEntfernen('Lunivo'), 'und wieder zurücknehmen');
+  stimmt(!b.benutzerwoerter().includes('lunivo'), 'dann ist es wieder fremd');
+}
+{
+  const b = new SprachBruecke();
+  const gedaechtnis = { woerter: {}, inRuhe: {} };
+  global.KI = { verfuegbar: () => false,
+                Gedaechtnis: { lies: () => gedaechtnis, schreib: (g) => Object.assign(gedaechtnis, g) } };
+  naechsteFunde = [fund(0, 5, 'weiss', 'weiß')];
+  b.pruefen('weiss der Himmel');
+  const id = b.offeneFehler()[0].id;
+
+  stimmt(b.annehmen(id), 'ein Vorschlag lässt sich annehmen (§26)');
+  gleich(b.offeneFehler().length, 0, 'danach ist der Fehler weg');
+  stimmt(b.benutzerwoerter().includes('weiß'), 'und der Vorschlag gilt als erlaubtes Wort');
+}
+{
+  const b = new SprachBruecke();
+  global.KI = { verfuegbar: () => false };
+  naechsteFunde = [fund(0, 5, 'weiss', 'weiß')];
+  b.pruefen('weiss der Himmel');
+  const id = b.offeneFehler()[0].id;
+
+  stimmt(b.korrekturAnwenden(id, 'weiß', 'weiß der Himmel'),
+         'eine Korrektur lässt sich anwenden (§23)');
+  gleich(b.fehler.find((f) => f.id === id).stand, 'erledigt', 'der Fehler gilt als erledigt');
+  gleich(b.stand, 'veraltet', 'und der Text muss neu geprüft werden');
+}
+{
+  const b = new SprachBruecke();
+  b.textSetzen('Ein Satz.');
+  const k = b.kontext();
+  stimmt(!!k.sprache && typeof k.fassung === 'number', 'der Sprachkontext steht bereit (§3)');
+  stimmt(Array.isArray(k.benutzerwoerter), 'mit den erlaubten Wörtern');
+  stimmt(Array.isArray(k.fehler), 'und den offenen Fehlern');
 }
 
 schluss();

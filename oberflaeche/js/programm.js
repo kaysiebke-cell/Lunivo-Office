@@ -8689,9 +8689,16 @@ function rechtsMenueZeigen(e) {
 
     if (fund.alt && /^[A-Za-zÄÖÜäöüß-]+$/.test(fund.alt)) {
       eintrag('Wort in Ruhe lassen', () => {
-        const g = KI.Gedaechtnis.lies();
-        g.inRuhe[fund.alt.toLowerCase()] = true;
-        KI.Gedaechtnis.schreib(g);
+        /* §9: Der Weg führt durch die Brücke. Sie schreibt ins Gedächtnis
+           und weiß zugleich, dass das Geprüfte damit nicht mehr stimmt —
+           vorher wusste sie von dem erlaubten Wort nichts. */
+        if (Bruecke) {
+          Bruecke.benutzerwortHinzufuegen(fund.alt);
+        } else {
+          const g = KI.Gedaechtnis.lies();
+          g.inRuhe[fund.alt.toLowerCase()] = true;
+          KI.Gedaechtnis.schreib(g);
+        }
         melde('„' + fund.alt + '" wird künftig nicht mehr angestrichen.');
         pruefen();
       });
@@ -8869,6 +8876,12 @@ function uebernimm(fund) {
   /* Was hier gelernt wird, soll das Schließen des Fensters überleben —
      sonst fragt das Programm morgen wieder nach längst Geklärtem. */
   KI.Gedaechtnis.merkeAenderung(fund);
+  /* §23: Der Brücke sagen, dass dieser Fehler erledigt ist. Nur den Text
+     zu ändern ließe ihn in ihrem Stand als offen stehen. */
+  if (Bruecke) {
+    const dazu = Bruecke.offeneFehler().find((f) => f.fund === fund);
+    if (dazu) Bruecke.korrekturAnwenden(dazu.id, fund.neu, Dokument.lies().text);
+  }
   pruefen();
 }
 
