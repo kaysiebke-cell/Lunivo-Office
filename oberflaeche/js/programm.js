@@ -1209,9 +1209,31 @@ function kopfFussAnwenden() {
   Speicher.schreib('kopfAn', kopfAn);
   Speicher.schreib('fussAn', fussAn);
   menueBauen();
+  /* Der Reiter „Kopf- und Fußzeile" hängt nicht nur an der Schreibstelle,
+     sondern auch daran, ob die Zeile überhaupt dasteht. Wird sie ein- oder
+     ausgeschaltet, bewegt sich die Schreibstelle nicht — ohne diese Zeile
+     bliebe der Reiter also weg (oder stehen), bis man das nächste Mal
+     irgendwohin klickt. */
+  if (typeof zusammenhangPruefen === 'function') zusammenhangPruefen();
 }
 B.kopfzeile = () => { kopfAn = !kopfAn; kopfFussAnwenden(); if (kopfAn) $('kopfzeile').focus(); };
 B.fusszeile = () => { fussAn = !fussAn; kopfFussAnwenden(); if (fussAn) $('fusszeile').focus(); };
+
+/* Hin und zurück zwischen Blatt und Kopf-/Fußzeile.
+
+   Mit der Maus ist der Weg zurück der schwierigere: Die Zeilen sind
+   schmal, das Blatt ist groß — hinein trifft man leicht, heraus nicht.
+   „Hin" schaltet die Zeile ein, falls sie aus war; sonst führte ein Knopf
+   an eine Stelle, die es gerade nicht gibt. */
+B.zurKopfzeile = () => {
+  if (!kopfAn) { kopfAn = true; kopfFussAnwenden(); }
+  $('kopfzeile').focus();
+};
+B.zurFusszeile = () => {
+  if (!fussAn) { fussAn = true; kopfFussAnwenden(); }
+  $('fusszeile').focus();
+};
+B.zurueckInText = () => feld.focus();
 
 /* Die Seitenzahl steht als Platzhalter da und wird beim Drucken vom Browser
    selbst gefüllt — im Blatt kann sie nicht stimmen, dort gibt es noch keine
@@ -1601,20 +1623,61 @@ const REGISTER_IM_ZUSAMMENHANG = [
   {
     name: 'Tabelle',
     gilt: () => !!zelleJetzt(),
+    /* Die Kennungen sind die aus symbole.js und stehen dort klein.
+       Vorher standen hier „Oben", „Weg", „Löschen" — Namen, die es dort
+       nicht gibt. symbolPfad() fand nichts, und alle zehn Knöpfe dieses
+       Reiters standen ohne Bild da. Ein Knopf ohne Bild sieht aus wie
+       einer, der noch nicht fertig ist. */
     gruppen: [
-      ['Zeilen', [['Oben', 'Zeile darüber', () => B.zeileOben(), 'gross'],
-                  ['Unten', 'Zeile darunter', () => B.zeileUnten(), 'gross'],
-                  ['Weg', 'Zeile löschen', () => B.zeileWeg()]]],
-      ['Spalten', [['Links', 'Spalte links', () => B.spalteLinks(), 'gross'],
-                   ['Rechts', 'Spalte rechts', () => B.spalteRechts(), 'gross'],
-                   ['Weg', 'Spalte löschen', () => B.spalteWeg()]]],
-      ['Tabelle', [['Kopfzeile', 'Erste Zeile als Kopf', () => B.kopfzeileTabelle()],
-                   ['Rahmen', 'Rahmen ein/aus', () => B.tabelleRahmen()],
-                   ['Sortieren', 'Sortieren', () => B.sortieren()],
-                   ['Löschen', 'Ganze Tabelle', () => B.tabelleWeg()]]],
+      ['Zeilen', [['tabelle', 'Zeile darüber', () => B.zeileOben(), 'gross'],
+                  ['tabelle', 'Zeile darunter', () => B.zeileUnten(), 'gross'],
+                  ['radierer', 'Zeile löschen', () => B.zeileWeg()]]],
+      ['Spalten', [['spalten', 'Spalte links', () => B.spalteLinks(), 'gross'],
+                   ['spalten', 'Spalte rechts', () => B.spalteRechts(), 'gross'],
+                   ['radierer', 'Spalte löschen', () => B.spalteWeg()]]],
+      ['Tabelle', [['kopfz', 'Erste Zeile als Kopf', () => B.kopfzeileTabelle()],
+                   ['rahmen', 'Rahmen ein/aus', () => B.tabelleRahmen()],
+                   ['sortieren', 'Sortieren', () => B.sortieren()],
+                   ['radierer', 'Ganze Tabelle', () => B.tabelleWeg()]]],
+    ],
+  },
+  {
+    /* Wer in der Kopfzeile steht, will Seitenzahl, Datum — und vor allem
+       wieder heraus. Der Weg zurück ist mit der Maus der fummeligste:
+       Man trifft die schmale Zeile leichter, als man sie wieder verlässt. */
+    name: 'Kopf- und Fußzeile',
+    gilt: () => !!kopfFussJetzt(),
+    gruppen: [
+      ['Kopf und Fuß', [['kopfz', 'Kopfzeile', () => B.kopfzeile(), 'gross'],
+                        ['fussz', 'Fußzeile', () => B.fusszeile(), 'gross']]],
+      ['Einfügen', [['zahlen', 'Seitenzahl', () => B.seitennummer(), 'gross'],
+                    ['datum', 'Datum', () => B.datum()],
+                    ['uhrzeit', 'Uhrzeit', () => B.uhrzeit()]]],
+      ['Navigation', [['zurueck', 'Zurück in den Text', () => B.zurueckInText(), 'gross'],
+                      ['kopfz', 'Zur Kopfzeile', () => B.zurKopfzeile()],
+                      ['fussz', 'Zur Fußzeile', () => B.zurFusszeile()]]],
     ],
   },
 ];
+
+/* Steht die Schreibstelle in der Kopf- oder Fußzeile?
+
+   Anders als zelleJetzt() wird bis zum Seitenkörper hinaufgegangen: Die
+   beiden Zeilen liegen neben dem Blatt, nicht darin. */
+function kopfFussJetzt() {
+  let k = window.getSelection().anchorNode;
+  while (k && k !== document.body) {
+    if (k.nodeType === Node.ELEMENT_NODE
+        && (k.id === 'kopfzeile' || k.id === 'fusszeile')) {
+      /* Nur wenn die Zeile auch dasteht. Eine ausgeblendete Kopfzeile
+         behält ihren Inhalt und damit ihre Schreibstelle — der Reiter
+         käme sonst zu einer Zeile, die niemand sieht. */
+      return k.offsetParent === null ? null : k;
+    }
+    k = k.parentNode;
+  }
+  return null;
+}
 
 function zusammenhangReiter() {
   return REGISTER_IM_ZUSAMMENHANG.filter((r) => {
