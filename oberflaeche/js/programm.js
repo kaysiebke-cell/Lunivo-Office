@@ -7455,54 +7455,65 @@ function leisteBauen(wohin, aufbau) {
    ------------------------------------------------------------ */
 function werkzeugeBauen() {
   leisteBauen('werkzeugleiste', ({ knopf, trenner }) => {
+    /* Die Reihenfolge und die Benennung stammen aus dem Aufbau — DATEI,
+       dann START ▸ ZWISCHENABLAGE und ▸ BEARBEITEN, dann das aus
+       EINFÜGEN und ÜBERPRÜFEN, was man ständig braucht. Die Leiste ist
+       die kurze Fassung desselben Aufbaus, nicht ein zweiter. */
     knopf('neu', 'Neu (Strg+N)', B.neu);
     knopf('oeffnen', 'Öffnen (Strg+O)', B.oeffnen);
     knopf('speichern', 'Speichern (Strg+S)', B.speichern);
+    knopf('unter', 'Speichern unter', B.speichernUnter);
     trenner();
-    knopf('pdf', 'Als PDF ausgeben', B.speichernPdf);
     knopf('drucken', 'Drucken (Strg+P)', B.drucken);
     knopf('vorschau', 'Druckvorschau', B.vorschau);
+    knopf('pdf', 'Als PDF exportieren', B.speichernPdf);
     trenner();
+    knopf('kleben', 'Einfügen (Strg+V)', B.einfuegen);
+    knopf('ohneformat', 'Einfügen ohne Formatierung', B.einfuegenOhne);
     knopf('schere', 'Ausschneiden (Strg+X)', B.ausschneiden);
     knopf('kopie', 'Kopieren (Strg+C)', B.kopieren);
-    knopf('kleben', 'Einfügen (Strg+V)', B.einfuegen);
     wzPinsel = knopf('pinsel', 'Format übertragen', B.formatUebertragen);
-    trenner();
     knopf('zurueck', 'Rückgängig (Strg+Z)', B.rueckgaengig);
     knopf('vor', 'Wiederholen (Strg+Y)', B.wiederholen);
     trenner();
-    knopf('haken', 'Rechtschreibung und Grammatik (F7)', B.rechtschreibpruefung);
+    knopf('lupe', 'Suchen und Ersetzen (Strg+F)', () => sucheZeigen(true));
     trenner();
-    knopf('tabelle', 'Tabelle einfügen', B.tabelle);
-    knopf('bild', 'Bild einfügen', B.bild);
-    knopf('saeule', 'Diagramm einfügen', B.diagramm);
-    knopf('rahmen', 'Textrahmen einfügen', B.textfeld);
+    knopf('haken', 'Prüfen (F7)', B.rechtschreibpruefung);
+    knopf('gruendlich', 'Gründlich prüfen', B.gruendlichPruefen);
     trenner();
     knopf('umbruch', 'Seitenumbruch (Strg+Enter)', B.seitenumbruch);
-    knopf('kette', 'Hyperlink einfügen', B.hyperlink);
+    knopf('tabelle', 'Tabelle einfügen', B.tabelle);
+    knopf('bild', 'Bild', B.bild);
+    knopf('stift', 'Zeichnen', B.zeichnen);
+    knopf('saeule', 'Diagramm', B.diagramm);
     trenner();
+    knopf('kette', 'Hyperlink', B.hyperlink);
     knopf('kopfz', 'Kopfzeile', B.kopfzeile);
     knopf('fussz', 'Fußzeile', B.fusszeile);
-    knopf('zahl', 'Seitennummer', B.seitennummer);
+    knopf('zahl', 'Seitenzahl', B.seitennummer);
+    trenner();
+    knopf('textrahmen', 'Textfeld', B.textfeld);
+    knopf('omega', 'Sonderzeichen', B.sonderzeichen);
     trenner();
     wzVerfolgt = knopf('verfolgt', 'Änderungen verfolgen', B.verfolgen);
-    knopf('notiz', 'Kommentar', B.kommentar);
-    trenner();
-    knopf('omega', 'Sonderzeichen', B.sonderzeichen);
-    knopf('stift', 'Form zeichnen', B.zeichnen);
+    knopf('notiz', 'Neuer Kommentar', B.kommentar);
   });
 
   /* ------------------------------------------------------------
      Die untere Leiste: alles, was den Text selbst betrifft.
      ------------------------------------------------------------ */
   leisteBauen('werkzeugleiste2', ({ knopf, trenner, leiste }) => {
-    wzVorlage = auswahl('wz-wahl--vorlage', VORLAGEN, absatz, 'Absatzformat');
-    leiste.appendChild(wzVorlage);
+    /* SCHRIFTART, dann ABSATZ, dann STILE — die Reihenfolge des Aufbaus.
+       Das Absatzformat stand vorher ganz vorn; im Aufbau kommen die Stile
+       nach dem Absatz, und dort stehen sie jetzt auch. */
     leiste.appendChild(schriftKnopfBauen());
     wzGroesse = auswahl('wz-wahl--groesse', GROESSEN.map((g) => [g, g]),
                         (g) => schriftgroesse(+g), 'Schriftgröße');
     wzGroesse.value = '12';                    // so groß steht der Text im Blatt
     leiste.appendChild(wzGroesse);
+    knopf('groesserA', 'Schrift vergrößern', B.schriftGroesser);
+    knopf('kleinerA', 'Schrift verkleinern', B.schriftKleiner);
+    knopf('radierer', 'Formatierung löschen', B.schlicht);
     trenner();
 
     knopf('F', 'Fett (Strg+B)', B.fett, 'wz--fett', 'bold');
@@ -7511,24 +7522,23 @@ function werkzeugeBauen() {
     knopf('S', 'Durchgestrichen', B.durch, 'wz--durch', 'strikeThrough');
     knopf('hoch', 'Hochgestellt', B.hoch, '', 'superscript');
     knopf('tief', 'Tiefgestellt', B.tief, '', 'subscript');
-    knopf('radierer', 'Formatierung entfernen', B.schlicht);
-    trenner();
-
+    knopf('marker', 'Hervorheben', B.hervorheben);
     knopf('farbe', 'Schriftfarbe', B.schriftfarbe);
-    knopf('marker', 'Hervorhebungsfarbe', B.hervorheben);
-    trenner();
-
-    knopf('links', 'Linksbündig', B.links, '', 'justifyLeft');
-    knopf('mitte', 'Zentriert', B.mitte, '', 'justifyCenter');
-    knopf('rechts', 'Rechtsbündig', B.rechts, '', 'justifyRight');
-    knopf('block', 'Blocksatz', B.block, '', 'justifyFull');
+    knopf('Aa', 'Groß-/Kleinschreibung', B.schreibweise);
+    knopf('unterart', 'Unterstreichungsart', B.unterstrichArt);
+    knopf('texteffekt', 'Texteffekte', B.effekt);
     trenner();
 
     knopf('punkte', 'Aufzählung', B.punkte, '', 'insertUnorderedList');
     knopf('zahlen', 'Nummerierung', B.zahlen, '', 'insertOrderedList');
+    knopf('weniger', 'Einzug verringern', B.einzugWeniger);
     knopf('mehr', 'Einzug vergrößern', B.einzugMehr);
-    knopf('weniger', 'Einzug verkleinern', B.einzugWeniger);
-    trenner();
+    knopf('ebeneHoch', 'Listenebene erhöhen', B.ebeneHoeher);
+    knopf('ebeneTief', 'Listenebene verringern', B.ebeneTiefer);
+    knopf('links', 'Linksbündig', B.links, '', 'justifyLeft');
+    knopf('mitte', 'Zentriert', B.mitte, '', 'justifyCenter');
+    knopf('rechts', 'Rechtsbündig', B.rechts, '', 'justifyRight');
+    knopf('block', 'Blocksatz', B.block, '', 'justifyFull');
 
     /* Der Zeilenabstand ist eine Wahl aus dreien — als drei einzelne Knöpfe
        wäre die Leiste noch länger, und man sähe nicht, welcher gerade gilt. */
@@ -7536,6 +7546,15 @@ function werkzeugeBauen() {
       [['1.15', 'Zeilen 1,0'], ['1.6', 'Zeilen 1,5'], ['2.1', 'Zeilen 2,0']],
       (wert) => zeilenabstand(wert)(), 'Zeilenabstand');
     leiste.appendChild(abstand);
+
+    knopf('rahmen', 'Absatzrahmen', B.absatzRahmen);
+    knopf('toenung', 'Absatzschattierung', B.absatzSchattierung);
+    knopf('sortieren', 'Sortieren', B.sortieren);
+    knopf('steuerzeichen', 'Steuerzeichen', B.steuerzeichenZeigen);
+    trenner();
+
+    wzVorlage = auswahl('wz-wahl--vorlage', VORLAGEN, absatz, 'Formatvorlage');
+    leiste.appendChild(wzVorlage);
   });
 }
 
