@@ -200,4 +200,44 @@ console.log('\nOhne Brücke läuft es auch');
   stimmt(br.text.includes('Text'), 'wird sie nachgereicht, bekommt sie den Stand');
 }
 
+console.log('\nDie Griffe, die das C++-Beispiel benutzt');
+{
+  /* main() in document_model.cpp ruft diese Namen — der Port muss sie
+     kennen, sonst laesst sich das Beispiel nicht nachbauen. */
+  const d = new M.Document();
+  const noetig = ['addSection','getSection','getCurrentSection','sectionCount',
+                  'getMetadata','getLanguageBridge','getDocumentVersion',
+                  'createCoverPage','createTableOfContents','removeSection'];
+  for (const n of noetig) stimmt(typeof d[n] === 'function', 'Document.' + n + '()');
+
+  const a = d.getCurrentSection();
+  for (const n of ['getContent','getPageSetup','getHeader','getFooter',
+                   'getPageNumbering','getId','insertBreak','previous','next']) {
+    stimmt(typeof a[n] === 'function', 'Section.' + n + '()');
+  }
+  const inhalt = a.getContent();
+  for (const n of ['addParagraph','addTable','addImage','addShape']) {
+    stimmt(typeof inhalt[n] === 'function', 'DocumentContent.' + n + '()');
+  }
+  gleich(d.sectionCount(), 1, 'sectionCount zaehlt die Abschnitte');
+}
+{
+  const d = new M.Document();
+  const inhalt = d.getCurrentSection().getContent();
+  const bild = inhalt.addImage('/bild.png');
+  const form = inhalt.addShape(M.ShapeType.Rectangle);
+  bild.getPosition().x = 20; bild.getPosition().y = 30;
+  form.getPosition().x = 50; form.getPosition().y = 80;
+  gleich(bild.getPosition().x, 20, 'Bild und Form tragen eine Position');
+  gleich(form.getPosition().y, 80, 'jede ihre eigene');
+}
+{
+  const v = new M.TableOfContents();
+  gleich(v.title, 'Inhaltsverzeichnis', 'das Verzeichnis hat einen Titel');
+  gleich(v.depth, 3, 'und eine Tiefe');
+  const e = v.addEntry('Kapitel eins', 7, 1);
+  gleich(e.pageNumber, 7, 'ein Eintrag traegt seine Seitenzahl');
+  gleich(e.level, 1, 'und seine Ebene');
+}
+
 schluss();

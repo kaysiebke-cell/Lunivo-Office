@@ -363,16 +363,28 @@ class CoverPage {
   }
 }
 
+/* Namen und Felder wie in document_model.cpp — text, pageNumber, level. */
 class TOCEntry {
-  constructor(text, ebene, seite) {
-    this.text = text; this.level = ebene; this.page = seite;
+  constructor(text = '', pageNumber = 0, level = 1) {
+    this.text = text;
+    this.pageNumber = pageNumber;
+    this.level = level;
   }
 }
 
 class TableOfContents {
-  constructor() { this.entries = []; this.maxLevel = 3; }
+  constructor() {
+    this.entries = [];
+    this.depth = 3;
+    this.title = 'Inhaltsverzeichnis';
+  }
 
-  /* Aus den Überschriften des Dokuments. Die Seitenzahl bleibt offen —
+  addEntry(text, page, ebene) {
+    this.entries.push(new TOCEntry(text, page, ebene));
+    return this.entries[this.entries.length - 1];
+  }
+
+  /* Aus den Überschriften des Dokuments. Die Seitenzahl bleibt null —
      die weiß erst der Umbruch, nicht das Modell. */
   rebuild(document) {
     this.entries = [];
@@ -380,8 +392,8 @@ class TableOfContents {
       for (const block of abschnitt.getContent().getBlocks()) {
         if (!(block instanceof Paragraph)) continue;
         const ebene = block.properties.outlineLevel || 0;
-        if (ebene > 0 && ebene <= this.maxLevel) {
-          this.entries.push(new TOCEntry(block.getText(), ebene, null));
+        if (ebene > 0 && ebene <= this.depth) {
+          this.addEntry(block.getText(), 0, ebene);
         }
       }
     }
@@ -530,12 +542,17 @@ class Document {
   getSections()       { return this.sections; }
   getSection(i)       { return this.sections[i] || null; }
   getCurrentSection() { return this.getSection(this.currentSectionIndex); }
+  sectionCount()      { return this.sections.length; }
+  getDocumentVersion() { return this.languageBridge ? this.languageBridge.fassung : 0; }
 
   setCurrentSection(i) {
     if (i < 0 || i >= this.sections.length) return false;
     this.currentSectionIndex = i;
     return true;
   }
+
+  createCoverPage(vorlage) { return this.setCoverPage(vorlage); }
+  createTableOfContents()  { return this.setTableOfContents(); }
 
   setCoverPage(vorlage) {
     this.coverPage = new CoverPage(vorlage);
