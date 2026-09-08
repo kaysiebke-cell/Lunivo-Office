@@ -33,6 +33,156 @@ const Speicher = {
 const Bruecke = typeof SprachBruecke !== 'undefined' ? new SprachBruecke() : null;
 
 /* ============================================================
+   Abschnitte
+
+   Ein Abschnitt ist der Teil eines Dokuments mit eigenem Seitenaufbau:
+   eigene Ränder, eigene Ausrichtung, eigene Kopf- und Fußzeile, eigene
+   Seitennummerierung. Ein Deckblatt ohne Zahl, ein Hauptteil mit Zahlen
+   ab eins, ein Anhang quer — das sind drei davon.
+
+   Bisher gab es nur einen: Papier, Ränder und Kopfzeile galten für das
+   ganze Dokument, und „Abschnittsumbruch" zog bloß eine Linie.
+
+   WIE ES ZUSAMMENGEHT
+
+   Der Text bleibt, wo er ist — im Feld, als HTML. Was dazukommt, ist der
+   AUFBAU: Das Dokumentmodell (dokumentmodell.js) führt die Abschnitte
+   und je Abschnitt den Seitenaufbau. Im Text stehen nur Trennlinien; wo
+   der Zeiger steht, sagt, in welchem Abschnitt man ist.
+
+   Der Bogen zeigt immer den Abschnitt, in dem geschrieben wird — so wie
+   im Writer und in Word. Wer den Zeiger über eine Trennlinie bewegt,
+   sieht die Ränder wechseln.
+
+   Die Sprachbrücke bekommt der Aufbau NICHT gereicht: Den Text meldet
+   das Feld ihr schon selbst, und ein zweiter Melder hieße, dass sie
+   abwechselnd den ganzen Text und einen leeren bekäme.
+   ============================================================ */
+const Aufbau = typeof Dokumentmodell !== 'undefined'
+  ? new Dokumentmodell.Document(null) : null;
+
+let abschnittJetztNr = 0;
+
+/* In welchem Abschnitt steht der Zeiger? Gezählt werden die Trennlinien
+   davor — die Reihenfolge im Text ist die Reihenfolge der Abschnitte. */
+function abschnittNummerAnStelle() {
+  if (!Aufbau) return 0;
+  const auswahl = window.getSelection();
+  if (!auswahl.rangeCount) return abschnittJetztNr;
+  let knoten = auswahl.anchorNode;
+  if (knoten && knoten.nodeType === Node.TEXT_NODE) knoten = knoten.parentElement;
+  if (!knoten || !feld.contains(knoten)) return abschnittJetztNr;
+
+  const marken = [...feld.querySelectorAll('hr.abschnitt')];
+  let zahl = 0;
+  for (const marke of marken) {
+    /* DOCUMENT_POSITION_PRECEDING: Die Marke steht im Text vor dem Zeiger. */
+    if (knoten.compareDocumentPosition(marke) & Node.DOCUMENT_POSITION_PRECEDING) zahl++;
+  }
+  return Math.min(zahl, Aufbau.getSections().length - 1);
+}
+
+/* Den Seitenaufbau eines Abschnitts auf den Bogen legen. */
+function abschnittAnwenden(nr) {
+  if (!Aufbau) return;
+  const abschnitt = Aufbau.getSection(nr);
+  if (!abschnitt) return;
+
+  const aufbau = abschnitt.getPageSetup();
+  papier = aufbau.pageSize.type.name.toLowerCase();
+  quer = aufbau.orientation === Dokumentmodell.Orientation.Landscape;
+  seitenrand = {
+    oben: aufbau.margins.top, unten: aufbau.margins.bottom,
+    links: aufbau.margins.left, rechts: aufbau.margins.right,
+  };
+
+  /* Kopf- und Fußzeile des Abschnitts — mit „Wie vorherige" kann das die
+     eines früheren sein. */
+  const kopf = abschnitt.wirksameKopfzeile();
+  const fuss = abschnitt.wirksameFusszeile();
+  kopfAn = kopf.enabled && !!abschnitt.header.sichtbar;
+  fussAn = fuss.enabled && !!abschnitt.footer.sichtbar;
+  $('kopfzeile').innerHTML = kopf.html || '<br>';
+  $('fusszeile').innerHTML = fuss.html || '<br>';
+
+  papierAnwenden();
+  seiteAnwenden();
+  kopfFussAnwenden();
+  linealAuffrischen();
+}
+
+/* Was am Bogen steht, in den Abschnitt zurückschreiben. Ohne das wäre
+   jede Einstellung beim nächsten Wechsel wieder weg. */
+function abschnittMerken(nr) {
+  if (!Aufbau) return;
+  const abschnitt = Aufbau.getSection(nr);
+  if (!abschnitt) return;
+  const aufbau = abschnitt.getPageSetup();
+  const masse = PAPIERE[papier] || PAPIERE.a4;
+  aufbau.pageSize.type.name = papier.toUpperCase();
+  aufbau.pageSize.width = masse.breite;
+  aufbau.pageSize.height = masse.hoehe;
+  aufbau.orientation = quer ? Dokumentmodell.Orientation.Landscape
+                            : Dokumentmodell.Orientation.Portrait;
+  aufbau.margins.top = seitenrand.oben;
+  aufbau.margins.bottom = seitenrand.unten;
+  aufbau.margins.left = seitenrand.links;
+  aufbau.margins.right = seitenrand.rechts;
+  abschnitt.header.sichtbar = kopfAn;
+  abschnitt.footer.sichtbar = fussAn;
+  abschnitt.header.html = $('kopfzeile').innerHTML;
+  abschnitt.footer.html = $('fusszeile').innerHTML;
+  abschnitteSichern();
+}
+
+/* Nachsehen, ob der Zeiger den Abschnitt gewechselt hat. */
+function abschnittPruefen() {
+  if (!Aufbau) return;
+  const nr = abschnittNummerAnStelle();
+  if (nr === abschnittJetztNr) return;
+  abschnittMerken(abschnittJetztNr);
+  abschnittJetztNr = nr;
+  abschnittAnwenden(nr);
+  const zahl = Aufbau.getSections().length;
+  if (zahl > 1) melde('Abschnitt ' + (nr + 1) + ' von ' + zahl + '.');
+}
+
+/* Was das Programm behält: je Abschnitt der Seitenaufbau und die beiden
+   Zeilen. Der Text selbst liegt weiter unter „inhalt". */
+function abschnitteSichern() {
+  if (!Aufbau) return;
+  Speicher.schreib('abschnitte', Aufbau.getSections().map((a) => ({
+    aufbau: a.getPageSetup(),
+    nummerierung: a.getPageNumbering(),
+    umbruch: a.getBreakBefore(),
+    kopf: { sichtbar: !!a.header.sichtbar, html: a.header.html || '',
+            wieVorherige: a.header.linkedToPrevious },
+    fuss: { sichtbar: !!a.footer.sichtbar, html: a.footer.html || '',
+            wieVorherige: a.footer.linkedToPrevious },
+  })));
+}
+
+function abschnitteHolen() {
+  if (!Aufbau) return;
+  const gespeichert = Speicher.lies('abschnitte', null);
+  if (!Array.isArray(gespeichert) || !gespeichert.length) return;
+  while (Aufbau.getSections().length < gespeichert.length) Aufbau.addSection();
+  gespeichert.forEach((stand, i) => {
+    const a = Aufbau.getSection(i);
+    if (!a || !stand) return;
+    if (stand.aufbau) Object.assign(a.getPageSetup(), stand.aufbau);
+    if (stand.nummerierung) Object.assign(a.getPageNumbering(), stand.nummerierung);
+    a.breakBefore = stand.umbruch || null;
+    if (stand.kopf) { a.header.sichtbar = stand.kopf.sichtbar;
+                      a.header.html = stand.kopf.html;
+                      a.header.linkedToPrevious = !!stand.kopf.wieVorherige; }
+    if (stand.fuss) { a.footer.sichtbar = stand.fuss.sichtbar;
+                      a.footer.html = stand.fuss.html;
+                      a.footer.linkedToPrevious = !!stand.fuss.wieVorherige; }
+  });
+}
+
+/* ============================================================
    1. Zustand
    ============================================================ */
 
@@ -1132,6 +1282,7 @@ B.seitenraender = () => {
       if (!Number.isNaN(zahl)) seitenrand[seite] = Math.max(0, Math.min(80, zahl));
     }
     seiteAnwenden();
+    abschnittMerken(abschnittJetztNr);
     melde('Seitenränder gesetzt.');
   });
 };
@@ -2946,6 +3097,9 @@ function zusammenhangPruefen() {
 }
 
 document.addEventListener('selectionchange', zusammenhangPruefen);
+/* Wandert der Zeiger über eine Trennlinie, gilt ein anderer Abschnitt —
+   und der Bogen muss ihn zeigen. */
+document.addEventListener('selectionchange', abschnittPruefen);
 
 /* ------------------------------------------------------------
    Symbolleisten oder Register
@@ -4257,11 +4411,18 @@ function papierAnwenden() {
   linealAuffrischen();
 }
 
-const setzePapier = (art) => () => { papier = art; papierAnwenden(); melde(PAPIERE[art].name + '.'); };
+const setzePapier = (art) => () => {
+  papier = art; papierAnwenden(); abschnittMerken(abschnittJetztNr);
+  melde(PAPIERE[art].name + (Aufbau && Aufbau.getSections().length > 1
+    ? ' — für Abschnitt ' + (abschnittJetztNr + 1) + '.' : '.'));
+};
 B.querformat = () => {
   quer = !quer;
   papierAnwenden();
-  melde(quer ? 'Querformat.' : 'Hochformat.');
+  abschnittMerken(abschnittJetztNr);
+  const wo = Aufbau && Aufbau.getSections().length > 1
+    ? ' — für Abschnitt ' + (abschnittJetztNr + 1) + '.' : '.';
+  melde((quer ? 'Querformat' : 'Hochformat') + wo);
 };
 
 /* ---- Seitenränder als Vorgaben ----
@@ -4279,6 +4440,7 @@ const setzeRandVorgabe = (art) => () => {
   seitenrand.oben = wie.oben; seitenrand.unten = wie.unten;
   seitenrand.links = wie.links; seitenrand.rechts = wie.rechts;
   seiteAnwenden();
+  abschnittMerken(abschnittJetztNr);
   melde('Seitenränder: ' + wie.name + '.');
 };
 
@@ -5614,9 +5776,32 @@ B.spaltenumbruch = () => {
 
 B.abschnittsumbruch = () => {
   /* Ein Abschnitt trennt Teile mit eigenem Aussehen — etwa ein Deckblatt
-     vom Rest. Sichtbar als Linie, im Druck als Seitenwechsel. */
+     vom Rest. Sichtbar als Linie, im Druck als Seitenwechsel.
+
+     Die Linie allein war früher alles. Jetzt entsteht dahinter ein
+     wirklicher Abschnitt im Aufbau: Er erbt zunächst den Seitenaufbau des
+     Abschnitts, in dem der Zeiger stand — alles andere wäre eine
+     Überraschung —, lässt sich danach aber eigenständig einstellen. */
+  if (Aufbau) {
+    abschnittMerken(abschnittJetztNr);
+    const vorher = Aufbau.getSection(abschnittJetztNr);
+    const neuer = Aufbau.addSection();
+    if (vorher) {
+      neuer.getPageSetup().margins = Object.assign({}, vorher.getPageSetup().margins);
+      neuer.getPageSetup().orientation = vorher.getPageSetup().orientation;
+      neuer.getPageSetup().pageSize = JSON.parse(JSON.stringify(vorher.getPageSetup().pageSize));
+      /* Die Kopfzeile läuft zunächst weiter — „Wie vorherige", wie im
+         Writer. Wer sie im neuen Abschnitt anders haben will, schaltet
+         das ab. */
+      neuer.header.linkedToPrevious = true;
+      neuer.footer.linkedToPrevious = true;
+    }
+    neuer.insertBreak(Dokumentmodell.SectionBreakType.NextPage);
+    abschnitteSichern();
+  }
   Dokument.einfuegen('<hr class="abschnitt" data-abschnitt="1"><p><br></p>');
-  melde('Abschnittsumbruch gesetzt.');
+  melde(Aufbau ? 'Abschnitt ' + Aufbau.getSections().length + ' beginnt hier.'
+               : 'Abschnittsumbruch gesetzt.');
 };
 
 /* ---- Bilder anordnen ----
@@ -8818,6 +9003,12 @@ setzeZoom(zoom);
 titelSetzen();
 zahlenAuffrischen();
 werkzeugeAuffrischen();
+
+/* Die Abschnitte kommen vor dem Text: Der Bogen soll gleich beim Öffnen
+   den Aufbau des ersten Abschnitts tragen und nicht erst, wenn jemand
+   hineinklickt. */
+abschnitteHolen();
+abschnittAnwenden(0);
 
 if (Bruecke) Bruecke.textSetzen(Dokument.lies().text);
 
