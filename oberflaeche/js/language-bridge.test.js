@@ -10,14 +10,8 @@
    ============================================================ */
 'use strict';
 
-let bestanden = 0;
-const stimmt = (bedingung, was) => {
-  if (!bedingung) { console.error('  FEHLT: ' + was); process.exitCode = 1; return; }
-  bestanden++;
-  console.log('  ok   ' + was);
-};
-const gleich = (ist, soll, was) =>
-  stimmt(ist === soll, was + (ist === soll ? '' : '  (ist ' + ist + ', soll ' + soll + ')'));
+const { pruefhelferBauen } = require('./pruefhelfer.js');
+const { stimmt, gleich, schluss } = pruefhelferBauen();
 
 /* Ein gestellter Prüfer. Er meldet, was ihm vorgelegt wird. */
 let naechsteFunde = [];
@@ -183,5 +177,4 @@ console.log('\nDie Auskunft');
   gleich(a.fassung, 1, 'sagt die Fassung');
 }
 
-console.log('\n' + bestanden + ' Prüfungen bestanden'
-            + (process.exitCode ? ' — aber nicht alle.' : '.') + '\n');
+schluss();
