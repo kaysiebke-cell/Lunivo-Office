@@ -1261,6 +1261,316 @@ B.zurFusszeile = () => {
 };
 B.zurueckInText = () => feld.focus();
 
+/* ============================================================
+   Die Werkzeuge für das, was im Text steht
+
+   Bisher ließ sich alles nur einfügen. Eine Form, ein Diagramm, ein
+   SmartArt, eine Formel — einmal im Text, waren sie ein Bild: löschen und
+   neu machen ging, ändern nicht. Wer sich bei einer Zahl vertippt hatte,
+   tippte alle noch einmal.
+
+   Möglich wird das Ändern dadurch, dass jedes Objekt seine Quelle
+   mitträgt (siehe merkeQuelle). Die Werkzeuge lesen sie, zeigen sie im
+   selben Fenster wie beim Einfügen und setzen das Ergebnis an dieselbe
+   Stelle.
+   ============================================================ */
+
+/* Ein Objekt an Ort und Stelle durch ein neues ersetzen. */
+function objektErsetzen(alt, neuerText) {
+  const halter = document.createElement('div');
+  halter.innerHTML = neuerText;
+  const neu = halter.firstElementChild;
+  if (!neu) return false;
+  alt.replaceWith(neu);
+  geaendertMelden();
+  return true;
+}
+
+/* ---- Zeichentools ---- */
+
+B.formAendern = () => {
+  const form = formJetzt();
+  if (!form) { melde('Im Text steht keine Form.'); return; }
+  const q = quelleLesen(form) || { form: 'linie', farbe: '#2F6FB5' };
+  fenster('Form', [
+    { schluessel: 'form', name: 'Form', art: 'auswahl', wert: q.form,
+      werte: [['linie', 'Linie'], ['pfeil', 'Pfeil'], ['rechteck', 'Rechteck'], ['kreis', 'Kreis']] },
+  ], (werte) => formNeuZeichnen(form, Object.assign({}, q, { form: werte.form })));
+};
+
+B.formFuellung = () => {
+  const form = formJetzt();
+  if (!form) { melde('Im Text steht keine Form.'); return; }
+  const q = quelleLesen(form) || {};
+  /* Linie und Pfeil haben keine Fläche — eine Füllung wäre dort ein
+     Knopf, der nichts tut. */
+  if (q.form === 'linie' || q.form === 'pfeil') {
+    melde('Eine Linie hat keine Fläche zum Füllen.'); return;
+  }
+  fenster('Füllung', [
+    { schluessel: 'wie', name: 'Fläche', art: 'auswahl',
+      wert: q.fuellung === 'none' ? 'ohne' : 'farbe',
+      werte: [['farbe', 'Mit Farbe füllen'], ['ohne', 'Ohne Füllung']] },
+    { schluessel: 'fuellung', name: 'Farbe der Fläche', art: 'color',
+      wert: q.fuellung && q.fuellung !== 'none' ? q.fuellung : '#E3EBF5' },
+  ], (werte) => formNeuZeichnen(form, Object.assign({}, q, {
+    fuellung: werte.wie === 'ohne' ? 'none' : werte.fuellung })));
+};
+
+B.formKontur = () => {
+  const form = formJetzt();
+  if (!form) { melde('Im Text steht keine Form.'); return; }
+  const q = quelleLesen(form) || {};
+  fenster('Kontur', [
+    { schluessel: 'farbe', name: 'Farbe der Linie', art: 'color', wert: q.farbe || '#2F6FB5' },
+    { schluessel: 'strich', name: 'Dicke (1 bis 8)', art: 'number',
+      wert: String(q.strich || 2), schritt: '1' },
+  ], (werte) => formNeuZeichnen(form, Object.assign({}, q, {
+    farbe: werte.farbe,
+    strich: Math.max(1, Math.min(8, Number(werte.strich) || 2)) })));
+};
+
+B.formGroesse = () => {
+  const form = formJetzt();
+  if (!form) { melde('Im Text steht keine Form.'); return; }
+  fenster('Größe', [
+    { schluessel: 'breite', name: 'Breite (Bildpunkte)', art: 'number',
+      wert: String(form.getAttribute('width') || 120), schritt: '10' },
+    { schluessel: 'hoehe', name: 'Höhe (Bildpunkte)', art: 'number',
+      wert: String(form.getAttribute('height') || 60), schritt: '10' },
+  ], (werte) => {
+    const b = Math.max(20, Math.min(1200, Number(werte.breite) || 120));
+    const h = Math.max(20, Math.min(1200, Number(werte.hoehe) || 60));
+    form.setAttribute('width', b);
+    form.setAttribute('height', h);
+    geaendertMelden();
+    melde('Größe geändert.');
+  });
+};
+
+/* Zeichnet die Form aus ihrer Quelle neu — Form, Farbe, Füllung, Dicke.
+   Die Maße bleiben, was sie waren: Wer die Farbe wechselt, will nicht
+   auch die Größe zurückgesetzt bekommen. */
+function formNeuZeichnen(alt, q) {
+  const kennung = 'p' + Date.now().toString(36);
+  let innen = (FORMEN[q.form] || FORMEN.linie)
+    .replace(/COLOR/g, q.farbe || '#2F6FB5')
+    .replace(/MID/g, kennung);
+  if (q.strich && q.strich !== 2) {
+    innen = innen.replace(/stroke-width="2"/g, 'stroke-width="' + q.strich + '"');
+  }
+  if (q.fuellung && q.fuellung !== 'none') {
+    innen = innen.replace(/fill="none"/g, 'fill="' + q.fuellung + '"');
+  }
+  const b = alt.getAttribute('width') || 120;
+  const h = alt.getAttribute('height') || 60;
+  const neu = merkeQuelle('<svg class="zeichnung" xmlns="http://www.w3.org/2000/svg" '
+    + 'viewBox="0 0 120 60" width="' + b + '" height="' + h + '">' + innen + '</svg>', q);
+  if (objektErsetzen(alt, neu)) melde('Form geändert.');
+}
+
+/* ---- Diagrammwerkzeuge ---- */
+
+/* Entwurf und Daten öffnen dasselbe Fenster; nur der Anlass ist ein
+   anderer. „Daten" ist der häufigere Weg — eine Zahl stimmt nicht —,
+   „Entwurf" der seltenere: Überschrift und Art. */
+function diagrammFenster(titel, nurDaten) {
+  const bild = diagrammJetzt();
+  if (!bild) { melde('Im Text steht kein Diagramm.'); return; }
+  const q = quelleLesen(bild);
+  if (!q) {
+    melde('Dieses Diagramm stammt aus einer älteren Fassung — '
+        + 'es trägt seine Zahlen nicht mit und lässt sich nur neu einfügen.');
+    return;
+  }
+  const felder = [{ art: 'satz', text: 'Je Zeile ein Wert: „Miete: 480".' }];
+  if (!nurDaten) {
+    felder.push({ schluessel: 'titel', name: 'Überschrift', wert: q.titel || '' });
+    felder.push({ schluessel: 'art', name: 'Art', art: 'auswahl', wert: q.art,
+      werte: [['balken', 'Balken'], ['linie', 'Linie'], ['kuchen', 'Kreis']] });
+  }
+  felder.push({ schluessel: 'daten', name: 'Zahlen', art: 'flaeche', zeilen: 7,
+                wert: q.daten || '' });
+
+  fenster(titel, felder, (werte) => {
+    const neuQ = {
+      art: nurDaten ? q.art : werte.art,
+      titel: nurDaten ? (q.titel || '') : werte.titel.trim(),
+      daten: werte.daten,
+    };
+    diagrammNeuZeichnen(bild, neuQ);
+  });
+}
+
+B.diagrammEntwurf = () => diagrammFenster('Diagrammentwurf', false);
+B.diagrammDaten   = () => diagrammFenster('Daten', true);
+
+B.diagrammTyp = () => {
+  const bild = diagrammJetzt();
+  if (!bild) { melde('Im Text steht kein Diagramm.'); return; }
+  const q = quelleLesen(bild);
+  if (!q) { melde('Dieses Diagramm trägt seine Zahlen nicht mit.'); return; }
+  fenster('Diagrammtyp', [
+    { schluessel: 'art', name: 'Art', art: 'auswahl', wert: q.art,
+      werte: [['balken', 'Balken'], ['linie', 'Linie'], ['kuchen', 'Kreis']] },
+  ], (werte) => diagrammNeuZeichnen(bild, Object.assign({}, q, { art: werte.art })));
+};
+
+B.diagrammFormat = () => {
+  const bild = diagrammJetzt();
+  if (!bild) { melde('Im Text steht kein Diagramm.'); return; }
+  fenster('Formatierung', [
+    { art: 'satz', text: 'Wie groß das Diagramm im Text steht.' },
+    { schluessel: 'breite', name: 'Breite (Bildpunkte)', art: 'number',
+      wert: String(bild.getAttribute('width') || 480), schritt: '20' },
+  ], (werte) => {
+    const b = Math.max(120, Math.min(1600, Number(werte.breite) || 480));
+    const kasten = (bild.getAttribute('viewBox') || '0 0 480 260').split(/\s+/);
+    const verhaeltnis = (Number(kasten[3]) || 260) / (Number(kasten[2]) || 480);
+    bild.setAttribute('width', b);
+    bild.setAttribute('height', Math.round(b * verhaeltnis));
+    geaendertMelden();
+    melde('Größe geändert.');
+  });
+};
+
+function diagrammNeuZeichnen(alt, q) {
+  const punkte = zahlenLesen(q.daten);
+  if (!punkte.length) { melde('Darin standen keine Zahlen, mit denen sich zeichnen ließe.'); return; }
+  const bauer = { balken: balkenSvg, linie: linienSvg, kuchen: kuchenSvg }[q.art] || balkenSvg;
+  if (objektErsetzen(alt, merkeQuelle(bauer(punkte, (q.titel || '').trim()), q))) {
+    melde('Diagramm mit ' + punkte.length + ' Werten geändert.');
+  }
+}
+
+/* ---- SmartArt-Werkzeuge ---- */
+
+function smartartFenster(titel, nurForm) {
+  const bild = smartartJetzt();
+  if (!bild) { melde('Im Text steht kein SmartArt.'); return; }
+  const q = quelleLesen(bild);
+  if (!q) {
+    melde('Dieses SmartArt stammt aus einer älteren Fassung — '
+        + 'es trägt seine Kästen nicht mit und lässt sich nur neu einfügen.');
+    return;
+  }
+  const felder = [{ schluessel: 'art', name: 'Form', art: 'auswahl', wert: q.art, werte: [
+    ['ablauf', 'Ablauf (Pfeile)'], ['kreis', 'Kreislauf'],
+    ['gliederung', 'Gliederung'], ['liste', 'Liste mit Kästen'],
+  ] }];
+  if (!nurForm) {
+    felder.unshift({ art: 'satz', text: 'Je Zeile ein Kasten.' });
+    felder.push({ schluessel: 'text', name: 'Kästen', art: 'flaeche', zeilen: 6, wert: q.text || '' });
+  }
+  fenster(titel, felder, (werte) => {
+    const neuQ = { art: werte.art, text: nurForm ? q.text : werte.text };
+    const schritte = String(neuQ.text).split(/\r?\n/).map((z) => z.trim()).filter(Boolean).slice(0, 8);
+    if (!schritte.length) { melde('Da stand keine Zeile.'); return; }
+    const bauer = { ablauf: smartartAblauf, kreis: smartartKreis,
+                    gliederung: smartartGliederung, liste: smartartListe }[neuQ.art] || smartartAblauf;
+    const neu = merkeQuelle(bauer(schritte), neuQ)
+      .replace('class="diagramm"', 'class="diagramm smartart"');
+    if (objektErsetzen(bild, neu)) melde('SmartArt mit ' + schritte.length + ' Kästen geändert.');
+  });
+}
+
+B.smartartEntwurf = () => smartartFenster('SmartArt-Entwurf', false);
+B.smartartFormat  = () => smartartFenster('SmartArt-Format', true);
+
+/* ---- Tabellenwerkzeuge: was noch fehlte ---- */
+
+B.zellengroesse = () => mitTabelle((zelle, zeile, tabelle) => {
+  fenster('Zellengröße', [
+    { art: 'satz', text: 'Gilt für die Spalte, in der der Zeiger steht.' },
+    { schluessel: 'breite', name: 'Breite (mm, 0 = automatisch)', art: 'number',
+      wert: '0', schritt: '5' },
+    { schluessel: 'hoehe', name: 'Zeilenhöhe (mm, 0 = automatisch)', art: 'number',
+      wert: '0', schritt: '2' },
+  ], (werte) => {
+    const spalte = [...zeile.cells].indexOf(zelle);
+    const breite = Number(werte.breite) || 0;
+    const hoehe = Number(werte.hoehe) || 0;
+    if (breite > 0) {
+      for (const r of tabelle.rows) {
+        if (r.cells[spalte]) r.cells[spalte].style.width = breite + 'mm';
+      }
+    }
+    if (hoehe > 0) zeile.style.height = hoehe + 'mm';
+    geaendertMelden();
+    melde('Zellengröße gesetzt.');
+  });
+});
+
+B.zellenAusrichtung = () => mitTabelle((zelle, zeile, tabelle) => {
+  fenster('Ausrichtung', [
+    { art: 'satz', text: 'Gilt für die Zelle, in der der Zeiger steht.' },
+    { schluessel: 'quer', name: 'Waagerecht', art: 'auswahl', werte: [
+      ['left', 'Links'], ['center', 'Zentriert'], ['right', 'Rechts'] ] },
+    { schluessel: 'hoch', name: 'Senkrecht', art: 'auswahl', werte: [
+      ['top', 'Oben'], ['middle', 'Mitte'], ['bottom', 'Unten'] ] },
+    { schluessel: 'wofuer', name: 'Wofür', art: 'auswahl', werte: [
+      ['zelle', 'Nur diese Zelle'], ['zeile', 'Ganze Zeile'], ['tabelle', 'Ganze Tabelle'] ] },
+  ], (werte) => {
+    const ziel = werte.wofuer === 'tabelle' ? [...tabelle.querySelectorAll('td, th')]
+               : werte.wofuer === 'zeile' ? [...zeile.cells]
+               : [zelle];
+    for (const z of ziel) {
+      z.style.textAlign = werte.quer;
+      z.style.verticalAlign = werte.hoch;
+    }
+    geaendertMelden();
+    melde(ziel.length === 1 ? 'Zelle ausgerichtet.' : ziel.length + ' Zellen ausgerichtet.');
+  });
+});
+
+B.tabelleFormat = () => mitTabelle((zelle, zeile, tabelle) => {
+  fenster('Tabellenformatierung', [
+    { schluessel: 'streifen', name: 'Zeilen abwechselnd tönen', art: 'auswahl', werte: [
+      ['nein', 'Nein'], ['ja', 'Ja'] ] },
+    { schluessel: 'linien', name: 'Rahmenlinien', art: 'auswahl', werte: [
+      ['alle', 'Um jede Zelle'], ['aussen', 'Nur außen'], ['keine', 'Keine'] ] },
+  ], (werte) => {
+    const zellen = [...tabelle.querySelectorAll('td, th')];
+    for (const z of zellen) {
+      z.style.border = werte.linien === 'alle' ? '1px solid currentColor' : 'none';
+      z.style.background = '';
+    }
+    tabelle.style.border = werte.linien === 'keine' ? 'none' : '1px solid currentColor';
+    if (werte.streifen === 'ja') {
+      [...tabelle.rows].forEach((r, i) => {
+        if (i % 2 === 1) for (const z of r.cells) z.style.background = 'rgba(127,127,127,.12)';
+      });
+    }
+    geaendertMelden();
+    melde('Tabelle formatiert.');
+  });
+});
+
+/* ---- Gleichungswerkzeuge ---- */
+
+B.formelAendern = () => {
+  const formel = formelJetzt();
+  if (!formel) { melde('Im Text steht keine Formel.'); return; }
+  const q = quelleLesen(formel);
+  if (!q || !q.formel) {
+    melde('Diese Formel stammt aus einer älteren Fassung — '
+        + 'sie trägt ihren Text nicht mit und lässt sich nur neu einfügen.');
+    return;
+  }
+  fenster('Formel ändern', [
+    { art: 'satz', text: 'So tippen, wie man es sagt:\n'
+        + 'x^2   hoch      H_2O   tief\n'
+        + '(a+b)/2   Bruch      sqrt(9)   Wurzel' },
+    { schluessel: 'formel', name: 'Formel', wert: q.formel },
+  ], (werte) => {
+    const mathml = formelBauen(werte.formel);
+    if (!mathml) return;
+    const neu = mathml.replace('<math ', '<math data-quelle="'
+      + JSON.stringify({ formel: werte.formel }).replace(/"/g, '&quot;') + '" ');
+    if (objektErsetzen(formel, neu)) melde('Formel geändert.');
+  });
+};
+
 /* Die Seitenzahl steht als Platzhalter da und wird beim Drucken vom Browser
    selbst gefüllt — im Blatt kann sie nicht stimmen, dort gibt es noch keine
    Seiten. */
@@ -1647,7 +1957,7 @@ const REGISTER = REGISTER_BAUEN(B, {
    griffen, wäre schlimmer als keiner. */
 const REGISTER_IM_ZUSAMMENHANG = [
   {
-    name: 'Tabelle',
+    name: 'Tabellenwerkzeuge',
     gilt: () => !!zelleJetzt(),
     /* Die Kennungen sind die aus symbole.js und stehen dort klein.
        Vorher standen hier „Oben", „Weg", „Löschen" — Namen, die es dort
@@ -1655,30 +1965,69 @@ const REGISTER_IM_ZUSAMMENHANG = [
        Reiters standen ohne Bild da. Ein Knopf ohne Bild sieht aus wie
        einer, der noch nicht fertig ist. */
     gruppen: [
-      ['Zeilen', [['tabelle', 'Zeile darüber', () => B.zeileOben(), 'gross'],
-                  ['tabelle', 'Zeile darunter', () => B.zeileUnten(), 'gross'],
-                  ['radierer', 'Zeile löschen', () => B.zeileWeg()]]],
-      ['Spalten', [['spalten', 'Spalte links', () => B.spalteLinks(), 'gross'],
-                   ['spalten', 'Spalte rechts', () => B.spalteRechts(), 'gross'],
-                   ['radierer', 'Spalte löschen', () => B.spalteWeg()]]],
-      ['Tabelle', [['kopfz', 'Erste Zeile als Kopf', () => B.kopfzeileTabelle()],
-                   ['rahmen', 'Rahmen ein/aus', () => B.tabelleRahmen()],
+      ['Tabelle', [['kopfz', 'Erste Zeile als Kopf', () => B.kopfzeileTabelle(), 'gross'],
                    ['sortieren', 'Sortieren', () => B.sortieren()],
-                   ['radierer', 'Ganze Tabelle', () => B.tabelleWeg()]]],
+                   ['radierer', 'Ganze Tabelle löschen', () => B.tabelleWeg()]]],
+      ['Zeilen und Spalten', [['tabelle', 'Zeile darüber', () => B.zeileOben(), 'gross'],
+                   ['tabelle', 'Zeile darunter', () => B.zeileUnten(), 'gross'],
+                   ['spalten', 'Spalte links', () => B.spalteLinks(), 'gross'],
+                   ['spalten', 'Spalte rechts', () => B.spalteRechts(), 'gross'],
+                   ['radierer', 'Zeile löschen', () => B.zeileWeg()],
+                   ['radierer', 'Spalte löschen', () => B.spalteWeg()]]],
+      ['Zellengröße', [['ecken', 'Zellengröße', () => B.zellengroesse(), 'gross']]],
+      ['Ausrichtung', [['ausrichtung', 'Ausrichtung', () => B.zellenAusrichtung(), 'gross']]],
+      ['Tabellenformatierung', [['rahmen', 'Rahmen ein/aus', () => B.tabelleRahmen(), 'gross'],
+                   ['toenung', 'Tabellenformatierung', () => B.tabelleFormat(), 'gross']]],
+    ],
+  },
+  {
+    name: 'Zeichentools',
+    gilt: () => !!formJetzt(),
+    gruppen: [
+      ['Formen', [['stift', 'Formen', () => B.formAendern(), 'gross']]],
+      ['Füllung', [['toenung', 'Füllung', () => B.formFuellung(), 'gross']]],
+      ['Kontur', [['rahmen', 'Kontur', () => B.formKontur(), 'gross']]],
+      ['Anordnen', [['anordnen', 'Anordnen', () => B.anordnen(), 'gross']]],
+      ['Größe', [['ecken', 'Größe', () => B.formGroesse(), 'gross']]],
+    ],
+  },
+  {
+    name: 'Diagrammtools',
+    gilt: () => !!diagrammJetzt(),
+    gruppen: [
+      ['Diagrammentwurf', [['saeule', 'Diagrammentwurf', () => B.diagrammEntwurf(), 'gross']]],
+      ['Daten', [['zahlen', 'Daten', () => B.diagrammDaten(), 'gross']]],
+      ['Diagrammtyp', [['saeule', 'Diagrammtyp', () => B.diagrammTyp(), 'gross']]],
+      ['Formatierung', [['ecken', 'Formatierung', () => B.diagrammFormat(), 'gross']]],
+    ],
+  },
+  {
+    name: 'SmartArt-Tools',
+    gilt: () => !!smartartJetzt(),
+    gruppen: [
+      ['SmartArt-Entwurf', [['smartart', 'SmartArt-Entwurf', () => B.smartartEntwurf(), 'gross']]],
+      ['SmartArt-Format', [['anpassen', 'SmartArt-Format', () => B.smartartFormat(), 'gross']]],
+    ],
+  },
+  {
+    name: 'Gleichungswerkzeuge',
+    gilt: () => !!formelJetzt(),
+    gruppen: [
+      ['Formeleditor-Funktionen', [['formel', 'Formel ändern', () => B.formelAendern(), 'gross']]],
     ],
   },
   {
     /* Wer in der Kopfzeile steht, will Seitenzahl, Datum — und vor allem
        wieder heraus. Der Weg zurück ist mit der Maus der fummeligste:
        Man trifft die schmale Zeile leichter, als man sie wieder verlässt. */
-    name: 'Kopf- und Fußzeile',
+    name: 'Kopf- und Fußzeilenwerkzeuge',
     gilt: () => !!kopfFussJetzt(),
     gruppen: [
-      ['Kopf und Fuß', [['kopfz', 'Kopfzeile', () => B.kopfzeile(), 'gross'],
-                        ['fussz', 'Fußzeile', () => B.fusszeile(), 'gross']]],
-      ['Einfügen', [['zahlen', 'Seitenzahl', () => B.seitennummer(), 'gross'],
-                    ['datum', 'Datum', () => B.datum()],
-                    ['uhrzeit', 'Uhrzeit', () => B.uhrzeit()]]],
+      ['Kopfzeile', [['kopfz', 'Kopfzeile', () => B.kopfzeile(), 'gross']]],
+      ['Fußzeile', [['fussz', 'Fußzeile', () => B.fusszeile(), 'gross']]],
+      ['Seitenzahl', [['zahlen', 'Seitenzahl', () => B.seitennummer(), 'gross'],
+                      ['datum', 'Datum', () => B.datum()],
+                      ['uhrzeit', 'Uhrzeit', () => B.uhrzeit()]]],
       ['Navigation', [['zurueck', 'Zurück in den Text', () => B.zurueckInText(), 'gross'],
                       ['kopfz', 'Zur Kopfzeile', () => B.zurKopfzeile()],
                       ['fussz', 'Zur Fußzeile', () => B.zurFusszeile()]]],
@@ -1690,6 +2039,37 @@ const REGISTER_IM_ZUSAMMENHANG = [
 
    Anders als zelleJetzt() wird bis zum Seitenkörper hinaufgegangen: Die
    beiden Zeilen liegen neben dem Blatt, nicht darin. */
+/* ============================================================
+   Was steht gerade unter dem Zeiger?
+
+   Die kontextabhängigen Register hängen daran. Gesucht wird erst am
+   Zeiger; steht er daneben — nach dem Einfügen ist das der Normalfall —,
+   gilt das zuletzt eingefügte Objekt seiner Art.
+   ============================================================ */
+function objektAnStelle(waehler, klasse) {
+  const auswahl = window.getSelection();
+  let knoten = auswahl.rangeCount ? auswahl.anchorNode : null;
+  if (knoten && knoten.nodeType === Node.TEXT_NODE) knoten = knoten.parentElement;
+  const nah = knoten && knoten.closest ? knoten.closest(waehler) : null;
+  if (nah && feld.contains(nah)) {
+    /* Ein SmartArt ist auch ein Diagramm — wer nach dem Diagramm sucht,
+       darf das SmartArt nicht mitnehmen, sonst stünden beide Register da. */
+    if (klasse === false && nah.classList.contains('smartart')) return null;
+    return nah;
+  }
+  const alle = feld.querySelectorAll(waehler);
+  for (let i = alle.length - 1; i >= 0; i--) {
+    if (klasse === false && alle[i].classList.contains('smartart')) continue;
+    return alle[i];
+  }
+  return null;
+}
+
+const formJetzt     = () => objektAnStelle('svg.zeichnung');
+const diagrammJetzt = () => objektAnStelle('svg.diagramm', false);
+const smartartJetzt = () => objektAnStelle('svg.smartart');
+const formelJetzt   = () => objektAnStelle('math');
+
 function kopfFussJetzt() {
   let k = window.getSelection().anchorNode;
   while (k && k !== document.body) {
@@ -3089,6 +3469,26 @@ function kuchenSvg(punkte, titel) {
 
 const alsText = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
+/* Was ein Objekt zum Ändern braucht, hängt an ihm selbst.
+
+   Ein Diagramm ist nach dem Einfügen erst einmal nur ein Bild: Die Zahlen,
+   aus denen es entstand, stehen nirgends mehr. Wer eine davon ändern will,
+   müsste alle neu tippen. Deshalb wandern sie als Angabe ins Element —
+   dieselbe Stelle, an der auch die Werkzeuge sie später suchen.
+
+   Sie stehen als JSON in einem einzigen Attribut, nicht in fünf einzelnen:
+   So bleibt beim Speichern und Wiederöffnen alles beisammen, und ein
+   neuer Wert braucht keine neue Zeile hier. */
+function merkeQuelle(svgText, quelle) {
+  const daten = JSON.stringify(quelle).replace(/"/g, '&quot;');
+  return svgText.replace('<svg ', '<svg data-quelle="' + daten + '" ');
+}
+
+function quelleLesen(el) {
+  if (!el || !el.dataset || !el.dataset.quelle) return null;
+  try { return JSON.parse(el.dataset.quelle); } catch (e) { return null; }
+}
+
 const svgHuelle = (b, h, innen) =>
   '<svg class="diagramm" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + b + ' ' + h + '"'
   + ' width="' + b + '" height="' + h + '" role="img">'
@@ -3108,7 +3508,13 @@ B.diagramm = () => {
     if (!punkte.length) { melde('Darin standen keine Zahlen, mit denen sich zeichnen ließe.'); return; }
     const bauer = { balken: balkenSvg, linie: linienSvg, kuchen: kuchenSvg }[werte.art] || balkenSvg;
     auswahlZurueck();
-    Dokument.einfuegen('<p>' + bauer(punkte, werte.titel.trim()) + '</p><p><br></p>');
+    /* Die Zahlen bleiben am Bild hängen. Ohne sie wäre ein Diagramm nach
+       dem Einfügen ein Bild wie jedes andere: Man könnte es löschen und
+       neu machen, aber nie ändern. Die Diagrammwerkzeuge lesen sie
+       zurück. */
+    Dokument.einfuegen('<p>' + merkeQuelle(bauer(punkte, werte.titel.trim()), {
+      art: werte.art, titel: werte.titel.trim(), daten: werte.daten,
+    }) + '</p><p><br></p>');
     melde('Diagramm mit ' + punkte.length + ' Werten eingefügt.');
   }, 'Einfügen');
 };
@@ -3212,7 +3618,10 @@ B.formel = () => {
     const mathml = formelBauen(werte.formel);
     if (!mathml) return;
     auswahlZurueck();
-    Dokument.einfuegen(mathml);
+    /* Die getippte Formel bleibt am Element: MathML lässt sich lesen, aber
+       nicht zurückverwandeln — „(a+b)/2" wäre sonst für immer weg. */
+    Dokument.einfuegen(mathml.replace('<math ',
+      '<math data-quelle="' + JSON.stringify({ formel: werte.formel }).replace(/"/g, '&quot;') + '" '));
     melde('Formel eingefügt.');
   }, 'Einfügen');
 };
@@ -3245,8 +3654,10 @@ B.zeichnen = () => {
       .replace(/COLOR/g, werte.farbe)
       .replace(/MID/g, kennung);
     auswahlZurueck();
-    Dokument.einfuegen('<svg class="zeichnung" xmlns="http://www.w3.org/2000/svg" '
-      + 'viewBox="0 0 120 60" width="120" height="60">' + innen + '</svg>');
+    Dokument.einfuegen(merkeQuelle(
+      '<svg class="zeichnung" xmlns="http://www.w3.org/2000/svg" '
+      + 'viewBox="0 0 120 60" width="120" height="60">' + innen + '</svg>',
+      { form: werte.form, farbe: werte.farbe, fuellung: 'none', strich: 2 }));
     melde('Form eingefügt.');
   }, 'Einfügen');
 };
@@ -4893,7 +5304,13 @@ B.smartart = () => {
     const bauer = { ablauf: smartartAblauf, kreis: smartartKreis,
                     gliederung: smartartGliederung, liste: smartartListe }[werte.art] || smartartAblauf;
     auswahlZurueck();
-    Dokument.einfuegen('<p>' + bauer(schritte) + '</p><p><br></p>');
+    /* Die eigene Klasse trennt SmartArt vom Diagramm: Beide entstehen aus
+       svgHuelle und trügen sonst denselben Namen — die Werkzeuge könnten
+       nicht auseinanderhalten, was vor ihnen steht. */
+    Dokument.einfuegen('<p>' + merkeQuelle(bauer(schritte), {
+      art: werte.art, text: werte.text,
+    }).replace('class="diagramm"', 'class="diagramm smartart"')
+      + '</p><p><br></p>');
     melde('SmartArt mit ' + schritte.length + ' Kästen eingefügt.');
   }, 'Einfügen');
 };
