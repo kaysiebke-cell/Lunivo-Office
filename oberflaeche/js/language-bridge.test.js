@@ -311,6 +311,101 @@ console.log('\nEine stolpernde KI');
   gleich(b.stand, 'fertig', 'und der Stand ist in Ordnung');
 }
 
+console.log('\nWo hat sich der Text geändert?');
+{
+  const b = new SprachBruecke();
+  b.textSetzen('Hallo Welt');
+  b.geaendert = null;
+  b.textSetzen('Hallo schöne Welt');
+  gleich(b.geaendert.von, 6, 'vorn steht „Hallo " unverändert');
+  gleich(b.geaendert.verschiebung, 7, 'sieben Zeichen sind dazugekommen');
+}
+{
+  const b = new SprachBruecke();
+  b.textSetzen('Ein Satz mit Fehler drin.');
+  b.geaendert = null;
+  b.textSetzen('Ein Satz drin.');
+  stimmt(b.geaendert.verschiebung < 0, 'beim Löschen wird die Verschiebung negativ');
+}
+{
+  const b = new SprachBruecke();
+  b.textSetzen('abc');
+  b.geaendert = null;
+  b.textSetzen('abXc');
+  b.textSetzen('abXYc');
+  gleich(b.geaendert.von, 2, 'zwei Änderungen werden zu einer zusammengefasst');
+  gleich(b.geaendert.verschiebung, 2, 'und die Verschiebungen addiert');
+}
+
+console.log('\nDer Sicherheitsrand');
+{
+  const b = new SprachBruecke();
+  const lang = 'Satz eins. ' + 'x'.repeat(500) + '. Satz drei. Satz vier.';
+  b.textSetzen(lang);
+  b.geaendert = null;
+  b.textSetzen(lang.replace('Satz drei', 'Satz DREI'));
+  const bereich = b.pruefbereich();
+  stimmt(bereich !== null, 'es gibt einen Bereich');
+  stimmt(bereich.bis - bereich.von >= 200, 'er ist mindestens 200 Zeichen breit');
+  stimmt(bereich.von === 0 || '.!?\n'.includes(lang[bereich.von - 1]),
+         'er beginnt an einer Satzgrenze');
+}
+
+console.log('\nGeprüft wird nur der Bereich');
+{
+  const b = new SprachBruecke();
+  const text = 'Hier steht weiss. ' + 'Fülltext. '.repeat(40) + 'Und hier gross.';
+  naechsteFunde = [fund(11, 16, 'weiss', 'weiß'),
+                   fund(text.length - 6, text.length - 1, 'gross', 'groß')];
+  b.pruefen(text);
+  gleich(b.offeneFehler().length, 2, 'erst beide Funde');
+
+  /* Am Ende etwas ändern: Der Fund vorn darf nicht neu gesucht werden. */
+  const neuerText = text.replace('Und hier gross.', 'Und hier gross gemacht.');
+  b.textSetzen(neuerText);
+  naechsteFunde = [fund(neuerText.length - 14, neuerText.length - 9, 'gross', 'groß')];
+  b.pruefen();
+  const offen = b.offeneFehler();
+  gleich(offen.length, 2, 'beide stehen weiter');
+  stimmt(offen.some((f) => f.text === 'weiss'), 'der vordere blieb erhalten');
+  gleich(neuerText.slice(offen.find((f) => f.text === 'weiss').von,
+                         offen.find((f) => f.text === 'weiss').bis), 'weiss',
+         'und steht noch an seiner Stelle');
+}
+
+console.log('\nVerschiebung nach einer Einfügung davor');
+{
+  const b = new SprachBruecke();
+  /* Lang genug, dass der Sicherheitsrand vorn nicht bis hinten reicht —
+     sonst würde der hintere Fund ohnehin neu gesucht. */
+  const text = 'Anfang. ' + 'Ein Satz zum Füllen. '.repeat(30) + 'Hier steht gross am Ende.';
+  const stelle = text.indexOf('gross');
+  naechsteFunde = [fund(stelle, stelle + 5, 'gross', 'groß')];
+  b.pruefen(text);
+  gleich(b.offeneFehler().length, 1, 'ein Fund hinten');
+
+  /* Ganz vorn etwas einfügen. */
+  const neuerText = 'Neu davor. ' + text;
+  b.textSetzen(neuerText);
+  naechsteFunde = [];                       // im geprüften Bereich vorn nichts
+  b.pruefen();
+  const f = b.offeneFehler()[0];
+  stimmt(!!f, 'der Fund hinten ist noch da');
+  gleich(neuerText.slice(f.von, f.bis), 'gross', 'und zeigt weiter auf dasselbe Wort');
+}
+
+console.log('\nMit KI wird immer alles geprüft');
+{
+  const b = new SprachBruecke();
+  naechsteFunde = [fund(0, 5, 'weiss', 'weiß')];
+  b.pruefen('weiss der Himmel');
+  b.textSetzen('weiss der Himmel. Und mehr.');
+  global.KI = { verfuegbar: () => false };
+  naechsteFunde = [fund(0, 5, 'weiss', 'weiß')];
+  b.pruefen(undefined, true);
+  gleich(b.offeneFehler().length, 1, 'die volle Prüfung bleibt möglich');
+}
+
 schluss();
 
 })();

@@ -6587,7 +6587,7 @@ B.gruendlichPruefen = async () => {
      landen im selben Stand. */
   if (Bruecke) {
     funde = Bruecke.pruefen(text, true);
-    zeichneFunde();
+    zeichneFunde(true);
     /* Hier wird nicht geschont: Wer „Gründlich prüfen" drückt, tippt
        gerade nicht — er will sehen, was gefunden wurde. */
     markiereFunde();
@@ -8303,10 +8303,23 @@ function kuerze(satz) {
   return satz.length > 70 ? satz.slice(0, 68) + '…' : satz;
 }
 
-function zeichneFunde() {
+/* Gezeichnet wird oft, gezählt wird selten.
+
+   KI.Gedaechtnis.merkeGezeigt legt ein Wort still, wenn es fünfmal
+   angezeigt und nie geändert wurde — die Annahme dahinter: Wer es
+   fünfmal stehen lässt, meint es so. Das war richtig gerechnet, solange
+   nur auf Knopfdruck geprüft wurde.
+
+   Mit der lebenden Prüfung wird alle 900 Millisekunden neu gezeichnet.
+   Dieselbe Zählung hätte jedes angestrichene Wort binnen Sekunden
+   stillgelegt — und der Mensch hätte gesehen, wie seine Wellenlinien
+   von selbst verschwinden, ohne dass er etwas getan hat.
+
+   Gezählt wird deshalb nur, wenn jemand ausdrücklich prüfen lässt. */
+function zeichneFunde(zaehlen) {
   const liste = $('funde');
   liste.innerHTML = '';
-  KI.Gedaechtnis.merkeGezeigt(funde);
+  if (zaehlen) KI.Gedaechtnis.merkeGezeigt(funde);
 
   if (!funde.length) {
     const leer = document.createElement('p');
@@ -8837,7 +8850,7 @@ function pruefen() {
   KIteil.vorschlaegeLeeren();
   markenEntfernen();
   funde = Bruecke ? Bruecke.pruefen(text) : Pruefung.findeProbleme(text);
-  zeichneFunde();
+  zeichneFunde(true);
   markiereFunde();
   meldeFunde(text.length);
   pruefungLaeuft = false;

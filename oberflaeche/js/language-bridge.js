@@ -130,6 +130,7 @@ const SprachBruecke = (() => {
       this.fehler = [];
       this.weggewinkt = new Set();    // Fehlerkennungen, die nicht mehr kommen sollen
       this.stand = 'ruht';            // ruht | fertig | veraltet
+      this.geaendert = null;          // wo sich seit der letzten Prüfung etwas tat
       /* Wird gerufen, wenn sich am Fehlerstand etwas geändert hat —
          etwa weil die KI spät geantwortet hat. Ohne das käme ihre Antwort
          an, und niemand sähe sie: Gezeichnet wird, wenn geprüft wird. */
@@ -150,9 +151,71 @@ const SprachBruecke = (() => {
 
     textSetzen(text) {
       if (this.text === text) return;
+      const alt = this.text;
       this.text = text;
       this.fassung++;
+      this.aendernGemerkt(alt, text);
       this.veralten();
+    }
+
+    /* Wo hat sich der Text geändert?
+
+       Verglichen wird von vorn und von hinten: Was an beiden Enden gleich
+       geblieben ist, kann nicht die Änderung sein. Was dazwischen liegt,
+       ist sie — und die Längendifferenz sagt, um wie viel alles dahinter
+       verrutscht ist.
+
+       Das ist keine Schätzung. Bei „Hallo Welt" → „Hallo schöne Welt"
+       stehen vorn sechs und hinten vier Zeichen unverändert; geändert hat
+       sich genau die Lücke dazwischen, und alles danach ist sieben Zeichen
+       weiter rechts. */
+    aendernGemerkt(alt, neu) {
+      let vorn = 0;
+      const kuerzer = Math.min(alt.length, neu.length);
+      while (vorn < kuerzer && alt[vorn] === neu[vorn]) vorn++;
+
+      let hinten = 0;
+      while (hinten < kuerzer - vorn
+             && alt[alt.length - 1 - hinten] === neu[neu.length - 1 - hinten]) hinten++;
+
+      const bereich = {
+        von: vorn,
+        bisAlt: alt.length - hinten,
+        bisNeu: neu.length - hinten,
+        verschiebung: neu.length - alt.length,
+      };
+
+      /* Mehrere Änderungen zwischen zwei Prüfungen werden zu einer
+         zusammengefasst — die Prüfung sieht ohnehin nur den Endstand. */
+      if (!this.geaendert) {
+        this.geaendert = bereich;
+      } else {
+        this.geaendert = {
+          von: Math.min(this.geaendert.von, bereich.von),
+          bisAlt: Math.max(this.geaendert.bisAlt, bereich.bisAlt),
+          bisNeu: Math.max(this.geaendert.bisNeu + bereich.verschiebung, bereich.bisNeu),
+          verschiebung: this.geaendert.verschiebung + bereich.verschiebung,
+        };
+      }
+    }
+
+    /* Der Bereich, der geprüft werden muss — mit Sicherheitsrand.
+
+       Ein geändertes Wort kann den Satz davor und danach betreffen:
+       Satzgrenzen, Kommas, Groß- und Kleinschreibung. Deshalb wird bis zur
+       nächsten Satzgrenze in beide Richtungen ausgedehnt, mindestens aber
+       um zweihundert Zeichen. Der Entwurf verlangt genau das (§14). */
+    pruefbereich() {
+      if (!this.geaendert) return null;
+      const rand = 200;
+      let von = Math.max(0, this.geaendert.von - rand);
+      let bis = Math.min(this.text.length, this.geaendert.bisNeu + rand);
+
+      /* Bis zur Satzgrenze zurück und vor. */
+      while (von > 0 && !'.!?\n'.includes(this.text[von - 1])) von--;
+      while (bis < this.text.length && !'.!?\n'.includes(this.text[bis])) bis++;
+      if (bis < this.text.length) bis++;
+      return { von, bis };
     }
 
     /* Der Text hat sich geändert: Was geprüft war, gilt nicht mehr.
@@ -234,10 +297,55 @@ const SprachBruecke = (() => {
       const laufNr = this.naechsterLauf++;
       this.laufNr = laufNr;
 
-      const gefunden = pruefEngineLauf(this.text, fassung, laufNr);
+      /* Nur den geänderten Bereich neu prüfen, wenn das reicht.
 
-      this.fehler = gefunden.filter(
-        (f) => !this.weggewinkt.has(SprachBrueckeKlasse.kennung(f)));
+         Bei einem Brief ist der Unterschied nicht zu spüren. Bei einem
+         Text von dreißigtausend Wörtern schon: Dort dauert eine volle
+         Prüfung mehrere Sekunden, und die lebende Prüfung liefe nach
+         jeder Tippause hinein. */
+      const bereich = mitKI ? null : this.pruefbereich();
+
+      if (bereich && this.fehler.length) {
+        const teil = this.text.slice(bereich.von, bereich.bis);
+        const neueImBereich = pruefEngineLauf(teil, fassung, laufNr)
+          .map((f) => Object.assign({}, f, {
+            von: f.von + bereich.von,
+            bis: f.bis + bereich.von,
+            id: f.id + '-t' + bereich.von,
+            fund: Object.assign({}, f.fund, {
+              von: f.fund.von + bereich.von, bis: f.fund.bis + bereich.von,
+            }),
+          }));
+
+        /* Was außerhalb lag, bleibt — verschoben um das, was sich an
+           Länge geändert hat. Verschoben wird nur, was HINTER der
+           Änderung stand; davor hat sich nichts bewegt. */
+        const v = this.geaendert.verschiebung;
+        const bisAlt = this.geaendert.bisAlt;
+        const draussen = [];
+        for (const f of this.fehler) {
+          if (f.stand !== 'offen') { draussen.push(f); continue; }
+          if (f.bis <= bereich.von) { draussen.push(f); continue; }
+          if (f.von >= bisAlt) {
+            /* Dahinter: um die Längendifferenz weiterrücken. */
+            const neu = Object.assign({}, f, { von: f.von + v, bis: f.bis + v });
+            neu.fund = Object.assign({}, f.fund,
+              { von: f.fund.von + v, bis: f.fund.bis + v });
+            if (neu.von >= bereich.bis) draussen.push(neu);
+            continue;
+          }
+          /* Mitten im geprüften Bereich: fällt weg, der Lauf hat ihn neu. */
+        }
+
+        this.fehler = draussen.concat(
+          neueImBereich.filter((f) => !this.weggewinkt.has(SprachBrueckeKlasse.kennung(f))));
+      } else {
+        const gefunden = pruefEngineLauf(this.text, fassung, laufNr);
+        this.fehler = gefunden.filter(
+          (f) => !this.weggewinkt.has(SprachBrueckeKlasse.kennung(f)));
+      }
+
+      this.geaendert = null;
       this.stand = 'fertig';
 
       /* Die KI wird nicht bei jedem Lauf gefragt.
