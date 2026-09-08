@@ -278,7 +278,7 @@ function darstellungZeigen() {
   $('einst-zoom-stand').textContent = 'Schriftgröße: ' + zoom + ' %';
   $('einst-probe').style.fontSize = (12 * zoom / 100).toFixed(1) + 'pt';
   $('einst-marken').checked = griffe.marken();
-  $('einst-wellen').checked = Dokument.feld.spellcheck;
+  $('einst-wellen').checked = griffe.wellenJetzt();
 }
 
 /* ------------------------------------------------------------
@@ -569,14 +569,11 @@ function verdrahten() {
 
   $('einst-marken').addEventListener('change', (e) => griffe.markenSetzen(e.target.checked));
 
-  $('einst-wellen').addEventListener('change', (e) => {
-    Dokument.feld.spellcheck = e.target.checked;
-    KI.Speicher.schreib('wellen', e.target.checked);
-    /* Der Browser prüft erst beim nächsten Hineinklicken neu. Einmal weg und
-       wieder her, dann verschwinden die Linien sofort. */
-    Dokument.feld.blur();
-    Dokument.feld.focus();
-  });
+  /* Die Wellenlinien kommen seit dem Umbau von Lunivo selbst, nicht mehr
+     vom Browser. Der Schalter geht deshalb denselben Weg wie der im Band —
+     sonst hätten zwei Stellen dieselbe Sache zu sagen und widersprächen
+     sich beim nächsten Start. */
+  $('einst-wellen').addEventListener('change', () => griffe.wellenUmschalten());
 
   $('einst-kleiner').addEventListener('click', () => { griffe.zoomSetzen(griffe.zoom() - 10); darstellungZeigen(); });
   $('einst-groesser').addEventListener('click', () => { griffe.zoomSetzen(griffe.zoom() + 10); darstellungZeigen(); });
@@ -628,8 +625,8 @@ function verdrahten() {
   $('einst-fassung').textContent = 'Lunivo-Office 1.2 · Prüfung und Wortschatz '
     + 'aus der Schreibhilfe';
 
-  /* Die Wellenlinien gelten ab dem Start, nicht erst nach einem Besuch hier. */
-  Dokument.feld.spellcheck = KI.Speicher.lies('wellen', true);
+  /* Die Wellenlinien setzt jetzt programm.js beim Start — hier ist nichts
+     mehr zu tun. Die Prüfung des Browsers bleibt aus. */
 }
 
 verdrahten();

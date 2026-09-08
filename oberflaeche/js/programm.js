@@ -194,6 +194,9 @@ let zoom = Speicher.lies('zoom', 100);
 let marken = Speicher.lies('marken', true);
 let tafelOffen = Speicher.lies('tafel', true);
 let thema = Speicher.lies('thema', 'auto');
+/* Die lebende Prüfung — das, was der Schalter „Rote Wellenlinien" jetzt
+   steuert. Vorher schaltete er die Prüfung des Systems an und aus. */
+let lebendAn = Speicher.lies('lebend', true);
 
 const CM = 37.795275590551185;     // ein Zentimeter in Bildpunkten bei 96 dpi
 
@@ -2146,7 +2149,7 @@ const REGISTER = REGISTER_BAUEN(B, {
     verfolgen:      () => verfolgenAn,
     kopfzeile:      () => kopfAn,
     fusszeile:      () => fussAn,
-    rechtschreibung: () => feld.spellcheck,
+    rechtschreibung: () => lebendAn,
     lesemodus:      () => lesemodus,
   }[was] || (() => false))(),
 });
@@ -3532,17 +3535,29 @@ B.formKnopf = () => {
    einmal. Die Wellenlinien des Systems finden falsch geschriebene Wörter,
    die Schreibhilfe findet, was danach noch schiefsteht. */
 B.rechtschreibpruefung = () => {
-  if (!feld.spellcheck) { feld.spellcheck = true; KI.Speicher.schreib('wellen', true); }
+  if (!lebendAn) { lebendAn = true; Speicher.schreib('lebend', true); }
   feld.blur(); feld.focus();
   pruefen();
 };
 
 B.rechtschreibung = () => {
-  const an = !feld.spellcheck;
-  feld.spellcheck = an;
-  KI.Speicher.schreib('wellen', an);
-  feld.blur(); feld.focus();
-  melde(an ? 'Rote Wellenlinien an.' : 'Rote Wellenlinien aus.');
+  /* Der Schalter steuert seit dem Umbau die EIGENEN Wellenlinien, nicht
+     die des Systems. Der Entwurf verlangt genau das (§8): Was
+     angestrichen wird, entscheidet Lunivo — mit seinen 355.322 Wörtern
+     und seinen Regeln —, nicht zwei Prüfer nebeneinander.
+
+     Ausgeschaltet werden nur die Striche. Die Funde bleiben in der
+     Seitenleiste stehen, und beim Wiedereinschalten muss nichts neu
+     geprüft werden. */
+  lebendAn = !lebendAn;
+  Speicher.schreib('lebend', lebendAn);
+  if (lebendAn) {
+    lebendPruefen();
+    melde('Rote Wellenlinien an — von Lunivo, beim Schreiben.');
+  } else {
+    markenEntfernen();
+    melde('Rote Wellenlinien aus. Die Funde bleiben in der Seitenleiste.');
+  }
   menueBauen();
 };
 
@@ -6696,7 +6711,7 @@ B.tastenHilfe = () => {
    ------------------------------------------------------------ */
 const SCHNELL = [
   { name: 'Wellen',     lang: 'Rote Wellenlinien unter unbekannten Wörtern',
-    an: () => feld.spellcheck,      tun: () => B.rechtschreibung() },
+    an: () => lebendAn,             tun: () => B.rechtschreibung() },
   { name: 'Vorhersage', lang: 'Wortvorhersage ab drei Buchstaben',
     an: () => vorhersageAn,         tun: () => B.vorhersage() },
   { name: 'AutoKorr',   lang: 'AutoKorrektur beim Tippen',
@@ -6748,7 +6763,7 @@ function schnellzugriffBauen() {
 const HILFE_STUFEN = [
   ['1', 'Rote Wellenlinien', '', 'Gibt es das Wort überhaupt?',
    'sofort beim Tippen',
-   { an: () => feld.spellcheck, tun: () => B.rechtschreibung() }],
+   { an: () => lebendAn, tun: () => B.rechtschreibung() }],
   ['1', 'Wortvorhersage', '', 'Wie ging das Wort weiter?',
    'ab drei Buchstaben',
    { an: () => vorhersageAn, tun: () => B.vorhersage() }],
@@ -8369,7 +8384,28 @@ function markenEntfernen() {
   if (marken.length) feld.normalize();
 }
 
-function markiereFunde() {
+/* Der Absatz, in dem gerade geschrieben wird — dort wird nicht markiert.
+
+   Die Markierung zerteilt Textknoten. Solange jemand in einem Absatz
+   tippt, hält die AutoKorrektur, die Wortvorhersage und der Browser
+   selbst Verweise auf genau diese Knoten. Werden sie unter ihnen
+   zerschnitten, landen Zeichen an falschen Stellen — im Versuch wurde
+   aus „Das ist garnicht weiss und wiederspiegelt." ein „Das ist nd
+   wiedegarnicht weiss u".
+
+   Andere Schreibprogramme machen es genauso: Die Zeile, in der der
+   Zeiger steht, wird beim Tippen nicht neu gesetzt. Sobald er sie
+   verlässt, holt die nächste Prüfung sie nach. */
+function absatzAmZeiger() {
+  const auswahl = window.getSelection();
+  if (!auswahl.rangeCount) return null;
+  let knoten = auswahl.anchorNode;
+  if (knoten && knoten.nodeType === Node.TEXT_NODE) knoten = knoten.parentElement;
+  if (!knoten || !feld.contains(knoten)) return null;
+  return knoten.closest('p, li, td, th, h1, h2, h3, h4, div') || null;
+}
+
+function markiereFunde(schoneAbsatz) {
   markenEntfernen();
 
   /* Von hinten nach vorn: Jede eingesetzte Markierung teilt Textknoten auf.
@@ -8380,6 +8416,13 @@ function markiereFunde() {
     if (text.slice(fund.von, fund.bis) !== (fund.alt || text.slice(fund.von, fund.bis))) continue;
 
     const bereich = Dokument.bereich(karte, fund.von, fund.bis);
+
+    /* Nicht im Absatz, in dem geschrieben wird. */
+    if (schoneAbsatz) {
+      const wo = bereich.startContainer.nodeType === Node.TEXT_NODE
+        ? bereich.startContainer.parentElement : bereich.startContainer;
+      if (wo && schoneAbsatz.contains(wo)) continue;
+    }
 
     /* Reicht ein Fund über mehrere Absätze oder mitten durch eine
        Auszeichnung, ließe er sich nicht in EIN Element fassen. Solche
@@ -8643,6 +8686,115 @@ function meldeFunde(zeichenZahl) {
   $('status-pruefung').classList.toggle('statuszeile__fund', zahl > 0);
 }
 
+/* ============================================================
+   Die lebende Prüfung
+
+   Bisher gab es rote Wellenlinien nur vom System — der eigenen Prüfung
+   sah man beim Schreiben nichts an, sie sprach erst auf Knopfdruck. Der
+   Entwurf verlangt es umgekehrt: Lunivos eigene Funde sollen die
+   Wellenlinien sein (§7, §8).
+
+   WARUM DAS NICHT TRIVIAL IST
+
+   Die Markierung setzt <span> in den Text und zerteilt dabei Textknoten.
+   Wer das tut, während jemand schreibt, verschiebt ihm die Schreibstelle
+   mitten im Wort. Deshalb wird die Stelle vorher als ZEICHENZAHL gemerkt
+   und hinterher daraus zurückgerechnet — ein geklonter Bereich überlebt
+   die Zerteilung nicht.
+
+   Und es wird nicht bei jedem Anschlag geprüft, sondern erst, wenn eine
+   Weile nichts kam. Bei dreihundert Wörtern ist eine Prüfung nicht zu
+   spüren, bei dreißigtausend schon.
+   ============================================================ */
+
+let lebendUhr = null;
+let lebendLaeuft = false;
+const LEBEND_WARTEN = 900;      // Millisekunden Ruhe, bevor geprüft wird
+
+/* Die Schreibstelle als Zeichenzahl im Text.
+
+   Der Zeiger hängt nicht immer in einem Textknoten. Steht er am Ende
+   eines Absatzes oder in einem leeren, ist der Anker der Absatz selbst,
+   und die Zahl daneben zählt Kindknoten, nicht Zeichen. Wer das nicht
+   auflöst, findet in der Karte nichts, gibt null zurück — und dann setzt
+   die Markierung den Zeiger irgendwohin. Genau das war zu sehen: Nach
+   dem Prüfen stand er wieder hinter „Da". */
+function zeigerStelle() {
+  const auswahl = window.getSelection();
+  if (!auswahl.rangeCount) return null;
+  let knoten = auswahl.anchorNode;
+  let versatz = auswahl.anchorOffset;
+  if (!knoten || !feld.contains(knoten)) return null;
+
+  /* Vom Element zum Textknoten hinabsteigen. */
+  if (knoten.nodeType === Node.ELEMENT_NODE) {
+    const kinder = knoten.childNodes;
+    if (versatz > 0 && kinder[versatz - 1]) {
+      /* Hinter das Ende des Knotens davor. */
+      const vorher = kinder[versatz - 1];
+      const letzter = letzterTextknoten(vorher);
+      if (letzter) { knoten = letzter; versatz = letzter.data.length; }
+    } else if (kinder[versatz]) {
+      const erster = ersterTextknoten(kinder[versatz]);
+      if (erster) { knoten = erster; versatz = 0; }
+    }
+  }
+  if (!knoten || knoten.nodeType !== Node.TEXT_NODE) return null;
+
+  const { karte } = Dokument.lies();
+  for (const e of karte) {
+    if (e.knoten === knoten) return e.von + Math.min(versatz, knoten.data.length);
+  }
+  return null;
+}
+
+function ersterTextknoten(knoten) {
+  if (knoten.nodeType === Node.TEXT_NODE) return knoten;
+  const gehe = document.createTreeWalker(knoten, NodeFilter.SHOW_TEXT);
+  return gehe.nextNode();
+}
+
+function letzterTextknoten(knoten) {
+  if (knoten.nodeType === Node.TEXT_NODE) return knoten;
+  const gehe = document.createTreeWalker(knoten, NodeFilter.SHOW_TEXT);
+  let letzter = null, jetzt;
+  while ((jetzt = gehe.nextNode())) letzter = jetzt;
+  return letzter;
+}
+
+function zeigerSetzen(stelle) {
+  if (stelle === null) return;
+  try {
+    const { karte } = Dokument.lies();
+    Dokument.waehle(Dokument.bereich(karte, stelle, stelle));
+  } catch (e) { /* Steht der Text nicht mehr so da, bleibt der Zeiger, wo er ist. */ }
+}
+
+function lebendAnstossen() {
+  if (!Bruecke || !lebendAn) return;
+  clearTimeout(lebendUhr);
+  lebendUhr = setTimeout(lebendPruefen, LEBEND_WARTEN);
+}
+
+function lebendPruefen() {
+  if (!Bruecke || !lebendAn || pruefungLaeuft || lebendLaeuft) return;
+  /* Während ein Fenster offen steht, wird nichts im Text verschoben. */
+  if (document.querySelector('.dialoggrund')) return;
+
+  lebendLaeuft = true;
+  try {
+    const text = Dokument.lies().text;
+    const stelle = zeigerStelle();
+    funde = Bruecke.pruefen(text);
+    zeichneFunde();
+    markiereFunde(absatzAmZeiger());
+    zeigerSetzen(stelle);
+    meldeFunde(text.length);
+  } finally {
+    lebendLaeuft = false;
+  }
+}
+
 function pruefen() {
   if (pruefungLaeuft) return;
   pruefungLaeuft = true;
@@ -8743,9 +8895,10 @@ function geaendertMelden() {
   if (!geaendert) { geaendert = true; titelSetzen(); }
   zahlenAuffrischen();
   merkeText();
-  /* Der Brücke sagen, dass das Geprüfte nicht mehr zum Text passt. Sie
-     prüft davon nicht von selbst neu — sie weiß es nur. */
+  /* Der Brücke sagen, dass das Geprüfte nicht mehr zum Text passt. */
   if (Bruecke) Bruecke.textSetzen(Dokument.lies().text);
+  /* Und nach einer Weile Ruhe von selbst nachsehen. */
+  if (!lebendLaeuft) lebendAnstossen();
 }
 
 /* Die Rückfrage, bevor ungesicherte Arbeit weggeht.
@@ -8950,6 +9103,10 @@ Einstellungen.verbinde({
   themaWeiter: () => setzeThema(THEMEN[(THEMEN.indexOf(thema) + 1) % THEMEN.length])(),
   marken: () => marken,
   markenSetzen: (an) => { if (an !== marken) B.markenZeigen(); },
+  /* Die Wellenlinien: ein Weg für beide Schalter, den im Band und den in
+     den Einstellungen. */
+  wellenJetzt: () => lebendAn,
+  wellenUmschalten: () => B.rechtschreibung(),
   neuZeichnen: () => KIteil.kiKnoepfeAuffrischen(),
 
   /* Die Optionenseite füllt jetzt auch Listen, die das Programm führt. Sie
