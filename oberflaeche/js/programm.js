@@ -26,6 +26,15 @@ const Speicher = {
   },
 };
 
+/* ====== Language Bridge (zentrale Sprachprüfung) ====== */
+let LanguageBridgeInstance = null;
+function initLanguageBridge() {
+  if (typeof LanguageBridge !== 'undefined') {
+    LanguageBridgeInstance = new LanguageBridge(REGELDATEN);
+    console.log('✓ Language Bridge initialized');
+  }
+}
+
 /* ============================================================
    1. Zustand
    ============================================================ */
@@ -8026,6 +8035,11 @@ function geaendertMelden() {
   if (!geaendert) { geaendert = true; titelSetzen(); }
   zahlenAuffrischen();
   merkeText();
+
+  // Language Bridge: Dokumentänderung melden
+  if (LanguageBridgeInstance) {
+    LanguageBridgeInstance.updateDocument(feld.innerText);
+  }
 }
 
 /* Die Rückfrage, bevor ungesicherte Arbeit weggeht.
@@ -8329,6 +8343,13 @@ setzeZoom(zoom);
 titelSetzen();
 zahlenAuffrischen();
 werkzeugeAuffrischen();
+
+/* Language Bridge initialisieren (nach Dokument geladen) */
+initLanguageBridge();
+if (LanguageBridgeInstance) {
+  LanguageBridgeInstance.setDocument(feld.innerText);
+  console.log('✓ Language Bridge document loaded');
+}
 
 /* Ganz zuletzt: Beide brauchen SYMBOLE und symbol(), und die stehen weiter
    unten in der Datei. Weiter oben aufgerufen liefe das Register ins Leere. */
