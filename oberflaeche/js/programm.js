@@ -7213,6 +7213,36 @@ function schriftZeilenNachlegen() {
   }
 }
 
+/* Die Liste an den Knopf hängen — aber nicht in ihn hinein.
+
+   Im Register steckt der Knopf im Band, und das Band rollt seitlich. Was
+   aber auf einer Achse rollt, schneidet der Browser auch auf der anderen
+   ab: Die Liste stand dann als Streifen von zwanzig Pixeln unter dem Knopf,
+   und von neunhundert Schriften war eine halbe zu sehen.
+
+   Deshalb wird sie aus dem Band gelöst und über das Fenster gelegt. Die
+   Stelle des Knopfes sagt, wohin — und was das Fenster noch hergibt, wie
+   hoch. */
+function schriftListeStellen() {
+  const platz = wzSchrift.getBoundingClientRect();
+  const breite = schriftListe.offsetWidth || 330;
+
+  schriftListe.style.position = 'fixed';
+  schriftListe.style.top = (platz.bottom + 4) + 'px';
+  /* Nicht über den rechten Rand hinaus: Steht der Knopf weit rechts, rutscht
+     die Liste so weit nach links, dass sie ganz im Fenster liegt. */
+  schriftListe.style.left =
+    Math.max(8, Math.min(platz.left, window.innerWidth - breite - 8)) + 'px';
+
+  /* Höher als das Fenster darf sie nicht werden — sonst reicht sie unten
+     hinaus und die letzten Zeilen sind nicht zu erreichen. */
+  const rollen = schriftListe.querySelector('.schriftliste__rollen');
+  if (rollen) {
+    const rest = window.innerHeight - platz.bottom - 24 - 44;   // 44: das Suchfeld
+    rollen.style.maxHeight = Math.max(140, Math.min(340, rest)) + 'px';
+  }
+}
+
 function schriftListeZeigen(an) {
   if (an) {
     if (!schriftListe.querySelector('.schriftliste__rollen')) {
@@ -7236,6 +7266,7 @@ function schriftListeZeigen(an) {
       schriftListe.append(suchfeld, rollen);
     }
     schriftListe.hidden = false;
+    schriftListeStellen();
     schriftListeBauen('');
     const suchfeld = schriftListe.querySelector('.schriftliste__suche');
     suchfeld.value = '';
@@ -7253,6 +7284,11 @@ function schriftListeZeigen(an) {
     if (gewaehlt) gewaehlt.scrollIntoView({ block: 'center' });
   } else {
     schriftListe.hidden = true;
+    /* Die Maße wieder abnehmen: Beim nächsten Mal steht der Knopf vielleicht
+       woanders, und ein alter Wert setzte die Liste an die Stelle von gestern. */
+    schriftListe.style.position = '';
+    schriftListe.style.top = '';
+    schriftListe.style.left = '';
     auswahlZurueck();
   }
 }
@@ -7263,6 +7299,21 @@ document.addEventListener('mousedown', (e) => {
     schriftListeZeigen(false);
   }
 });
+
+/* Ändert sich das Fenster oder rollt das Band weiter, während die Liste
+   offen steht, stünde sie sonst neben dem Knopf, zu dem sie gehört.
+   „Rollen" steigt nicht auf, deshalb wird es auf dem Weg nach unten
+   abgefangen. */
+window.addEventListener('resize', () => {
+  if (schriftListe && !schriftListe.hidden) schriftListeStellen();
+});
+document.addEventListener('scroll', (e) => {
+  if (!schriftListe || schriftListe.hidden) return;
+  /* Nicht, wenn die Liste in sich selbst rollt — dann steht der Knopf ja
+     still, und neu zu messen hieße nur, bei jeder Zeile zu rechnen. */
+  if (e.target instanceof Node && schriftListe.contains(e.target)) return;
+  schriftListeStellen();
+}, true);
 
 /* Welche Schriften liegen auf diesem Rechner? Nur das Fenster weiß es —
    eine Seite im Browser darf danach nicht fragen. Läuft sie doch einmal im
