@@ -65,10 +65,10 @@ function REGISTER_BAUEN(B, w) {
                     ['pdf', 'Als PDF', () => B.speichernPdf(), 'gross'],
                     ['vorschau', 'Druckvorschau', () => B.vorschau()],
                     ['drucker2', 'Druckereinstellungen…', () => B.druckerEinrichten()]], () => B.druckerEinrichten()],
+    /* „Wörter zählen" und „Bearbeitung sperren" standen hier ein zweites
+       Mal. Im Aufbau gehören sie zu Überprüfen, und dort stehen sie auch. */
     ['Informationen', [['notiz', 'Eigenschaften', () => B.eigenschaften(), 'gross'],
-                    ['umbenennen', 'Umbenennen…', () => B.umbenennen()],
-                    ['woerter', 'Wörter zählen', () => B.woerterZaehlen()],
-                    ['sperren', 'Bearbeitung sperren', () => B.bearbeitungSperren()]]],
+                    ['umbenennen', 'Umbenennen…', () => B.umbenennen()]]],
     ['Schließen', [['neuesfenster', 'Neues Fenster', () => B.neuesFenster()],
                     ['beenden', 'Beenden', () => B.beenden()]]],
     ['Hilfe', [['handbuch', 'Handbuch', () => B.handbuch(), 'gross'],
@@ -115,7 +115,7 @@ function REGISTER_BAUEN(B, w) {
                     ['toenung', 'Schattierung…', () => B.absatzSchattierung()],
                     ['sortieren', 'Sortieren…', () => B.sortieren()],
                     ['¶', 'Steuerzeichen', () => B.steuerzeichenZeigen()]], () => B.einzugGenau()],
-    ['Formatvorlagen', 'katalog'],
+    ['Stile', 'katalog'],
     ['Bearbeiten', [['lupe', 'Suchen und Ersetzen', () => w.sucheZeigen(true), 'gross'],
                     ['allesmark', 'Alles markieren', () => B.allesMarkieren()],
                     ['objekte', 'Objekte wählen', () => B.objekteWaehlen()]]],
@@ -152,7 +152,7 @@ function REGISTER_BAUEN(B, w) {
                     ['formel', 'Formel…', () => B.formel()]]],
   ]],
 
-  ['Layout', [
+  ['Seitenlayout', [
     /* Wie im Menüband von Word: „Seitenränder", „Ausrichtung", „Größe" und
        „Umbrüche" sind je ein Knopf mit Klappe, nicht je vier bis fünf
        Knöpfe nebeneinander. Was gerade gilt, trägt in der Klappe einen
@@ -187,6 +187,9 @@ function REGISTER_BAUEN(B, w) {
                     ['abstand', 'Absatzabstand', () => B.absatzabstand()],
                     ['zeilennr', 'Zeilennummern', () => B.zeilennummern()],
                     ['trennung', 'Silbentrennung', () => B.silbentrennung()]], () => B.einzugGenau()],
+    /* Der Textumbruch steht im Aufbau als eigene Gruppe. Er wird im selben
+       Fenster gesetzt wie das Anordnen — dort ist er die erste Zeile. */
+    ['Textumbruch', [['anordnen', 'Textumbruch…', () => B.anordnen(), 'gross']]],
     ['Seitenhintergrund', [['farbe', 'Seitenfarbe…', () => B.seitenfarbe(), 'gross'],
                     ['wasserzeichen', 'Wasserzeichen…', () => B.wasserzeichen()],
                     ['rahmen', 'Seitenrahmen…', () => B.seitenrahmen()]]],
@@ -227,10 +230,13 @@ function REGISTER_BAUEN(B, w) {
                     ['zurueck', 'Voriger', () => B.kommentarZurueck()],
                     ['kommentarweg', 'Kommentar löschen', () => B.kommentarWeg()],
                     ['kommentareweg', 'Alle Kommentare löschen', () => B.kommentareAlleWeg()]]],
-    ['Nachverfolgung', [['verfolgt', 'Änderungen verfolgen', () => B.verfolgen(), 'gross'],
-                    ['markup', 'Markup zeigen', () => B.markupUmschalten()],
-                    ['bereich', 'Überarbeitungsbereich', () => B.ueberarbeitungsbereich()]]],
-    ['Änderungen', [['annehmen', 'Änderung annehmen', () => B.aenderungAnnehmen(), 'gross'],
+    /* Im Aufbau ist das eine Gruppe: Das Verfolgen und das Annehmen gehören
+       zusammen — vorher standen sie als „Nachverfolgung" und „Änderungen"
+       getrennt nebeneinander. */
+    ['Änderungen', [['verfolgt', 'Änderungen verfolgen', () => B.verfolgen(), 'gross'],
+                    ['markup', 'Markup anzeigen', () => B.markupUmschalten()],
+                    ['bereich', 'Überarbeitungsbereich', () => B.ueberarbeitungsbereich()],
+                    ['annehmen', 'Änderung annehmen', () => B.aenderungAnnehmen(), 'gross'],
                     ['ablehnen', 'Änderung ablehnen', () => B.aenderungAblehnen(), 'gross'],
                     ['vor', 'Nächste Änderung', () => B.aenderungWeiter()],
                     ['zurueck', 'Vorige Änderung', () => B.aenderungZurueck()],
@@ -260,30 +266,31 @@ function REGISTER_BAUEN(B, w) {
   ['Sendungen', [
     ['Erstellen', [['kette', 'Umschlag…', () => B.umschlag(), 'gross'],
                     ['etiketten', 'Etiketten…', () => B.etiketten(), 'gross']]],
-    ['Seriendruck starten', [['serie', 'Seriendruck-Assistent…', () => B.seriendruck(), 'gross']]],
-    ['Felder schreiben', [['seriefeld', 'Seriendruckfeld…', () => B.seriendruckfeld(), 'gross'],
+    /* Im Aufbau ist der Seriendruck eine Gruppe, nicht zwei — der
+       Assistent und die Felder, die er füllt, gehören zusammen. */
+    ['Seriendruck', [['serie', 'Seriendruck-Assistent…', () => B.seriendruck(), 'gross'],
+                    ['seriefeld', 'Seriendruckfeld…', () => B.seriendruckfeld(), 'gross'],
                     ['adressblock', 'Adressblock', () => B.adressblock()],
-                    ['Regel', 'Regel…', () => B.seriendruckregel()]]],
-    ['Vorschau', [['vorschau', 'Vorschau auf Ergebnisse…', () => B.serienVorschau(), 'gross']]],
+                    ['eintrag', 'Regeln…', () => B.seriendruckregel()]]],
+    ['Vorschau', [['vorschau', 'Ergebnisse anzeigen', () => B.serienVorschau(), 'gross']]],
     ['Formular', [['formfeld', 'Textfeld', () => B.formTextfeld(), 'gross'],
                     ['kaestchen', 'Kontrollkästchen', () => B.formKasten()],
                     ['formknopf', 'Schaltfläche', () => B.formKnopf()]]],
-    ['Makros', [['aufnahme', 'Aufzeichnen', () => B.makroAufnahme(), 'gross'],
-                    ['aufnahmeende', 'Aufnahme beenden', () => B.makroBeenden()],
-                    ['abspielen', 'Abspielen…', () => B.makroAbspielen()],
-                    ['Verwalten', 'Verwalten…', () => B.makrosVerwalten()]]],
+    /* Die Makros stehen im Aufbau nicht. Sie sind deshalb nicht weg —
+       die Menüleiste (☰) führt sie weiter, so wie die Verzeichnisse. */
   ]],
 
   ['Ansicht', [
-    ['Ansichten', [['blattansicht', 'Blatt (Druckbild)', () => w.setzeLayout('blatt')(), 'gross'],
+    ['Dokumentansichten', [['blattansicht', 'Drucklayout', () => w.setzeLayout('blatt')(), 'gross'],
                     ['lesen', 'Lesemodus', () => B.lesemodus(), 'gross'],
-                    ['zweiblatt', 'Zwei Blätter nebeneinander', () => w.setzeLayout('doppelt')()],
-                    ['fortlaufend', 'Fortlaufend (ohne Rand)', () => w.setzeLayout('web')()],
+                    ['zweiblatt', 'Zwei Seiten', () => w.setzeLayout('doppelt')()],
+                    ['fortlaufend', 'Weblayout', () => w.setzeLayout('web')()],
                     ['gliederung', 'Gliederung', () => B.gliederung()]]],
+    /* „Steuerzeichen" stand hier ein zweites Mal. Im Aufbau gehört es zu
+       Start ▸ Absatz, und dort steht es auch. */
     ['Anzeigen', [['linealIcon', 'Lineal', () => B.linealZeigen()],
-                    ['netz', 'Netzlinien', () => B.netzlinien()],
+                    ['netz', 'Gitternetzlinien', () => B.netzlinien()],
                     ['navigation', 'Navigationsbereich', () => B.navigation()],
-                    ['steuerzeichen', 'Steuerzeichen', () => B.steuerzeichenZeigen()],
                     ['ecken', 'Textbegrenzungen', () => B.markenZeigen()],
                     ['tafel', 'Seitenleiste Schreibhilfe', () => B.tafelZeigen()],
                    ['brille', 'Lesehilfe…', () => B.lesehilfe(), 'gross'],
@@ -308,7 +315,6 @@ function REGISTER_BAUEN(B, w) {
                     ['Oberfläche', 'Benutzeroberfläche…', () => B.benutzeroberflaeche()],
                     ['menueleiste', 'Menüleiste', () => B.menueleisteZeigen()],
                     ['leisten', 'Symbolleisten', () => B.leistenZeigen()],
-                    ['Vorlagen', 'Formatvorlagen verwalten…', () => B.vorlagenVerwalten()],
                     ['Zurück', 'Vorlagen zurücksetzen', () => B.vorlagenZurueck()]], () => B.registerAnpassen()],
   ]],
 

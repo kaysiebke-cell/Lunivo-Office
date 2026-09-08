@@ -1824,6 +1824,19 @@ function registerBauen() {
     /* Der Katalog zeigt die Formatvorlagen, statt sie zu benennen. */
     if (eintraege === 'katalog') {
       gruppe.appendChild(katalogBauen());
+      /* Im Aufbau hat die Gruppe „Stile" zwei Dinge: die Vorlagen zum
+         Aussuchen — das ist der Katalog — und den Weg, sie zu verwalten.
+         Der stand vorher unter Ansicht ▸ Oberfläche, also weit weg von
+         dem, was er verwaltet. */
+      const verwalten = document.createElement('button');
+      verwalten.className = 'wz register__stileVerwalten';
+      verwalten.type = 'button';
+      verwalten.title = 'Formatvorlagen verwalten…';
+      verwalten.setAttribute('aria-label', 'Formatvorlagen verwalten…');
+      verwalten.appendChild(symbol('anpassen'));
+      verwalten.addEventListener('click', () => B.vorlagenVerwalten());
+      gruppe.appendChild(verwalten);
+
       const name = document.createElement('span');
       name.className = 'register__name';
       name.textContent = gruppenName;
