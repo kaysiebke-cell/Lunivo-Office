@@ -6583,6 +6583,15 @@ B.gruendlichPruefen = async () => {
   const text = Dokument.lies().text;
   if (!text.trim()) { melde('Es steht kein Text da.'); return; }
 
+  /* Erst der eigene Prüfer und die KI, dann LanguageTool. Alle drei
+     landen im selben Stand. */
+  if (Bruecke) {
+    funde = Bruecke.pruefen(text, true);
+    zeichneFunde();
+    /* Hier wird nicht geschont: Wer „Gründlich prüfen" drückt, tippt
+       gerade nicht — er will sehen, was gefunden wurde. */
+    markiereFunde();
+  }
   melde('LanguageTool prüft … das dauert beim ersten Mal.');
   let treffer;
   try {
@@ -6599,7 +6608,20 @@ B.gruendlichPruefen = async () => {
   }
 
   if (!treffer.length) {
-    leereFunde('LanguageTool hat nichts gefunden.');
+    /* Nichts gefunden heißt nicht: alles wegwerfen. Vorher leerte dieser
+       Zweig die Liste — wer gründlich prüfte, verlor damit die Funde der
+       Schreibhilfe und der KI, weil LanguageTool nichts beizutragen
+       hatte. */
+    if (Bruecke) {
+      funde = Bruecke.offeneFehler().map((f) => f.fund).filter(Boolean);
+      zeichneFunde();
+      markiereFunde();
+      meldeFunde(text.length);
+    }
+    melde(funde.length
+      ? 'LanguageTool hat nichts gefunden — die ' + funde.length
+        + (funde.length === 1 ? ' Fund bleibt' : ' Funde bleiben') + ' stehen.'
+      : 'LanguageTool hat nichts gefunden.');
     return;
   }
 
@@ -6607,7 +6629,7 @@ B.gruendlichPruefen = async () => {
      Seitenleiste sie ohne Sonderbehandlung, und „Zeigen" und „Ändern"
      arbeiten wie gewohnt. */
   KIteil.vorschlaegeLeeren();
-  funde = treffer.map((t) => ({
+  const fremde = treffer.map((t) => ({
     von: t.von, bis: t.bis,
     alt: text.slice(t.von, t.bis),
     neu: t.vorschlag || '',
@@ -6618,11 +6640,24 @@ B.gruendlichPruefen = async () => {
     vonLanguageTool: true,
   }));
 
+  /* Alles in EINEN Fehlerstand. Vorher warf „Gründlich prüfen" die eigenen
+     Funde weg und zeigte nur die von LanguageTool — wer gründlich prüfte,
+     sah weniger als vorher. Der Entwurf will das Gegenteil (§21): Die
+     Quellen laufen zusammen, gleiche Stellen werden vereint. */
+  let dazu = fremde.length;
+  if (Bruecke) {
+    dazu = Bruecke.fremdeFundeAufnehmen(fremde, 'languagetool');
+    funde = Bruecke.offeneFehler().map((f) => f.fund).filter(Boolean);
+  } else {
+    funde = funde.concat(fremde);
+  }
+
   zeichneFunde();
   markiereFunde();
   meldeFunde(text.length);
-  melde(funde.length + (funde.length === 1 ? ' Fund' : ' Funde')
-      + ' von LanguageTool — zusätzlich zu dem, was die Schreibhilfe sucht.');
+  melde(dazu + (dazu === 1 ? ' Fund' : ' Funde') + ' von LanguageTool'
+      + (Bruecke ? ' — dazu, was die Schreibhilfe schon hatte.'
+                 : ' — zusätzlich zu dem, was die Schreibhilfe sucht.'));
 };
 
 /* ---- Fenster und Hilfe ---- */
@@ -9212,6 +9247,18 @@ werkzeugeAuffrischen();
 /* Die Abschnitte kommen vor dem Text: Der Bogen soll gleich beim Öffnen
    den Aufbau des ersten Abschnitts tragen und nicht erst, wenn jemand
    hineinklickt. */
+/* Antwortet die KI spät, muss jemand es zeichnen — sonst käme ihr Fund an
+   und bliebe unsichtbar. */
+if (Bruecke) {
+  Bruecke.beiAenderung = () => {
+    if (pruefungLaeuft || lebendLaeuft) return;
+    funde = Bruecke.offeneFehler().map((f) => f.fund).filter(Boolean);
+    zeichneFunde();
+    markiereFunde(absatzAmZeiger());
+    meldeFunde(Dokument.lies().text.length);
+  };
+}
+
 abschnitteHolen();
 abschnittAnwenden(0);
 

@@ -1,3 +1,5 @@
+'use strict';
+(async () => {
 /* ============================================================
    Prüfläufe für die Sprachbrücke.
 
@@ -8,7 +10,6 @@
    ersetzt: Der echte braucht REGELDATEN und ein Wörterbuch von viereinhalb
    Megabyte, und darum geht es hier nicht.
    ============================================================ */
-'use strict';
 
 const { pruefhelferBauen } = require('./pruefhelfer.js');
 const { stimmt, gleich, schluss } = pruefhelferBauen();
@@ -177,4 +178,139 @@ console.log('\nDie Auskunft');
   gleich(a.fassung, 1, 'sagt die Fassung');
 }
 
+/* ---- Die KI ---- */
+console.log('\nDie KI');
+
+/* Eine gestellte KI. Sie antwortet, wann wir es sagen. */
+function kiStellen(funde, warten = 0) {
+  global.KI = {
+    verfuegbar: () => true,
+    Gedaechtnis: { lies: () => ({ woerter: {}, inRuhe: {} }) },
+    sprachfunde: async () => {
+      if (warten) await new Promise((r) => setTimeout(r, warten));
+      return { funde };
+    },
+  };
+}
+
+const kiFund = (von, bis, alt, neu, sicherheit = 0.8, art = 'grammatik') =>
+  ({ von, bis, alt, neu, grund: 'weil die KI das sagt', art, sicherheit });
+
+{
+  const b = new SprachBruecke();
+  naechsteFunde = [];
+  kiStellen([kiFund(4, 7, 'ist', 'sind')]);
+  b.pruefen('Das ist so.', true);
+  await new Promise((r) => setTimeout(r, 20));
+  gleich(b.offeneFehler().length, 1, 'ein KI-Fund kommt in den Fehlerstand');
+  gleich(b.offeneFehler()[0].quelle, 'ki', 'und ist als KI-Fund erkennbar');
+  gleich(b.offeneFehler()[0].sicherheit, 0.8, 'mit seiner Sicherheit');
+  stimmt(!!b.offeneFehler()[0].fund, 'und in der Form, die das Programm kennt');
+}
+
+{
+  const b = new SprachBruecke();
+  naechsteFunde = [];
+  kiStellen([kiFund(0, 3, 'Das', 'Dass', 0.95)]);
+  b.pruefen('Das ist so.', true);
+  await new Promise((r) => setTimeout(r, 20));
+  gleich(b.offeneFehler()[0].art, 'fehler', 'ab 0,9 gilt es als sicher falsch');
+}
+
+{
+  const b = new SprachBruecke();
+  naechsteFunde = [];
+  kiStellen([kiFund(0, 3, 'Das', 'Dies', 0.4, 'stil')]);
+  b.pruefen('Das ist so.', true);
+  await new Promise((r) => setTimeout(r, 20));
+  gleich(b.offeneFehler()[0].art, 'hinweis', 'ein Stilvorschlag ist nur ein Hinweis');
+}
+
+console.log('\nEine späte Antwort der KI');
+{
+  const b = new SprachBruecke();
+  naechsteFunde = [];
+  kiStellen([kiFund(4, 7, 'ist', 'sind')], 60);
+  b.pruefen('Das ist so.', true);
+  b.textSetzen('Ein ganz anderer Text.');   // dazwischen wurde getippt
+  await new Promise((r) => setTimeout(r, 140));
+  gleich(b.offeneFehler().length, 0,
+         'wird verworfen, wenn der Text sich geändert hat');
+}
+
+{
+  const b = new SprachBruecke();
+  naechsteFunde = [];
+  kiStellen([kiFund(4, 7, 'ist', 'sind')], 60);
+  b.pruefen('Das ist so.', true);
+  b.pruefen('Das ist so.', true);                 // zweiter Lauf über denselben Text
+  await new Promise((r) => setTimeout(r, 140));
+  gleich(b.offeneFehler().length, 1,
+         'ein überholter Lauf bringt seinen Fund nicht doppelt');
+}
+
+console.log('\nWörter, die der Mensch erlaubt hat');
+{
+  const b = new SprachBruecke();
+  naechsteFunde = [];
+  global.Pruefung.Gelernt.daten.inRuhe['lunivo'] = true;
+  kiStellen([kiFund(0, 6, 'Lunivo', 'Luniva', 0.9)]);
+  b.pruefen('Lunivo ist gut.', true);
+  await new Promise((r) => setTimeout(r, 20));
+  gleich(b.offeneFehler().length, 0, 'die KI darf sie nicht bemängeln');
+  global.Pruefung.Gelernt.daten.inRuhe = {};
+}
+
+console.log('\nZwei Prüfer über derselben Stelle');
+{
+  const b = new SprachBruecke();
+  naechsteFunde = [fund(0, 5, 'weiss', 'weiß')];       // Prüfer: sicher
+  kiStellen([kiFund(0, 5, 'weiss', 'weiss?', 0.3)]);   // KI: unsicher
+  b.pruefen('weiss der Himmel', true);
+  await new Promise((r) => setTimeout(r, 20));
+
+  gleich(b.offeneFehler().length, 1, 'wird zu einem Fehler zusammengeführt');
+  const f = b.offeneFehler()[0];
+  gleich(f.vorschlaege[0], 'weiß', 'der sicherere Vorschlag steht vorn');
+  gleich(f.vorschlaege.length, 2, 'der andere geht nicht verloren');
+  gleich(f.grund, 'weil', 'die Begründung kommt vom sichereren');
+}
+
+{
+  const b = new SprachBruecke();
+  naechsteFunde = [fund(0, 5, 'weiss', 'weiß', true, 'tipp')];   // 0,6
+  kiStellen([kiFund(0, 5, 'weiss', 'weiß', 0.95)]);              // gleicher Vorschlag
+  b.pruefen('weiss der Himmel', true);
+  await new Promise((r) => setTimeout(r, 20));
+  const f = b.offeneFehler()[0];
+  gleich(f.vorschlaege.length, 1, 'derselbe Vorschlag zählt einmal');
+  gleich(f.sicherheit, 0.95, 'die höhere Sicherheit gilt');
+}
+
+console.log('\nOhne Modell');
+{
+  const b = new SprachBruecke();
+  naechsteFunde = [];
+  global.KI = { verfuegbar: () => false };
+  b.pruefen('Das ist so.', true);
+  await new Promise((r) => setTimeout(r, 20));
+  gleich(b.offeneFehler().length, 0, 'wird die KI gar nicht erst gefragt');
+  gleich(b.stand, 'fertig', 'und das Prüfen läuft trotzdem durch');
+}
+
+console.log('\nEine stolpernde KI');
+{
+  const b = new SprachBruecke();
+  naechsteFunde = [fund(0, 5, 'weiss', 'weiß')];
+  global.KI = { verfuegbar: () => true,
+                Gedaechtnis: { lies: () => ({ woerter: {}, inRuhe: {} }) },
+                sprachfunde: async () => { throw new Error('kaputt'); } };
+  const funde = b.pruefen('weiss der Himmel');
+  await new Promise((r) => setTimeout(r, 20));
+  gleich(funde.length, 1, 'die Funde des Prüfers bleiben stehen');
+  gleich(b.stand, 'fertig', 'und der Stand ist in Ordnung');
+}
+
 schluss();
+
+})();

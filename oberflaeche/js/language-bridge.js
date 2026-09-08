@@ -70,11 +70,53 @@ const SprachBruecke = (() => {
     }));
   }
 
-  /* Die KI. Sie ist das einzige, was es noch nicht gibt — und das einzige,
-     wofür die Brücke wirklich gebraucht wird: Ihre Antwort kommt später,
-     und bis dahin kann der Text ein anderer sein. */
-  async function kiEngineLauf() {
-    return [];
+  /* Die KI.
+
+     Sie ist der Grund, warum es die Brücke gibt: Ihre Antwort kommt spät —
+     über Ollama bis zu zehn Minuten —, und bis dahin kann der Text ein
+     anderer sein. Wer sie ungeprüft ins Blatt legte, malte Wellenlinien
+     über Stellen, an denen längst etwas anderes steht.
+
+     Gefragt wird nur, wenn ein Modell gewählt ist. Ohne eines wäre jede
+     Prüfung ein Fehlschlag, den niemand bestellt hat. */
+  async function kiEngineLauf(text, fassung, laufNr, kenntWort) {
+    if (typeof KI === 'undefined' || !KI.verfuegbar || !KI.verfuegbar()) return [];
+    if (!text || !text.trim()) return [];
+
+    /* Was der Mensch schon erlaubt hat, geht mit — sonst schlägt die KI
+       seinen Nachnamen vor. */
+    let eigene = [];
+    try {
+      const g = KI.Gedaechtnis.lies();
+      eigene = Object.keys(g.woerter || {}).concat(Object.keys(g.inRuhe || {}));
+    } catch (e) { eigene = []; }
+
+    const { funde, fehler } = await KI.sprachfunde(text, eigene);
+    if (fehler || !funde) return [];
+
+    return funde
+      .filter((f) => !kenntWort || !kenntWort(f.alt))
+      .map((f, i) => ({
+        id: 'ki-' + fassung + '-' + laufNr + '-' + i,
+        quelle: 'ki',
+        art: f.sicherheit >= 0.9 ? 'fehler' : (f.art === 'stil' ? 'hinweis' : 'tipp'),
+        von: f.von,
+        bis: f.bis,
+        text: f.alt,
+        vorschlaege: [f.neu],
+        grund: f.grund,
+        sicherheit: f.sicherheit,
+        fassung,
+        laufNr,
+        stand: 'offen',
+        /* Ein Fund in der Form, die das Programm kennt — damit „Ändern"
+           in der Seitenleiste auch bei KI-Funden greift. */
+        fund: { von: f.von, bis: f.bis, alt: f.alt, neu: f.neu,
+                zeigeAlt: f.alt, zeigeNeu: f.neu,
+                grund: f.grund,
+                art: f.sicherheit >= 0.9 ? 'fehler' : (f.art === 'stil' ? 'hinweis' : 'tipp'),
+                wortEbene: /^[A-Za-zÄÖÜäöüß-]+$/.test(f.alt) },
+      }));
   }
 
   return class SprachBrueckeKlasse {
@@ -88,7 +130,13 @@ const SprachBruecke = (() => {
       this.fehler = [];
       this.weggewinkt = new Set();    // Fehlerkennungen, die nicht mehr kommen sollen
       this.stand = 'ruht';            // ruht | fertig | veraltet
+      /* Wird gerufen, wenn sich am Fehlerstand etwas geändert hat —
+         etwa weil die KI spät geantwortet hat. Ohne das käme ihre Antwort
+         an, und niemand sähe sie: Gezeichnet wird, wenn geprüft wird. */
+      this.beiAenderung = null;
     }
+
+    melden() { if (this.beiAenderung) this.beiAenderung(); }
 
     /* ---- Sprache ---- */
 
@@ -179,7 +227,7 @@ const SprachBruecke = (() => {
     /* Prüft den übergebenen Text und gibt die Funde zurück — in der Form,
        die das Programm schon kennt. Der Prüfer arbeitet sofort; nur die KI
        antwortet später und läuft deshalb nebenher weiter. */
-    pruefen(text) {
+    pruefen(text, mitKI = false) {
       if (typeof text === 'string') this.textSetzen(text);
 
       const fassung = this.fassung;
@@ -192,7 +240,14 @@ const SprachBruecke = (() => {
         (f) => !this.weggewinkt.has(SprachBrueckeKlasse.kennung(f)));
       this.stand = 'fertig';
 
-      this.kiFragen(fassung, laufNr);
+      /* Die KI wird nicht bei jedem Lauf gefragt.
+
+         Die lebende Prüfung läuft nach jeder Tippause. Eine Anfrage an
+         Ollama dauert bis zu zehn Minuten und rechnet auf demselben
+         Rechner, an dem geschrieben wird — sie alle 900 ms zu stellen
+         hieße, das Programm unbenutzbar zu machen. Gefragt wird deshalb
+         nur, wenn jemand es verlangt: „Gründlich prüfen". */
+      if (mitKI) this.kiFragen(fassung, laufNr);
       /* Nur was aus pruefung.js kam, trägt einen Original-Fund. Was die KI
          später beisteuert, hat keinen — es kommt über offeneFehler(). */
       return this.offeneFehler().map((f) => f.fund).filter(Boolean);
@@ -201,7 +256,8 @@ const SprachBruecke = (() => {
     async kiFragen(fassung, laufNr) {
       let gefunden;
       try {
-        gefunden = await kiEngineLauf(this.text, fassung, laufNr);
+        gefunden = await kiEngineLauf(this.text, fassung, laufNr,
+                                      (w) => this.kenntWort(w));
       } catch (grund) {
         console.warn('Die KI hat nicht geantwortet:', grund);
         return;
@@ -216,16 +272,90 @@ const SprachBruecke = (() => {
         if (this.kenntWort(fehler.text)) continue;
         /* Was der Prüfer schon gemeldet hat, wird nicht zweimal
            angestrichen — die Vorschläge kommen zusammen. */
-        const schon = this.fehler.find(
-          (f) => f.von === fehler.von && f.bis === fehler.bis);
+        const schon = this.fehler.find((f) => f.stand === 'offen'
+          && f.von < fehler.bis && f.bis > fehler.von);
         if (schon) {
-          for (const v of fehler.vorschlaege) {
-            if (!schon.vorschlaege.includes(v)) schon.vorschlaege.push(v);
-          }
+          this.zusammenfuehren(schon, fehler);
           continue;
         }
         this.fehler.push(fehler);
       }
+      this.melden();
+    }
+
+    /* Funde von anderswo — LanguageTool zum Beispiel — in denselben Stand.
+
+       Sie ersetzen nichts: Der Entwurf will einen Fehlerstand, in dem alle
+       Quellen zusammenlaufen (§21). Vorher warf „Gründlich prüfen" die
+       eigenen Funde weg und zeigte nur die fremden. */
+    fremdeFundeAufnehmen(funde, quelle, sicherheit = 0.7) {
+      if (!Array.isArray(funde)) return 0;
+      let dazu = 0;
+      for (const fund of funde) {
+        const fehler = {
+          id: quelle + '-' + this.fassung + '-' + dazu,
+          quelle,
+          art: fund.art,
+          von: fund.von, bis: fund.bis,
+          text: fund.alt,
+          vorschlaege: fund.neu ? [fund.neu] : [],
+          grund: fund.grund,
+          sicherheit,
+          fassung: this.fassung, laufNr: this.laufNr,
+          stand: 'offen',
+          fund,
+        };
+        if (this.weggewinkt.has(SprachBrueckeKlasse.kennung(fehler))) continue;
+        const schon = this.fehler.find((f) => f.stand === 'offen'
+          && f.von < fehler.bis && f.bis > fehler.von);
+        if (schon) { this.zusammenfuehren(schon, fehler); continue; }
+        this.fehler.push(fehler);
+        dazu++;
+      }
+      this.melden();
+      return dazu;
+    }
+
+    /* Zwei Prüfer über derselben Stelle.
+
+       Der Entwurf sagt, was hier NICHT passieren darf (§21, §22): Ein
+       guter Vorschlag darf nicht von einem schlechteren überschrieben
+       werden, und es darf nicht einfach der zuletzt eingegangene gelten.
+
+       Also bleiben beide Vorschläge stehen, geordnet nach Sicherheit —
+       der beste zuerst, denn den bietet die Oberfläche als Erstes an.
+       Doppelte fallen weg: Schlagen Prüfer und KI dasselbe vor, ist das
+       ein Vorschlag und nicht zwei.
+
+       Die Begründung kommt von dem, der sicherer ist. Zwei Erklärungen
+       für eine Stelle helfen niemandem. */
+    zusammenfuehren(bleibt, dazu) {
+      const beide = [];
+      const nehmen = (fehler) => {
+        for (const v of fehler.vorschlaege) {
+          if (!v) continue;
+          const da = beide.find((e) => e.text === v);
+          if (da) { da.sicher = Math.max(da.sicher, fehler.sicherheit); continue; }
+          beide.push({ text: v, sicher: fehler.sicherheit });
+        }
+      };
+      nehmen(bleibt);
+      nehmen(dazu);
+      beide.sort((a, b) => b.sicher - a.sicher);
+      bleibt.vorschlaege = beide.map((e) => e.text);
+
+      if (dazu.sicherheit > bleibt.sicherheit) {
+        bleibt.grund = dazu.grund || bleibt.grund;
+        bleibt.sicherheit = dazu.sicherheit;
+        /* Der Fund fürs Programm zeigt auf den besseren Vorschlag. */
+        if (bleibt.fund && bleibt.vorschlaege.length) {
+          bleibt.fund.neu = bleibt.vorschlaege[0];
+          bleibt.fund.zeigeNeu = bleibt.vorschlaege[0];
+        }
+      }
+      /* Woher der Fund kam, bleibt nachvollziehbar. */
+      bleibt.auch = (bleibt.auch || []).concat(dazu.quelle);
+      return bleibt;
     }
 
     /* ---- Auskunft ---- */

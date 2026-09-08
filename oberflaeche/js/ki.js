@@ -668,6 +668,107 @@ async function vorschlaege(text) {
   return { vorschlaege: brauchbar, cent };
 }
 
+/* ============================================================
+   Sprachfunde für die Brücke
+
+   Die drei Wege oben geben einen ganzen Text zurück oder lose Vorschläge.
+   Die Sprachbrücke braucht etwas anderes: einzelne Funde mit Stelle,
+   Vorschlag und einer Angabe, wie sicher sich die KI ist — dieselbe Form,
+   in der auch pruefung.js meldet. Nur so lassen sich beide zusammenführen,
+   statt zwei Listen nebeneinander zu führen.
+
+   WAS DIE KI NICHT ANFASSEN DARF
+
+   Wörter, die der Mensch gelernt oder in Ruhe gestellt hat, gehen als
+   Liste mit. Ohne sie schlüge die KI seinen Nachnamen und den Namen
+   seiner Straße vor — dieselben Wörter, die er der Prüfung schon einmal
+   ausdrücklich erlaubt hat (Entwurf §17).
+   ============================================================ */
+const SPRACHFUND_BAUPLAN = {
+  type: 'object',
+  properties: {
+    funde: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          alt:       { type: 'string' },
+          neu:       { type: 'string' },
+          grund:     { type: 'string' },
+          art:       { type: 'string', enum: ['rechtschreibung', 'grammatik', 'stil'] },
+          sicherheit: { type: 'number' },
+        },
+        required: ['alt', 'neu', 'grund', 'art', 'sicherheit'],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ['funde'],
+  additionalProperties: false,
+};
+
+function anweisungSprachfunde(eigeneWoerter) {
+  let anweisung =
+    'Du prüfst einen deutschen Text auf Fehler. Gib jeden Fund einzeln zurück: '
+    + 'das falsche Stück genau so, wie es im Text steht („alt"), die Verbesserung '
+    + '(„neu"), einen Grund in einfachen Worten, die Art und wie sicher du bist '
+    + '(0 bis 1).\n\n'
+    + '„alt" muss ZEICHENGENAU im Text vorkommen und so kurz wie möglich sein — '
+    + 'nur das falsche Wort oder die falsche Wendung, nicht der ganze Satz. '
+    + 'Kommt es mehrfach vor, nimm so viel Text mit, dass die Stelle eindeutig ist.\n\n'
+    + 'Der Text stammt von einem Menschen mit Legasthenie. Erkläre so, wie man es '
+    + 'jemandem sagen würde, nicht mit grammatischen Fachwörtern. '
+    + 'Ändere nichts am Inhalt und am Ton, und schlage keine schöneren Wörter vor, '
+    + 'wenn das vorhandene richtig ist.\n\n'
+    + 'Bei „sicherheit": 1 nur für sicher Falsches (Rechtschreibung, klare '
+    + 'Grammatik). Alles, was vom Zusammenhang abhängt, bekommt weniger. '
+    + 'Findest du nichts, bleibt die Liste leer — das ist eine gute Antwort.';
+
+  if (eigeneWoerter && eigeneWoerter.length) {
+    anweisung += '\n\nDiese Wörter sind richtig so und dürfen nicht bemängelt '
+      + 'werden: ' + eigeneWoerter.slice(0, 200).join(', ') + '.';
+  }
+  return anweisung;
+}
+
+/** Funde der KI, mit Stelle im Text. Gibt { funde } oder { fehler }. */
+async function sprachfunde(text, eigeneWoerter) {
+  const { ergebnis, fehler, cent } =
+    await anfrage(anweisungSprachfunde(eigeneWoerter), text, SPRACHFUND_BAUPLAN);
+  if (fehler) return { fehler, funde: [] };
+  if (cent) merkeKosten(cent);
+
+  const daten = alsJson(ergebnis);
+  if (!daten || !Array.isArray(daten.funde)) {
+    return { fehler: 'Die Antwort kam nicht in der erwarteten Form.', funde: [] };
+  }
+
+  /* Nur was sich zeichengenau wiederfindet, hat eine Stelle. Alles andere
+     wäre eine Wellenlinie über irgendetwas — und ein Knopf „Ändern", der
+     den falschen Text träfe. */
+  const funde = [];
+  for (const roh of daten.funde) {
+    if (!roh || typeof roh.alt !== 'string' || typeof roh.neu !== 'string') continue;
+    const alt = roh.alt;
+    if (!alt.trim() || alt === roh.neu) continue;
+    const von = text.indexOf(alt);
+    if (von < 0) continue;
+    /* Kommt es mehrfach vor, ist die Stelle nicht eindeutig — dann lieber
+       keine Marke als eine an der falschen Stelle. */
+    if (text.indexOf(alt, von + 1) >= 0) continue;
+
+    const sicher = Number(roh.sicherheit);
+    funde.push({
+      von, bis: von + alt.length,
+      alt, neu: roh.neu,
+      grund: String(roh.grund || ''),
+      art: roh.art === 'rechtschreibung' || roh.art === 'grammatik' ? roh.art : 'stil',
+      sicherheit: Number.isFinite(sicher) ? Math.max(0, Math.min(1, sicher)) : 0.5,
+    });
+  }
+  return { funde, cent };
+}
+
 /** Synonyme für ein Wort — der Thesaurus.
 
     Die Wörterliste weiß, wie Wörter geschrieben werden, nicht was sie
@@ -796,7 +897,7 @@ return {
   zettelLies, ZETTEL_GRENZE, SPRACHEN,
   verfuegbar, modellJetzt, modellSetzen, istLokal, lokalerName, OLLAMA_MARKE,
   schluesselLies, schluesselSetzen, schluesselLoeschen,
-  ollamaModelle, korrigieren, uebersetzen, vorschlaege, synonyme,
+  ollamaModelle, korrigieren, uebersetzen, vorschlaege, synonyme, sprachfunde,
   centFuer, alsGeld, kostenStand, kostenLeeren,
   sicherungBauen, sicherungEinspielen,
 };
