@@ -1,594 +1,249 @@
-// ============================================================
-// LANGUAGE BRIDGE — Zentrale Sprachprüfungs-Engine für Lunivo
-// ============================================================
-//
-// Die Language Bridge koordiniert ALLE Sprachprüfungen zentral:
-// - Rechtschreibung (SpellingEngine)
-// - Grammatik (GrammarEngine)
-// - KI-Korrekturen (AIEngine)
-//
-// Sie besitzt den EINZIGEN Sprachzustand und verhindert parallele,
-// unabhängige Fehler- und Wörterbuch-Verwaltung.
-//
-// Wichtig: regeln.js wird NICHT dupliziert. Die Bridge hat nur
-// Zugriff darauf, nicht eine Kopie.
-// ============================================================
+/* ============================================================
+   Die Sprachbrücke — ein Fehlerstand für alle Prüfer.
 
+   WAS SIE IST UND WAS NICHT.
+
+   Sie prüft nicht selbst. Geprüft wird in pruefung.js, und das seit
+   langem: Wörterbuch, Vorschläge, Lautvergleich, die Regeln für Komma
+   und Großschreibung, das Gelernte. Eine zweite Prüfung danebenzustellen
+   hieße, dasselbe Wörterbuch ein zweites Mal zu führen — und zwei
+   Abschriften bleiben nur gleich, solange jemand danebensteht.
+
+   Sie hält den Zustand: welche Fassung des Textes geprüft wurde, welcher
+   Prüflauf gerade zählt, was der Mensch angenommen oder weggewinkt hat.
+   Das ist die Arbeit, die vorher niemand tat — und ohne die eine späte
+   Antwort der KI Fehler an Stellen malt, an denen längst etwas anderes
+   steht.
+
+   Die Aufteilung folgt dem, was im Entwurf steht: Die Prüfer besitzen die
+   Prüfungslogik, die Brücke besitzt den gemeinsamen Zustand. Dass
+   Rechtschreibung und Grammatik dabei in einer Datei liegen statt in
+   zweien, ist ausdrücklich erlaubt — die Zielstruktur beschreibt
+   Zuständigkeiten, keine Dateinamen.
+
+   WOHER DIE WÖRTER KOMMEN.
+
+   Nicht von hier. Gelernte Wörter und die, die in Ruhe bleiben sollen,
+   führt KI.Gedaechtnis; pruefung.js liest sie über Pruefung.Gelernt. Die
+   Brücke fragt dort nach und legt keine eigene Liste an. Eine dritte
+   Wortliste wäre genau der Zustand, den dieser Umbau abschaffen soll.
+   ============================================================ */
 'use strict';
 
-class LanguageBridge {
-  constructor(rulesData = {}) {
-    // ====== CONTEXT (Sprach- und Dokumentkontext) ======
-    this.language = 'de-DE';
-    this.documentVersion = 0;
-    this.documentText = '';
-    this.checkId = 0;
-    this.nextCheckId = 1;
+const SprachBruecke = (() => {
 
-    // ====== STATE (Zentraler Zustand) ======
-    this.userWords = new Set();           // Benutzerwörter (akzeptiert)
-    this.ignoredWords = new Set();        // Ignorierte Wörter
-    this.acceptedCorrections = new Map(); // {issueId → appliedSuggestion}
-    this.issues = [];                     // Alle erkannten Fehler
-    this.invalidatedRanges = [];          // Zu erneuernde Bereiche
-    this.status = 'idle';                 // idle | scheduled | checking | ready | stale | error
-    this.statusDetails = {};              // {documentVersion, checkId, error?}
+  /* ------------------------------------------------------------
+     Der Prüfer: pruefung.js, in die einheitliche Fehlerform gebracht.
 
-    // ====== SHARED RULES (Referenz auf zentrale Regeln, KEINE KOPIE) ======
-    this.rulesData = rulesData;
+     Ein Fund von dort heißt {von, bis, alt, neu, grund, art} und trägt
+     wortEbene, wenn er ein einzelnes Wort richtigstellt. Daraus wird
+     hier ein Fehler mit Quelle, Zustand und Fassungsnummer — dieselbe
+     Form, in der später auch die KI antwortet.
+     ------------------------------------------------------------ */
+  function pruefEngineLauf(text, fassung, laufNr) {
+    if (typeof Pruefung === 'undefined') return [];
 
-    // ====== ENGINES ======
-    this.spellingEngine = new SpellingEngine(this);
-    this.grammarEngine = new GrammarEngine(this);
-    this.aiEngine = new AIEngine(this);
-
-    // ====== DEBOUNCING (für inkrementelle Prüfung) ======
-    this.debounceTimer = null;
-    this.debounceDelay = 500; // ms
-
-    // ====== PERSISTENCE ======
-    this.storagePrefix = 'sp.language-';
-    this._loadFromStorage();
-  }
-
-  // ====== STORAGE ======
-  _loadFromStorage() {
+    let funde;
     try {
-      const words = localStorage.getItem(this.storagePrefix + 'userWords');
-      if (words) this.userWords = new Set(JSON.parse(words));
-
-      const ignored = localStorage.getItem(this.storagePrefix + 'ignoredWords');
-      if (ignored) this.ignoredWords = new Set(JSON.parse(ignored));
-
-      const accepted = localStorage.getItem(this.storagePrefix + 'acceptedCorrections');
-      if (accepted) this.acceptedCorrections = new Map(JSON.parse(accepted));
-    } catch (e) {
-      console.warn('Language Bridge storage load failed:', e);
-    }
-  }
-
-  _saveToStorage() {
-    try {
-      localStorage.setItem(this.storagePrefix + 'userWords',
-        JSON.stringify([...this.userWords]));
-      localStorage.setItem(this.storagePrefix + 'ignoredWords',
-        JSON.stringify([...this.ignoredWords]));
-      localStorage.setItem(this.storagePrefix + 'acceptedCorrections',
-        JSON.stringify([...this.acceptedCorrections]));
-    } catch (e) {
-      console.warn('Language Bridge storage save failed:', e);
-    }
-  }
-
-  // ====== LANGUAGE ======
-  setLanguage(language) {
-    if (this.language === language) return;
-    this.language = language;
-    this.invalidate();
-  }
-
-  getLanguage() {
-    return this.language;
-  }
-
-  // ====== DOCUMENT ======
-  setDocument(text) {
-    this.documentText = text;
-    this.documentVersion++;
-    this.invalidate();
-  }
-
-  updateDocument(text, startPos = 0, endPos = null) {
-    this.documentText = text;
-    this.documentVersion++;
-
-    if (endPos === null || endPos <= startPos) {
-      endPos = Math.min(this.documentText.length, startPos + 200);
+      funde = Pruefung.findeProbleme(text) || [];
+    } catch (grund) {
+      /* Ein Prüfer, der stolpert, darf nicht den ganzen Sprachstand
+         mitreißen. Die KI kann trotzdem noch antworten. */
+      console.warn('Die Prüfung ist gestolpert:', grund);
+      return [];
     }
 
-    this.invalidate(startPos, endPos);
+    return funde.map((fund, i) => ({
+      id: 'pruefung-' + fassung + '-' + i,
+      quelle: fund.wortEbene ? 'rechtschreibung' : 'grammatik',
+      art: fund.art,                       // fehler | tipp | hinweis
+      von: fund.von,
+      bis: fund.bis,
+      text: fund.alt,
+      vorschlaege: fund.neu ? [fund.neu] : [],
+      grund: fund.grund,
+      sicherheit: fund.art === 'fehler' ? 1 : 0.6,
+      fassung,
+      laufNr,
+      stand: 'offen',
+      fund,                                // das Original, für uebernimm()
+    }));
   }
 
-  getDocumentText() {
-    return this.documentText;
-  }
-
-  getDocumentVersion() {
-    return this.documentVersion;
-  }
-
-  // ====== USER WORDS (Benutzerwörter) ======
-  addUserWord(word) {
-    if (!word || typeof word !== 'string' || word.trim() === '') return false;
-    const normalized = word.toLowerCase().trim();
-    if (this.userWords.has(normalized)) return false;
-    this.userWords.add(normalized);
-    this._saveToStorage();
-    this.invalidate();
-    return true;
-  }
-
-  removeUserWord(word) {
-    if (!word) return false;
-    const normalized = word.toLowerCase().trim();
-    const removed = this.userWords.delete(normalized);
-    if (removed) {
-      this._saveToStorage();
-      this.invalidate();
-    }
-    return removed;
-  }
-
-  isUserWord(word) {
-    if (!word) return false;
-    return this.userWords.has(word.toLowerCase().trim());
-  }
-
-  getUserWords() {
-    return [...this.userWords];
-  }
-
-  // ====== IGNORED WORDS (Ignorierte Wörter) ======
-  ignoreWord(word) {
-    if (!word || typeof word !== 'string') return false;
-    const normalized = word.toLowerCase().trim();
-    if (this.ignoredWords.has(normalized)) return false;
-    this.ignoredWords.add(normalized);
-    this._saveToStorage();
-    this.invalidate();
-    return true;
-  }
-
-  unignoreWord(word) {
-    if (!word) return false;
-    const normalized = word.toLowerCase().trim();
-    const removed = this.ignoredWords.delete(normalized);
-    if (removed) {
-      this._saveToStorage();
-      this.invalidate();
-    }
-    return removed;
-  }
-
-  isIgnoredWord(word) {
-    if (!word) return false;
-    return this.ignoredWords.has(word.toLowerCase().trim());
-  }
-
-  // ====== ISSUES (Fehler-Management) ======
-  addIssue(issue) {
-    if (!issue || !issue.id) return false;
-
-    // Eindeutigkeit: ID muss neu sein
-    if (this.issues.some(i => i.id === issue.id)) return false;
-
-    // Standardwerte für Issue
-    issue.documentVersion = issue.documentVersion ?? this.documentVersion;
-    issue.checkId = issue.checkId ?? this.checkId;
-    issue.state = issue.state ?? 'active';
-    issue.suggestions = issue.suggestions || [];
-    issue.confidence = issue.confidence ?? 1.0;
-
-    this.issues.push(issue);
-    return true;
-  }
-
-  getIssue(issueId) {
-    return this.issues.find(i => i.id === issueId) || null;
-  }
-
-  getIssues() {
-    return [...this.issues];
-  }
-
-  getActiveIssues() {
-    return this.issues.filter(i => i.state === 'active');
-  }
-
-  getIssuesByRange(startPos, endPos) {
-    return this.issues.filter(i =>
-      i.state === 'active' && i.start < endPos && i.end > startPos
-    );
-  }
-
-  // ====== ISSUE STATE TRANSITIONS ======
-  acceptIssue(issueId) {
-    const issue = this.getIssue(issueId);
-    if (!issue) return false;
-
-    issue.state = 'accepted';
-
-    // Wenn es ein Wort ist, als Benutzerwort speichern
-    if (issue.type === 'word' && issue.text) {
-      this.addUserWord(issue.text);
-    }
-
-    this._saveToStorage();
-    return true;
-  }
-
-  ignoreIssue(issueId) {
-    const issue = this.getIssue(issueId);
-    if (!issue) return false;
-
-    issue.state = 'ignored';
-
-    // Fehler-Signatur speichern
-    if (issue.type === 'word' && issue.text) {
-      this.ignoreWord(issue.text);
-    }
-
-    this._saveToStorage();
-    return true;
-  }
-
-  applyCorrection(issueId, suggestion) {
-    const issue = this.getIssue(issueId);
-    if (!issue) return false;
-    if (!suggestion || typeof suggestion !== 'string') return false;
-
-    issue.state = 'corrected';
-    this.acceptedCorrections.set(issueId, suggestion);
-    this._saveToStorage();
-    return true;
-  }
-
-  // ====== INVALIDATION (Bereich neu prüfen) ======
-  invalidate(startPos = 0, endPos = null) {
-    if (endPos === null) {
-      // Gesamtes Dokument invalidieren
-      this.invalidatedRanges = [{start: 0, end: this.documentText.length}];
-    } else {
-      // Bereich erweitern (Sicherheitsbereich für Satzgrenzen)
-      const expandBy = 200;
-      const start = Math.max(0, startPos - expandBy);
-      const end = Math.min(this.documentText.length, endPos + expandBy);
-
-      // Ranges zusammenführen
-      this.invalidatedRanges.push({start, end});
-      this._mergeRanges();
-    }
-
-    this.status = 'stale';
-    this._scheduleCheck();
-  }
-
-  _mergeRanges() {
-    if (this.invalidatedRanges.length <= 1) return;
-
-    const sorted = this.invalidatedRanges.sort((a, b) => a.start - b.start);
-    const merged = [];
-
-    for (const range of sorted) {
-      if (merged.length === 0) {
-        merged.push(range);
-      } else {
-        const last = merged[merged.length - 1];
-        if (range.start <= last.end) {
-          last.end = Math.max(last.end, range.end);
-        } else {
-          merged.push(range);
-        }
-      }
-    }
-
-    this.invalidatedRanges = merged;
-  }
-
-  // ====== DEBOUNCED CHECKING ======
-  _scheduleCheck() {
-    if (this.debounceTimer) clearTimeout(this.debounceTimer);
-    this.debounceTimer = setTimeout(() => this.check(), this.debounceDelay);
-  }
-
-  // ====== CHECK (Prüfung starten) ======
-  async check() {
-    if (this.status === 'checking') return;
-
-    this.status = 'checking';
-    this.checkId = this.nextCheckId++;
-
-    this.statusDetails = {
-      documentVersion: this.documentVersion,
-      checkId: this.checkId,
-    };
-
-    try {
-      // Alte Fehler entfernen, die nicht mehr aktuell sind
-      this._purgeStaleIssues();
-
-      // Bereichsprüfung oder Vollprüfung
-      if (this.invalidatedRanges.length > 0) {
-        await this._checkRanges();
-      } else {
-        await this._checkAll();
-      }
-
-      this.status = 'ready';
-      this.invalidatedRanges = [];
-    } catch (error) {
-      this.status = 'error';
-      this.statusDetails.error = error.message;
-      console.error('Language Bridge check failed:', error);
-    }
-  }
-
-  async _checkRanges() {
-    for (const range of this.invalidatedRanges) {
-      // Alte Fehler in diesem Bereich entfernen
-      this.issues = this.issues.filter(i =>
-        i.state !== 'active' || i.end <= range.start || i.start >= range.end
-      );
-
-      // Neue Prüfungen
-      const text = this.documentText.substring(range.start, range.end);
-
-      const spellingIssues = await this.spellingEngine.check(text, range.start);
-      const grammarIssues = await this.grammarEngine.check(text, range.start);
-
-      this.issues.push(...spellingIssues, ...grammarIssues);
-    }
-
-    // Asynchrone KI-Prüfung im Hintergrund (nicht auf sie warten)
-    this._checkWithAI();
-  }
-
-  async _checkAll() {
-    // Fehler zurücksetzen
-    this.issues = this.issues.filter(i => i.state !== 'active');
-
-    // Alle Prüfer parallel
-    const spellingIssues = await this.spellingEngine.check(this.documentText, 0);
-    const grammarIssues = await this.grammarEngine.check(this.documentText, 0);
-
-    this.issues.push(...spellingIssues, ...grammarIssues);
-
-    // Asynchrone KI-Prüfung im Hintergrund
-    this._checkWithAI();
-  }
-
-  async _checkWithAI() {
-    // KI läuft async, nicht blockierend
-    this.aiEngine.check(this.documentText, 0)
-      .then(issues => {
-        // Nur übernehmen, wenn noch aktuell
-        if (this.documentVersion === this.statusDetails.documentVersion &&
-            this.checkId === this.statusDetails.checkId) {
-          this.issues.push(...issues);
-        }
-      })
-      .catch(error => {
-        console.warn('AI check failed (non-blocking):', error);
-      });
-  }
-
-  _purgeStaleIssues() {
-    const maxAge = 5; // Versionen
-    this.issues = this.issues.filter(i => {
-      if (i.state === 'active') {
-        return i.documentVersion >= this.documentVersion - maxAge;
-      }
-      return true;
-    });
-  }
-
-  // ====== STATUS ======
-  getStatus() {
-    return {
-      status: this.status,
-      documentVersion: this.documentVersion,
-      checkId: this.checkId,
-      activeIssueCount: this.getActiveIssues().length,
-      userWordCount: this.userWords.size,
-      error: this.statusDetails.error || null,
-    };
-  }
-
-  // ====== CONTEXT (für Engines) ======
-  getContext() {
-    return {
-      language: this.language,
-      documentVersion: this.documentVersion,
-      documentText: this.documentText,
-      checkId: this.checkId,
-      userWords: this.userWords,
-      ignoredWords: this.ignoredWords,
-      rulesData: this.rulesData,
-    };
-  }
-}
-
-// ============================================================
-// SPELLING ENGINE
-// ============================================================
-
-class SpellingEngine {
-  constructor(bridge) {
-    this.bridge = bridge;
-  }
-
-  async check(text, offset = 0) {
-    const issues = [];
-    const context = this.bridge.getContext();
-
-    // Wörter splitten (einfache Tokenisierung)
-    const words = text.match(/\b\w+\b/g) || [];
-    let pos = 0;
-
-    for (const word of words) {
-      const wordPos = text.indexOf(word, pos);
-      if (wordPos === -1) continue;
-
-      const documentPos = offset + wordPos;
-
-      // Prüfen gegen Wörterbuch und Benutzerwörter
-      const issue = this._checkWord(word, documentPos, context);
-      if (issue) issues.push(issue);
-
-      pos = wordPos + word.length;
-    }
-
-    // Gegen Wörterbuch-Duplikate prüfen (wieder/wider, etc.)
-    const dictIssues = this._checkDictionary(text, offset, context);
-    issues.push(...dictIssues);
-
-    return issues;
-  }
-
-  _checkWord(word, pos, context) {
-    const lower = word.toLowerCase();
-
-    // Ignoriert?
-    if (context.ignoredWords.has(lower)) return null;
-
-    // Benutzerwort?
-    if (context.userWords.has(lower)) return null;
-
-    // Großbuchstaben-Ignoranz (Akronyme, Eigennamen)
-    if (word.match(/^[A-ZÄÖÜ]/)) return null;
-
-    // Hier würde in einer echten Implementierung eine echte
-    // Rechtschreibprüfung stattfinden (gegen ein Wörterbuch).
-    // Für MVP: ignorieren.
-
-    return null;
-  }
-
-  _checkDictionary(text, offset, context) {
-    const issues = [];
-    const dict = context.rulesData.WOERTERBUCH || {};
-
-    for (const [wrong, correct] of Object.entries(dict)) {
-      const regex = new RegExp('\\b' + wrong + '\\b', 'gi');
-      let match;
-
-      while ((match = regex.exec(text)) !== null) {
-        const start = offset + match.index;
-        const end = start + match[0].length;
-
-        // Nicht ignoriert, nicht akzeptiert?
-        if (context.ignoredWords.has(wrong.toLowerCase())) continue;
-
-        issues.push({
-          id: `spelling-${start}-${end}`,
-          source: 'spelling',
-          type: 'word',
-          start,
-          end,
-          text: match[0],
-          suggestions: [correct],
-          confidence: 1.0,
-          documentVersion: context.documentVersion,
-          checkId: context.checkId,
-          state: 'active',
-        });
-      }
-    }
-
-    return issues;
-  }
-}
-
-// ============================================================
-// GRAMMAR ENGINE
-// ============================================================
-
-class GrammarEngine {
-  constructor(bridge) {
-    this.bridge = bridge;
-  }
-
-  async check(text, offset = 0) {
-    const issues = [];
-    const context = this.bridge.getContext();
-
-    // Beispiel: dass/das Unterscheidung
-    const dassDasIssues = this._checkDassDas(text, offset, context);
-    issues.push(...dassDasIssues);
-
-    // Weitere Grammatik-Prüfungen können hier hinzu
-
-    return issues;
-  }
-
-  _checkDassDas(text, offset, context) {
-    const issues = [];
-    const rules = context.rulesData;
-
-    if (!rules.DENK_ZEITWOERTER) return issues;
-
-    // Regex: "VERB [Words]* dass"
-    const verbs = rules.DENK_ZEITWOERTER.join('|');
-    const regex = new RegExp(
-      `\\b(${verbs})\\b[^.!?]*?\\b(das)\\b`,
-      'gi'
-    );
-
-    let match;
-    while ((match = regex.exec(text)) !== null) {
-      const dasPos = match.index + match[0].lastIndexOf('das');
-      const start = offset + dasPos;
-      const end = start + 3;
-
-      // Könnte "dass" sein?
-      issues.push({
-        id: `grammar-das-dass-${start}`,
-        source: 'grammar',
-        type: 'dass-das',
-        start,
-        end,
-        text: 'das',
-        suggestions: ['dass'],
-        confidence: 0.7,
-        documentVersion: context.documentVersion,
-        checkId: context.checkId,
-        state: 'active',
-      });
-    }
-
-    return issues;
-  }
-}
-
-// ============================================================
-// AI ENGINE (Stub für später)
-// ============================================================
-
-class AIEngine {
-  constructor(bridge) {
-    this.bridge = bridge;
-  }
-
-  async check(text, offset = 0) {
-    // Stub: Wird später mit echter KI-Implementierung gefüllt
+  /* Die KI. Sie ist das einzige, was es noch nicht gibt — und das einzige,
+     wofür die Brücke wirklich gebraucht wird: Ihre Antwort kommt später,
+     und bis dahin kann der Text ein anderer sein. */
+  async function kiEngineLauf() {
     return [];
   }
-}
 
-// ============================================================
-// EXPORT
-// ============================================================
+  return class SprachBrueckeKlasse {
+    constructor() {
+      this.sprache = 'de-DE';
+      this.text = '';
+      this.fassung = 0;               // steigt bei jeder Textänderung
+      this.laufNr = 0;                // welcher Prüflauf gerade zählt
+      this.naechsterLauf = 1;
 
+      this.fehler = [];
+      this.weggewinkt = new Set();    // Fehlerkennungen, die nicht mehr kommen sollen
+      this.stand = 'ruht';            // ruht | fertig | veraltet
+    }
+
+    /* ---- Sprache ---- */
+
+    spracheSetzen(sprache) {
+      if (this.sprache === sprache) return;
+      this.sprache = sprache;
+      this.veralten();
+    }
+
+    /* ---- Der Text ---- */
+
+    textSetzen(text) {
+      if (this.text === text) return;
+      this.text = text;
+      this.fassung++;
+      this.veralten();
+    }
+
+    /* Der Text hat sich geändert: Was geprüft war, gilt nicht mehr.
+
+       Verschoben wird hier nichts. Steht vor einem Fehler ein neues Wort,
+       rutschen seine Stellen — und ein Fehler an der falschen Stelle ist
+       schlimmer als keiner.
+
+       Von selbst geprüft wird deshalb aber nicht. Das Programm prüft, wenn
+       jemand „Prüfen" drückt, und dabei bleibt es: Eine Prüfung, die bei
+       jeder Tippause im Hintergrund mitläuft, kostet bei neunhundert
+       Wörtern spürbar Zeit und niemand hat sie bestellt. */
+    veralten() {
+      this.stand = 'veraltet';
+    }
+
+    /* ---- Wörter: gefragt wird das Gedächtnis, nicht die Brücke ---- */
+
+    kenntWort(wort) {
+      if (typeof Pruefung === 'undefined' || !wort) return false;
+      return !!(Pruefung.Gelernt.wort(wort) || Pruefung.Gelernt.inRuhe(wort));
+    }
+
+    /* ---- Fehler ---- */
+
+    offeneFehler() {
+      return this.fehler.filter((f) => f.stand === 'offen');
+    }
+
+    fehlerBei(von, bis) {
+      return this.offeneFehler().filter((f) => f.von < bis && f.bis > von);
+    }
+
+    /* Eine Kennung, die den Fehler überlebt, auch wenn er beim nächsten
+       Lauf an anderer Stelle steht: Quelle, Wort, Vorschlag. Die Stelle
+       gehört nicht hinein — sonst käme dasselbe weggewinkte Wort im
+       nächsten Absatz wieder. */
+    static kennung(fehler) {
+      return [fehler.quelle, fehler.text, fehler.vorschlaege[0] || ''].join('|');
+    }
+
+    wegwinken(id) {
+      return this.wegwinkenFehler(this.fehler.find((f) => f.id === id));
+    }
+
+    /* „Übergehen" im Rechtsmenü reicht den Fund selbst herein. Nur ihn aus
+       der Liste zu nehmen genügt nicht: Beim nächsten Prüfen stünde er
+       wieder da, und man übergeht dasselbe zum dritten Mal.
+
+       Gemerkt wird für dieses Fenster, nicht für immer — dafür gibt es
+       „Wort in Ruhe lassen", und das schreibt ins Gedächtnis. */
+    wegwinkenFund(fund) {
+      return this.wegwinkenFehler(this.fehler.find((f) => f.fund === fund));
+    }
+
+    wegwinkenFehler(fehler) {
+      if (!fehler) return false;
+      fehler.stand = 'weggewinkt';
+      this.weggewinkt.add(SprachBrueckeKlasse.kennung(fehler));
+      return true;
+    }
+
+    erledigt(id) {
+      const fehler = this.fehler.find((f) => f.id === id);
+      if (!fehler) return false;
+      fehler.stand = 'erledigt';
+      return true;
+    }
+
+    /* ---- Prüfen ---- */
+
+    /* Prüft den übergebenen Text und gibt die Funde zurück — in der Form,
+       die das Programm schon kennt. Der Prüfer arbeitet sofort; nur die KI
+       antwortet später und läuft deshalb nebenher weiter. */
+    pruefen(text) {
+      if (typeof text === 'string') this.textSetzen(text);
+
+      const fassung = this.fassung;
+      const laufNr = this.naechsterLauf++;
+      this.laufNr = laufNr;
+
+      const gefunden = pruefEngineLauf(this.text, fassung, laufNr);
+
+      this.fehler = gefunden.filter(
+        (f) => !this.weggewinkt.has(SprachBrueckeKlasse.kennung(f)));
+      this.stand = 'fertig';
+
+      this.kiFragen(fassung, laufNr);
+      /* Nur was aus pruefung.js kam, trägt einen Original-Fund. Was die KI
+         später beisteuert, hat keinen — es kommt über offeneFehler(). */
+      return this.offeneFehler().map((f) => f.fund).filter(Boolean);
+    }
+
+    async kiFragen(fassung, laufNr) {
+      let gefunden;
+      try {
+        gefunden = await kiEngineLauf(this.text, fassung, laufNr);
+      } catch (grund) {
+        console.warn('Die KI hat nicht geantwortet:', grund);
+        return;
+      }
+      /* Beide Fragen müssen ja lauten: Ist es noch derselbe Text, und ist
+         es noch derselbe Lauf? Sonst käme die Antwort von vorhin über den
+         Text von jetzt. */
+      if (this.fassung !== fassung || this.laufNr !== laufNr) return;
+
+      for (const fehler of gefunden) {
+        if (this.weggewinkt.has(SprachBrueckeKlasse.kennung(fehler))) continue;
+        if (this.kenntWort(fehler.text)) continue;
+        /* Was der Prüfer schon gemeldet hat, wird nicht zweimal
+           angestrichen — die Vorschläge kommen zusammen. */
+        const schon = this.fehler.find(
+          (f) => f.von === fehler.von && f.bis === fehler.bis);
+        if (schon) {
+          for (const v of fehler.vorschlaege) {
+            if (!schon.vorschlaege.includes(v)) schon.vorschlaege.push(v);
+          }
+          continue;
+        }
+        this.fehler.push(fehler);
+      }
+    }
+
+    /* ---- Auskunft ---- */
+
+    auskunft() {
+      return {
+        stand: this.stand,
+        sprache: this.sprache,
+        fassung: this.fassung,
+        laufNr: this.laufNr,
+        offen: this.offeneFehler().length,
+        weggewinkt: this.weggewinkt.size,
+      };
+    }
+  };
+})();
+
+/* Für die Prüfläufe außerhalb des Fensters (language-bridge.test.js). */
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { LanguageBridge, SpellingEngine, GrammarEngine, AIEngine };
+  module.exports = { SprachBruecke };
 }

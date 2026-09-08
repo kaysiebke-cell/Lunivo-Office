@@ -26,14 +26,11 @@ const Speicher = {
   },
 };
 
-/* ====== Language Bridge (zentrale Sprachprüfung) ====== */
-let LanguageBridgeInstance = null;
-function initLanguageBridge() {
-  if (typeof LanguageBridge !== 'undefined') {
-    LanguageBridgeInstance = new LanguageBridge(REGELDATEN);
-    console.log('✓ Language Bridge initialized');
-  }
-}
+/* Die Sprachbrücke hält den Fehlerstand: welche Fassung geprüft wurde,
+   was weggewinkt ist, und ob eine späte Antwort der KI noch zum Text von
+   jetzt gehört. Geprüft wird weiter in pruefung.js. Steht sie einmal
+   nicht zur Verfügung, prüft das Programm wie vorher direkt. */
+const Bruecke = typeof SprachBruecke !== 'undefined' ? new SprachBruecke() : null;
 
 /* ============================================================
    1. Zustand
@@ -7957,6 +7954,9 @@ function rechtsMenueZeigen(e) {
     }
 
     eintrag('Übergehen', () => {
+      /* Auch der Brücke sagen — sonst steht der Fund beim nächsten Prüfen
+         wieder da, und man übergeht ihn zum dritten Mal. */
+      if (Bruecke) Bruecke.wegwinkenFund(fund);
       funde = funde.filter((f) => f !== fund);
       zeichneFunde();
       markiereFunde();
@@ -7996,7 +7996,7 @@ function pruefen() {
   const text = Dokument.lies().text;
   KIteil.vorschlaegeLeeren();
   markenEntfernen();
-  funde = Pruefung.findeProbleme(Dokument.lies().text);
+  funde = Bruecke ? Bruecke.pruefen(text) : Pruefung.findeProbleme(text);
   zeichneFunde();
   markiereFunde();
   meldeFunde(text.length);
@@ -8086,11 +8086,9 @@ function geaendertMelden() {
   if (!geaendert) { geaendert = true; titelSetzen(); }
   zahlenAuffrischen();
   merkeText();
-
-  // Language Bridge: Dokumentänderung melden
-  if (LanguageBridgeInstance) {
-    LanguageBridgeInstance.updateDocument(feld.innerText);
-  }
+  /* Der Brücke sagen, dass das Geprüfte nicht mehr zum Text passt. Sie
+     prüft davon nicht von selbst neu — sie weiß es nur. */
+  if (Bruecke) Bruecke.textSetzen(Dokument.lies().text);
 }
 
 /* Die Rückfrage, bevor ungesicherte Arbeit weggeht.
@@ -8328,6 +8326,8 @@ Einstellungen.verbinde({
   pruefspracheSetzen: (kennung) => {
     Speicher.schreib('pruefsprache', kennung);
     feld.lang = kennung;
+    /* Eine andere Sprache heißt: Das Geprüfte gilt nicht mehr. */
+    if (Bruecke) Bruecke.spracheSetzen(kennung);
     feld.blur(); feld.focus();
   },
 });
@@ -8395,12 +8395,7 @@ titelSetzen();
 zahlenAuffrischen();
 werkzeugeAuffrischen();
 
-/* Language Bridge initialisieren (nach Dokument geladen) */
-initLanguageBridge();
-if (LanguageBridgeInstance) {
-  LanguageBridgeInstance.setDocument(feld.innerText);
-  console.log('✓ Language Bridge document loaded');
-}
+if (Bruecke) Bruecke.textSetzen(Dokument.lies().text);
 
 /* Ganz zuletzt: Beide brauchen SYMBOLE und symbol(), und die stehen weiter
    unten in der Datei. Weiter oben aufgerufen liefe das Register ins Leere. */

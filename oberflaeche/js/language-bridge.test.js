@@ -1,279 +1,187 @@
-// ============================================================
-// LANGUAGE BRIDGE - TESTS
-// ============================================================
-//
-// Tests zur Language Bridge — lokal lauffähig, keine App nötig.
-// Mit Node.js ausführbar: node language-bridge.test.js
-//
-// ============================================================
+/* ============================================================
+   Prüfläufe für die Sprachbrücke.
 
+   Laufen ohne das Fenster:  node oberflaeche/js/language-bridge.test.js
+
+   Geprüft wird, was die Brücke selbst tut — den Zustand. Was sie an
+   pruefung.js weiterreicht, wird hier durch einen gestellten Prüfer
+   ersetzt: Der echte braucht REGELDATEN und ein Wörterbuch von viereinhalb
+   Megabyte, und darum geht es hier nicht.
+   ============================================================ */
 'use strict';
 
-// Mock für localStorage (bei Node)
-if (typeof localStorage === 'undefined') {
-  global.localStorage = {
-    data: {},
-    getItem(key) { return this.data[key] || null; },
-    setItem(key, value) { this.data[key] = value; },
-    removeItem(key) { delete this.data[key]; },
-    clear() { this.data = {}; },
-  };
-}
+let bestanden = 0;
+const stimmt = (bedingung, was) => {
+  if (!bedingung) { console.error('  FEHLT: ' + was); process.exitCode = 1; return; }
+  bestanden++;
+  console.log('  ok   ' + was);
+};
+const gleich = (ist, soll, was) =>
+  stimmt(ist === soll, was + (ist === soll ? '' : '  (ist ' + ist + ', soll ' + soll + ')'));
 
-// Klassen laden (bei Node.js)
-if (typeof require !== 'undefined' && typeof LanguageBridge === 'undefined') {
-  try {
-    const bridge = require('./language-bridge.js');
-    Object.assign(globalThis, bridge);
-  } catch (e) {
-    console.warn('Require failed, assuming browser context');
-  }
-}
-
-// Test-Assertions
-const assert = (condition, message) => {
-  if (!condition) {
-    throw new Error(`FAIL: ${message}`);
-  }
-  console.log(`✓ ${message}`);
+/* Ein gestellter Prüfer. Er meldet, was ihm vorgelegt wird. */
+let naechsteFunde = [];
+global.Pruefung = {
+  findeProbleme: () => naechsteFunde,
+  Gelernt: {
+    daten: { woerter: {}, inRuhe: {} },
+    wort:   (w) => global.Pruefung.Gelernt.daten.woerter[String(w).toLowerCase()] || null,
+    inRuhe: (w) => !!global.Pruefung.Gelernt.daten.inRuhe[String(w).toLowerCase()],
+  },
 };
 
-const assertEqual = (actual, expected, message) => {
-  if (actual !== expected) {
-    throw new Error(`FAIL: ${message} (got ${actual}, expected ${expected})`);
-  }
-  console.log(`✓ ${message}`);
-};
+const fund = (von, bis, alt, neu, wortEbene = true, art = 'fehler') =>
+  ({ von, bis, alt, neu, grund: 'weil', art, wortEbene });
 
-// ============================================================
-// TEST SUITE
-// ============================================================
+const { SprachBruecke } = require('./language-bridge.js');
 
-async function runTests() {
-  console.log('\n🧪 Language Bridge Tests\n');
+console.log('\nSprachbrücke\n');
 
-  // Test-Daten
-  const testRules = {
-    WOERTERBUCH: {
-      'wiederspiegeln': 'widerspiegeln',
-      'garnicht': 'gar nicht',
-    },
-    DENK_ZEITWOERTER: [
-      'glaube', 'glaubst', 'glaubt', 'denke', 'denkst', 'denkt'
-    ],
-  };
-
-  // ---- Test 1: Initialization ----
-  console.log('Test 1: Initialization');
-  const bridge = new LanguageBridge(testRules);
-  assert(bridge.language === 'de-DE', 'Default language is de-DE');
-  assert(bridge.documentVersion === 0, 'Initial document version is 0');
-  assert(bridge.status === 'idle', 'Initial status is idle');
-  assert(bridge.getActiveIssues().length === 0, 'No issues initially');
-
-  // ---- Test 2: Document Management ----
-  console.log('\nTest 2: Document Management');
-  bridge.setDocument('Das ist ein Test.');
-  assertEqual(bridge.getDocumentVersion(), 1, 'Document version incremented');
-  assertEqual(bridge.getDocumentText(), 'Das ist ein Test.', 'Document text set');
-
-  bridge.updateDocument('Das ist ein neuer Test.', 10, 13);
-  assertEqual(bridge.getDocumentVersion(), 2, 'Version incremented on update');
-  assert(bridge.invalidatedRanges.length > 0, 'Range invalidated on update');
-
-  // ---- Test 3: Language ----
-  console.log('\nTest 3: Language Management');
-  bridge.setLanguage('en-US');
-  assertEqual(bridge.getLanguage(), 'en-US', 'Language changed');
-
-  bridge.setLanguage('de-DE');
-  assertEqual(bridge.getLanguage(), 'de-DE', 'Language changed back');
-
-  // ---- Test 4: User Words ----
-  console.log('\nTest 4: User Words');
-  const added = bridge.addUserWord('Lunivo');
-  assert(added, 'User word added');
-  assert(bridge.isUserWord('lunivo'), 'User word recognized (case-insensitive)');
-
-  const notAdded = bridge.addUserWord('Lunivo');
-  assert(!notAdded, 'Duplicate word not added');
-
-  assertEqual(bridge.getUserWords().length, 1, 'One user word stored');
-
-  const removed = bridge.removeUserWord('Lunivo');
-  assert(removed, 'User word removed');
-  assert(!bridge.isUserWord('Lunivo'), 'User word no longer recognized');
-
-  // ---- Test 5: Ignored Words ----
-  console.log('\nTest 5: Ignored Words');
-  const ignored = bridge.ignoreWord('xyz');
-  assert(ignored, 'Word ignored');
-  assert(bridge.isIgnoredWord('xyz'), 'Ignored word recognized');
-
-  const unignored = bridge.unignoreWord('xyz');
-  assert(unignored, 'Ignored word removed');
-
-  // ---- Test 6: Issue Management ----
-  console.log('\nTest 6: Issue Management');
-  const issue = {
-    id: 'test-issue-1',
-    source: 'spelling',
-    type: 'word',
-    start: 10,
-    end: 15,
-    text: 'wiederspiegeln',
-    suggestions: ['widerspiegeln'],
-    confidence: 1.0,
-  };
-
-  const issueAdded = bridge.addIssue(issue);
-  assert(issueAdded, 'Issue added');
-  assertEqual(bridge.getIssues().length, 1, 'Issue in list');
-
-  const retrieved = bridge.getIssue('test-issue-1');
-  assert(retrieved !== null, 'Issue retrieved by ID');
-  assertEqual(retrieved.state, 'active', 'Issue state is active');
-
-  // ---- Test 7: Issue State Transitions ----
-  console.log('\nTest 7: Issue State Transitions');
-
-  // Accept
-  const accepted = bridge.acceptIssue('test-issue-1');
-  assert(accepted, 'Issue accepted');
-  const afterAccept = bridge.getIssue('test-issue-1');
-  assertEqual(afterAccept.state, 'accepted', 'Issue state changed to accepted');
-  assert(bridge.isUserWord('wiederspiegeln'), 'Word added to user words on accept');
-
-  // Create new issue for ignore test
-  const issue2 = {
-    id: 'test-issue-2',
-    source: 'spelling',
-    type: 'word',
-    start: 20,
-    end: 28,
-    text: 'garnicht',
-    suggestions: ['gar nicht'],
-  };
-  bridge.addIssue(issue2);
-
-  const ignored2 = bridge.ignoreIssue('test-issue-2');
-  assert(ignored2, 'Issue ignored');
-  const afterIgnore = bridge.getIssue('test-issue-2');
-  assertEqual(afterIgnore.state, 'ignored', 'Issue state changed to ignored');
-
-  // Create new issue for correction test
-  const issue3 = {
-    id: 'test-issue-3',
-    source: 'spelling',
-    type: 'word',
-    start: 30,
-    end: 35,
-    text: 'falsh',
-    suggestions: ['falsch'],
-  };
-  bridge.addIssue(issue3);
-
-  const corrected = bridge.applyCorrection('test-issue-3', 'falsch');
-  assert(corrected, 'Correction applied');
-  const afterCorrect = bridge.getIssue('test-issue-3');
-  assertEqual(afterCorrect.state, 'corrected', 'Issue state changed to corrected');
-
-  // ---- Test 8: Filtering Issues ----
-  console.log('\nTest 8: Filtering Issues');
-  const activeIssues = bridge.getActiveIssues();
-  assert(activeIssues.length <= bridge.getIssues().length,
-    'Active issues subset of all issues');
-
-  // Neue aktive Issue für Range-Test
-  const rangeTestIssue = {
-    id: 'range-test-1',
-    source: 'spelling',
-    type: 'word',
-    start: 10,
-    end: 20,
-    text: 'test',
-    state: 'active',
-  };
-  bridge.addIssue(rangeTestIssue);
-
-  const rangeIssues = bridge.getIssuesByRange(5, 25);
-  assert(rangeIssues.length > 0, 'Range filtering finds issues in range');
-
-  // ---- Test 9: Status ----
-  console.log('\nTest 9: Status');
-  const status = bridge.getStatus();
-  assert(status.status !== undefined, 'Status object has status field');
-  assert(status.documentVersion !== undefined, 'Status has version');
-  assert(status.activeIssueCount !== undefined, 'Status has issue count');
-
-  // ---- Test 10: Context for Engines ----
-  console.log('\nTest 10: Context for Engines');
-  const context = bridge.getContext();
-  assert(context.language !== undefined, 'Context has language');
-  assert(context.documentText !== undefined, 'Context has text');
-  assert(context.userWords !== undefined, 'Context has user words');
-  assert(context.rulesData !== undefined, 'Context has rules data');
-
-  // ---- Test 11: Storage Persistence ----
-  console.log('\nTest 11: Storage Persistence');
-  const bridge2 = new LanguageBridge(testRules);
-
-  // bridge2 sollte die Daten von bridge1 laden (da localStorage persistent ist)
-  const loadedWords = bridge2.getUserWords();
-  assert(loadedWords.length > 0, 'User words persisted to localStorage');
-
-  // ---- Test 12: Invalidation ----
-  console.log('\nTest 12: Invalidation');
-  bridge.invalidatedRanges = [];
-  bridge.invalidate(0, 50);
-  assert(bridge.invalidatedRanges.length > 0, 'Range invalidated');
-  assert(bridge.status === 'stale', 'Status changed to stale');
-
-  // ---- Test 13: Spelling Engine ----
-  console.log('\nTest 13: Spelling Engine');
-  const engine = new SpellingEngine(bridge);
-  bridge.setDocument('Das ist wiederspiegeln falsch.');
-  const spellingIssues = await engine.check(bridge.documentText, 0);
-  assert(Array.isArray(spellingIssues), 'Spelling engine returns array');
-  // Spellcheck sollte 'wiederspiegeln' finden
-  const foundWrong = spellingIssues.some(i =>
-    i.text === 'wiederspiegeln' && i.suggestions.includes('widerspiegeln')
-  );
-  assert(foundWrong || spellingIssues.length === 0,
-    'Spelling engine checks dictionary');
-
-  // ---- Test 14: Grammar Engine ----
-  console.log('\nTest 14: Grammar Engine');
-  const grammarEngine = new GrammarEngine(bridge);
-  bridge.setDocument('Ich glaube das es richtig ist.');
-  const grammarIssues = await grammarEngine.check(bridge.documentText, 0);
-  assert(Array.isArray(grammarIssues), 'Grammar engine returns array');
-
-  // ---- Test 15: API Surface ----
-  console.log('\nTest 15: Full API Surface');
-  const apiMethods = [
-    'setDocument', 'updateDocument', 'getDocumentText', 'getDocumentVersion',
-    'setLanguage', 'getLanguage',
-    'addUserWord', 'removeUserWord', 'isUserWord', 'getUserWords',
-    'ignoreWord', 'unignoreWord', 'isIgnoredWord',
-    'addIssue', 'getIssue', 'getIssues', 'getActiveIssues', 'getIssuesByRange',
-    'acceptIssue', 'ignoreIssue', 'applyCorrection',
-    'invalidate', 'check',
-    'getStatus', 'getContext',
-  ];
-
-  for (const method of apiMethods) {
-    assert(typeof bridge[method] === 'function', `API method: ${method}`);
-  }
-
-  console.log('\n✨ All tests passed!\n');
+/* ---- Der Anfang ---- */
+console.log('Der Anfang');
+{
+  const b = new SprachBruecke();
+  gleich(b.sprache, 'de-DE', 'spricht zunächst Deutsch');
+  gleich(b.fassung, 0, 'Fassung null');
+  gleich(b.stand, 'ruht', 'ruht');
+  gleich(b.offeneFehler().length, 0, 'kennt noch keinen Fehler');
 }
 
-// ============================================================
-// RUN
-// ============================================================
+/* ---- Der Text ---- */
+console.log('\nDer Text');
+{
+  const b = new SprachBruecke();
+  b.textSetzen('Ein Satz.');
+  gleich(b.fassung, 1, 'neuer Text, neue Fassung');
+  gleich(b.stand, 'veraltet', 'Geprüftes gilt nicht mehr');
 
-runTests().catch(error => {
-  console.error('\n❌ Test failed:', error.message);
-  process.exit(1);
-});
+  b.textSetzen('Ein Satz.');
+  gleich(b.fassung, 1, 'derselbe Text zählt nicht als Änderung');
+
+  b.textSetzen('Ein anderer Satz.');
+  gleich(b.fassung, 2, 'anderer Text, nächste Fassung');
+}
+
+/* ---- Prüfen ---- */
+console.log('\nPrüfen');
+{
+  const b = new SprachBruecke();
+  naechsteFunde = [fund(0, 5, 'weiss', 'weiß')];
+  const funde = b.pruefen('weiss der Himmel');
+
+  gleich(funde.length, 1, 'gibt den Fund zurück');
+  gleich(funde[0].alt, 'weiss', 'und zwar unverändert, wie das Programm ihn kennt');
+  gleich(b.stand, 'fertig', 'danach: fertig');
+  gleich(b.offeneFehler().length, 1, 'ein offener Fehler');
+  gleich(b.offeneFehler()[0].quelle, 'rechtschreibung',
+         'ein Wortfund zählt als Rechtschreibung');
+  gleich(b.offeneFehler()[0].vorschlaege[0], 'weiß', 'mit Vorschlag');
+}
+
+{
+  const b = new SprachBruecke();
+  naechsteFunde = [fund(3, 6, 'das', 'dass', false, 'tipp')];
+  b.pruefen('Ich das er kommt');
+  gleich(b.offeneFehler()[0].quelle, 'grammatik',
+         'was kein Wortfund ist, zählt als Grammatik');
+}
+
+/* ---- Übergehen ---- */
+console.log('\nÜbergehen');
+{
+  const b = new SprachBruecke();
+  const einer = fund(0, 5, 'weiss', 'weiß');
+  naechsteFunde = [einer];
+
+  b.pruefen('weiss der Himmel');
+  gleich(b.offeneFehler().length, 1, 'erst da');
+
+  stimmt(b.wegwinkenFund(einer), 'übergangen');
+  gleich(b.offeneFehler().length, 0, 'dann weg');
+
+  /* Und beim nächsten Mal nicht wieder — das ist der Punkt. */
+  naechsteFunde = [fund(0, 5, 'weiss', 'weiß')];
+  const nochmal = b.pruefen('weiss der Himmel');
+  gleich(nochmal.length, 0, 'kommt beim nächsten Prüfen nicht wieder');
+}
+
+{
+  const b = new SprachBruecke();
+  const einer = fund(0, 5, 'weiss', 'weiß');
+  naechsteFunde = [einer];
+  b.pruefen('weiss der Himmel');
+  b.wegwinkenFund(einer);
+
+  /* Ein anderes Wort ist ein anderer Fall. */
+  naechsteFunde = [fund(0, 5, 'gross', 'groß')];
+  gleich(b.pruefen('gross').length, 1, 'ein anderes Wort kommt weiter');
+}
+
+/* ---- Fehler an einer Stelle ---- */
+console.log('\nFehler an einer Stelle');
+{
+  const b = new SprachBruecke();
+  naechsteFunde = [fund(0, 5, 'weiss', 'weiß')];
+  b.pruefen('weiss der Himmel');
+
+  gleich(b.fehlerBei(0, 20).length, 1, 'wird gefunden, wo er liegt');
+  gleich(b.fehlerBei(30, 40).length, 0, 'und nicht, wo er nicht liegt');
+  gleich(b.fehlerBei(3, 8).length, 1, 'auch bei teilweiser Überschneidung');
+}
+
+/* ---- Wörter: gefragt wird das Gedächtnis ---- */
+console.log('\nWörter');
+{
+  const b = new SprachBruecke();
+  stimmt(!b.kenntWort('Lunivo'), 'ein fremdes Wort kennt sie nicht');
+
+  global.Pruefung.Gelernt.daten.inRuhe['lunivo'] = true;
+  stimmt(b.kenntWort('Lunivo'), 'was in Ruhe bleiben soll, kennt sie');
+  stimmt(b.kenntWort('lunivo'), 'groß oder klein ist dabei gleich');
+  global.Pruefung.Gelernt.daten.inRuhe = {};
+}
+
+/* ---- Späte Antworten ---- */
+console.log('\nSpäte Antworten');
+{
+  const b = new SprachBruecke();
+  naechsteFunde = [];
+  b.pruefen('Ein Satz.');
+  const alteFassung = b.fassung;
+  const alterLauf = b.laufNr;
+
+  b.textSetzen('Ein ganz anderer Satz.');       // dazwischen wurde getippt
+
+  b.kiFragen(alteFassung, alterLauf);
+  gleich(b.offeneFehler().length, 0,
+         'eine Antwort zu einer alten Fassung wird verworfen');
+}
+
+/* ---- Ein stolpernder Prüfer ---- */
+console.log('\nEin stolpernder Prüfer');
+{
+  const b = new SprachBruecke();
+  const heil = global.Pruefung.findeProbleme;
+  global.Pruefung.findeProbleme = () => { throw new Error('kaputt'); };
+
+  const funde = b.pruefen('Ein Satz.');
+  gleich(funde.length, 0, 'reißt den Sprachstand nicht mit');
+  gleich(b.stand, 'fertig', 'das Programm läuft weiter');
+
+  global.Pruefung.findeProbleme = heil;
+}
+
+/* ---- Die Auskunft ---- */
+console.log('\nDie Auskunft');
+{
+  const b = new SprachBruecke();
+  naechsteFunde = [fund(0, 5, 'weiss', 'weiß')];
+  b.pruefen('weiss der Himmel');
+  const a = b.auskunft();
+  gleich(a.stand, 'fertig', 'sagt den Stand');
+  gleich(a.offen, 1, 'sagt, wie viele offen sind');
+  gleich(a.fassung, 1, 'sagt die Fassung');
+}
+
+console.log('\n' + bestanden + ' Prüfungen bestanden'
+            + (process.exitCode ? ' — aber nicht alle.' : '.') + '\n');
