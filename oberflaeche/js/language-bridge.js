@@ -131,6 +131,10 @@ const SprachBruecke = (() => {
 
       this.fehler = [];
       this.weggewinkt = new Set();    // Fehlerkennungen, die nicht mehr kommen sollen
+      /* Angenommene Fehler bekommen eine eigene Liste, wie in der
+         C++-Vorlage (acceptedIssueKeys). Ohne sie käme ein angenommener
+         Vorschlag beim nächsten Lauf wieder als offener Fehler. */
+      this.angenommen = new Set();
       /* §31: ruht · veraltet · prueft · fertig · fehler */
       this.stand = 'ruht';
       this.geaendert = null;          // wo sich seit der letzten Prüfung etwas tat
@@ -294,6 +298,7 @@ const SprachBruecke = (() => {
       const fehler = this.fehler.find((f) => f.id === id);
       if (!fehler) return false;
       fehler.stand = 'angenommen';
+      this.angenommen.add(SprachBrueckeKlasse.kennung(fehler));
       if (fehler.fund && fehler.fund.wortEbene && fehler.vorschlaege[0]) {
         this.benutzerwortHinzufuegen(fehler.vorschlaege[0]);
       }
@@ -341,11 +346,26 @@ const SprachBruecke = (() => {
     }
 
     /* Eine Kennung, die den Fehler überlebt, auch wenn er beim nächsten
-       Lauf an anderer Stelle steht: Quelle, Wort, Vorschlag. Die Stelle
-       gehört nicht hinein — sonst käme dasselbe weggewinkte Wort im
-       nächsten Absatz wieder. */
+       Lauf an anderer Stelle steht.
+
+       Quelle, Art, Text — so steht es in deiner C++-Vorlage
+       (makeIssueKey) und im Entwurf §25. Ich hatte hier den Vorschlag
+       statt der Art genommen; das war falsch: Zwei Prüfer mit
+       verschiedenen Vorschlägen für dasselbe Wort ergaben zwei
+       Kennungen, und wer den einen wegwinkte, bekam den anderen weiter
+       angestrichen.
+
+       Die Stelle gehört nicht hinein — sonst käme dasselbe weggewinkte
+       Wort im nächsten Absatz wieder. */
     static kennung(fehler) {
-      return [fehler.quelle, fehler.text, fehler.vorschlaege[0] || ''].join('|');
+      return [fehler.quelle, fehler.art, fehler.text].join('|');
+    }
+
+    /* Zählt dieser Fund noch? Weggewinktes und Angenommenes nicht —
+       entspricht normalizeIssue in der Vorlage. */
+    gilt(fehler) {
+      const k = SprachBrueckeKlasse.kennung(fehler);
+      return !this.weggewinkt.has(k) && !this.angenommen.has(k);
     }
 
     wegwinken(id) {
@@ -432,12 +452,10 @@ const SprachBruecke = (() => {
           /* Mitten im geprüften Bereich: fällt weg, der Lauf hat ihn neu. */
         }
 
-        this.fehler = draussen.concat(
-          neueImBereich.filter((f) => !this.weggewinkt.has(SprachBrueckeKlasse.kennung(f))));
+        this.fehler = draussen.concat(neueImBereich.filter((f) => this.gilt(f)));
       } else {
         const gefunden = pruefEngineLauf(this.text, fassung, laufNr, gestolpert);
-        this.fehler = gefunden.filter(
-          (f) => !this.weggewinkt.has(SprachBrueckeKlasse.kennung(f)));
+        this.fehler = gefunden.filter((f) => this.gilt(f));
       }
 
       this.geaendert = null;
@@ -474,7 +492,7 @@ const SprachBruecke = (() => {
       if (this.fassung !== fassung || this.laufNr !== laufNr) return;
 
       for (const fehler of gefunden) {
-        if (this.weggewinkt.has(SprachBrueckeKlasse.kennung(fehler))) continue;
+        if (!this.gilt(fehler)) continue;
         if (this.kenntWort(fehler.text)) continue;
         /* Was der Prüfer schon gemeldet hat, wird nicht zweimal
            angestrichen — die Vorschläge kommen zusammen. */
@@ -511,7 +529,7 @@ const SprachBruecke = (() => {
           stand: 'offen',
           fund,
         };
-        if (this.weggewinkt.has(SprachBrueckeKlasse.kennung(fehler))) continue;
+        if (!this.gilt(fehler)) continue;
         const schon = this.fehler.find((f) => f.stand === 'offen'
           && f.von < fehler.bis && f.bis > fehler.von);
         if (schon) { this.zusammenfuehren(schon, fehler); continue; }

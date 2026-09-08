@@ -459,6 +459,35 @@ console.log('\nDie Griffe aus §4');
   stimmt(Array.isArray(k.fehler), 'und den offenen Fehlern');
 }
 
+console.log('\nNach der C++-Vorlage');
+{
+  const b = new SprachBruecke();
+  const f1 = { quelle: 'rechtschreibung', art: 'fehler', text: 'weiss',
+               vorschlaege: ['weiß'] };
+  const f2 = { quelle: 'rechtschreibung', art: 'fehler', text: 'weiss',
+               vorschlaege: ['weiss?'] };
+  gleich(SprachBruecke.kennung(f1), SprachBruecke.kennung(f2),
+         'Quelle|Art|Text — verschiedene Vorschläge geben dieselbe Kennung (makeIssueKey)');
+  const f3 = Object.assign({}, f1, { art: 'tipp' });
+  stimmt(SprachBruecke.kennung(f1) !== SprachBruecke.kennung(f3),
+         'eine andere Art ist ein anderer Fall');
+}
+{
+  const b = new SprachBruecke();
+  const gedaechtnis = { woerter: {}, inRuhe: {} };
+  global.KI = { verfuegbar: () => false,
+                Gedaechtnis: { lies: () => gedaechtnis, schreib: (g) => Object.assign(gedaechtnis, g) } };
+  naechsteFunde = [fund(0, 5, 'weiss', 'weiß')];
+  b.pruefen('weiss der Himmel');
+  b.annehmen(b.offeneFehler()[0].id);
+  gleich(b.offeneFehler().length, 0, 'angenommen heißt weg');
+
+  naechsteFunde = [fund(0, 5, 'weiss', 'weiß')];
+  b.textSetzen('weiss der Himmel!');
+  gleich(b.pruefen().length, 0,
+         'und kommt beim nächsten Lauf nicht wieder (acceptedIssueKeys)');
+}
+
 schluss();
 
 })();
