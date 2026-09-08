@@ -2130,6 +2130,25 @@ const REGISTER = REGISTER_BAUEN(B, {
   setzeRandVorgabe: (art)  => setzeRandVorgabe(art),
   papierJetzt:      ()     => papier,
   querJetzt:        ()     => quer,
+  /* Ob ein Schalter im Band gerade an ist. Ein Zugang für alle statt
+     zwanzig einzelne Namen — und register.js bleibt eine Liste, die
+     nichts vom Programm wissen muss. */
+  an: (was) => ({
+    zeilennummern:  () => zeilennummern,
+    silbentrennung: () => trennung,
+    steuerzeichen:  () => steuerzeichen,
+    lineal:         () => !$('lineal').hidden,
+    netzlinien:     () => netzlinien,
+    navigation:     () => navOffen,
+    textbegrenzungen: () => marken,
+    tafel:          () => tafelOffen,
+    zeilenfokus:    () => lesehilfe.fokus,
+    verfolgen:      () => verfolgenAn,
+    kopfzeile:      () => kopfAn,
+    fusszeile:      () => fussAn,
+    rechtschreibung: () => feld.spellcheck,
+    lesemodus:      () => lesemodus,
+  }[was] || (() => false))(),
 });
 
 /* Kontextabhängige Reiter: Sie stehen nur da, wenn sie etwas zu sagen haben.
@@ -2396,6 +2415,8 @@ function registerBauen() {
   band.hidden = registerEingeklappt;
   document.body.classList.toggle('register--zu', registerEingeklappt);
   band.innerHTML = '';
+  /* Die Knöpfe von vorhin gibt es gleich nicht mehr. */
+  registerSchalter = [];
   if (registerEingeklappt) { registerPfeile(); return; }
 
   const ausZusatz = zusatz.find((r) => r.name === registerOffen);
@@ -2506,7 +2527,10 @@ function registerBauen() {
         k.appendChild(pfeil);
         k.addEventListener('click', () => registerKlappe(k, tun));
       } else {
-        k.addEventListener('click', tun);
+        /* Nach dem Klick nachsehen, was jetzt an ist. Ein Schalter, der
+           seinen Zustand erst beim nächsten Neubau des Bandes zeigt,
+           leuchtet noch, wenn er längst aus ist. */
+        k.addEventListener('click', () => { tun(); registerSchalterAuffrischen(); });
       }
       return k;
     };
@@ -2514,9 +2538,10 @@ function registerBauen() {
     for (const eintrag of eintraege) {
       /* Ein 'felder' mitten in der Liste heißt: hier stehen die Wähler. */
       if (eintrag === 'felder') { reihe.appendChild(felderKiste()); continue; }
-      const [zeichen, titel, tun, gross] = eintrag;
-      if (gross) reihe.appendChild(bauen(zeichen, titel, tun, true));
-      else kleineKiste.appendChild(bauen(zeichen, titel, tun, false));
+      const [zeichen, titel, tun, gross, zustand] = eintrag;
+      const k = bauen(zeichen, titel, tun, !!gross);
+      if (typeof zustand === 'function') registerSchalter.push({ knopf: k, ist: zustand });
+      (gross ? reihe : kleineKiste).appendChild(k);
     }
     if (kleineKiste.childNodes.length) reihe.appendChild(kleineKiste);
     gruppe.appendChild(reihe);
@@ -2547,6 +2572,7 @@ function registerBauen() {
     band.appendChild(gruppe);
   }
 
+  registerSchalterAuffrischen();
   registerPfeile();
 }
 
@@ -3087,6 +3113,27 @@ function registerPfeile() {
    gebaut wird aber nur, wenn sich wirklich etwas ändert — bei jedem
    Tastendruck das ganze Band neu zu zeichnen wäre beim Schreiben zu spüren. */
 let zusammenhangStand = '';
+
+/* Welche Knöpfe im Band einen Zustand haben — und wie er gerade steht.
+
+   Der Kopf von register.js versprach das seit jeher („Ein vierter Eintrag
+   als Funktion, die true oder false gibt, setzt einen Haken"), aber der
+   Baukasten las ihn nie aus. Also zeigte kein Schalter im Band, ob er an
+   ist: Wer versehentlich die Zeilennummern anschaltete, sah Zahlen neben
+   jeder Zeile und fand den Knopf nicht wieder, der sie gebracht hatte.
+
+   Die Liste wird bei jedem Neubau des Bandes neu gefüllt — die Knöpfe von
+   vorhin gibt es dann nicht mehr. */
+let registerSchalter = [];
+
+function registerSchalterAuffrischen() {
+  for (const { knopf, ist } of registerSchalter) {
+    let an = false;
+    try { an = !!ist(); } catch (e) { an = false; }
+    knopf.classList.toggle('wz--an', an);
+    knopf.setAttribute('aria-pressed', an ? 'true' : 'false');
+  }
+}
 
 function zusammenhangPruefen() {
   if (flaeche !== 'register') return;
@@ -8142,6 +8189,7 @@ function werkzeugeBauen() {
 }
 
 function werkzeugeAuffrischen() {
+  registerSchalterAuffrischen();
   for (const k of $('werkzeugleiste').querySelectorAll('.wz[data-zustand]')) {
     k.classList.toggle('wz--an', Dokument.anGeschaltet(k.dataset.zustand));
   }
