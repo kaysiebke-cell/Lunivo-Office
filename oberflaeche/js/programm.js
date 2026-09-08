@@ -561,6 +561,32 @@ B.umbenennen = () => {
 
 B.beenden = () => darfVerwerfen(() => window.close());
 
+/* „Schließen" schließt das Dokument, nicht das Programm: Es bleibt ein
+   leeres Blatt stehen, auf dem sich weiterschreiben lässt. Wer das Fenster
+   loswerden will, nimmt „Beenden". */
+B.schliessen = () => darfVerwerfen(() => {
+  Dateien.stileSetzen('');
+  Speicher.schreib('importstil', '');
+  Dokument.setzeInhalt('<p><br></p>');
+  $('kopfzeile').innerHTML = '<br>';
+  $('fusszeile').innerHTML = '<br>';
+  Speicher.schreib('kopfinhalt', '<br>');
+  Speicher.schreib('fussinhalt', '<br>');
+  dateiname = 'Unbenannt 1';
+  geaendert = false;
+  leereFunde('Noch nicht geprüft.');
+  merkeText();
+  titelSetzen();
+  feld.focus();
+  melde('Dokument geschlossen.');
+});
+
+/* Im Aufbau stehen „Suchen" und „Ersetzen" einzeln neben „Suchen und
+   Ersetzen". Es ist dieselbe Leiste — sie stellt nur die Schreibstelle
+   gleich dorthin, wo man hinwollte. */
+B.suchen = () => { sucheZeigen(true); $('suche-was').focus(); };
+B.ersetzen = () => { sucheZeigen(true); $('suche-womit').focus(); };
+
 /* ---- Bearbeiten ---- */
 
 B.rueckgaengig = () => Dokument.befehl('undo');
