@@ -1651,7 +1651,37 @@ function linealAuffrischen() {
      Lineal zeigte hinterher noch A4, während längst A5 quer eingestellt
      war. setTimeout kommt auch dann. */
   if (linealUhr) return;
-  linealUhr = setTimeout(() => { linealUhr = null; linealZeichnen(); }, 0);
+  linealUhr = setTimeout(() => { linealUhr = null; linealZeichnen(); linealNachmessen(); }, 0);
+}
+
+/* Ein zweiter Blick, nachdem das Fenster fertig umgebaut hat.
+
+   Wird das Fenster schmaler, kommt „resize" sofort — das Blatt steht zu
+   diesem Zeitpunkt aber noch, wo es vorher stand. Das Lineal misst dann
+   die alte Stelle, zeichnet sich dorthin, und danach ruft es niemand
+   mehr: Die Bahn blieb stehen, während das Blatt nach links rutschte.
+   Gemeldet am 03.09.2026 als „das Lineal bleibt starr".
+
+   Statt eine Wartezeit zu raten, die auf jedem Rechner anders ausfällt,
+   wird nachgesehen: Liegt die Bahn nicht mehr über dem Blatt, wird noch
+   einmal gezeichnet. Einmal — sonst liefe es im Kreis, wenn die beiden
+   sich aus einem anderen Grund nie treffen. */
+let linealZweiterBlick = false;
+function linealNachmessen() {
+  if (linealZweiterBlick) { linealZweiterBlick = false; return; }
+  const balken = $('lineal');
+  if (balken.hidden) return;
+  linealZweiterBlick = true;
+  setTimeout(() => {
+    const bahn = $('lineal-bahn');
+    const blatt = $('blatt');
+    const rb = bahn.getBoundingClientRect();
+    const rBlatt = blatt.getBoundingClientRect();
+    if (Math.abs(rb.left - rBlatt.left) > 1 || Math.abs(rb.width - rBlatt.width) > 1) {
+      linealZeichnen();
+    }
+    linealZweiterBlick = false;
+  }, 120);
 }
 
 /* Das Lineal hängt am Blatt, nicht an einer Liste von Stellen, die daran

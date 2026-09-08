@@ -864,11 +864,17 @@ def fenster_lesen():
         if len(teile) < 4:
             continue
         kennung, titel = teile[0], teile[3]
-        # Drei Namen, weil drei Fassungen unterwegs sein können: das
-        # Fenster dieser Fassung, eines der Fassung vor der Umbenennung,
-        # und die Schreibhilfe daneben.
+        # Nur die Fenster DIESES Programms — der eigene Name und der von
+        # vor der Umbenennung.
+        #
+        # „Schreibhilfe" stand hier einmal mit in der Liste, und das war
+        # falsch: Der Name kommt auch anderswo vor. Wer „Fenster wechseln"
+        # aufmachte, fand darin ein fremdes Fenster, das mit diesem
+        # Schreibprogramm nichts zu tun hat — gemeldet am 04.09.2026.
+        # Ein Fenster, das man nicht gemeint hat, ist schlimmer als ein
+        # fehlendes: Man wechselt hin und ist aus seinem Text heraus.
         if any(name in titel for name in
-               ("Lunivo-Office", "Schreibprogramm", "Schreibhilfe")):
+               ("Lunivo-Office", "Schreibprogramm")):
             fenstern.append({"kennung": kennung, "titel": titel})
     return fenstern
 
@@ -2199,8 +2205,7 @@ def speichern_fragen(_umgebung, ladung):
 
 def main():
     for noetig in ("oberflaeche/index.html", "oberflaeche/js/pruefung.js",
-                   "oberflaeche/daten/regeln.js", "oberflaeche/daten/woerter.txt",
-                   "symbole/icon.svg"):
+                   "oberflaeche/daten/regeln.js", "oberflaeche/daten/woerter.txt"):
         if not os.path.isfile(os.path.join(HIER, noetig)):
             print("Es fehlt: %s" % noetig, file=sys.stderr)
             return 1
@@ -2241,6 +2246,8 @@ def main():
     # Symbol-Ordner selbst die passende Größe heraus — 16 Bildpunkte für die
     # Fensterleiste, 48 für den Umschalter. Eine feste Datei müsste er für
     # jede Stelle herunterrechnen, und klein sähe das nach nichts aus.
+    # Das Start-/Fenster-Icon ist optional: Wenn es vorhanden ist, wird es
+    # wie bisher verwendet. Fehlt es, startet Lunivo-Office trotzdem.
     fenster.set_icon_name("lunivo-office")
 
     # Solange der Menüeintrag noch nicht geschrieben wurde, kennt der
@@ -2249,7 +2256,10 @@ def main():
         for groesse in ("symbole/icon-256.png", "symbole/icon-128.png", "symbole/icon-512.png"):
             symbol = os.path.join(HIER, groesse)
             if os.path.isfile(symbol):
-                fenster.set_icon_from_file(symbol)
+                try:
+                    fenster.set_icon_from_file(symbol)
+                except Exception:
+                    pass
                 break
     # Ohne das bleiben confirm() und prompt() der Seite unsichtbar hängen.
     ansicht.connect("script-dialog", seiten_dialog)
