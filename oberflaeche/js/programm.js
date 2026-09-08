@@ -8046,6 +8046,10 @@ const KIteil = KI_BAUEN(B, {
      muessen die Funde der Rechtschreibpruefung aus der Seitenleiste
      weichen — sie teilen sich denselben Platz. */
   fundeLeeren: ()     => { funde = []; },
+  /* Welche Fassung des Textes gerade gilt. Die KI braucht sie, weil ihre
+     Antwort spät kommt: Über Ollama dauert eine Anfrage bis zu zehn
+     Minuten, und in zehn Minuten schreibt ein Mensch weiter. */
+  fassung:     ()     => (Bruecke ? Bruecke.fassung : null),
 });
 
 /* ============================================================

@@ -247,6 +247,18 @@ async function kiLauf(laeuft, arbeit) {
   kiKnoepfeAuffrischen();
   melde(laeuft);
 
+  /* Welche Fassung des Textes gefragt wurde.
+
+     Die Antwort kommt spät: Über Ollama, ohne Grafikkarte, dauert eine
+     Anfrage bis zu zehn Minuten — und in zehn Minuten schreibt ein
+     Mensch weiter. Käme die Antwort dann ungeprüft ins Blatt, würde sie
+     über den neuen Text gelegt: ersetzeErgebnis rechnet alle Stellen aus
+     dem Text von vorhin, und bei „ersetze(0, alt.length, neu)" fiele
+     alles weg, was inzwischen dazugekommen ist.
+
+     Also wird die Fassung vorher gemerkt und nachher verglichen. */
+  const fassungVorher = umg.fassung ? umg.fassung() : null;
+
   let ergebnis;
   try {
     ergebnis = await arbeit(Dokument.lies().text);
@@ -256,6 +268,14 @@ async function kiLauf(laeuft, arbeit) {
   }
 
   if (ergebnis && ergebnis.fehler) { melde(ergebnis.fehler); return null; }
+
+  if (fassungVorher !== null && umg.fassung() !== fassungVorher) {
+    melde('Du hast weitergeschrieben, während die KI gelesen hat. '
+        + 'Ihre Antwort passt nicht mehr zu dem, was jetzt dasteht — '
+        + 'nichts wurde geändert. Noch einmal drücken fragt sie neu.');
+    return null;
+  }
+
   return ergebnis;
 }
 
