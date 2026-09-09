@@ -2722,3 +2722,91 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
   background:var(--karte);border:1px solid var(--rand);border-radius:4px;
   padding:1px 6px;font-size:12px;
 }
+
+/* ============================================================
+   Die Dokumentleiste
+
+   Ganz oben, über allem anderen: für jedes offene Dokument ein Reiter.
+   Sie steht dort und nicht unten, weil sie eine Ebene höher liegt als
+   alles darunter — die Menüleiste, die Symbolleisten und das Register
+   gehören zu dem Dokument, das hier gewählt ist. Eine Leiste, die den
+   Inhalt aller anderen bestimmt, gehört über sie.
+
+   Bei einem einzigen Dokument bleibt sie weg (hidden). Wer nur einen
+   Brief schreibt, soll keinen Reiter sehen müssen, der nichts zur Wahl
+   stellt.
+   ============================================================ */
+.dokumentleiste{
+  display:flex;align-items:flex-end;gap:2px;
+  background:var(--grund);
+  border-bottom:1px solid var(--rand);
+  padding:4px 6px 0;
+  user-select:none;flex:0 0 auto;
+  overflow-x:auto;overflow-y:hidden;
+  scrollbar-width:thin;
+}
+.dokumentleiste[hidden]{display:none}
+
+.dokumentreiter{
+  display:flex;align-items:center;gap:6px;
+  flex:0 1 auto;min-width:0;max-width:230px;
+  background:none;border:1px solid transparent;border-bottom:0;
+  border-radius:6px 6px 0 0;
+  color:var(--schrift-2);
+  font:inherit;font-size:var(--bedienschrift);
+  padding:5px 8px 6px 11px;
+  cursor:default;white-space:nowrap;
+}
+.dokumentreiter:hover{background:rgba(255,255,255,.06);color:var(--schrift)}
+:root[data-theme="light"] .dokumentreiter:hover{background:rgba(0,0,0,.05)}
+
+/* Der vorderste sieht aus, als hinge das Blatt daran: dieselbe Farbe wie
+   die Leiste darunter, und keine Linie dazwischen. */
+.dokumentreiter--vorn{
+  background:var(--leiste);
+  border-color:var(--rand);
+  color:var(--schrift);
+  margin-bottom:-1px;padding-bottom:7px;
+}
+
+/* Der Name darf gekürzt werden, das Übrige nicht. */
+.dokumentreiter__name{overflow:hidden;text-overflow:ellipsis;min-width:0}
+
+/* Der Punkt steht für „noch nicht gespeichert". Er sitzt an der Stelle
+   des Schließkreuzes und weicht ihm, sobald die Maus darüberfährt —
+   sonst bräuchte der Reiter zwei Plätze für dieselbe Ecke. */
+.dokumentreiter__punkt{
+  flex:0 0 auto;width:14px;text-align:center;color:var(--warm);font-size:15px;line-height:1;
+}
+.dokumentreiter__zu{
+  flex:0 0 auto;
+  background:none;border:0;color:var(--schrift-3);
+  font:inherit;font-size:15px;line-height:1;
+  width:18px;height:18px;border-radius:4px;
+  cursor:default;padding:0;
+}
+.dokumentreiter__zu:hover{background:rgba(255,255,255,.14);color:var(--schrift)}
+:root[data-theme="light"] .dokumentreiter__zu:hover{background:rgba(0,0,0,.12)}
+
+/* Solange nichts zu holen ist, bleibt das Kreuz aus dem Weg: Es taucht
+   auf, wenn die Maus auf dem Reiter steht oder der Reiter vorn liegt. */
+.dokumentreiter__zu{visibility:hidden}
+.dokumentreiter:hover .dokumentreiter__zu,
+.dokumentreiter--vorn .dokumentreiter__zu{visibility:visible}
+.dokumentreiter:hover .dokumentreiter__punkt,
+.dokumentreiter--vorn .dokumentreiter__punkt{display:none}
+
+/* Beim Ziehen: Der Reiter unter der Maus wird durchsichtig, der Platz,
+   an dem er landet, bekommt eine Kante. */
+.dokumentreiter--zieht{opacity:.4}
+.dokumentreiter--ziel{box-shadow:inset 2px 0 0 var(--blau-hell)}
+
+.dokumentleiste__neu{
+  flex:0 0 auto;
+  background:none;border:0;color:var(--schrift-2);
+  font:inherit;font-size:17px;line-height:1;
+  width:26px;height:26px;border-radius:5px;
+  cursor:default;margin-bottom:3px;
+}
+.dokumentleiste__neu:hover{background:rgba(255,255,255,.09);color:var(--schrift)}
+:root[data-theme="light"] .dokumentleiste__neu:hover{background:rgba(0,0,0,.08)}

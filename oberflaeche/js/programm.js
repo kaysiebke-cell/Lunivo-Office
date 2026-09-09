@@ -16,13 +16,23 @@ const feld = Dokument.feld;
    beim ersten Start nach dem Update seinen Text und seine Einstellungen
    weg. Lunivo-Office ist ein eigenes Programm; es fasst nichts an, was
    der App gehört. */
+/* Und er weiß seit den Dokumentreitern, zu WEM ein Wert gehört. „inhalt"
+   ist nicht mehr ein Text, sondern der Text des Dokuments, das gerade
+   vorn liegt — dokumente.js biegt den Namen um. Das ist der ganze
+   Kunstgriff hinter den Reitern: Das Programm schreibt weiter, was es
+   immer schrieb, nur landet es woanders. Was allen Dokumenten gehört
+   (Vergrößerung, Helligkeit, welche Leisten sichtbar sind), geht
+   ungebogen durch. */
 const Speicher = {
+  ort(name) {
+    return 'sp.' + (typeof Dokumente !== 'undefined' ? Dokumente.schluessel(name) : name);
+  },
   lies(name, ersatz) {
-    try { const w = localStorage.getItem('sp.' + name); return w === null ? ersatz : JSON.parse(w); }
+    try { const w = localStorage.getItem(this.ort(name)); return w === null ? ersatz : JSON.parse(w); }
     catch (e) { return ersatz; }
   },
   schreib(name, wert) {
-    try { localStorage.setItem('sp.' + name, JSON.stringify(wert)); } catch (e) { /* voll */ }
+    try { localStorage.setItem(this.ort(name), JSON.stringify(wert)); } catch (e) { /* voll */ }
   },
 };
 
@@ -209,45 +219,15 @@ const B = {};
 
 /* ---- Datei ---- */
 
-B.neu = () => darfVerwerfen(() => {
-  /* War überhaupt etwas da? Ein leeres Blatt noch einmal zu leeren ändert
-     nichts, und genau daran sah „Neu" aus wie ein toter Knopf: Er tat seine
-     Arbeit, aber es gab keine. Wer drückt, soll wenigstens erfahren, woran
-     er ist. */
-  const warLeer = !Dokument.lies().text.trim()
-                && !$('kopfzeile').textContent.trim()
-                && !$('fusszeile').textContent.trim();
-
-  /* Ein neues Blatt hat nichts mit der zuletzt geöffneten Datei zu tun —
-     ihr Stilblatt muss weg, sonst schriebe man im Format eines fremden
-     Briefes weiter. */
-  Dateien.stileSetzen('');
-  Speicher.schreib('importstil', '');
-  Dokument.setzeInhalt('<p><br></p>');
-
-  /* Kopf- und Fußzeile gehören zum Dokument, nicht zum Programm. Wer ein
-     neues Blatt nimmt, will nicht den Briefkopf des letzten darauf. Ob sie
-     angezeigt werden, bleibt dagegen eingestellt, wie es war — das ist
-     seine Gewohnheit, nicht sein Text. */
-  $('kopfzeile').innerHTML = '<br>';
-  $('fusszeile').innerHTML = '<br>';
-  Speicher.schreib('kopfinhalt', '<br>');
-  Speicher.schreib('fussinhalt', '<br>');
-
-  dateiname = 'Unbenannt 1';
-  geaendert = false;
-  leereFunde('Noch nicht geprüft.');
-  merkeText();
-  titelSetzen();
-
-  /* Die Schreibstelle ins Blatt: Das ist das, was man nach „Neu" will —
-     lostippen können, ohne erst hinzuklicken. Und es ist zu sehen. */
-  feld.focus();
-
-  melde(warLeer
-    ? 'Das Blatt war schon leer — du kannst gleich losschreiben.'
-    : 'Neues, leeres Blatt.');
-});
+/* „Neu" leerte einmal das Blatt. Mit den Dokumentreitern tut es, was es
+   in jedem anderen Schreibprogramm tut: Es legt ein zweites Dokument an
+   und stellt es nach vorn. Der Brief, an dem gerade geschrieben wurde,
+   bleibt offen — es geht nichts mehr verloren, und deshalb muss auch
+   niemand mehr gefragt werden. */
+B.neu = () => {
+  dokumentNeu();
+  melde('Neues Blatt — ' + Dokumente.anzahl() + ' Dokumente offen.');
+};
 
 /* Welches Format beim Speichern genommen wird, wenn eine Datei dieser Art
    geöffnet wurde. Was sich nicht zurückschreiben lässt, kommt dem Nächsten
@@ -258,7 +238,9 @@ const SCHREIBBAR = {
   dotx: 'docx', docm: 'docx', odf: 'odt', ott: 'odt', dot: 'doc',
 };
 
-B.oeffnen = () => darfVerwerfen(async () => {
+/* Auch „Öffnen" verwirft nichts mehr: Die Datei kommt in einen eigenen
+   Reiter, wenn im vordersten schon etwas steht. */
+B.oeffnen = async () => {
   /* Erst der Dateibrowser des Systems — der kennt die Ordner des Menschen,
      seine Lesezeichen und die gewohnte Bedienung. Nur wenn es ihn nicht gibt
      (im Browser statt im eigenen Fenster), bleibt der schlichte Dateiwähler. */
@@ -295,7 +277,7 @@ B.oeffnen = () => darfVerwerfen(async () => {
     if (datei) await dateiUebernehmen(datei);
   });
   waehler.click();
-});
+};
 
 /* Die zuletzt geöffneten Dateien.
 
@@ -328,7 +310,7 @@ function zuletztPunkte() {
   }));
 }
 
-B.zuletztOeffnen = (nr) => darfVerwerfen(async () => {
+B.zuletztOeffnen = async (nr) => {
   try {
     const antwort = await fetch('zuletzt-oeffnen?nr=' + nr, { method: 'POST' });
     if (!antwort.ok) {
@@ -346,7 +328,7 @@ B.zuletztOeffnen = (nr) => darfVerwerfen(async () => {
   /* In beiden Fällen: Ist die Datei inzwischen weg, fällt sie beim
      Nachfragen aus der Liste und steht beim nächsten Aufklappen nicht mehr da. */
   await zuletztHolen();
-});
+};
 
 /* ------------------------------------------------------------
    Neu aus Vorlage
@@ -381,7 +363,7 @@ async function vorlagenHolen() {
   }
 }
 
-B.vorlageOeffnen = (nr) => darfVerwerfen(async () => {
+B.vorlageOeffnen = async (nr) => {
   try {
     const antwort = await fetch('vorlage-oeffnen?nr=' + nr, { method: 'POST' });
     if (!antwort.ok) {
@@ -400,7 +382,7 @@ B.vorlageOeffnen = (nr) => darfVerwerfen(async () => {
   }
   /* Ist sie inzwischen weggeworfen, fällt sie beim Nachfragen aus der Liste. */
   await vorlagenHolen();
-});
+};
 
 /* Beide Oberflächen gehen denselben Weg: Das Menü ruft dies, und das Band
    ruft dies. Vorher hing an der Menüleiste ein Klappmenü mit Namen und am
@@ -429,10 +411,14 @@ B.vorlagenWaehlen = async () => {
 
    Der Name im Fenster ist der des Gerüsts. Wer „Bewerbung" öffnet und
    speichert, bekommt „Bewerbung" vorgeschlagen und muss ihn nicht tippen. */
-B.musterOeffnen = (kennung) => darfVerwerfen(() => {
+B.musterOeffnen = (kennung) => {
   const html = Vorlagen.musterHtml(kennung);
   if (!html) { melde('Dieses Gerüst gibt es nicht mehr.'); return; }
   const muster = VORLAGENMUSTER.find((m) => m[0] === kennung);
+
+  /* Steht im vordersten Reiter schon etwas, bekommt das Gerüst einen
+     eigenen — es soll niemandem seinen Brief wegnehmen. */
+  dokumentPlatzSchaffen();
 
   /* Wie bei „Neu": Das Stilblatt der zuletzt geöffneten Datei muss weg,
      sonst schriebe man den Lebenslauf im Format eines fremden Briefes. */
@@ -463,7 +449,7 @@ B.musterOeffnen = (kennung) => darfVerwerfen(() => {
       melde('„' + (muster ? muster[1] : 'Gerüst') + '" steht im Blatt.');
     }
   }, 0);
-});
+};
 
 B.vorlageBehalten = async () => {
   fenster('Als Vorlage behalten', [
@@ -535,7 +521,11 @@ B.vorlagenOrdner = async () => {
    oder aus dem Dateiwähler kommt. */
 async function dateiUebernehmen(datei) {
   try {
-    Dokument.setzeInhalt(await Dateien.oeffne(datei));
+    /* Erst lesen, dann den Reiter anlegen: Geht das Lesen schief, soll
+       kein leerer Reiter zurückbleiben. */
+    const gelesen = await Dateien.oeffne(datei);
+    dokumentPlatzSchaffen();
+    Dokument.setzeInhalt(gelesen);
 
     /* Das Stilblatt der Datei gehört zum Dokument. Ohne es stünde derselbe
        Brief nach dem nächsten Start wieder anders da. */
@@ -712,27 +702,28 @@ B.umbenennen = () => {
 /* „Drucken…“ öffnet das Druckfenster — siehe den Abschnitt
    „Drucken: die Vorschau und das Druckfenster“ weiter unten. */
 
-B.beenden = () => darfVerwerfen(() => window.close());
+/* „Beenden" schließt das Fenster — und damit alle Dokumente darin. Die
+   Rückfrage muss deshalb auch die betreffen, die gerade nicht vorn
+   liegen; sonst verlöre man einen Brief, den man nie wieder zu Gesicht
+   bekommen hat. */
+B.beenden = () => {
+  const offen = Dokumente.liste().filter(
+    (nr) => (nr === Dokumente.aktiv() ? geaendert : !!geaendertJe[nr]));
+  if (!offen.length) { window.close(); return; }
+  fenster('Nicht gespeichert', [
+    { art: 'satz', text: offen.length === 1
+        ? '„' + Dokumente.name(offen[0]) + '" hat Änderungen, die in keiner Datei '
+          + 'stehen. Wer weitermacht, verliert sie.'
+        : offen.length + ' Dokumente haben Änderungen, die in keiner Datei stehen: '
+          + offen.map((nr) => '„' + Dokumente.name(nr) + '"').join(', ')
+          + '. Wer weitermacht, verliert sie.' },
+  ], () => window.close(), 'Trotzdem beenden');
+};
 
 /* „Schließen" schließt das Dokument, nicht das Programm: Es bleibt ein
    leeres Blatt stehen, auf dem sich weiterschreiben lässt. Wer das Fenster
    loswerden will, nimmt „Beenden". */
-B.schliessen = () => darfVerwerfen(() => {
-  Dateien.stileSetzen('');
-  Speicher.schreib('importstil', '');
-  Dokument.setzeInhalt('<p><br></p>');
-  $('kopfzeile').innerHTML = '<br>';
-  $('fusszeile').innerHTML = '<br>';
-  Speicher.schreib('kopfinhalt', '<br>');
-  Speicher.schreib('fussinhalt', '<br>');
-  dateiname = 'Unbenannt 1';
-  geaendert = false;
-  leereFunde('Noch nicht geprüft.');
-  merkeText();
-  titelSetzen();
-  feld.focus();
-  melde('Dokument geschlossen.');
-});
+B.schliessen = () => dokumentSchliessen();
 
 /* Im Aufbau stehen „Suchen" und „Ersetzen" einzeln neben „Suchen und
    Ersetzen". Es ist dieselbe Leiste — sie stellt nur die Schreibstelle
@@ -7473,7 +7464,26 @@ const MENUES = [
       { name: 'Eine Seite', tun: B.zoomSeite },
       { name: 'Zoom', tun: B.zoomStufe },
     ] },
-    { name: 'Fenster', unter: [
+    /* Als Funktion, nicht als Liste: Welche Dokumente offen sind, ändert
+       sich, während das Fenster steht. Eine einmal gebaute Liste zeigte
+       den Stand von damals — derselbe Grund wie bei „Zuletzt geöffnet". */
+    { name: 'Fenster', unter: () => [
+      /* Erst die Dokumente in DIESEM Fenster, dann die Fenster selbst.
+         Die Reihenfolge ist nicht beliebig: Wer „Fenster" aufklappt, weil
+         er zu einem anderen Brief will, meint meistens einen Reiter und
+         nicht ein zweites Fenster. */
+      ...Dokumente.liste().map((nr) => ({
+        name: Dokumente.name(nr)
+            + ((nr === Dokumente.aktiv() ? geaendert : geaendertJe[nr]) ? ' *' : ''),
+        tun: () => dokumentWechseln(nr),
+        haken: () => nr === Dokumente.aktiv(),
+      })),
+      strich,
+      { name: 'Neues Dokument', tun: B.neu, taste: 'Strg+N' },
+      { name: 'Dokument schließen', tun: () => dokumentSchliessen(), taste: 'Strg+W' },
+      { name: 'Nächstes Dokument', tun: () => dokumentWechseln(Dokumente.weiter(1)),
+        taste: 'Strg+Tab' },
+      strich,
       { name: 'Neues Fenster', tun: B.neuesFenster },
       { name: 'Anordnen', unter: [
         { name: 'Nebeneinander', tun: B.fensterNebeneinander },
@@ -8925,6 +8935,11 @@ const KIteil = KI_BAUEN(B, {
 function titelSetzen() {
   document.title = dateiname + (geaendert ? ' *' : '') + ' — Lunivo-Office';
   Speicher.schreib('dateiname', dateiname);
+  /* Im Reiter steht derselbe Name und derselbe Punkt für „nicht
+     gespeichert". Beides hier nachzuziehen ist der einzige Weg, der
+     keine Stelle vergisst: Jede Umbenennung und jede erste Änderung
+     kommt hier vorbei. */
+  if (typeof dokumentleisteBauen === 'function') dokumentleisteBauen();
 }
 
 function zahlenAuffrischen() {
@@ -8962,29 +8977,12 @@ function geaendertMelden() {
   if (!lebendLaeuft) lebendAnstossen();
 }
 
-/* Die Rückfrage, bevor ungesicherte Arbeit weggeht.
-
-   Sie lief einmal über confirm(). Das ist im eigenen Fenster der falsche
-   Weg: WebKit zeigt dafür nur dann etwas, wenn das Programm den Dialog
-   selbst baut — und was nur mit fremder Hilfe erscheint, kann auch
-   ausbleiben. Genau das geschah: „Neu" tat scheinbar nichts, weil die
-   Frage unsichtbar auf eine Antwort wartete.
-
-   Jetzt fragt das Programm mit seinem eigenen Fenster. Das steht im Blatt,
-   sieht aus wie alles andere und braucht niemanden sonst. Der Preis ist,
-   dass die Antwort später kommt: Wer fragt, bekommt sie als Rückruf statt
-   als Rückgabewert — deshalb nimmt darfVerwerfen jetzt entgegen, was danach
-   geschehen soll. */
-function darfVerwerfen(dann) {
-  if (!geaendert) { dann(); return; }
-  fenster('Nicht gespeichert', [
-    { art: 'satz', text: 'Das Dokument hat Änderungen, die in keiner Datei stehen. '
-                       + 'Wer weitermacht, verliert sie.' },
-  ], () => dann(), 'Trotzdem weiter');
-}
-
+/* Nicht nur das vorderste: Wird das Fenster über das Kreuz des Systems
+   zugemacht, gehen alle Reiter darin mit. */
 window.addEventListener('beforeunload', (e) => {
-  if (!geaendert) return;
+  const offen = geaendert
+    || Dokumente.liste().some((nr) => nr !== Dokumente.aktiv() && geaendertJe[nr]);
+  if (!offen) return;
   e.preventDefault();
   e.returnValue = '';
 });
@@ -9000,6 +8998,20 @@ const KUERZEL = {
 };
 
 document.addEventListener('keydown', (e) => {
+  /* Strg+Tab und Strg+Umschalt+Tab wechseln den Reiter — wie überall.
+     Das muss vor dem Tab weiter unten stehen, das die Lücken der
+     Bausteine anspringt: Sonst käme man aus einem Gerüst nie heraus. */
+  if (e.key === 'Tab' && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    dokumentWechseln(Dokumente.weiter(e.shiftKey ? -1 : 1));
+    return;
+  }
+  /* Strg+W schließt den Reiter, Strg+F4 auch — die eine Taste kommt von
+     den Browsern, die andere von Word. */
+  if (((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'w')
+      || ((e.ctrlKey || e.metaKey) && e.key === 'F4')) {
+    e.preventDefault(); dokumentSchliessen(); return;
+  }
   if (e.key === 'F4') { e.preventDefault(); B.vorlesen(); return; }
   if (e.key === 'F7') { e.preventDefault(); pruefen(); return; }
   /* Kürzel tippen, F3 drücken — wie in LibreOffice. Findet sich kein
@@ -9221,6 +9233,329 @@ Vorlagen.verbinde({
   benutzer: () => Speicher.lies('benutzer', {}) || {},
 });
 
+/* ============================================================
+   Die Dokumentreiter
+
+   Ein Fenster trägt mehrere Dokumente. Oben steht für jedes ein Reiter,
+   und ein Klick darauf bringt es nach vorn.
+
+   WIE DER WECHSEL FUNKTIONIERT
+
+   Nicht, indem das Programm zwei Texte gleichzeitig im Fenster hält —
+   das gäbe zwei Schreibfelder, und jede Stelle im Programm, die „das
+   Dokument" sagt, müsste erst fragen, welches gemeint ist.
+
+   Sondern über den Speicher. Alles, was ein Dokument ausmacht, steht dort
+   ohnehin schon: der Text, die Kopfzeile, das Papier, die Abschnitte.
+   dokumente.js gibt jedem Dokument seine eigene Ecke darin. Der Wechsel
+   ist deshalb nur:
+
+       1. was jetzt im Fenster steht, in die Ecke des alten schreiben
+       2. die Ecke wechseln
+       3. alles neu einlesen — genau wie beim Start des Programms
+
+   Schritt 3 ist derselbe Ablauf, den auch der Programmstart nimmt. Er
+   steht deshalb nur einmal da, als „dokumentZustandLaden".
+
+   WAS DABEI NICHT MITGEHT
+
+   Das Rückgängig des Browsers hängt am Schreibfeld, nicht am Text. Wer
+   den Reiter wechselt, kann im anderen Dokument nicht mehr über den
+   Wechsel hinaus zurückgehen. Der Text ist vollständig da — nur die
+   Schrittfolge dorthin nicht. Anders ginge es nur mit einem eigenen
+   Rückgängig, das jeden Tastendruck selbst mitschreibt; das wäre ein
+   eigenes Stück Arbeit und keins, das man nebenbei richtig hinbekommt.
+   ============================================================ */
+
+/* Ob ein Dokument ungesicherte Änderungen hat. Für das vorderste sagt
+   das „geaendert"; für die anderen muss es sich jemand merken, sonst
+   ginge beim Beenden eine Warnung verloren. */
+const geaendertJe = {};
+
+/* Der Speicher schreibt den Text erst nach einer kurzen Ruhe (merkeText).
+   Beim Reiterwechsel ist das genau falsch: Die Uhr liefe ab, NACHDEM der
+   Speicher schon auf das neue Dokument zeigt — und schriebe den alten
+   Text in das neue. Also vorher anhalten und sofort schreiben. */
+function textJetztSichern() {
+  clearTimeout(merkUhr);
+  Speicher.schreib('inhalt', ohneMarken(Dokument.inhalt()));
+}
+
+/* Was im Fenster steht, in die Ecke des Dokuments schreiben, das gerade
+   vorn liegt. */
+function dokumentZustandSichern() {
+  abschnittMerken(abschnittJetztNr);          /* schreibt auch die Abschnitte */
+  textJetztSichern();
+  Speicher.schreib('kopfinhalt', $('kopfzeile').innerHTML);
+  Speicher.schreib('fussinhalt', $('fusszeile').innerHTML);
+  Speicher.schreib('dateiname', dateiname);
+  geaendertJe[Dokumente.aktiv()] = geaendert;
+}
+
+/* Der Aufbau gehört dem Dokument, nicht dem Fenster. Vor dem Einlesen
+   muss er leer sein — „abschnitteHolen" legt nur Abschnitte an, es nimmt
+   keine weg. Ohne diese Zeilen behielte ein Brief mit einem Abschnitt die
+   drei des vorigen. */
+function abschnitteLeeren() {
+  if (!Aufbau) return;
+  while (Aufbau.getSections().length > 1) {
+    Aufbau.removeSection(Aufbau.getSections()[Aufbau.getSections().length - 1]);
+  }
+  const erster = Aufbau.getSection(0);
+  if (!erster) return;
+  Object.assign(erster.getPageSetup(), Dokumentmodell.PageSetup());
+  Object.assign(erster.getPageNumbering(), Dokumentmodell.PageNumbering());
+  erster.breakBefore = null;
+  for (const zeile of [erster.header, erster.footer]) {
+    zeile.sichtbar = false;
+    zeile.html = '';
+    zeile.linkedToPrevious = false;
+  }
+}
+
+/* Alles einlesen und anwenden, was zum vordersten Dokument gehört. Das
+   ist derselbe Ablauf wie beim Start — die Reihenfolge stammt von dort
+   und ist nicht beliebig: erst die Schrift, dann der Text, dann die
+   Seite, ganz zuletzt der Aufbau. */
+function dokumentZustandLaden() {
+  dateiname = Speicher.lies('dateiname', 'Unbenannt');
+
+  /* Die Werte, die als eigene Variablen im Programm stehen. Sie werden
+     beim Start aus dem Speicher gelesen; hier noch einmal, weil der
+     Speicher jetzt woandershin zeigt. */
+  spalten       = Speicher.lies('spalten', 1);
+  layout        = Speicher.lies('layout', 'blatt');
+  zeilennummern = Speicher.lies('zeilennummern', false);
+  trennung      = Speicher.lies('trennung', false);
+  seitenfarbe   = Speicher.lies('seitenfarbe', '');
+  wasserzeichen = Speicher.lies('wasserzeichen', '');
+  seitenrahmen  = Speicher.lies('seitenrahmen', '');
+  markupZeigen  = Speicher.lies('markup', true);
+  verfolgenAn   = Speicher.lies('verfolgen', false);
+  design        = Speicher.lies('design', '');
+  vorlagenStile = Object.assign({}, VORLAGEN_STANDARD, Speicher.lies('vorlagenstile', {}));
+
+  grundschriftAnwenden();
+  Dateien.stileSetzen(Speicher.lies('importstil', ''));
+  Dokument.setzeInhalt(Speicher.lies('inhalt', '<p><br></p>'));
+  $('kopfzeile').innerHTML = Speicher.lies('kopfinhalt', '');
+  $('fusszeile').innerHTML = Speicher.lies('fussinhalt', '');
+
+  layoutAnwenden();
+  vorlagenAnwenden();
+  if (design) designAnwenden(design);
+  zeilennummernAnwenden();
+  trennungAnwenden();
+  seitenfarbeAnwenden();
+  wasserzeichenAnwenden();
+  seitenrahmenAnwenden();
+  markupAnwenden();
+  feld.classList.toggle('dokument--verfolgt', verfolgenAn);
+
+  /* Papier, Ränder und die beiden Zeilen kommen aus dem Abschnitt, in dem
+     der Zeiger steht — nicht aus dem Speicher. „abschnittAnwenden" setzt
+     sie und ruft papierAnwenden, seiteAnwenden und kopfFussAnwenden. */
+  abschnitteLeeren();
+  abschnitteHolen();
+  abschnittJetztNr = 0;
+  abschnittAnwenden(0);
+
+  /* Der Fehlerstand gehört zum Text. Ein Fund aus dem anderen Dokument
+     zeigte auf eine Stelle, die es hier nicht gibt. */
+  leereFunde('Noch nicht geprüft.');
+  if (Bruecke) Bruecke.textSetzen(Dokument.lies().text);
+
+  /* Erst ganz zuletzt, und das ist der Punkt: „Dokument.setzeInhalt"
+     weiter oben schreibt in das Feld, und das Feld meldet jede Schreibung
+     als Änderung. Wer den Reiter wechselt, hätte danach in JEDEM Dokument
+     einen Stern und beim Schließen eine Rückfrage, die niemand verdient
+     hat. Der Änderungsstand ist der gemerkte, nicht der eben ausgelöste. */
+  geaendert = !!geaendertJe[Dokumente.aktiv()];
+
+  setzeZoom(zoom);
+  titelSetzen();
+  zahlenAuffrischen();
+  werkzeugeAuffrischen();
+  registerSchalterAuffrischen();
+  menueBauen();
+}
+
+/** Auf einen anderen Reiter. */
+function dokumentWechseln(nr) {
+  if (nr === Dokumente.aktiv()) { feld.focus(); return; }
+  dokumentZustandSichern();
+  if (!Dokumente.wechsle(nr)) return;
+  dokumentZustandLaden();
+  dokumentleisteBauen();
+  feld.focus();
+  melde('Dokument: ' + dateiname);
+}
+
+/** Ein neues, leeres Dokument in einem neuen Reiter. */
+function dokumentNeu(wieHeisst) {
+  dokumentZustandSichern();
+  const nr = Dokumente.anlegen(wieHeisst);
+  geaendertJe[nr] = false;
+  dokumentZustandLaden();
+  dokumentleisteBauen();
+  feld.focus();
+  return nr;
+}
+
+/* „Öffnen" soll keinen leeren Reiter hinterlassen. Steht im vordersten
+   noch nichts und wurde nichts geändert, kommt die Datei dorthin; sonst
+   bekommt sie einen eigenen. So macht es jedes Programm mit Reitern. */
+function dokumentPlatzSchaffen() {
+  const leer = !Dokument.lies().text.trim()
+            && !$('kopfzeile').textContent.trim()
+            && !$('fusszeile').textContent.trim();
+  if (leer && !geaendert) return;
+  dokumentNeu();
+}
+
+/**
+ * Einen Reiter schließen. Beim letzten wird nicht geschlossen, sondern
+ * geleert — ein Fenster ohne Blatt hätte nichts, worin man schreiben
+ * könnte.
+ */
+function dokumentSchliessen(nr) {
+  const ziel = nr === undefined ? Dokumente.aktiv() : nr;
+  const seins = ziel === Dokumente.aktiv();
+  const hatAenderung = seins ? geaendert : !!geaendertJe[ziel];
+
+  const tun = () => {
+    if (Dokumente.anzahl() < 2) {
+      /* Der letzte: leeren statt schließen. */
+      Dateien.stileSetzen('');
+      Speicher.schreib('importstil', '');
+      Speicher.schreib('inhalt', '<p><br></p>');
+      Speicher.schreib('kopfinhalt', '<br>');
+      Speicher.schreib('fussinhalt', '<br>');
+      Speicher.schreib('abschnitte', null);
+      Speicher.schreib('dateiname', 'Unbenannt 1');
+      geaendertJe[ziel] = false;
+      geaendert = false;
+      dokumentZustandLaden();
+      dokumentleisteBauen();
+      feld.focus();
+      melde('Dokument geschlossen.');
+      return;
+    }
+
+    /* Wer einen anderen als den vordersten schließt, soll nicht plötzlich
+       woanders stehen: Erst das Sichtbare sichern, dann wegräumen. */
+    dokumentZustandSichern();
+    const name = Dokumente.name(ziel);
+    delete geaendertJe[ziel];
+    const jetzt = Dokumente.entfernen(ziel);
+    if (jetzt === null) return;
+    if (seins) dokumentZustandLaden();
+    dokumentleisteBauen();
+    feld.focus();
+    melde('Geschlossen: ' + name);
+  };
+
+  if (!hatAenderung) { tun(); return; }
+  fenster('Nicht gespeichert', [
+    { art: 'satz', text: '„' + Dokumente.name(ziel) + '" hat Änderungen, die in keiner '
+                       + 'Datei stehen. Wer weitermacht, verliert sie.' },
+  ], tun, 'Trotzdem schließen');
+}
+
+/* ------------------------------------------------------------
+   Die Leiste zeichnen
+
+   Sie wird neu gebaut, wenn sich etwas an ihr ändert — beim Wechsel, beim
+   Anlegen, beim Schließen und immer, wenn der Titel sich ändert (dann
+   kommt oder geht der Punkt für „nicht gespeichert").
+   ------------------------------------------------------------ */
+let ziehtNr = null;              /* welcher Reiter gerade gezogen wird */
+
+function dokumentleisteBauen() {
+  const leiste = $('dokumentleiste');
+  if (!leiste) return;
+  leiste.innerHTML = '';
+
+  for (const nr of Dokumente.liste()) {
+    const vorn = nr === Dokumente.aktiv();
+    const offen = vorn ? geaendert : !!geaendertJe[nr];
+
+    const reiter = document.createElement('div');
+    reiter.className = 'dokumentreiter' + (vorn ? ' dokumentreiter--vorn' : '');
+    reiter.setAttribute('role', 'tab');
+    reiter.setAttribute('aria-selected', vorn ? 'true' : 'false');
+    reiter.tabIndex = vorn ? 0 : -1;
+    reiter.draggable = true;
+    reiter.dataset.nr = String(nr);
+    reiter.title = Dokumente.name(nr) + (offen ? ' — nicht gespeichert' : '');
+
+    const name = document.createElement('span');
+    name.className = 'dokumentreiter__name';
+    name.textContent = Dokumente.name(nr);
+    reiter.appendChild(name);
+
+    /* Der Punkt und das Kreuz teilen sich denselben Platz — welches zu
+       sehen ist, entscheidet das Stilblatt. */
+    const punkt = document.createElement('span');
+    punkt.className = 'dokumentreiter__punkt';
+    punkt.textContent = offen ? '\u2022' : '';
+    punkt.setAttribute('aria-hidden', 'true');
+    reiter.appendChild(punkt);
+
+    const zu = document.createElement('button');
+    zu.className = 'dokumentreiter__zu';
+    zu.type = 'button';
+    zu.textContent = '\u00D7';
+    zu.setAttribute('aria-label', Dokumente.name(nr) + ' schließen');
+    zu.addEventListener('click', (e) => { e.stopPropagation(); dokumentSchliessen(nr); });
+    reiter.appendChild(zu);
+
+    reiter.addEventListener('click', () => dokumentWechseln(nr));
+    /* Mit der mittleren Taste schließen — wie überall, wo es Reiter gibt. */
+    reiter.addEventListener('auxclick', (e) => {
+      if (e.button === 1) { e.preventDefault(); dokumentSchliessen(nr); }
+    });
+    reiter.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); dokumentWechseln(nr); }
+    });
+
+    /* Ziehen ordnet um. Die Nummern bleiben, was sie sind; nur die
+       Reihenfolge der Liste ändert sich. */
+    reiter.addEventListener('dragstart', (e) => {
+      ziehtNr = nr;
+      reiter.classList.add('dokumentreiter--zieht');
+      try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(nr)); }
+      catch (fehler) { /* manche Umgebungen mögen das nicht */ }
+    });
+    reiter.addEventListener('dragend', () => { ziehtNr = null; dokumentleisteBauen(); });
+    reiter.addEventListener('dragover', (e) => {
+      if (ziehtNr === null || ziehtNr === nr) return;
+      e.preventDefault();
+      reiter.classList.add('dokumentreiter--ziel');
+    });
+    reiter.addEventListener('dragleave', () => reiter.classList.remove('dokumentreiter--ziel'));
+    reiter.addEventListener('drop', (e) => {
+      e.preventDefault();
+      reiter.classList.remove('dokumentreiter--ziel');
+      if (ziehtNr === null || ziehtNr === nr) return;
+      Dokumente.verschieben(ziehtNr, Dokumente.liste().indexOf(nr));
+      ziehtNr = null;
+      dokumentleisteBauen();
+    });
+
+    leiste.appendChild(reiter);
+  }
+
+  const plus = document.createElement('button');
+  plus.className = 'dokumentleiste__neu';
+  plus.type = 'button';
+  plus.textContent = '+';
+  plus.title = 'Neues Dokument (Strg+N)';
+  plus.setAttribute('aria-label', 'Neues Dokument');
+  plus.addEventListener('click', () => B.neu());
+  leiste.appendChild(plus);
+}
+
 /* Das Zuletztgeschriebene zurückholen — wie in der App. Ein Fenster, das
    beim Öffnen leer ist, obwohl gestern etwas drinstand, ist ein Verlust. */
 grundschriftAnwenden();
@@ -9295,6 +9630,10 @@ if (Bruecke) Bruecke.textSetzen(Dokument.lies().text);
 menueleisteAnwenden();
 bedienungAnwenden();
 flaecheAnwenden();
+
+/* Die Reiter der offenen Dokumente. Ganz zuletzt, weil sie Namen und
+   Änderungsstand aller Dokumente zeigt — beides steht erst jetzt fest. */
+dokumentleisteBauen();
 
 
 })();

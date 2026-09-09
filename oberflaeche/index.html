@@ -32,6 +32,15 @@
 
 <!-- Die Menüleiste wird aus einer Liste gebaut (js/programm.js). Sie hier
      von Hand hinzuschreiben hieße, jeden Menüpunkt zweimal zu pflegen. -->
+<!-- Die offenen Dokumente, ganz oben — wie im WPS Writer. Ein Fenster
+     traegt mehrere Briefe; hier steht, welche das sind und welcher vorn
+     liegt. Gebaut wird die Leiste in js/programm.js aus der Liste in
+     js/dokumente.js; sie von Hand hinzuschreiben hiesse, sie doppelt zu
+     fuehren. Sie steht auch bei einem einzigen Dokument da: Wer nicht
+     sieht, dass es Reiter gibt, sucht sie auch nicht. -->
+<div class="dokumentleiste" id="dokumentleiste" role="tablist"
+     aria-label="Offene Dokumente"></div>
+
 <div class="menueleiste" id="menueleiste" role="menubar"></div>
 
 <!-- Zwei Leisten, wie im Writer: oben die Datei und das Dokument, darunter
@@ -839,6 +848,9 @@
 <!-- Language Bridge: Zentrale Sprachprüfungs-Engine (hängt sich selbst in programm.js ein) -->
 <script src="js/language-bridge.js"></script>
 <script src="js/dokumentmodell.js"></script>
+<!-- Die offenen Dokumente. Muss vor programm.js stehen: Der Speicher
+     dort fragt beim Laden schon, zu welchem Dokument ein Wert gehoert. -->
+<script src="js/dokumente.js"></script>
 <script src="js/programm.js"></script>
 </body>
 </html>
