@@ -259,8 +259,9 @@ dem Menüband von Word: *Start* trägt Zwischenablage, Schriftart, Absatz,
 Formatvorlagen und Bearbeiten, *Ansicht* beginnt mit den Ansichten und
 nicht mit dem Zoom. Jeder der 191 Befehle ist von dort erreichbar. Auf *Start* steht der
 **Formatvorlagen-Katalog**: Er zeigt die Vorlage, statt sie zu benennen —
-acht Kacheln in zwei Zeilen, und der Pfeil daneben klappt sie groß auf,
-samt *Neue Formatvorlage*, *verwalten* und *löschen*.
+acht Kacheln in zwei Zeilen. Der Pfeil daneben klappt auf, was dort
+*nicht* steht: die eigenen Vorlagen und die Befehle *Neue Formatvorlage*,
+*verwalten* und *löschen*.
 
 **Eigene Formatvorlagen.** Was fehlt, legt man selbst an: eine
 *Anschrift*, die immer rechts steht, ein *Merksatz* in Grau. Der Dialog

@@ -1913,14 +1913,22 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 .katalog__mehr:hover{background:rgba(127,127,127,.12);border-color:var(--rand);color:var(--schrift)}
 
 .katalogklappe{
-  position:fixed;z-index:80;
+  position:fixed;z-index:80;min-width:224px;
   background:var(--leiste);
   border:1px solid var(--rand);border-radius:8px;
   box-shadow:var(--schatten);
   padding:6px;
 }
+/* Nur die eigenen Vorlagen stehen hier — die acht mitgelieferten stehen
+   zwei Zentimeter darüber im Band, und zweimal dasselbe ist keine Hilfe.
+   Deshalb höchstens drei nebeneinander: Vier machten das Menü breiter,
+   als es Inhalt hat. */
+.katalogklappe__kopf{
+  margin:2px 4px 6px;font-size:11px;font-weight:600;
+  letter-spacing:.5px;text-transform:uppercase;color:var(--schrift-3);
+}
 .katalogklappe__gitter{
-  display:grid;grid-template-columns:repeat(4, 1fr);gap:3px;
+  display:grid;grid-template-columns:repeat(3, 1fr);gap:3px;
 }
 .katalogklappe__strich{height:1px;background:var(--rand);margin:6px 4px 4px}
 .katalogklappe__punkt{

@@ -2466,8 +2466,8 @@ function katalogBauen() {
   const mehr = document.createElement('button');
   mehr.className = 'katalog__mehr';
   mehr.type = 'button';
-  mehr.title = 'Alle Formatvorlagen';
-  mehr.setAttribute('aria-label', 'Alle Formatvorlagen');
+  mehr.title = 'Mehr zu den Formatvorlagen';
+  mehr.setAttribute('aria-label', 'Mehr zu den Formatvorlagen');
   mehr.setAttribute('aria-haspopup', 'true');
   mehr.textContent = '⌄';
   mehr.addEventListener('mousedown', (e) => e.preventDefault());
@@ -2483,9 +2483,19 @@ function katalogKlappeWeg() {
   if (katalogKlappe) { katalogKlappe.remove(); katalogKlappe = null; }
 }
 
-/* Die aufgeklappte Tafel.
+/* Das Klappmenü unter dem Pfeil.
  *
- * Sie hängt am Fenster und nicht im Band, und das ist kein Schönheits-
+ * Es zeigte erst ALLE acht Vorlagen noch einmal — dieselben, die zwei
+ * Zentimeter darüber schon im Band stehen. „Das ist so doppelt gemoppelt,
+ * deswegen hat WPS ein Klappmenü, du öffnest ein extra Fenster", und das
+ * war richtig: Ein Aufklappen soll bringen, was oben NICHT steht.
+ *
+ * Was oben nicht steht, sind die selbst angelegten Vorlagen (das Band
+ * bleibt bei den acht mitgelieferten, sonst wüchse die Gruppe mit jeder
+ * eigenen weiter hinein) und die drei Befehle. Genau das steht hier —
+ * mehr nicht.
+ *
+ * Es hängt am Fenster und nicht im Band, und das ist kein Schönheits-
  * fehler: Das Band rollt seitlich, und was auf einer Achse rollt,
  * schneidet der Browser auch auf der anderen ab. Genau daran war einmal
  * die Schriftliste als Streifen von zwanzig Pixeln geendet.
@@ -2496,14 +2506,23 @@ function katalogKlappeZeigen(knopf) {
   const tafel = document.createElement('div');
   tafel.className = 'katalogklappe';
 
-  const gitter = document.createElement('div');
-  gitter.className = 'katalogklappe__gitter';
-  for (const eintrag of katalogEintraege()) gitter.appendChild(katalogStueck(eintrag, true));
-  tafel.appendChild(gitter);
+  /* Die eigenen Vorlagen — nur die, und nur wenn es welche gibt. */
+  const eigene = katalogEintraege().slice(KATALOG.length);
+  if (eigene.length) {
+    const kopf = document.createElement('p');
+    kopf.className = 'katalogklappe__kopf';
+    kopf.textContent = 'Eigene Formatvorlagen';
+    tafel.appendChild(kopf);
 
-  const strichchen = document.createElement('div');
-  strichchen.className = 'katalogklappe__strich';
-  tafel.appendChild(strichchen);
+    const gitter = document.createElement('div');
+    gitter.className = 'katalogklappe__gitter';
+    for (const eintrag of eigene) gitter.appendChild(katalogStueck(eintrag, true));
+    tafel.appendChild(gitter);
+
+    const strichchen = document.createElement('div');
+    strichchen.className = 'katalogklappe__strich';
+    tafel.appendChild(strichchen);
+  }
 
   /* Im Aufbau hat die Gruppe „Stile" zwei Dinge: die Vorlagen zum
      Aussuchen — das ist der Katalog — und den Weg, sie zu verwalten. Der
@@ -4760,6 +4779,23 @@ function vorlageDialog(titel, start, knopfName, beiOk, basisAnfang) {
     knopfName, true);
 }
 
+/* Ein Name, den es noch nicht gibt.
+ *
+ * Zwei Vorlagen „Anschrift" nebeneinander sind im Katalog, im Klappfeld
+ * und in der Verwaltung nicht auseinanderzuhalten — man wählt eine und
+ * bekommt vielleicht die andere. Also hängt der zweite eine Zahl an,
+ * still: Wer den Namen schon vergeben hat, weiß es meistens nicht mehr,
+ * und eine Fehlermeldung stünde zwischen ihm und seiner Arbeit.
+ */
+function freierName(wunsch) {
+  const namen = new Set(Object.values(vorlagenStile).map((wie) => wie.name));
+  if (!namen.has(wunsch)) return wunsch;
+  for (let n = 2; n < 100; n++) {
+    if (!namen.has(wunsch + ' ' + n)) return wunsch + ' ' + n;
+  }
+  return wunsch;
+}
+
 /* Der nächste freie Platz für eine eigene Vorlage. Sie hängt als Klasse
    am Absatz: <p class="eigen-3">. */
 function eigenerSchluessel() {
@@ -4785,6 +4821,7 @@ B.vorlageNeu = () => {
   auswahlMerken();
   vorlageDialog('Neue Formatvorlage', start, 'Anlegen', (wie) => {
     wie.eigen = true;
+    wie.name = freierName(wie.name);
     vorlagenStile[schluessel] = wie;
     vorlagenAnwenden();
     werkzeugeBauen();
