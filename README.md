@@ -300,11 +300,25 @@ wird, dazu ein Suchfeld und **1801 Zeichnungen** zur Wahl. Ein Klick, und
 sie ist getauscht; „Zurücksetzen" holt die alte zurück. LibreOffice kann
 das für seine Symbolleisten, für sein Symbolband nicht — hier geht beides.
 
-**Optionen** (F9). Wie im Writer: links ein Baum, rechts der Bereich.
-Benutzerdaten, Ansicht, Schriftarten, Pfade, Sprache, Prüfung und KI,
-Gedächtnis — und unter *Erweitert*, was zusätzlich geholt wurde und ob es
-da ist. Unter *Extras ▸ Erweiterungsverwaltung* steht dasselbe noch einmal
-als eigenes Fenster.
+**Optionen** (F9). Links die Seiten, rechts der Bereich — in der
+Reihenfolge und mit den Namen aus WPS Writer: Ansicht, Bearbeiten,
+Allgemein und Speichern, Speicherort für Dateien, Änderungen verfolgen,
+Benutzerinformationen, Rechtschreibprüfung, dazu Lunivos eigene Seiten
+Schreibhilfe und KI, Gedächtnis, Menüband anpassen und *Erweitert*, wo
+steht, was zusätzlich geholt wurde und ob es da ist.
+
+Die Schalter dort sind dieselben wie im Menü und im Band — Lineal,
+Navigationsbereich, Textbegrenzungen, Gitternetzlinien, Steuerzeichen,
+AutoKorrektur, Wortvorhersage, Änderungen verfolgen, Markup, Wellenlinien.
+Ein Schalter, drei Stellen, ein Zustand; wer ihn irgendwo umlegt, sieht
+ihn überall wechseln.
+
+Was WPS dort hat und hier fehlt, fehlt mit Grund: *Sicherungseinstellungen*
+(Lunivo sichert von selbst, laufend — es gäbe nichts einzustellen),
+*Drucken* und *In PDF exportieren* (steht im Druckfenster, wo man es
+braucht), *Sicherheit* (Kennwortschutz kann das Programm nicht) und die
+*Symbolleiste für den Schnellzugriff* (gibt es nicht). Ein Feld ohne
+Wirkung ist schlimmer als ein fehlendes.
 
 ## So sieht es aus
 

@@ -291,22 +291,49 @@
       </div>
     </div>
 
-    <div class="gruppe" data-bereich="schreiben">
+    <div class="gruppe" data-bereich="bearbeiten">
       <span class="gruppe__titel">Beim Schreiben</span>
       <div class="karte">
         <label class="feld feld--schalter">
-          <span class="feld__name">Textbegrenzungen
-            <em class="feld__satz">Die vier Ecken zeigen, wo der bedruckbare Bereich beginnt.</em>
+          <span class="feld__name">AutoKorrektur
+            <em class="feld__satz">Bessert beim Tippen still aus, was fast immer ein Vertipper ist.</em>
           </span>
-          <input id="einst-marken" type="checkbox">
+          <input type="checkbox" data-schalter="autokorrektur">
         </label>
-
         <label class="feld feld--schalter">
-          <span class="feld__name">Rote Wellenlinien
-            <em class="feld__satz">Die Rechtschreibprüfung des Systems. Die Schreibhilfe
-              arbeitet davon unabhängig weiter.</em>
+          <span class="feld__name">Wortvorhersage
+            <em class="feld__satz">Ab drei Buchstaben stehen passende Wörter zur Wahl. Wiedererkennen ist leichter als Erinnern.</em>
           </span>
-          <input id="einst-wellen" type="checkbox">
+          <input type="checkbox" data-schalter="vorhersage">
+        </label>
+      </div>
+
+      <span class="gruppe__titel">Einfügen</span>
+      <div class="karte">
+        <div class="feld">
+          <span class="feld__name">Ohne Formatierung einfügen</span>
+          <em class="feld__satz">Kein Schalter, sondern ein eigener Befehl: im Menü
+            unter Bearbeiten, im Band, unter der rechten Maustaste — und mit
+            Strg+Umschalt+V. So bleibt beides erreichbar, statt dass eine
+            Einstellung heimlich entscheidet, was beim Einfügen geschieht.</em>
+        </div>
+      </div>
+    </div>
+
+    <div class="gruppe" data-bereich="verfolgen">
+      <span class="gruppe__titel">Änderungen verfolgen</span>
+      <div class="karte">
+        <label class="feld feld--schalter">
+          <span class="feld__name">Änderungen verfolgen
+            <em class="feld__satz">Was ab jetzt geschrieben wird, steht unterstrichen da; Gelöschtes bleibt durchgestrichen stehen.</em>
+          </span>
+          <input type="checkbox" data-schalter="verfolgen">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Markup anzeigen
+            <em class="feld__satz">Aus gesehen: Der Text steht so da, wie er nach dem Annehmen aussähe. Die Änderungen sind nicht weg.</em>
+          </span>
+          <input type="checkbox" data-schalter="markup">
         </label>
       </div>
     </div>
@@ -387,13 +414,74 @@
           </select>
         </div>
       </div>
+
+      <!-- „Anzeigen" heißt es im WPS Writer, und es sind dieselben Schalter,
+           die auch unter Ansicht im Menü stehen. Zweimal derselbe Schalter
+           ist hier kein Fehler, sondern der Sinn einer Optionenseite: Wer
+           sie sucht, sucht sie an einer Stelle beisammen. -->
+      <span class="gruppe__titel">Anzeigen</span>
+      <div class="karte">
+        <label class="feld feld--schalter">
+          <span class="feld__name">Lineal
+            <em class="feld__satz">Zentimeter über dem Blatt, mit den Marken für die Einzüge.</em>
+          </span>
+          <input type="checkbox" data-schalter="lineal">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Navigationsbereich
+            <em class="feld__satz">Die Überschriften als Liste zum Anspringen.</em>
+          </span>
+          <input type="checkbox" data-schalter="navigation">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Textbegrenzungen
+            <em class="feld__satz">Die vier Ecken zeigen, wo der bedruckbare Bereich beginnt.</em>
+          </span>
+          <input type="checkbox" data-schalter="marken">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Gitternetzlinien
+            <em class="feld__satz">Ein Raster über dem Blatt — zum Ausrichten, nicht zum Drucken.</em>
+          </span>
+          <input type="checkbox" data-schalter="netzlinien">
+        </label>
+      </div>
+
+      <span class="gruppe__titel">Formatierungszeichen</span>
+      <div class="karte">
+        <label class="feld feld--schalter">
+          <span class="feld__name">Steuerzeichen
+            <em class="feld__satz">Leerzeichen, Tabulatoren und Absatzmarken werden sichtbar. Auf dem Papier stehen sie nicht.</em>
+          </span>
+          <input type="checkbox" data-schalter="steuerzeichen">
+        </label>
+      </div>
     </div>
 
-    <div class="gruppe" data-bereich="schriften">
-      <span class="gruppe__titel">Schriftarten</span>
+    <div class="gruppe" data-bereich="speichern">
+      <span class="gruppe__titel">Speichern</span>
       <div class="karte">
         <div class="feld">
-          <label class="feld__name" for="einst-schrift">Schrift für neuen Text</label>
+          <label class="feld__name" for="einst-endung">Dateien als Standard speichern</label>
+          <em class="feld__satz">Womit „Speichern unter" aufgeht. Eine geöffnete Datei
+            behält ihr eigenes Format — wer einen Word-Brief ändert und speichert,
+            bekommt wieder Word.</em>
+          <select id="einst-endung">
+            <option value="odt">OpenDocument-Text (.odt)</option>
+            <option value="docx">Microsoft Word (.docx)</option>
+            <option value="doc">Word 97–2003 (.doc)</option>
+            <option value="rtf">Rich Text (.rtf)</option>
+            <option value="fodt">OpenDocument, eine Datei (.fodt)</option>
+            <option value="html">Webseite (.html)</option>
+            <option value="txt">Nur Text (.txt)</option>
+          </select>
+        </div>
+      </div>
+
+      <span class="gruppe__titel">Schrift für neuen Text</span>
+      <div class="karte">
+        <div class="feld">
+          <label class="feld__name" for="einst-schrift">Schrift</label>
           <em class="feld__satz">Gilt für ein neues Dokument. Ein geöffnetes
             bringt seine eigene mit.</em>
           <select id="einst-schrift"></select>
@@ -403,10 +491,20 @@
           <select id="einst-schriftgroesse"></select>
         </div>
       </div>
+
+      <span class="gruppe__titel">Maßeinheit</span>
+      <div class="karte">
+        <div class="feld">
+          <span class="feld__name">Millimeter</span>
+          <em class="feld__satz">Ränder, Abstände und Einzüge stehen überall in
+            Millimetern, das Lineal in Zentimetern. Umstellen lässt sich das
+            nicht — ein Feld mit einer einzigen Wahl wäre eine Attrappe.</em>
+        </div>
+      </div>
     </div>
 
-    <div class="gruppe" data-bereich="sprache">
-      <span class="gruppe__titel">Sprache</span>
+    <div class="gruppe" data-bereich="pruefung">
+      <span class="gruppe__titel">Rechtschreibprüfung</span>
       <div class="karte">
         <div class="feld">
           <label class="feld__name" for="einst-pruefsprache">Sprache für die Prüfung</label>
@@ -414,11 +512,31 @@
             und die gründliche Prüfung.</em>
           <select id="einst-pruefsprache"></select>
         </div>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Rechtschreibung während der Eingabe prüfen
+            <em class="feld__satz">Rote Wellenlinien im Text, von Lunivo. Aus gesehen bleibt das Blatt sauber — die Funde stehen weiter in der Seitenleiste, auch nach „Prüfen".</em>
+          </span>
+          <input type="checkbox" data-schalter="wellen">
+        </label>
+      </div>
+
+      <span class="gruppe__titel">Benutzerwörterbuch</span>
+      <div class="karte">
+        <div class="feld">
+          <span class="feld__name">Was das Programm gelernt hat</span>
+          <em class="feld__satz">Wörter, die künftig als richtig gelten, und
+            Schreibweisen, die du selbst gewählt hast. Sie stehen unter
+            <b>Gedächtnis</b> — dort lassen sie sich ansehen und wieder
+            vergessen.</em>
+          <div class="reihe">
+            <button class="knopf" id="einst-zum-gedaechtnis" type="button">Zum Gedächtnis</button>
+          </div>
+        </div>
       </div>
     </div>
 
     <div class="gruppe" data-bereich="pfade">
-      <span class="gruppe__titel">Pfade</span>
+      <span class="gruppe__titel">Speicherort für Dateien</span>
       <div class="karte">
         <div class="feld">
           <span class="feld__name">Ordner zum Speichern</span>
@@ -429,6 +547,42 @@
             <button class="knopf" id="einst-ordner-waehlen" type="button">Wählen…</button>
             <button class="knopf" id="einst-ordner-weg" type="button">Zurücksetzen</button>
           </div>
+        </div>
+
+        <div class="feld">
+          <span class="feld__name">Eigene Vorlagen</span>
+          <em class="feld__satz">Was in diesem Ordner liegt, steht unter
+            <b>Datei ▸ Neu aus Vorlage</b> im zweiten Reiter. Hineinlegen genügt.</em>
+          <div class="reihe">
+            <input id="einst-vorlagenordner" type="text" readonly>
+            <button class="knopf" id="einst-vorlagenordner-auf" type="button">Öffnen</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- „Menüband anpassen" heißt bei WPS eine ganze Seite mit zwei Listen.
+         Hier steht der Weg dorthin: Das Anpassen selbst hat sein eigenes
+         Fenster, und es zweimal zu bauen hieße, zwei Fassungen zu pflegen. -->
+    <div class="gruppe" data-bereich="band">
+      <span class="gruppe__titel">Menüband anpassen</span>
+      <div class="karte">
+        <div class="feld">
+          <span class="feld__name">Gruppen umsortieren und ausblenden</span>
+          <em class="feld__satz">Je Reiter lässt sich die Reihenfolge der Gruppen
+            ändern und einzelne ausblenden. Verschoben wird mit zwei Pfeilen,
+            nicht mit der Maus — Ziehen verlangt eine ruhige Hand, ein Pfeil
+            nach oben trifft immer.</em>
+          <div class="reihe">
+            <button class="knopf" id="einst-band-anpassen" type="button">Register anpassen…</button>
+          </div>
+        </div>
+
+        <div class="feld">
+          <span class="feld__name">Ein Symbol austauschen</span>
+          <em class="feld__satz">Rechtsklick auf einen Knopf — im Band wie in den
+            Symbolleisten. Ein Fenster zeigt, wo die Zeichnung überall benutzt
+            wird, dazu ein Suchfeld und 1801 Zeichnungen zur Wahl.</em>
         </div>
       </div>
     </div>

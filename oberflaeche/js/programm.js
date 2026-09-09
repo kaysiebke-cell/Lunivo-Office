@@ -10445,12 +10445,10 @@ Einstellungen.verbinde({
   zoomSetzen: setzeZoom,
   thema: () => thema,
   themaWeiter: () => setzeThema(THEMEN[(THEMEN.indexOf(thema) + 1) % THEMEN.length])(),
-  marken: () => marken,
-  markenSetzen: (an) => { if (an !== marken) B.markenZeigen(); },
-  /* Die Wellenlinien: ein Weg für beide Schalter, den im Band und den in
-     den Einstellungen. */
-  wellenJetzt: () => lebendAn,
-  wellenUmschalten: () => B.rechtschreibung(),
+  /* „marken" und „wellen" standen hier einmal einzeln. Sie sind jetzt zwei
+     von zehn Schaltern und stehen weiter unten in einer Liste — einzeln
+     verdrahtet wären es zwanzig fast gleiche Zeilen, und die elfte
+     vergisst man. */
   neuZeichnen: () => KIteil.kiKnoepfeAuffrischen(),
 
   /* Die Optionenseite füllt jetzt auch Listen, die das Programm führt. Sie
@@ -10473,6 +10471,33 @@ Einstellungen.verbinde({
     if (skala !== undefined) Speicher.schreib('skalierung', Number(skala) || 100);
     bedienungAnwenden();
   },
+  /* Die Schalter der Optionenseite. Jeder sagt, wie es steht, und legt
+     denselben Griff um, den auch das Menü und das Band benutzen — ein
+     Schalter, drei Stellen, ein Zustand. Die Seite fasst nichts selbst an;
+     sie wüsste auch gar nicht, was „Lineal an" bedeutet. */
+  schalter: {
+    lineal:        { an: () => lineal,          um: () => B.linealZeigen() },
+    navigation:    { an: () => !$('navigation').hidden, um: () => B.navigation() },
+    marken:        { an: () => marken,          um: () => B.markenZeigen() },
+    netzlinien:    { an: () => netzlinien,      um: () => B.netzlinien() },
+    steuerzeichen: { an: () => steuerzeichen,   um: () => B.steuerzeichenZeigen() },
+    autokorrektur: { an: () => autokorrekturAn, um: () => B.autokorrektur() },
+    vorhersage:    { an: () => vorhersageAn,    um: () => B.vorhersage() },
+    verfolgen:     { an: () => verfolgenAn,     um: () => B.verfolgen() },
+    markup:        { an: () => markupZeigen,    um: () => B.markupUmschalten() },
+    wellen:        { an: () => lebendAn,        um: () => B.rechtschreibung() },
+  },
+
+  /* Das Format, mit dem „Speichern unter" aufgeht. Es gehört zum Dokument
+     (Dokumente.EIGEN), nicht zum Programm — wer einen Word-Brief offen
+     hat, soll ihn als Word behalten. */
+  endungJetzt: () => Speicher.lies('endung', 'odt'),
+  endungSetzen: (endung) => Speicher.schreib('endung', endung),
+
+  registerAnpassen: () => B.registerAnpassen(),
+  vorlagenOrdner: () => B.vorlagenOrdner(),
+  vorlagenOrdnerWeg: () => '~/Vorlagen',
+
   flaecheJetzt: () => flaeche,
   flaecheSetzen: (wahl) => {
     flaeche = wahl === 'register' ? 'register' : 'leisten';

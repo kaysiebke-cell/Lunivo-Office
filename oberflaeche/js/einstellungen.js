@@ -23,9 +23,15 @@ let griffe = {
   zoomSetzen: () => {},
   thema: () => 'auto',
   themaWeiter: () => {},
-  marken: () => true,
-  markenSetzen: () => {},
   neuZeichnen: () => {},
+  /* Die Schalter: leer, bis programm.js sie reicht. Ein fehlender Griff
+     macht sein Kästchen grau statt das Fenster kaputt. */
+  schalter: {},
+  endungJetzt: () => 'odt',
+  endungSetzen: () => {},
+  registerAnpassen: () => {},
+  vorlagenOrdner: () => {},
+  vorlagenOrdnerWeg: () => '',
 };
 
 const verbinde = (neue) => { griffe = Object.assign(griffe, neue); };
@@ -33,34 +39,40 @@ const verbinde = (neue) => { griffe = Object.assign(griffe, neue); };
 /* ------------------------------------------------------------
    Der Baum links
 
-   Die Reihenfolge ist die des Writers, soweit es hier etwas dazu gibt:
-   erst wer schreibt, dann womit, dann wie es aussieht, zuletzt das
-   Zusätzliche. Wer den Writer kennt, sucht nicht zweimal.
+   Die Reihenfolge und die Namen sind die aus dem Optionen-Fenster des WPS
+   Writer — Kay hat es Seite für Seite geschickt. Wer von dort kommt,
+   sucht nicht zweimal.
+
+   FLACH, nicht als Baum. Vorher lagen die Seiten in drei Zweigen, die man
+   erst aufklappen musste. Bei elf Seiten ist das ein Umweg ohne Gewinn:
+   Man sieht ohnehin alle auf einmal, und WPS macht es genauso.
+
+   Was bei ihm steht und hier fehlt, fehlt mit Grund:
+
+     Sicherungseinstellungen — Lunivo sichert von selbst, laufend, in den
+       Speicher des Fensters. Es gibt nichts einzustellen; ein Feld dafür
+       wäre eine Attrappe.
+     In PDF exportieren, Drucken — was es dazu gibt, steht im Druckfenster,
+       wo man es beim Drucken braucht.
+     Sicherheit — Kennwortschutz kann das Programm nicht. „Bearbeitung
+       sperren" ist etwas anderes und steht unter Überprüfen.
+     Symbolleiste für den Schnellzugriff — gibt es nicht.
    ------------------------------------------------------------ */
 const BEREICHE = [
-  ['programm', 'Lunivo-Office', [
-    ['benutzer',  'Benutzerdaten'],
-    ['ansicht',   'Ansicht'],
-    ['schriften', 'Schriftarten'],
-    ['pfade',     'Pfade'],
-    ['erweitert', 'Erweitert'],
-  ]],
-  ['pruefung', 'Sprache und Prüfung', [
-    ['sprache',   'Sprache'],
-    ['schreiben', 'Beim Schreiben'],
-  ]],
-  ['hilfe', 'Schreibhilfe', [
-    ['ki',          'Prüfung und KI'],
-    ['gedaechtnis', 'Gedächtnis'],
-  ]],
+  ['ansicht',     'Ansicht'],
+  ['bearbeiten',  'Bearbeiten'],
+  ['speichern',   'Allgemein und Speichern'],
+  ['pfade',       'Speicherort für Dateien'],
+  ['verfolgen',   'Änderungen verfolgen'],
+  ['benutzer',    'Benutzerinformationen'],
+  ['pruefung',    'Rechtschreibprüfung'],
+  ['ki',          'Schreibhilfe und KI'],
+  ['gedaechtnis', 'Gedächtnis'],
+  ['band',        'Menüband anpassen'],
+  ['erweitert',   'Erweitert'],
 ];
 
-let bereichJetzt = 'benutzer';
-/* Welche Zweige offen stehen. Alle drei zu Anfang: Wer die Optionen zum
-   ersten Mal aufmacht, soll sehen, was es gibt, statt drei zugeklappte
-   Wörter zu finden und raten zu müssen, was darunter liegt. */
-const offeneZweige = new Set(BEREICHE.map(([kennung]) => kennung));
-
+let bereichJetzt = 'ansicht';
 function bereichZeigen(kennung) {
   bereichJetzt = kennung;
   for (const gruppe of document.querySelectorAll('#einst-bereiche .gruppe[data-bereich]')) {
@@ -84,56 +96,18 @@ function baumBauen() {
   const baum = $('einst-baum');
   baum.innerHTML = '';
 
-  for (const [zweigKennung, zweigName, blaetter] of BEREICHE) {
-    const offen = offeneZweige.has(zweigKennung);
-
-    const zweig = document.createElement('button');
-    zweig.type = 'button';
-    zweig.className = 'optionen__zweig';
-    zweig.setAttribute('aria-expanded', offen ? 'true' : 'false');
-
-    const pfeil = document.createElement('span');
-    pfeil.className = 'optionen__pfeil';
-    pfeil.textContent = offen ? '▾' : '▸';
-    zweig.appendChild(pfeil);
-    zweig.appendChild(document.createTextNode(zweigName));
-
-    /* Ein Klick auf den Zweig klappt auf und zu. Er wählt selbst nichts aus:
-       Hinter „Lunivo-Office" liegt keine Seite, sondern fünf. */
-    zweig.addEventListener('click', () => {
-      if (offeneZweige.has(zweigKennung)) offeneZweige.delete(zweigKennung);
-      else offeneZweige.add(zweigKennung);
-      baumBauen();
-    });
-    baum.appendChild(zweig);
-
-    const kasten = document.createElement('div');
-    kasten.className = 'optionen__blaetter';
-    kasten.hidden = !offen;
-
-    for (const [kennung, name] of blaetter) {
-      const ast = document.createElement('button');
-      ast.type = 'button';
-      ast.className = 'optionen__ast';
-      ast.dataset.bereich = kennung;
-      ast.textContent = name;
-      ast.setAttribute('role', 'tab');
-      ast.addEventListener('click', () => bereichZeigen(kennung));
-      kasten.appendChild(ast);
-    }
-    baum.appendChild(kasten);
+  for (const [kennung, name] of BEREICHE) {
+    const ast = document.createElement('button');
+    ast.type = 'button';
+    ast.className = 'optionen__ast';
+    ast.dataset.bereich = kennung;
+    ast.textContent = name;
+    ast.setAttribute('role', 'tab');
+    ast.addEventListener('click', () => bereichZeigen(kennung));
+    baum.appendChild(ast);
   }
 
   bereichZeigen(bereichJetzt);
-}
-
-/* Zu welchem Zweig gehört ein Blatt? Wird gebraucht, wenn ein Menüpunkt
-   geradewegs in einen Bereich springt, dessen Zweig zugeklappt ist. */
-function zweigVon(blatt) {
-  for (const [zweigKennung, , blaetter] of BEREICHE) {
-    if (blaetter.some(([kennung]) => kennung === blatt)) return zweigKennung;
-  }
-  return null;
 }
 
 /* ------------------------------------------------------------
@@ -273,12 +247,61 @@ function gedaechtnisZeigen() {
 /* ------------------------------------------------------------
    Darstellung
    ------------------------------------------------------------ */
+function speichernZeigen() {
+  const w = $('einst-endung');
+  const jetzt = griffe.endungJetzt();
+  w.value = [...w.options].some((o) => o.value === jetzt) ? jetzt : 'odt';
+  $('einst-vorlagenordner').value = griffe.vorlagenOrdnerWeg() || '~/Vorlagen';
+}
+
 function darstellungZeigen() {
   const zoom = griffe.zoom();
   $('einst-zoom-stand').textContent = 'Schriftgröße: ' + zoom + ' %';
   $('einst-probe').style.fontSize = (12 * zoom / 100).toFixed(1) + 'pt';
-  $('einst-marken').checked = griffe.marken();
-  $('einst-wellen').checked = griffe.wellenJetzt();
+  schalterZeigen();
+}
+
+/* ------------------------------------------------------------
+   Die Schalter
+
+   Zehn Stück, und alle machen dasselbe: Sie fragen das Programm, wie es
+   gerade steht, und legen den Griff um. Sie einzeln zu verdrahten hieße
+   zwanzig fast gleiche Zeilen — und die elfte vergisst man.
+
+   Am Kästchen steht, welcher Griff gemeint ist (data-schalter). Die
+   Griffe selbst liegen in programm.js: Nur dort weiß jemand, was „Lineal
+   an" bedeutet. */
+function schalterGriff(kasten) {
+  return (griffe.schalter || {})[kasten.dataset.schalter] || null;
+}
+
+function schalterZeigen() {
+  for (const kasten of document.querySelectorAll('#einst-bereiche [data-schalter]')) {
+    const griff = schalterGriff(kasten);
+    /* Beides, an UND aus: Ein Kästchen, das einmal grau wurde, blieb es
+       sonst für immer — auch wenn der Griff längst da ist. Genau das war
+       der Fall, als die Seite ihre Schalter verdrahtete, bevor
+       programm.js sie gereicht hatte: zehn graue Kästchen. */
+    kasten.disabled = !griff;
+    if (!griff) { kasten.checked = false; continue; }
+    try { kasten.checked = !!griff.an(); } catch (e) { kasten.checked = false; }
+  }
+}
+
+function schalterVerdrahten() {
+  for (const kasten of document.querySelectorAll('#einst-bereiche [data-schalter]')) {
+    kasten.addEventListener('change', () => {
+      /* Erst beim Klick nachsehen, welcher Griff gemeint ist — beim
+         Verdrahten gibt es ihn womöglich noch nicht. */
+      const griff = schalterGriff(kasten);
+      if (!griff) return;
+      griff.um();
+      /* Danach alle noch einmal nachsehen: Manche Schalter ziehen andere
+         mit — „Änderungen verfolgen" aus heißt auch, dass das Markup
+         nichts mehr zu zeigen hat. */
+      schalterZeigen();
+    });
+  }
 }
 
 /* ------------------------------------------------------------
@@ -290,11 +313,7 @@ function oeffnen(bereich) {
   $('einstellungen').hidden = false;
   offen = true;
 
-  if (bereich) {
-    bereichJetzt = bereich;
-    const zweig = zweigVon(bereich);
-    if (zweig) offeneZweige.add(zweig);
-  }
+  if (bereich) bereichJetzt = bereich;
   baumBauen();
 
   benutzerZeigen();
@@ -311,6 +330,7 @@ function oeffnen(bereich) {
   kostenZeigen();
   gedaechtnisZeigen();
   darstellungZeigen();
+  speichernZeigen();
 
   /* Dauert einen Moment und darf das Aufgehen nicht aufhalten. */
   lokaleModelleNachtragen();
@@ -567,13 +587,21 @@ function verdrahten() {
       + 'Was hier schon stand, blieb erhalten.';
   });
 
-  $('einst-marken').addEventListener('change', (e) => griffe.markenSetzen(e.target.checked));
+  /* Alle Schalter über einen Kamm — siehe schalterVerdrahten. Jeder geht
+     denselben Weg wie sein Zwilling im Band; sonst hätten zwei Stellen
+     dieselbe Sache zu sagen und widersprächen sich beim nächsten Start. */
+  schalterVerdrahten();
 
-  /* Die Wellenlinien kommen seit dem Umbau von Lunivo selbst, nicht mehr
-     vom Browser. Der Schalter geht deshalb denselben Weg wie der im Band —
-     sonst hätten zwei Stellen dieselbe Sache zu sagen und widersprächen
-     sich beim nächsten Start. */
-  $('einst-wellen').addEventListener('change', () => griffe.wellenUmschalten());
+  $('einst-endung').addEventListener('change', () => {
+    griffe.endungSetzen($('einst-endung').value);
+  });
+
+  $('einst-zum-gedaechtnis').addEventListener('click', () => bereichZeigen('gedaechtnis'));
+  $('einst-band-anpassen').addEventListener('click', () => {
+    schliessen();
+    griffe.registerAnpassen();
+  });
+  $('einst-vorlagenordner-auf').addEventListener('click', () => griffe.vorlagenOrdner());
 
   $('einst-kleiner').addEventListener('click', () => { griffe.zoomSetzen(griffe.zoom() - 10); darstellungZeigen(); });
   $('einst-groesser').addEventListener('click', () => { griffe.zoomSetzen(griffe.zoom() + 10); darstellungZeigen(); });
