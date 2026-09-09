@@ -30,6 +30,35 @@
    der Reiter, ändert sich nur, WOHIN diese Namen zeigen — und das
    Programm liest sie neu ein.
 
+   MEHRERE FENSTER
+
+   „Fenster ▸ Neues Fenster" startet einen zweiten Programmlauf, der sich
+   an denselben Server hängt — und damit an denselben Speicher. Ohne
+   Weiteres führten beide Fenster dieselbe Reiterliste und schrieben ihre
+   Sicherung übereinander. Wer in zwei Fenstern schrieb, verlor einen der
+   beiden Texte.
+
+   Deshalb nimmt sich jedes Fenster beim Aufgehen einen PLATZ: die
+   kleinste Nummer, die gerade niemand hat. Der Platz kommt vor den Namen:
+
+       Fenster 1:  sp.dokumente        sp.dok.1.inhalt
+       Fenster 2:  sp.f2.dokumente     sp.f2.dok.1.inhalt
+
+   Fenster 1 bleibt ohne Vorsatz. Das ist kein Schönheitsfehler, sondern
+   Absicht: Wer bisher einen Text hatte, findet ihn wieder, ohne dass
+   irgendetwas umziehen muss.
+
+   Wer den Platz hat, sagt er alle paar Sekunden. Bleibt die Meldung aus
+   — Fenster zu, oder abgestürzt —, ist der Platz nach einer Viertelminute
+   wieder frei, und das nächste Fenster erbt die Dokumente, die dort noch
+   offen waren. Zwei Fenster, die im selben Augenblick aufgehen, greifen
+   nicht nach demselben Platz: Wer schreibt, liest gleich nach, ob er
+   wirklich dasteht.
+
+   Was NICHT je Fenster getrennt wird: die Gewohnheiten des Menschen —
+   Vergrößerung, Helligkeit, welche Leisten er mag. Die gehören ihm, nicht
+   dem Fenster, und sollen in jedem gleich sein.
+
    Diese Datei führt Buch: welche Dokumente offen sind, welches vorn
    liegt, und unter welchem Namen die Werte des vordersten liegen. Sie
    fasst die Oberfläche nicht an; das tut programm.js.
@@ -38,10 +67,92 @@
 
 const Dokumente = (() => {
 
+/* ------------------------------------------------------------
+   Der Platz dieses Fensters
+   ------------------------------------------------------------ */
+
+const WACH_ALLE = 5000;      /* so oft meldet sich ein Fenster */
+const WACH_TOT = 15000;      /* danach gilt sein Platz als frei */
+const PLAETZE = 32;          /* mehr Fenster macht niemand auf */
+
+function wachName(n) { return 'sp.fenster.' + n + '.wach'; }
+
+/* Welchen Platz DIESES Fenster zuletzt hatte.
+ *
+ * Der Merkzettel liegt im sessionStorage, und das ist der ganze Grund,
+ * warum er hilft: Der gehört dem einen Fenster, überlebt ein Neuladen und
+ * geht mit dem Fenster unter. Genau die Frage, die hier zu beantworten
+ * ist.
+ *
+ * Ohne ihn nahm ein neu geladenes Fenster wieder den kleinsten freien
+ * Platz — und das war womöglich der eines inzwischen geschlossenen
+ * Fensters. Dann lud Fenster 3 nach einem Neustart plötzlich die
+ * Dokumente von Fenster 2. Ein Fenster soll bei seinen Sachen bleiben.
+ */
+const MERK = 'sp.fenster.platz';
+function platzGemerkt() {
+  try {
+    const n = Number(sessionStorage.getItem(MERK));
+    return Number.isInteger(n) && n >= 1 && n <= PLAETZE ? n : null;
+  } catch (e) { return null; }
+}
+function platzMerken(n) {
+  try { sessionStorage.setItem(MERK, String(n)); } catch (e) { /* egal */ }
+}
+
+/* Ist der Platz frei? Frei heißt: Da hat sich lange niemand gemeldet. */
+function platzFrei(n) {
+  const da = roh(wachName(n), null);
+  return !(da && typeof da.zeit === 'number' && Date.now() - da.zeit < WACH_TOT);
+}
+
+/* Draufschreiben und gleich nachsehen, ob wirklich wir dastehen. Zwei
+   Fenster, die im selben Augenblick aufgehen, schreiben sonst beide auf
+   denselben Platz und merken es nie. Der spätere Schreiber gewinnt; der
+   frühere liest eine fremde Marke und geht eins weiter. */
+function platzGreifen(n, marke) {
+  rohSchreib(wachName(n), { marke: marke, zeit: Date.now() });
+  const jetzt = roh(wachName(n), null);
+  return !!(jetzt && jetzt.marke === marke);
+}
+
+function platzNehmen() {
+  const marke = Date.now().toString(36) + '.' + Math.random().toString(36).slice(2, 10);
+
+  /* Erst der eigene von vorhin — ein Neuladen soll nichts verschieben. */
+  const eigener = platzGemerkt();
+  if (eigener !== null && platzFrei(eigener) && platzGreifen(eigener, marke)) {
+    return { nr: eigener, marke: marke };
+  }
+
+  for (let n = 1; n <= PLAETZE; n++) {
+    if (!platzFrei(n)) continue;
+    if (platzGreifen(n, marke)) { platzMerken(n); return { nr: n, marke: marke }; }
+  }
+  /* Zweiunddreißig Fenster offen. Dann eben zu zweit auf Platz eins —
+     das ist besser, als gar nicht aufzugehen. */
+  return { nr: 1, marke: marke };
+}
+
+const PLATZ = platzNehmen();
+
+/* Fenster 1 schreibt ohne Vorsatz — so findet ein Mensch, der bisher ein
+   Fenster hatte, seinen Text an derselben Stelle wieder. */
+const VORSATZ = PLATZ.nr === 1 ? '' : 'f' + PLATZ.nr + '.';
+
+/* Sagen, dass es uns noch gibt — und beim Zumachen den Platz räumen,
+   damit das nächste Fenster nicht eine Viertelminute warten muss. */
+if (typeof window !== 'undefined') {
+  window.setInterval(() => {
+    rohSchreib(wachName(PLATZ.nr), { marke: PLATZ.marke, zeit: Date.now() });
+  }, WACH_ALLE);
+  window.addEventListener('pagehide', () => rohWeg(wachName(PLATZ.nr)));
+}
+
 /* Der Schlüssel, unter dem die Buchführung selbst liegt. Er gehört dem
    Fenster, nicht einem Dokument — sonst könnte man ihn nicht finden,
    ohne vorher zu wissen, was drinsteht. */
-const BUCH = 'sp.dokumente';
+const BUCH = 'sp.' + VORSATZ + 'dokumente';
 
 /* Was zum Dokument gehört und deshalb mit dem Reiter wechselt.
  *
@@ -127,7 +238,7 @@ function buchLesen() {
    setzt der Speicher in programm.js davor, und zwei Stellen, die
    dasselbe Vorwort anhängen, sind eine zu viel. */
 function schluesselVon(nr, name) {
-  return 'dok.' + nr + '.' + name;
+  return VORSATZ + 'dok.' + nr + '.' + name;
 }
 
 /* ------------------------------------------------------------
@@ -144,6 +255,10 @@ function schluesselVon(nr, name) {
    wieder zurücknimmt, findet seinen Text vor.
    ------------------------------------------------------------ */
 function umziehen() {
+  /* Nur Fenster 1. Der Altbestand ist EIN Text — ihn in jedes neue
+     Fenster zu kopieren hieße, denselben Brief mehrfach offen zu haben
+     und beim Speichern nicht zu wissen, welcher gilt. */
+  if (VORSATZ) return;
   for (const name of EIGEN) {
     const alt = localStorage.getItem('sp.' + name);
     if (alt === null) continue;
@@ -262,8 +377,11 @@ function verschieben(nr, anStelle) {
   return true;
 }
 
+/** Der Platz dieses Fensters. 1 ist das erste. */
+function fenster() { return PLATZ.nr; }
+
 return {
-  EIGEN, istEigen, schluessel, schluesselVon,
+  EIGEN, istEigen, schluessel, schluesselVon, fenster,
   liste, aktiv, anzahl, name,
   anlegen, wechsle, entfernen, weiter, verschieben, nachbarVon,
 };

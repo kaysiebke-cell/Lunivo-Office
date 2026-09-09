@@ -118,7 +118,29 @@ TABELLEN_FILTER = [
 LETZTER_ORDNER = {"weg": None}
 
 # Was zuletzt gelesen werden durfte — dieselbe Vorsorge wie beim Schreiben.
-LESEZIEL = {"pfad": None}
+#
+# Und zwar JE FENSTER. Hier stand einmal ein einziger Weg für das ganze
+# Programm. Bei zwei offenen Fenstern reichte das nicht: Wählt das eine
+# eine Datei, während das andere seine noch nicht abgeholt hat, bekommt
+# es die fremde — und schreibt sie beim nächsten Strg+S über den eigenen
+# Brief. Die Seite sagt deshalb bei jedem Aufruf, aus welchem Fenster sie
+# kommt (?f=…).
+LESEZIEL = {}
+
+
+# Aus welchem Fenster kommt dieser Aufruf?
+#
+# Die Nummer wird zum Schlüssel eines Merkzettels im Server — sie darf
+# deshalb nichts anderes sein als eine kleine Zahl. Ohne Angabe: Fenster
+# eins. So bleibt ein Aufruf von Hand (oder aus einer älteren Fassung
+# der Seite) weiter gültig.
+def fenster_nummer(adresse):
+    roh = (urllib.parse.parse_qs(adresse).get("f") or ["1"])[0]
+    try:
+        nr = int(roh)
+    except ValueError:
+        return 1
+    return nr if 1 <= nr <= 99 else 1
 
 # Die zuletzt geöffneten und gespeicherten Dateien.
 #
@@ -760,7 +782,13 @@ def dialog_oeffnen(nur=""):
 # Wohin zuletzt gespeichert werden durfte. Nur dieser eine Weg wird
 # beschrieben, und nur einmal: Sonst könnte die Seite jede Datei auf dem
 # Rechner überschreiben, indem sie einfach einen Pfad mitschickt.
-SPEICHERZIEL = {"pfad": None, "merken": True}
+# Auch dies je Fenster — aus demselben Grund wie LESEZIEL.
+SPEICHERZIEL = {}
+
+
+def speicherziel(nr):
+    """Der Merkzettel dieses Fensters. Er entsteht beim ersten Zugriff."""
+    return SPEICHERZIEL.setdefault(nr, {"pfad": None, "merken": True})
 
 
 def vorlagen_schnellzugriff(dialog):
@@ -1640,8 +1668,9 @@ class Leise(http.server.SimpleHTTPRequestHandler):
         """
         # Die im Dialog gewählte Datei — und nur die, und nur einmal.
         if self.path.split("?")[0] == "/lesen":
-            pfad = LESEZIEL["pfad"]
-            LESEZIEL["pfad"] = None
+            # Nur die Datei, die DIESES Fenster gewaehlt hat.
+            nr = fenster_nummer(urllib.parse.urlparse(self.path).query)
+            pfad = LESEZIEL.pop(nr, None)
             if not pfad or not os.path.isfile(pfad):
                 self.fehler_melden(409, "Es wurde keine Datei gewählt.")
                 return
@@ -1873,14 +1902,15 @@ class Leise(http.server.SimpleHTTPRequestHandler):
 
         # „Öffnen": der Dateibrowser des Systems, mit Filtern.
         if adresse.path == "/oeffnen-dialog":
+            nr = fenster_nummer(adresse.query)
             nur = (urllib.parse.parse_qs(adresse.query).get("nur") or [""])[0]
             ergebnis = dialog_oeffnen(nur)
             pfad = ergebnis.get("pfad")
             if not pfad or not os.path.isfile(pfad):
-                LESEZIEL["pfad"] = None
+                LESEZIEL.pop(nr, None)
                 self.auskunft({"abgebrochen": True})
                 return
-            LESEZIEL["pfad"] = pfad
+            LESEZIEL[nr] = pfad
             LETZTER_ORDNER["weg"] = os.path.dirname(pfad)
             zuletzt_merken(pfad)
             self.auskunft({"pfad": pfad, "name": os.path.basename(pfad)})
@@ -1889,6 +1919,7 @@ class Leise(http.server.SimpleHTTPRequestHandler):
         # Einen Eintrag aus der Liste öffnen. Herein kommt eine Nummer, nie
         # ein Pfad — und die Nummer gilt nur, solange sie in die Liste passt.
         if adresse.path == "/zuletzt-oeffnen":
+            nr = fenster_nummer(adresse.query)
             liste = zuletzt_lesen()
             try:
                 nummer = int((urllib.parse.parse_qs(adresse.query)
@@ -1896,11 +1927,11 @@ class Leise(http.server.SimpleHTTPRequestHandler):
             except ValueError:
                 nummer = -1
             if nummer < 0 or nummer >= len(liste):
-                LESEZIEL["pfad"] = None
+                LESEZIEL.pop(nr, None)
                 self.fehler_melden(404, "Die Datei steht nicht mehr in der Liste.")
                 return
             pfad = liste[nummer]
-            LESEZIEL["pfad"] = pfad
+            LESEZIEL[nr] = pfad
             LETZTER_ORDNER["weg"] = os.path.dirname(pfad)
             self.auskunft({"pfad": pfad, "name": os.path.basename(pfad)})
             return
@@ -1910,6 +1941,7 @@ class Leise(http.server.SimpleHTTPRequestHandler):
         # Ordner für den nächsten Speichern-Dialog — sonst stünde der beim
         # Sichern in den Vorlagen, und der erste Fehlklick wäre teuer.
         if adresse.path == "/vorlage-oeffnen":
+            nr = fenster_nummer(adresse.query)
             liste = vorlagen_lesen()
             try:
                 nummer = int((urllib.parse.parse_qs(adresse.query)
@@ -1917,10 +1949,10 @@ class Leise(http.server.SimpleHTTPRequestHandler):
             except ValueError:
                 nummer = -1
             if nummer < 0 or nummer >= len(liste):
-                LESEZIEL["pfad"] = None
+                LESEZIEL.pop(nr, None)
                 self.fehler_melden(404, "Die Vorlage liegt nicht mehr im Ordner.")
                 return
-            LESEZIEL["pfad"] = liste[nummer]["pfad"]
+            LESEZIEL[nr] = liste[nummer]["pfad"]
             self.auskunft({"name": liste[nummer]["datei"]})
             return
 
@@ -1950,8 +1982,9 @@ class Leise(http.server.SimpleHTTPRequestHandler):
             if os.path.dirname(os.path.realpath(ziel)) != os.path.realpath(eigen):
                 self.fehler_melden(400, "Dieser Name führt aus dem Vorlagenordner heraus.")
                 return
-            SPEICHERZIEL["pfad"] = ziel
-            SPEICHERZIEL["merken"] = False
+            merker = speicherziel(fenster_nummer(adresse.query))
+            merker["pfad"] = ziel
+            merker["merken"] = False
             self.auskunft({"pfad": ziel, "endung": endung,
                            "ersetzt": os.path.isfile(ziel)})
             return
@@ -1973,27 +2006,29 @@ class Leise(http.server.SimpleHTTPRequestHandler):
 
         # „Speichern unter": Der Dialog fragt nach Ort und Format.
         if adresse.path == "/speichern-dialog":
+            merker = speicherziel(fenster_nummer(adresse.query))
             wahl = urllib.parse.parse_qs(adresse.query)
             name = (wahl.get("name") or ["Unbenannt"])[0]
             endung = (wahl.get("format") or ["odt"])[0].lower()
             ergebnis = dialog_speichern(os.path.basename(name), endung)
 
             if not ergebnis.get("pfad"):
-                SPEICHERZIEL["pfad"] = None
+                merker["pfad"] = None
                 self.auskunft({"abgebrochen": True})
                 return
 
-            SPEICHERZIEL["pfad"] = ergebnis["pfad"]
+            merker["pfad"] = ergebnis["pfad"]
             LETZTER_ORDNER["weg"] = os.path.dirname(ergebnis["pfad"])
             self.auskunft({"pfad": ergebnis["pfad"], "endung": ergebnis["endung"]})
             return
 
         # Und danach die fertige Datei dorthin schreiben.
         if adresse.path == "/schreiben":
-            ziel = SPEICHERZIEL["pfad"]
-            merken = SPEICHERZIEL.get("merken", True)
-            SPEICHERZIEL["pfad"] = None          # gilt nur dieses eine Mal
-            SPEICHERZIEL["merken"] = True
+            merker = speicherziel(fenster_nummer(adresse.query))
+            ziel = merker["pfad"]
+            merken = merker.get("merken", True)
+            merker["pfad"] = None                # gilt nur dieses eine Mal
+            merker["merken"] = True
             if not ziel:
                 self.fehler_melden(409, "Es wurde kein Ziel gewählt.")
                 return

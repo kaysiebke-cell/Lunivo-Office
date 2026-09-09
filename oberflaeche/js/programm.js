@@ -36,6 +36,15 @@ const Speicher = {
   },
 };
 
+/* Wer fragt? Der Server merkt sich zwischen dem Dateidialog und dem
+   Lesen genau EINEN Weg — welche Datei gewählt wurde. Bei zwei offenen
+   Fenstern reicht das nicht: Wählt das eine eine Datei, während das
+   andere seine noch nicht abgeholt hat, bekäme es die fremde. Also sagt
+   jeder Aufruf, aus welchem Fenster er kommt. */
+function amFenster(pfad) {
+  return pfad + (pfad.includes('?') ? '&' : '?') + 'f=' + Dokumente.fenster();
+}
+
 /* Die Sprachbrücke hält den Fehlerstand: welche Fassung geprüft wurde,
    was weggewinkt ist, und ob eine späte Antwort der KI noch zum Text von
    jetzt gehört. Geprüft wird weiter in pruefung.js. Steht sie einmal
@@ -246,7 +255,7 @@ B.oeffnen = async () => {
      (im Browser statt im eigenen Fenster), bleibt der schlichte Dateiwähler. */
   let wahl = null;
   try {
-    const antwort = await fetch('oeffnen-dialog', { method: 'POST' });
+    const antwort = await fetch(amFenster('oeffnen-dialog'), { method: 'POST' });
     if (antwort.ok) wahl = await antwort.json();
   } catch (e) { /* kein eigenes Fenster — weiter unten */ }
 
@@ -254,7 +263,7 @@ B.oeffnen = async () => {
 
   if (wahl && wahl.pfad) {
     try {
-      const daten = await fetch('lesen');
+      const daten = await fetch(amFenster('lesen'));
       if (!daten.ok) {
         let grund = 'Fehler ' + daten.status;
         try { grund = (await daten.json()).fehler || grund; } catch (e) { /* egal */ }
@@ -312,14 +321,14 @@ function zuletztPunkte() {
 
 B.zuletztOeffnen = async (nr) => {
   try {
-    const antwort = await fetch('zuletzt-oeffnen?nr=' + nr, { method: 'POST' });
+    const antwort = await fetch(amFenster('zuletzt-oeffnen?nr=' + nr), { method: 'POST' });
     if (!antwort.ok) {
       let grund = 'Fehler ' + antwort.status;
       try { grund = (await antwort.json()).fehler || grund; } catch (e) { /* egal */ }
       throw new Error(grund);
     }
     const wahl = await antwort.json();
-    const daten = await fetch('lesen');
+    const daten = await fetch(amFenster('lesen'));
     if (!daten.ok) throw new Error('Fehler ' + daten.status);
     await dateiUebernehmen(new File([await daten.blob()], wahl.name || 'Dokument'));
   } catch (grund) {
@@ -365,14 +374,14 @@ async function vorlagenHolen() {
 
 B.vorlageOeffnen = async (nr) => {
   try {
-    const antwort = await fetch('vorlage-oeffnen?nr=' + nr, { method: 'POST' });
+    const antwort = await fetch(amFenster('vorlage-oeffnen?nr=' + nr), { method: 'POST' });
     if (!antwort.ok) {
       let grund = 'Fehler ' + antwort.status;
       try { grund = (await antwort.json()).fehler || grund; } catch (e) { /* egal */ }
       throw new Error(grund);
     }
     const wahl = await antwort.json();
-    const daten = await fetch('lesen');
+    const daten = await fetch(amFenster('lesen'));
     if (!daten.ok) throw new Error('Fehler ' + daten.status);
     await dateiUebernehmen(new File([await daten.blob()], wahl.name || 'Vorlage'));
     melde('Abschrift von „' + (wahl.name || 'Vorlage') + '" — die Vorlage selbst '
@@ -467,8 +476,8 @@ B.vorlageBehalten = async () => {
     const endung = 'odt';
     let wahl;
     try {
-      const antwort = await fetch('vorlage-ziel?name=' + encodeURIComponent(name)
-                                + '&format=' + endung, { method: 'POST' });
+      const antwort = await fetch(amFenster('vorlage-ziel?name=' + encodeURIComponent(name)
+                                + '&format=' + endung), { method: 'POST' });
       if (!antwort.ok) throw new Error('Fehler ' + antwort.status);
       wahl = await antwort.json();
     } catch (e) {
@@ -489,7 +498,7 @@ B.vorlageBehalten = async () => {
            installiertem Motor entsteht, wäre gar keine. */
         datei = Dateien.baue(endung, inhalt, Dokument.lies().text);
       }
-      const geschrieben = await fetch('schreiben', { method: 'POST', body: datei });
+      const geschrieben = await fetch(amFenster('schreiben'), { method: 'POST', body: datei });
       if (!geschrieben.ok) {
         let grund = 'Fehler ' + geschrieben.status;
         try { grund = (await geschrieben.json()).fehler || grund; } catch (e) { /* egal */ }
@@ -619,9 +628,10 @@ B.speichern      = () => speichereAls(Speicher.lies('endung', 'odt'));
 B.speichernUnter = async () => {
   let wahl;
   try {
-    const antwort = await fetch('speichern-dialog?name=' + encodeURIComponent(dateiname)
-                              + '&format=' + encodeURIComponent(Speicher.lies('endung', 'odt')),
-                                { method: 'POST' });
+    const antwort = await fetch(
+      amFenster('speichern-dialog?name=' + encodeURIComponent(dateiname)
+              + '&format=' + encodeURIComponent(Speicher.lies('endung', 'odt'))),
+      { method: 'POST' });
     if (!antwort.ok) throw new Error('Fehler ' + antwort.status);
     wahl = await antwort.json();
   } catch (e) {
@@ -642,7 +652,7 @@ B.speichernUnter = async () => {
       ? await Dateien.baueMitMotor(endung, inhalt)
       : Dateien.baue(endung, inhalt, Dokument.lies().text);
 
-    const geschrieben = await fetch('schreiben', { method: 'POST', body: datei });
+    const geschrieben = await fetch(amFenster('schreiben'), { method: 'POST', body: datei });
     if (!geschrieben.ok) {
       let grund = 'Fehler ' + geschrieben.status;
       try { grund = (await geschrieben.json()).fehler || grund; } catch (e) { /* egal */ }
@@ -5313,14 +5323,14 @@ B.initiale = () => {
 B.textAusDatei = async () => {
   let wahl = null;
   try {
-    const antwort = await fetch('oeffnen-dialog', { method: 'POST' });
+    const antwort = await fetch(amFenster('oeffnen-dialog'), { method: 'POST' });
     if (antwort.ok) wahl = await antwort.json();
   } catch (e) { /* kein eigenes Fenster */ }
 
   if (!wahl || wahl.abgebrochen || !wahl.pfad) { melde('Nichts eingefügt.'); return; }
 
   try {
-    const daten = await fetch('lesen');
+    const daten = await fetch(amFenster('lesen'));
     if (!daten.ok) throw new Error('Fehler ' + daten.status);
     const html = await Dateien.oeffne(new File([await daten.blob()], wahl.name || 'Dokument'));
     Dokument.einfuegen(html);
@@ -5672,7 +5682,7 @@ B.screenshot = async () => {
 B.tabellenblatt = async () => {
   let wahl = null;
   try {
-    const antwort = await fetch('oeffnen-dialog?nur=tabellen', { method: 'POST' });
+    const antwort = await fetch(amFenster('oeffnen-dialog?nur=tabellen'), { method: 'POST' });
     if (antwort.ok) wahl = await antwort.json();
   } catch (e) { /* kein eigenes Fenster */ }
 
@@ -5680,7 +5690,7 @@ B.tabellenblatt = async () => {
 
   melde('Tabellenblatt wird gelesen …');
   try {
-    const daten = await fetch('lesen');
+    const daten = await fetch(amFenster('lesen'));
     if (!daten.ok) throw new Error('Fehler ' + daten.status);
     const roh = await daten.blob();
     const endung = (wahl.name.match(/\.([^.]+)$/) || [, 'xlsx'])[1].toLowerCase();
@@ -8933,7 +8943,12 @@ const KIteil = KI_BAUEN(B, {
    ============================================================ */
 
 function titelSetzen() {
-  document.title = dateiname + (geaendert ? ' *' : '') + ' — Lunivo-Office';
+  /* Bei mehreren Fenstern gehört die Nummer in den Titel. Zwei Fenster
+     mit „Unbenannt 1 — Lunivo-Office" sind in der Fensterliste des
+     Systems nicht auseinanderzuhalten — und genau dort sucht man sie. */
+  const fensterNr = Dokumente.fenster();
+  document.title = dateiname + (geaendert ? ' *' : '') + ' — Lunivo-Office'
+                 + (fensterNr > 1 ? ' (Fenster ' + fensterNr + ')' : '');
   Speicher.schreib('dateiname', dateiname);
   /* Im Reiter steht derselbe Name und derselbe Punkt für „nicht
      gespeichert". Beides hier nachzuziehen ist der einzige Weg, der
