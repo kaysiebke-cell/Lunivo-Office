@@ -4442,25 +4442,17 @@ function vorlageZuCss(wie) {
    zeigte sie etwas anderes, als hinterher dasteht.
    ------------------------------------------------------------ */
 
-const VORLAGE_AUSRICHTUNGEN = [
-  ['', 'wie das Blatt'], ['left', 'linksbündig'], ['center', 'zentriert'],
-  ['right', 'rechtsbündig'], ['justify', 'Blocksatz'],
-];
+/* Die Ausrichtung steht als vier Tasten da, nicht als Klappfeld — der
+   Zeilenabstand als Klappfeld, weil „eineinhalb" kein Zeichen hat, das
+   jeder auf Anhieb liest. */
 const VORLAGE_ZEILEN = [
   ['0', 'wie das Blatt'], ['1.15', 'einfach'], ['1.6', 'eineinhalb'], ['2.1', 'doppelt'],
-];
-const VORLAGE_SCHNITTE = [
-  ['normal', 'normal'], ['fett', 'fett'],
-  ['kursiv', 'kursiv'], ['fettkursiv', 'fett und kursiv'],
 ];
 
 const inGrenzen = (wert, klein, gross, ersatz) => {
   const z = parseFloat(wert);
   return Number.isFinite(z) ? Math.max(klein, Math.min(gross, z)) : ersatz;
 };
-
-const schnittVon = (wie) => (wie.fett ? (wie.kursiv ? 'fettkursiv' : 'fett')
-                                      : (wie.kursiv ? 'kursiv' : 'normal'));
 
 /* Die Vorschau: ein grauer Absatz davor, die Probe, ein grauer danach.
    Die grauen zeigen, wie die Abstände wirken — eine Probe allein steht im
@@ -4507,78 +4499,265 @@ function werteZuVorlage(werte, alt) {
   return wie;
 }
 
-/* Die Felder für Aussehen und Abstände — dieselben beim Anlegen wie beim
-   Ändern. Zweimal geschrieben liefen sie auseinander. */
-function vorlageFelder(wie) {
+/* ------------------------------------------------------------
+   Das Formular
+
+   Erst stand hier eine Zeile je Griff: elf Beschriftungen links, elf
+   Felder rechts, jedes so breit wie das Fenster. Das ist viel Platz für
+   wenig — und es liest sich als Liste, obwohl es Gruppen sind.
+
+   WPS Writer legt dieselben Griffe in ZWEI LEISTEN: oben, was die Schrift
+   angeht (Schriftart, Größe, fett, kursiv, Farbe), darunter, was den
+   Absatz angeht (Ausrichtung, Zeilenabstand, Abstände, Einzug). Das ist
+   nicht nur kürzer, sondern richtiger sortiert: Was zusammen wirkt, steht
+   zusammen, und man sieht es auf einen Blick statt es zu lesen.
+
+   Die kleinen Zahlenfelder tragen ihre Beschriftung darüber und nicht
+   daneben — als Zeichen allein („⇕ 2,5") wüsste niemand, ob das der
+   Abstand davor oder danach ist.
+   ------------------------------------------------------------ */
+function vorlageFormBauen(start, mitName, basisAnfang) {
+  const block = document.createElement('div');
+  block.className = 'vorlageform';
+  const feldChen = {};
+
+  const ueberschrift = (text) => {
+    const p = document.createElement('p');
+    p.className = 'vorlageform__gruppe';
+    p.textContent = text;
+    block.appendChild(p);
+  };
+
+  const zeile = (name, el) => {
+    const l = document.createElement('label');
+    l.className = 'vorlageform__zeile';
+    const wort = document.createElement('span');
+    wort.textContent = name;
+    l.append(wort, el);
+    block.appendChild(l);
+  };
+
+  const leiste = () => {
+    const l = document.createElement('div');
+    l.className = 'vorlageform__leiste';
+    block.appendChild(l);
+    return l;
+  };
+
+  const teiler = (wo) => {
+    const s = document.createElement('span');
+    s.className = 'vorlageform__teiler';
+    wo.appendChild(s);
+  };
+
+  const klappe = (schluessel, eintraege, wert, titel, klasse) => {
+    const w = document.createElement('select');
+    w.className = 'vorlageform__wahl' + (klasse ? ' ' + klasse : '');
+    w.title = titel;
+    w.setAttribute('aria-label', titel);
+    for (const [k, n] of eintraege) {
+      const o = document.createElement('option');
+      o.value = String(k); o.textContent = String(n);
+      w.appendChild(o);
+    }
+    w.value = String(wert);
+    feldChen[schluessel] = w;
+    return w;
+  };
+
+  /* Ein Schalter, der an oder aus ist — fett, kursiv, die vier
+     Ausrichtungen. Sein Zustand steht in „dataset.an", damit ihn dieselbe
+     Stelle liest, die auch die Klappfelder liest. */
+  const schalter = (schluessel, zeichen, titel, an, klasse) => {
+    const k = document.createElement('button');
+    k.type = 'button';
+    k.className = 'vorlageform__knopf' + (klasse ? ' ' + klasse : '');
+    k.title = titel;
+    k.setAttribute('aria-label', titel);
+    k.dataset.an = an ? 'ja' : 'nein';
+    k.classList.toggle('vorlageform__knopf--an', !!an);
+    if (SYMBOLE[zeichen]) k.appendChild(symbol(zeichen));
+    else k.appendChild(document.createTextNode(zeichen));
+    k.addEventListener('mousedown', (e) => e.preventDefault());
+    feldChen[schluessel] = k;
+    return k;
+  };
+
+  const zahl = (schluessel, name, wert, gross) => {
+    const kiste = document.createElement('label');
+    kiste.className = 'vorlageform__zahl';
+    const wort = document.createElement('span');
+    wort.textContent = name;
+    const e = document.createElement('input');
+    e.type = 'number';
+    e.step = '0.5';
+    e.min = '0';
+    e.max = String(gross);
+    e.value = wert;
+    e.title = name + ' (mm)';
+    kiste.append(wort, e);
+    feldChen[schluessel] = e;
+    return kiste;
+  };
+
+  /* ---- Eigenschaften ---- */
+  if (mitName) {
+    ueberschrift('Eigenschaften');
+    const name = document.createElement('input');
+    name.type = 'text';
+    name.value = start.name;
+    feldChen.name = name;
+    zeile('Name', name);
+    zeile('Baut auf', klappe('basis',
+      Object.entries(vorlagenStile).map(([tag, wie]) => [tag, wie.name]),
+      basisAnfang, 'Worauf die Vorlage aufbaut', 'vorlageform__wahl--voll'));
+  }
+
+  /* ---- Formatierung: erst die Schrift ---- */
+  ueberschrift('Formatierung');
+  const oben = leiste();
   const schriften = (alleSchriften && alleSchriften.length ? alleSchriften : SCHRIFTEN);
-  return [
-    { schluessel: 'schrift', name: 'Schriftart', art: 'auswahl',
-      werte: [['', 'wie das Blatt']].concat(schriften.map((s) => [s, s])),
-      wert: wie.schrift || '' },
-    { schluessel: 'groesse', name: 'Größe (pt)', art: 'number', wert: wie.groesse },
-    { schluessel: 'schnitt', name: 'Schriftschnitt', art: 'auswahl',
-      werte: VORLAGE_SCHNITTE, wert: schnittVon(wie) },
-    { schluessel: 'farbe', name: 'Farbe', art: 'color', wert: wie.farbe },
-    { schluessel: 'ausrichtung', name: 'Ausrichtung', art: 'auswahl',
-      werte: VORLAGE_AUSRICHTUNGEN, wert: wie.ausrichtung || '' },
-    { schluessel: 'zeilen', name: 'Zeilenabstand', art: 'auswahl',
-      werte: VORLAGE_ZEILEN, wert: String(wie.zeilen || 0) },
-    { schluessel: 'abstandVor', name: 'Abstand davor (mm)', art: 'number',
-      wert: wie.abstandVor || 0, schritt: '0.5' },
-    { schluessel: 'abstand', name: 'Abstand danach (mm)', art: 'number',
-      wert: wie.abstand, schritt: '0.5' },
-    { schluessel: 'einzug', name: 'Einzug erste Zeile (mm)', art: 'number',
-      wert: wie.einzug || 0, schritt: '0.5' },
-  ];
+  oben.appendChild(klappe('schrift',
+    [['', 'wie das Blatt']].concat(schriften.map((s) => [s, s])),
+    start.schrift || '', 'Schriftart', 'vorlageform__wahl--breit'));
+  oben.appendChild(klappe('groesse', GROESSEN.map((g) => [g, g]),
+    start.groesse, 'Größe in Punkt', 'vorlageform__wahl--eng'));
+  oben.appendChild(schalter('fett', 'F', 'Fett', start.fett, 'vorlageform__knopf--fett'));
+  oben.appendChild(schalter('kursiv', 'K', 'Kursiv', start.kursiv, 'vorlageform__knopf--kursiv'));
+  teiler(oben);
+  const farbe = document.createElement('input');
+  farbe.type = 'color';
+  farbe.className = 'vorlageform__farbe';
+  farbe.value = start.farbe;
+  farbe.title = 'Schriftfarbe';
+  feldChen.farbe = farbe;
+  oben.appendChild(farbe);
+
+  /* ---- und dann der Absatz ---- */
+  const unten = leiste();
+  const RICHTUNGEN = [['', 'links', 'Wie das Blatt (linksbündig)'],
+                      ['left', 'links', 'Linksbündig'],
+                      ['center', 'mitte', 'Zentriert'],
+                      ['right', 'rechts', 'Rechtsbündig'],
+                      ['justify', 'block', 'Blocksatz']];
+  /* „wie das Blatt" ist keine fünfte Taste, sondern der Zustand, in dem
+     keine der vier gedrückt ist — sonst müsste man raten, was der
+     Unterschied zwischen „wie das Blatt" und „linksbündig" ist. */
+  for (const [wert, zeichen, titel] of RICHTUNGEN.slice(1)) {
+    const k = schalter('richtung_' + wert, zeichen, titel, start.ausrichtung === wert);
+    k.dataset.wert = wert;
+    k.classList.add('vorlageform__knopf--richtung');
+    unten.appendChild(k);
+  }
+  teiler(unten);
+  unten.appendChild(klappe('zeilen', VORLAGE_ZEILEN, String(start.zeilen || 0),
+    'Zeilenabstand', 'vorlageform__wahl--eng'));
+  teiler(unten);
+  unten.appendChild(zahl('abstandVor', 'Abstand davor', start.abstandVor || 0, 40));
+  unten.appendChild(zahl('abstand', 'danach', start.abstand, 40));
+  teiler(unten);
+  unten.appendChild(zahl('einzug', 'Einzug 1. Zeile', start.einzug || 0, 60));
+
+  const { kiste, probe } = vorlagenschauBauen();
+  block.appendChild(kiste);
+
+  /* Was in den Griffen steht — in derselben Form, die „werteZuVorlage"
+     erwartet. So bleibt die Umrechnung an einer Stelle. */
+  const lesen = () => {
+    let richtung = '';
+    for (const [schluessel, el] of Object.entries(feldChen)) {
+      if (schluessel.startsWith('richtung_') && el.dataset.an === 'ja') richtung = el.dataset.wert;
+    }
+    return {
+      name: feldChen.name ? feldChen.name.value : undefined,
+      basis: feldChen.basis ? feldChen.basis.value : undefined,
+      schrift: feldChen.schrift.value,
+      groesse: feldChen.groesse.value,
+      schnitt: (feldChen.fett.dataset.an === 'ja')
+        ? (feldChen.kursiv.dataset.an === 'ja' ? 'fettkursiv' : 'fett')
+        : (feldChen.kursiv.dataset.an === 'ja' ? 'kursiv' : 'normal'),
+      farbe: feldChen.farbe.value,
+      ausrichtung: richtung,
+      zeilen: feldChen.zeilen.value,
+      abstandVor: feldChen.abstandVor.value,
+      abstand: feldChen.abstand.value,
+      einzug: feldChen.einzug.value,
+    };
+  };
+
+  /* Die Griffe aus einer Vorlage füllen — für „Baut auf". */
+  const fuellen = (wie) => {
+    const voll = Object.assign({}, VORLAGE_ZUSATZ, wie);
+    feldChen.schrift.value = voll.schrift || '';
+    feldChen.groesse.value = String(voll.groesse);
+    if (!GROESSEN.includes(voll.groesse)) feldChen.groesse.value = String(GROESSEN[0]);
+    setzeSchalter(feldChen.fett, voll.fett);
+    setzeSchalter(feldChen.kursiv, voll.kursiv);
+    feldChen.farbe.value = voll.farbe;
+    for (const [schluessel, el] of Object.entries(feldChen)) {
+      if (schluessel.startsWith('richtung_')) {
+        setzeSchalter(el, el.dataset.wert === (voll.ausrichtung || ''));
+      }
+    }
+    feldChen.zeilen.value = String(voll.zeilen || 0);
+    feldChen.abstandVor.value = voll.abstandVor || 0;
+    feldChen.abstand.value = voll.abstand;
+    feldChen.einzug.value = voll.einzug || 0;
+  };
+
+  return { block, probe, feldChen, lesen, fuellen };
 }
 
-/* Der gemeinsame Dialog. „basis" bestimmt, ob oben Name und „basiert auf"
-   stehen — die braucht nur das Anlegen. */
-function vorlageDialog(titel, start, knopfName, beiOk, mitName) {
-  const { kiste, probe } = vorlagenschauBauen();
-  probe.style.cssText = vorlageZuCss(start);
+function setzeSchalter(k, an) {
+  k.dataset.an = an ? 'ja' : 'nein';
+  k.classList.toggle('vorlageform__knopf--an', !!an);
+}
 
-  const felder = [];
-  if (mitName) {
-    felder.push({ art: 'satz',
-      text: 'Eine Absatzvorlage: Sie gilt für den ganzen Absatz, in dem der '
-          + 'Zeiger steht — nicht für einzelne Wörter.' });
-    felder.push({ schluessel: 'name', name: 'Name', wert: start.name });
-    felder.push({ schluessel: 'basis', name: 'Baut auf', art: 'auswahl',
-      werte: Object.entries(vorlagenStile).map(([tag, wie]) => [tag, wie.name]),
-      wert: mitName });
-  }
-  felder.push(...vorlageFelder(start));
-  felder.push({ art: 'knoten', knoten: kiste });
+/* Der gemeinsame Dialog. „basisAnfang" bestimmt, ob oben Name und
+   „Baut auf" stehen — die braucht nur das Anlegen. */
+function vorlageDialog(titel, start, knopfName, beiOk, basisAnfang) {
+  const form = vorlageFormBauen(start, !!basisAnfang, basisAnfang);
+  const zeigen = () => {
+    form.probe.style.cssText = vorlageZuCss(werteZuVorlage(form.lesen(), start));
+  };
+  zeigen();
 
-  let basisVorher = mitName || '';
-
-  fenster(titel, felder,
-    (werte) => beiOk(werteZuVorlage(werte, start), werte),
-    knopfName, true, null,
-    (werte, eingaben) => {
+  /* Die Schalter melden sich nicht von selbst — sie sind Knöpfe, keine
+     Eingabefelder. Also hier verdrahtet, an einer Stelle für alle. */
+  for (const [schluessel, el] of Object.entries(form.feldChen)) {
+    if (el.tagName === 'BUTTON') {
+      el.addEventListener('click', () => {
+        if (schluessel.startsWith('richtung_')) {
+          /* Vier Tasten, von denen höchstens eine gedrückt ist. Noch
+             einmal auf die gedrückte heißt „wie das Blatt". */
+          const anVorher = el.dataset.an === 'ja';
+          for (const [s2, e2] of Object.entries(form.feldChen)) {
+            if (s2.startsWith('richtung_')) setzeSchalter(e2, false);
+          }
+          setzeSchalter(el, !anVorher);
+        } else {
+          setzeSchalter(el, el.dataset.an !== 'ja');
+        }
+        zeigen();
+      });
+      continue;
+    }
+    el.addEventListener('change', () => {
       /* Wer „Baut auf" umstellt, will die Werte von dort sehen — sonst
          hieße „baut auf Überschrift 1" nur, dass ein Name dasteht. */
-      if (eingaben.basis && werte.basis !== basisVorher) {
-        basisVorher = werte.basis;
-        const quelle = vorlagenStile[werte.basis];
-        if (quelle) {
-          const voll = Object.assign({}, VORLAGE_ZUSATZ, quelle);
-          eingaben.schrift.value = voll.schrift || '';
-          eingaben.groesse.value = voll.groesse;
-          eingaben.schnitt.value = schnittVon(voll);
-          eingaben.farbe.value = voll.farbe;
-          eingaben.ausrichtung.value = voll.ausrichtung || '';
-          eingaben.zeilen.value = String(voll.zeilen || 0);
-          eingaben.abstandVor.value = voll.abstandVor || 0;
-          eingaben.abstand.value = voll.abstand;
-          eingaben.einzug.value = voll.einzug || 0;
-          werte = {};
-          for (const [k, e] of Object.entries(eingaben)) werte[k] = e.value;
-        }
-      }
-      probe.style.cssText = vorlageZuCss(werteZuVorlage(werte, start));
+      if (schluessel === 'basis' && vorlagenStile[el.value]) form.fuellen(vorlagenStile[el.value]);
+      zeigen();
     });
+    el.addEventListener('input', zeigen);
+  }
+
+  /* „breit": Die zweite Leiste trägt vier Ausrichtungen, den
+     Zeilenabstand und drei Zahlenfelder. In 520 Bildpunkten bricht sie
+     um, und dann steht „Einzug 1. Zeile" allein in einer dritten Zeile —
+     was zusammengehört, sähe aus, als gehörte es nicht dazu. */
+  fenster(titel, [{ art: 'knoten', knoten: form.block }],
+    () => beiOk(werteZuVorlage(form.lesen(), start)),
+    knopfName, true);
 }
 
 /* Der nächste freie Platz für eine eigene Vorlage. Sie hängt als Klasse

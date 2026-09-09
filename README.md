@@ -264,8 +264,8 @@ samt *Neue Formatvorlage*, *verwalten* und *löschen*.
 
 **Eigene Formatvorlagen.** Was fehlt, legt man selbst an: eine
 *Anschrift*, die immer rechts steht, ein *Merksatz* in Grau. Der Dialog
-fragt nach Name, worauf sie aufbaut, Schrift, Größe, Schnitt, Farbe,
-Ausrichtung, Zeilenabstand, Abständen und Einzug — und zeigt darunter eine
+fragt nach Name und worauf sie aufbaut; die Formatierung steht darunter in
+zwei Leisten — oben die Schrift, darunter der Absatz — und ganz unten eine
 Vorschau, die sich beim Tippen mitändert. Wer „baut auf" umstellt, sieht
 die übrigen Felder mitgehen. Eigene Vorlagen gehören zum Dokument und
 wandern mit dem Reiter.

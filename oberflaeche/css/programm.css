@@ -1935,6 +1935,77 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 .katalogklappe__punkt--aus:hover{background:none;color:var(--schrift-3)}
 
 /* ------------------------------------------------------------
+   Das Formular für Formatvorlagen
+
+   Erst stand hier eine Zeile je Griff: elf Beschriftungen links, elf
+   Felder rechts, jedes so breit wie das Fenster. Viel Platz für wenig —
+   und es liest sich als Liste, obwohl es Gruppen sind.
+
+   Jetzt zwei Leisten, wie im WPS Writer: oben, was die Schrift angeht,
+   darunter, was den Absatz angeht. Was zusammen wirkt, steht zusammen.
+   ------------------------------------------------------------ */
+.vorlageform__gruppe{
+  margin:14px 0 6px;font-size:11px;font-weight:600;
+  letter-spacing:.6px;text-transform:uppercase;color:var(--schrift-3);
+}
+.vorlageform__gruppe:first-child{margin-top:0}
+.vorlageform__zeile{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.vorlageform__zeile > span{flex:0 0 82px;font-size:13px}
+.vorlageform__zeile > input{
+  flex:1 1 auto;min-width:0;
+  background-color:var(--grund);color:var(--schrift);
+  border:1px solid var(--rand);border-radius:6px;
+  padding:7px 10px;font:inherit;
+}
+.vorlageform__zeile > input:focus{outline:none;border-color:var(--blau-hell)}
+
+/* Die Leisten: alles nebeneinander, und was nicht mehr hinpasst, geht in
+   die nächste Zeile — auf einem schmalen Schirm bricht sie um, statt
+   hinauszuragen. */
+.vorlageform__leiste{
+  display:flex;align-items:flex-end;flex-wrap:wrap;gap:4px;
+  margin-bottom:8px;
+}
+/* „align-self:stretch" half hier nicht: Die Leiste richtet unten aus, und
+   ein Kind ohne Inhalt bleibt dann hoch wie nichts. Also eine feste Höhe,
+   dieselbe wie die Griffe daneben. */
+.vorlageform__teiler{
+  width:1px;height:32px;flex:0 0 auto;align-self:flex-end;
+  background:var(--rand);margin:0 6px;
+}
+.vorlageform__wahl{height:32px;flex:0 0 auto}
+.vorlageform__wahl--breit{flex:1 1 130px;min-width:0;max-width:210px}
+.vorlageform__wahl--eng{width:120px}
+.vorlageform__wahl--voll{flex:1 1 auto;min-width:0}
+.vorlageform__knopf{
+  display:flex;align-items:center;justify-content:center;
+  width:32px;height:32px;flex:0 0 auto;
+  background:none;border:1px solid transparent;border-radius:6px;
+  color:var(--schrift);font:inherit;font-size:14px;cursor:pointer;padding:0;
+}
+.vorlageform__knopf:hover{background:rgba(127,127,127,.14);border-color:var(--rand)}
+.vorlageform__knopf--an{background:var(--blau);border-color:var(--blau);color:#fff}
+.vorlageform__knopf--an:hover{background:var(--blau)}
+.vorlageform__knopf--fett{font-weight:700}
+.vorlageform__knopf--kursiv{font-style:italic}
+.vorlageform__farbe{
+  width:44px;height:32px;flex:0 0 auto;padding:2px;cursor:pointer;
+  background-color:var(--grund);border:1px solid var(--rand);border-radius:6px;
+}
+
+/* Die Zahlenfelder tragen ihre Beschriftung DARÜBER. Als Zeichen allein
+   („⇕ 2,5") wüsste niemand, ob das der Abstand davor oder danach ist. */
+.vorlageform__zahl{display:flex;flex-direction:column;gap:2px;flex:0 0 auto}
+.vorlageform__zahl > span{font-size:10px;color:var(--schrift-3);padding-left:2px}
+.vorlageform__zahl > input{
+  width:78px;height:32px;
+  background-color:var(--grund);color:var(--schrift);
+  border:1px solid var(--rand);border-radius:6px;
+  padding:0 8px;font:inherit;font-size:13px;
+}
+.vorlageform__zahl > input:focus{outline:none;border-color:var(--blau-hell)}
+
+/* ------------------------------------------------------------
    Die Vorschau im Vorlagen-Dialog
 
    Ein grauer Absatz davor, die Probe, ein grauer danach. Die grauen sind
@@ -1947,8 +2018,8 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 .vorlagenschau{
   background:var(--blatt);color:var(--blatt-schrift);
   border:1px solid var(--rand);border-radius:7px;
-  padding:10px 12px;margin-top:6px;
-  max-height:150px;overflow:hidden;
+  padding:10px 12px;margin-top:12px;
+  max-height:132px;overflow:hidden;
   font-family:Georgia,"Liberation Serif",serif;
 }
 .vorlagenschau__grau{
