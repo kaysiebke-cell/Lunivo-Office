@@ -132,37 +132,67 @@ body{
 .wz--unter{text-decoration:underline}
 .wz--durch{text-decoration:line-through}
 .wz__trenner{width:1px;height:20px;background:var(--rand);margin:0 5px}
-/* Ohne „appearance:none" zeichnet WebKit die Auswahlfelder nach dem Thema
-   des Systems und übergeht Farbe und Hintergrund von hier. Auf einem dunklen
-   Schreibtisch stand dann dunkle Schrift auf dunklem Grund — man sah, dass
-   ein Kasten da ist, aber nicht, was drinsteht. Also zeichnen wir sie selbst,
-   samt Pfeil. */
+/* ============================================================
+   Auswahlfelder — EINE Regel für alle
+
+   Ohne „appearance:none" zeichnet WebKit ein Auswahlfeld nach dem Thema
+   des Systems und übergeht Farbe und Hintergrund von hier: Im dunklen
+   Fenster steht dann ein weißer Kasten mit fast unsichtbarer Schrift.
+
+   Dieser Griff stand einmal an drei Stellen einzeln — bei den Leisten,
+   bei der Einstellungsseite, bei den Dialogen —, und jedes Mal, wenn
+   irgendwo ein neues Auswahlfeld dazukam, fehlte er wieder. Zuletzt bei
+   der Formatleiste unter der rechten Maustaste; gemeldet am 09.09.2026.
+
+   Deshalb steht er jetzt EINMAL, für jedes „select" im Programm. Die
+   einzelnen Klassen sagen nur noch, wie groß das Feld ist. Wer künftig
+   ein Auswahlfeld einbaut, bekommt das Richtige, ohne es zu wissen — und
+   das ist der einzige Weg, auf dem so ein Fehler wirklich aufhört.
+
+   Der Pfeil ist ein eingebettetes Bild, damit keine Datei nachgeladen
+   werden muss. „currentColor" geht in SVG-Daten nicht, deshalb steht die
+   Farbe zweimal da: einmal für dunkel, einmal für hell.
+
+   Und überall „background-color", nie die Kurzform „background": Die
+   Kurzform setzt auch background-image zurück — und damit wäre der Pfeil
+   wieder weg.
+
+   „.wz-wahl" steht mit dabei, obwohl es meistens ein „select" IST: Der
+   Schriftknopf im Band ist keins, sondern ein Knopf mit einer eigenen,
+   durchsuchbaren Liste dahinter (neunhundert Schriften wären in einem
+   Klappfeld nicht zu finden). Er soll aber genauso aussehen wie die
+   Felder daneben — beim ersten Zusammenlegen dieser Regeln stand er
+   plötzlich weiß im dunklen Band.
+   ============================================================ */
+select,
 .wz-wahl{
-  height:28px;
   appearance:none;-webkit-appearance:none;
-  background:var(--karte);
+  cursor:pointer;
+  background-color:var(--karte);
   color:var(--schrift);
-  border:1px solid var(--rand);border-radius:5px;
+  border:1px solid var(--rand);
+  border-radius:5px;
   font:inherit;
   padding:0 22px 0 8px;
-  /* Der Pfeil: zwei Striche als eingebettetes Bild, damit keine Datei
-     nachgeladen werden muss. currentColor geht in SVG-Daten nicht, deshalb
-     steht die Farbe zweimal da — einmal hell, einmal dunkel. */
   background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23A7AFB7' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
   background-repeat:no-repeat;
   background-position:right 7px center;
   background-size:9px;
 }
+:root[data-theme="light"] select,
 :root[data-theme="light"] .wz-wahl{
   background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%234C555E' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
 }
-.wz-wahl:hover{border-color:var(--blau-hell)}
-.wz-wahl:focus{outline:none;border-color:var(--blau-hell)}
+select:hover,.wz-wahl:hover{border-color:var(--blau-hell)}
+select:focus,.wz-wahl:focus{outline:none;border-color:var(--blau-hell)}
 /* Die aufgeklappte Liste zeichnet das System — sie braucht ihre eigenen
    Farben, sonst steht sie hell da, während alles andere dunkel ist. */
-.wz-wahl option,.feld select option,.dialog__zeile select option{
-  background:var(--karte);color:var(--schrift);
-}
+select option{background:var(--karte);color:var(--schrift)}
+
+/* Die Auswahlfelder der Leisten. Alles Übrige steht oben.
+   „text-align:left" nur wegen des Schriftknopfes: Ein Knopf zentriert
+   seine Beschriftung, ein Klappfeld nicht — nebeneinander sähe man es. */
+.wz-wahl{height:28px;text-align:left}
 .wz-wahl--schrift{width:150px}
 .wz-wahl--groesse{width:62px}
 .wz-wahl--vorlage{width:130px}
@@ -433,36 +463,25 @@ body{
 .feld input[type="text"],
 .feld select{
   display:block;width:100%;margin-top:10px;
-  background:var(--grund);
+  /* „background-color" und nicht die Kurzform: Die Kurzform setzte auch
+     background-image zurück, und damit wäre der Pfeil weg. */
+  background-color:var(--grund);
   color:var(--schrift);
   border:1px solid var(--rand);
   border-radius:7px;
   padding:9px 11px;
   font:inherit;
 }
-/* Auch für die Rückfrage-Kästen. Ohne „appearance:none" zeichnet WebKit
-   die Auswahlfelder nach dem Thema des Systems und übergeht Farbe und
-   Hintergrund von hier: Im dunklen Fenster standen dann helle Kästen mit
-   fast unsichtbarer Schrift. Die Einstellungsseite hatte den Griff, die
-   Dialoge nicht — und Dialoge mit Auswahlfeldern gibt es viele. */
+/* Nur noch die Maße — „appearance", Farbe und Pfeil stehen oben bei
+   „select", einmal für alle. */
 .feld select,
 .dialog__zeile select{
-  cursor:pointer;
-  appearance:none;-webkit-appearance:none;
   padding-right:30px;
-  background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23A7AFB7' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
-  background-repeat:no-repeat;
   background-position:right 11px center;
   background-size:10px;
 }
 .feld input:focus,.feld select:focus{
   outline:none;border-color:var(--blau-hell);
-}
-/* Der Pfeil im hellen Thema braucht die dunkle Fassung — sonst zeigt ein
-   grauer Pfeil auf hellem Grund ins Nichts. */
-:root[data-theme="light"] .feld select,
-:root[data-theme="light"] .dialog__zeile select{
-  background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%234C555E' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
 }
 
 /* Schalterzeilen: Text links, Schalter rechts. */
@@ -1035,11 +1054,15 @@ button.wz-wahl--schrift{
 .minileiste__knopf--kursiv{font-style:italic}
 .minileiste__knopf--unter{text-decoration:underline}
 .minileiste__teiler{width:1px;height:18px;background:var(--rand);margin:0 4px;flex:0 0 auto}
+/* Nur die Maße — der Rest steht oben bei „select". Genau diese Zeilen
+   hatten den Griff vergessen, und die Kästen standen weiß im dunklen
+   Fenster. */
 .minileiste__wahl{
   height:26px;max-width:78px;
-  background:var(--karte);color:var(--schrift);
-  border:1px solid var(--rand);border-radius:5px;
-  font:inherit;font-size:12px;padding:0 4px;
+  font-size:12px;
+  padding:0 19px 0 6px;
+  background-position:right 5px center;
+  background-size:8px;
 }
 .minileiste__wahl--breit{max-width:132px;flex:1 1 auto;min-width:0}
 .minileiste__wahl:disabled{color:var(--schrift-3)}
