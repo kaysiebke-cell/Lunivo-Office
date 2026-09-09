@@ -134,7 +134,11 @@ vorher in *Extras ▸ Beim Schreiben*, wo sie niemand fand. Daneben führt
 und dort lässt sich jede auch gleich umlegen oder auslösen.
 
 **Prüfen.** Der Knopf *Prüfen* (F7) legt jeden Fund als Karte in die
-Seitenleiste und zieht im Text eine Wellenlinie darunter. Auf jeder Karte
+Seitenleiste und zieht im Text eine Wellenlinie darunter. Wer die
+Wellenlinien nicht mag, schaltet sie aus — über die Marke *Wellen*, über
+*Schreibhilfe ▸ Beim Schreiben ▸ Rechtschreibprüfung* oder über
+*Überprüfen ▸ Rechtschreibung*. Die Funde bleiben dann in der
+Seitenleiste; angestrichen wird nichts mehr, auch nicht nach *Prüfen*. Auf jeder Karte
 steht ein **Ohr**: Es liest den Vorschlag samt Begründung vor. Wer zwischen
 „das" und „dass" unsicher ist, hört den Unterschied oft schneller, als er
 ihn sieht.

@@ -3770,11 +3770,19 @@ B.formKnopf = () => {
 /* „Rechtschreibung & Grammatik" wie in der Leiste des Writers: Beides auf
    einmal. Die Wellenlinien des Systems finden falsch geschriebene Wörter,
    die Schreibhilfe findet, was danach noch schiefsteht. */
-B.rechtschreibpruefung = () => {
-  if (!lebendAn) { lebendAn = true; Speicher.schreib('lebend', true); }
-  feld.blur(); feld.focus();
-  pruefen();
-};
+/* „Prüfen" — der Lauf, nicht der Schalter. Die beiden Namen liegen
+   dicht beieinander: „rechtschreibpruefung" prüft JETZT,
+   „rechtschreibung" schaltet die Wellenlinien an und aus.
+
+   Hier standen einmal zwei Zeilen, die beide aus einer Zeit stammen, als
+   der Schalter die Prüfung des SYSTEMS steuerte: Er wurde eingeschaltet,
+   und das Feld verlor und bekam den Fokus, damit WebKit neu anstrich.
+   Seit §8 streicht Lunivo selbst an — und die zwei Zeilen richteten
+   Schaden an: Wer die Wellenlinien ausgeschaltet hatte und auf „Prüfen"
+   drückte, hatte sie wieder. Am Ende ließ sich der Schalter überhaupt
+   nicht mehr ausschalten, weil der Knopf im Band, der wie der Schalter
+   aussah, in Wahrheit hierher zeigte. Gemeldet am 09.09.2026. */
+B.rechtschreibpruefung = () => pruefen();
 
 B.rechtschreibung = () => {
   /* Der Schalter steuert seit dem Umbau die EIGENEN Wellenlinien, nicht
@@ -8084,7 +8092,7 @@ const MENUES = [
     { name: 'Dokumentprüfung', unter: [
       { name: 'Prüfen', tun: () => pruefen(), taste: 'F7' },
       { name: 'Gründlich prüfen', tun: B.gruendlichPruefen },
-      { name: 'Rechtschreibung', tun: B.rechtschreibung },
+      { name: 'Rechtschreibung', tun: B.rechtschreibung, haken: () => lebendAn },
       { name: 'Thesaurus', tun: B.thesaurus },
       { name: 'Wörter zählen', tun: B.woerterZaehlen },
     ] },
@@ -8126,7 +8134,9 @@ const MENUES = [
       ] },
     ] },
     { name: 'Beim Schreiben', unter: [
-      { name: 'Rechtschreibprüfung', tun: B.rechtschreibpruefung },
+      /* Ein Schalter, kein Prüflauf: Die Gruppe heißt „Beim Schreiben",
+         und daneben stehen zwei weitere Schalter. */
+      { name: 'Rechtschreibprüfung', tun: B.rechtschreibung, haken: () => lebendAn },
       { name: 'Wortvorhersage', tun: B.vorhersage },
       { name: 'AutoKorrektur', tun: B.autokorrektur },
     ] },
@@ -8381,10 +8391,17 @@ function messenUndKippen(klappe) {
 }
 
 function menueBauen() {
-  /* Die drei Schalter stehen an zwei Stellen — im Menü und in der
-     Seitenleiste. Wer einen im Menü umlegt, soll die Marke daneben
-     wechseln sehen; sonst widersprechen sich die beiden. */
+  /* Die drei Schalter stehen an DREI Stellen — im Menü, in der
+     Seitenleiste und im Band. Wer einen umlegt, soll ihn überall wechseln
+     sehen; sonst widersprechen sie sich, und man drückt weiter auf einen,
+     der schon umgelegt ist.
+
+     Die Lampen im Band hingen vorher hinterher: Sie frischten sich erst
+     auf, wenn die Schreibstelle sich das nächste Mal bewegte. Wer die
+     Wellenlinien in der Seitenleiste ausschaltete, sah im Band noch eine
+     Weile „an". */
   schnellzugriffBauen();
+  registerSchalterAuffrischen();
   const leiste = $('menueleiste');
   leiste.innerHTML = '';
   for (const [titel, punkte] of MENUES) {
@@ -9217,6 +9234,12 @@ function absatzAmZeiger() {
 
 function markiereFunde(schoneAbsatz) {
   markenEntfernen();
+
+  /* Sind die Wellenlinien ausgeschaltet, wird nichts angestrichen — auch
+     nicht nach einem ausdrücklichen „Prüfen". Die Funde stehen dann in
+     der Seitenleiste, und genau das verspricht der Schalter. Ohne diese
+     Zeile zeichnete „Prüfen" sie ungefragt wieder ins Blatt. */
+  if (!lebendAn) return;
 
   /* Von hinten nach vorn: Jede eingesetzte Markierung teilt Textknoten auf.
      Vorn beginnend verschöben sich alle folgenden Stellen. */

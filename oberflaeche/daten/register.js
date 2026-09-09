@@ -216,7 +216,7 @@ function REGISTER_BAUEN(B, w) {
   ['Überprüfen', [
     ['Dokumentprüfung', [['haken', 'Prüfen', () => w.pruefen(), 'gross'],
                     ['gruendlich', 'Gründlich prüfen', () => B.gruendlichPruefen(), 'gross'],
-                    ['Duden', 'Rechtschreibung', () => B.rechtschreibung()],
+                    ['Duden', 'Rechtschreibung', () => B.rechtschreibung(), false, () => w.an('rechtschreibung')],
                     ['thesaurus', 'Thesaurus', () => B.thesaurus()],
                     ['woerter', 'Wörter zählen', () => B.woerterZaehlen()]]],
     ['Sprache', [['sprache', 'Korrektursprache', () => B.pruefsprache(), 'gross']]],
@@ -248,7 +248,10 @@ function REGISTER_BAUEN(B, w) {
                       ['-'],
                       ['Welche Hilfe wann', () => B.welcheHilfe()],
                     ], 'gross']]],
-    ['Beim Schreiben', [['wellen', 'Rechtschreibprüfung', () => B.rechtschreibpruefung(), false, () => w.an('rechtschreibung')],
+    /* Ein SCHALTER, kein Prüflauf. Er zeigte seinen Stand an, tat aber
+       etwas anderes: Er rief den Lauf, und der schaltete sich selbst ein.
+       Damit stand die Lampe immer auf „an" und ging nie wieder aus. */
+    ['Beim Schreiben', [['wellen', 'Rechtschreibprüfung', () => B.rechtschreibung(), false, () => w.an('rechtschreibung')],
                     ['Vorhersage', 'Wortvorhersage', () => B.vorhersage()],
                     ['autokorr', 'AutoKorrektur', () => B.autokorrektur()]]],
     ['Vorlesen', [['vorlesen', 'Vorlesen', [
