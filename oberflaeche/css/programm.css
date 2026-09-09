@@ -1030,6 +1030,34 @@ button.wz-wahl--schrift{
   height:1px;background:var(--rand);margin:5px 8px;
 }
 
+/* Was an dieser Stelle nicht geht, steht grau da statt zu fehlen. Ein
+   Punkt, der mal da ist und mal nicht, lässt sich nicht lernen — man
+   sucht ihn dann jedes Mal neu. */
+.rechtsmenue__punkt--aus{
+  color:var(--schrift-3);cursor:default;
+}
+.rechtsmenue__punkt--aus:hover{background:none;color:var(--schrift-3)}
+
+/* Untermenüs: Schrift, Absatz, Tabelle. Ohne sie stünden dreißig Zeilen
+   untereinander, und das liest niemand. */
+.rechtsmenue__gruppe{position:relative}
+.rechtsmenue__punkt--auf{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.rechtsmenue__pfeil{opacity:.55;font-size:15px;line-height:1}
+.rechtsmenue__gruppe--offen > .rechtsmenue__punkt--auf{background:var(--blau);color:#fff}
+.rechtsmenue__klappe{
+  display:none;
+  position:absolute;left:100%;top:-6px;z-index:81;
+  min-width:210px;
+  background:var(--leiste);
+  border:1px solid var(--rand);border-radius:8px;
+  box-shadow:var(--schatten);
+  padding:5px;
+}
+.rechtsmenue__gruppe--offen > .rechtsmenue__klappe{display:block}
+/* Am rechten Fensterrand klappt es nach links auf — sonst stünde die
+   Hälfte außerhalb. */
+.rechtsmenue__klappe--links{left:auto;right:100%}
+
 /* ============================================================
    Die Farbtafel
    ============================================================ */

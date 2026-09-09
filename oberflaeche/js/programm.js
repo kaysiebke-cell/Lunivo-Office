@@ -1323,6 +1323,63 @@ B.hyperlink = () => {
   }, 'Einfügen');
 };
 
+/* Einen vorhandenen Hyperlink ändern oder wegnehmen.
+ *
+ * Beides gibt es nur unter der rechten Maustaste, und das ist richtig so:
+ * Man kann es nur tun, wenn man auf einem Link steht — und dann zeigt man
+ * ohnehin schon darauf. Im Menü stünden zwei Punkte, die meistens grau
+ * sind.
+ */
+B.linkBearbeiten = (a) => {
+  if (!a) return;
+  fenster('Hyperlink bearbeiten', [
+    { schluessel: 'text', name: 'Beschriftung', wert: a.textContent },
+    { schluessel: 'ziel', name: 'Adresse', wert: a.getAttribute('href') || '' },
+  ], (werte) => {
+    const ziel = werte.ziel.trim();
+    if (!/^(https?|mailto):/i.test(ziel)) { melde('Das ist keine brauchbare Adresse.'); return; }
+    a.setAttribute('href', ziel);
+    a.textContent = werte.text.trim() || ziel;
+    geaendertMelden();
+    melde('Hyperlink geändert.');
+  }, 'Übernehmen');
+};
+
+/* Der Text bleibt, der Link geht. „removeFormat" täte das nicht — es
+   nimmt Fett und Farbe weg und lässt das <a> stehen. */
+B.linkEntfernen = (a) => {
+  if (!a || !a.parentNode) return;
+  const text = document.createTextNode(a.textContent);
+  a.parentNode.replaceChild(text, a);
+  geaendertMelden();
+  melde('Hyperlink entfernt — der Text bleibt.');
+};
+
+/* Die Adresse in die Zwischenablage. Erst der neue Weg, dann der alte:
+   Im eigenen Fenster ist die Berechtigung für die Zwischenablage nicht
+   immer da, und ein Menüpunkt, der still nichts tut, ist schlimmer als
+   keiner. */
+B.linkKopieren = async (a) => {
+  const ziel = a ? a.getAttribute('href') || '' : '';
+  if (!ziel) return;
+  try {
+    await navigator.clipboard.writeText(ziel);
+    melde('Adresse kopiert.');
+    return;
+  } catch (e) { /* dann der alte Weg */ }
+  const feldchen = document.createElement('textarea');
+  feldchen.value = ziel;
+  feldchen.style.position = 'fixed';
+  feldchen.style.opacity = '0';
+  document.body.appendChild(feldchen);
+  feldchen.select();
+  let ging = false;
+  try { ging = document.execCommand('copy'); } catch (e) { ging = false; }
+  feldchen.remove();
+  feld.focus();
+  melde(ging ? 'Adresse kopiert.' : 'Die Adresse ließ sich nicht kopieren: ' + ziel);
+};
+
 B.kommentar = () => {
   auswahlMerken();
   fenster('Kommentar', [
@@ -8632,43 +8689,182 @@ function fundAnStelle(ziel) {
   return Number.isNaN(nummer) ? null : funde[nummer] || null;
 }
 
+/* Steht die Schreibstelle da, wo geklickt wurde?
+ *
+ * Die Befehle des Menüs arbeiten mit der Schreibstelle, nicht mit dem
+ * Mauszeiger: „Zeile darüber" fragt, in welcher Zelle der Zeiger steht.
+ * Wer in eine andere Zelle rechtsklickt, meint aber die, auf die er
+ * zeigt. Also wird der Zeiger dorthin gesetzt — es sei denn, es ist
+ * etwas markiert und man hat in die Markierung geklickt: Dann will man
+ * mit der Markierung etwas tun und nicht sie verlieren.
+ */
+function zeigerZumKlick(e) {
+  const auswahl = window.getSelection();
+  if (auswahl && auswahl.rangeCount && !auswahl.isCollapsed) {
+    const r = auswahl.getRangeAt(0);
+    for (const kasten of r.getClientRects()) {
+      if (e.clientX >= kasten.left && e.clientX <= kasten.right
+          && e.clientY >= kasten.top && e.clientY <= kasten.bottom) return;
+    }
+  }
+  let bereich = null;
+  if (document.caretRangeFromPoint) {
+    bereich = document.caretRangeFromPoint(e.clientX, e.clientY);
+  } else if (document.caretPositionFromPoint) {
+    const stelle = document.caretPositionFromPoint(e.clientX, e.clientY);
+    if (stelle) {
+      bereich = document.createRange();
+      bereich.setStart(stelle.offsetNode, stelle.offset);
+      bereich.collapse(true);
+    }
+  }
+  if (bereich && feld.contains(bereich.startContainer)) Dokument.waehle(bereich);
+}
+
+/* ------------------------------------------------------------
+   Das Menü unter der rechten Maustaste
+
+   Es stand einmal auf vier Zeilen: Ausschneiden, Kopieren, Einfügen,
+   Rechtschreibung. Das ist zu wenig — die rechte Maustaste ist für die
+   meisten der kürzeste Weg zu einem Befehl, und wer sie drückt, hat den
+   Zeiger schon dort, wo er etwas ändern will.
+
+   Jetzt zeigt es, was an DIESER Stelle geht: auf einem Link etwas
+   anderes als in einer Tabelle, in einer Tabelle etwas anderes als in
+   einem Bild. Was überall gilt — Zwischenablage, Schrift, Absatz —
+   steht darunter, das Seltenere in Untermenüs. Word macht es genauso,
+   und aus gutem Grund: Ein Menü mit dreißig Zeilen liest niemand.
+
+   Was gerade nicht geht, steht grau da statt zu fehlen. Ein Punkt, der
+   mal da ist und mal nicht, lässt sich nicht lernen.
+   ------------------------------------------------------------ */
 function rechtsMenueZeigen(e) {
   e.preventDefault();
   rechtsMenueSchliessen();
+  zeigerZumKlick(e);
 
   const kasten = document.createElement('div');
   kasten.className = 'rechtsmenue';
 
-  const eintrag = (beschriftung, tun, klasse = '') => {
+  /* ---- Bausteine ---- */
+
+  const knopfBauen = (beschriftung, tun, klasse, aus) => {
     const k = document.createElement('button');
     k.type = 'button';
-    k.className = 'rechtsmenue__punkt ' + klasse;
+    k.className = 'rechtsmenue__punkt ' + (klasse || '') + (aus ? ' rechtsmenue__punkt--aus' : '');
     k.textContent = beschriftung;
+    if (aus) { k.disabled = true; return k; }
+    /* Ohne dies nähme der Klick dem Blatt die Schreibstelle — und der
+       Befehl wüsste nicht mehr, worauf er sich bezieht. */
     k.addEventListener('mousedown', (ev) => ev.preventDefault());
     k.addEventListener('click', () => { rechtsMenueSchliessen(); tun(); });
+    return k;
+  };
+
+  const eintrag = (beschriftung, tun, klasse, aus) => {
+    const k = knopfBauen(beschriftung, tun, klasse, aus);
     kasten.appendChild(k);
     return k;
   };
-  const trennlinie = () => {
-    const t = document.createElement('div');
-    t.className = 'rechtsmenue__strich';
-    kasten.appendChild(t);
+
+  const kopfzeileSetzen = (text) => {
+    const kopf = document.createElement('div');
+    kopf.className = 'rechtsmenue__kopf';
+    kopf.textContent = text;
+    kasten.appendChild(kopf);
   };
 
-  /* Erst das Wort, auf das gezeigt wurde: Rechtschreibvorschläge stehen
-     ganz oben, so wie es jedes Schreibprogramm hält. Sie brauchen keine
-     vorherige Prüfung — das Wörterbuch liegt ohnehin im Speicher. */
+  /* Eine Trennlinie, die nur kommt, wenn darüber wirklich etwas steht.
+     Sonst begänne das Menü an mancher Stelle mit einem Strich, und an
+     anderer stünden zwei übereinander. */
+  const trennlinie = () => {
+    if (!kasten.lastElementChild
+        || kasten.lastElementChild.classList.contains('rechtsmenue__strich')) return;
+    const s = document.createElement('div');
+    s.className = 'rechtsmenue__strich';
+    kasten.appendChild(s);
+  };
+
+  /* Ein Untermenü. Es klappt zur Seite auf — nach rechts, wenn dort
+     Platz ist, sonst nach links. Gemessen wird erst, wenn es sichtbar
+     ist; vorher hat es keine Breite. */
+  const gruppe = (name, punkte) => {
+    const huelle = document.createElement('div');
+    huelle.className = 'rechtsmenue__gruppe';
+
+    const kopf = document.createElement('button');
+    kopf.type = 'button';
+    kopf.className = 'rechtsmenue__punkt rechtsmenue__punkt--auf';
+    kopf.appendChild(document.createTextNode(name));
+    const pfeil = document.createElement('span');
+    pfeil.className = 'rechtsmenue__pfeil';
+    pfeil.textContent = '›';
+    kopf.appendChild(pfeil);
+    kopf.addEventListener('mousedown', (ev) => ev.preventDefault());
+    huelle.appendChild(kopf);
+
+    const klappe = document.createElement('div');
+    klappe.className = 'rechtsmenue__klappe';
+    for (const p of punkte) {
+      if (p === strich) {
+        const s = document.createElement('div');
+        s.className = 'rechtsmenue__strich';
+        klappe.appendChild(s);
+        continue;
+      }
+      klappe.appendChild(knopfBauen(p.name, p.tun, '', p.aus));
+    }
+    huelle.appendChild(klappe);
+
+    huelle.addEventListener('mouseenter', () => {
+      for (const andere of kasten.querySelectorAll('.rechtsmenue__gruppe--offen')) {
+        andere.classList.remove('rechtsmenue__gruppe--offen');
+      }
+      huelle.classList.add('rechtsmenue__gruppe--offen');
+      klappe.classList.remove('rechtsmenue__klappe--links');
+      if (klappe.getBoundingClientRect().right > window.innerWidth - 6) {
+        klappe.classList.add('rechtsmenue__klappe--links');
+      }
+    });
+    huelle.addEventListener('mouseleave', () => huelle.classList.remove('rechtsmenue__gruppe--offen'));
+
+    kasten.appendChild(huelle);
+  };
+
+  /* ---- Wo ist geklickt worden? ---- */
+
+  const ziel = e.target && e.target.closest ? e.target : null;
+  const link = ziel ? ziel.closest('a[href]') : null;
+  const zelle = ziel ? ziel.closest('td, th') : null;
+  const bild = ziel ? ziel.closest('img') : null;
+  const form = ziel ? ziel.closest('svg.zeichnung') : null;
+  const diagramm = ziel ? ziel.closest('svg.diagramm') : null;
+  const smartart = ziel ? ziel.closest('svg.smartart') : null;
+  const formel = ziel ? ziel.closest('math') : null;
+
+  const auswahl = window.getSelection();
+  const markiert = !!(auswahl && auswahl.rangeCount && !auswahl.isCollapsed
+                      && auswahl.toString().length);
+  const gesperrt = feld.contentEditable === 'false';
+
+  /* ---- 1. Das Wort, auf das gezeigt wurde ----
+     Rechtschreibvorschläge stehen ganz oben, so wie es jedes
+     Schreibprogramm hält. Sie brauchen keine vorherige Prüfung — das
+     Wörterbuch liegt ohnehin im Speicher. */
   const stelle = wortAnPunkt(e.clientX, e.clientY);
-  const unbekannt = stelle && !Pruefung.kennt(stelle.wort);
+  /* Kurze Wörter nicht: „A" in einer Tabellenzelle steht in keinem
+     Wörterbuch, ist aber kein Fehler. Die Tippfehlerprüfung fängt aus
+     demselben Grund erst bei vier Buchstaben an (pruefung.js) — und wenn
+     die Seitenleiste ein Wort nicht anstreicht, darf das Menü unter der
+     rechten Taste es nicht als unbekannt melden. Zwei Meinungen zu
+     demselben Wort sind schlimmer als eine strenge. */
+  const unbekannt = stelle && stelle.wort.length >= 4 && !Pruefung.kennt(stelle.wort);
   const vorschlaege = unbekannt ? Pruefung.vorschlaegeFuer(stelle.wort) : [];
 
   if (unbekannt) {
-    const kopf = document.createElement('div');
-    kopf.className = 'rechtsmenue__kopf';
-    kopf.textContent = vorschlaege.length
+    kopfzeileSetzen(vorschlaege.length
       ? '„' + stelle.wort + '" steht nicht im Wörterbuch'
-      : '„' + stelle.wort + '" steht nicht im Wörterbuch — kein Vorschlag gefunden';
-    kasten.appendChild(kopf);
+      : '„' + stelle.wort + '" steht nicht im Wörterbuch — kein Vorschlag gefunden');
 
     for (const wort of vorschlaege) {
       const ersatz = wieGeschrieben(stelle.wort, wort);
@@ -8691,13 +8887,11 @@ function rechtsMenueZeigen(e) {
     trennlinie();
   }
 
+  /* ---- 2. Die angestrichene Stelle ---- */
   const fund = fundAnStelle(e.target);
 
   if (fund) {
-    const kopf = document.createElement('div');
-    kopf.className = 'rechtsmenue__kopf';
-    kopf.textContent = fund.grund || 'Gefundene Stelle';
-    kasten.appendChild(kopf);
+    kopfzeileSetzen(fund.grund || 'Gefundene Stelle');
 
     if (fund.art !== 'hinweis' && fund.neu) {
       /* Der Vorschlag steht fett und ganz oben — er ist der Grund, weshalb
@@ -8736,16 +8930,161 @@ function rechtsMenueZeigen(e) {
     trennlinie();
   }
 
-  eintrag('Ausschneiden', B.ausschneiden);
-  eintrag('Kopieren', B.kopieren);
-  eintrag('Einfügen', B.einfuegen);
-  trennlinie();
-  eintrag('Rechtschreibung und Grammatik', B.rechtschreibpruefung);
+  /* ---- 3. Der Hyperlink ---- */
+  if (link) {
+    const wohin = link.getAttribute('href') || '';
+    kopfzeileSetzen(wohin.length > 60 ? wohin.slice(0, 57) + '…' : wohin);
+    eintrag('Hyperlink bearbeiten…', () => B.linkBearbeiten(link), '', gesperrt);
+    eintrag('Adresse kopieren', () => B.linkKopieren(link));
+    eintrag('Hyperlink entfernen', () => B.linkEntfernen(link), '', gesperrt);
+    trennlinie();
+  }
 
-  kasten.style.left = Math.min(e.clientX, window.innerWidth - 250) + 'px';
-  kasten.style.top = Math.min(e.clientY, window.innerHeight - 260) + 'px';
+  /* ---- 4. Bild, Zeichnung, Diagramm, SmartArt, Formel ----
+     Dieselben Befehle, die auch der Reiter im Zusammenhang anbietet. Sie
+     hier ein zweites Mal zu schreiben wäre falsch; sie werden gerufen. */
+  if (bild) {
+    kopfzeileSetzen('Bild');
+    eintrag('Anordnen und Umbruch…', () => B.anordnen(), '', gesperrt);
+    trennlinie();
+  } else if (form) {
+    kopfzeileSetzen('Zeichnung');
+    eintrag('Form ändern…', () => B.formAendern(), '', gesperrt);
+    eintrag('Füllung…', () => B.formFuellung(), '', gesperrt);
+    eintrag('Kontur…', () => B.formKontur(), '', gesperrt);
+    eintrag('Größe…', () => B.formGroesse(), '', gesperrt);
+    eintrag('Anordnen…', () => B.anordnen(), '', gesperrt);
+    trennlinie();
+  } else if (diagramm) {
+    kopfzeileSetzen('Diagramm');
+    eintrag('Daten bearbeiten…', () => B.diagrammDaten(), '', gesperrt);
+    eintrag('Diagrammtyp…', () => B.diagrammTyp(), '', gesperrt);
+    eintrag('Entwurf…', () => B.diagrammEntwurf(), '', gesperrt);
+    eintrag('Format…', () => B.diagrammFormat(), '', gesperrt);
+    trennlinie();
+  } else if (smartart) {
+    kopfzeileSetzen('SmartArt');
+    eintrag('Entwurf…', () => B.smartartEntwurf(), '', gesperrt);
+    eintrag('Format…', () => B.smartartFormat(), '', gesperrt);
+    trennlinie();
+  } else if (formel) {
+    kopfzeileSetzen('Formel');
+    eintrag('Formel ändern…', () => B.formelAendern(), '', gesperrt);
+    trennlinie();
+  }
+
+  /* ---- 5. Die Tabelle ---- */
+  if (zelle) {
+    gruppe('Einfügen', [
+      { name: 'Zeile darüber', tun: () => B.zeileOben(), aus: gesperrt },
+      { name: 'Zeile darunter', tun: () => B.zeileUnten(), aus: gesperrt },
+      { name: 'Spalte links', tun: () => B.spalteLinks(), aus: gesperrt },
+      { name: 'Spalte rechts', tun: () => B.spalteRechts(), aus: gesperrt },
+    ]);
+    gruppe('Löschen', [
+      { name: 'Zeile', tun: () => B.zeileWeg(), aus: gesperrt },
+      { name: 'Spalte', tun: () => B.spalteWeg(), aus: gesperrt },
+      strich,
+      { name: 'Ganze Tabelle', tun: () => B.tabelleWeg(), aus: gesperrt },
+    ]);
+    gruppe('Tabelle', [
+      { name: 'Erste Zeile als Kopf', tun: () => B.kopfzeileTabelle(), aus: gesperrt },
+      { name: 'Zellengröße…', tun: () => B.zellengroesse(), aus: gesperrt },
+      { name: 'Ausrichtung…', tun: () => B.zellenAusrichtung(), aus: gesperrt },
+      { name: 'Rahmen ein/aus', tun: () => B.tabelleRahmen(), aus: gesperrt },
+      { name: 'Tabellenformatierung…', tun: () => B.tabelleFormat(), aus: gesperrt },
+      strich,
+      { name: 'Sortieren…', tun: () => B.sortieren(), aus: gesperrt },
+    ]);
+    trennlinie();
+  }
+
+  /* ---- 6. Die Zwischenablage ----
+     Sie steht immer da. Was ohne Markierung nicht geht, steht grau. */
+  eintrag('Ausschneiden', B.ausschneiden, '', !markiert || gesperrt);
+  eintrag('Kopieren', B.kopieren, '', !markiert);
+  eintrag('Einfügen', B.einfuegen, '', gesperrt);
+  eintrag('Einfügen ohne Formatierung', B.einfuegenOhne, '', gesperrt);
+  eintrag('Format übertragen', B.formatUebertragen, '', gesperrt);
+  trennlinie();
+
+  /* ---- 7. Schrift und Absatz ---- */
+  gruppe('Schrift', [
+    { name: 'Fett', tun: B.fett, aus: gesperrt },
+    { name: 'Kursiv', tun: B.kursiv, aus: gesperrt },
+    { name: 'Unterstrichen', tun: B.unter, aus: gesperrt },
+    { name: 'Durchgestrichen', tun: B.durch, aus: gesperrt },
+    strich,
+    { name: 'Schriftfarbe…', tun: B.schriftfarbe, aus: gesperrt },
+    { name: 'Hervorheben', tun: B.hervorheben, aus: gesperrt },
+    { name: 'Texteffekte…', tun: B.effekt, aus: gesperrt },
+    { name: 'Groß-/Kleinschreibung…', tun: B.schreibweise, aus: gesperrt || !markiert },
+    strich,
+    { name: 'Formatierung löschen', tun: B.schlicht, aus: gesperrt },
+  ]);
+
+  gruppe('Absatz', [
+    { name: 'Linksbündig', tun: B.links, aus: gesperrt },
+    { name: 'Zentriert', tun: B.mitte, aus: gesperrt },
+    { name: 'Rechtsbündig', tun: B.rechts, aus: gesperrt },
+    { name: 'Blocksatz', tun: B.block, aus: gesperrt },
+    strich,
+    { name: 'Aufzählung', tun: B.punkte, aus: gesperrt },
+    { name: 'Nummerierung', tun: B.zahlen, aus: gesperrt },
+    { name: 'Einzug vergrößern', tun: B.einzugMehr, aus: gesperrt },
+    { name: 'Einzug verringern', tun: B.einzugWeniger, aus: gesperrt },
+    strich,
+    { name: 'Absatzabstand…', tun: B.absatzabstand, aus: gesperrt },
+    { name: 'Einzug genau…', tun: B.einzugGenau, aus: gesperrt },
+    { name: 'Rahmen…', tun: B.absatzRahmen, aus: gesperrt },
+    { name: 'Schattierung…', tun: B.absatzSchattierung, aus: gesperrt },
+  ]);
+
+  /* Die Formatvorlagen kommen aus dem Katalog — dieselbe Liste, die auch
+     der Katalog im Band zeigt. Zwei Listen liefen auseinander. */
+  gruppe('Formatvorlage', KATALOG.map(([name, , tun]) => (
+    { name: name, tun: tun, aus: gesperrt })));
+  trennlinie();
+
+  /* ---- 8. Was man an dieser Stelle einfügt ---- */
+  if (!link) eintrag('Hyperlink…', B.hyperlink, '', gesperrt);
+  eintrag('Neuer Kommentar', B.kommentar, '', gesperrt);
+  trennlinie();
+
+  /* ---- 9. Sprache und Nachschlagen ---- */
+  eintrag('Rechtschreibung und Grammatik', B.rechtschreibpruefung);
+  eintrag('Thesaurus', B.thesaurus, '', !stelle && !markiert);
+  eintrag('Ab hier vorlesen', B.vorlesenAbSatz);
+  eintrag('Wörter zählen', B.woerterZaehlen);
+  trennlinie();
+  eintrag('Alles auswählen', B.allesMarkieren);
+
+  /* ---- Hinstellen ----
+     Erst einhängen, dann messen: Wie hoch das Menü ist, hängt daran, wie
+     viel an dieser Stelle zu bieten war — und das steht erst jetzt fest.
+     Vorher stand hier eine feste Zahl (260 Bildpunkte), und das längere
+     Menü ragte unten aus dem Fenster heraus. */
+  kasten.style.left = '0px';
+  kasten.style.top = '0px';
   document.body.appendChild(kasten);
   rechtsMenue = kasten;
+
+  const masse = kasten.getBoundingClientRect();
+  const rand = 6;
+  let x = e.clientX;
+  let y = e.clientY;
+  if (x + masse.width > window.innerWidth - rand) x = Math.max(rand, e.clientX - masse.width);
+  if (y + masse.height > window.innerHeight - rand) y = Math.max(rand, window.innerHeight - rand - masse.height);
+  kasten.style.left = x + 'px';
+  kasten.style.top = y + 'px';
+
+  /* Ist es höher als das Fenster, muss es rollen können — sonst wären die
+     letzten Punkte unerreichbar. */
+  if (masse.height > window.innerHeight - 2 * rand) {
+    kasten.style.top = rand + 'px';
+    kasten.style.maxHeight = (window.innerHeight - 2 * rand) + 'px';
+    kasten.style.overflowY = 'auto';
+  }
 
   setTimeout(() => {
     document.addEventListener('mousedown', function zu(ev) {
