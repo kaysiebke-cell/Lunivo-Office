@@ -2370,29 +2370,129 @@ const KATALOG = [
   ['Kein Abstand', 'Aa', () => vorlageSetzen('p', 'ohne-abstand'), 'kat--p'],
 ];
 
+/* Eine Kachel des Katalogs. Sie trägt die Form, die sie setzt — sonst
+   wäre der Katalog acht gleiche Kästchen mit verschiedenen Wörtern
+   darunter. */
+function katalogStueck([name, probe, tun, klasse], gross) {
+  const k = document.createElement('button');
+  k.type = 'button';
+  k.className = 'katalog__stueck' + (gross ? ' katalog__stueck--gross' : '');
+  k.title = name;
+  k.setAttribute('aria-label', name);
+
+  const bild = document.createElement('span');
+  bild.className = 'katalog__probe ' + klasse;
+  bild.textContent = probe;
+  const wort = document.createElement('span');
+  wort.className = 'katalog__name';
+  wort.textContent = name;
+
+  k.append(bild, wort);
+  k.addEventListener('mousedown', (e) => e.preventDefault());
+  k.addEventListener('click', () => { katalogKlappeWeg(); tun(); });
+  return k;
+}
+
+/* ------------------------------------------------------------
+   Der Formatvorlagen-Katalog im Band
+
+   Er stand als EINE Zeile da und zog sich über die halbe Breite des
+   Fensters: acht Kacheln nebeneinander, und darunter allein in der Mitte
+   das Zeichen zum Verwalten mit der Aufschrift „STILE". Das sah aus wie
+   eine Gruppe, die aus dem Leim gegangen ist.
+
+   Der WPS Writer macht daraus ein Gitter mit zwei Zeilen und einen Pfeil
+   daneben, der alles aufklappt. Das ist die bessere Form, und zwar nicht
+   aus Geschmack: Eine Gruppe im Band ist so hoch wie das Band. Wer die
+   Höhe nicht nutzt, braucht die doppelte Breite — und die fehlt dann den
+   Gruppen dahinter.
+   ------------------------------------------------------------ */
 function katalogBauen() {
   const kiste = document.createElement('div');
-  kiste.className = 'katalog';
-  for (const [name, probe, tun, klasse] of KATALOG) {
-    const k = document.createElement('button');
-    k.type = 'button';
-    k.className = 'katalog__stueck';
-    k.title = name;
-    k.setAttribute('aria-label', name);
+  kiste.className = 'katalogkiste';
 
-    const bild = document.createElement('span');
-    bild.className = 'katalog__probe ' + klasse;
-    bild.textContent = probe;
-    const wort = document.createElement('span');
-    wort.className = 'katalog__name';
-    wort.textContent = name;
+  const gitter = document.createElement('div');
+  gitter.className = 'katalog';
+  for (const eintrag of KATALOG) gitter.appendChild(katalogStueck(eintrag));
+  kiste.appendChild(gitter);
 
-    k.append(bild, wort);
-    k.addEventListener('mousedown', (e) => e.preventDefault());
-    k.addEventListener('click', tun);
-    kiste.appendChild(k);
-  }
+  const mehr = document.createElement('button');
+  mehr.className = 'katalog__mehr';
+  mehr.type = 'button';
+  mehr.title = 'Alle Formatvorlagen';
+  mehr.setAttribute('aria-label', 'Alle Formatvorlagen');
+  mehr.setAttribute('aria-haspopup', 'true');
+  mehr.textContent = '⌄';
+  mehr.addEventListener('mousedown', (e) => e.preventDefault());
+  mehr.addEventListener('click', () => katalogKlappeZeigen(mehr));
+  kiste.appendChild(mehr);
+
   return kiste;
+}
+
+let katalogKlappe = null;
+
+function katalogKlappeWeg() {
+  if (katalogKlappe) { katalogKlappe.remove(); katalogKlappe = null; }
+}
+
+/* Die aufgeklappte Tafel.
+ *
+ * Sie hängt am Fenster und nicht im Band, und das ist kein Schönheits-
+ * fehler: Das Band rollt seitlich, und was auf einer Achse rollt,
+ * schneidet der Browser auch auf der anderen ab. Genau daran war einmal
+ * die Schriftliste als Streifen von zwanzig Pixeln geendet.
+ */
+function katalogKlappeZeigen(knopf) {
+  if (katalogKlappe) { katalogKlappeWeg(); return; }
+
+  const tafel = document.createElement('div');
+  tafel.className = 'katalogklappe';
+
+  const gitter = document.createElement('div');
+  gitter.className = 'katalogklappe__gitter';
+  for (const eintrag of KATALOG) gitter.appendChild(katalogStueck(eintrag, true));
+  tafel.appendChild(gitter);
+
+  const strichchen = document.createElement('div');
+  strichchen.className = 'katalogklappe__strich';
+  tafel.appendChild(strichchen);
+
+  /* Im Aufbau hat die Gruppe „Stile" zwei Dinge: die Vorlagen zum
+     Aussuchen — das ist der Katalog — und den Weg, sie zu verwalten. Der
+     stand vorher unter Ansicht ▸ Oberfläche, also weit weg von dem, was
+     er verwaltet. */
+  const verwalten = document.createElement('button');
+  verwalten.className = 'katalogklappe__punkt';
+  verwalten.type = 'button';
+  verwalten.textContent = 'Formatvorlagen verwalten…';
+  verwalten.addEventListener('mousedown', (e) => e.preventDefault());
+  verwalten.addEventListener('click', () => { katalogKlappeWeg(); B.vorlagenVerwalten(); });
+  tafel.appendChild(verwalten);
+
+  document.body.appendChild(tafel);
+  katalogKlappe = tafel;
+
+  /* Erst einhängen, dann messen — vorher hat sie keine Breite. */
+  const platz = knopf.getBoundingClientRect();
+  const masse = tafel.getBoundingClientRect();
+  const rand = 6;
+  let links = platz.right - masse.width;
+  if (links < rand) links = rand;
+  if (links + masse.width > window.innerWidth - rand) {
+    links = Math.max(rand, window.innerWidth - rand - masse.width);
+  }
+  tafel.style.left = links + 'px';
+  tafel.style.top = Math.min(platz.bottom + 4,
+                             window.innerHeight - rand - masse.height) + 'px';
+
+  setTimeout(() => {
+    document.addEventListener('mousedown', function zu(ev) {
+      if (tafel.contains(ev.target) || knopf.contains(ev.target)) return;
+      katalogKlappeWeg();
+      document.removeEventListener('mousedown', zu);
+    });
+  }, 0);
 }
 
 let registerOffen = Speicher.lies('register', 'Start');
@@ -2492,19 +2592,11 @@ function registerBauen() {
 
     /* Der Katalog zeigt die Formatvorlagen, statt sie zu benennen. */
     if (eintraege === 'katalog') {
+      /* „Formatvorlagen verwalten" stand hier einmal als eigenes Zeichen
+         unter dem Katalog — allein in der Mitte, unter einer Reihe, die
+         doppelt so breit war. Es steht jetzt in der Klappe, dort, wo man
+         ohnehin hinsieht, wenn man mehr Vorlagen sucht. */
       gruppe.appendChild(katalogBauen());
-      /* Im Aufbau hat die Gruppe „Stile" zwei Dinge: die Vorlagen zum
-         Aussuchen — das ist der Katalog — und den Weg, sie zu verwalten.
-         Der stand vorher unter Ansicht ▸ Oberfläche, also weit weg von
-         dem, was er verwaltet. */
-      const verwalten = document.createElement('button');
-      verwalten.className = 'wz register__stileVerwalten';
-      verwalten.type = 'button';
-      verwalten.title = 'Formatvorlagen verwalten…';
-      verwalten.setAttribute('aria-label', 'Formatvorlagen verwalten…');
-      verwalten.appendChild(symbol('anpassen'));
-      verwalten.addEventListener('click', () => B.vorlagenVerwalten());
-      gruppe.appendChild(verwalten);
 
       const name = document.createElement('span');
       name.className = 'register__name';

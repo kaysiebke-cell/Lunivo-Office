@@ -258,7 +258,9 @@ Gleichungswerkzeuge und Kopf- und Fußzeilenwerkzeuge. Die Gruppen folgen
 dem Menüband von Word: *Start* trägt Zwischenablage, Schriftart, Absatz,
 Formatvorlagen und Bearbeiten, *Ansicht* beginnt mit den Ansichten und
 nicht mit dem Zoom. Jeder der 191 Befehle ist von dort erreichbar. Auf *Start* steht der
-**Formatvorlagen-Katalog**: Er zeigt die Vorlage, statt sie zu benennen.
+**Formatvorlagen-Katalog**: Er zeigt die Vorlage, statt sie zu benennen —
+acht Kacheln in zwei Zeilen, und der Pfeil daneben klappt sie groß auf,
+samt *Formatvorlagen verwalten*.
 Wo eine Gruppe nicht alles zeigt, was es gibt, steht unten rechts ein
 **Pfeil ⭨** zum vollen Dialog. Ein **Doppelklick auf den Reiter** klappt
 das Band weg und wieder auf.

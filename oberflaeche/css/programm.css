@@ -1881,7 +1881,48 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 
 /* Der Katalog zeigt die Vorlage, statt sie zu benennen. Wer mit Schrift
    kämpft, erkennt eine Form schneller, als er einen Namen liest. */
-.katalog{display:flex;gap:3px;align-items:stretch;flex:1 1 auto}
+/* Zwei Zeilen statt einer langen.
+   Eine Gruppe im Band ist so hoch wie das Band; wer die Höhe nicht nutzt,
+   braucht die doppelte Breite — und die fehlt dann den Gruppen dahinter.
+   „grid-auto-flow:column" füllt spaltenweise: erst oben, dann unten, dann
+   die nächste Spalte. So stehen Standard und Titel übereinander und nicht
+   Standard und Überschrift 1. */
+.katalogkiste{display:flex;align-items:stretch;gap:2px}
+.katalog{
+  display:grid;
+  grid-template-rows:repeat(2, 1fr);
+  grid-auto-flow:column;
+  gap:2px;
+}
+
+/* Der Pfeil daneben klappt alle Vorlagen auf — wie im WPS Writer. */
+.katalog__mehr{
+  align-self:stretch;
+  width:16px;flex:0 0 auto;
+  background:none;border:1px solid transparent;border-radius:5px;
+  color:var(--schrift-3);font:inherit;font-size:13px;line-height:1;
+  cursor:pointer;padding:0;
+}
+.katalog__mehr:hover{background:rgba(127,127,127,.12);border-color:var(--rand);color:var(--schrift)}
+
+.katalogklappe{
+  position:fixed;z-index:80;
+  background:var(--leiste);
+  border:1px solid var(--rand);border-radius:8px;
+  box-shadow:var(--schatten);
+  padding:6px;
+}
+.katalogklappe__gitter{
+  display:grid;grid-template-columns:repeat(4, 1fr);gap:3px;
+}
+.katalogklappe__strich{height:1px;background:var(--rand);margin:6px 4px 4px}
+.katalogklappe__punkt{
+  display:block;width:100%;text-align:left;
+  background:none;border:0;border-radius:5px;
+  color:var(--schrift);font:inherit;
+  padding:7px 10px;cursor:pointer;
+}
+.katalogklappe__punkt:hover{background:var(--blau);color:#fff}
 
 /* Erst stand hier Papierweiß — die Vorschau sollte aussehen wie auf dem
    Blatt. Im dunklen Fenster wurden daraus acht grelle Kästen, die mit dem
@@ -1891,10 +1932,13 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
    die FORM der Vorlage, nicht die Farbe des Papiers. */
 .katalog__stueck{
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:1px;min-width:46px;padding:2px 6px;
+  gap:0;min-width:52px;padding:1px 6px;
   background:none;border:1px solid transparent;border-radius:5px;
   color:var(--schrift);cursor:pointer;
+  overflow:hidden;
 }
+/* In der Klappe ist Platz — dort dürfen die Proben ihre volle Größe haben. */
+.katalog__stueck--gross{min-width:76px;padding:6px 8px;gap:2px}
 .katalog__stueck:hover{
   background:rgba(127,127,127,.12);
   border-color:var(--rand);
@@ -1908,13 +1952,22 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 
 /* Jede Probe trägt die Form, die sie setzt — sonst wäre der Katalog acht
    gleiche Kästchen mit verschiedenen Wörtern darunter. */
-.kat--p{font-size:13px}
-.kat--h1{font-size:19px;font-weight:700}
-.kat--h2{font-size:16px;font-weight:700}
-.kat--h3{font-size:14px;font-weight:700}
-.kat--titel{font-size:20px;font-weight:700;letter-spacing:.5px}
-.kat--untertitel{font-size:14px;color:var(--schrift-2);font-style:italic}
-.kat--zitat{font-size:13px;font-style:italic;color:var(--schrift-2)}
+.kat--p{font-size:12px}
+.kat--h1{font-size:15px;font-weight:700}
+.kat--h2{font-size:14px;font-weight:700}
+.kat--h3{font-size:13px;font-weight:700}
+.kat--titel{font-size:15px;font-weight:700;letter-spacing:.5px}
+.kat--untertitel{font-size:13px;color:var(--schrift-2);font-style:italic}
+.kat--zitat{font-size:12px;font-style:italic;color:var(--schrift-2)}
+/* In der Klappe größer — dort steht die Form im Vordergrund, nicht der
+   Platz. */
+.katalog__stueck--gross .kat--p{font-size:14px}
+.katalog__stueck--gross .kat--h1{font-size:20px}
+.katalog__stueck--gross .kat--h2{font-size:17px}
+.katalog__stueck--gross .kat--h3{font-size:15px}
+.katalog__stueck--gross .kat--titel{font-size:21px}
+.katalog__stueck--gross .kat--untertitel{font-size:15px}
+.katalog__stueck--gross .kat--zitat{font-size:14px}
 
 /* Der Reiter, der nur da ist, solange er etwas zu sagen hat. */
 .register__reiter button.register__zusatz{
