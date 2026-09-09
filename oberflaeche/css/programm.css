@@ -1003,8 +1003,52 @@ button.wz-wahl--schrift{
 /* ============================================================
    Das Menü unter der rechten Maustaste
    ============================================================ */
+/* ------------------------------------------------------------
+   Die schwebende Formatleiste über dem Menü
+
+   Ein eigener Kasten, wie im WPS Writer. Das Menü ist eine Liste zum
+   Lesen, die Leiste eine Fläche zum Zielen — zwei verschiedene Dinge,
+   und deshalb nicht ineinander.
+   ------------------------------------------------------------ */
+.minileiste{
+  position:fixed;z-index:81;
+  background:var(--leiste);
+  border:1px solid var(--rand);border-radius:8px;
+  box-shadow:var(--schatten);
+  padding:4px 5px;
+}
+.minileiste__reihe{display:flex;align-items:center;gap:2px}
+.minileiste__reihe + .minileiste__reihe{margin-top:2px}
+.minileiste__knopf{
+  display:flex;align-items:center;justify-content:center;
+  width:27px;height:27px;flex:0 0 auto;
+  background:none;border:0;border-radius:5px;
+  color:var(--schrift);font:inherit;font-size:14px;
+  cursor:pointer;padding:0;
+}
+.minileiste__knopf:hover{background:var(--blau);color:#fff}
+.minileiste__knopf--aus{color:var(--schrift-3);cursor:default}
+.minileiste__knopf--aus:hover{background:none;color:var(--schrift-3)}
+/* F, K und U sind in deutschen Schreibprogrammen Buchstaben, kein Behelf
+   — und sie zeigen ihre Wirkung an sich selbst. */
+.minileiste__knopf--fett{font-weight:700}
+.minileiste__knopf--kursiv{font-style:italic}
+.minileiste__knopf--unter{text-decoration:underline}
+.minileiste__teiler{width:1px;height:18px;background:var(--rand);margin:0 4px;flex:0 0 auto}
+.minileiste__wahl{
+  height:26px;max-width:78px;
+  background:var(--karte);color:var(--schrift);
+  border:1px solid var(--rand);border-radius:5px;
+  font:inherit;font-size:12px;padding:0 4px;
+}
+.minileiste__wahl--breit{max-width:132px;flex:1 1 auto;min-width:0}
+.minileiste__wahl:disabled{color:var(--schrift-3)}
+
+/* ------------------------------------------------------------
+   Das Menü unter der rechten Maustaste
+   ------------------------------------------------------------ */
 .rechtsmenue{
-  position:fixed;z-index:80;min-width:230px;
+  position:fixed;z-index:80;min-width:268px;
   background:var(--leiste);
   border:1px solid var(--rand);border-radius:8px;
   box-shadow:var(--schatten);
@@ -1014,15 +1058,25 @@ button.wz-wahl--schrift{
   padding:6px 10px 8px;
   font-size:11px;color:var(--schrift-3);
   border-bottom:1px solid var(--rand);margin-bottom:4px;
-  max-width:260px;
+  max-width:280px;
 }
+/* Links das Bild, in der Mitte das Wort, rechts die Tastenkombination.
+   Die drei Spalten stehen fest — sonst tanzen die Beschriftungen von
+   Zeile zu Zeile, und man liest statt zu sehen. */
 .rechtsmenue__punkt{
-  display:block;width:100%;text-align:left;
+  display:flex;align-items:center;gap:9px;width:100%;text-align:left;
   background:none;border:0;border-radius:5px;
   color:var(--schrift);font:inherit;
-  padding:7px 10px;cursor:pointer;
+  padding:6px 10px;cursor:pointer;
 }
+.rechtsmenue__bild{
+  display:flex;align-items:center;justify-content:center;
+  width:16px;flex:0 0 auto;opacity:.85;
+}
+.rechtsmenue__wort{flex:1 1 auto;min-width:0}
+.rechtsmenue__taste{flex:0 0 auto;font-size:11px;color:var(--schrift-3)}
 .rechtsmenue__punkt:hover{background:var(--blau);color:#fff}
+.rechtsmenue__punkt:hover .rechtsmenue__taste{color:rgba(255,255,255,.8)}
 /* Der Vorschlag ist der Grund, weshalb das Menü offen ist — er steht
    deshalb kräftiger da als die übrigen Zeilen. */
 .rechtsmenue__punkt--vorschlag{font-weight:700}
@@ -1037,17 +1091,17 @@ button.wz-wahl--schrift{
   color:var(--schrift-3);cursor:default;
 }
 .rechtsmenue__punkt--aus:hover{background:none;color:var(--schrift-3)}
+.rechtsmenue__punkt--aus:hover .rechtsmenue__taste{color:var(--schrift-3)}
 
-/* Untermenüs: Schrift, Absatz, Tabelle. Ohne sie stünden dreißig Zeilen
+/* Untermenüs für das Seltenere. Ohne sie stünden dreißig Zeilen
    untereinander, und das liest niemand. */
 .rechtsmenue__gruppe{position:relative}
-.rechtsmenue__punkt--auf{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.rechtsmenue__pfeil{opacity:.55;font-size:15px;line-height:1}
+.rechtsmenue__pfeil{opacity:.55;font-size:15px;line-height:1;flex:0 0 auto}
 .rechtsmenue__gruppe--offen > .rechtsmenue__punkt--auf{background:var(--blau);color:#fff}
 .rechtsmenue__klappe{
   display:none;
-  position:absolute;left:100%;top:-6px;z-index:81;
-  min-width:210px;
+  position:absolute;left:100%;top:-6px;z-index:82;
+  min-width:214px;
   background:var(--leiste);
   border:1px solid var(--rand);border-radius:8px;
   box-shadow:var(--schatten);
@@ -1055,6 +1109,8 @@ button.wz-wahl--schrift{
 }
 .rechtsmenue__gruppe--offen > .rechtsmenue__klappe{display:block}
 /* Am rechten Fensterrand klappt es nach links auf — sonst stünde die
+   Hälfte außerhalb. */
+.rechtsmenue__klappe--links{left:auto;right:100%}f — sonst stünde die
    Hälfte außerhalb. */
 .rechtsmenue__klappe--links{left:auto;right:100%}
 

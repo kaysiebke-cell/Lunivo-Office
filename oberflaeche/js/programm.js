@@ -8593,9 +8593,15 @@ function ohneMarken(html) {
    Ausschneiden, Kopieren, Einfügen.
    ============================================================ */
 let rechtsMenue = null;
+/* Die kleine Formatleiste, die über dem Menü schwebt. Sie ist ein eigener
+   Kasten, kein Teil des Menüs — so hält es der WPS Writer, und es hat
+   einen Grund: Das Menü ist eine Liste zum Lesen, die Leiste eine Fläche
+   zum Zielen. Zwei verschiedene Dinge gehören nicht ineinander. */
+let rechtsLeiste = null;
 
 function rechtsMenueSchliessen() {
   if (rechtsMenue) { rechtsMenue.remove(); rechtsMenue = null; }
+  if (rechtsLeiste) { rechtsLeiste.remove(); rechtsLeiste = null; }
 }
 
 /* ------------------------------------------------------------
@@ -8722,50 +8728,189 @@ function zeigerZumKlick(e) {
 }
 
 /* ------------------------------------------------------------
+   Die schwebende Formatleiste
+
+   Sie geht mit dem Menü zusammen auf und steht darüber. Darin: Schrift,
+   Größe, größer, kleiner, Zeilenabstand — und darunter fett, kursiv,
+   unterstrichen, hervorheben, Schriftfarbe, Ausrichtung, Pinsel.
+
+   Warum überhaupt eine Leiste und nicht Menüzeilen? Weil das die Sachen
+   sind, die man beim Schreiben zehnmal in der Minute anfasst. Als Zeilen
+   in einer Liste müsste man sie jedes Mal lesen; als Fläche zielt man
+   hin. Der WPS Writer macht das so, und es ist die bessere Lösung.
+
+   Die Auswahlfelder brauchen einen Umweg: Wer ein Klappfeld anklickt,
+   nimmt dem Blatt die Schreibstelle. Deshalb wird sie beim Aufgehen
+   gemerkt und vor dem Anwenden zurückgeholt — derselbe Weg, den auch die
+   Schriftliste im Band geht.
+   ------------------------------------------------------------ */
+function rechtsLeisteBauen(gesperrt) {
+  const leiste = document.createElement('div');
+  leiste.className = 'minileiste';
+
+  const reihe = () => {
+    const r = document.createElement('div');
+    r.className = 'minileiste__reihe';
+    leiste.appendChild(r);
+    return r;
+  };
+
+  const zeichen = (r, name, titel, tun, klasse) => {
+    const k = document.createElement('button');
+    k.type = 'button';
+    k.className = 'minileiste__knopf' + (klasse ? ' ' + klasse : '')
+                + (gesperrt ? ' minileiste__knopf--aus' : '');
+    k.title = titel;
+    k.setAttribute('aria-label', titel);
+    if (SYMBOLE[name]) k.appendChild(symbol(name));
+    else k.appendChild(document.createTextNode(name));
+    if (gesperrt) { k.disabled = true; r.appendChild(k); return k; }
+    /* Kein Fokuswechsel: So bleibt die Markierung im Blatt stehen. */
+    k.addEventListener('mousedown', (ev) => ev.preventDefault());
+    k.addEventListener('click', () => {
+      tun();
+      /* Und gleich neu merken, was jetzt markiert ist. Ohne das griff der
+         nächste Griff ins Leere: Wer erst „fett" drückt und dann die Größe
+         wählt, hätte die Markierung von VOR dem Fettmachen zurückgeholt —
+         und die zeigt auf Textknoten, die es nach dem Umbauen nicht mehr
+         gibt. Beim Prüfen aufgefallen. */
+      auswahlMerken();
+    });
+    r.appendChild(k);
+    return k;
+  };
+
+  const klappfeld = (r, eintraege, jetzt, titel, tun, breit) => {
+    const w = document.createElement('select');
+    w.className = 'minileiste__wahl' + (breit ? ' minileiste__wahl--breit' : '');
+    w.title = titel;
+    w.setAttribute('aria-label', titel);
+    for (const [wert, name] of eintraege) {
+      const o = document.createElement('option');
+      o.value = String(wert);
+      o.textContent = String(name);
+      w.appendChild(o);
+    }
+    if (jetzt !== undefined && jetzt !== null) w.value = String(jetzt);
+    w.disabled = gesperrt;
+    /* Vor dem Aufklappen merken, nicht vorher: „mousedown" kommt, bevor
+       das Klappfeld den Fokus nimmt — in diesem Augenblick steht die
+       Markierung noch im Blatt. */
+    w.addEventListener('mousedown', auswahlMerken);
+    w.addEventListener('change', () => { auswahlZurueck(); tun(w.value); auswahlMerken(); });
+    r.appendChild(w);
+    return w;
+  };
+
+  /* Erste Reihe: alles, was mit der Größe der Schrift zu tun hat. */
+  const oben = reihe();
+  klappfeld(oben, (alleSchriften && alleSchriften.length ? alleSchriften : SCHRIFTEN)
+                    .map((s) => [s, s]),
+            schriftJetzt, 'Schriftart', (name) => { schriftJetzt = name; schriftart(name); }, true);
+  klappfeld(oben, GROESSEN.map((g) => [g, g]), 12, 'Schriftgröße', (g) => schriftgroesse(+g));
+  zeichen(oben, 'groesserA', 'Schrift vergrößern', B.schriftGroesser);
+  zeichen(oben, 'kleinerA', 'Schrift verkleinern', B.schriftKleiner);
+  klappfeld(oben, [['1.15', '1,0'], ['1.6', '1,5'], ['2.1', '2,0']],
+            null, 'Zeilenabstand', (wert) => zeilenabstand(wert)());
+
+  /* Zweite Reihe: wie der Text aussieht. */
+  const unten = reihe();
+  zeichen(unten, 'F', 'Fett (Strg+B)', B.fett, 'minileiste__knopf--fett');
+  zeichen(unten, 'K', 'Kursiv (Strg+I)', B.kursiv, 'minileiste__knopf--kursiv');
+  zeichen(unten, 'U', 'Unterstrichen (Strg+U)', B.unter, 'minileiste__knopf--unter');
+  zeichen(unten, 'marker', 'Hervorheben', B.hervorheben);
+  zeichen(unten, 'farbe', 'Schriftfarbe', B.schriftfarbe);
+  const teiler = document.createElement('span');
+  teiler.className = 'minileiste__teiler';
+  unten.appendChild(teiler);
+  zeichen(unten, 'links', 'Linksbündig', B.links);
+  zeichen(unten, 'mitte', 'Zentriert', B.mitte);
+  zeichen(unten, 'rechts', 'Rechtsbündig', B.rechts);
+  zeichen(unten, 'block', 'Blocksatz', B.block);
+  zeichen(unten, 'pinsel', 'Format übertragen', B.formatUebertragen);
+
+  return leiste;
+}
+
+/* ------------------------------------------------------------
    Das Menü unter der rechten Maustaste
 
    Es stand einmal auf vier Zeilen: Ausschneiden, Kopieren, Einfügen,
    Rechtschreibung. Das ist zu wenig — die rechte Maustaste ist für die
-   meisten der kürzeste Weg zu einem Befehl, und wer sie drückt, hat den
-   Zeiger schon dort, wo er etwas ändern will.
+   meisten der kürzeste Weg zu einem Befehl. Der zweite Anlauf war dann
+   zu viel: zwanzig Zeilen untereinander. Eine lange Liste ist nicht mehr
+   Hilfe als eine kurze, sondern weniger — man muss sie lesen, statt sie
+   zu sehen.
 
-   Jetzt zeigt es, was an DIESER Stelle geht: auf einem Link etwas
-   anderes als in einer Tabelle, in einer Tabelle etwas anderes als in
-   einem Bild. Was überall gilt — Zwischenablage, Schrift, Absatz —
-   steht darunter, das Seltenere in Untermenüs. Word macht es genauso,
-   und aus gutem Grund: Ein Menü mit dreißig Zeilen liest niemand.
+   Jetzt sind es zwei Kästen, wie im WPS Writer:
 
-   Was gerade nicht geht, steht grau da statt zu fehlen. Ein Punkt, der
-   mal da ist und mal nicht, lässt sich nicht lernen.
+       DIE FORMATLEISTE schwebt darüber (rechtsLeisteBauen). Sie trägt,
+       was man beim Schreiben ständig anfasst.
+
+       DAS MENÜ ist eine kurze Liste. Links das Bild, rechts die
+       Tastenkombination — beides hilft dem, der den Punkt beim zweiten
+       Mal wiederfinden will, ohne zu lesen.
+
+   Und es zeigt nur, was hier etwas bewirkt: auf einem Link anderes als
+   in einer Tabelle, in einer Tabelle anderes als in einem Bild. Was
+   selten gebraucht wird, steht in einem Untermenü; was gar nicht geht,
+   steht grau da statt zu fehlen — ein Punkt, der mal da ist und mal
+   nicht, lässt sich nicht lernen.
+
+   Was hier NICHT steht, steht in den Leisten: Wörter zählen, Vorlesen,
+   Alles auswählen, Texteffekte. Die rechte Maustaste ist für das, was
+   man an dieser Stelle tut — nicht für alles, was das Programm kann.
    ------------------------------------------------------------ */
 function rechtsMenueZeigen(e) {
   e.preventDefault();
   rechtsMenueSchliessen();
   zeigerZumKlick(e);
+  /* Für die Klappfelder der Leiste: Sie nehmen dem Blatt beim Anklicken
+     die Schreibstelle, und ohne sie wüsste der Befehl nicht, worauf er
+     sich bezieht. */
+  auswahlMerken();
 
   const kasten = document.createElement('div');
   kasten.className = 'rechtsmenue';
 
   /* ---- Bausteine ---- */
 
-  const knopfBauen = (beschriftung, tun, klasse, aus) => {
+  const knopfBauen = (p) => {
     const k = document.createElement('button');
     k.type = 'button';
-    k.className = 'rechtsmenue__punkt ' + (klasse || '') + (aus ? ' rechtsmenue__punkt--aus' : '');
-    k.textContent = beschriftung;
-    if (aus) { k.disabled = true; return k; }
+    k.className = 'rechtsmenue__punkt' + (p.klasse ? ' ' + p.klasse : '')
+                + (p.aus ? ' rechtsmenue__punkt--aus' : '');
+
+    /* Links das Bild — und wo keins ist, bleibt der Platz frei, damit
+       alle Beschriftungen auf einer Linie stehen. */
+    const bildchen = document.createElement('span');
+    bildchen.className = 'rechtsmenue__bild';
+    if (p.zeichen && SYMBOLE[p.zeichen]) bildchen.appendChild(symbol(p.zeichen));
+    k.appendChild(bildchen);
+
+    const wort = document.createElement('span');
+    wort.className = 'rechtsmenue__wort';
+    wort.textContent = p.name;
+    k.appendChild(wort);
+
+    /* Rechts die Tastenkombination — wer sie zweimal gelesen hat, braucht
+       das Menü beim dritten Mal nicht mehr. */
+    if (p.taste) {
+      const taste = document.createElement('span');
+      taste.className = 'rechtsmenue__taste';
+      taste.textContent = p.taste;
+      k.appendChild(taste);
+    }
+
+    if (p.aus) { k.disabled = true; return k; }
     /* Ohne dies nähme der Klick dem Blatt die Schreibstelle — und der
        Befehl wüsste nicht mehr, worauf er sich bezieht. */
     k.addEventListener('mousedown', (ev) => ev.preventDefault());
-    k.addEventListener('click', () => { rechtsMenueSchliessen(); tun(); });
+    k.addEventListener('click', () => { rechtsMenueSchliessen(); p.tun(); });
     return k;
   };
 
-  const eintrag = (beschriftung, tun, klasse, aus) => {
-    const k = knopfBauen(beschriftung, tun, klasse, aus);
-    kasten.appendChild(k);
-    return k;
-  };
+  const eintrag = (p) => { const k = knopfBauen(p); kasten.appendChild(k); return k; };
 
   const kopfzeileSetzen = (text) => {
     const kopf = document.createElement('div');
@@ -8788,19 +8933,16 @@ function rechtsMenueZeigen(e) {
   /* Ein Untermenü. Es klappt zur Seite auf — nach rechts, wenn dort
      Platz ist, sonst nach links. Gemessen wird erst, wenn es sichtbar
      ist; vorher hat es keine Breite. */
-  const gruppe = (name, punkte) => {
+  const gruppe = (zeichen, name, punkte) => {
     const huelle = document.createElement('div');
     huelle.className = 'rechtsmenue__gruppe';
 
-    const kopf = document.createElement('button');
-    kopf.type = 'button';
-    kopf.className = 'rechtsmenue__punkt rechtsmenue__punkt--auf';
-    kopf.appendChild(document.createTextNode(name));
+    const kopf = knopfBauen({ zeichen: zeichen, name: name, tun: () => {} });
+    kopf.classList.add('rechtsmenue__punkt--auf');
     const pfeil = document.createElement('span');
     pfeil.className = 'rechtsmenue__pfeil';
     pfeil.textContent = '›';
     kopf.appendChild(pfeil);
-    kopf.addEventListener('mousedown', (ev) => ev.preventDefault());
     huelle.appendChild(kopf);
 
     const klappe = document.createElement('div');
@@ -8812,7 +8954,7 @@ function rechtsMenueZeigen(e) {
         klappe.appendChild(s);
         continue;
       }
-      klappe.appendChild(knopfBauen(p.name, p.tun, '', p.aus));
+      klappe.appendChild(knopfBauen(p));
     }
     huelle.appendChild(klappe);
 
@@ -8847,43 +8989,88 @@ function rechtsMenueZeigen(e) {
                       && auswahl.toString().length);
   const gesperrt = feld.contentEditable === 'false';
 
-  /* ---- 1. Das Wort, auf das gezeigt wurde ----
-     Rechtschreibvorschläge stehen ganz oben, so wie es jedes
-     Schreibprogramm hält. Sie brauchen keine vorherige Prüfung — das
-     Wörterbuch liegt ohnehin im Speicher. */
+  /* ---- 1. Das Wort, auf das gezeigt wurde ---- */
+
   const stelle = wortAnPunkt(e.clientX, e.clientY);
+
+  /* Was der Prüfer selbst zu diesem Wort sagt.
+   *
+   * Hier stand vorher nur die Klangliste („vorschlaegeFuer"), und die ist
+   * blind: Auf „garnicht" bot sie „gereinigt, krankt, kränkt" an. Der
+   * Prüfer weiß es besser — er kennt die Regel und antwortet „gar nicht".
+   * Er wird deshalb zuerst gefragt, und zwar nur nach diesem einen Wort;
+   * das ist schnell genug, um es bei jedem Rechtsklick zu tun.
+   *
+   * Und es gilt auch für Wörter, die IM Wörterbuch stehen: „wiederspiegelt"
+   * ist ein richtiges Wort und trotzdem falsch. Vorher kam dafür gar
+   * nichts, solange nicht vorher geprüft worden war.
+   */
+  const kurz = !stelle || stelle.wort.length < 4;
+  let rat = null;
+  if (!kurz) {
+    try {
+      rat = (Pruefung.findeProbleme(stelle.wort) || [])
+        .find((f) => f.neu && f.alt === stelle.wort && f.art !== 'hinweis') || null;
+    } catch (fehler) { rat = null; }
+  }
+
   /* Kurze Wörter nicht: „A" in einer Tabellenzelle steht in keinem
      Wörterbuch, ist aber kein Fehler. Die Tippfehlerprüfung fängt aus
      demselben Grund erst bei vier Buchstaben an (pruefung.js) — und wenn
      die Seitenleiste ein Wort nicht anstreicht, darf das Menü unter der
-     rechten Taste es nicht als unbekannt melden. Zwei Meinungen zu
-     demselben Wort sind schlimmer als eine strenge. */
-  const unbekannt = stelle && stelle.wort.length >= 4 && !Pruefung.kennt(stelle.wort);
-  const vorschlaege = unbekannt ? Pruefung.vorschlaegeFuer(stelle.wort) : [];
+     rechten Taste es nicht als unbekannt melden. */
+  const unbekannt = !kurz && !Pruefung.kennt(stelle.wort);
 
-  if (unbekannt) {
-    kopfzeileSetzen(vorschlaege.length
-      ? '„' + stelle.wort + '" steht nicht im Wörterbuch'
-      : '„' + stelle.wort + '" steht nicht im Wörterbuch — kein Vorschlag gefunden');
+  /* Die Klangliste nur, wenn der Prüfer nichts weiß. Weiß er es —
+     „garnicht" → „gar nicht" —, wären sechs Wörter daneben, die zufällig
+     ähnlich klingen, kein Angebot, sondern Lärm; man muss dann erst
+     wieder suchen, welches gemeint ist. Und wenn sie kommt, dann kurz:
+     Wer unter fünf Vorschlägen nicht fündig wird, wird es unter zehn
+     auch nicht. */
+  const vorschlaege = (unbekannt && !rat)
+    ? Pruefung.vorschlaegeFuer(stelle.wort).slice(0, 5) : [];
+
+  if (rat || unbekannt) {
+    kopfzeileSetzen(rat ? (rat.grund || 'Schreibweise')
+      : vorschlaege.length
+        ? '„' + stelle.wort + '" steht nicht im Wörterbuch'
+        : '„' + stelle.wort + '" steht nicht im Wörterbuch — kein Vorschlag gefunden');
+
+    /* Der Rat des Prüfers steht oben und fett — er ist der Grund, weshalb
+       jemand die rechte Taste gedrückt hat. Die Groß- und Kleinschreibung
+       bringt er schon mit; sie noch einmal anzupassen machte aus „gar
+       nicht" womöglich „Gar Nicht". */
+    if (rat) {
+      eintrag({ name: rat.neu, klasse: 'rechtsmenue__punkt--vorschlag', tun: () => {
+        wortErsetzen(stelle, rat.neu);
+        KI.Gedaechtnis.merkeAenderung({ wortEbene: true, alt: stelle.wort, neu: rat.neu });
+        melde('„' + stelle.wort + '" zu „' + rat.neu + '" geändert.');
+      } });
+    }
 
     for (const wort of vorschlaege) {
       const ersatz = wieGeschrieben(stelle.wort, wort);
-      eintrag(ersatz, () => {
+      eintrag({ name: ersatz, klasse: 'rechtsmenue__punkt--vorschlag', tun: () => {
         wortErsetzen(stelle, ersatz);
         /* Was hier von Hand gewählt wird, soll das Programm sich merken —
            beim nächsten Mal steht es dann gleich oben. */
         KI.Gedaechtnis.merkeAenderung({ wortEbene: true, alt: stelle.wort, neu: ersatz });
         melde('„' + stelle.wort + '" zu „' + ersatz + '" geändert.');
-      }, 'rechtsmenue__punkt--vorschlag');
+      } });
     }
 
-    eintrag('Wort ins Gedächtnis aufnehmen', () => {
-      const g = KI.Gedaechtnis.lies();
-      g.inRuhe[stelle.wort.toLowerCase()] = true;
-      KI.Gedaechtnis.schreib(g);
-      melde('„' + stelle.wort + '" gilt künftig als richtig.');
-      if (funde.length) pruefen();
-    });
+    /* Nur bei einem Wort, das WIRKLICH keiner kennt. Bei „wiederspiegelt"
+       wäre der Punkt falsch: Das Wort ist bekannt, nur an dieser Stelle
+       das verkehrte. */
+    if (unbekannt) {
+      eintrag({ zeichen: 'haken', name: 'Wort ins Gedächtnis aufnehmen', tun: () => {
+        const g = KI.Gedaechtnis.lies();
+        g.inRuhe[stelle.wort.toLowerCase()] = true;
+        KI.Gedaechtnis.schreib(g);
+        melde('„' + stelle.wort + '" gilt künftig als richtig.');
+        if (funde.length) pruefen();
+      } });
+    }
     trennlinie();
   }
 
@@ -8894,18 +9081,14 @@ function rechtsMenueZeigen(e) {
     kopfzeileSetzen(fund.grund || 'Gefundene Stelle');
 
     if (fund.art !== 'hinweis' && fund.neu) {
-      /* Der Vorschlag steht fett und ganz oben — er ist der Grund, weshalb
-         jemand die rechte Taste gedrückt hat. */
-      eintrag(fund.neu, () => uebernimm(fund), 'rechtsmenue__punkt--vorschlag');
+      eintrag({ name: fund.neu, klasse: 'rechtsmenue__punkt--vorschlag',
+                tun: () => uebernimm(fund) });
     }
 
-    eintrag('Diese Stelle zeigen', () => Dokument.zeige(fund.von, fund.bis));
-
     if (fund.alt && /^[A-Za-zÄÖÜäöüß-]+$/.test(fund.alt)) {
-      eintrag('Wort in Ruhe lassen', () => {
+      eintrag({ zeichen: 'haken', name: 'Wort in Ruhe lassen', tun: () => {
         /* §9: Der Weg führt durch die Brücke. Sie schreibt ins Gedächtnis
-           und weiß zugleich, dass das Geprüfte damit nicht mehr stimmt —
-           vorher wusste sie von dem erlaubten Wort nichts. */
+           und weiß zugleich, dass das Geprüfte damit nicht mehr stimmt. */
         if (Bruecke) {
           Bruecke.benutzerwortHinzufuegen(fund.alt);
         } else {
@@ -8915,10 +9098,10 @@ function rechtsMenueZeigen(e) {
         }
         melde('„' + fund.alt + '" wird künftig nicht mehr angestrichen.');
         pruefen();
-      });
+      } });
     }
 
-    eintrag('Übergehen', () => {
+    eintrag({ name: 'Übergehen', tun: () => {
       /* Auch der Brücke sagen — sonst steht der Fund beim nächsten Prüfen
          wieder da, und man übergeht ihn zum dritten Mal. */
       if (Bruecke) Bruecke.wegwinkenFund(fund);
@@ -8926,17 +9109,19 @@ function rechtsMenueZeigen(e) {
       zeichneFunde();
       markiereFunde();
       meldeFunde(Dokument.lies().text.length);
-    });
+    } });
     trennlinie();
   }
 
   /* ---- 3. Der Hyperlink ---- */
   if (link) {
     const wohin = link.getAttribute('href') || '';
-    kopfzeileSetzen(wohin.length > 60 ? wohin.slice(0, 57) + '…' : wohin);
-    eintrag('Hyperlink bearbeiten…', () => B.linkBearbeiten(link), '', gesperrt);
-    eintrag('Adresse kopieren', () => B.linkKopieren(link));
-    eintrag('Hyperlink entfernen', () => B.linkEntfernen(link), '', gesperrt);
+    kopfzeileSetzen(wohin.length > 52 ? wohin.slice(0, 49) + '…' : wohin);
+    eintrag({ zeichen: 'kette', name: 'Hyperlink bearbeiten…',
+              tun: () => B.linkBearbeiten(link), aus: gesperrt });
+    eintrag({ zeichen: 'kopie', name: 'Adresse kopieren', tun: () => B.linkKopieren(link) });
+    eintrag({ zeichen: 'radierer', name: 'Hyperlink entfernen',
+              tun: () => B.linkEntfernen(link), aus: gesperrt });
     trennlinie();
   }
 
@@ -8944,50 +9129,57 @@ function rechtsMenueZeigen(e) {
      Dieselben Befehle, die auch der Reiter im Zusammenhang anbietet. Sie
      hier ein zweites Mal zu schreiben wäre falsch; sie werden gerufen. */
   if (bild) {
-    kopfzeileSetzen('Bild');
-    eintrag('Anordnen und Umbruch…', () => B.anordnen(), '', gesperrt);
+    eintrag({ zeichen: 'anordnen', name: 'Anordnen und Umbruch…',
+              tun: () => B.anordnen(), aus: gesperrt });
     trennlinie();
   } else if (form) {
-    kopfzeileSetzen('Zeichnung');
-    eintrag('Form ändern…', () => B.formAendern(), '', gesperrt);
-    eintrag('Füllung…', () => B.formFuellung(), '', gesperrt);
-    eintrag('Kontur…', () => B.formKontur(), '', gesperrt);
-    eintrag('Größe…', () => B.formGroesse(), '', gesperrt);
-    eintrag('Anordnen…', () => B.anordnen(), '', gesperrt);
+    gruppe('stift', 'Zeichnung', [
+      { name: 'Form ändern…', tun: () => B.formAendern(), aus: gesperrt },
+      { name: 'Füllung…', tun: () => B.formFuellung(), aus: gesperrt },
+      { name: 'Kontur…', tun: () => B.formKontur(), aus: gesperrt },
+      { name: 'Größe…', tun: () => B.formGroesse(), aus: gesperrt },
+      { name: 'Anordnen…', tun: () => B.anordnen(), aus: gesperrt },
+    ]);
     trennlinie();
   } else if (diagramm) {
-    kopfzeileSetzen('Diagramm');
-    eintrag('Daten bearbeiten…', () => B.diagrammDaten(), '', gesperrt);
-    eintrag('Diagrammtyp…', () => B.diagrammTyp(), '', gesperrt);
-    eintrag('Entwurf…', () => B.diagrammEntwurf(), '', gesperrt);
-    eintrag('Format…', () => B.diagrammFormat(), '', gesperrt);
+    gruppe('saeule', 'Diagramm', [
+      { name: 'Daten bearbeiten…', tun: () => B.diagrammDaten(), aus: gesperrt },
+      { name: 'Diagrammtyp…', tun: () => B.diagrammTyp(), aus: gesperrt },
+      { name: 'Entwurf…', tun: () => B.diagrammEntwurf(), aus: gesperrt },
+      { name: 'Format…', tun: () => B.diagrammFormat(), aus: gesperrt },
+    ]);
     trennlinie();
   } else if (smartart) {
-    kopfzeileSetzen('SmartArt');
-    eintrag('Entwurf…', () => B.smartartEntwurf(), '', gesperrt);
-    eintrag('Format…', () => B.smartartFormat(), '', gesperrt);
+    gruppe('smartart', 'SmartArt', [
+      { name: 'Entwurf…', tun: () => B.smartartEntwurf(), aus: gesperrt },
+      { name: 'Format…', tun: () => B.smartartFormat(), aus: gesperrt },
+    ]);
     trennlinie();
   } else if (formel) {
-    kopfzeileSetzen('Formel');
-    eintrag('Formel ändern…', () => B.formelAendern(), '', gesperrt);
+    eintrag({ zeichen: 'formel', name: 'Formel ändern…',
+              tun: () => B.formelAendern(), aus: gesperrt });
     trennlinie();
   }
 
-  /* ---- 5. Die Tabelle ---- */
+  /* ---- 5. Die Tabelle ----
+     „Einfügen" und „Löschen" heißen hier „Zellen einfügen" und „Zellen
+     löschen": Zwei Zeilen weiter unten steht das Einfügen aus der
+     Zwischenablage, und zwei Punkte gleichen Namens in einem Menü sind
+     eine Falle. */
   if (zelle) {
-    gruppe('Einfügen', [
+    gruppe('tabelle', 'Zellen einfügen', [
       { name: 'Zeile darüber', tun: () => B.zeileOben(), aus: gesperrt },
       { name: 'Zeile darunter', tun: () => B.zeileUnten(), aus: gesperrt },
       { name: 'Spalte links', tun: () => B.spalteLinks(), aus: gesperrt },
       { name: 'Spalte rechts', tun: () => B.spalteRechts(), aus: gesperrt },
     ]);
-    gruppe('Löschen', [
+    gruppe('radierer', 'Zellen löschen', [
       { name: 'Zeile', tun: () => B.zeileWeg(), aus: gesperrt },
       { name: 'Spalte', tun: () => B.spalteWeg(), aus: gesperrt },
       strich,
       { name: 'Ganze Tabelle', tun: () => B.tabelleWeg(), aus: gesperrt },
     ]);
-    gruppe('Tabelle', [
+    gruppe('rahmen', 'Tabelle', [
       { name: 'Erste Zeile als Kopf', tun: () => B.kopfzeileTabelle(), aus: gesperrt },
       { name: 'Zellengröße…', tun: () => B.zellengroesse(), aus: gesperrt },
       { name: 'Ausrichtung…', tun: () => B.zellenAusrichtung(), aus: gesperrt },
@@ -8999,96 +9191,113 @@ function rechtsMenueZeigen(e) {
     trennlinie();
   }
 
-  /* ---- 6. Die Zwischenablage ----
-     Sie steht immer da. Was ohne Markierung nicht geht, steht grau. */
-  eintrag('Ausschneiden', B.ausschneiden, '', !markiert || gesperrt);
-  eintrag('Kopieren', B.kopieren, '', !markiert);
-  eintrag('Einfügen', B.einfuegen, '', gesperrt);
-  eintrag('Einfügen ohne Formatierung', B.einfuegenOhne, '', gesperrt);
-  eintrag('Format übertragen', B.formatUebertragen, '', gesperrt);
+  /* ---- 6. Die Zwischenablage ---- */
+  eintrag({ zeichen: 'kopie', name: 'Kopieren', taste: 'Strg+C',
+            tun: B.kopieren, aus: !markiert });
+  eintrag({ zeichen: 'schere', name: 'Ausschneiden', taste: 'Strg+X',
+            tun: B.ausschneiden, aus: !markiert || gesperrt });
+  eintrag({ zeichen: 'kleben', name: 'Einfügen', taste: 'Strg+V',
+            tun: B.einfuegen, aus: gesperrt });
+  eintrag({ zeichen: 'ohneformat', name: 'Einfügen ohne Formatierung',
+            tun: B.einfuegenOhne, aus: gesperrt });
   trennlinie();
 
-  /* ---- 7. Schrift und Absatz ---- */
-  gruppe('Schrift', [
-    { name: 'Fett', tun: B.fett, aus: gesperrt },
-    { name: 'Kursiv', tun: B.kursiv, aus: gesperrt },
-    { name: 'Unterstrichen', tun: B.unter, aus: gesperrt },
-    { name: 'Durchgestrichen', tun: B.durch, aus: gesperrt },
-    strich,
-    { name: 'Schriftfarbe…', tun: B.schriftfarbe, aus: gesperrt },
-    { name: 'Hervorheben', tun: B.hervorheben, aus: gesperrt },
-    { name: 'Texteffekte…', tun: B.effekt, aus: gesperrt },
-    { name: 'Groß-/Kleinschreibung…', tun: B.schreibweise, aus: gesperrt || !markiert },
-    strich,
-    { name: 'Formatierung löschen', tun: B.schlicht, aus: gesperrt },
-  ]);
-
-  gruppe('Absatz', [
-    { name: 'Linksbündig', tun: B.links, aus: gesperrt },
-    { name: 'Zentriert', tun: B.mitte, aus: gesperrt },
-    { name: 'Rechtsbündig', tun: B.rechts, aus: gesperrt },
-    { name: 'Blocksatz', tun: B.block, aus: gesperrt },
-    strich,
-    { name: 'Aufzählung', tun: B.punkte, aus: gesperrt },
-    { name: 'Nummerierung', tun: B.zahlen, aus: gesperrt },
+  /* ---- 7. Absatz, Listen, Vorlagen ---- */
+  if (markiert) {
+    eintrag({ zeichen: 'unterart', name: 'Groß-/Kleinschreibung…',
+              tun: B.schreibweise, aus: gesperrt });
+  }
+  gruppe('abstand', 'Absatz', [
+    { name: 'Absatzabstand…', tun: B.absatzabstand, aus: gesperrt },
+    { name: 'Einzug genau…', tun: B.einzugGenau, aus: gesperrt },
     { name: 'Einzug vergrößern', tun: B.einzugMehr, aus: gesperrt },
     { name: 'Einzug verringern', tun: B.einzugWeniger, aus: gesperrt },
     strich,
-    { name: 'Absatzabstand…', tun: B.absatzabstand, aus: gesperrt },
-    { name: 'Einzug genau…', tun: B.einzugGenau, aus: gesperrt },
     { name: 'Rahmen…', tun: B.absatzRahmen, aus: gesperrt },
     { name: 'Schattierung…', tun: B.absatzSchattierung, aus: gesperrt },
   ]);
-
-  /* Die Formatvorlagen kommen aus dem Katalog — dieselbe Liste, die auch
+  gruppe('punkte', 'Aufzählung und Nummerierung', [
+    { name: 'Aufzählung', tun: B.punkte, aus: gesperrt },
+    { name: 'Nummerierung', tun: B.zahlen, aus: gesperrt },
+    strich,
+    { name: 'Listenebene erhöhen', tun: B.ebeneHoeher, aus: gesperrt },
+    { name: 'Listenebene verringern', tun: B.ebeneTiefer, aus: gesperrt },
+  ]);
+  /* Die Formatvorlagen kommen aus dem Katalog — derselben Liste, die auch
      der Katalog im Band zeigt. Zwei Listen liefen auseinander. */
-  gruppe('Formatvorlage', KATALOG.map(([name, , tun]) => (
+  gruppe('inhalt', 'Formatvorlage', KATALOG.map(([name, , tun]) => (
     { name: name, tun: tun, aus: gesperrt })));
   trennlinie();
 
-  /* ---- 8. Was man an dieser Stelle einfügt ---- */
-  if (!link) eintrag('Hyperlink…', B.hyperlink, '', gesperrt);
-  eintrag('Neuer Kommentar', B.kommentar, '', gesperrt);
+  /* ---- 8. Was man an dieser Stelle einfügt ----
+     Auf einem Link stünde „Hyperlink…" daneben und machte einen zweiten
+     daraus — dort steht oben schon „bearbeiten". */
+  if (!link) {
+    eintrag({ zeichen: 'kette', name: 'Hyperlink…', taste: 'Strg+K',
+              tun: B.hyperlink, aus: gesperrt });
+  }
+  eintrag({ zeichen: 'notiz', name: 'Kommentar einfügen', tun: B.kommentar, aus: gesperrt });
   trennlinie();
 
-  /* ---- 9. Sprache und Nachschlagen ---- */
-  eintrag('Rechtschreibung und Grammatik', B.rechtschreibpruefung);
-  eintrag('Thesaurus', B.thesaurus, '', !stelle && !markiert);
-  eintrag('Ab hier vorlesen', B.vorlesenAbSatz);
-  eintrag('Wörter zählen', B.woerterZaehlen);
-  trennlinie();
-  eintrag('Alles auswählen', B.allesMarkieren);
+  /* ---- 9. Sprache ----
+     Der Thesaurus nur, wenn überhaupt ein Wort dasteht — sonst hat er
+     nichts nachzuschlagen. */
+  if (stelle || markiert) {
+    eintrag({ zeichen: 'thesaurus', name: 'Thesaurus', tun: B.thesaurus });
+  }
+  eintrag({ zeichen: 'wellen', name: 'Rechtschreibung und Grammatik', taste: 'F7',
+            tun: B.rechtschreibpruefung });
 
   /* ---- Hinstellen ----
      Erst einhängen, dann messen: Wie hoch das Menü ist, hängt daran, wie
      viel an dieser Stelle zu bieten war — und das steht erst jetzt fest.
      Vorher stand hier eine feste Zahl (260 Bildpunkte), und das längere
      Menü ragte unten aus dem Fenster heraus. */
+  const leiste = rechtsLeisteBauen(gesperrt);
+  leiste.style.left = '0px';
+  leiste.style.top = '0px';
+  document.body.appendChild(leiste);
+  rechtsLeiste = leiste;
+
   kasten.style.left = '0px';
   kasten.style.top = '0px';
   document.body.appendChild(kasten);
   rechtsMenue = kasten;
 
-  const masse = kasten.getBoundingClientRect();
   const rand = 6;
-  let x = e.clientX;
-  let y = e.clientY;
-  if (x + masse.width > window.innerWidth - rand) x = Math.max(rand, e.clientX - masse.width);
-  if (y + masse.height > window.innerHeight - rand) y = Math.max(rand, window.innerHeight - rand - masse.height);
-  kasten.style.left = x + 'px';
-  kasten.style.top = y + 'px';
+  const lMasse = leiste.getBoundingClientRect();
+  const mMasse = kasten.getBoundingClientRect();
+  const breite = Math.max(lMasse.width, mMasse.width);
 
-  /* Ist es höher als das Fenster, muss es rollen können — sonst wären die
-     letzten Punkte unerreichbar. */
-  if (masse.height > window.innerHeight - 2 * rand) {
-    kasten.style.top = rand + 'px';
-    kasten.style.maxHeight = (window.innerHeight - 2 * rand) + 'px';
+  let x = e.clientX;
+  if (x + breite > window.innerWidth - rand) x = Math.max(rand, window.innerWidth - rand - breite);
+
+  /* Die Leiste steht über dem Menü und beide zusammen sollen ins Fenster
+     passen. Ist unten kein Platz, rutscht das Gespann hinauf; ist auch
+     dann keiner, bekommt das Menü eine Rolle. */
+  const zusammen = lMasse.height + 4 + mMasse.height;
+  let oben = e.clientY;
+  if (oben + zusammen > window.innerHeight - rand) {
+    oben = Math.max(rand, window.innerHeight - rand - zusammen);
+  }
+
+  leiste.style.left = x + 'px';
+  leiste.style.top = oben + 'px';
+  kasten.style.left = x + 'px';
+  kasten.style.top = (oben + lMasse.height + 4) + 'px';
+
+  if (zusammen > window.innerHeight - 2 * rand) {
+    leiste.style.top = rand + 'px';
+    kasten.style.top = (rand + lMasse.height + 4) + 'px';
+    kasten.style.maxHeight = (window.innerHeight - 2 * rand - lMasse.height - 4) + 'px';
     kasten.style.overflowY = 'auto';
   }
 
   setTimeout(() => {
     document.addEventListener('mousedown', function zu(ev) {
-      if (!kasten.contains(ev.target)) { rechtsMenueSchliessen(); document.removeEventListener('mousedown', zu); }
+      if (kasten.contains(ev.target) || leiste.contains(ev.target)) return;
+      rechtsMenueSchliessen();
+      document.removeEventListener('mousedown', zu);
     });
   }, 0);
 }
