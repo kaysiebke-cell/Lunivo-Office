@@ -865,13 +865,20 @@ button.wz-wahl--schrift{
   background:rgba(0,0,0,.10);
   justify-content:flex-end;
 }
+/* Überschrift oben, Knöpfe unten, und nur das dazwischen rollt.
+   Vorher rollte das ganze Fenster: Bei einem langen Dialog standen
+   Abbrechen und Übernehmen unterhalb des Bildschirmrandes, und man musste
+   erst an allem vorbeirollen, um sie zu finden. */
 .dialog{
+  display:flex;flex-direction:column;
   background:var(--leiste);
   border:1px solid var(--rand);border-radius:10px;
   box-shadow:var(--schatten);
   padding:20px;min-width:340px;max-width:520px;
-  max-height:80vh;overflow-y:auto;
+  max-height:calc(100vh - 32px);overflow:hidden;
 }
+.dialog__inhalt{flex:1 1 auto;min-height:0;overflow-y:auto}
+.dialog__knoepfe{flex:0 0 auto}
 .dialog__titel{margin:0 0 12px;font-size:16px;font-weight:600}
 /* „white-space:pre-line" hält die Zeilenumbrüche, mit denen die Zahlen im
    Wortzähler untereinanderstehen. */
@@ -1923,6 +1930,33 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
   padding:7px 10px;cursor:pointer;
 }
 .katalogklappe__punkt:hover{background:var(--blau);color:#fff}
+/* Löschen ist grau, solange es keine eigene Vorlage gibt. */
+.katalogklappe__punkt--aus{color:var(--schrift-3);cursor:default}
+.katalogklappe__punkt--aus:hover{background:none;color:var(--schrift-3)}
+
+/* ------------------------------------------------------------
+   Die Vorschau im Vorlagen-Dialog
+
+   Ein grauer Absatz davor, die Probe, ein grauer danach. Die grauen sind
+   nicht Zierde: Abstand sieht man nur zu etwas. Eine Probe allein stünde
+   im Nichts, und „Abstand davor 6 mm" bliebe eine Zahl.
+
+   Der Kasten trägt Papierfarbe und Papierschrift, nicht die der Leisten —
+   hier soll man sehen, wie es auf dem Blatt aussieht.
+   ------------------------------------------------------------ */
+.vorlagenschau{
+  background:var(--blatt);color:var(--blatt-schrift);
+  border:1px solid var(--rand);border-radius:7px;
+  padding:10px 12px;margin-top:6px;
+  max-height:150px;overflow:hidden;
+  font-family:Georgia,"Liberation Serif",serif;
+}
+.vorlagenschau__grau{
+  margin:0;color:#9AA3AB;font-size:11px;line-height:1.35;
+}
+/* Die Probe bekommt ihre Angaben beim Tippen ins style-Attribut gesetzt —
+   deshalb steht hier nur, was sie ohne Vorlage wäre. */
+.vorlagenschau__probe{margin:0;font-size:12pt;line-height:1.45}
 
 /* Erst stand hier Papierweiß — die Vorschau sollte aussehen wie auf dem
    Blatt. Im dunklen Fenster wurden daraus acht grelle Kästen, die mit dem

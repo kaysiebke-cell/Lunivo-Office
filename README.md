@@ -260,7 +260,15 @@ Formatvorlagen und Bearbeiten, *Ansicht* beginnt mit den Ansichten und
 nicht mit dem Zoom. Jeder der 191 Befehle ist von dort erreichbar. Auf *Start* steht der
 **Formatvorlagen-Katalog**: Er zeigt die Vorlage, statt sie zu benennen —
 acht Kacheln in zwei Zeilen, und der Pfeil daneben klappt sie groß auf,
-samt *Formatvorlagen verwalten*.
+samt *Neue Formatvorlage*, *verwalten* und *löschen*.
+
+**Eigene Formatvorlagen.** Was fehlt, legt man selbst an: eine
+*Anschrift*, die immer rechts steht, ein *Merksatz* in Grau. Der Dialog
+fragt nach Name, worauf sie aufbaut, Schrift, Größe, Schnitt, Farbe,
+Ausrichtung, Zeilenabstand, Abständen und Einzug — und zeigt darunter eine
+Vorschau, die sich beim Tippen mitändert. Wer „baut auf" umstellt, sieht
+die übrigen Felder mitgehen. Eigene Vorlagen gehören zum Dokument und
+wandern mit dem Reiter.
 Wo eine Gruppe nicht alles zeigt, was es gibt, steht unten rechts ein
 **Pfeil ⭨** zum vollen Dialog. Ein **Doppelklick auf den Reiter** klappt
 das Band weg und wieder auf.

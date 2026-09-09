@@ -865,8 +865,15 @@ function vorlageSetzen(tag, klasse) {
   while (el && el !== feld && el.parentNode !== feld) el = el.parentNode;
   if (!el || el === feld) return;
   /* Die anderen Zusätze müssen weg — ein Absatz ist entweder Titel oder
-     Untertitel, nicht beides. */
+     Untertitel, nicht beides. Und er trägt höchstens EINE eigene Vorlage:
+     Ohne diese Schleife sammelte ein Absatz beim Umformatieren
+     „eigen-1 eigen-2 eigen-3" an, und welche davon gilt, entschiede die
+     Reihenfolge im Stilblatt — also der Zufall. */
   el.classList.remove('titel', 'untertitel', 'ohne-abstand');
+  for (const klasseDa of [...el.classList]) {
+    if (klasseDa.startsWith('eigen-')) el.classList.remove(klasseDa);
+  }
+  if (!klasse && !el.classList.length) el.removeAttribute('class');
   if (klasse) el.classList.add(klasse);
   geaendertMelden();
 }
@@ -976,19 +983,30 @@ function fenster(titel, felder, beiOk, knopfName = 'Übernehmen', breit = false,
   kasten.innerHTML = '<h3 class="dialog__titel"></h3>';
   kasten.querySelector('.dialog__titel').textContent = titel;
 
+  /* Die Felder in einen eigenen Kasten, der rollen kann.
+   *
+   * Vorher rollte das ganze Fenster. Bei einem langen — „Neue
+   * Formatvorlage" hat elf Zeilen und eine Vorschau — standen Abbrechen
+   * und Übernehmen unterhalb des Bildschirmrandes, und man musste erst an
+   * allem vorbeirollen, um sie zu finden. Jetzt bleiben Überschrift und
+   * Knöpfe stehen, und nur das dazwischen rollt.
+   */
+  const inhalt = document.createElement('div');
+  inhalt.className = 'dialog__inhalt';
+
   const eingaben = {};
   for (const feldChen of felder) {
     if (feldChen.art === 'satz') {
       const p = document.createElement('p');
       p.className = 'dialog__satz';
       p.textContent = feldChen.text;
-      kasten.appendChild(p);
+      inhalt.appendChild(p);
       continue;
     }
     /* Ein fertig gebauter Block. Für Seiten, die mehr sind als ein Absatz —
        die Hilfe etwa, die eine Treppe zeichnet statt einen Satz zu schreiben. */
     if (feldChen.art === 'knoten') {
-      kasten.appendChild(feldChen.knoten);
+      inhalt.appendChild(feldChen.knoten);
       continue;
     }
     const zeile = document.createElement('label');
@@ -1016,7 +1034,7 @@ function fenster(titel, felder, beiOk, knopfName = 'Übernehmen', breit = false,
     if (feldChen.wert !== undefined) eingabe.value = feldChen.wert;
     if (feldChen.schritt) eingabe.step = feldChen.schritt;
     zeile.appendChild(eingabe);
-    kasten.appendChild(zeile);
+    inhalt.appendChild(zeile);
     eingaben[feldChen.schluessel] = eingabe;
   }
 
@@ -1027,7 +1045,10 @@ function fenster(titel, felder, beiOk, knopfName = 'Übernehmen', breit = false,
   };
 
   if (beiWechsel) {
-    const gewechselt = () => beiWechsel(werteLesen());
+    /* Zweites Argument: die Eingabefelder selbst. Wer „basiert auf"
+       umstellt, soll die anderen Felder mitwandern sehen — und dafür muss
+       jemand hineinschreiben können, nicht nur herauslesen. */
+    const gewechselt = () => beiWechsel(werteLesen(), eingaben);
     for (const eingabe of Object.values(eingaben)) {
       eingabe.addEventListener('change', gewechselt);
       eingabe.addEventListener('input', gewechselt);
@@ -1041,6 +1062,7 @@ function fenster(titel, felder, beiOk, knopfName = 'Übernehmen', breit = false,
   const ok = document.createElement('button');
   ok.className = 'knopf knopf--haupt'; ok.textContent = knopfName;
   knoepfe.append(ab, ok);
+  kasten.appendChild(inhalt);
   kasten.appendChild(knoepfe);
   grund.appendChild(kasten);
   document.body.appendChild(grund);
@@ -2370,10 +2392,23 @@ const KATALOG = [
   ['Kein Abstand', 'Aa', () => vorlageSetzen('p', 'ohne-abstand'), 'kat--p'],
 ];
 
+/* Die acht mitgelieferten Vorlagen und dahinter die selbst angelegten.
+   Die eigenen tragen keine feste Klasse für die Vorschau — ihre Form
+   steht in „vorlagenStile", und die Kachel malt sich danach. */
+function katalogEintraege() {
+  const eigene = Object.entries(vorlagenStile)
+    .filter(([, wie]) => wie.eigen)
+    .map(([tag, wie]) => {
+      const [grund, klasse] = tag.split('.');
+      return [wie.name, 'Aa', () => vorlageSetzen(grund, klasse), '', wie];
+    });
+  return KATALOG.concat(eigene);
+}
+
 /* Eine Kachel des Katalogs. Sie trägt die Form, die sie setzt — sonst
    wäre der Katalog acht gleiche Kästchen mit verschiedenen Wörtern
    darunter. */
-function katalogStueck([name, probe, tun, klasse], gross) {
+function katalogStueck([name, probe, tun, klasse, wie], gross) {
   const k = document.createElement('button');
   k.type = 'button';
   k.className = 'katalog__stueck' + (gross ? ' katalog__stueck--gross' : '');
@@ -2381,8 +2416,17 @@ function katalogStueck([name, probe, tun, klasse], gross) {
   k.setAttribute('aria-label', name);
 
   const bild = document.createElement('span');
-  bild.className = 'katalog__probe ' + klasse;
+  bild.className = 'katalog__probe ' + (klasse || '');
   bild.textContent = probe;
+  /* Eine eigene Vorlage hat keine Klasse im Stilblatt, die man hier
+     anhängen könnte — sie wird deshalb unmittelbar gemalt. Größe gedeckelt:
+     Eine Vorlage mit 60 pt sprengte sonst die Kachel. */
+  if (wie) {
+    bild.style.fontWeight = wie.fett ? '700' : '400';
+    bild.style.fontStyle = wie.kursiv ? 'italic' : 'normal';
+    bild.style.fontSize = Math.min(gross ? 21 : 15, Math.max(11, wie.groesse)) + 'px';
+    if (wie.schrift) bild.style.fontFamily = '"' + wie.schrift.replace(/"/g, '') + '"';
+  }
   const wort = document.createElement('span');
   wort.className = 'katalog__name';
   wort.textContent = name;
@@ -2413,6 +2457,9 @@ function katalogBauen() {
 
   const gitter = document.createElement('div');
   gitter.className = 'katalog';
+  /* Im Band nur die acht mitgelieferten — sonst wüchse die Gruppe mit
+     jeder eigenen Vorlage weiter ins Band hinein. Alle stehen in der
+     Klappe. */
   for (const eintrag of KATALOG) gitter.appendChild(katalogStueck(eintrag));
   kiste.appendChild(gitter);
 
@@ -2451,7 +2498,7 @@ function katalogKlappeZeigen(knopf) {
 
   const gitter = document.createElement('div');
   gitter.className = 'katalogklappe__gitter';
-  for (const eintrag of KATALOG) gitter.appendChild(katalogStueck(eintrag, true));
+  for (const eintrag of katalogEintraege()) gitter.appendChild(katalogStueck(eintrag, true));
   tafel.appendChild(gitter);
 
   const strichchen = document.createElement('div');
@@ -2462,13 +2509,24 @@ function katalogKlappeZeigen(knopf) {
      Aussuchen — das ist der Katalog — und den Weg, sie zu verwalten. Der
      stand vorher unter Ansicht ▸ Oberfläche, also weit weg von dem, was
      er verwaltet. */
-  const verwalten = document.createElement('button');
-  verwalten.className = 'katalogklappe__punkt';
-  verwalten.type = 'button';
-  verwalten.textContent = 'Formatvorlagen verwalten…';
-  verwalten.addEventListener('mousedown', (e) => e.preventDefault());
-  verwalten.addEventListener('click', () => { katalogKlappeWeg(); B.vorlagenVerwalten(); });
-  tafel.appendChild(verwalten);
+  const punkt = (name, tun, aus) => {
+    const k = document.createElement('button');
+    k.className = 'katalogklappe__punkt' + (aus ? ' katalogklappe__punkt--aus' : '');
+    k.type = 'button';
+    k.textContent = name;
+    if (aus) { k.disabled = true; tafel.appendChild(k); return; }
+    k.addEventListener('mousedown', (e) => e.preventDefault());
+    k.addEventListener('click', () => { katalogKlappeWeg(); tun(); });
+    tafel.appendChild(k);
+  };
+
+  punkt('Neue Formatvorlage…', () => B.vorlageNeu());
+  punkt('Formatvorlagen verwalten…', () => B.vorlagenVerwalten());
+  /* Grau, solange es nichts zu löschen gibt: Die mitgelieferten Vorlagen
+     bleiben. Ein Punkt, der mal da ist und mal nicht, lässt sich nicht
+     lernen. */
+  punkt('Formatvorlage löschen…', () => B.vorlageLoeschen(),
+        !Object.values(vorlagenStile).some((wie) => wie.eigen));
 
   document.body.appendChild(tafel);
   katalogKlappe = tafel;
@@ -4314,6 +4372,24 @@ const VORLAGEN_STANDARD = {
 
 let vorlagenStile = Object.assign({}, VORLAGEN_STANDARD, Speicher.lies('vorlagenstile', {}));
 
+/* Was eine Vorlage außer Größe, Fett, Farbe und Abstand noch tragen kann.
+ *
+ * Diese Felder sind später dazugekommen — für den Dialog „Neue
+ * Formatvorlage". Sie sind alle FREIWILLIG: Steht nichts drin, schreibt
+ * das Stilblatt dazu auch nichts, und der Absatz nimmt, was das Blatt
+ * vorgibt. Ohne das verlören alle Vorlagen, die schon auf einem Rechner
+ * liegen, beim ersten Start ihre Schrift und ihre Ausrichtung — sie
+ * kennen die neuen Felder ja nicht.
+ */
+const VORLAGE_ZUSATZ = {
+  schrift: '',        /* leer: die Schrift des Blattes */
+  kursiv: false,
+  ausrichtung: '',    /* leer: wie das Blatt, also links */
+  zeilen: 0,          /* 0: wie das Blatt */
+  abstandVor: 0,      /* mm */
+  einzug: 0,          /* mm, nur die erste Zeile */
+};
+
 function vorlagenAnwenden() {
   let blatt = document.getElementById('vorlagenblatt');
   if (!blatt) {
@@ -4323,15 +4399,241 @@ function vorlagenAnwenden() {
   }
   let css = '';
   for (const [tag, wie] of Object.entries(vorlagenStile)) {
-    css += '.dokument ' + tag + '{'
-         + 'font-size:' + wie.groesse + 'pt;'
-         + 'font-weight:' + (wie.fett ? '700' : '400') + ';'
-         + 'color:' + wie.farbe + ';'
-         + 'margin-bottom:' + wie.abstand + 'mm;'
-         + '}';
+    css += '.dokument ' + tag + '{' + vorlageZuCss(wie) + '}';
   }
   blatt.textContent = css;
   Speicher.schreib('vorlagenstile', vorlagenStile);
+}
+
+/* Eine Vorlage als Stilangaben. Steht sie auch in der Vorschau des
+   Dialogs, muss beides dieselbe Rechnung nehmen — sonst zeigte die
+   Vorschau etwas anderes, als hinterher im Blatt steht. */
+function vorlageZuCss(wie) {
+  let css = 'font-size:' + wie.groesse + 'pt;'
+          + 'font-weight:' + (wie.fett ? '700' : '400') + ';'
+          + 'color:' + wie.farbe + ';'
+          + 'margin-bottom:' + wie.abstand + 'mm;';
+  if (wie.schrift) css += 'font-family:"' + wie.schrift.replace(/"/g, '') + '";';
+  if (wie.kursiv) css += 'font-style:italic;';
+  if (wie.ausrichtung) css += 'text-align:' + wie.ausrichtung + ';';
+  if (wie.zeilen) css += 'line-height:' + wie.zeilen + ';';
+  if (wie.abstandVor) css += 'margin-top:' + wie.abstandVor + 'mm;';
+  if (wie.einzug) css += 'text-indent:' + wie.einzug + 'mm;';
+  return css;
+}
+
+/* ------------------------------------------------------------
+   Formatvorlagen anlegen und ändern
+
+   Vorher gab es nur Ändern, und auch das nur an vier Stellschrauben:
+   Größe, Schriftschnitt, Farbe, Abstand danach. Eine EIGENE Vorlage
+   anzulegen ging gar nicht — wer für seine Briefe eine „Anschrift"
+   brauchte, musste sie in jedem Absatz von Hand nachbauen.
+
+   Der Dialog ist der aus WPS Writer, ohne die Griffe, die es hier nicht
+   gibt: „Formatvorlagentyp" stünde auf „Absatz" und ließe sich nicht
+   ändern (Zeichenvorlagen kennt das Programm nicht), und „Vorlage für den
+   folgenden Absatz" verlangte, dass die Eingabetaste die Vorlage wechselt
+   — auch das gibt es nicht. Ein Klappfeld mit einem Eintrag ist kein
+   Angebot, sondern eine Attrappe.
+
+   Was es dafür gibt: eine Vorschau, die sich beim Tippen mitändert. Sie
+   rechnet mit derselben Funktion wie das Blatt (vorlageZuCss) — sonst
+   zeigte sie etwas anderes, als hinterher dasteht.
+   ------------------------------------------------------------ */
+
+const VORLAGE_AUSRICHTUNGEN = [
+  ['', 'wie das Blatt'], ['left', 'linksbündig'], ['center', 'zentriert'],
+  ['right', 'rechtsbündig'], ['justify', 'Blocksatz'],
+];
+const VORLAGE_ZEILEN = [
+  ['0', 'wie das Blatt'], ['1.15', 'einfach'], ['1.6', 'eineinhalb'], ['2.1', 'doppelt'],
+];
+const VORLAGE_SCHNITTE = [
+  ['normal', 'normal'], ['fett', 'fett'],
+  ['kursiv', 'kursiv'], ['fettkursiv', 'fett und kursiv'],
+];
+
+const inGrenzen = (wert, klein, gross, ersatz) => {
+  const z = parseFloat(wert);
+  return Number.isFinite(z) ? Math.max(klein, Math.min(gross, z)) : ersatz;
+};
+
+const schnittVon = (wie) => (wie.fett ? (wie.kursiv ? 'fettkursiv' : 'fett')
+                                      : (wie.kursiv ? 'kursiv' : 'normal'));
+
+/* Die Vorschau: ein grauer Absatz davor, die Probe, ein grauer danach.
+   Die grauen zeigen, wie die Abstände wirken — eine Probe allein steht im
+   Nichts, und Abstand sieht man nur zu etwas. */
+function vorlagenschauBauen() {
+  const kiste = document.createElement('div');
+  kiste.className = 'vorlagenschau';
+
+  const grau = (text) => {
+    const p = document.createElement('p');
+    p.className = 'vorlagenschau__grau';
+    p.textContent = text;
+    return p;
+  };
+
+  const probe = document.createElement('p');
+  probe.className = 'vorlagenschau__probe';
+  probe.textContent = 'Beispieltext Beispieltext Beispieltext Beispieltext '
+                    + 'Beispieltext Beispieltext Beispieltext Beispieltext '
+                    + 'Beispieltext Beispieltext Beispieltext Beispieltext';
+
+  kiste.append(grau('Vorhergehender Absatz Vorhergehender Absatz Vorhergehender Absatz'),
+               probe,
+               grau('Folgender Absatz Folgender Absatz Folgender Absatz'));
+  return { kiste, probe };
+}
+
+/* Was in den Feldern steht, als Vorlage. */
+function werteZuVorlage(werte, alt) {
+  const wie = Object.assign({}, VORLAGE_ZUSATZ, alt || {});
+  if (werte.name !== undefined) {
+    wie.name = String(werte.name).trim().slice(0, 40) || wie.name || 'Formatvorlage';
+  }
+  wie.groesse    = inGrenzen(werte.groesse, 6, 72, wie.groesse);
+  wie.fett       = werte.schnitt === 'fett' || werte.schnitt === 'fettkursiv';
+  wie.kursiv     = werte.schnitt === 'kursiv' || werte.schnitt === 'fettkursiv';
+  wie.farbe      = werte.farbe || wie.farbe;
+  wie.schrift    = werte.schrift || '';
+  wie.ausrichtung = werte.ausrichtung || '';
+  wie.zeilen     = parseFloat(werte.zeilen) || 0;
+  wie.abstandVor = inGrenzen(werte.abstandVor, 0, 40, 0);
+  wie.abstand    = inGrenzen(werte.abstand, 0, 40, 0);
+  wie.einzug     = inGrenzen(werte.einzug, 0, 60, 0);
+  return wie;
+}
+
+/* Die Felder für Aussehen und Abstände — dieselben beim Anlegen wie beim
+   Ändern. Zweimal geschrieben liefen sie auseinander. */
+function vorlageFelder(wie) {
+  const schriften = (alleSchriften && alleSchriften.length ? alleSchriften : SCHRIFTEN);
+  return [
+    { schluessel: 'schrift', name: 'Schriftart', art: 'auswahl',
+      werte: [['', 'wie das Blatt']].concat(schriften.map((s) => [s, s])),
+      wert: wie.schrift || '' },
+    { schluessel: 'groesse', name: 'Größe (pt)', art: 'number', wert: wie.groesse },
+    { schluessel: 'schnitt', name: 'Schriftschnitt', art: 'auswahl',
+      werte: VORLAGE_SCHNITTE, wert: schnittVon(wie) },
+    { schluessel: 'farbe', name: 'Farbe', art: 'color', wert: wie.farbe },
+    { schluessel: 'ausrichtung', name: 'Ausrichtung', art: 'auswahl',
+      werte: VORLAGE_AUSRICHTUNGEN, wert: wie.ausrichtung || '' },
+    { schluessel: 'zeilen', name: 'Zeilenabstand', art: 'auswahl',
+      werte: VORLAGE_ZEILEN, wert: String(wie.zeilen || 0) },
+    { schluessel: 'abstandVor', name: 'Abstand davor (mm)', art: 'number',
+      wert: wie.abstandVor || 0, schritt: '0.5' },
+    { schluessel: 'abstand', name: 'Abstand danach (mm)', art: 'number',
+      wert: wie.abstand, schritt: '0.5' },
+    { schluessel: 'einzug', name: 'Einzug erste Zeile (mm)', art: 'number',
+      wert: wie.einzug || 0, schritt: '0.5' },
+  ];
+}
+
+/* Der gemeinsame Dialog. „basis" bestimmt, ob oben Name und „basiert auf"
+   stehen — die braucht nur das Anlegen. */
+function vorlageDialog(titel, start, knopfName, beiOk, mitName) {
+  const { kiste, probe } = vorlagenschauBauen();
+  probe.style.cssText = vorlageZuCss(start);
+
+  const felder = [];
+  if (mitName) {
+    felder.push({ art: 'satz',
+      text: 'Eine Absatzvorlage: Sie gilt für den ganzen Absatz, in dem der '
+          + 'Zeiger steht — nicht für einzelne Wörter.' });
+    felder.push({ schluessel: 'name', name: 'Name', wert: start.name });
+    felder.push({ schluessel: 'basis', name: 'Baut auf', art: 'auswahl',
+      werte: Object.entries(vorlagenStile).map(([tag, wie]) => [tag, wie.name]),
+      wert: mitName });
+  }
+  felder.push(...vorlageFelder(start));
+  felder.push({ art: 'knoten', knoten: kiste });
+
+  let basisVorher = mitName || '';
+
+  fenster(titel, felder,
+    (werte) => beiOk(werteZuVorlage(werte, start), werte),
+    knopfName, true, null,
+    (werte, eingaben) => {
+      /* Wer „Baut auf" umstellt, will die Werte von dort sehen — sonst
+         hieße „baut auf Überschrift 1" nur, dass ein Name dasteht. */
+      if (eingaben.basis && werte.basis !== basisVorher) {
+        basisVorher = werte.basis;
+        const quelle = vorlagenStile[werte.basis];
+        if (quelle) {
+          const voll = Object.assign({}, VORLAGE_ZUSATZ, quelle);
+          eingaben.schrift.value = voll.schrift || '';
+          eingaben.groesse.value = voll.groesse;
+          eingaben.schnitt.value = schnittVon(voll);
+          eingaben.farbe.value = voll.farbe;
+          eingaben.ausrichtung.value = voll.ausrichtung || '';
+          eingaben.zeilen.value = String(voll.zeilen || 0);
+          eingaben.abstandVor.value = voll.abstandVor || 0;
+          eingaben.abstand.value = voll.abstand;
+          eingaben.einzug.value = voll.einzug || 0;
+          werte = {};
+          for (const [k, e] of Object.entries(eingaben)) werte[k] = e.value;
+        }
+      }
+      probe.style.cssText = vorlageZuCss(werteZuVorlage(werte, start));
+    });
+}
+
+/* Der nächste freie Platz für eine eigene Vorlage. Sie hängt als Klasse
+   am Absatz: <p class="eigen-3">. */
+function eigenerSchluessel() {
+  for (let n = 1; n < 1000; n++) {
+    if (!vorlagenStile['p.eigen-' + n]) return 'p.eigen-' + n;
+  }
+  return null;
+}
+
+B.vorlageNeu = () => {
+  const schluessel = eigenerSchluessel();
+  if (!schluessel) { melde('Mehr eigene Vorlagen gehen nicht.'); return; }
+
+  /* Sie fängt bei dem an, worin der Zeiger gerade steht — das ist
+     meistens das, was man abwandeln will. */
+  const jetzt = vorlageSchluesselAnStelle();
+  const basis = vorlagenStile[jetzt] ? jetzt : 'p';
+  const start = Object.assign({}, VORLAGE_ZUSATZ, vorlagenStile[basis], {
+    name: 'Formatvorlage ' + schluessel.replace('p.eigen-', ''),
+    eigen: true,
+  });
+
+  auswahlMerken();
+  vorlageDialog('Neue Formatvorlage', start, 'Anlegen', (wie) => {
+    wie.eigen = true;
+    vorlagenStile[schluessel] = wie;
+    vorlagenAnwenden();
+    werkzeugeBauen();
+    registerBauen();
+    menueBauen();
+    /* Und gleich anwenden: Wer eine Vorlage anlegt, während der Zeiger in
+       einem Absatz steht, meint diesen Absatz. */
+    auswahlZurueck();
+    vorlageSetzen('p', schluessel.slice('p.'.length));
+    melde('Vorlage „' + wie.name + '" angelegt und auf diesen Absatz gesetzt.');
+  }, basis);
+};
+
+/* In welcher Vorlage steht der Zeiger? Der Schlüssel, wie ihn
+   „vorlagenStile" führt — also mit Klasse, wenn eine dranhängt. */
+function vorlageSchluesselAnStelle() {
+  let k = window.getSelection().anchorNode;
+  while (k && k !== feld) {
+    if (k.nodeType === Node.ELEMENT_NODE && k.tagName && k.parentNode === feld) {
+      const grund = k.tagName.toLowerCase();
+      for (const klasse of k.classList) {
+        if (vorlagenStile[grund + '.' + klasse]) return grund + '.' + klasse;
+      }
+      return vorlagenStile[grund] ? grund : 'p';
+    }
+    k = k.parentNode;
+  }
+  return 'p';
 }
 
 B.vorlagenVerwalten = () => {
@@ -4339,28 +4641,58 @@ B.vorlagenVerwalten = () => {
   fenster('Formatvorlagen verwalten', [
     { art: 'satz', text: 'Eine Vorlage ändern gilt für jeden Absatz, der sie trägt.' },
     { schluessel: 'tag', name: 'Vorlage', art: 'auswahl',
-      werte: tags.map((t) => [t, vorlagenStile[t].name]) },
+      werte: tags.map((t) => [t, vorlagenStile[t].name
+        + (vorlagenStile[t].eigen ? ' (eigene)' : '')]),
+      wert: vorlageSchluesselAnStelle() },
   ], (werte) => vorlageBearbeiten(werte.tag), 'Bearbeiten');
 };
 
 function vorlageBearbeiten(tag) {
   const wie = vorlagenStile[tag];
   if (!wie) return;
-  fenster('Vorlage: ' + wie.name, [
-    { schluessel: 'groesse', name: 'Größe (pt)', art: 'number', wert: wie.groesse },
-    { schluessel: 'fett', name: 'Schriftschnitt', art: 'auswahl',
-      werte: [['nein', 'normal'], ['ja', 'fett']], wert: wie.fett ? 'ja' : 'nein' },
-    { schluessel: 'farbe', name: 'Farbe', art: 'color', wert: wie.farbe },
-    { schluessel: 'abstand', name: 'Abstand danach (mm)', art: 'number', wert: wie.abstand, schritt: '0.5' },
-  ], (werte) => {
-    wie.groesse = Math.max(6, Math.min(72, parseFloat(werte.groesse) || wie.groesse));
-    wie.fett = werte.fett === 'ja';
-    wie.farbe = werte.farbe;
-    wie.abstand = Math.max(0, Math.min(40, parseFloat(werte.abstand) || 0));
+  const start = Object.assign({}, VORLAGE_ZUSATZ, wie);
+  vorlageDialog('Vorlage: ' + wie.name, start, 'Übernehmen', (neu) => {
+    Object.assign(wie, neu);
     vorlagenAnwenden();
+    werkzeugeBauen();
+    registerBauen();
     melde('Vorlage „' + wie.name + '" geändert — überall, wo sie steht.');
   });
 }
+
+/* Eine eigene Vorlage wieder loswerden. Die mitgelieferten nicht: „Titel"
+   oder „Überschrift 1" zu löschen hieße, ein Dokument zu hinterlassen, in
+   dem Absätze auf etwas zeigen, das es nicht mehr gibt. */
+B.vorlageLoeschen = () => {
+  const eigene = Object.entries(vorlagenStile).filter(([, wie]) => wie.eigen);
+  if (!eigene.length) {
+    melde('Es gibt keine eigene Vorlage — gelöscht werden nur die selbst angelegten.');
+    return;
+  }
+  fenster('Formatvorlage löschen', [
+    { art: 'satz', text: 'Absätze, die sie tragen, werden wieder Fließtext. '
+                       + 'Der Text bleibt, wie er ist.' },
+    { schluessel: 'tag', name: 'Vorlage', art: 'auswahl',
+      werte: eigene.map(([tag, wie]) => [tag, wie.name]) },
+  ], (werte) => {
+    const wie = vorlagenStile[werte.tag];
+    if (!wie) return;
+    const klasse = werte.tag.split('.')[1];
+    for (const el of feld.querySelectorAll('.' + klasse)) {
+      el.classList.remove(klasse);
+      /* Und das leere Attribut gleich mit. „classList.remove" lässt
+         class="" stehen, und das wandert in die gespeicherte Datei —
+         eine Spur von etwas, das es nicht mehr gibt. */
+      if (!el.classList.length) el.removeAttribute('class');
+    }
+    delete vorlagenStile[werte.tag];
+    vorlagenAnwenden();
+    werkzeugeBauen();
+    registerBauen();
+    geaendertMelden();
+    melde('Vorlage „' + wie.name + '" gelöscht.');
+  }, 'Löschen');
+};
 
 B.vorlagenZurueck = () => {
   vorlagenStile = JSON.parse(JSON.stringify(VORLAGEN_STANDARD));
@@ -7383,8 +7715,11 @@ const MENUES = [
     { name: 'Stile', unter: [
       { name: 'Formatvorlagen', unter: [
         { name: 'Formatvorlage auswählen', unter: () =>
-            VORLAGEN.map(([wert, name]) => ({ name, tun: () => absatz(wert) })) },
+            vorlagenFuerFeld().map(([wert, name]) => (
+              { name, tun: () => vorlageAusFeld(wert) })) },
+        { name: 'Neue Formatvorlage…', tun: B.vorlageNeu },
         { name: 'Formatvorlagen verwalten', tun: B.vorlagenVerwalten },
+        { name: 'Formatvorlage löschen…', tun: B.vorlageLoeschen },
       ] },
     ] },
     { name: 'Bearbeiten', unter: [
@@ -8206,6 +8541,24 @@ const GROESSEN = [8, 9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 36];
 const VORLAGEN = [['p', 'Fließtext'], ['h1', 'Überschrift 1'],
                   ['h2', 'Überschrift 2'], ['h3', 'Überschrift 3']];
 
+/* Dasselbe für das Klappfeld und das Menü — mitgelieferte Vorlagen und
+   dahinter die selbst angelegten. Als Funktion und nicht als feste Liste:
+   Wer eine Vorlage anlegt, soll sie sofort dort finden. */
+function vorlagenFuerFeld() {
+  const eigene = Object.entries(vorlagenStile)
+    .filter(([, wie]) => wie.eigen)
+    .map(([tag, wie]) => [tag, wie.name]);
+  return VORLAGEN.concat(eigene);
+}
+
+/* Der Wert ist entweder ein Grundelement („h1") oder eines mit Klasse
+   („p.eigen-2"). Zwei Wege, ein Feld. */
+function vorlageAusFeld(wert) {
+  const [grund, klasse] = String(wert).split('.');
+  if (klasse) vorlageSetzen(grund, klasse);
+  else absatz(grund);
+}
+
 /* Ein Eintrag ist [Wert, Beschriftung]. Steht statt der Beschriftung eine
    Liste, wird daraus eine Gruppe mit Überschrift — so wie die Schriften
    dieses Rechners unter denen stehen, die sich für Fließtext bewährt haben. */
@@ -8413,7 +8766,7 @@ function werkzeugeBauen() {
     knopf('steuerzeichen', 'Steuerzeichen', B.steuerzeichenZeigen);
     trenner();
 
-    wzVorlage = auswahl('wz-wahl--vorlage', VORLAGEN, absatz, 'Formatvorlage');
+    wzVorlage = auswahl('wz-wahl--vorlage', vorlagenFuerFeld(), vorlageAusFeld, 'Formatvorlage');
     leiste.appendChild(wzVorlage);
   });
 }
@@ -8424,8 +8777,12 @@ function werkzeugeAuffrischen() {
     k.classList.toggle('wz--an', Dokument.anGeschaltet(k.dataset.zustand));
   }
   if (wzVorlage) {
-    const jetzt = Dokument.absatzformat();
-    wzVorlage.value = VORLAGEN.some(([w]) => w === jetzt) ? jetzt : 'p';
+    /* Erst der genaue Schlüssel — der trifft auch eine eigene Vorlage.
+       Sonst das Grundelement, sonst Fließtext. */
+    const drin = (wert) => [...wzVorlage.options].some((o) => o.value === wert);
+    const genau = vorlageSchluesselAnStelle();
+    const grund = Dokument.absatzformat();
+    wzVorlage.value = drin(genau) ? genau : (drin(grund) ? grund : 'p');
   }
 }
 
