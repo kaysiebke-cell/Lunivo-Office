@@ -33,8 +33,12 @@ const Speicher = {
   },
   schreib(name, wert) {
     try { localStorage.setItem(this.ort(name), JSON.stringify(wert)); } catch (e) { /* voll */ }
+    Einstellungsdatei.merken();
   },
 };
+
+/* Der Speicher ist das Abbild in der Datei schuldig — geschrieben wird
+   sie in js/einstellungsdatei.js, gebündelt und nicht bei jedem Zug. */
 
 /* Wer fragt? Der Server merkt sich zwischen dem Dateidialog und dem
    Lesen genau EINEN Weg — welche Datei gewählt wurde. Bei zwei offenen
@@ -1817,23 +1821,533 @@ B.seitennummer = () => {
 
 /* ---- Ansicht: Lineal, Steuerzeichen ---- */
 let lineal = Speicher.lies('lineal', false);
+/* Zwei Lineale, zwei Schalter — so hält es der WPS Writer, und nur so
+   lässt sich der Stand abbilden, den Kay dort eingestellt hat: senkrecht
+   an, waagerecht aus. */
+let linealHoch = Speicher.lies('linealHoch', false);
 let steuerzeichen = Speicher.lies('steuerzeichen', false);
 let leistenAn = Speicher.lies('leisten', true);
 
 function ansichtExtras() {
   $('lineal').hidden = !lineal;
+  $('lineal-hoch').hidden = !linealHoch;
+  /* Die Ecke gehört zum senkrechten: Ohne es hätte sie nichts zu füllen
+     und schöbe das waagerechte Lineal nur um ihre Breite nach rechts. */
+  $('lineal-ecke').hidden = !linealHoch;
   /* Erst sichtbar machen, dann zeichnen: Ein verstecktes Lineal hat keine
      Breite, und ohne Breite lässt sich nichts ausmessen. */
   if (lineal) linealZeichnen();
+  if (linealHoch) linealHochZeichnen();
   feld.classList.toggle('dokument--steuerzeichen', steuerzeichen);
+  zeichenAnwenden();
   $('werkzeugleiste').hidden = !leistenAn;
   $('werkzeugleiste2').hidden = !leistenAn;
   Speicher.schreib('lineal', lineal);
+  Speicher.schreib('linealHoch', linealHoch);
   Speicher.schreib('steuerzeichen', steuerzeichen);
   Speicher.schreib('leisten', leistenAn);
   menueBauen();
 }
 B.linealZeigen = () => { lineal = !lineal; ansichtExtras(); };
+B.linealHochZeigen = () => { linealHoch = !linealHoch; ansichtExtras(); };
+
+/* ------------------------------------------------------------
+   Die einfachen Schalter aus dem Optionen-Fenster
+
+   Der WPS Writer führt in seinen dreizehn Seiten weit über hundert
+   Kästchen. Die meisten davon merken sich nichts weiter als an oder aus
+   und lösen beim Umlegen eine Kleinigkeit aus — eine Klasse am Blatt,
+   eine Leiste weg, ein Zeichen mehr.
+
+   Einzeln verdrahtet wären das je zwanzig fast gleiche Zeilen: ein
+   Zustand, ein Lesen aus dem Speicher, ein Schreiben, ein B.-Befehl, ein
+   Griff für die Optionenseite. Bei sechzig Schaltern ist das nicht mehr
+   zu übersehen, und die einundsechzigste Zeile vergisst man.
+
+   Deshalb stehen sie hier als Tabelle: Name, Standardwert, Wirkung.
+   Alles Übrige — Speichern, Umlegen, der Griff für die Optionenseite —
+   entsteht daraus von selbst.
+
+   WAS HIER NICHT HINEINGEHÖRT
+
+   Schalter, die mehr tun als eine Kleinigkeit: Lineal, Navigationsbereich,
+   Änderungen verfolgen. Die haben ihren eigenen Befehl, weil an ihnen
+   noch anderes hängt.
+   ------------------------------------------------------------ */
+const SCHALTER = {
+
+  /* ---- Ansicht ▸ Anzeigen ---- */
+
+  /* Bei WPS „Statusleiste". Sie trägt Seitenzahl, Wortzahl und den Zoom;
+     wer den Platz braucht, schaltet sie weg. */
+  statusleiste: { standard: true, wirkt: (an) =>
+    document.body.classList.toggle('ohne-statuszeile', !an) },
+
+  /* Bei WPS „Startaufgabenfenster": ob die Seitenleiste beim Öffnen des
+     Programms schon aufgeklappt ist. Nicht, ob es sie gibt — das steht
+     unter Ansicht. */
+  tafelBeimStart: { standard: true, wirkt: () => {} },
+
+  /* Bei WPS „QuickInfo": die kleinen Erklärungen an den Knöpfen. Sie
+     werden nicht gelöscht, nur unterdrückt — sonst wären sie nach dem
+     Ausschalten für immer weg. */
+  quickinfo: { standard: true, wirkt: (an) =>
+    document.body.classList.toggle('ohne-quickinfo', !an) },
+
+  /* Bei WPS „Live-Vorschau aktivieren": ob das Überfahren eines Stils den
+     Text schon probeweise umstellt. */
+  livevorschau: { standard: true, wirkt: () => {} },
+
+  /* Die beiden Minisymbolleisten: die schwebende Formatleiste, die bei
+     einer Auswahl erscheint, und dieselbe beim Rechtsklick. */
+  minileisteAuswahl: { standard: true, wirkt: () => {} },
+  minileisteRechts:  { standard: true, wirkt: () => {} },
+
+  /* Bei WPS „Tipp für Kopf- bzw. Fußzeile eingeben": der Hinweis, der im
+     leeren Kopfbereich steht und sagt, was man dort tun kann. */
+  kopfzeilenTipp: { standard: true, wirkt: (an) =>
+    document.body.classList.toggle('ohne-kopftipp', !an) },
+
+  /* ---- Ansicht ▸ Formatierungszeichen ----
+
+     WPS zeigt sechs Kästchen, wo Lunivo bisher eines hatte. Sie wirken
+     einzeln: jedes schaltet eine Klasse am Blatt, und das Stilblatt
+     entscheidet, was dann sichtbar wird. */
+  fzAbsatzmarken: { standard: true,  wirkt: () => zeichenAnwenden() },
+  fzLeerzeichen:  { standard: true,  wirkt: () => zeichenAnwenden() },
+  fzTabstopp:     { standard: true,  wirkt: () => zeichenAnwenden() },
+  fzObjektanker:  { standard: false, wirkt: () => zeichenAnwenden() },
+  fzAusgeblendet: { standard: false, wirkt: () => zeichenAnwenden() },
+
+  /* ---- Ansicht ▸ Menübandoptionen ---- */
+
+  /* Bei WPS „Auf Registerkarte doppelklicken, um Menüband auszublenden". */
+  bandDoppelklick: { standard: true, wirkt: () => {} },
+  /* Bei WPS „Use CTRL + Click to follow hyperlink": ob ein Klick allein
+     dem Verweis folgt oder erst mit Strg. */
+  strgKlickLink:   { standard: true, wirkt: () => {} },
+
+  /* ---- Bearbeiten ▸ AutoKorrektur ----
+
+     Elf Kästchen bei WPS. Was sie auslösen, steht in AUTOKORREKTUR — jede
+     Regel dort nennt den Schalter, an dem sie hängt. */
+  akAnfuehrung:     { standard: true,  wirkt: () => {} },
+  akGedankenstrich: { standard: true,  wirkt: () => {} },
+  akAuslassung:     { standard: true,  wirkt: () => {} },
+  akSatzGross:      { standard: false, wirkt: () => {} },
+  akWochentage:     { standard: false, wirkt: () => {} },
+  akOrdnungszahlen: { standard: true,  wirkt: () => {} },
+  akFeststelltaste: { standard: false, wirkt: () => {} },
+
+  /* ---- Bearbeiten ▸ Bearbeitungsoptionen ---- */
+
+  /* Bei WPS „Textbearbeitung durch Drag _Drop". Aus gesehen lässt sich
+     markierter Text nicht mehr mit der Maus verschieben — für alle, denen
+     beim Markieren die Hand verrutscht und der Absatz plötzlich woanders
+     steht. */
+  ziehenUndLegen: { standard: true, wirkt: (an) => {
+    const feld = $('dokument');
+    if (feld) feld.classList.toggle('ohne-ziehen', !an);
+  } },
+
+  /* Bei WPS „Intelligente Absatzmarkierung verwenden": ob beim Markieren
+     ganze Wörter genommen werden statt einzelner Buchstaben. */
+  wortweiseMarkieren: { standard: true, wirkt: () => {} },
+
+  /* ---- Bearbeiten ▸ Ausschneide- und Einfügeoptionen ---- */
+
+  /* Bei WPS „Enable middle button paste": unter Linux fügt die mittlere
+     Maustaste ein, was zuletzt markiert war. Wer sie versehentlich
+     drückt, hat plötzlich fremden Text im Brief. */
+  mittelklickEinfuegen: { standard: false, wirkt: () => {} },
+
+  /* Bei WPS „Schaltflächen für Einfügeoptionen anzeigen": das Kästchen,
+     das nach dem Einfügen erscheint und fragt, mit oder ohne Format. */
+  einfuegeKnopf: { standard: true, wirkt: () => {} },
+
+  /* ---- Bearbeiten ▸ AutoFormat ----
+
+     „1." oder „- " am Zeilenanfang macht aus dem Absatz eine Liste. Was
+     die beiden auslösen, steht in autoListeLaufen(). */
+  autoNummerierung: { standard: true, wirkt: () => {} },
+  autoAufzaehlung:  { standard: true, wirkt: () => {} },
+
+  /* ---- Rechtschreibprüfung ----
+
+     Fünf Kästchen bei WPS, die Lunivo noch nicht führte. Sie greifen in
+     pruefung.js: Was hier aus ist, wird gar nicht erst angestrichen. */
+  rsGrossIgnorieren:  { standard: true,  wirkt: () => {} },
+  rsZahlenIgnorieren: { standard: true,  wirkt: () => {} },
+  rsPfadeIgnorieren:  { standard: true,  wirkt: () => {} },
+  rsIgnorierteZeigen: { standard: false, wirkt: () => {} },
+  rsGrammatik:        { standard: true,  wirkt: () => {} },
+
+  /* ---- In PDF exportieren ----
+
+     Was beim Export mitgeht. Gelesen wird das in B.speichernPdf. */
+  pdfKommentare:    { standard: false, wirkt: () => {} },
+  pdfHyperlinks:    { standard: true,  wirkt: () => {} },
+  pdfUeberschriften:{ standard: true,  wirkt: () => {} },
+  pdfEigenschaften: { standard: true,  wirkt: () => {} },
+  pdfNachExport:    { standard: false, wirkt: () => {} },
+
+  /* ---- Drucken ----
+
+     Die Standardwerte, mit denen das Druckfenster aufgeht. Dort lassen
+     sie sich für den einzelnen Auftrag noch ändern — hier steht, womit
+     es anfängt. */
+  drHohequalitaet:  { standard: true,  wirkt: () => {} },
+  drUmgekehrt:      { standard: false, wirkt: () => {} },
+  drHintergrund:    { standard: false, wirkt: () => {} },
+  drZeichnungen:    { standard: true,  wirkt: () => {} },
+  drLeereSeiten:    { standard: true,  wirkt: () => {} },
+
+  /* ---- Sicherheit ---- */
+
+  /* Bei WPS „Ausgeblendete Markups beim Öffnen oder Speichern anzeigen":
+     ob verborgene Änderungen und Kommentare beim Öffnen sichtbar werden.
+     Ein Brief, den man weitergibt, trägt sonst ungesehen mit, was darin
+     einmal stand. */
+  markupBeimOeffnen: { standard: true, wirkt: () => {} },
+  /* Bei WPS „Beim Speichern persönliche Daten aus Dateieigenschaften
+     entfernen". */
+  datenBeimSpeichernWeg: { standard: false, wirkt: () => {} },
+
+  /* ---- Ansicht ▸ Druckoptionen ----
+     Bei WPS eine eigene Gruppe AUF der Ansicht-Seite. Sie sagt, was beim
+     Drucken mitgeht — die Seite „Drucken" sagt, WIE gedruckt wird. */
+  dpHervorheben:      { standard: true,  wirkt: () => {} },
+  dpTextbegrenzungen: { standard: false, wirkt: () => {} },
+  dpZuschnittsmarken: { standard: false, wirkt: () => {} },
+  dpFeldfunktionen:   { standard: false, wirkt: () => {} },
+  dpTextmarken:       { standard: false, wirkt: () => {} },
+
+  /* ---- Bearbeiten, was noch fehlte ---- */
+  tippenErsetzt:      { standard: true,  wirkt: () => {} },
+  akHyperlink:        { standard: true,  wirkt: () => {} },
+  akKreiszahl:        { standard: true,  wirkt: () => {} },
+  akErstzeileneinzug: { standard: true,  wirkt: () => {} },
+  akLeerzeichenRechts:{ standard: true,  wirkt: () => {} },
+  akEinzugZentriert:  { standard: false, wirkt: () => {} },
+  akTabEinzug:        { standard: true,  wirkt: () => {} },
+
+  /* ---- Allgemein und Speichern ---- */
+  bilderNichtKomprimieren: { standard: false, wirkt: () => {} },
+  kompUnterstreichen:      { standard: true,  wirkt: () => {} },
+  kompUmbruchTeilen:       { standard: false, wirkt: () => {} },
+  kompHaengendTabstopp:    { standard: false, wirkt: () => {} },
+  kompZeilenhoeheRaster:   { standard: true,  wirkt: () => {} },
+  kompFussnotenWord97:     { standard: false, wirkt: () => {} },
+
+  /* ---- Änderungen verfolgen ---- */
+  spVerbindungslinien: { standard: true, wirkt: () => {} },
+  spEmpfohleneBreite:  { standard: true, wirkt: () => {} },
+
+  /* ---- In PDF exportieren, was noch fehlte ---- */
+  pdfFussEndnoten:    { standard: true,  wirkt: () => {} },
+  pdfTextmarken:      { standard: false, wirkt: () => {} },
+  pdfAndereStile:     { standard: false, wirkt: () => {} },
+  pdfEigeneStile:     { standard: false, wirkt: () => {} },
+
+  /* ---- Benutzerinformationen ---- */
+  benutzerVerwenden:  { standard: false, wirkt: () => {} },
+
+  /* ---- Drucken, was noch fehlte ---- */
+  drFelderAktualisieren: { standard: false, wirkt: () => {} },
+  drFeldfunktionen:      { standard: false, wirkt: () => {} },
+  drNurFormulardaten:    { standard: false, wirkt: () => {} },
+  drBlattvorderseite:    { standard: true,  wirkt: () => {} },
+  drBlattrueckseite:     { standard: true,  wirkt: () => {} },
+
+  /* ---- Rechtschreibprüfung ---- */
+  rsImmerVorschlaege: { standard: true, wirkt: () => {} },
+};
+
+/* Die Auswahlfelder und Zahlen aus dem Optionen-Fenster.
+
+   Nicht alles dort ist ein Kästchen: WPS führt Klappmenüs und Zahlenfelder
+   — Maßeinheit, Feldschattierung, Standardeinfügeformat, die Farben und
+   Striche des Markups, die Sprechblasenbreite. Sie brauchen einen Wert
+   statt an/aus, sonst dieselbe Behandlung. */
+const WERTE = {
+  /* Ansicht ▸ Druckoptionen */
+  feldschattierung: { standard: 'auswahl' },   // nie | immer | auswahl
+  /* Bearbeiten */
+  rueckgaengigZahl: { standard: 0 },           // 0 = unbegrenzt
+  einfuegeformat:   { standard: 'ursprung' },  // ursprung | ziel | nurtext
+  /* Allgemein und Speichern */
+  masseinheit:      { standard: 'mm' },        // mm | cm | zoll | punkt
+  ausgabeziel:      { standard: 220 },         // ppi
+  webKodierung:     { standard: 'utf-8' },
+  /* Änderungen verfolgen */
+  markupEinfuegung: { standard: 'unterstrichen' },
+  markupLoeschung:  { standard: 'durchgestrichen' },
+  markupZeilen:     { standard: 'aussen' },
+  markupFarbe:      { standard: 'autor' },
+  spBlasen:         { standard: 'blasen' },
+  spSeitenrand:     { standard: 'rechts' },
+  spBreite:         { standard: 94 },          // in mm
+  spPapier:         { standard: 'behalten' },
+  /* Drucken */
+  drAusgeblendet:   { standard: 'nicht' },
+  drAutor:          { standard: 'vollstaendig' },
+  /* Sicherungseinstellungen */
+  sicherungsart:    { standard: 'laufend' },   // laufend | schliessen | zeit
+  sicherungMinuten: { standard: 10 },
+  cacheTage:        { standard: 90 },
+  /* Benutzerinformationen */
+  initialen:        { standard: '' },
+};
+
+const werteStand = {};
+for (const name of Object.keys(WERTE)) {
+  werteStand[name] = Speicher.lies(name, WERTE[name].standard);
+}
+const wertLesen = (name) => werteStand[name];
+function wertSetzen(name, wert) {
+  if (!WERTE[name]) return;
+  werteStand[name] = wert;
+  Speicher.schreib(name, wert);
+  wertAnwenden(name);
+}
+function wertAnwenden(name) {
+  /* Was sich am Blatt zeigen lässt, zeigt sich sofort. */
+  const feld = $('dokument');
+  if (!feld) return;
+  if (name === 'feldschattierung') {
+    feld.classList.toggle('feldschatten--immer',   wertLesen(name) === 'immer');
+    feld.classList.toggle('feldschatten--auswahl', wertLesen(name) === 'auswahl');
+  }
+  if (name === 'markupEinfuegung' || name === 'markupLoeschung' || name === 'markupZeilen') {
+    feld.dataset[name] = wertLesen(name);
+  }
+}
+function alleWerteAnwenden() {
+  for (const name of Object.keys(WERTE)) wertAnwenden(name);
+}
+
+/* Listen beim Tippen erkennen.
+
+   WPS führt dafür zwei Kästchen unter AutoFormat. Lunivo konnte Listen,
+   aber nur auf Knopfdruck — wer „1." schrieb, bekam einen Absatz, der wie
+   eine Liste aussah und sich nicht wie eine verhielt.
+
+   Ausgelöst wird beim Leerzeichen, wie überall: Erst wenn jemand hinter
+   „1." weiterschreibt, ist es als Aufzählung gemeint. Und nur am Anfang
+   eines noch leeren Absatzes — mitten im Satz ist „1. " eine Zahl. */
+function autoListeLaufen() {
+  const auswahl = window.getSelection();
+  if (!auswahl.rangeCount || !auswahl.isCollapsed) return false;
+  const knoten = auswahl.anchorNode;
+  if (!knoten || knoten.nodeType !== Node.TEXT_NODE || !feld.contains(knoten)) return false;
+
+  const absatz = knoten.parentElement && knoten.parentElement.closest('p,div');
+  if (!absatz || absatz.closest('li')) return false;
+
+  const bis = auswahl.anchorOffset;
+  const vorn = knoten.data.slice(0, bis);
+  /* Nur wenn davor nichts steht: Der Absatz fängt hier an. */
+  if (vorn !== knoten.data.slice(0, bis) || absatz.textContent.slice(0, bis) !== vorn) return false;
+
+  const nummer = schalterAn('autoNummerierung') && /^\s*\d+[.)]$/.test(vorn);
+  const punkt  = schalterAn('autoAufzaehlung')  && /^\s*[-*•]$/.test(vorn);
+  if (!nummer && !punkt) return false;
+
+  /* Das Zeichen wegnehmen, das die Liste angekündigt hat — es steht
+     nachher als Aufzählungszeichen da und wäre sonst doppelt. */
+  knoten.data = knoten.data.slice(bis);
+  const bereich = document.createRange();
+  bereich.setStart(knoten, 0);
+  bereich.collapse(true);
+  auswahl.removeAllRanges();
+  auswahl.addRange(bereich);
+
+  Dokument.befehl(nummer ? 'insertOrderedList' : 'insertUnorderedList');
+  return true;
+}
+
+/* Der Stand jedes Schalters, aus dem Speicher geholt. */
+const schalterStand = {};
+for (const name of Object.keys(SCHALTER)) {
+  schalterStand[name] = Speicher.lies(name, SCHALTER[name].standard);
+}
+const schalterAn = (name) => !!schalterStand[name];
+
+function schalterAnwenden(name) {
+  try { SCHALTER[name].wirkt(schalterStand[name]); } catch (e) { /* still */ }
+}
+function schalterUmlegen(name) {
+  if (!SCHALTER[name]) return;
+  schalterStand[name] = !schalterStand[name];
+  Speicher.schreib(name, schalterStand[name]);
+  schalterAnwenden(name);
+}
+/* Beim Start einmal alle anwenden: Ein gespeicherter Schalter, der beim
+   Öffnen nicht wirkt, ist so gut wie nicht gespeichert. */
+function alleSchalterAnwenden() {
+  for (const name of Object.keys(SCHALTER)) schalterAnwenden(name);
+}
+
+/* Ein Fenster für die anderen Bausteine.
+
+   pruefung.js, drucken.js und dateien.js müssen wissen, wie ein Schalter
+   steht — pruefung.js etwa, ob GROSSBUCHSTABEN übergangen werden sollen.
+   Sie sollen dafür nicht in programm.js hineingreifen: Ein einziger
+   benannter Zugang ist leichter zu übersehen als zwanzig verstreute.
+
+   Es steht am window, weil die Bausteine vor programm.js geladen werden
+   und sonst nichts voneinander sehen. */
+/* ------------------------------------------------------------
+   Die Symbolleiste für den Schnellzugriff
+
+   WPS führt dafür eine eigene Optionsseite mit zwei Listen. Sie fehlte
+   hier ganz — die Begründung war, es gebe die Leiste nicht. Es gibt sie:
+   die obere Werkzeugleiste. Was darin liegt, stand nur fest im Quelltext.
+   ------------------------------------------------------------ */
+const SZ_STANDARD = ['Neu', 'Öffnen', 'Speichern', 'Drucken', 'Druckvorschau',
+                     'Rückgängig', 'Wiederholen'];
+/* Alles, was hineingelegt werden kann. Die Namen sind die der Befehle,
+   damit die Liste lesbar bleibt und in der Einstellungsdatei etwas sagt. */
+const SZ_ANGEBOT = [
+  'Neu', 'Öffnen', 'Speichern', 'Speichern unter', 'Drucken', 'Druckvorschau',
+  'Als PDF exportieren', 'Rückgängig', 'Wiederholen', 'Ausschneiden', 'Kopieren',
+  'Einfügen', 'Format übertragen', 'Fett', 'Kursiv', 'Unterstrichen',
+  'Suchen', 'Ersetzen', 'Prüfen', 'Tabelle einfügen', 'Bild', 'Hyperlink',
+  'Kopfzeile', 'Fußzeile', 'Seitenzahl', 'Sonderzeichen', 'Optionen',
+];
+let szLeiste = Speicher.lies('schnellzugriff', SZ_STANDARD.slice());
+const szSichern = () => { Speicher.schreib('schnellzugriff', szLeiste); };
+
+/* ------------------------------------------------------------
+   Das Dokumentkennwort
+
+   AES-256-GCM, der Schlüssel mit PBKDF2 aus dem Kennwort — beides bringt
+   der Browser mit. Das Kennwort selbst wird nirgends gespeichert, nur der
+   Hinweis darauf; ohne es ist der Text nicht mehr zu lesen, auch nicht
+   von Lunivo.
+
+   Der Sinn: Ein Feld, das nur so tut, wäre gefährlicher als keines. Wer
+   sein Kennwort einträgt, soll geschützt sein.
+   ------------------------------------------------------------ */
+let kennwortSchluessel = null;   /* nur im Speicher, nie auf der Platte */
+
+async function schluesselAus(kennwort, salz) {
+  const roh = await crypto.subtle.importKey(
+    'raw', new TextEncoder().encode(kennwort), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt: salz, iterations: 210000, hash: 'SHA-256' },
+    roh, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+}
+
+async function kennwortSetzen(kennwort, hinweis) {
+  if (!kennwort) {
+    kennwortSchluessel = null;
+    Speicher.schreib('kennwortSalz', '');
+    Speicher.schreib('kennwortHinweis', '');
+    melde('Kennwort entfernt — die Datei ist wieder im Klartext lesbar.');
+    return;
+  }
+  const salz = crypto.getRandomValues(new Uint8Array(16));
+  kennwortSchluessel = await schluesselAus(kennwort, salz);
+  Speicher.schreib('kennwortSalz', Array.from(salz).join(','));
+  Speicher.schreib('kennwortHinweis', hinweis || '');
+  melde('Kennwort gesetzt. Ohne es kommt niemand mehr an den Text — auch du nicht.');
+}
+
+/* Verschlüsseln und entschlüsseln, für dateien.js beim Speichern und
+   Öffnen. Ohne gesetztes Kennwort geben beide den Text unverändert
+   zurück — dann ändert sich am bisherigen Verhalten nichts. */
+async function textVerschluesseln(text) {
+  if (!kennwortSchluessel) return text;
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const roh = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv }, kennwortSchluessel, new TextEncoder().encode(text));
+  return 'LUNIVO-AES256:' + btoa(String.fromCharCode(...iv))
+       + ':' + btoa(String.fromCharCode(...new Uint8Array(roh)));
+}
+async function textEntschluesseln(text) {
+  if (typeof text !== 'string' || !text.startsWith('LUNIVO-AES256:')) return text;
+  if (!kennwortSchluessel) throw new Error('Für diese Datei braucht es das Kennwort.');
+  const [, ivB, datenB] = text.split(':');
+  const iv = Uint8Array.from(atob(ivB), (c) => c.charCodeAt(0));
+  const daten = Uint8Array.from(atob(datenB), (c) => c.charCodeAt(0));
+  const roh = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, kennwortSchluessel, daten);
+  return new TextDecoder().decode(roh);
+}
+window.Kennwort = { setzen: kennwortSetzen, ver: textVerschluesseln, ent: textEntschluesseln,
+                    gesetzt: () => !!kennwortSchluessel };
+
+window.Optionen = {
+  an: (name) => schalterAn(name),
+  um: (name) => schalterUmlegen(name),
+  wert: (name) => wertLesen(name),
+  setze: (name, wert) => wertSetzen(name, wert),
+  /* Alle auf einmal — für das Druckfenster, das seine Voreinstellungen
+     in einem Zug übernimmt. */
+  alle: () => Object.assign({}, schalterStand),
+};
+
+/* ---- Was die Schalter am Verhalten ändern ----
+
+   Vier von ihnen genügt keine Klasse im Stilblatt: Sie müssen ein
+   Ereignis abfangen. Die Zuhörer hängen einmal und fragen bei jedem Zug
+   nach, wie der Schalter gerade steht — so wirkt ein Umlegen sofort,
+   ohne dass jemand sie neu anschließen müsste. */
+(() => {
+  const feld = $('dokument');
+
+  /* „Textbearbeitung durch Drag & Drop". Aus gesehen bleibt markierter
+     Text liegen, wo er ist. */
+  if (feld) feld.addEventListener('dragstart', (e) => {
+    if (!schalterAn('ziehenUndLegen')) e.preventDefault();
+  });
+
+  /* „Enable middle button paste". Unter Linux fügt die mittlere Maustaste
+     ein, was zuletzt irgendwo markiert wurde — auch aus einem fremden
+     Fenster. Wer sie streift, hat plötzlich fremden Text im Brief. */
+  if (feld) feld.addEventListener('auxclick', (e) => {
+    if (e.button === 1 && !schalterAn('mittelklickEinfuegen')) e.preventDefault();
+  });
+  if (feld) feld.addEventListener('paste', (e) => {
+    /* Auch das Einfügen selbst abfangen: Manche Umgebungen melden den
+       Mittelklick nicht als auxclick, sondern gleich als Einfügen. */
+    if (e.inputType === 'insertFromPasteAsQuotation'
+        && !schalterAn('mittelklickEinfuegen')) e.preventDefault();
+  });
+
+  /* „Use CTRL + Click to follow hyperlink". An gesehen öffnet ein Klick
+     allein den Verweis nicht — dann lässt sich der Text davor bearbeiten,
+     ohne dass der Browser wegspringt. */
+  if (feld) feld.addEventListener('click', (e) => {
+    const verweis = e.target.closest && e.target.closest('a[href]');
+    if (!verweis) return;
+    if (schalterAn('strgKlickLink') && !(e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      melde('Mit Strg anklicken, um dem Verweis zu folgen.');
+    }
+  });
+
+  /* „Auf Registerkarte doppelklicken, um Menüband auszublenden." */
+  const reiter = $('register-reiter');
+  if (reiter) reiter.addEventListener('dblclick', () => {
+    if (!schalterAn('bandDoppelklick')) return;
+    const band = $('register-band');
+    if (band) band.hidden = !band.hidden;
+  });
+})();
+
+/* Die Formatierungszeichen zusammen: „Steuerzeichen" ist der Hauptschalter,
+   die fünf darunter sagen, welche davon. Aus gesehen ist alles aus — so
+   hält es auch WPS, wo „Alle" die anderen mitzieht. */
+function zeichenAnwenden() {
+  const feld = $('dokument');
+  if (!feld) return;
+  feld.classList.toggle('zeichen--absatz',      steuerzeichen && schalterAn('fzAbsatzmarken'));
+  feld.classList.toggle('zeichen--leer',        steuerzeichen && schalterAn('fzLeerzeichen'));
+  feld.classList.toggle('zeichen--tab',         steuerzeichen && schalterAn('fzTabstopp'));
+  feld.classList.toggle('zeichen--anker',       steuerzeichen && schalterAn('fzObjektanker'));
+  feld.classList.toggle('zeichen--ausgeblendet',steuerzeichen && schalterAn('fzAusgeblendet'));
+}
 
 /* ------------------------------------------------------------
    Das Lineal
@@ -1885,7 +2399,10 @@ function linealAuffrischen() {
      Lineal zeigte hinterher noch A4, während längst A5 quer eingestellt
      war. setTimeout kommt auch dann. */
   if (linealUhr) return;
-  linealUhr = setTimeout(() => { linealUhr = null; linealZeichnen(); linealNachmessen(); }, 0);
+  linealUhr = setTimeout(() => {
+    linealUhr = null;
+    linealZeichnen(); linealHochZeichnen(); linealNachmessen();
+  }, 0);
 }
 
 /* Ein zweiter Blick, nachdem das Fenster fertig umgebaut hat.
@@ -2007,6 +2524,82 @@ function linealZeichnen() {
 
   linealBandSetzen();
 }
+
+/* Das senkrechte Lineal zeichnen.
+
+   Dieselbe Rechnung wie waagerecht, nur an der anderen Achse: Gemessen
+   wird nicht mit einer Zahl aus dem Stilblatt, sondern mit dem, was das
+   Blatt gerade wirklich hoch ist — die Vergrößerung steckt schon darin.
+
+   Die Null sitzt am oberen Rand des Satzspiegels, dort also, wo die
+   erste Zeile steht. Über ihr laufen die Zentimeter weiter, nur blass:
+   Das ist der Rand, und dort steht nichts.
+
+   Marken zum Ziehen gibt es hier keine. Waagerecht hängen drei davon,
+   weil Einzüge waagerecht sind; senkrecht gäbe es nur die Seitenränder,
+   und die stehen im Dialog „Seitenränder" mit einer Zahl, die man lesen
+   kann — genauer, als eine Maus je zieht. */
+function linealHochZeichnen() {
+  const balken = $('lineal-hoch');
+  if (balken.hidden) return;
+  const bahn = $('lineal-hoch-bahn');
+  const blatt = $('blatt');
+
+  const masse = PAPIERE[papier] || PAPIERE.a4;
+  const hoeheMm = quer ? masse.breite : masse.hoehe;
+
+  const rBalken = balken.getBoundingClientRect();
+  const rBlatt = blatt.getBoundingClientRect();
+  if (!rBlatt.height) return;
+
+  bahn.style.top = (rBlatt.top - rBalken.top) + 'px';
+  bahn.style.height = rBlatt.height + 'px';
+
+  const proMm = rBlatt.height / hoeheMm;
+  const feldVon = seitenrand.oben * proMm;
+  const feldBis = (hoeheMm - seitenrand.unten) * proMm;
+
+  bahn.textContent = '';
+
+  const band = document.createElement('div');
+  band.className = 'lineal-hoch__feld';
+  band.style.top = feldVon + 'px';
+  band.style.height = Math.max(0, feldBis - feldVon) + 'px';
+  bahn.appendChild(band);
+
+  for (let mm = 0; mm <= hoeheMm + 0.01; mm += 5) {
+    const y = mm * proMm;
+    const abCm = (mm - seitenrand.oben) / 10;
+    const ganz = Math.abs(abCm - Math.round(abCm)) < 0.01;
+
+    const strich = document.createElement('span');
+    strich.className = 'lineal-hoch__strich' + (ganz ? '' : ' lineal-hoch__strich--klein');
+    strich.style.top = y + 'px';
+    bahn.appendChild(strich);
+
+    /* Am äußersten Rand keine Zahl: Sie stünde halb außerhalb des
+       Blattes und würde abgeschnitten. */
+    const platz = y > 9 && y < rBlatt.height - 9;
+    if (ganz && Math.round(abCm) !== 0 && platz) {
+      const zahl = document.createElement('span');
+      const draussen = mm < seitenrand.oben - 0.01 || mm > hoeheMm - seitenrand.unten + 0.01;
+      zahl.className = 'lineal-hoch__zahl' + (draussen ? ' lineal-hoch__zahl--rand' : '');
+      zahl.style.top = y + 'px';
+      zahl.textContent = String(Math.abs(Math.round(abCm)));
+      bahn.appendChild(zahl);
+    }
+  }
+}
+
+/* Beim Scrollen wandert das Blatt unter dem Lineal weg. Waagerecht fällt
+   das nicht auf — die Fläche scrollt senkrecht. Hier schon: Ohne diese
+   Zeile bliebe die Skala stehen, während der Text unter ihr durchläuft,
+   und zeigte ab der zweiten Bildschirmhöhe überall die falsche Zahl.
+
+   „passive": Das Lineal hält das Scrollen nicht auf, es sieht nur zu. */
+$('arbeitsflaeche').addEventListener('scroll', () => {
+  if (!$('lineal-hoch').hidden) linealHochZeichnen();
+}, { passive: true });
 
 /* Das helle Band spannt sich zwischen den Marken auf. Es liest ihre
    Stellung aus dem Lineal selbst — dann stimmt es auch mitten im Ziehen,
@@ -2221,6 +2814,7 @@ const REGISTER = REGISTER_BAUEN(B, {
     silbentrennung: () => trennung,
     steuerzeichen:  () => steuerzeichen,
     lineal:         () => !$('lineal').hidden,
+    linealHoch:     () => !$('lineal-hoch').hidden,
     netzlinien:     () => netzlinien,
     navigation:     () => navOffen,
     textbegrenzungen: () => marken,
@@ -3467,6 +4061,89 @@ function registerGruppenFuer(name, gruppen) {
 
 /* Dieselbe Liste, aber vollständig — auch die ausgeblendeten. Sie ist es,
    die im Anpassen-Fenster steht. */
+/* Was jemand sich selbst angelegt hat: neue Registerkarten, neue Gruppen,
+   umbenannte, und die Befehle, die er hineingelegt hat.
+
+   REGISTER selbst steht in daten/register.js und ist beim Start immer
+   gleich. Die Zusätze daneben zu speichern hat einen Grund: Wenn dort ein
+   neuer Knopf dazukommt, bekommt ihn auch, wer schon angepasst hat — eine
+   ganze Kopie im Speicher würde die Änderung verschlucken.
+
+   Gespeichert wird nur, was sich benennen lässt: Name der Karte, Name der
+   Gruppe, Namen der Befehle. Die Funktionen dahinter werden beim Laden aus
+   dem Band geholt — Funktionen lassen sich nicht speichern. */
+function eigeneRegisterSichern() {
+  const eigene = [];
+  for (const [reiterName, gruppen] of REGISTER) {
+    for (const g of gruppen) {
+      if (!Array.isArray(g[1])) continue;
+      const befehle = g[1].filter((e) => Array.isArray(e) && typeof e[1] === 'string')
+                          .map((e) => e[1]);
+      eigene.push({ reiter: reiterName, gruppe: g[0], befehle });
+    }
+  }
+  Speicher.schreib('registerEigene', eigene);
+}
+
+/* Beim Start: die eigenen Karten und Gruppen wieder anlegen.
+
+   Nur, was es noch nicht gibt — alles Übrige steht schon in register.js
+   und würde sonst doppelt erscheinen. */
+function eigeneRegisterHolen() {
+  const eigene = Speicher.lies('registerEigene', null);
+  if (!Array.isArray(eigene)) return;
+
+  /* Einen Befehl im ganzen Band suchen, um sein Symbol mitzunehmen. */
+  const suchen = (name) => {
+    for (const [, gruppen] of REGISTER) {
+      for (const g of gruppen) {
+        const liste = Array.isArray(g[1]) ? g[1] : [];
+        const e = liste.find((x) => Array.isArray(x) && x[1] === name);
+        if (e) return e;
+      }
+    }
+    return null;
+  };
+
+  for (const eintrag of eigene) {
+    if (!eintrag || !eintrag.reiter || !eintrag.gruppe) continue;
+    let reiter = REGISTER.find(([n]) => n === eintrag.reiter);
+    if (!reiter) { reiter = [eintrag.reiter, []]; REGISTER.push(reiter); }
+    let gruppe = reiter[1].find((g) => g[0] === eintrag.gruppe);
+    if (!gruppe) { gruppe = [eintrag.gruppe, []]; reiter[1].push(gruppe); }
+    if (!Array.isArray(gruppe[1])) continue;
+    for (const name of (eintrag.befehle || [])) {
+      if (gruppe[1].some((e) => Array.isArray(e) && e[1] === name)) continue;
+      const vorlage = suchen(name);
+      if (vorlage) gruppe[1].push(vorlage.slice());
+    }
+  }
+}
+eigeneRegisterHolen();
+
+/* Das Symbol zu einem Befehlsnamen, aus dem Band herausgesucht.
+
+   Die Listen im Optionen-Fenster kennen oft nur den Namen — die Leiste
+   für den Schnellzugriff speichert nur ihn, denn Funktionen lassen sich
+   nicht speichern. Ohne Bild wäre ein Befehl in einer Liste von hundert
+   kaum wiederzufinden: Das Auge sucht die Form, nicht das Wort. */
+function symbolZuBefehl(name) {
+  for (const [, gruppen] of REGISTER) {
+    for (const g of gruppen) {
+      const liste = Array.isArray(g[1]) ? g[1] : [];
+      const e = liste.find((x) => Array.isArray(x) && x[1] === name);
+      if (e) return e[0];
+      /* Auch in den Untermenüs nachsehen — sie tragen das Symbol des
+         Knopfes, unter dem sie hängen. */
+      for (const x of liste) {
+        if (Array.isArray(x) && Array.isArray(x[2])
+            && x[2].some((u) => Array.isArray(u) && u[0] === name)) return x[0];
+      }
+    }
+  }
+  return '';
+}
+
 function registerListeFuer(name) {
   const gefunden = REGISTER.find(([n]) => n === name);
   const roh = gefunden ? gefunden[1] : [];
@@ -3504,9 +4181,44 @@ B.registerAnpassen = () => {
   kopf.append(kopfWort, wahl);
   knoten.appendChild(kopf);
 
+  /* Die Liste und die beiden Pfeile daneben.
+
+     Sie standen einmal IN jeder Zeile, einer je Gruppe. Das ließ sich
+     genau einen Schritt weit bedienen: Nach dem Klick wurde die Liste neu
+     gezeichnet, die Zeile war weggewandert, und unter dem Zeiger stand
+     jetzt die nachgerückte. Ein zweiter Klick schob sie wieder zurück.
+     Gemeldet als „nur um eine Position, in beide Richtungen".
+
+     Jetzt wird eine Zeile ausgewählt, und die Pfeile stehen fest daneben —
+     so hält es auch WPS in „Menüband anpassen". Die Knöpfe bleiben unter
+     dem Zeiger, während die Auswahl wandert; damit lässt sich eine Gruppe
+     in einem Zug von unten nach oben schieben. */
+  const mitte = document.createElement('div');
+  mitte.className = 'anpassen__mitte';
+
   const kasten = document.createElement('div');
   kasten.className = 'anpassen__liste';
-  knoten.appendChild(kasten);
+  kasten.setAttribute('role', 'listbox');
+  kasten.setAttribute('aria-label', 'Gruppen dieses Reiters');
+
+  const pfeile = document.createElement('div');
+  pfeile.className = 'anpassen__pfeile';
+  const hoch = document.createElement('button');
+  hoch.type = 'button';
+  hoch.className = 'wz';
+  hoch.textContent = '▲';
+  hoch.title = 'Die gewählte Gruppe nach oben';
+  hoch.setAttribute('aria-label', 'Die gewählte Gruppe nach oben');
+  const runter = document.createElement('button');
+  runter.type = 'button';
+  runter.className = 'wz';
+  runter.textContent = '▼';
+  runter.title = 'Die gewählte Gruppe nach unten';
+  runter.setAttribute('aria-label', 'Die gewählte Gruppe nach unten');
+  pfeile.append(hoch, runter);
+
+  mitte.append(kasten, pfeile);
+  knoten.appendChild(mitte);
 
   const fuss = document.createElement('div');
   fuss.className = 'anpassen__fuss';
@@ -3522,6 +4234,9 @@ B.registerAnpassen = () => {
   knoten.appendChild(fuss);
 
   let liste = [];
+  /* Welche Zeile gewählt ist — nicht als Nummer, sondern als Name: Die
+     Nummer wandert beim Verschieben, der Name nicht. */
+  let gewaehlt = null;
 
   const sichern = () => {
     registerOrdnung[wahl.value] = liste.map(({ name, an }) => ({ name, an }));
@@ -3529,11 +4244,39 @@ B.registerAnpassen = () => {
     registerBauen();
   };
 
+  const pfeileStellen = () => {
+    const i = liste.findIndex((e) => e.name === gewaehlt);
+    hoch.disabled = i <= 0;
+    runter.disabled = i < 0 || i === liste.length - 1;
+  };
+
+  /* Verschieben: um eine Stelle, und die Auswahl geht mit. Sie bleibt am
+     Namen hängen, deshalb steht sie danach wieder auf derselben Gruppe —
+     nur eine Zeile weiter oben. Der nächste Klick schiebt weiter. */
+  const schieben = (wohin) => {
+    const i = liste.findIndex((e) => e.name === gewaehlt);
+    const ziel = i + wohin;
+    if (i < 0 || ziel < 0 || ziel >= liste.length) return;
+    [liste[ziel], liste[i]] = [liste[i], liste[ziel]];
+    sichern();
+    zeichnen();
+  };
+  hoch.addEventListener('click', () => schieben(-1));
+  runter.addEventListener('click', () => schieben(1));
+
   const zeichnen = () => {
     kasten.textContent = '';
+    /* Ohne Auswahl die erste: Sonst stünden beide Pfeile grau da und man
+       müsste erst erraten, dass man etwas anklicken soll. */
+    if (!liste.some((e) => e.name === gewaehlt)) gewaehlt = liste.length ? liste[0].name : null;
+
     liste.forEach((eintrag, i) => {
       const zeile = document.createElement('div');
-      zeile.className = 'anpassen__zeile' + (eintrag.an ? '' : ' anpassen__zeile--aus');
+      zeile.className = 'anpassen__zeile'
+                      + (eintrag.an ? '' : ' anpassen__zeile--aus')
+                      + (eintrag.name === gewaehlt ? ' anpassen__zeile--gewaehlt' : '');
+      zeile.setAttribute('role', 'option');
+      zeile.setAttribute('aria-selected', eintrag.name === gewaehlt ? 'true' : 'false');
 
       const schalter = document.createElement('input');
       schalter.type = 'checkbox';
@@ -3541,6 +4284,7 @@ B.registerAnpassen = () => {
       schalter.id = 'anpassen-' + i;
       schalter.addEventListener('change', () => {
         eintrag.an = schalter.checked;
+        gewaehlt = eintrag.name;
         sichern();
         zeichnen();
       });
@@ -3550,35 +4294,19 @@ B.registerAnpassen = () => {
       name.htmlFor = schalter.id;
       name.textContent = eintrag.name;
 
-      const hoch = document.createElement('button');
-      hoch.type = 'button';
-      hoch.className = 'wz';
-      hoch.textContent = '▲';
-      hoch.title = eintrag.name + ' nach oben';
-      hoch.setAttribute('aria-label', eintrag.name + ' nach oben');
-      hoch.disabled = i === 0;
-      hoch.addEventListener('click', () => {
-        [liste[i - 1], liste[i]] = [liste[i], liste[i - 1]];
-        sichern();
+      /* Der Klick auf die Zeile wählt sie — nicht auf das Kästchen, das
+         hat seine eigene Aufgabe, und nicht auf die Beschriftung, die
+         gehört zum Kästchen. */
+      zeile.addEventListener('mousedown', (e) => {
+        if (e.target === schalter || e.target === name) return;
+        gewaehlt = eintrag.name;
         zeichnen();
       });
 
-      const runter = document.createElement('button');
-      runter.type = 'button';
-      runter.className = 'wz';
-      runter.textContent = '▼';
-      runter.title = eintrag.name + ' nach unten';
-      runter.setAttribute('aria-label', eintrag.name + ' nach unten');
-      runter.disabled = i === liste.length - 1;
-      runter.addEventListener('click', () => {
-        [liste[i + 1], liste[i]] = [liste[i], liste[i + 1]];
-        sichern();
-        zeichnen();
-      });
-
-      zeile.append(schalter, name, hoch, runter);
+      zeile.append(schalter, name);
       kasten.appendChild(zeile);
     });
+    pfeileStellen();
   };
 
   const laden = () => { liste = registerListeFuer(wahl.value); zeichnen(); };
@@ -3621,6 +4349,13 @@ B.registerAnpassen = () => {
     registerBauen();
   });
 };
+
+/* Der Lesehilfe-Knopf neben den Reitern. Er gehört zu keinem Reiter und
+   bleibt deshalb stehen, gleich welcher offen ist. */
+(() => {
+  const knopf = $('lesehilfe-knopf');
+  if (knopf) knopf.addEventListener('click', () => B.lesehilfe());
+})();
 
 /* Die Pfeile werden einmal angeschlossen — registerBauen() leert nur das
    Band, nicht den Streifen darum. */
@@ -4164,15 +4899,82 @@ B.zeichnen = () => {
    ============================================================ */
 let autokorrekturAn = Speicher.lies('autokorrektur', true);
 
+/* Die AutoKorrektur, nach Regeln geordnet.
+
+   Sie war eine Liste von sieben Ersetzungen, die nur zusammen an- oder
+   auszuschalten waren. WPS führt an derselben Stelle elf einzelne
+   Kästchen — „Jeden Satz mit einem Großbuchstaben beginnen",
+   „Wochentage immer großschreiben" und so fort.
+
+   Damit die Kästchen etwas bewirken und nicht bloß dastehen, hängt jede
+   Ersetzung jetzt an einem Namen aus SCHALTER. Was es dafür noch nicht
+   gab — Satzanfang, Wochentage, Ordnungszahlen, Feststelltaste, Verweise
+   — ist dazugekommen; die Kästchen wären sonst Attrappen.
+
+   Der Hauptschalter „AutoKorrektur" bleibt darüber: Aus gesehen läuft
+   keine einzige, gleich was darunter angekreuzt ist. */
+const WOCHENTAGE = ['montag', 'dienstag', 'mittwoch', 'donnerstag',
+                    'freitag', 'samstag', 'sonnabend', 'sonntag'];
+
 const AUTOKORREKTUR = [
-  [/(^|[\s(\[])"/g, '$1„'],          // öffnendes Anführungszeichen
-  [/"/g, '"'],                        // schließendes
-  [/(^|[\s(\[])'/g, '$1‚'],
-  [/'/g, "'"],
-  [/(\s)--(\s)/g, '$1–$2'],
-  [/\.\.\./g, '…'],
-  [/(\d)\s*-\s*(\d)/g, '$1–$2'],     // Zahlenbereich: 10–20
+  { schalter: 'akAnfuehrung', regeln: [
+    [/(^|[\s(\[])"/g, '$1„'],          // öffnendes Anführungszeichen
+    [/"/g, '"'],                        // schließendes
+    [/(^|[\s(\[])'/g, '$1‚'],
+    [/'/g, "'"],
+  ] },
+  { schalter: 'akGedankenstrich', regeln: [
+    [/(\s)--(\s)/g, '$1–$2'],
+    [/(\d)\s*-\s*(\d)/g, '$1–$2'],     // Zahlenbereich: 10–20
+  ] },
+  { schalter: 'akAuslassung', regeln: [
+    [/\.\.\./g, '…'],
+  ] },
+
+  /* Neu, für die Kästchen, die WPS führt und Lunivo noch nicht hatte. */
+
+  /* „Unbeabsichtigtes Verwenden der fESTSTELLTASTE korrigieren": ein
+     kleiner erster Buchstabe, danach lauter große — das passiert nur mit
+     eingerasteter Taste.
+
+     Steht VOR der Satzanfang-Regel, und das ist kein Zufall: Die macht aus
+     dem kleinen f ein großes, und danach ist „fESTSTELLTASTE" nur noch ein
+     Wort in Großbuchstaben, dem man nichts mehr ansieht. Geprüft am
+     laufenden Programm — vorher kam „FESTSTELLTASTE" heraus. */
+  { schalter: 'akFeststelltaste', regeln: [
+    [/\b([a-zäöü])([A-ZÄÖÜ]{2,})\b/g, (_, erst, rest) =>
+      erst.toUpperCase() + rest.toLowerCase()],
+  ] },
+
+  /* „Jeden Satz mit einem Großbuchstaben beginnen." Nur nach Punkt,
+     Ruf- oder Fragezeichen und einem Leerzeichen — und nicht hinter
+     einer Abkürzung wie „z. B.", wo der Punkt keinen Satz beendet. */
+  { schalter: 'akSatzGross', regeln: [
+    [/(^|[.!?]\s)([a-zäöüß])(?=\w)/g, (_, vorn, b) => vorn + b.toUpperCase()],
+  ] },
+
+  /* „Wochentage immer großschreiben." */
+  { schalter: 'akWochentage', regeln: [
+    [new RegExp('\\b(' + WOCHENTAGE.join('|') + ')\\b', 'g'),
+     (w) => w.charAt(0).toUpperCase() + w.slice(1)],
+  ] },
+
+  /* „Englisch Ordnungszahlen hochstellen": 1st, 2nd, 3rd, 4th. */
+  { schalter: 'akOrdnungszahlen', regeln: [
+    [/\b(\d+)(st|nd|rd|th)\b/g, (_, zahl, endung) =>
+      zahl + endung.replace(/./g, (c) => 'ˢᵗⁿᵈʳᵈᵗʰ'['stnrdh'.indexOf(c)] || c)],
+  ] },
+
 ];
+
+/* Flach und nur das, was gerade gelten soll. */
+function autokorrekturRegeln() {
+  const liste = [];
+  for (const teil of AUTOKORREKTUR) {
+    if (schalterAn(teil.schalter)) liste.push(...teil.regeln);
+  }
+  return liste;
+}
 
 function autokorrekturLaufen() {
   if (!autokorrekturAn) return;
@@ -4185,7 +4987,7 @@ function autokorrekturLaufen() {
   const bis = auswahl.anchorOffset;
   const alt = knoten.data.slice(0, bis);
   let neu = alt;
-  for (const [suche, ersatz] of AUTOKORREKTUR) neu = neu.replace(suche, ersatz);
+  for (const [suche, ersatz] of autokorrekturRegeln()) neu = neu.replace(suche, ersatz);
   if (neu === alt) return;
 
   /* Gleiche Länge vorausgesetzt bleibt der Zeiger, wo er war. Wird der Text
@@ -7881,14 +8683,22 @@ const MENUES = [
     { name: 'Umbenennen', tun: B.umbenennen },
     strich,
     { name: 'Schließen', tun: B.schliessen },
-    { name: 'Beenden', tun: B.beenden },
     strich,
+    /* Die letzten drei stehen in der Reihenfolge des WPS-Menüs: Hilfe,
+       Optionen, Beenden. Dort ganz unten, mit Zahnrad, gleich über dem
+       Ausgang — Kay hat das Menü abfotografiert, so steht es darin.
+
+       Sie standen kurz im Band unter „Start ▸ Einstellungen". Das war ein
+       Fehlschluss: WPS führt zwar eine Bandgruppe dieses Namens, aber die
+       Optionen selbst liegen im Menü hinter dem ☰ und nirgends sonst. */
     { name: 'Hilfe', unter: [
       { name: 'Handbuch', tun: B.handbuch },
       { name: 'Tastenkürzel', tun: B.tastenHilfe },
       { name: 'Erweiterungen', tun: B.erweiterungen },
       { name: 'Über Lunivo Office', tun: B.ueber },
     ] },
+    { name: 'Optionen', tun: () => Einstellungen.oeffnen(), taste: 'F9' },
+    { name: 'Beenden', tun: B.beenden },
   ]],
 
   ['Start', [
@@ -8187,13 +8997,17 @@ const MENUES = [
       { name: 'Weblayout', tun: setzeLayout('web'), haken: () => layout === 'web' },
       { name: 'Gliederung', tun: B.gliederung },
     ] },
+    /* Ganz oben im Ansicht-Menü, mit Taste — nicht im Untermenü
+       „Anzeigen", wo sie zwei Ebenen tief stand. */
+    { name: 'Lesehilfe', tun: B.lesehilfe, taste: 'F6' },
+    strich,
     { name: 'Anzeigen', unter: [
-      { name: 'Lineal', tun: B.linealZeigen },
+      { name: 'Lineal', tun: B.linealZeigen, haken: () => lineal },
+      { name: 'Vertikales Lineal', tun: B.linealHochZeigen, haken: () => linealHoch },
       { name: 'Gitternetzlinien', tun: B.netzlinien },
       { name: 'Navigationsbereich', tun: B.navigation },
       { name: 'Textbegrenzungen', tun: B.markenZeigen, haken: () => marken },
       { name: 'Seitenleiste Schreibhilfe', tun: B.tafelZeigen },
-      { name: 'Lesehilfe', tun: B.lesehilfe },
       { name: 'Zeilenfokus', tun: B.zeilenfokus },
     ] },
     { name: 'Zoom', unter: [
@@ -8952,6 +9766,13 @@ function werkzeugeBauen() {
     trenner();
     wzVerfolgt = knopf('verfolgt', 'Änderungen verfolgen', B.verfolgen);
     knopf('notiz', 'Neuer Kommentar', B.kommentar);
+    trenner();
+    /* Die Optionen gehören auch hierher. Sie standen erst nur im Band und
+       im Menü — dann trug die Leiste einen Befehl nicht, den die anderen
+       beiden führten, und wer mit Symbolleisten arbeitet, kam nicht an
+       seine Einstellungen. Die Leiste ist die kurze Fassung desselben
+       Aufbaus, nicht ein zweiter. */
+    knopf('optionen', 'Optionen (F9)', () => Einstellungen.oeffnen());
   });
 
   /* ------------------------------------------------------------
@@ -10284,6 +11105,9 @@ document.addEventListener('keydown', (e) => {
     e.preventDefault(); dokumentSchliessen(); return;
   }
   if (e.key === 'F4') { e.preventDefault(); B.vorlesen(); return; }
+  /* F6: die Lesehilfe. Sie hatte als einzige der großen Hilfen keine
+     Taste — F4 liest vor, F5 öffnet die Seitenleiste, F7 prüft. */
+  if (e.key === 'F6') { e.preventDefault(); B.lesehilfe(); return; }
   if (e.key === 'F7') { e.preventDefault(); pruefen(); return; }
   /* Kürzel tippen, F3 drücken — wie in LibreOffice. Findet sich kein
      Baustein zu dem Wort, passiert nichts; F3 ist sonst nicht belegt. */
@@ -10386,6 +11210,7 @@ feld.addEventListener('input', geaendertMelden);
 /* Die AutoKorrektur greift, wenn ein Wort abgeschlossen ist — nicht
    mitten hinein. */
 feld.addEventListener('keyup', (e) => {
+  if (e.key === ' ') autoListeLaufen();
   if (e.key === ' ' || e.key === 'Enter' || '.,;:!?"\''.includes(e.key)) autokorrekturLaufen();
 });
 document.addEventListener('dokument:geaendert', geaendertMelden);
@@ -10457,6 +11282,218 @@ Einstellungen.verbinde({
   /* „alleSchriften" trägt die des Rechners, sobald sie da sind — SCHRIFTEN
      ist nur die kurze Startliste, mit der das Fenster aufgeht. In den
      Optionen stünden sonst zehn statt neunhundert. */
+  /* Die Gruppenliste des Menübands, jetzt auch auf der Optionenseite.
+     Sie greift auf dieselbe Ordnung wie das Anpassen-Fenster — zwei
+     Listen derselben Sache liefen irgendwann auseinander. */
+  /* Die Lesehilfe, jetzt auch von der Optionenseite aus.
+
+     Sie war nur über ihren Dialog zu erreichen — und ein Dialog legt sich
+     über den Text, an dem man gerade beurteilen will, ob die Einstellung
+     etwas taugt. Auf der Seite wirkt jede Wahl sofort auf dem Blatt. */
+  lesehilfeWerte: () => ({
+    ton:      PAPIERTOENE.map(([m, n]) => [m, n]),
+    zeichen:  ABSTUFUNG.map(([m, n]) => [m, n]),
+    wort:     ABSTUFUNG.map(([m, n]) => [m, n]),
+    zeilen:   ABSTUFUNG.map(([m, n]) => [m, n]),
+    groesser: VERGROESSERN.map(([m, n]) => [m, n]),
+    zurueck:  ZURUECKNEHMEN.map(([m, n]) => [m, n]),
+  }),
+  lesehilfeStand: () => Object.assign({}, lesehilfe),
+  lesehilfeSetzen: (feld, wert) => {
+    lesehilfe[feld] = wert;
+    lesehilfeAnwenden();
+    Speicher.schreib('lesehilfe', lesehilfe);
+  },
+  stimmeWaehlen: () => B.stimmeWaehlen(),
+
+  bandReiter: () => REGISTER.map(([name]) => name),
+  tastenHilfe: () => B.tastenHilfe(),
+
+  /* Die Befehlsliste links in beiden Fenstern. „Häufig verwendete" ist die
+     kurze Auswahl, die WPS voreinstellt; „Alle Befehle" holt alles aus dem
+     Band zusammen, und die dritte Sorte zeigt eine einzelne Registerkarte.
+
+     Gelesen wird aus REGISTER selbst — eine zweite Liste danebenzustellen
+     hieße, sie beim nächsten neuen Knopf zu vergessen. */
+  befehle: (quelle) => {
+    const haeufigNamen = ['Neu', 'Öffnen', 'Speichern', 'Speichern unter',
+      'Als PDF exportieren', 'Drucken', 'Druckvorschau', 'Rückgängig',
+      'Wiederholen', 'Einfügen', 'Kopieren', 'Ausschneiden', 'Fett', 'Kursiv',
+      'Unterstrichen', 'Format übertragen', 'Suchen', 'Ersetzen', 'Prüfen',
+      'Zentriert', 'Linksbündig', 'Schrift vergrößern', 'Schriftfarbe',
+      'Tabelle einfügen', 'Bild', 'Hyperlink', 'Kopfzeile', 'Fußzeile',
+      'Seitenzahl', 'Sonderzeichen', 'Optionen'];
+    if (quelle === 'Häufig verwendete Befehle' || !quelle) {
+      return haeufigNamen.map((n) => ({ name: n, symbol: symbolZuBefehl(n) }));
+    }
+
+    /* Aus einem Reiter alle Knopfnamen holen. Ein Eintrag ist
+       [symbol, name, tun, …]; Untermenüs stehen als Liste an dritter
+       Stelle und werden mit aufgenommen. */
+    /* Name UND Symbol: In der Liste steht bei WPS vor jedem Befehl seine
+       Zeichnung. Ein Befehl ohne Bild ist in einer Liste von hundert kaum
+       wiederzufinden — das Auge sucht die Form, nicht das Wort. */
+    const ausReiter = (reiter) => {
+      const raus = [];
+      const gefunden = REGISTER.find(([n]) => n === reiter);
+      if (!gefunden) return raus;
+      for (const gruppe of gefunden[1]) {
+        const eintraege = Array.isArray(gruppe[1]) ? gruppe[1] : [];
+        for (const e of eintraege) {
+          if (!Array.isArray(e)) continue;
+          if (typeof e[1] === 'string') raus.push({ name: e[1], symbol: e[0] });
+          /* Untermenüs: Sie tragen kein eigenes Symbol, deshalb das des
+             Knopfes, unter dem sie hängen. */
+          if (Array.isArray(e[2])) {
+            for (const u of e[2]) {
+              if (Array.isArray(u) && typeof u[0] === 'string') {
+                raus.push({ name: u[0], symbol: e[0] });
+              }
+            }
+          }
+        }
+      }
+      return raus;
+    };
+
+    if (quelle.startsWith('Registerkarte: ')) return ausReiter(quelle.slice(15));
+
+    const alle = [];
+    for (const [name] of REGISTER) alle.push(...ausReiter(name));
+    /* Doppelte heraus: „Suchen" steht in Start und in Überprüfen. */
+    const gesehen = new Set();
+    const einmalig = alle.filter((e) => {
+      if (gesehen.has(e.name)) return false;
+      gesehen.add(e.name); return true;
+    });
+    return einmalig.sort((a, b) => a.name.localeCompare(b.name, 'de'));
+  },
+
+  /* Das Symbol zu einem Befehlsnamen — für die Listen, die nur den Namen
+     kennen (die Leiste für den Schnellzugriff etwa). */
+  symbolZu: (name) => symbolZuBefehl(name),
+  /* Den Pfad zu einer Symbolkennung — das Zeichnen selbst macht die
+     Optionenseite, sie bekommt hier nur die Linien. */
+  symbolLinien: (kennung) => symbolPfad(kennung),
+
+  /* „Neue Registerkarte", „Neue Gruppe", „Umbenennen" — die drei Knöpfe
+     unter dem Baum. Sie fragen nach dem Namen und legen ihn ab; das Band
+     baut sich danach neu. */
+  bandNeueKarte: () => {
+    const name = window.prompt('Name der neuen Registerkarte:', 'Neue Registerkarte');
+    if (!name) return;
+    if (REGISTER.some(([n]) => n === name)) { melde('Diesen Reiter gibt es schon.'); return; }
+    REGISTER.push([name, []]);
+    eigeneRegisterSichern();
+    registerBauen();
+  },
+  bandNeueGruppe: (reiter) => {
+    const name = window.prompt('Name der neuen Gruppe:', 'Neue Gruppe');
+    if (!name) return;
+    const gefunden = REGISTER.find(([n]) => n === reiter);
+    if (!gefunden) return;
+    if (gefunden[1].some((g) => g[0] === name)) { melde('Diese Gruppe gibt es schon.'); return; }
+    gefunden[1].push([name, []]);
+    eigeneRegisterSichern();
+    registerBauen();
+  },
+  bandUmbenennen: (reiter, gruppe) => {
+    const alt = gruppe || reiter;
+    const name = window.prompt('Neuer Name:', alt);
+    if (!name || name === alt) return;
+    if (gruppe) {
+      const gefunden = REGISTER.find(([n]) => n === reiter);
+      const treffer = gefunden && gefunden[1].find((g) => g[0] === gruppe);
+      if (treffer) treffer[0] = name;
+      /* Die gespeicherte Ordnung kennt den alten Namen — mitziehen, sonst
+         steht die Gruppe nachher zweimal da. */
+      const ordnung = registerOrdnung[reiter];
+      if (Array.isArray(ordnung)) {
+        const e = ordnung.find((x) => x && x.name === gruppe);
+        if (e) e.name = name;
+      }
+    } else {
+      const gefunden = REGISTER.find(([n]) => n === reiter);
+      if (gefunden) gefunden[0] = name;
+      if (registerOrdnung[reiter]) {
+        registerOrdnung[name] = registerOrdnung[reiter];
+        delete registerOrdnung[reiter];
+      }
+      if (registerOffen === reiter) registerOffen = name;
+    }
+    Speicher.schreib('registerOrdnung', registerOrdnung);
+    eigeneRegisterSichern();
+    registerBauen();
+  },
+
+  /* Einen Befehl in eine Gruppe legen. */
+  bandBefehlDazu: (reiter, gruppe, befehl) => {
+    if (!gruppe) { melde('Erst eine Gruppe im Baum rechts wählen.'); return; }
+    const gefunden = REGISTER.find(([n]) => n === reiter);
+    const treffer = gefunden && gefunden[1].find((g) => g[0] === gruppe);
+    if (!treffer || !Array.isArray(treffer[1])) { melde('In diese Gruppe geht das nicht.'); return; }
+    if (treffer[1].some((e) => Array.isArray(e) && e[1] === befehl)) {
+      melde('Dieser Befehl steht dort schon.'); return;
+    }
+    /* Den Befehl im Band suchen und mitsamt seinem Symbol übernehmen —
+       ein Knopf ohne Bild sieht aus, als wäre er nicht fertig. */
+    let vorlage = null;
+    for (const [, gruppen] of REGISTER) {
+      for (const g of gruppen) {
+        const liste = Array.isArray(g[1]) ? g[1] : [];
+        const e = liste.find((x) => Array.isArray(x) && x[1] === befehl);
+        if (e) { vorlage = e; break; }
+      }
+      if (vorlage) break;
+    }
+    treffer[1].push(vorlage ? vorlage.slice() : ['punkt', befehl, () => melde(befehl)]);
+    eigeneRegisterSichern();
+    registerBauen();
+  },
+
+  bandGruppen: (reiter) => registerListeFuer(reiter),
+  bandGruppeZeigen: (reiter, name, an) => {
+    const liste = registerListeFuer(reiter);
+    const treffer = liste.find((e) => e.name === name);
+    if (treffer) treffer.an = an;
+    registerOrdnung[reiter] = liste.map(({ name: n, an: a }) => ({ name: n, an: a }));
+    Speicher.schreib('registerOrdnung', registerOrdnung);
+    registerBauen();
+  },
+  bandGruppeSchieben: (reiter, name, wohin) => {
+    const liste = registerListeFuer(reiter);
+    const i = liste.findIndex((e) => e.name === name);
+    const ziel = i + wohin;
+    if (i < 0 || ziel < 0 || ziel >= liste.length) return;
+    [liste[ziel], liste[i]] = [liste[i], liste[ziel]];
+    registerOrdnung[reiter] = liste.map(({ name: n, an: a }) => ({ name: n, an: a }));
+    Speicher.schreib('registerOrdnung', registerOrdnung);
+    registerBauen();
+  },
+  bandZuruecksetzen: (reiter) => {
+    if (reiter) delete registerOrdnung[reiter];
+    else registerOrdnung = {};
+    Speicher.schreib('registerOrdnung', registerOrdnung);
+    registerBauen();
+  },
+
+  /* Die Symbolleiste für den Schnellzugriff. */
+  szAlle: () => SZ_ANGEBOT.filter((n) => !szLeiste.includes(n)),
+  szDrin: () => szLeiste.slice(),
+  szDazu: (name) => { if (!szLeiste.includes(name)) { szLeiste.push(name); szSichern(); } },
+  szWeg:  (name) => { szLeiste = szLeiste.filter((n) => n !== name); szSichern(); },
+  szSchieben: (name, wohin) => {
+    const i = szLeiste.indexOf(name), ziel = i + wohin;
+    if (i < 0 || ziel < 0 || ziel >= szLeiste.length) return;
+    [szLeiste[ziel], szLeiste[i]] = [szLeiste[i], szLeiste[ziel]];
+    szSichern();
+  },
+  szZurueck: () => { szLeiste = SZ_STANDARD.slice(); szSichern(); },
+
+  /* Das Dokumentkennwort. */
+  kennwortGesetzt: () => window.Kennwort.gesetzt(),
+  kennwortSetzen: (kennwort, hinweis) => window.Kennwort.setzen(kennwort, hinweis),
+
   schriften: () => (alleSchriften && alleSchriften.length ? alleSchriften : SCHRIFTEN),
   groessen: () => GROESSEN,
   pruefsprachen: () => SPRACHEN_PRUEFUNG,
@@ -10477,6 +11514,9 @@ Einstellungen.verbinde({
      sie wüsste auch gar nicht, was „Lineal an" bedeutet. */
   schalter: {
     lineal:        { an: () => lineal,          um: () => B.linealZeigen() },
+    linealHoch:    { an: () => linealHoch,      um: () => B.linealHochZeigen() },
+    /* Die Schalter aus der Tabelle kommen von selbst dazu — siehe
+       weiter unten, wo das Objekt zusammengesetzt wird. */
     navigation:    { an: () => !$('navigation').hidden, um: () => B.navigation() },
     marken:        { an: () => marken,          um: () => B.markenZeigen() },
     netzlinien:    { an: () => netzlinien,      um: () => B.netzlinien() },
@@ -10486,6 +11526,13 @@ Einstellungen.verbinde({
     verfolgen:     { an: () => verfolgenAn,     um: () => B.verfolgen() },
     markup:        { an: () => markupZeigen,    um: () => B.markupUmschalten() },
     wellen:        { an: () => lebendAn,        um: () => B.rechtschreibung() },
+    /* Und die aus SCHALTER: Name für Name, mit demselben Zuschnitt aus
+       „an" und „um". Von Hand geschrieben wären es hier sechzig Zeilen,
+       die sich nur im Namen unterscheiden. */
+    ...Object.fromEntries(Object.keys(SCHALTER).map((name) => [name, {
+      an: () => schalterAn(name),
+      um: () => schalterUmlegen(name),
+    }])),
   },
 
   /* Das Format, mit dem „Speichern unter" aufgeht. Es gehört zum Dokument
@@ -10876,6 +11923,10 @@ werkzeugeBauen();
 KIteil.empfaengerBauen();
 KIteil.kiKnoepfeAuffrischen();
 ansichtAnwenden();
+/* Erst die Schalter aus der Tabelle, dann das Übrige: „Steuerzeichen"
+   fragt die fünf Formatierungszeichen ab, und die müssen dafür stehen. */
+alleSchalterAnwenden();
+alleWerteAnwenden();
 ansichtExtras();
 kopfFussAnwenden();
 seiteAnwenden();

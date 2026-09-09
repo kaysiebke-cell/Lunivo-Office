@@ -239,10 +239,12 @@ keine Duplexeinheit, bleibt der Schalter dafür grau. Gedruckt wird direkt
 über den Druckerdienst; ist keiner eingerichtet, öffnet das Fenster des
 Systems.
 
-**Das Lineal** misst wirklich: Zentimeter mit Zahlen, vom Satzspiegel aus
-gezählt wie im Writer, und drei Marken für die Einzüge, die sich ziehen
-lassen — erste Zeile, links, rechts. Das helle Band zeigt, wo Text steht,
-und wandert beim Ziehen mit.
+**Die beiden Lineale** messen wirklich: Zentimeter mit Zahlen, vom
+Satzspiegel aus gezählt wie im Writer, und drei Marken für die Einzüge,
+die sich ziehen lassen — erste Zeile, links, rechts. Das helle Band zeigt,
+wo Text steht, und wandert beim Ziehen mit. Das **senkrechte** misst von
+der ersten Zeile abwärts und scrollt mit dem Blatt; es lässt sich einzeln
+ein- und ausschalten, so wie WPS es hält.
 
 **Zuletzt verwendet.** Unter *Datei* stehen die letzten zehn Dokumente mit
 Namen — ein Klick, und das Blatt ist wieder da. Wer eine Datei inzwischen
@@ -300,25 +302,38 @@ wird, dazu ein Suchfeld und **1801 Zeichnungen** zur Wahl. Ein Klick, und
 sie ist getauscht; „Zurücksetzen" holt die alte zurück. LibreOffice kann
 das für seine Symbolleisten, für sein Symbolband nicht — hier geht beides.
 
-**Optionen** (F9). Links die Seiten, rechts der Bereich — in der
-Reihenfolge und mit den Namen aus WPS Writer: Ansicht, Bearbeiten,
-Allgemein und Speichern, Speicherort für Dateien, Änderungen verfolgen,
-Benutzerinformationen, Rechtschreibprüfung, dazu Lunivos eigene Seiten
-Schreibhilfe und KI, Gedächtnis, Menüband anpassen und *Erweitert*, wo
-steht, was zusätzlich geholt wurde und ob es da ist.
+**Optionen** — *Datei ▸ Optionen*, oder **F9**. Links die Seiten, rechts
+der Bereich, zweispaltig und kompakt wie im WPS Writer: **alle dreizehn
+Seiten**, in seiner Reihenfolge und mit seinen Namen — Ansicht,
+Bearbeiten, Allgemein und Speichern, Sicherungseinstellungen, Speicherort
+für Dateien, Änderungen verfolgen, In PDF exportieren,
+Benutzerinformationen, Drucken, Rechtschreibprüfung, Sicherheit, Menüband
+anpassen, Symbolleiste für den Schnellzugriff. Dazu drei eigene:
+Schreibhilfe und KI, Gedächtnis und *Erweitert*, wo steht, was zusätzlich
+geholt wurde und ob es da ist.
 
-Die Schalter dort sind dieselben wie im Menü und im Band — Lineal,
-Navigationsbereich, Textbegrenzungen, Gitternetzlinien, Steuerzeichen,
-AutoKorrektur, Wortvorhersage, Änderungen verfolgen, Markup, Wellenlinien.
-Ein Schalter, drei Stellen, ein Zustand; wer ihn irgendwo umlegt, sieht
-ihn überall wechseln.
+86 Schalter und 20 Klapplisten, keiner davon eine Attrappe. Die Schalter
+sind dieselben wie im Menü und im Band — ein Schalter, drei Stellen, ein
+Zustand; wer ihn irgendwo umlegt, sieht ihn überall wechseln.
 
-Was WPS dort hat und hier fehlt, fehlt mit Grund: *Sicherungseinstellungen*
-(Lunivo sichert von selbst, laufend — es gäbe nichts einzustellen),
-*Drucken* und *In PDF exportieren* (steht im Druckfenster, wo man es
-braucht), *Sicherheit* (Kennwortschutz kann das Programm nicht) und die
-*Symbolleiste für den Schnellzugriff* (gibt es nicht). Ein Feld ohne
-Wirkung ist schlimmer als ein fehlendes.
+*Menüband anpassen* und *Symbolleiste für den Schnellzugriff* sind nach
+demselben Bild gebaut: links die Befehle mit Klappliste, Suchfeld und
+ihren Zeichnungen, in der Mitte Hinzufügen und Entfernen, rechts das
+Ziel — beim Menüband ein Baum aus Registerkarten und Gruppen, bei der
+Leiste ihr Inhalt. Neue Registerkarten und Gruppen lassen sich anlegen
+und umbenennen.
+
+**Das Dokumentkennwort** verschlüsselt wirklich: AES-256, den Schlüssel
+mit PBKDF2 aus dem Kennwort, beides vom Browser selbst gerechnet. Ohne das
+Kennwort ist der Inhalt nicht mehr zu lesen, auch nicht von Lunivo — und
+ein vergessenes kann niemand wiederherstellen.
+
+**Die Einstellungen liegen in einer Datei**, lesbar, eine Zeile je
+Einstellung: `~/.config/lunivo-office/einstellungen.conf` — dort, wo auch
+WPS seine ablegt. Sie lässt sich sichern, auf einen zweiten Rechner
+mitnehmen und von Hand ändern. Der Speicher des Fensters bleibt, was er
+war; die Datei ist sein Abbild, beim Start gelesen und nach jeder
+Änderung neu geschrieben.
 
 ## So sieht es aus
 

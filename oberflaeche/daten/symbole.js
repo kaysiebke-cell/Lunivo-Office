@@ -102,6 +102,11 @@ const SYMBOLE = {
   zweiblatt:     'M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20',   /* lucide: book */
   fortlaufend:   'M15 12h-5 M15 8h-5 M19 17V5a2 2 0 0 0-2-2H4 M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3',   /* lucide: scroll-text */
   gliederung:    'M8 5h13 M13 12h8 M13 19h8 M3 10a2 2 0 0 0 2 2h3 M3 5v12a2 2 0 0 0 2 2h3',   /* lucide: list-tree */
+  /* Das senkrechte Lineal. Das lucide-ruler daneben liegt diagonal und
+     sieht gedreht genauso aus — zwei gleiche Knöpfe nebeneinander sagen
+     nicht, welcher welcher ist. Deshalb hier ein aufrechtes Band mit
+     Strichen an der Seite: Man sieht die Richtung. */
+  linealHochIcon: 'M9 2h6v20H9z M9 6h3 M9 10h3 M9 14h3 M9 18h3',
   linealIcon:    'M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z M14.5 12.5 l2-2 M11.5 9.5 l2-2 M8.5 6.5 l2-2 M17.5 15.5 l2-2',   /* lucide: ruler */
   netz:          'M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2z M3 9h18 M3 15h18 M9 3v18 M15 3v18',   /* lucide: grid-3x3 */
   navigation:    'M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2z M9 3v18',   /* lucide: panel-left */

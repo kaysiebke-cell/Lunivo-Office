@@ -14,7 +14,30 @@
 
 const Einstellungen = (() => {
 
-const $ = (id) => document.getElementById(id);
+/* Ein fehlendes Element hat einmal die ganze Seite lahmgelegt: Ein
+   addEventListener auf null wirft, verdrahten() bricht ab, und ab da war
+   kein einziger Knopf mehr angeschlossen — auch die neunzig anderen
+   nicht. Passiert war es beim Umbau, als ein Knopf wegfiel und seine
+   Zeile stehenblieb.
+
+   Jetzt gibt $() für einen unbekannten Namen eine Attrappe zurück, an der
+   sich gefahrlos horchen lässt. Die übrigen Knöpfe funktionieren weiter,
+   und in der Konsole steht, welcher fehlt. */
+const $ = (id) => {
+  const gefunden = document.getElementById(id);
+  if (gefunden) return gefunden;
+  console.warn('einstellungen.js: „' + id + '" gibt es im Fenster nicht.');
+  return {
+    addEventListener() {}, removeEventListener() {}, click() {}, focus() {},
+    querySelector: () => null, querySelectorAll: () => [],
+    appendChild: (k) => k, insertBefore: (k) => k,
+    scrollIntoView() {},
+    classList: { add() {}, remove() {}, toggle() {}, contains: () => false },
+    dataset: {}, style: {}, options: [], hidden: false, disabled: true,
+    value: '', textContent: '', innerHTML: '', title: '', checked: false,
+    scrollTop: 0, type: '',
+  };
+};
 
 /* Die Griffe aus programm.js. Bis sie gereicht sind, tut hier nichts weh:
    leere Funktionen statt Abstürze, falls jemand die Reihenfolge umstellt. */
@@ -39,42 +62,87 @@ const verbinde = (neue) => { griffe = Object.assign(griffe, neue); };
 /* ------------------------------------------------------------
    Der Baum links
 
+   WO DIESE SEITE AUFGEHT
+
+   Datei ▸ Optionen, oder F9. Auch weiterhin unter Schreibhilfe ▸ Anzeigen
+   ▸ Optionen, wo sie zuerst stand — und wo sie niemand fand: letzter
+   Reiter, letzte Gruppe, hinter Vorlesen und KI. WPS führt sie unter
+   Datei, und dort sucht auch jeder zuerst.
+
    Die Reihenfolge und die Namen sind die aus dem Optionen-Fenster des WPS
    Writer — Kay hat es Seite für Seite geschickt. Wer von dort kommt,
    sucht nicht zweimal.
 
    FLACH, nicht als Baum. Vorher lagen die Seiten in drei Zweigen, die man
-   erst aufklappen musste. Bei elf Seiten ist das ein Umweg ohne Gewinn:
-   Man sieht ohnehin alle auf einmal, und WPS macht es genauso.
+   erst aufklappen musste. Bei sechzehn Seiten ist das ein Umweg ohne
+   Gewinn: Man sieht ohnehin alle auf einmal, und WPS macht es genauso.
 
-   Was bei ihm steht und hier fehlt, fehlt mit Grund:
+   ALLE DREIZEHN SEITEN DES WPS WRITER, dazu drei eigene.
 
-     Sicherungseinstellungen — Lunivo sichert von selbst, laufend, in den
-       Speicher des Fensters. Es gibt nichts einzustellen; ein Feld dafür
-       wäre eine Attrappe.
-     In PDF exportieren, Drucken — was es dazu gibt, steht im Druckfenster,
-       wo man es beim Drucken braucht.
-     Sicherheit — Kennwortschutz kann das Programm nicht. „Bearbeitung
-       sperren" ist etwas anderes und steht unter Überprüfen.
-     Symbolleiste für den Schnellzugriff — gibt es nicht.
+   Fünf davon fehlten lange mit Begründung — Sicherung, PDF, Drucken,
+   Sicherheit, Schnellzugriff. Die Begründungen stimmten für sich
+   genommen, nur stand am Ende ein Fenster da, das sich mit Kays
+   Optionen-Fenster nicht mehr vergleichen ließ. Jetzt ist jede Seite da,
+   und wo Lunivo etwas anders macht als WPS, steht das AUF der Seite statt
+   in einem Kommentar, den niemand liest.
+
+   Die eigenen drei — Schreibhilfe und KI, Gedächtnis, Erweitert — stehen
+   dort, wo WPS nichts hat, das sie verdrängen könnten.
+
    ------------------------------------------------------------ */
 const BEREICHE = [
-  ['ansicht',     'Ansicht'],
-  ['bearbeiten',  'Bearbeiten'],
-  ['speichern',   'Allgemein und Speichern'],
-  ['pfade',       'Speicherort für Dateien'],
-  ['verfolgen',   'Änderungen verfolgen'],
-  ['benutzer',    'Benutzerinformationen'],
-  ['pruefung',    'Rechtschreibprüfung'],
-  ['ki',          'Schreibhilfe und KI'],
-  ['gedaechtnis', 'Gedächtnis'],
-  ['band',        'Menüband anpassen'],
-  ['erweitert',   'Erweitert'],
+  /* GANZ OBEN, als eigener Zweig, und das ist keine Geschmacksfrage.
+
+     Lunivo ist ein Schreibprogramm für Menschen mit Legasthenie — die
+     Lesehilfe ist nicht eine Einstellung unter vierzig, sie ist der Grund,
+     warum es das Programm gibt. */
+  ['lesen', 'Leichter lesen', [
+    ['lesehilfe',   'Lesehilfe'],
+    ['schriften',   'Schriftarten'],
+    ['sprache',     'Sprache'],
+    ['pruefung',    'Rechtschreibprüfung'],
+  ]],
+
+  /* Die dreizehn Seiten des WPS Writer, in seiner Reihenfolge und mit
+     seinen Namen. */
+  ['wps', 'Wie im WPS Writer', [
+    ['ansicht',        'Ansicht'],
+    ['bearbeiten',     'Bearbeiten'],
+    ['speichern',      'Allgemein und Speichern'],
+    ['sicherung',      'Sicherungseinstellungen'],
+    ['pfade',          'Speicherort für Dateien'],
+    ['verfolgen',      'Änderungen verfolgen'],
+    ['pdf',            'In PDF exportieren'],
+    ['benutzer',       'Benutzerinformationen'],
+    ['drucken',        'Drucken'],
+    ['sicherheit',     'Sicherheit'],
+    ['band',           'Menüband anpassen'],
+    ['schnellzugriff', 'Symbolleiste für den Schnellzugriff'],
+  ]],
+
+  /* Was WPS nicht hat. */
+  ['lunivo', 'Nur bei Lunivo', [
+    ['ki',          'Schreibhilfe und KI'],
+    ['gedaechtnis', 'Gedächtnis'],
+    ['erweitert',   'Erweitert'],
+  ]],
 ];
 
-let bereichJetzt = 'ansicht';
+/* Die Seite, die aufgeht: die Lesehilfe. Wer F9 drückt, ist meistens
+   ihretwegen hier. */
+let bereichJetzt = 'lesehilfe';
 function bereichZeigen(kennung) {
   bereichJetzt = kennung;
+  /* Führt ein Knopf auf eine Seite in einem zugeklappten Zweig — etwa
+     „Zur Schriftwahl" —, klappt der Zweig auf. Sonst führte der Weg ins
+     Leere. */
+  for (const [zweigKennung, , blaetter] of BEREICHE) {
+    if (blaetter.some(([k]) => k === kennung) && zweigeZu.has(zweigKennung)) {
+      zweigeZu.delete(zweigKennung);
+      baumBauen();
+      return;
+    }
+  }
   for (const gruppe of document.querySelectorAll('#einst-bereiche .gruppe[data-bereich]')) {
     gruppe.classList.toggle('gruppe--offen', gruppe.dataset.bereich === kennung);
   }
@@ -92,19 +160,54 @@ function bereichZeigen(kennung) {
   $('einst-bereiche').scrollTop = 0;
 }
 
+/* Der Baum mit seinen Zweigen.
+
+   Er war einmal flach: sechzehn Seiten untereinander, jede gleich laut.
+   Bei elf ging das noch, bei sechzehn sucht man. Der Stand im Git-Archiv
+   hatte drei Zweige, und das war übersichtlicher — Kay hat darauf
+   hingewiesen, und er hat recht.
+
+   Alle Zweige stehen offen, wenn das Fenster aufgeht: Wer die Optionen
+   zum ersten Mal aufmacht, soll sehen, was es gibt, statt drei
+   zugeklappte Wörter. Zuklappen kann man sie danach. */
+const zweigeZu = new Set();
+
 function baumBauen() {
   const baum = $('einst-baum');
   baum.innerHTML = '';
 
-  for (const [kennung, name] of BEREICHE) {
-    const ast = document.createElement('button');
-    ast.type = 'button';
-    ast.className = 'optionen__ast';
-    ast.dataset.bereich = kennung;
-    ast.textContent = name;
-    ast.setAttribute('role', 'tab');
-    ast.addEventListener('click', () => bereichZeigen(kennung));
-    baum.appendChild(ast);
+  for (const [zweigKennung, zweigName, blaetter] of BEREICHE) {
+    const kopf = document.createElement('button');
+    kopf.type = 'button';
+    kopf.className = 'optionen__zweig';
+    const pfeil = document.createElement('span');
+    pfeil.className = 'optionen__pfeil';
+    pfeil.textContent = zweigeZu.has(zweigKennung) ? '▸' : '▾';
+    const wort = document.createElement('span');
+    wort.textContent = zweigName;
+    kopf.append(pfeil, wort);
+    kopf.setAttribute('aria-expanded', zweigeZu.has(zweigKennung) ? 'false' : 'true');
+    kopf.addEventListener('click', () => {
+      if (zweigeZu.has(zweigKennung)) zweigeZu.delete(zweigKennung);
+      else zweigeZu.add(zweigKennung);
+      baumBauen();
+    });
+    baum.appendChild(kopf);
+
+    const kiste = document.createElement('div');
+    kiste.className = 'optionen__blaetter';
+    kiste.hidden = zweigeZu.has(zweigKennung);
+    for (const [kennung, name] of blaetter) {
+      const ast = document.createElement('button');
+      ast.type = 'button';
+      ast.className = 'optionen__ast';
+      ast.dataset.bereich = kennung;
+      ast.textContent = name;
+      ast.setAttribute('role', 'tab');
+      ast.addEventListener('click', () => bereichZeigen(kennung));
+      kiste.appendChild(ast);
+    }
+    baum.appendChild(kiste);
   }
 
   bereichZeigen(bereichJetzt);
@@ -259,6 +362,10 @@ function darstellungZeigen() {
   $('einst-zoom-stand').textContent = 'Schriftgröße: ' + zoom + ' %';
   $('einst-probe').style.fontSize = (12 * zoom / 100).toFixed(1) + 'pt';
   schalterZeigen();
+  /* Die drei Listen, die auf Griffe aus programm.js angewiesen sind. */
+  bandZeichnen();
+  szZeichnen();
+  kennwortStandZeigen();
 }
 
 /* ------------------------------------------------------------
@@ -275,7 +382,449 @@ function schalterGriff(kasten) {
   return (griffe.schalter || {})[kasten.dataset.schalter] || null;
 }
 
+/* Die Klappmenüs und Zahlenfelder.
+
+   Nicht alles im Optionen-Fenster ist ein Kästchen: WPS führt Maßeinheit,
+   Feldschattierung, Standardeinfügeformat, die Striche und Farben des
+   Markups, die Breite der Sprechblasen. Sie tragen data-wert statt
+   data-schalter und holen ihren Stand aus derselben Quelle.
+
+   Verdrahtet wird über window.Optionen — programm.js reicht es dorthin,
+   und die Optionenseite muss dafür nichts über das Programm wissen. */
+const OPT = () => (typeof window !== 'undefined' && window.Optionen) || null;
+
+/* Die Erklärungen als Tooltip.
+
+   Sie standen unter jedem Namen und machten die Zeile dreimal so hoch —
+   WPS hat dort nichts, und deshalb passt bei ihm eine ganze Seite auf
+   eine Seite. Weggeworfen sind sie damit nicht: Sie hängen jetzt an der
+   Zeile, und wer sie braucht, hält kurz die Maus darauf.
+
+   Läuft einmal beim Öffnen; danach steht der Text und ändert sich nicht
+   mehr. */
+let tooltipsGesetzt = false;
+function tooltipsSetzen() {
+  if (tooltipsGesetzt) return;
+  tooltipsGesetzt = true;
+  /* Auch die Klapplisten und Zahlenfelder: Ihre Erklärung steht jetzt
+     ebenfalls im Tooltip, nicht mehr in der Zeile. */
+  for (const zeile of document.querySelectorAll('#einst-bereiche .karte > .feld:not(.feld--schalter)')) {
+    const satz = zeile.querySelector('.feld__satz');
+    const name = zeile.querySelector('.feld__name');
+    if (satz && name) zeile.title = name.textContent.trim() + ' — ' + satz.textContent.trim();
+  }
+  for (const zeile of document.querySelectorAll('#einst-bereiche .feld--schalter')) {
+    const satz = zeile.querySelector('.feld__satz');
+    const name = zeile.querySelector('.feld__name');
+    if (!satz || !name) continue;
+    /* Der Name steht im selben Element wie der Satz — deshalb nicht
+       textContent des Namens nehmen, sondern beide zusammensetzen. */
+    const kurz = name.childNodes[0] ? String(name.childNodes[0].textContent).trim() : '';
+    zeile.title = (kurz ? kurz + ' — ' : '') + satz.textContent.trim();
+  }
+}
+
+/* Die Lesehilfe auf der ersten Seite.
+
+   Die Klapplisten füllen sich aus dem Programm — dieselben Stufen wie im
+   Dialog, damit nicht zwei Listen nebeneinanderstehen und auseinander
+   laufen. Und jede Wahl wirkt sofort: Wer sehen will, ob ihm mehr
+   Buchstabenabstand hilft, muss dafür nicht erst „Übernehmen" drücken. */
+let lesehilfeGefuellt = false;
+
+function lesehilfeZeigen() {
+  if (!griffe.lesehilfeStand || !griffe.lesehilfeWerte) return;
+  const werte = griffe.lesehilfeWerte();
+  const stand = griffe.lesehilfeStand();
+
+  for (const feld of document.querySelectorAll('#einst-bereiche [data-lesehilfe]')) {
+    const name = feld.dataset.lesehilfe;
+    if (!lesehilfeGefuellt && werte[name]) {
+      feld.innerHTML = '';
+      for (const [marke, wort] of werte[name]) {
+        const punkt = document.createElement('option');
+        punkt.value = marke; punkt.textContent = wort;
+        feld.appendChild(punkt);
+      }
+    }
+    if (stand[name] !== undefined) feld.value = String(stand[name]);
+  }
+  lesehilfeGefuellt = true;
+}
+
+function lesehilfeVerdrahten() {
+  for (const feld of document.querySelectorAll('#einst-bereiche [data-lesehilfe]')) {
+    feld.addEventListener('change', () => {
+      if (griffe.lesehilfeSetzen) griffe.lesehilfeSetzen(feld.dataset.lesehilfe, feld.value);
+    });
+  }
+  const zurPruefung = $('einst-zur-pruefung');
+  if (zurPruefung) zurPruefung.addEventListener('click', () => bereichZeigen('pruefung'));
+  const zumGed2 = $('einst-zum-gedaechtnis2');
+  if (zumGed2) zumGed2.addEventListener('click', () => bereichZeigen('gedaechtnis'));
+
+  const zuErweitert = $('einst-schriften-pruefen');
+  if (zuErweitert) zuErweitert.addEventListener('click', () => bereichZeigen('erweitert'));
+
+  const zurSchrift = $('einst-lh-zur-schrift');
+  if (zurSchrift) zurSchrift.addEventListener('click', () => {
+    bereichZeigen('schriften');
+    const wahl = $('einst-schrift');
+    if (wahl) { wahl.scrollIntoView({ block: 'center' }); wahl.focus(); }
+  });
+  const stimme = $('einst-lh-stimme');
+  if (stimme) stimme.addEventListener('click', () => {
+    schliessen();
+    if (griffe.stimmeWaehlen) griffe.stimmeWaehlen();
+  });
+}
+
+function werteZeigen() {
+  const o = OPT();
+  for (const feld of document.querySelectorAll('#einst-bereiche [data-wert]')) {
+    if (!o) { feld.disabled = true; continue; }
+    feld.disabled = false;
+    try {
+      const wert = o.wert(feld.dataset.wert);
+      if (wert !== undefined && wert !== null) feld.value = String(wert);
+    } catch (e) { /* still */ }
+  }
+}
+
+/* ------------------------------------------------------------
+   „Menüband anpassen" und „Symbolleiste für den Schnellzugriff"
+
+   Beide Seiten sind nach dem WPS-Fenster gebaut: links eine Klappliste
+   mit Suchfeld und darunter die Befehle, in der Mitte „Hinzufügen" und
+   „Entfernen", rechts das Ziel — beim Menüband ein Baum aus
+   Registerkarten und ihren Gruppen, beim Schnellzugriff die Leiste
+   selbst. Die Pfeile stehen rechts daneben und bleiben stehen, während
+   die Auswahl wandert.
+
+   Vorher stand hier eine schmale Liste mit Kästchen und zwei Pfeilen.
+   Das war dieselbe Sache, aber nicht derselbe Aufbau.
+   ------------------------------------------------------------ */
+
+/* Das kleine Bild vor einem Befehl.
+
+   Bei WPS steht in der Befehlsliste vor jedem Namen seine Zeichnung —
+   und das ist keine Zier: In einer Liste von hundert Namen sucht das Auge
+   die Form, nicht das Wort. Hier standen erst nur Wörter.
+
+   Gezeichnet wird aus denselben Linien wie im Band; programm.js reicht
+   sie durch symbolLinien(). Findet sich keine, bleibt die Stelle leer —
+   dann rückt der Name nicht ein und die Liste bleibt bündig. */
+const SVG_RAUM = 'http://www.w3.org/2000/svg';
+
+function anpBild(kennung) {
+  const o = OPT();
+  const platz = document.createElement('span');
+  platz.className = 'anp__bild';
+  platz.setAttribute('aria-hidden', 'true');
+  if (!kennung || !griffe.symbolLinien) return platz;
+
+  let linien = '';
+  try { linien = griffe.symbolLinien(kennung) || ''; } catch (e) { linien = ''; }
+  if (!linien) {
+    /* Manche Knöpfe tragen statt einer Zeichnung einen Buchstaben — „F"
+       für fett, „K" für kursiv. Dann steht der da. */
+    if (kennung.length <= 2) platz.textContent = kennung;
+    return platz;
+  }
+
+  const bild = document.createElementNS(SVG_RAUM, 'svg');
+  bild.setAttribute('viewBox', '0 0 24 24');
+  bild.setAttribute('width', '15'); bild.setAttribute('height', '15');
+  bild.setAttribute('fill', 'none'); bild.setAttribute('stroke', 'currentColor');
+  bild.setAttribute('stroke-width', '1.8');
+  bild.setAttribute('stroke-linecap', 'round');
+  bild.setAttribute('stroke-linejoin', 'round');
+  if (linien.indexOf('<') === -1) {
+    const pfad = document.createElementNS(SVG_RAUM, 'path');
+    pfad.setAttribute('d', linien);
+    bild.appendChild(pfad);
+  } else {
+    bild.innerHTML = linien;
+  }
+  platz.appendChild(bild);
+  return platz;
+}
+
+/* Eine Zeile in einer der vier Listen. */
+function anpZeile(text, gewaehlt, klick, zusatz, symbol) {
+  const zeile = document.createElement('div');
+  zeile.className = 'anp__zeile' + (gewaehlt ? ' anp__zeile--gewaehlt' : '')
+                  + (zusatz ? ' ' + zusatz : '');
+  zeile.setAttribute('role', 'option');
+  zeile.setAttribute('aria-selected', gewaehlt ? 'true' : 'false');
+  if (symbol !== undefined) zeile.appendChild(anpBild(symbol));
+  const wort = document.createElement('span');
+  wort.className = 'anp__wort';
+  wort.textContent = text;
+  zeile.appendChild(wort);
+  zeile.title = text;
+  zeile.addEventListener('mousedown', (e) => { e.preventDefault(); klick(); });
+  return zeile;
+}
+
+/* Was in der linken Klappliste steht: dieselben Gruppen wie bei WPS. */
+function anpQuellenFuellen(wahl) {
+  if (!wahl || wahl.options.length) return;
+  const namen = ['Häufig verwendete Befehle', 'Alle Befehle'];
+  if (griffe.bandReiter) namen.push(...griffe.bandReiter().map((n) => 'Registerkarte: ' + n));
+  for (const name of namen) {
+    const punkt = document.createElement('option');
+    punkt.value = name; punkt.textContent = name;
+    wahl.appendChild(punkt);
+  }
+}
+
+/* Die Befehle zu einer Quelle, gefiltert nach dem Suchwort. */
+function anpBefehle(quelle, suche) {
+  if (!griffe.befehle) return [];
+  /* Sie kommen als { name, symbol } — ältere Fassungen gaben nur Namen
+     zurück, deshalb beides annehmen. */
+  let liste = (griffe.befehle(quelle) || []).map(
+    (e) => (typeof e === 'string' ? { name: e, symbol: '' } : e));
+  const wort = (suche || '').trim().toLowerCase();
+  if (wort) liste = liste.filter((e) => e.name.toLowerCase().includes(wort));
+  return liste;
+}
+
+/* ---- Menüband anpassen ---- */
+let bandGewaehltBefehl = null;   /* links */
+let bandGewaehlt = null;         /* rechts: { reiter, gruppe } */
+const bandOffen = new Set();     /* welche Registerkarten aufgeklappt sind */
+
+function bandBefehleZeichnen() {
+  const kasten = $('einst-band-befehle');
+  if (!kasten) return;
+  kasten.textContent = '';
+  for (const e of anpBefehle($('einst-band-quelle').value, $('einst-band-suche').value)) {
+    kasten.appendChild(anpZeile(e.name, e.name === bandGewaehltBefehl, () => {
+      bandGewaehltBefehl = e.name; bandBefehleZeichnen(); bandKnoepfeStellen();
+    }, '', e.symbol));
+  }
+}
+
+function bandBaumZeichnen() {
+  const kasten = $('einst-band-baum');
+  if (!kasten || !griffe.bandReiter) return;
+  kasten.textContent = '';
+  for (const reiter of griffe.bandReiter()) {
+    const auf = bandOffen.has(reiter);
+    const gewaehlt = bandGewaehlt && bandGewaehlt.reiter === reiter && !bandGewaehlt.gruppe;
+    const zeile = anpZeile(reiter, gewaehlt, () => {
+      bandGewaehlt = { reiter, gruppe: null };
+      if (auf) bandOffen.delete(reiter); else bandOffen.add(reiter);
+      bandBaumZeichnen(); bandKnoepfeStellen();
+    });
+    const pfeil = document.createElement('span');
+    pfeil.className = 'anp__pfeil';
+    pfeil.textContent = auf ? '▼' : '▶';
+    zeile.insertBefore(pfeil, zeile.firstChild);
+    kasten.appendChild(zeile);
+
+    if (!auf) continue;
+    for (const eintrag of (griffe.bandGruppen(reiter) || [])) {
+      const gew = bandGewaehlt && bandGewaehlt.reiter === reiter
+               && bandGewaehlt.gruppe === eintrag.name;
+      const g = anpZeile(eintrag.name, gew, () => {
+        bandGewaehlt = { reiter, gruppe: eintrag.name };
+        bandBaumZeichnen(); bandKnoepfeStellen();
+      }, 'anp__zeile--gruppe');
+      const kaestchen = document.createElement('input');
+      kaestchen.type = 'checkbox';
+      kaestchen.checked = eintrag.an;
+      kaestchen.addEventListener('mousedown', (e) => e.stopPropagation());
+      kaestchen.addEventListener('change', () => {
+        griffe.bandGruppeZeigen(reiter, eintrag.name, kaestchen.checked);
+        bandBaumZeichnen();
+      });
+      g.insertBefore(kaestchen, g.firstChild);
+      kasten.appendChild(g);
+    }
+  }
+}
+
+function bandKnoepfeStellen() {
+  const g = bandGewaehlt;
+  const liste = g && g.gruppe ? (griffe.bandGruppen(g.reiter) || []) : [];
+  const i = g && g.gruppe ? liste.findIndex((e) => e.name === g.gruppe) : -1;
+  $('einst-band-hoch').disabled = i <= 0;
+  $('einst-band-runter').disabled = i < 0 || i === liste.length - 1;
+  $('einst-band-dazu').disabled = !bandGewaehltBefehl || !g;
+  $('einst-band-raus').disabled = !(g && g.gruppe);
+}
+
+function bandZeichnen() {
+  anpQuellenFuellen($('einst-band-quelle'));
+  bandBefehleZeichnen();
+  bandBaumZeichnen();
+  bandKnoepfeStellen();
+}
+
+function bandListeVerdrahten() {
+  if (!$('einst-band-baum')) return;
+  $('einst-band-quelle').addEventListener('change', bandBefehleZeichnen);
+  $('einst-band-suche').addEventListener('input', bandBefehleZeichnen);
+
+  const schieben = (wohin) => {
+    const g = bandGewaehlt;
+    if (!g || !g.gruppe || !griffe.bandGruppeSchieben) return;
+    griffe.bandGruppeSchieben(g.reiter, g.gruppe, wohin);
+    bandBaumZeichnen(); bandKnoepfeStellen();
+  };
+  $('einst-band-hoch').addEventListener('click', () => schieben(-1));
+  $('einst-band-runter').addEventListener('click', () => schieben(1));
+
+  $('einst-band-dazu').addEventListener('click', () => {
+    if (!bandGewaehltBefehl || !bandGewaehlt || !griffe.bandBefehlDazu) return;
+    griffe.bandBefehlDazu(bandGewaehlt.reiter, bandGewaehlt.gruppe, bandGewaehltBefehl);
+    bandOffen.add(bandGewaehlt.reiter);
+    bandZeichnen();
+  });
+  $('einst-band-raus').addEventListener('click', () => {
+    const g = bandGewaehlt;
+    if (!g || !g.gruppe || !griffe.bandGruppeZeigen) return;
+    /* „Entfernen" heißt bei einer Gruppe: ausblenden. Gelöscht wird nichts
+       — sonst wäre sie mit „Zurücksetzen" nicht wiederzuholen. */
+    griffe.bandGruppeZeigen(g.reiter, g.gruppe, false);
+    bandBaumZeichnen();
+  });
+
+  $('einst-band-neuekarte').addEventListener('click', () => {
+    if (griffe.bandNeueKarte) { griffe.bandNeueKarte(); bandZeichnen(); }
+  });
+  $('einst-band-neuegruppe').addEventListener('click', () => {
+    if (bandGewaehlt && griffe.bandNeueGruppe) {
+      griffe.bandNeueGruppe(bandGewaehlt.reiter);
+      bandOffen.add(bandGewaehlt.reiter);
+      bandZeichnen();
+    }
+  });
+  $('einst-band-umbenennen').addEventListener('click', () => {
+    if (bandGewaehlt && griffe.bandUmbenennen) {
+      griffe.bandUmbenennen(bandGewaehlt.reiter, bandGewaehlt.gruppe);
+      bandZeichnen();
+    }
+  });
+  $('einst-band-zuruecksetzen').addEventListener('click', () => {
+    if (griffe.bandZuruecksetzen) { griffe.bandZuruecksetzen(null); bandZeichnen(); }
+  });
+  $('einst-band-tasten').addEventListener('click', () => {
+    if (griffe.tastenHilfe) griffe.tastenHilfe();
+  });
+}
+
+/* ---- Symbolleiste für den Schnellzugriff ---- */
+let szLinks = null, szRechts = null;
+
+function szZeichnen() {
+  if (!$('einst-sz-alle') || !griffe.szDrin) return;
+  anpQuellenFuellen($('einst-sz-quelle'));
+
+  const drin = griffe.szDrin();
+  const links = $('einst-sz-alle');
+  links.textContent = '';
+  for (const e of anpBefehle($('einst-sz-quelle').value, $('einst-sz-suche').value)) {
+    if (drin.includes(e.name)) continue;
+    links.appendChild(anpZeile(e.name, e.name === szLinks, () => {
+      szLinks = e.name; szRechts = null; szZeichnen();
+    }, '', e.symbol));
+  }
+
+  const rechts = $('einst-sz-drin');
+  rechts.textContent = '';
+  for (const name of drin) {
+    rechts.appendChild(anpZeile(name, name === szRechts, () => {
+      szRechts = name; szLinks = null; szZeichnen();
+    }, '', griffe.symbolZu ? griffe.symbolZu(name) : ''));
+  }
+
+  const i = drin.indexOf(szRechts);
+  $('einst-sz-hoch').disabled = i <= 0;
+  $('einst-sz-runter').disabled = i < 0 || i === drin.length - 1;
+  $('einst-sz-dazu').disabled = !szLinks;
+  $('einst-sz-weg').disabled = !szRechts;
+}
+
+function schnellzugriffVerdrahten() {
+  if (!$('einst-sz-alle')) return;
+  $('einst-sz-quelle').addEventListener('change', szZeichnen);
+  $('einst-sz-suche').addEventListener('input', szZeichnen);
+  $('einst-sz-dazu').addEventListener('click', () => {
+    if (szLinks && griffe.szDazu) { griffe.szDazu(szLinks); szRechts = szLinks; szLinks = null; szZeichnen(); }
+  });
+  $('einst-sz-weg').addEventListener('click', () => {
+    if (szRechts && griffe.szWeg) { griffe.szWeg(szRechts); szRechts = null; szZeichnen(); }
+  });
+  $('einst-sz-hoch').addEventListener('click', () => {
+    if (szRechts && griffe.szSchieben) { griffe.szSchieben(szRechts, -1); szZeichnen(); }
+  });
+  $('einst-sz-runter').addEventListener('click', () => {
+    if (szRechts && griffe.szSchieben) { griffe.szSchieben(szRechts, 1); szZeichnen(); }
+  });
+  $('einst-sz-zurueck').addEventListener('click', () => {
+    if (griffe.szZurueck) griffe.szZurueck();
+    szLinks = szRechts = null; szZeichnen();
+  });
+}
+
+/* ------------------------------------------------------------
+   Das Dokumentkennwort
+
+   Hier stand einmal, Lunivo könne das nicht, und ein Feld dafür wäre
+   gefährlich. Das erste stimmte, das zweite war ein Vorwand: Der Browser
+   bringt AES-256 mit, und ein Schlüssel aus dem Kennwort ist mit PBKDF2
+   in zehn Zeilen gerechnet. Jetzt verschlüsselt es wirklich.
+   ------------------------------------------------------------ */
+function kennwortStandZeigen() {
+  const stand = $('einst-kennwort-stand');
+  if (!stand || !griffe.kennwortGesetzt) return;
+  stand.textContent = griffe.kennwortGesetzt()
+    ? 'Dieses Dokument ist verschlüsselt.'
+    : 'Ohne Kennwort — die Datei ist im Klartext lesbar.';
+}
+
+function kennwortVerdrahten() {
+  const setzen = $('einst-kennwort-setzen');
+  if (!setzen) return;
+  setzen.addEventListener('click', async () => {
+    const eins = $('einst-kennwort').value;
+    const zwei = $('einst-kennwort2').value;
+    const stand = $('einst-kennwort-stand');
+    if (!eins) { stand.textContent = 'Bitte ein Kennwort eingeben.'; return; }
+    if (eins !== zwei) { stand.textContent = 'Die beiden Kennwörter sind nicht gleich.'; return; }
+    await griffe.kennwortSetzen(eins, $('einst-kennwort-hinweis').value);
+    $('einst-kennwort').value = $('einst-kennwort2').value = '';
+    kennwortStandZeigen();
+  });
+  $('einst-kennwort-weg').addEventListener('click', async () => {
+    await griffe.kennwortSetzen('', '');
+    kennwortStandZeigen();
+  });
+  kennwortStandZeigen();
+}
+
+function werteVerdrahten() {
+  for (const feld of document.querySelectorAll('#einst-bereiche [data-wert]')) {
+    feld.addEventListener('change', () => {
+      const o = OPT();
+      if (!o) return;
+      /* Zahlenfelder als Zahl zurückgeben — sonst stünde „220" als Text
+         in der Einstellungsdatei und käme als Text zurück. */
+      const roh = feld.value;
+      const wert = feld.type === 'number' ? Number(roh) : roh;
+      o.setze(feld.dataset.wert, wert);
+    });
+  }
+}
+
 function schalterZeigen() {
+  werteZeigen();
+  lesehilfeZeigen();
+  tooltipsSetzen();
   for (const kasten of document.querySelectorAll('#einst-bereiche [data-schalter]')) {
     const griff = schalterGriff(kasten);
     /* Beides, an UND aus: Ein Kästchen, das einmal grau wurde, blieb es
@@ -289,6 +838,11 @@ function schalterZeigen() {
 }
 
 function schalterVerdrahten() {
+  werteVerdrahten();
+  lesehilfeVerdrahten();
+  bandListeVerdrahten();
+  schnellzugriffVerdrahten();
+  kennwortVerdrahten();
   for (const kasten of document.querySelectorAll('#einst-bereiche [data-schalter]')) {
     kasten.addEventListener('change', () => {
       /* Erst beim Klick nachsehen, welcher Griff gemeint ist — beim
@@ -413,15 +967,22 @@ function bedienungZeigen() {
   if (fl) fl.value = griffe.flaecheJetzt();
 }
 
+/* Die Prüfsprache steht an zwei Stellen: auf der Seite „Sprache", wo man
+   sie sucht, und auf der Seite „Rechtschreibprüfung", wo WPS sie führt.
+   Beide zeigen denselben Wert und stellen denselben um — ein Feld, zwei
+   Stellen, ein Zustand. */
 function spracheZeigen() {
-  const wahl = $('einst-pruefsprache');
   const jetzt = griffe.pruefspracheJetzt();
-  wahl.innerHTML = '';
-  for (const [kennung, name] of griffe.pruefsprachen()) {
-    const o = document.createElement('option');
-    o.value = kennung; o.textContent = name;
-    if (kennung === jetzt) o.selected = true;
-    wahl.appendChild(o);
+  for (const id of ['einst-pruefsprache', 'einst-pruefsprache2']) {
+    const wahl = $(id);
+    if (!wahl || !wahl.appendChild) continue;
+    wahl.innerHTML = '';
+    for (const [kennung, name] of griffe.pruefsprachen()) {
+      const o = document.createElement('option');
+      o.value = kennung; o.textContent = name;
+      if (kennung === jetzt) o.selected = true;
+      wahl.appendChild(o);
+    }
   }
 }
 
@@ -597,10 +1158,9 @@ function verdrahten() {
   });
 
   $('einst-zum-gedaechtnis').addEventListener('click', () => bereichZeigen('gedaechtnis'));
-  $('einst-band-anpassen').addEventListener('click', () => {
-    schliessen();
-    griffe.registerAnpassen();
-  });
+  /* Der Knopf „Register anpassen…" ist weg: Die beiden Listen stehen jetzt
+     auf der Seite selbst, wie im WPS-Fenster. Das eigene Fenster gibt es
+     weiterhin — es hängt am Rechtsklick aufs Band. */
   $('einst-vorlagenordner-auf').addEventListener('click', () => griffe.vorlagenOrdner());
 
   $('einst-kleiner').addEventListener('click', () => { griffe.zoomSetzen(griffe.zoom() - 10); darstellungZeigen(); });
@@ -628,12 +1188,38 @@ function verdrahten() {
     $('einst-skalierung-stand').textContent = wert + ' %';
     griffe.bedienungSetzen(undefined, wert);
   });
+  /* Die zwei Knöpfe auf den neuen Seiten tun dasselbe wie die auf der
+     Gedächtnis-Seite. Sie noch einmal zu bauen hieße, zwei Fassungen zu
+     pflegen — sie leiten deshalb einfach weiter. */
+  const weiterleiten = (von, zu) => {
+    const knopf = $(von), ziel = $(zu);
+    if (knopf && ziel) knopf.addEventListener('click', () => ziel.click());
+  };
+  weiterleiten('einst-sichern2', 'einst-sichern');
+  weiterleiten('einst-einspielen2', 'einst-einspielen');
+
+  /* „Zur Benutzeroberfläche" auf der Schnellzugriff-Seite: Sie steht auf
+     der Seite Ansicht, und dorthin führt der Knopf. Ein Verweis, dem man
+     nicht folgen kann, ist keiner. */
+  const zurFlaeche = $('einst-zur-flaeche');
+  if (zurFlaeche) zurFlaeche.addEventListener('click', () => {
+    bereichZeigen('ansicht');
+    const wahl = $('einst-flaeche');
+    if (wahl) { wahl.scrollIntoView({ block: 'center' }); wahl.focus(); }
+  });
+
   $('einst-flaeche').addEventListener('change', () => {
     griffe.flaecheSetzen($('einst-flaeche').value);
   });
 
+  const zweite = $('einst-pruefsprache2');
+  if (zweite && zweite.addEventListener) zweite.addEventListener('change', () => {
+    griffe.pruefspracheSetzen(zweite.value);
+    spracheZeigen();
+  });
   $('einst-pruefsprache').addEventListener('change', () => {
     griffe.pruefspracheSetzen($('einst-pruefsprache').value);
+    spracheZeigen();
   });
 
   $('einst-ordner-waehlen').addEventListener('click', async () => {

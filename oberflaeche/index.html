@@ -54,6 +54,23 @@
      Ansicht ▸ Benutzeroberfläche. -->
 <div class="register" id="register" role="toolbar" aria-label="Register">
   <div class="register__reiter" id="register-reiter" role="tablist"></div>
+
+  <!-- Die Lesehilfe, immer sichtbar.
+
+       Sie stand als kleiner Knopf unter „Ansicht ▸ Anzeigen", zwischen
+       sieben anderen, und im Menü zwei Ebenen tief. Für das eine, wofür
+       dieses Programm gebaut ist, war das die falsche Stelle: Wer sie
+       braucht, soll sie nicht suchen müssen.
+
+       Deshalb steht sie hier, außerhalb der Reiter — sie bleibt stehen,
+       gleich welcher Reiter offen ist, und verschwindet auch nicht, wenn
+       jemand das Band zuklappt. -->
+  <button class="lesehilfe-knopf" id="lesehilfe-knopf" type="button"
+          aria-label="Lesehilfe öffnen (F6)"
+          title="Lesehilfe — Papierton, Abstände, Zeilenfokus (F6)">
+    <span class="lesehilfe-knopf__bild" aria-hidden="true">👓</span>
+    <span class="lesehilfe-knopf__wort">Lesehilfe</span>
+  </button>
   <div class="register__streifen">
     <button class="register__pfeil register__pfeil--links" id="register-links"
             type="button" hidden aria-label="Weiter nach links">‹</button>
@@ -85,13 +102,32 @@
        über fremdem Gebiet misst nichts mehr. -->
   <div class="werkbank">
 
-    <!-- Es zeigt nicht nur, wo der Satzspiegel anfängt und aufhört,
-         sondern misst: Zentimeter, Zahlen, und drei Marken für die
-         Einzüge, die sich ziehen lassen. Alles darin baut
-         js/programm.js — es hängt von Papierformat, Rand und
-         Vergrößerung ab und kann deshalb nicht hier stehen. -->
-    <div class="lineal" id="lineal" hidden aria-label="Lineal">
-      <div class="lineal__bahn" id="lineal-bahn"></div>
+    <!-- Die beiden Lineale treffen sich oben links. Dort steht eine leere
+         Ecke: Ohne sie begänne das waagerechte Lineal bei Null, das Blatt
+         aber erst hinter dem senkrechten — und dann zeigte es überall die
+         falsche Zahl. Sie ist nur da, wenn auch das senkrechte da ist. -->
+    <div class="werkbank__kopf">
+      <div class="lineal__ecke" id="lineal-ecke" hidden aria-hidden="true"></div>
+      <!-- Es zeigt nicht nur, wo der Satzspiegel anfängt und aufhört,
+           sondern misst: Zentimeter, Zahlen, und drei Marken für die
+           Einzüge, die sich ziehen lassen. Alles darin baut
+           js/programm.js — es hängt von Papierformat, Rand und
+           Vergrößerung ab und kann deshalb nicht hier stehen. -->
+      <div class="lineal" id="lineal" hidden aria-label="Lineal">
+        <div class="lineal__bahn" id="lineal-bahn"></div>
+      </div>
+    </div>
+
+  <div class="werkbank__reihe">
+
+    <!-- Das senkrechte Lineal. Im WPS Writer ein eigener Schalter, und bei
+         Kay steht es an, während das waagerechte aus ist — deshalb sind es
+         hier zwei Schalter und nicht einer. Es misst den Satzspiegel von
+         oben nach unten und scrollt mit dem Blatt mit. Marken zum Ziehen
+         hat es keine: Einzüge sind waagerecht, und ein Griff, der nichts
+         greift, wäre eine Attrappe. -->
+    <div class="lineal-hoch" id="lineal-hoch" hidden aria-label="Vertikales Lineal">
+      <div class="lineal-hoch__bahn" id="lineal-hoch-bahn"></div>
     </div>
 
   <div class="arbeitsflaeche" id="arbeitsflaeche">
@@ -117,6 +153,7 @@
       <div class="fusszeile" id="fusszeile" contenteditable="true" hidden
            spellcheck="false" aria-label="Fußzeile"></div>
     </div>
+  </div>
   </div>
   </div>
 
@@ -189,6 +226,216 @@
          Grund: Umschlag, Etiketten, Seriendruck und der Verfasser eines
          Dokuments fragen alle nach demselben, und niemand tippt seine
          Adresse gern zum vierten Mal. -->
+    <!-- ============================================================
+         Die Lesehilfe — der Grund, warum es dieses Programm gibt.
+
+         Sie stand im Dialog hinter „Ansicht ▸ Anzeigen ▸ Lesehilfe": drei
+         Klicks, und man musste wissen, wo. Für ein Programm, das für
+         Menschen mit Legasthenie gebaut ist, war das die falsche Stelle.
+
+         Jetzt steht sie hier, als erste Seite, und jede Wahl wirkt sofort
+         auf dem Blatt — kein „Übernehmen", kein Fenster, das sich über den
+         Text legt, den man beurteilen will.
+         ============================================================ -->
+    <div class="gruppe" data-bereich="lesehilfe">
+      <span class="gruppe__titel">Leichter lesen</span>
+      <div class="karte">
+        <div class="feld">
+          <label class="feld__name" for="einst-lh-ton">Papierton</label>
+          <em class="feld__satz">Ein warmer Grund nimmt dem Weiß die Schärfe.</em>
+          <select id="einst-lh-ton" data-lesehilfe="ton"></select>
+        </div>
+        <div class="feld">
+          <label class="feld__name" for="einst-lh-zeichen">Buchstabenabstand</label>
+          <em class="feld__satz">Mehr Luft zwischen den Buchstaben — Wörter zerfallen weniger ineinander.</em>
+          <select id="einst-lh-zeichen" data-lesehilfe="zeichen"></select>
+        </div>
+        <div class="feld">
+          <label class="feld__name" for="einst-lh-wort">Wortabstand</label>
+          <em class="feld__satz">Wo ein Wort aufhört und das nächste anfängt.</em>
+          <select id="einst-lh-wort" data-lesehilfe="wort"></select>
+        </div>
+        <div class="feld">
+          <label class="feld__name" for="einst-lh-zeilen">Zeilenluft</label>
+          <em class="feld__satz">Abstand zwischen den Zeilen — hilft beim Zurückspringen an den Anfang.</em>
+          <select id="einst-lh-zeilen" data-lesehilfe="zeilen"></select>
+        </div>
+      </div>
+
+      <span class="gruppe__titel">Beim Schreiben</span>
+      <div class="karte">
+        <label class="feld feld--schalter">
+          <span class="feld__name">Zeilenfokus
+            <em class="feld__satz">Die Zeile, in der du schreibst, tritt hervor. Der Rest bleibt ruhig.</em>
+          </span>
+          <input type="checkbox" data-schalter="zeilenfokus">
+        </label>
+        <div class="feld">
+          <label class="feld__name" for="einst-lh-groesser">Absatz beim Schreiben</label>
+          <em class="feld__satz">Der Absatz, in dem der Zeiger steht, wächst ein wenig. Der Text springt dabei nicht.</em>
+          <select id="einst-lh-groesser" data-lesehilfe="groesser"></select>
+        </div>
+        <div class="feld">
+          <label class="feld__name" for="einst-lh-zurueck">Übriger Text</label>
+          <em class="feld__satz">Was gerade nicht dran ist, tritt zurück — Hervorheben wirkt erst, wenn das Übrige leiser wird.</em>
+          <select id="einst-lh-zurueck" data-lesehilfe="zurueck"></select>
+        </div>
+      </div>
+
+      <span class="gruppe__titel">Schrift und Sprache</span>
+      <div class="karte">
+        <div class="feld">
+          <label class="feld__name" for="einst-lh-schrift">Schrift zum leichteren Lesen</label>
+          <em class="feld__satz">OpenDyslexic, Lexend und Atkinson Hyperlegible sind dafür gemacht. Sie stehen in derselben Liste wie alle anderen Schriften.</em>
+          <div class="reihe">
+            <button class="knopf" id="einst-lh-zur-schrift" type="button">Zur Schriftwahl</button>
+          </div>
+        </div>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Silbentrennung
+            <em class="feld__satz">Lange Wörter werden getrennt statt in die nächste Zeile geschoben. Das hält die Zeilen gleichmäßig.</em>
+          </span>
+          <input type="checkbox" data-schalter="silbentrennung">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Rechtschreibung während der Eingabe prüfen
+            <em class="feld__satz">Rote Wellenlinien im Text. Steht auch unter Rechtschreibprüfung — hier, weil man es hier sucht.</em>
+          </span>
+          <input type="checkbox" data-schalter="wellen">
+        </label>
+      </div>
+
+      <span class="gruppe__titel">Vorlesen</span>
+      <div class="karte">
+        <div class="feld">
+          <span class="feld__name">Den Text hören</span>
+          <em class="feld__satz">Mit <b>F4</b>, oder unter <b>Schreibhilfe ▸ Vorlesen</b>. Sechs
+            aufgenommene Stimmen stehen zur Wahl, nicht die blecherne des Systems.</em>
+          <div class="reihe">
+            <button class="knopf" id="einst-lh-stimme" type="button">Stimme und Tempo…</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Eine eigene Seite, wie im alten Stand.
+
+         Die Schriftwahl steckte zuletzt unter „Allgemein und Speichern",
+         zwischen Dateiformat und Kompatibilität. Für ein Programm, das
+         OpenDyslexic, Lexend und Atkinson Hyperlegible mitbringt, gehört
+         sie neben die Lesehilfe: Welche Schrift jemand lesen kann, ist
+         keine Speicherfrage. -->
+    <!-- Eine eigene Seite für alles Sprachliche.
+
+         Im alten Baum hieß ein ganzer Zweig „Sprache und Prüfung". Beim
+         Umbau auf die WPS-Ordnung ist er zerfallen: Die Prüfsprache landete
+         auf der Rechtschreibseite, das Übersetzen bei der KI, die
+         Wörterbücher im Gedächtnis. Jedes für sich am richtigen Platz —
+         zusammen aber nicht mehr zu finden.
+
+         Hier stehen sie wieder beieinander. -->
+    <div class="gruppe" data-bereich="sprache">
+      <span class="gruppe__titel">Sprache</span>
+      <div class="karte">
+        <div class="feld">
+          <label class="feld__name" for="einst-pruefsprache2">Sprache für die Prüfung</label>
+          <em class="feld__satz">Danach richten sich die roten Wellenlinien und die
+            gründliche Prüfung. Zwölf Sprachen stehen zur Wahl, mit den Abweichungen
+            für Österreich und die Schweiz.</em>
+          <select id="einst-pruefsprache2"></select>
+        </div>
+        <div class="feld">
+          <label class="feld__name" for="einst-sprache">Übersetzen nach</label>
+          <em class="feld__satz">Der Knopf steht in der Seitenleiste. Hier steht,
+            wohin übersetzt wird — vierzehn Sprachen.</em>
+          <select id="einst-sprache"></select>
+        </div>
+      </div>
+
+      <span class="gruppe__titel">Was geprüft wird</span>
+      <div class="karte">
+        <label class="feld feld--schalter">
+          <span class="feld__name">Rechtschreibung während der Eingabe
+            <em class="feld__satz">Rote Wellenlinien im Text, von Lunivo selbst.</em>
+          </span>
+          <input type="checkbox" data-schalter="wellen">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Grammatik mitprüfen
+            <em class="feld__satz">Nicht nur einzelne Wörter, auch Kommas und Satzbau.</em>
+          </span>
+          <input type="checkbox" data-schalter="rsGrammatik">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Silbentrennung
+            <em class="feld__satz">Lange Wörter werden getrennt statt in die nächste Zeile geschoben.</em>
+          </span>
+          <input type="checkbox" data-schalter="silbentrennung">
+        </label>
+        <div class="feld">
+          <span class="feld__name">Alle Prüfoptionen</span>
+          <em class="feld__satz">Was ignoriert wird — GROSSBUCHSTABEN, Wörter mit
+            Zahlen, Pfade — steht auf der Seite Rechtschreibprüfung.</em>
+          <div class="reihe">
+            <button class="knopf" id="einst-zur-pruefung" type="button">Zur Rechtschreibprüfung</button>
+          </div>
+        </div>
+      </div>
+
+      <span class="gruppe__titel">Wörter, die Lunivo kennt</span>
+      <div class="karte">
+        <div class="feld">
+          <span class="feld__name">Dein eigener Wortschatz</span>
+          <em class="feld__satz">Wörter, die künftig als richtig gelten, und
+            Schreibweisen, die du selbst gewählt hast. Sie stehen unter
+            <b>Gedächtnis</b> — dort lassen sie sich ansehen und wieder vergessen.</em>
+          <div class="reihe">
+            <button class="knopf" id="einst-zum-gedaechtnis2" type="button">Zum Gedächtnis</button>
+          </div>
+        </div>
+        <div class="feld">
+          <span class="feld__name">Gründlich prüfen</span>
+          <em class="feld__satz">Über die eigenen Regeln hinaus prüft LanguageTool —
+            wenn es geholt ist. Unter <b>Erweitert</b> steht, ob es liegt.</em>
+        </div>
+      </div>
+    </div>
+
+    <div class="gruppe" data-bereich="schriften">
+      <span class="gruppe__titel">Schrift für neuen Text</span>
+      <div class="karte">
+        <div class="feld">
+          <label class="feld__name" for="einst-schrift">Schrift</label>
+          <em class="feld__satz">Gilt für ein neues Dokument. Ein geöffnetes
+            bringt seine eigene mit.</em>
+          <select id="einst-schrift"></select>
+        </div>
+        <div class="feld">
+          <label class="feld__name" for="einst-schriftgroesse">Größe</label>
+          <select id="einst-schriftgroesse"></select>
+        </div>
+      </div>
+
+      <span class="gruppe__titel">Zum leichteren Lesen</span>
+      <div class="karte">
+        <div class="feld">
+          <span class="feld__name">Drei Schriften sind dafür gemacht</span>
+          <em class="feld__satz"><b>OpenDyslexic</b> beschwert die Buchstaben unten,
+            damit sie nicht kippen. <b>Lexend</b> weitet die Abstände. <b>Atkinson
+            Hyperlegible</b> unterscheidet Zeichen, die sich ähneln — l, I und 1.
+            Sie stehen in der Liste oben, sobald sie geholt sind.</em>
+        </div>
+        <div class="feld">
+          <span class="feld__name">Sind sie da?</span>
+          <em class="feld__satz">Unter <b>Erweitert</b> steht, was zusätzlich geholt
+            wurde und ob es liegt.</em>
+          <div class="reihe">
+            <button class="knopf" id="einst-schriften-pruefen" type="button">Zu Erweitert</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="gruppe" data-bereich="benutzer">
       <span class="gruppe__titel">Benutzerdaten</span>
       <div class="karte">
@@ -212,6 +459,329 @@
           </div>
           <p class="hinweis">Bleibt auf diesem Rechner und geht nie mit einem
             Text an die KI.</p>
+        </div>
+        <div class="feld">
+          <label class="feld__name" for="einst-initialen">Initialen</label>
+          <em class="feld__satz">Stehen an Kommentaren und Änderungen, wo für den
+            ganzen Namen kein Platz ist.</em>
+          <input id="einst-initialen" type="text" maxlength="6" data-wert="initialen"
+                 placeholder="z. B. KS" autocomplete="off">
+        </div>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Diese Benutzerinformationen verwenden
+            <em class="feld__satz">Aus gesehen bleiben Verfasser und Anschrift aus dem
+              Dokument heraus — auch aus den Dateieigenschaften.</em>
+          </span>
+          <input type="checkbox" data-schalter="benutzerVerwenden">
+        </label>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         Die fünf Seiten, die lange fehlten. Jede stand einmal in einem
+         Kommentar mit Begründung, warum es sie nicht gibt — und jede
+         Begründung stimmte für sich. Nur ließ sich das Fenster am Ende
+         nicht mehr mit dem von WPS vergleichen. Jetzt steht auf der Seite
+         selbst, was Lunivo anders macht.
+         ============================================================ -->
+
+    <div class="gruppe" data-bereich="sicherung">
+      <span class="gruppe__titel">Sicherung</span>
+      <div class="karte">
+        <div class="feld">
+          <label class="feld__name" for="einst-sicherungsart">Wann gesichert wird</label>
+          <em class="feld__satz">„Laufend" heißt: nach jeder Änderung, ohne Zeitabstand
+            — so arbeitet Lunivo von Haus aus.</em>
+          <select id="einst-sicherungsart" data-wert="sicherungsart">
+            <option value="laufend">Laufend, nach jeder Änderung</option>
+            <option value="zeit">In festen Abständen</option>
+            <option value="schliessen">Beim Schließen</option>
+          </select>
+        </div>
+        <div class="feld">
+          <label class="feld__name" for="einst-sicherung-minuten">Abstand (Minuten)</label>
+          <em class="feld__satz">Gilt nur bei „In festen Abständen".</em>
+          <input id="einst-sicherung-minuten" type="number" min="1" max="120" step="1"
+                 data-wert="sicherungMinuten">
+        </div>
+        <div class="feld">
+          <span class="feld__name">Wo die Einstellungen liegen</span>
+          <em class="feld__satz">Seit dem Umbau in einer lesbaren Datei, eine Zeile je
+            Einstellung — dort, wo auch WPS seine ablegt:</em>
+          <input id="einst-conf-pfad" type="text" readonly
+                 value="~/.config/lunivo-office/einstellungen.conf">
+        </div>
+      </div>
+
+      <span class="gruppe__titel">Zwischenstände aufheben</span>
+      <div class="karte">
+        <div class="feld">
+          <label class="feld__name" for="einst-cache-tage">Wie lange (Tage)</label>
+          <em class="feld__satz">Wie lange alte Fassungen aufgehoben werden, bevor sie
+            verfallen.</em>
+          <input id="einst-cache-tage" type="number" min="7" max="120" step="1"
+                 data-wert="cacheTage">
+        </div>
+        <div class="feld">
+          <span class="feld__name">Zwischenstände löschen</span>
+          <em class="feld__satz">Gibt den Platz frei. Das offene Dokument bleibt.</em>
+          <div class="reihe">
+            <button class="knopf" id="einst-cache-weg" type="button">Zwischenstände löschen</button>
+          </div>
+        </div>
+      </div>
+
+      <span class="gruppe__titel">Was im Speicher steht</span>
+      <div class="karte">
+        <div class="feld">
+          <span class="feld__name">Sichern und zurückholen</span>
+          <em class="feld__satz">Alles zusammen als Text — zum Aufheben oder um es auf
+            einen zweiten Rechner zu bringen.</em>
+          <div class="reihe">
+            <button class="knopf" id="einst-sichern2" type="button">⧉ Sichern</button>
+            <button class="knopf" id="einst-einspielen2" type="button">⤓ Einspielen</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="gruppe" data-bereich="pdf">
+      <span class="gruppe__titel">Exportoptionen</span>
+      <div class="karte">
+        <label class="feld feld--schalter">
+          <span class="feld__name">Hyperlinks
+            <em class="feld__satz">Verweise bleiben im PDF anklickbar.</em>
+          </span>
+          <input type="checkbox" data-schalter="pdfHyperlinks">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Überschriften als Lesezeichen
+            <em class="feld__satz">Das PDF bekommt ein Inhaltsverzeichnis zum Anspringen.</em>
+          </span>
+          <input type="checkbox" data-schalter="pdfUeberschriften">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Kommentare mitnehmen
+            <em class="feld__satz">Aus gesehen bleibt im PDF nur der Text — was beim Weitergeben meist gemeint ist.</em>
+          </span>
+          <input type="checkbox" data-schalter="pdfKommentare">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Dokumenteigenschaften mitnehmen
+            <em class="feld__satz">Titel, Verfasser und Stichwörter stehen im PDF.</em>
+          </span>
+          <input type="checkbox" data-schalter="pdfEigenschaften">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Verknüpfung von Fuß- und Endnoten
+            <em class="feld__satz">Die Ziffer im Text springt im PDF zur Note und zurück.</em>
+          </span>
+          <input type="checkbox" data-schalter="pdfFussEndnoten">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Textmarken übernehmen
+            <em class="feld__satz">Gesetzte Textmarken werden zu Sprungzielen im PDF.</em>
+          </span>
+          <input type="checkbox" data-schalter="pdfTextmarken">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Andere Formatvorlagen in Lesezeichen umwandeln
+            <em class="feld__satz">Nicht nur Überschriften — auch Zitate, Titel und Untertitel.</em>
+          </span>
+          <input type="checkbox" data-schalter="pdfAndereStile">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Eigene Formatvorlagen in Lesezeichen umwandeln
+            <em class="feld__satz">Was du dir selbst angelegt hast.</em>
+          </span>
+          <input type="checkbox" data-schalter="pdfEigeneStile">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">PDF nach dem Export öffnen
+            <em class="feld__satz">Zum Nachsehen, ob alles so steht, wie es soll.</em>
+          </span>
+          <input type="checkbox" data-schalter="pdfNachExport">
+        </label>
+      </div>
+    </div>
+
+    <div class="gruppe" data-bereich="drucken">
+      <span class="gruppe__titel">Druckoptionen</span>
+      <div class="karte">
+        <div class="feld">
+          <span class="feld__name">Womit das Druckfenster aufgeht</span>
+          <em class="feld__satz">Für den einzelnen Auftrag lässt sich dort alles noch
+            umstellen — hier steht, womit es anfängt.</em>
+        </div>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Hohe Qualität
+            <em class="feld__satz">Langsamer, aber schärfer bei Bildern und Zeichnungen.</em>
+          </span>
+          <input type="checkbox" data-schalter="drHohequalitaet">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Umgekehrte Reihenfolge
+            <em class="feld__satz">Letzte Seite zuerst — für Drucker, die den Stapel verkehrt herum ablegen.</em>
+          </span>
+          <input type="checkbox" data-schalter="drUmgekehrt">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Zeichnungsobjekte drucken
+            <em class="feld__satz">Formen, Linien und Textfelder.</em>
+          </span>
+          <input type="checkbox" data-schalter="drZeichnungen">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Hintergrundfarben und -bilder drucken
+            <em class="feld__satz">Aus gesehen bleibt das Papier weiß — und die Patrone voll.</em>
+          </span>
+          <input type="checkbox" data-schalter="drHintergrund">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Leere Seiten mitdrucken
+            <em class="feld__satz">Betrifft Seiten, die nur durch einen Umbruch entstehen.</em>
+          </span>
+          <input type="checkbox" data-schalter="drLeereSeiten">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Felder vor dem Drucken aktualisieren
+            <em class="feld__satz">Datum, Seitenzahl und Verweise werden neu gerechnet.</em>
+          </span>
+          <input type="checkbox" data-schalter="drFelderAktualisieren">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Feldfunktionen drucken
+            <em class="feld__satz">Statt „Seite 3" steht die Anweisung selbst auf dem Papier.</em>
+          </span>
+          <input type="checkbox" data-schalter="drFeldfunktionen">
+        </label>
+        <div class="feld">
+          <label class="feld__name" for="einst-dr-ausgeblendet">Ausgeblendeter Text</label>
+          <select id="einst-dr-ausgeblendet" data-wert="drAusgeblendet">
+            <option value="nicht">Ausgeblendeten Text nicht drucken</option>
+            <option value="drucken">Ausgeblendeten Text drucken</option>
+            <option value="unterstrichen">Drucken und unterstreichen</option>
+          </select>
+        </div>
+        <div class="feld">
+          <label class="feld__name" for="einst-dr-autor">Autor der Kommentare und Überarbeitungen</label>
+          <select id="einst-dr-autor" data-wert="drAutor">
+            <option value="vollstaendig">Vollständiger Name</option>
+            <option value="initialen">Nur Initialen</option>
+            <option value="keiner">Gar nicht</option>
+          </select>
+        </div>
+      </div>
+
+      <span class="gruppe__titel">Nur für das aktuelle Dokument</span>
+      <div class="karte">
+        <label class="feld feld--schalter">
+          <span class="feld__name">Nur Formulardaten drucken
+            <em class="feld__satz">Für vorgedruckte Bögen: Es kommt nur das aufs Papier, was ausgefüllt wurde.</em>
+          </span>
+          <input type="checkbox" data-schalter="drNurFormulardaten">
+        </label>
+      </div>
+
+      <span class="gruppe__titel">Duplexdruck</span>
+      <div class="karte">
+        <label class="feld feld--schalter">
+          <span class="feld__name">Blattvorderseite
+            <em class="feld__satz">Die ungeraden Seiten.</em>
+          </span>
+          <input type="checkbox" data-schalter="drBlattvorderseite">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Blattrückseite
+            <em class="feld__satz">Die geraden Seiten. Beides an heißt: beidseitig.</em>
+          </span>
+          <input type="checkbox" data-schalter="drBlattrueckseite">
+        </label>
+      </div>
+    </div>
+
+    <div class="gruppe" data-bereich="sicherheit">
+      <span class="gruppe__titel">Kennwortschutz</span>
+      <div class="karte">
+        <div class="feld">
+          <label class="feld__name" for="einst-kennwort">Dokumentkennwort</label>
+          <em class="feld__satz">Verschlüsselt den Text, bevor er in die Datei geht —
+            mit AES-256, vom Browser selbst gerechnet. Ohne das Kennwort ist der
+            Inhalt nicht mehr zu lesen, auch nicht von Lunivo.</em>
+          <input id="einst-kennwort" type="password" autocomplete="new-password"
+                 placeholder="Kennwort">
+          <input id="einst-kennwort2" type="password" autocomplete="new-password"
+                 placeholder="Kennwort erneut eingeben">
+          <input id="einst-kennwort-hinweis" type="text" autocomplete="off"
+                 placeholder="Hinweis zum Kennwort (freiwillig)">
+          <div class="reihe">
+            <button class="knopf" id="einst-kennwort-setzen" type="button">Kennwort setzen</button>
+            <button class="knopf" id="einst-kennwort-weg" type="button">Kennwort entfernen</button>
+          </div>
+          <p class="hinweis" id="einst-kennwort-stand"></p>
+          <p class="hinweis"><b>Ein vergessenes Kennwort kann niemand
+            wiederherstellen.</b> Bewahre es an einem sicheren Ort auf.</p>
+        </div>
+        <div class="feld">
+          <span class="feld__name">Bearbeitung sperren</span>
+          <em class="feld__satz">Etwas anderes als ein Kennwort: Es hält die eigene
+            Hand an, nicht fremde. Steht unter <b>Überprüfen</b>.</em>
+        </div>
+      </div>
+
+      <span class="gruppe__titel">Datenschutz</span>
+      <div class="karte">
+        <label class="feld feld--schalter">
+          <span class="feld__name">Ausgeblendete Markups beim Öffnen anzeigen
+            <em class="feld__satz">Ein Brief, den jemand weitergibt, trägt sonst ungesehen mit, was einmal darin stand.</em>
+          </span>
+          <input type="checkbox" data-schalter="markupBeimOeffnen">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Beim Speichern persönliche Daten entfernen
+            <em class="feld__satz">Verfasser und Bearbeitungszeiten werden aus der Datei genommen.</em>
+          </span>
+          <input type="checkbox" data-schalter="datenBeimSpeichernWeg">
+        </label>
+      </div>
+    </div>
+
+    <div class="gruppe" data-bereich="schnellzugriff">
+      <!-- Derselbe Aufbau wie bei WPS: links die Befehle mit Klappliste und
+           Suche, in der Mitte Hinzufügen und Entfernen, rechts, was gerade
+           in der Leiste liegt, daneben die Pfeile. -->
+      <div class="anp">
+        <div class="anp__spalte">
+          <label class="anp__titel" for="einst-sz-quelle">Befehle auswählen</label>
+          <div class="anp__kopf">
+            <select id="einst-sz-quelle"></select>
+            <input id="einst-sz-suche" type="search" placeholder="Befehl suchen"
+                   autocomplete="off" aria-label="Befehl suchen">
+          </div>
+          <div class="anp__liste" id="einst-sz-alle" role="listbox"
+               aria-label="Befehle zur Wahl"></div>
+        </div>
+
+        <div class="anp__mitte">
+          <button class="knopf knopf--klein" id="einst-sz-dazu" type="button">Hinzufügen &gt;&gt;</button>
+          <button class="knopf knopf--klein" id="einst-sz-weg" type="button">&lt;&lt; Entfernen</button>
+        </div>
+
+        <div class="anp__spalte">
+          <span class="anp__titel">Derzeit angezeigte Optionen</span>
+          <div class="anp__liste" id="einst-sz-drin" role="listbox"
+               aria-label="In der Leiste"></div>
+          <div class="anp__pfeile anp__pfeile--rechts">
+            <button class="wz" id="einst-sz-hoch" type="button" aria-label="Nach vorn">▲</button>
+            <button class="wz" id="einst-sz-runter" type="button" aria-label="Nach hinten">▼</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="anp__fuss">
+        <div class="anp__fuss-links"></div>
+        <div class="anp__fuss-rechts">
+          <button class="knopf knopf--klein" id="einst-sz-zurueck" type="button">Zurücksetzen</button>
         </div>
       </div>
     </div>
@@ -281,35 +851,173 @@
              target="_blank" rel="noopener">Guthaben aufladen ↗</a>
         </div>
 
-        <div class="feld">
-          <label class="feld__name" for="einst-sprache">Übersetzen</label>
-          <em class="feld__satz">Der Knopf steht in der Seitenleiste. Hier steht,
-            wohin übersetzt wird.</em>
-          <select id="einst-sprache"></select>
-        </div>
-
       </div>
     </div>
 
+    <!-- Die vier Gruppen des WPS Writer, in seiner Reihenfolge:
+         Bearbeitungsoptionen, AutoFormat, AutoKorrektur, Ausschneide- und
+         Einfügeoptionen. -->
     <div class="gruppe" data-bereich="bearbeiten">
-      <span class="gruppe__titel">Beim Schreiben</span>
+      <span class="gruppe__titel">Bearbeitungsoptionen</span>
+      <div class="karte">
+        <label class="feld feld--schalter">
+          <span class="feld__name">Wortweise markieren
+            <em class="feld__satz">Beim Ziehen über den Text werden ganze Wörter genommen statt einzelner Buchstaben. Bei WPS heißt das „intelligente Absatzmarkierung".</em>
+          </span>
+          <input type="checkbox" data-schalter="wortweiseMarkieren">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Text mit der Maus verschieben
+            <em class="feld__satz">Aus gesehen bleibt markierter Text liegen. Für alle, denen beim Markieren die Hand verrutscht und der Absatz plötzlich woanders steht.</em>
+          </span>
+          <input type="checkbox" data-schalter="ziehenUndLegen">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Tippen ersetzt die Auswahl
+            <em class="feld__satz">Aus gesehen bleibt markierter Text stehen und das Getippte kommt davor.</em>
+          </span>
+          <input type="checkbox" data-schalter="tippenErsetzt">
+        </label>
+        <div class="feld">
+          <label class="feld__name" for="einst-rueckgaengig">Maximale Rückgängig-Schritte</label>
+          <em class="feld__satz">0 heißt unbegrenzt, solange das Dokument offen ist. Eine Zahl grenzt ein, wie weit zurück man kommt — WPS verlangt dafür einen Neustart, hier gilt sie sofort.</em>
+          <input id="einst-rueckgaengig" type="number" min="0" max="1000" step="1" data-wert="rueckgaengigZahl">
+        </div>
+      </div>
+
+      <span class="gruppe__titel">AutoFormat</span>
+      <div class="karte">
+        <label class="feld feld--schalter">
+          <span class="feld__name">Automatisch nummerierte Listen
+            <em class="feld__satz">„1." am Zeilenanfang macht aus dem Absatz eine Nummerierung.</em>
+          </span>
+          <input type="checkbox" data-schalter="autoNummerierung">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Aufzählungen erkennen
+            <em class="feld__satz">Ein Strich oder Stern am Zeilenanfang wird zum Aufzählungspunkt.</em>
+          </span>
+          <input type="checkbox" data-schalter="autoAufzaehlung">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Zahl automatisch im Kreis
+            <em class="feld__satz">Aus (1) wird ①.</em>
+          </span>
+          <input type="checkbox" data-schalter="akKreiszahl">
+        </label>
+      </div>
+
+      <span class="gruppe__titel">AutoKorrektur</span>
       <div class="karte">
         <label class="feld feld--schalter">
           <span class="feld__name">AutoKorrektur
-            <em class="feld__satz">Bessert beim Tippen still aus, was fast immer ein Vertipper ist.</em>
+            <em class="feld__satz">Der Hauptschalter. Aus gesehen läuft keine der Regeln darunter.</em>
           </span>
           <input type="checkbox" data-schalter="autokorrektur">
         </label>
         <label class="feld feld--schalter">
+          <span class="feld__name">Typografische Anführungszeichen
+            <em class="feld__satz">Aus " wird „ und ", je nachdem, ob das Wort anfängt oder aufhört.</em>
+          </span>
+          <input type="checkbox" data-schalter="akAnfuehrung">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Gedankenstriche
+            <em class="feld__satz">Aus -- wird –, und aus „10-20" wird „10–20".</em>
+          </span>
+          <input type="checkbox" data-schalter="akGedankenstrich">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Auslassungspunkte
+            <em class="feld__satz">Aus drei Punkten wird ein einzelnes Zeichen …</em>
+          </span>
+          <input type="checkbox" data-schalter="akAuslassung">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Jeden Satz mit einem Großbuchstaben beginnen
+            <em class="feld__satz">Nach Punkt, Ruf- oder Fragezeichen. Abkürzungen wie „z. B." bleiben unberührt.</em>
+          </span>
+          <input type="checkbox" data-schalter="akSatzGross">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Wochentage immer großschreiben
+            <em class="feld__satz">Aus „montag" wird „Montag".</em>
+          </span>
+          <input type="checkbox" data-schalter="akWochentage">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Englische Ordnungszahlen hochstellen
+            <em class="feld__satz">Aus 1st wird 1ˢᵗ.</em>
+          </span>
+          <input type="checkbox" data-schalter="akOrdnungszahlen">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Feststelltaste korrigieren
+            <em class="feld__satz">Aus „fESTSTELLTASTE" wird „Feststelltaste" — der Tippfehler, den nur eine eingerastete Taste macht.</em>
+          </span>
+          <input type="checkbox" data-schalter="akFeststelltaste">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Internet- und Netzwerkpfade durch Hyperlinks ersetzen
+            <em class="feld__satz">Aus „www.beispiel.de" wird ein anklickbarer Verweis.</em>
+          </span>
+          <input type="checkbox" data-schalter="akHyperlink">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Leerzeichen am Absatzanfang mit Erstzeileneinzug
+            <em class="feld__satz">Ein Leerzeichen zu Beginn wird zum richtigen Einzug — der hält, auch wenn der Text umbricht.</em>
+          </span>
+          <input type="checkbox" data-schalter="akErstzeileneinzug">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Leerzeichenformat am Ende rechtsbündiger Zeilen anpassen
+            <em class="feld__satz">Nachlaufende Leerzeichen verändern die Ausrichtung nicht mehr.</em>
+          </span>
+          <input type="checkbox" data-schalter="akLeerzeichenRechts">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Bei zentriertem Ausrichten Erstzeileneinzug löschen
+            <em class="feld__satz">Ein Einzug in einer zentrierten Zeile verschiebt sie aus der Mitte.</em>
+          </span>
+          <input type="checkbox" data-schalter="akEinzugZentriert">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Tabulator und Rücktaste setzen den Einzug
+            <em class="feld__satz">Am Absatzanfang rücken sie ein und wieder aus, statt ein Zeichen zu setzen.</em>
+          </span>
+          <input type="checkbox" data-schalter="akTabEinzug">
+        </label>
+        <label class="feld feld--schalter">
           <span class="feld__name">Wortvorhersage
-            <em class="feld__satz">Ab drei Buchstaben stehen passende Wörter zur Wahl. Wiedererkennen ist leichter als Erinnern.</em>
+            <em class="feld__satz">Ab drei Buchstaben stehen passende Wörter zur Wahl. Wiedererkennen ist leichter als Erinnern. Bei WPS heißt das „Tipps für AutoVervollständigen".</em>
           </span>
           <input type="checkbox" data-schalter="vorhersage">
         </label>
       </div>
 
-      <span class="gruppe__titel">Einfügen</span>
+      <span class="gruppe__titel">Ausschneiden und Einfügen</span>
       <div class="karte">
+        <label class="feld feld--schalter">
+          <span class="feld__name">Schaltfläche nach dem Einfügen
+            <em class="feld__satz">Das Kästchen, das nach dem Einfügen fragt: mit Format oder ohne.</em>
+          </span>
+          <input type="checkbox" data-schalter="einfuegeKnopf">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Mittlere Maustaste fügt ein
+            <em class="feld__satz">Unter Linux fügt sie ein, was zuletzt irgendwo markiert war — auch aus einem fremden Fenster. Wer sie streift, hat plötzlich fremden Text im Brief.</em>
+          </span>
+          <input type="checkbox" data-schalter="mittelklickEinfuegen">
+        </label>
+        <div class="feld">
+          <label class="feld__name" for="einst-einfuegeformat">Standardeinfügeformat</label>
+          <em class="feld__satz">Womit Strg+V einfügt, wenn nichts anderes gewählt wird.</em>
+          <select id="einst-einfuegeformat" data-wert="einfuegeformat">
+            <option value="ursprung">Ursprüngliche Formatierung beibehalten</option>
+            <option value="ziel">An das Ziel anpassen</option>
+            <option value="nurtext">Nur den Text übernehmen</option>
+          </select>
+        </div>
         <div class="feld">
           <span class="feld__name">Ohne Formatierung einfügen</span>
           <em class="feld__satz">Kein Schalter, sondern ein eigener Befehl: im Menü
@@ -335,6 +1043,94 @@
           </span>
           <input type="checkbox" data-schalter="markup">
         </label>
+      </div>
+
+      <span class="gruppe__titel">Markup</span>
+      <div class="karte">
+        <div class="feld">
+          <label class="feld__name" for="einst-markup-ein">Einfügungen</label>
+          <select id="einst-markup-ein" data-wert="markupEinfuegung">
+            <option value="unterstrichen">Unterstrichen</option>
+            <option value="fett">Fett</option>
+            <option value="kursiv">Kursiv</option>
+            <option value="farbe">Nur farbig</option>
+          </select>
+        </div>
+        <div class="feld">
+          <label class="feld__name" for="einst-markup-weg">Löschvorgänge</label>
+          <select id="einst-markup-weg" data-wert="markupLoeschung">
+            <option value="durchgestrichen">Durchgestrichen</option>
+            <option value="versteckt">Ausgeblendet</option>
+            <option value="farbe">Nur farbig</option>
+          </select>
+        </div>
+        <div class="feld">
+          <label class="feld__name" for="einst-markup-zeilen">Geänderte Zeilen</label>
+          <select id="einst-markup-zeilen" data-wert="markupZeilen">
+            <option value="aussen">Äußere Rahmenlinie</option>
+            <option value="links">Linker Rand</option>
+            <option value="rechts">Rechter Rand</option>
+            <option value="keine">Keine</option>
+          </select>
+        </div>
+        <div class="feld">
+          <label class="feld__name" for="einst-markup-farbe">Farbe</label>
+          <em class="feld__satz">Nach dem Autor heißt: Jeder, der etwas ändert, bekommt eine eigene.</em>
+          <select id="einst-markup-farbe" data-wert="markupFarbe">
+            <option value="autor">Nach dem Autor</option>
+            <option value="schwarz">Schwarz</option>
+            <option value="rot">Rot</option>
+            <option value="blau">Blau</option>
+          </select>
+        </div>
+      </div>
+
+      <span class="gruppe__titel">Sprechblasen</span>
+      <div class="karte">
+        <div class="feld">
+          <label class="feld__name" for="einst-sp-blasen">Sprechblasen verwenden</label>
+          <select id="einst-sp-blasen" data-wert="spBlasen">
+            <option value="blasen">Überarbeitungen in Sprechblasen anzeigen</option>
+            <option value="text">Alles im Text anzeigen</option>
+            <option value="nurkommentar">Nur Kommentare und Formatierung</option>
+          </select>
+        </div>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Empfohlene Breite verwenden
+            <em class="feld__satz">Aus gesehen gilt die Zahl darunter.</em>
+          </span>
+          <input type="checkbox" data-schalter="spEmpfohleneBreite">
+        </label>
+        <div class="feld">
+          <label class="feld__name" for="einst-sp-breite">Bevorzugte Breite (mm)</label>
+          <input id="einst-sp-breite" type="number" min="20" max="200" step="1" data-wert="spBreite">
+        </div>
+        <div class="feld">
+          <label class="feld__name" for="einst-sp-rand">Seitenrand</label>
+          <select id="einst-sp-rand" data-wert="spSeitenrand">
+            <option value="rechts">Rechts</option>
+            <option value="links">Links</option>
+          </select>
+        </div>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Verbindungslinien zum Text anzeigen
+            <em class="feld__satz">Eine Linie von der Blase zu der Stelle, um die es geht.</em>
+          </span>
+          <input type="checkbox" data-schalter="spVerbindungslinien">
+        </label>
+      </div>
+
+      <span class="gruppe__titel">Drucken (mit Sprechblasen)</span>
+      <div class="karte">
+        <div class="feld">
+          <label class="feld__name" for="einst-sp-papier">Papierausrichtung</label>
+          <em class="feld__satz">Querformat schafft Platz für die Blasen am Rand.</em>
+          <select id="einst-sp-papier" data-wert="spPapier">
+            <option value="behalten">Beibehalten</option>
+            <option value="quer">Querformat erzwingen</option>
+            <option value="auto">Automatisch</option>
+          </select>
+        </div>
       </div>
     </div>
 
@@ -365,7 +1161,199 @@
     </div>
 
     <div class="gruppe" data-bereich="ansicht">
-      <span class="gruppe__titel">Ansicht</span>
+
+      <!-- „Anzeigen" heißt es im WPS Writer, und es sind dieselben Schalter,
+           die auch unter Ansicht im Menü stehen. Zweimal derselbe Schalter
+           ist hier kein Fehler, sondern der Sinn einer Optionenseite: Wer
+           sie sucht, sucht sie an einer Stelle beisammen. -->
+      <span class="gruppe__titel">Anzeigen</span>
+      <div class="karte">
+        <label class="feld feld--schalter">
+          <span class="feld__name">Lineal
+            <em class="feld__satz">Zentimeter über dem Blatt, mit den Marken für die Einzüge.</em>
+          </span>
+          <input type="checkbox" data-schalter="lineal">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Vertikales Lineal
+            <em class="feld__satz">Zentimeter neben dem Blatt, von der ersten Zeile
+              abwärts gezählt. Es scrollt mit. Marken zum Ziehen hat es keine —
+              die Seitenränder stehen unter Seitenlayout mit einer Zahl.</em>
+          </span>
+          <input type="checkbox" data-schalter="linealHoch">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Navigationsbereich
+            <em class="feld__satz">Die Überschriften als Liste zum Anspringen.</em>
+          </span>
+          <input type="checkbox" data-schalter="navigation">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Textbegrenzungen
+            <em class="feld__satz">Die vier Ecken zeigen, wo der bedruckbare Bereich beginnt.</em>
+          </span>
+          <input type="checkbox" data-schalter="marken">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Gitternetzlinien
+            <em class="feld__satz">Ein Raster über dem Blatt — zum Ausrichten, nicht zum Drucken.</em>
+          </span>
+          <input type="checkbox" data-schalter="netzlinien">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Statusleiste
+            <em class="feld__satz">Die Zeile ganz unten mit Seitenzahl, Wortzahl und Vergrößerung.</em>
+          </span>
+          <input type="checkbox" data-schalter="statusleiste">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Seitenleiste beim Start
+            <em class="feld__satz">Ob die Schreibhilfe schon offen steht, wenn das Programm aufgeht. Bei WPS heißt das „Startaufgabenfenster".</em>
+          </span>
+          <input type="checkbox" data-schalter="tafelBeimStart">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">QuickInfo
+            <em class="feld__satz">Die kleinen Erklärungen, die am Knopf erscheinen, wenn die Maus darauf steht.</em>
+          </span>
+          <input type="checkbox" data-schalter="quickinfo">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Live-Vorschau
+            <em class="feld__satz">Ob das Überfahren eines Stils den Absatz schon probeweise umstellt.</em>
+          </span>
+          <input type="checkbox" data-schalter="livevorschau">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Minisymbolleiste bei Auswahl
+            <em class="feld__satz">Die kleine Formatleiste, die über markiertem Text erscheint.</em>
+          </span>
+          <input type="checkbox" data-schalter="minileisteAuswahl">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Minisymbolleiste bei Rechtsklick
+            <em class="feld__satz">Dieselbe Leiste über dem Menü der rechten Maustaste.</em>
+          </span>
+          <input type="checkbox" data-schalter="minileisteRechts">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Tipp für Kopf- bzw. Fußzeile
+            <em class="feld__satz">Der Hinweis im leeren Kopfbereich, der sagt, was dort hineingehört.</em>
+          </span>
+          <input type="checkbox" data-schalter="kopfzeilenTipp">
+        </label>
+      </div>
+
+      <!-- Bei WPS eine eigene Gruppe auf DIESER Seite: was beim Drucken
+           mitgeht. Die Seite „Drucken" sagt, wie gedruckt wird. -->
+      <span class="gruppe__titel">Druckoptionen</span>
+      <div class="karte">
+        <label class="feld feld--schalter">
+          <span class="feld__name">Hervorhebungen drucken
+            <em class="feld__satz">Der gelbe Marker erscheint auf dem Papier.</em>
+          </span>
+          <input type="checkbox" data-schalter="dpHervorheben">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Textbegrenzungen drucken
+            <em class="feld__satz">Die vier Ecken des Satzspiegels — sonst nur am Bildschirm.</em>
+          </span>
+          <input type="checkbox" data-schalter="dpTextbegrenzungen">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Zuschnittsmarken anzeigen
+            <em class="feld__satz">Schnittmarken an den Ecken, für alles, was nach dem Druck beschnitten wird.</em>
+          </span>
+          <input type="checkbox" data-schalter="dpZuschnittsmarken">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Feldfunktionen drucken
+            <em class="feld__satz">Statt „Seite 3" steht die Anweisung selbst auf dem Papier — zum Nachsehen, was gerechnet wird.</em>
+          </span>
+          <input type="checkbox" data-schalter="dpFeldfunktionen">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Textmarken drucken
+            <em class="feld__satz">Die eckigen Klammern, die eine Textmarke umschließen.</em>
+          </span>
+          <input type="checkbox" data-schalter="dpTextmarken">
+        </label>
+        <div class="feld">
+          <label class="feld__name" for="einst-feldschattierung">Feldschattierung</label>
+          <em class="feld__satz">Der graue Grund hinter Seitenzahlen, Datum und Verweisen — damit man sieht, dass dort gerechnet wird.</em>
+          <select id="einst-feldschattierung" data-wert="feldschattierung">
+            <option value="nie">Nie</option>
+            <option value="auswahl">Wenn ausgewählt</option>
+            <option value="immer">Immer</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- WPS zeigt hier sechs Kästchen. Lunivo hatte eines, das alles
+           zusammen schaltete. Jetzt sagt „Alle anzeigen", OB überhaupt
+           etwas sichtbar wird, und die fünf darunter sagen, WAS. -->
+      <span class="gruppe__titel">Formatierungszeichen</span>
+      <div class="karte">
+        <label class="feld feld--schalter">
+          <span class="feld__name">Alle anzeigen
+            <em class="feld__satz">Der Hauptschalter. Aus gesehen bleibt das Blatt sauber, gleich was darunter angekreuzt ist. Auf dem Papier stehen diese Zeichen nie.</em>
+          </span>
+          <input type="checkbox" data-schalter="steuerzeichen">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Absatzmarken
+            <em class="feld__satz">Das ¶ am Ende jedes Absatzes.</em>
+          </span>
+          <input type="checkbox" data-schalter="fzAbsatzmarken">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Leerzeichen
+            <em class="feld__satz">Geschützte Leerzeichen als kleiner Kreis — die, die eine Zeile nicht umbrechen darf.</em>
+          </span>
+          <input type="checkbox" data-schalter="fzLeerzeichen">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Tabstoppzeichen
+            <em class="feld__satz">Ein Pfeil, wo der Tabulator hinspringt.</em>
+          </span>
+          <input type="checkbox" data-schalter="fzTabstopp">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Objektanker
+            <em class="feld__satz">Zeigt an, an welchem Absatz ein Bild oder Textfeld hängt.</em>
+          </span>
+          <input type="checkbox" data-schalter="fzObjektanker">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Ausgeblendeter Text
+            <em class="feld__satz">Was als verborgen gilt, wird gepunktet unterstrichen sichtbar.</em>
+          </span>
+          <input type="checkbox" data-schalter="fzAusgeblendet">
+        </label>
+      </div>
+
+      <!-- Bei WPS eine eigene Gruppe auf derselben Seite. -->
+      <span class="gruppe__titel">Menübandoptionen</span>
+      <div class="karte">
+        <label class="feld feld--schalter">
+          <span class="feld__name">Doppelklick blendet das Band aus
+            <em class="feld__satz">Ein Doppelklick auf einen Reiter klappt das Band zu und wieder auf.</em>
+          </span>
+          <input type="checkbox" data-schalter="bandDoppelklick">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Strg+Klick folgt einem Verweis
+            <em class="feld__satz">Aus gesehen genügt ein Klick. An gesehen braucht es Strg — dann lässt sich ein Verweis anklicken, ohne ihn zu öffnen.</em>
+          </span>
+          <input type="checkbox" data-schalter="strgKlickLink">
+        </label>
+      </div>
+
+      <!-- Diese Gruppe stand einmal ganz oben und hieß „Ansicht" — wie die
+           Seite selbst, was nichts unterscheidet. Bei WPS beginnt die Seite
+           mit „Anzeigen", den Schaltern also, und die Darstellung ist eine
+           Zutat von Lunivo. Zutaten stehen hinten. -->
+      <span class="gruppe__titel">Darstellung</span>
       <div class="karte">
         <div class="feld">
           <span class="feld__name">Schrift und Helligkeit</span>
@@ -414,48 +1402,6 @@
           </select>
         </div>
       </div>
-
-      <!-- „Anzeigen" heißt es im WPS Writer, und es sind dieselben Schalter,
-           die auch unter Ansicht im Menü stehen. Zweimal derselbe Schalter
-           ist hier kein Fehler, sondern der Sinn einer Optionenseite: Wer
-           sie sucht, sucht sie an einer Stelle beisammen. -->
-      <span class="gruppe__titel">Anzeigen</span>
-      <div class="karte">
-        <label class="feld feld--schalter">
-          <span class="feld__name">Lineal
-            <em class="feld__satz">Zentimeter über dem Blatt, mit den Marken für die Einzüge.</em>
-          </span>
-          <input type="checkbox" data-schalter="lineal">
-        </label>
-        <label class="feld feld--schalter">
-          <span class="feld__name">Navigationsbereich
-            <em class="feld__satz">Die Überschriften als Liste zum Anspringen.</em>
-          </span>
-          <input type="checkbox" data-schalter="navigation">
-        </label>
-        <label class="feld feld--schalter">
-          <span class="feld__name">Textbegrenzungen
-            <em class="feld__satz">Die vier Ecken zeigen, wo der bedruckbare Bereich beginnt.</em>
-          </span>
-          <input type="checkbox" data-schalter="marken">
-        </label>
-        <label class="feld feld--schalter">
-          <span class="feld__name">Gitternetzlinien
-            <em class="feld__satz">Ein Raster über dem Blatt — zum Ausrichten, nicht zum Drucken.</em>
-          </span>
-          <input type="checkbox" data-schalter="netzlinien">
-        </label>
-      </div>
-
-      <span class="gruppe__titel">Formatierungszeichen</span>
-      <div class="karte">
-        <label class="feld feld--schalter">
-          <span class="feld__name">Steuerzeichen
-            <em class="feld__satz">Leerzeichen, Tabulatoren und Absatzmarken werden sichtbar. Auf dem Papier stehen sie nicht.</em>
-          </span>
-          <input type="checkbox" data-schalter="steuerzeichen">
-        </label>
-      </div>
     </div>
 
     <div class="gruppe" data-bereich="speichern">
@@ -478,28 +1424,81 @@
         </div>
       </div>
 
-      <span class="gruppe__titel">Schrift für neuen Text</span>
+      <span class="gruppe__titel">Allgemeine Optionen</span>
       <div class="karte">
         <div class="feld">
-          <label class="feld__name" for="einst-schrift">Schrift</label>
-          <em class="feld__satz">Gilt für ein neues Dokument. Ein geöffnetes
-            bringt seine eigene mit.</em>
-          <select id="einst-schrift"></select>
+          <label class="feld__name" for="einst-masseinheit">Maßeinheit</label>
+          <em class="feld__satz">Worin Ränder, Abstände und Einzüge stehen — in den Dialogen und auf dem Lineal.</em>
+          <select id="einst-masseinheit" data-wert="masseinheit">
+            <option value="mm">Millimeter</option>
+            <option value="cm">Zentimeter</option>
+            <option value="zoll">Zoll</option>
+            <option value="punkt">Punkt</option>
+          </select>
         </div>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Bilder in der Datei nicht komprimieren
+            <em class="feld__satz">Volle Auflösung, größere Datei. Für alles, was noch gedruckt werden soll.</em>
+          </span>
+          <input type="checkbox" data-schalter="bilderNichtKomprimieren">
+        </label>
         <div class="feld">
-          <label class="feld__name" for="einst-schriftgroesse">Größe</label>
-          <select id="einst-schriftgroesse"></select>
+          <label class="feld__name" for="einst-ausgabeziel">Standard-Ausgabeziel</label>
+          <em class="feld__satz">Auf wie viele Bildpunkte je Zoll Bilder heruntergerechnet werden.</em>
+          <select id="einst-ausgabeziel" data-wert="ausgabeziel">
+            <option value="96">96 ppi (Bildschirm)</option>
+            <option value="150">150 ppi</option>
+            <option value="220">220 ppi</option>
+            <option value="330">330 ppi (Druck)</option>
+          </select>
         </div>
       </div>
 
-      <span class="gruppe__titel">Maßeinheit</span>
+      <span class="gruppe__titel">Webseite</span>
       <div class="karte">
         <div class="feld">
-          <span class="feld__name">Millimeter</span>
-          <em class="feld__satz">Ränder, Abstände und Einzüge stehen überall in
-            Millimetern, das Lineal in Zentimetern. Umstellen lässt sich das
-            nicht — ein Feld mit einer einzigen Wahl wäre eine Attrappe.</em>
+          <label class="feld__name" for="einst-webkodierung">Webseitencodierung</label>
+          <em class="feld__satz">Womit eine als Webseite gespeicherte Datei geschrieben wird.</em>
+          <select id="einst-webkodierung" data-wert="webKodierung">
+            <option value="utf-8">UTF-8</option>
+            <option value="iso-8859-1">ISO-8859-1 (Westeuropäisch)</option>
+            <option value="windows-1252">Windows-1252</option>
+          </select>
         </div>
+      </div>
+
+      <span class="gruppe__titel">Kompatibilitätsoptionen</span>
+      <div class="karte">
+        <label class="feld feld--schalter">
+          <span class="feld__name">Seitenumbruch und Absatzmarke aufteilen
+            <em class="feld__satz">Ein Umbruch am Absatzende zählt zur nächsten Seite, nicht zur alten.</em>
+          </span>
+          <input type="checkbox" data-schalter="kompUmbruchTeilen">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Hängenden Einzug nicht als Tabstopp verwenden
+            <em class="feld__satz">Betrifft Aufzählungen und Nummerierungen aus älteren Word-Dateien.</em>
+          </span>
+          <input type="checkbox" data-schalter="kompHaengendTabstopp">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Nachstehende Leerstellen unterstreichen
+            <em class="feld__satz">Die Unterstreichung läuft bis zum Zeilenende weiter.</em>
+          </span>
+          <input type="checkbox" data-schalter="kompUnterstreichen">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Layout von Fußnoten wie Word 6/95/97
+            <em class="feld__satz">Für Dateien, die in einer alten Fassung gesetzt wurden.</em>
+          </span>
+          <input type="checkbox" data-schalter="kompFussnotenWord97">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Zeilenhöhe in Tabellen auf Rasterhöhe anpassen
+            <em class="feld__satz">Zeilen in Tabellen sitzen auf demselben Raster wie der Fließtext.</em>
+          </span>
+          <input type="checkbox" data-schalter="kompZeilenhoeheRaster">
+        </label>
       </div>
     </div>
 
@@ -517,6 +1516,42 @@
             <em class="feld__satz">Rote Wellenlinien im Text, von Lunivo. Aus gesehen bleibt das Blatt sauber — die Funde stehen weiter in der Seitenleiste, auch nach „Prüfen".</em>
           </span>
           <input type="checkbox" data-schalter="wellen">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Immer Korrekturvorschläge unterbreiten
+            <em class="feld__satz">Aus gesehen wird nur angestrichen, ohne zu sagen, was stattdessen richtig wäre.</em>
+          </span>
+          <input type="checkbox" data-schalter="rsImmerVorschlaege">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Grammatik mitprüfen
+            <em class="feld__satz">Nicht nur einzelne Wörter, auch Kommas und Satzbau.</em>
+          </span>
+          <input type="checkbox" data-schalter="rsGrammatik">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Wörter in GROSSBUCHSTABEN ignorieren
+            <em class="feld__satz">Abkürzungen und Kürzel. Ein Wörterbuch kennt sie nicht und schlägt Unsinn vor.</em>
+          </span>
+          <input type="checkbox" data-schalter="rsGrossIgnorieren">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Wörter mit Zahlen ignorieren
+            <em class="feld__satz">Aktenzeichen, Artikelnummern, „A4".</em>
+          </span>
+          <input type="checkbox" data-schalter="rsZahlenIgnorieren">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Internet- und Netzwerkpfade ignorieren
+            <em class="feld__satz">Adressen und Dateipfade sind kein Fließtext.</em>
+          </span>
+          <input type="checkbox" data-schalter="rsPfadeIgnorieren">
+        </label>
+        <label class="feld feld--schalter">
+          <span class="feld__name">Weggewinkte Funde wieder anzeigen
+            <em class="feld__satz">Was du einmal übergangen hast, steht wieder da — zum Nachsehen, ob es doch ein Fehler war.</em>
+          </span>
+          <input type="checkbox" data-schalter="rsIgnorierteZeigen">
         </label>
       </div>
 
@@ -565,30 +1600,58 @@
          Hier steht der Weg dorthin: Das Anpassen selbst hat sein eigenes
          Fenster, und es zweimal zu bauen hieße, zwei Fassungen zu pflegen. -->
     <div class="gruppe" data-bereich="band">
-      <span class="gruppe__titel">Menüband anpassen</span>
-      <div class="karte">
-        <div class="feld">
-          <span class="feld__name">Gruppen umsortieren und ausblenden</span>
-          <em class="feld__satz">Je Reiter lässt sich die Reihenfolge der Gruppen
-            ändern und einzelne ausblenden. Verschoben wird mit zwei Pfeilen,
-            nicht mit der Maus — Ziehen verlangt eine ruhige Hand, ein Pfeil
-            nach oben trifft immer.</em>
-          <div class="reihe">
-            <button class="knopf" id="einst-band-anpassen" type="button">Register anpassen…</button>
+      <!-- Der Aufbau des WPS-Fensters, Feld für Feld: links die Befehle mit
+           Klappliste und Suche, rechts der Baum der Registerkarten, in der
+           Mitte Hinzufügen und Entfernen, unten die drei Knöpfe für neue
+           Karten und Gruppen. -->
+      <div class="anp">
+        <div class="anp__spalte">
+          <label class="anp__titel" for="einst-band-quelle">Befehle auswählen</label>
+          <div class="anp__kopf">
+            <select id="einst-band-quelle"></select>
+            <input id="einst-band-suche" type="search" placeholder="Befehl suchen"
+                   autocomplete="off" aria-label="Befehl suchen">
           </div>
+          <div class="anp__liste" id="einst-band-befehle" role="listbox"
+               aria-label="Befehle"></div>
         </div>
 
-        <div class="feld">
-          <span class="feld__name">Ein Symbol austauschen</span>
-          <em class="feld__satz">Rechtsklick auf einen Knopf — im Band wie in den
-            Symbolleisten. Ein Fenster zeigt, wo die Zeichnung überall benutzt
-            wird, dazu ein Suchfeld und 1801 Zeichnungen zur Wahl.</em>
+        <div class="anp__mitte">
+          <button class="knopf knopf--klein" id="einst-band-dazu" type="button">Hinzufügen</button>
+          <button class="knopf knopf--klein" id="einst-band-raus" type="button">Entfernen</button>
+        </div>
+
+        <div class="anp__spalte">
+          <span class="anp__titel">Menüband anpassen</span>
+          <div class="anp__kopf">
+            <select id="einst-band-bereich">
+              <option value="haupt">Hauptregisterkarten</option>
+            </select>
+          </div>
+          <div class="anp__liste" id="einst-band-baum" role="tree"
+               aria-label="Registerkarten und Gruppen"></div>
+          <div class="anp__pfeile anp__pfeile--rechts">
+            <button class="wz" id="einst-band-hoch" type="button" aria-label="Nach oben">▲</button>
+            <button class="wz" id="einst-band-runter" type="button" aria-label="Nach unten">▼</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="anp__fuss">
+        <div class="anp__fuss-links">
+          <span class="anp__fuss-wort">Tastenkombinationen:</span>
+          <button class="knopf knopf--klein" id="einst-band-tasten" type="button">Anpassen…</button>
+        </div>
+        <div class="anp__fuss-rechts">
+          <button class="knopf knopf--klein" id="einst-band-neuekarte" type="button">Neue Registerkarte</button>
+          <button class="knopf knopf--klein" id="einst-band-neuegruppe" type="button">Neue Gruppe</button>
+          <button class="knopf knopf--klein" id="einst-band-umbenennen" type="button">Umbenennen</button>
+          <span class="anp__fuss-wort">Anpassungen:</span>
+          <button class="knopf knopf--klein" id="einst-band-zuruecksetzen" type="button">Zurücksetzen ▾</button>
         </div>
       </div>
     </div>
 
-    <!-- „Erweitert" heißt im Writer: Java und Experimentelles. Hier heißt es
-         das, was zusätzlich geholt wird und nicht im Programm steckt. -->
     <div class="gruppe" data-bereich="erweitert">
       <span class="gruppe__titel">Erweitert</span>
       <div class="karte">
@@ -967,6 +2030,10 @@
 
 <!-- Der Wortschatz zuerst: Die Prüfung liest ihn beim Anlegen. -->
 <!-- Die Zeichnungen der Knöpfe. Vor dem Programm, das sie benutzt. -->
+<!-- Vor allen anderen: Sie holt die Einstellungen aus der Datei in den
+     Speicher des Fensters. Was danach käme, käme zu spät — programm.js
+     liest seine Werte, sobald es geladen ist. -->
+<script src="js/einstellungsdatei.js"></script>
 <script src="daten/symbole.js"></script>
 <script src="daten/regeln.js"></script>
 <!-- Die Wörter je Empfänger. Das Programm reicht sie an die Prüfung weiter,

@@ -149,9 +149,44 @@ const Pruefung = (() => {
   /* ------------------------------------------------------------
      a) Wörter aus der Liste oben
      ------------------------------------------------------------ */
+  /* Was gar nicht erst geprüft wird.
+
+     WPS führt dafür drei Kästchen auf der Seite „Rechtschreibprüfung":
+     Wörter in GROSSBUCHSTABEN, Wörter mit Zahlen, Internet- und
+     Netzwerkpfade. Alle drei standen bei Kay an — und Lunivo strich
+     trotzdem an, weil es sie nicht kannte.
+
+     Gefragt wird bei jedem Wort neu, nicht einmal beim Start: Wer den
+     Schalter umlegt, soll den Unterschied beim nächsten Prüfen sehen und
+     nicht erst nach einem Neustart. Fehlt der Griff — etwa in den Tests,
+     die pruefung.js für sich allein laufen lassen —, wird geprüft wie
+     bisher. */
+  const schalter = (name, ersatz) => {
+    try {
+      return typeof Optionen !== 'undefined' && Optionen && typeof Optionen.an === 'function'
+             ? Optionen.an(name) : ersatz;
+    } catch (e) { return ersatz; }
+  };
+
+  const uebergehen = (wort) => {
+    /* GROSSBUCHSTABEN: Abkürzungen, Namen von Programmen, Kürzel. Ein
+       Wörterbuch kennt sie nicht und schlägt Unsinn vor. */
+    if (schalter('rsGrossIgnorieren', true)
+        && wort.length > 1 && wort === wort.toUpperCase()
+        && /[A-ZÄÖÜ]/.test(wort)) return true;
+    /* Wörter mit Zahlen: Aktenzeichen, Artikelnummern, „A4". */
+    if (schalter('rsZahlenIgnorieren', true) && /\d/.test(wort)) return true;
+    return false;
+  };
+
   function pruefeWoerter(text, funde) {
     for (const treffer of text.matchAll(WORT_MUSTER)) {
       const wort = treffer[0];
+      if (uebergehen(wort)) continue;
+      /* Internet- und Netzwerkpfade: Dafür gibt es istAdresse() schon —
+         hier wird nur gefragt, ob es gelten soll. */
+      if (schalter('rsPfadeIgnorieren', true)
+          && typeof istAdresse === 'function' && istAdresse(text, treffer.index)) continue;
       /* Erst die mitgelieferte Liste, dann die selbst gelernte. Was dieser
          Mensch schon einmal richtiggestellt hat, steht beim nächsten Mal sofort
          da — ohne KI, ohne Internet. */

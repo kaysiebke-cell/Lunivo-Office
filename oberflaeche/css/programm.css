@@ -207,6 +207,14 @@ select option{background:var(--karte);color:var(--schrift)}
   display:flex;flex-direction:column;
 }
 
+/* Die Werkbank hat zwei Zeilen: oben die Ecke und das waagerechte Lineal,
+   darunter das senkrechte und die Fläche. Beide Zeilen sind Reihen, damit
+   die Ecke genau so breit ist wie das senkrechte Lineal darunter — sonst
+   säßen die Zentimeter des einen neben denen des anderen verschoben. */
+.werkbank__kopf{display:flex;flex:0 0 auto}
+.werkbank__reihe{display:flex;flex:1 1 auto;min-height:0;min-width:0}
+.werkbank__kopf > .lineal{flex:1 1 auto;min-width:0}
+
 .arbeitsflaeche{
   flex:1 1 auto;min-width:0;min-height:0;overflow:auto;
   padding:28px 24px 64px;
@@ -484,14 +492,115 @@ select option{background:var(--karte);color:var(--schrift)}
   outline:none;border-color:var(--blau-hell);
 }
 
-/* Schalterzeilen: Text links, Schalter rechts. */
+/* ---------- Die Optionenseite nach dem Vorbild des WPS Writer ----------
+
+   Sie war einspaltig, mit fetten Karten: Titel, darunter zwei Zeilen
+   Erklärung, der Schalter weit rechts am Rand. Von dreißig Feldern der
+   Seite „Ansicht" waren acht zu sehen, den Rest musste man scrollen.
+
+   WPS macht es umgekehrt und ist damit im Recht: zwei Spalten, das
+   Kästchen VOR dem Namen, eine Zeile je Option, keine Erklärtexte im
+   Weg. Alles, was auf eine Seite gehört, steht auf einer Seite. Wer die
+   Erklärung braucht, hält kurz die Maus darauf.
+
+   Die Erklärungen sind nicht gelöscht — sie stehen als kleine Schrift
+   unter dem Namen, aber gedämpft und nur eine Zeile hoch. Wer sie ganz
+   lesen will, bekommt sie im Tooltip. */
+
+/* Zwei Spalten, sobald Platz ist. Darunter eine — auf einem schmalen
+   Fenster wären zwei Spalten zu je 150 Punkten unlesbar. */
+/* Die Gruppen: nur ein dünner Rahmen, keine graue Fläche.
+
+   Sie waren gefüllte Kästen — auf hellem Grund geht das, auf schwarzem
+   wird jeder davon zu einem grauen Block, und die Seite besteht aus
+   Blöcken statt aus Text. WPS setzt auf hellem Grund eine Linie um jede
+   Gruppe und lässt sie sonst leer; dasselbe im Dunklen heißt: Rahmen ja,
+   Füllung nein. */
+.karte{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(320px, 1fr));
+  gap:0;
+  background:transparent;
+}
+/* Die Trennlinien innen dürfen leiser sein als der Rahmen außen —
+   sonst zerfällt die Gruppe in ein Gitter. */
+.karte > .feld{border-bottom-color:rgba(127,127,127,.16)}
+.karte > .feld--schalter:nth-child(odd){border-right-color:rgba(127,127,127,.16)}
+/* Die letzte Zeile braucht keine Linie nach unten. */
+.karte > .feld:last-child,
+.karte > .feld:nth-last-child(2):nth-child(odd){border-bottom:0}
+/* Felder, die eine ganze Zeile brauchen: Klapplisten, Textfelder, die
+   beiden Listen von Menüband und Schnellzugriff. */
+.karte > .feld:not(.feld--schalter){
+  grid-column:1 / -1;
+}
+
+/* Eine Zeile je Option, deutlich flacher als vorher. */
+.feld{
+  display:block;
+  padding:7px 12px;
+  border-bottom:1px solid var(--rand);
+  min-width:0;
+}
+/* Bei zwei Spalten trennt auch ein senkrechter Strich. */
+.karte > .feld--schalter:nth-child(odd){border-right:1px solid var(--rand)}
+
+/* Das Kästchen VOR dem Namen, wie bei WPS — nicht am anderen Ende der
+   Zeile, wo man mit dem Auge hin und zurück muss. */
 .feld--schalter{
-  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  display:flex;align-items:flex-start;gap:10px;
+  cursor:pointer;
 }
 .feld--schalter input[type="checkbox"]{
-  flex:0 0 auto;width:20px;height:20px;
+  flex:0 0 auto;width:16px;height:16px;margin-top:2px;
   accent-color:var(--blau-hell);cursor:pointer;
+  order:-1;                       /* vor den Namen, ohne das HTML umzubauen */
 }
+.feld--schalter .feld__name{flex:1 1 auto;min-width:0;font-weight:500}
+
+/* Die Erklärungen stehen nicht mehr in der Zeile.
+
+   WPS hat dort keine, und mit ihnen wurde jede Zeile dreimal so hoch: Von
+   dreißig Feldern der Seite „Ansicht" waren acht zu sehen. Sie sind nicht
+   gelöscht — einstellungen.js hängt sie als Tooltip an die Zeile, und wer
+   sie braucht, hält kurz die Maus darauf. */
+.feld--schalter .feld__satz{display:none}
+
+/* Klapplisten und Zahlen: Beschriftung links, Feld rechts — auf einer
+   Zeile, so wie WPS es setzt („Feldschattierung: [Wenn ausgewählt ▾]").
+   Untereinander brauchten sie dreimal die Höhe, und die Seite passte
+   nicht mehr auf eine Seite. */
+.karte > .feld:not(.feld--schalter){
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+}
+.karte > .feld:not(.feld--schalter) > .feld__name{
+  flex:0 0 auto;margin:0;font-weight:500;
+}
+.karte > .feld:not(.feld--schalter) > .feld__satz{display:none}
+.karte > .feld:not(.feld--schalter) > select,
+.karte > .feld:not(.feld--schalter) > input[type="text"],
+.karte > .feld:not(.feld--schalter) > input[type="password"],
+.karte > .feld:not(.feld--schalter) > input[type="number"]{
+  flex:1 1 200px;min-width:0;width:auto;margin-top:0;padding:5px 10px;
+}
+.karte > .feld:not(.feld--schalter) > input[type="number"]{flex:0 0 110px}
+/* Die Reihe mit Knöpfen bleibt, wo sie ist. */
+.karte > .feld:not(.feld--schalter) > .reihe{flex:1 1 100%;margin-top:4px}
+
+.feld input[type="password"],
+.feld input[type="text"],
+.feld input[type="number"],
+.feld select{
+  margin-top:6px;padding:6px 10px;
+}
+
+/* Diese beiden Seiten haben kein Karten-Raster: Sie sind ein eigener
+   Aufbau aus zwei Spalten und stünden im Raster verzerrt. */
+.gruppe[data-bereich="band"] > .anp,
+.gruppe[data-bereich="schnellzugriff"] > .anp{margin-top:4px}
+
+.gruppe__titel{margin:14px 0 6px 2px}
+.gruppe__titel:first-child{margin-top:0}
 
 .zeile{
   display:flex;align-items:center;justify-content:space-between;
@@ -522,11 +631,18 @@ select option{background:var(--karte);color:var(--schrift)}
 
 /* Der Fuß klebt unten. „Fertig" ist der Weg zurück — der darf nicht erst
    nach zwei Bildschirmlängen Scrollen auftauchen. */
+/* Die Fußleiste: fest unten, mit Trennlinie und vollem Grund — wie die
+   Leiste mit „Cancel" und „OK" bei WPS.
+
+   Sie war ein Farbverlauf, durch den der Text darunter durchschien: Beim
+   Scrollen lief eine halb sichtbare Zeile hinter dem Knopf durch, und man
+   sah nicht, ob dort noch etwas steht. */
 .seite__fuss{
   position:sticky;bottom:0;
   display:flex;align-items:center;justify-content:flex-end;gap:10px;
-  padding:14px 0;
-  background:linear-gradient(to top,var(--grund) 70%,transparent);
+  padding:12px 16px;margin-top:8px;
+  background:var(--grund);
+  border-top:1px solid var(--rand);
 }
 .knopf--haupt{
   background:var(--blau);border-color:var(--blau);
@@ -684,6 +800,61 @@ button.wz-wahl--schrift{
   z-index:1;
 }
 
+/* ---------- Das senkrechte Lineal ----------
+   Bei WPS ein eigener Schalter neben dem waagerechten, und bei Kay stand
+   es an, während das waagerechte aus war. Ein gemeinsamer Schalter hätte
+   diesen Stand nicht abbilden können.
+
+   Es ist dasselbe Maßband, um eine Vierteldrehung gekippt: gedämpfte
+   Farbe, kleine Striche, blasse Zahlen, das helle Feld auf dem
+   Satzspiegel. Der Unterschied liegt darin, dass es mitscrollt — das
+   Blatt ist meist länger als die Fläche, und ein Lineal, das oben
+   stehen bleibt, während der Text darunter wegläuft, misst nichts. */
+.lineal-hoch{
+  width:27px;flex:0 0 auto;
+  background:var(--leiste);
+  border-right:1px solid var(--rand);
+  position:relative;overflow:hidden;
+  user-select:none;
+}
+.lineal-hoch[hidden]{display:none}
+
+/* Die Ecke, wo sich beide treffen. Sie misst nichts, sie hält nur den
+   Platz frei, damit das waagerechte Lineal dort beginnt, wo die Fläche
+   beginnt — und nicht 27 Punkte davor. */
+.lineal__ecke{
+  width:27px;flex:0 0 auto;
+  background:var(--leiste);
+  border-bottom:1px solid var(--rand);
+  border-right:1px solid var(--rand);
+}
+.lineal__ecke[hidden]{display:none}
+
+/* Die Bahn liegt über dem Blatt, senkrecht gerechnet. Weil sie mit dem
+   Blatt scrollt, kann sie oben und unten aus dem Lineal herauslaufen —
+   abgeschnitten wird sie vom overflow des Lineals. */
+.lineal-hoch__bahn{position:absolute;left:0;right:0}
+
+.lineal-hoch__feld{
+  position:absolute;left:5px;right:6px;
+  background:var(--karte);
+  border:1px solid var(--rand);border-radius:2px;
+  z-index:1;
+}
+.lineal-hoch__strich{
+  position:absolute;right:8px;height:1px;width:4px;
+  background:var(--schrift-3);opacity:.85;z-index:2;
+}
+.lineal-hoch__strich--klein{width:2px;opacity:.55}
+.lineal-hoch__zahl{
+  position:absolute;left:7px;
+  transform:translateY(-50%);
+  font-size:10px;line-height:1;color:var(--schrift-2);
+  font-variant-numeric:tabular-nums;
+  z-index:2;pointer-events:none;
+}
+.lineal-hoch__zahl--rand{color:var(--schrift-3)}
+
 .lineal__strich{
   position:absolute;bottom:8px;width:1px;height:4px;
   background:var(--schrift-3);opacity:.85;z-index:2;
@@ -813,12 +984,53 @@ button.wz-wahl--schrift{
 
 /* ---------- Steuerzeichen ---------- */
 /* Absatzmarken sichtbar machen — wie das Pilcrow-Zeichen im Writer. */
-.dokument--steuerzeichen p::after,
-.dokument--steuerzeichen h1::after,
-.dokument--steuerzeichen h2::after,
-.dokument--steuerzeichen h3::after,
-.dokument--steuerzeichen h4::after{
+/* ---------- Die Formatierungszeichen einzeln ----------
+
+   WPS zeigt auf der Seite „Ansicht" sechs Kästchen: Leerzeichen,
+   Tabstoppzeichen, Absatzmarken, Ausgeblendeter Text, Objektanker, Alle.
+   Lunivo hatte eines, das alles zusammen ein- und ausschaltete.
+
+   Jetzt sagt „Steuerzeichen" weiterhin, OB überhaupt etwas gezeigt wird,
+   und die fünf darunter sagen, WAS. Programm.js setzt je eine Klasse; was
+   sie sichtbar macht, steht hier. */
+.zeichen--absatz p::after,
+.zeichen--absatz h1::after,
+.zeichen--absatz h2::after,
+.zeichen--absatz h3::after,
+.zeichen--absatz h4::after{
   content:'¶';color:#9BB0C4;margin-left:2px;font-weight:400;
+}
+
+/* Leerzeichen als Mittelpunkt. Ein Leerzeichen im Fließtext lässt sich
+   nicht anfassen — wohl aber das geschützte, das als eigenes Zeichen im
+   Text steht, und die Abstände, die Lunivo selbst setzt. */
+.zeichen--leer .geschuetzt::before{
+  content:'°';color:#9BB0C4;position:absolute;margin-left:-.28em;
+  pointer-events:none;
+}
+.zeichen--leer .geschuetzt{position:relative}
+
+/* Tabstopps als Pfeil. Lunivo setzt sie als eigenes Element, deshalb ist
+   hier etwas zu treffen. */
+.zeichen--tab .tabstopp::before{
+  content:'→';color:#9BB0C4;pointer-events:none;
+}
+
+/* Objektanker: das Ankersymbol an allem, was am Absatz hängt statt im
+   Text zu stehen — Bilder, Zeichnungen, Textfelder. */
+.zeichen--anker .textrahmen::before,
+.zeichen--anker figure::before{
+  content:'⚓';color:#9BB0C4;font-size:11px;
+  position:absolute;margin-left:-14px;pointer-events:none;
+}
+.zeichen--anker .textrahmen,
+.zeichen--anker figure{position:relative}
+
+/* Ausgeblendeter Text: sonst gar nicht zu sehen, hier gepunktet
+   unterstrichen — so zeigt ihn auch der Writer. */
+.ausgeblendet{display:none}
+.zeichen--ausgeblendet .ausgeblendet{
+  display:inline;border-bottom:1px dotted #9BB0C4;color:var(--schrift-3);
 }
 
 /* ---------- Was eingefügt werden kann ---------- */
@@ -860,10 +1072,19 @@ button.wz-wahl--schrift{
 }
 /* Ein Fenster, das sofort wirkt, muss den Blick freigeben — sonst stellt man
    etwas ein und sieht dabei zu, wie ein grauer Schleier darüber liegt.
-   Deshalb rückt es an den Rand und nimmt den Schleier fast ganz weg. */
+   Deshalb nimmt es den Schleier fast ganz weg.
+
+   AN DEN RAND rückte es einmal dazu, mit „justify-content:flex-end". Das
+   gab zwar das Blatt frei, kostete aber mehr: Das Fenster lag über der
+   Seitenleiste, wurde bei schmalem Bildschirm angeschnitten, und der Weg
+   dorthin war der weiteste, den es gibt. Für ein Fenster, das gerade
+   denen helfen soll, die es schwerer haben, ist das die falsche Stelle.
+
+   Jetzt bleibt es in der Mitte — immer an derselben Stelle, kurze Wege,
+   nichts abgeschnitten — und gibt den Blick über den blassen Schleier
+   frei statt über die Entfernung. */
 .dialoggrund--schaut{
   background:rgba(0,0,0,.10);
-  justify-content:flex-end;
 }
 /* Überschrift oben, Knöpfe unten, und nur das dazwischen rollt.
    Vorher rollte das ganze Fenster: Bei einem langen Dialog standen
@@ -1315,6 +1536,23 @@ sup.fussnote{
 .dokument--steuerzeichen .indexmarke::after{content:'⌗';color:#C08A2E;width:auto}
 .dokument--steuerzeichen .textmarke,
 .dokument--steuerzeichen .indexmarke{width:auto}
+
+/* ---------- Was die Optionen sonst noch wegschalten ---------- */
+
+/* „Statusleiste" auf der Seite Ansicht. Sie trägt Seitenzahl, Wortzahl
+   und Zoom; wer den Platz für das Blatt braucht, schaltet sie weg. */
+body.ohne-statuszeile .statuszeile{display:none}
+
+/* „QuickInfo": die Erklärungen an den Knöpfen. Die title-Angaben bleiben
+   stehen — sie sind es, was Bildschirmleser vorlesen —, nur der gelbe
+   Kasten der Maus bleibt aus. */
+body.ohne-quickinfo [title]{pointer-events:auto}
+body.ohne-quickinfo .wz[title]:hover::after{display:none}
+
+/* „Tipp für Kopf- bzw. Fußzeile eingeben": der Hinweis im leeren
+   Kopfbereich, der sagt, was man dort tun kann. */
+body.ohne-kopftipp .kopfzeile:empty::before,
+body.ohne-kopftipp .fusszeile:empty::before{content:none}
 .querverweis{color:var(--blau);text-decoration:none;border-bottom:1px dotted var(--blau)}
 
 /* ---- Kommentar und Änderung hervorheben beim Durchgehen ---- */
@@ -2514,8 +2752,32 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
   flex:1 1 auto;min-width:0;font-size:14px;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;
 }
-.anpassen__zeile .wz{flex:0 0 auto;min-width:28px;height:26px}
-.anpassen__zeile .wz:disabled{opacity:.3}
+
+/* Die Liste und die Pfeile nebeneinander.
+
+   Die Pfeile standen einmal in jeder Zeile — und wanderten damit beim
+   Verschieben mit weg. Ein zweiter Klick an derselben Stelle traf die
+   nachgerückte Zeile und schob sie zurück; weiter als einen Schritt kam
+   man nicht. Fest daneben bleiben sie unter dem Zeiger stehen, und man
+   kann eine Gruppe in einem Zug ganz nach oben klicken. So macht es auch
+   WPS in „Menüband anpassen". */
+.anpassen__mitte{display:flex;align-items:flex-start;gap:10px}
+.anpassen__mitte > .anpassen__liste{flex:1 1 auto;min-width:0}
+.anpassen__pfeile{
+  flex:0 0 auto;display:flex;flex-direction:column;gap:6px;
+  /* Auf Höhe der ersten Zeile beginnen, nicht am Kastenrand. */
+  padding-top:6px;
+}
+.anpassen__pfeile .wz{min-width:32px;height:30px}
+.anpassen__pfeile .wz:disabled{opacity:.3}
+
+/* Die gewählte Zeile. Ohne sie wüsste niemand, worauf die Pfeile wirken. */
+.anpassen__zeile--gewaehlt{
+  border-color:var(--blau);
+  box-shadow:inset 0 0 0 1px var(--blau);
+}
+.anpassen__zeile{cursor:default}
+
 .anpassen__fuss{display:flex;gap:10px;flex-wrap:wrap}
 
 
@@ -3083,3 +3345,139 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 }
 .dokumentleiste__neu:hover{background:rgba(255,255,255,.09);color:var(--schrift)}
 :root[data-theme="light"] .dokumentleiste__neu:hover{background:rgba(0,0,0,.08)}
+
+/* ---------- „Menüband anpassen" und „Schnellzugriff" ----------
+
+   Der Aufbau des WPS-Fensters, Feld für Feld: zwei Spalten nebeneinander,
+   dazwischen die Knöpfe zum Hinüber- und Zurücknehmen, rechts die Pfeile,
+   unten eine Leiste mit den übrigen Knöpfen.
+
+   Vorher standen die Listen untereinander, jede Zeile so hoch wie eine
+   Schaltfläche. Damit sah man vier Befehle statt zwanzig und musste für
+   jeden Handgriff scrollen. */
+.anp{
+  display:grid;
+  grid-template-columns:1fr auto 1fr;
+  gap:12px;align-items:start;
+}
+/* Auf schmalem Fenster untereinander — drei Spalten zu je 90 Punkten
+   wären unlesbar. */
+@media (max-width:820px){
+  .anp{grid-template-columns:1fr}
+  .anp__mitte{flex-direction:row !important;justify-content:center}
+}
+
+.anp__spalte{display:flex;flex-direction:column;gap:6px;min-width:0;position:relative}
+.anp__titel{
+  font-size:12px;color:var(--schrift-2);font-weight:500;
+}
+.anp__kopf{display:flex;gap:6px;min-width:0}
+.anp__kopf select{flex:1 1 auto;min-width:0;margin:0;padding:5px 10px}
+.anp__kopf input[type="search"]{
+  flex:0 1 140px;min-width:0;margin:0;padding:5px 10px;
+  background-color:var(--grund);color:var(--schrift);
+  border:1px solid var(--rand);border-radius:7px;font:inherit;
+}
+
+/* Die Listen: schmale Zeilen, viele auf einmal — wie in einem Dateifenster
+   und nicht wie eine Reihe Schaltflächen. */
+.anp__liste{
+  height:280px;overflow-y:auto;
+  border:1px solid var(--rand);border-radius:7px;
+  /* Kein eigener Ton: Auf schwarzem Grund wäre der Kasten ein grauer
+     Block, in dem die Zeilen untergehen. Der Rahmen genügt. */
+  background:transparent;
+  padding:3px;
+}
+
+/* Das Bild vor dem Befehl. Feste Breite, damit die Namen bündig stehen,
+   auch wo eine Zeichnung fehlt. */
+.anp__bild{
+  flex:0 0 18px;display:flex;align-items:center;justify-content:center;
+  color:var(--schrift-2);font-size:11px;font-weight:600;
+}
+.anp__zeile--gewaehlt .anp__bild{color:#fff}
+.anp__wort{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.anp__spalte:has(.anp__pfeile--rechts) .anp__liste{padding-right:36px}
+.anp__zeile{
+  display:flex;align-items:center;gap:7px;
+  padding:3px 7px;border-radius:4px;
+  font-size:13px;line-height:1.5;
+  cursor:default;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;
+}
+.anp__zeile:hover{background:rgba(127,127,127,.10)}
+.anp__zeile--gewaehlt{background:var(--blau);color:#fff}
+.anp__zeile--gewaehlt:hover{background:var(--blau)}
+.anp__zeile input[type="checkbox"]{
+  flex:0 0 auto;width:14px;height:14px;margin:0;accent-color:var(--blau-hell);
+}
+/* Der Baum rechts: Gruppen eingerückt unter ihrer Registerkarte. */
+.anp__zeile--gruppe{padding-left:26px;color:var(--schrift-2)}
+.anp__pfeil{
+  flex:0 0 auto;width:12px;text-align:center;
+  font-size:9px;color:var(--schrift-3);cursor:pointer;user-select:none;
+}
+
+.anp__mitte{
+  display:flex;flex-direction:column;gap:8px;
+  align-self:center;
+}
+.anp__mitte .knopf{white-space:nowrap;min-width:112px}
+
+/* Die Pfeile stehen rechts NEBEN der Liste, nicht darunter: So bleiben sie
+   unter dem Zeiger, während die Auswahl wandert. */
+/* Die Pfeile standen 34 Punkte AUSSERHALB der Spalte — damit ragte die
+   Seite über ihren Rand hinaus und bekam eine Querleiste. Jetzt sitzen
+   sie innen am rechten Rand der Liste, wo sie ohnehin hingehören. */
+.anp__pfeile--rechts{
+  position:absolute;right:6px;top:50%;transform:translateY(-50%);
+  display:flex;flex-direction:column;gap:6px;
+  z-index:2;
+}
+.anp__pfeile--rechts .wz{min-width:26px;height:26px}
+.anp__pfeile--rechts .wz:disabled{opacity:.3}
+@media (max-width:820px){
+  .anp__pfeile--rechts{position:static;flex-direction:row;margin-top:6px}
+}
+
+.anp__fuss{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:12px;flex-wrap:wrap;margin-top:12px;
+}
+.anp__fuss-links,.anp__fuss-rechts{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.anp__fuss-wort{font-size:12px;color:var(--schrift-2)}
+
+/* ---------- Der Lesehilfe-Knopf, immer sichtbar ----------
+
+   Er sitzt neben den Reitern und gehört zu keinem: Wer die Lesehilfe
+   braucht, soll sie nicht in einem Reiter suchen, den er erst öffnen
+   muss. Sie stand dort als kleiner Knopf zwischen sieben anderen.
+
+   Kräftiger als alles daneben — das ist Absicht. In einer Leiste aus
+   grauen Wörtern findet das Auge zuerst die Farbe, und genau darum geht
+   es hier. */
+.lesehilfe-knopf{
+  flex:0 0 auto;
+  display:flex;align-items:center;gap:7px;
+  /* Gleich hinter dem letzten Reiter, nicht am äußersten Rand.
+
+     Mit „margin-left:auto" stand er ganz rechts — vom Text aus der
+     weiteste Weg auf dem Bildschirm, und bei breitem Fenster verlor man
+     ihn aus dem Blick. Neben den Reitern ist er da, wo die Hand ohnehin
+     hinfährt. */
+  margin:0 8px 0 12px;
+  padding:5px 14px 5px 11px;
+  background:var(--blau);border:1px solid var(--blau);
+  color:#fff;border-radius:999px;
+  font:inherit;font-size:13px;font-weight:600;
+  cursor:pointer;white-space:nowrap;
+}
+.lesehilfe-knopf:hover{background:var(--blau-hell);border-color:var(--blau-hell)}
+.lesehilfe-knopf:focus-visible{outline:2px solid var(--schrift);outline-offset:2px}
+.lesehilfe-knopf__bild{font-size:15px;line-height:1}
+/* Auf schmalem Fenster nur die Brille — der Knopf bleibt, das Wort geht. */
+@media (max-width:900px){
+  .lesehilfe-knopf__wort{display:none}
+  .lesehilfe-knopf{padding:5px 10px}
+}

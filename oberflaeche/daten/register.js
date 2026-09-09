@@ -63,12 +63,20 @@ function REGISTER_BAUEN(B, w) {
                   () => B.druckerEinrichten()],
     ['Dokument', [['notiz', 'Dokumenteigenschaften', () => B.eigenschaften(), 'gross'],
                     ['umbenennen', 'Umbenennen', () => B.umbenennen()]]],
-    ['Beenden', [['schliessen', 'Schließen', () => B.schliessen(), 'gross'],
-                    ['beenden', 'Beenden', () => B.beenden()]]],
+    /* Nach der Hilfe, vor dem Beenden — die Reihenfolge aus dem WPS-Menü,
+       das Kay abfotografiert hat: Hilfe, Optionen, Beenden.
+
+       Einen Datei-REITER hat WPS nicht; dort sitzt bei ihm das ☰-Menü, und
+       genau das ist hier der Datei-Reiter. Deshalb steht sie hier und nicht
+       unter Start: Die Bandgruppe „Einstellungen", die WPS im Start führt,
+       enthält anderes — die Optionen liegen bei ihm allein im Menü. */
     ['Hilfe', [['handbuch', 'Handbuch', () => B.handbuch(), 'gross'],
                     ['tasten', 'Tastenkürzel', () => B.tastenHilfe()],
                     ['Teile', 'Erweiterungen', () => B.erweiterungen()],
                     ['ueberprog', 'Über Lunivo Office', () => B.ueber()]]],
+    ['Einstellungen', [['optionen', 'Optionen', () => Einstellungen.oeffnen(), 'gross']]],
+    ['Beenden', [['schliessen', 'Schließen', () => B.schliessen(), 'gross'],
+                    ['beenden', 'Beenden', () => B.beenden()]]],
   ]],
 
   ['Start', [
@@ -109,12 +117,18 @@ function REGISTER_BAUEN(B, w) {
                     ['mitte', 'Zentriert', () => B.mitte()],
                     ['rechts', 'Rechtsbündig', () => B.rechts()],
                     ['block', 'Blocksatz', () => B.block()],
-                    ['abstand', 'Zeilenabstand', () => B.absatzabstand()],
-                    ['rahmen', 'Absatzrahmen', () => B.absatzRahmen()],
-                    ['toenung', 'Absatzschattierung', () => B.absatzSchattierung()],
                     ['sortieren', 'Sortieren', () => B.sortieren()],
                     ['¶', 'Steuerzeichen', () => B.steuerzeichenZeigen(), false, () => w.an('steuerzeichen')]], () => B.einzugGenau()],
+    /* Bei WPS eine eigene Gruppe zwischen Formatvorlagen und Bearbeiten:
+       was den Absatz als Block betrifft, nicht seine Zeilen. Sie fehlte
+       hier ganz — Abstand, Rahmen und Schattierung standen mit unter
+       „Absatz", wo schon Ausrichtung und Aufzählung liegen. */
     ['Stile', 'katalog'],
+    ['Absatzlayout', [['abstand', 'Zeilenabstand', () => B.absatzabstand(), 'gross'],
+                    ['einzug', 'Einzug genau', () => B.einzugGenau()],
+                    ['rahmen', 'Absatzrahmen', () => B.absatzRahmen()],
+                    ['toenung', 'Absatzschattierung', () => B.absatzSchattierung()]],
+                  () => B.einzugGenau()],
     ['Bearbeiten', [['lupe', 'Suchen', () => B.suchen(), 'gross'],
                     ['uebersetzen', 'Ersetzen', () => B.ersetzen()],
                     ['lupe', 'Suchen und Ersetzen', () => w.sucheZeigen(true)],
@@ -281,17 +295,27 @@ function REGISTER_BAUEN(B, w) {
   ]],
 
   ['Ansicht', [
+    /* GANZ VORN, mit großem Knopf.
+
+       Lesehilfe und Zeilenfokus standen als zwei kleine Knöpfe am Ende der
+       Gruppe „Anzeigen", hinter Lineal, Gitternetz, Navigationsbereich,
+       Textbegrenzungen und Seitenleiste. Das ist die Stelle für etwas, das
+       man selten braucht — und nicht für das, wofür dieses Programm
+       gebaut ist. */
+    ['Lesehilfe', [['brille', 'Lesehilfe', () => B.lesehilfe(), 'gross'],
+                    ['zeile', 'Zeilenfokus', () => B.zeilenfokus(), false, () => w.an('zeilenfokus')],
+                    ['vorlesen', 'Vorlesen', () => B.vorlesen()]], () => B.lesehilfe()],
     ['Dokumentansichten', [['blattansicht', 'Drucklayout', () => w.setzeLayout('blatt')(), 'gross'],
                     ['lesen', 'Lesemodus', () => B.lesemodus(), 'gross', () => w.an('lesemodus')],
                     ['zweiblatt', 'Zwei Seiten', () => w.setzeLayout('doppelt')()],
                     ['fortlaufend', 'Weblayout', () => w.setzeLayout('web')()],
                     ['gliederung', 'Gliederung', () => B.gliederung()]]],
     ['Anzeigen', [['linealIcon', 'Lineal', () => B.linealZeigen(), false, () => w.an('lineal')],
+                    ['linealHochIcon', 'Vertikales Lineal', () => B.linealHochZeigen(), false, () => w.an('linealHoch')],
                     ['netz', 'Gitternetzlinien', () => B.netzlinien(), false, () => w.an('netzlinien')],
                     ['navigation', 'Navigationsbereich', () => B.navigation(), false, () => w.an('navigation')],
                     ['ecken', 'Textbegrenzungen', () => B.markenZeigen(), false, () => w.an('textbegrenzungen')],
                     ['tafel', 'Seitenleiste Schreibhilfe', () => B.tafelZeigen(), false, () => w.an('tafel')],
-                    ['brille', 'Lesehilfe', () => B.lesehilfe()],
                     ['zeile', 'Zeilenfokus', () => B.zeilenfokus(), false, () => w.an('zeilenfokus')]], () => B.lesehilfe()],
     ['Zoom', [['lupe', 'Vergrößern', () => B.groesser(), 'gross'],
                     ['kleinerLupe', 'Verkleinern', () => B.kleiner(), 'gross'],

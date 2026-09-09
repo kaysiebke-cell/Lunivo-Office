@@ -151,6 +151,76 @@ def fenster_nummer(adresse):
 # Server sagt, was in seiner Liste steht, und nimmt zurück nur eine Nummer
 # daraus entgegen.
 ZULETZT_DATEI = os.path.join(DATEN, "zuletzt.json")
+
+# Die Einstellungen als lesbare Datei.
+#
+# Sie standen bisher nur im Speicher des Fensters. Das war bequem und
+# unsichtbar: Wer sie sichern, auf einen zweiten Rechner mitnehmen oder auch
+# nur nachsehen wollte, was eingestellt ist, kam nicht heran — und ein
+# geleerter Speicher nahm alles mit. WPS legt seine unter
+# ~/.config/Kingsoft/Office.conf ab; hier liegt sie an der entsprechenden
+# Stelle und im gleichen Aufbau: eine Zeile je Einstellung, Name=Wert.
+#
+# Der Speicher des Fensters bleibt, was er war — dort wird gelesen und
+# geschrieben, während gearbeitet wird. Diese Datei ist sein Abbild: beim
+# Start gelesen, nach jeder Änderung neu geschrieben.
+EINSTELLUNGEN_DATEI = os.path.expanduser("~/.config/lunivo-office/einstellungen.conf")
+
+
+def einstellungen_lesen():
+    """Die Datei als Wörterbuch. Fehlt sie, ist es leer — kein Fehler.
+
+    Kaputte Zeilen werden übergangen statt die ganze Datei zu verwerfen:
+    Wer von Hand hineinschreibt und sich vertippt, soll die übrigen
+    Einstellungen behalten.
+    """
+    werte = {}
+    try:
+        with open(EINSTELLUNGEN_DATEI, encoding="utf-8") as datei:
+            for zeile in datei:
+                zeile = zeile.strip()
+                if not zeile or zeile.startswith("#") or "=" not in zeile:
+                    continue
+                name, _, wert = zeile.partition("=")
+                name = name.strip()
+                if name:
+                    werte[name] = wert.strip()
+    except OSError:
+        return {}
+    return werte
+
+
+def einstellungen_schreiben(werte):
+    """Erst daneben, dann an die Stelle.
+
+    Wird mitten im Schreiben der Strom knapp, steht sonst eine halbe Datei
+    da — und beim nächsten Start fehlt die Hälfte der Einstellungen. Die
+    Ersetzung am Ende geschieht in einem Zug.
+    """
+    if not isinstance(werte, dict):
+        return False
+    ordner = os.path.dirname(EINSTELLUNGEN_DATEI)
+    try:
+        os.makedirs(ordner, exist_ok=True)
+        zeilen = ["# Lunivo-Office — die Einstellungen.",
+                  "#",
+                  "# Eine Zeile je Einstellung. Von Hand geändert werden darf",
+                  "# hier alles; gelesen wird die Datei beim Start des Fensters.",
+                  "# Was hier fehlt, steht auf seinem üblichen Wert.",
+                  ""]
+        for name in sorted(werte):
+            wert = werte[name]
+            if not isinstance(wert, str):
+                continue
+            # Zeilenumbrüche im Wert würden die nächste Zeile vortäuschen.
+            zeilen.append(name + "=" + wert.replace("\n", " ").replace("\r", " "))
+        vorlaeufig = EINSTELLUNGEN_DATEI + ".neu"
+        with open(vorlaeufig, "w", encoding="utf-8") as datei:
+            datei.write("\n".join(zeilen) + "\n")
+        os.replace(vorlaeufig, EINSTELLUNGEN_DATEI)
+    except OSError:
+        return False
+    return True
 ZULETZT_VIELE = 10
 
 
@@ -1697,6 +1767,13 @@ class Leise(http.server.SimpleHTTPRequestHandler):
             self.auskunft(teile_lesen())
             return
 
+        # Die Einstellungen aus der Datei. Beim Start holt das Fenster sie
+        # sich von hier; ist die Datei leer oder fehlt sie, bleibt es bei
+        # dem, was im Speicher des Fensters steht.
+        if self.path.split("?")[0] == "/einstellungen":
+            self.auskunft(einstellungen_lesen())
+            return
+
         if self.path.split("?")[0] == "/stimmen":
             ladung = json.dumps({
                 "gut": piper_stimmen(),   # die natürlichen, beste zuerst
@@ -1760,6 +1837,28 @@ class Leise(http.server.SimpleHTTPRequestHandler):
         dem LibreOffice, das ohnehin auf diesem Rechner liegt.
         """
         adresse = urllib.parse.urlparse(self.path)
+
+        # Die Einstellungen in die Datei. Das Fenster schickt sie nach jeder
+        # Änderung — gebündelt, nicht bei jedem Tastendruck.
+        if adresse.path == "/einstellungen":
+            try:
+                laenge = int(self.headers.get("Content-Length") or 0)
+            except ValueError:
+                laenge = 0
+            if laenge <= 0 or laenge > 1024 * 1024:
+                self.fehler_melden(400, "Die Einstellungen fehlen oder sind zu groß.")
+                return
+            try:
+                werte = json.loads(self.rfile.read(laenge).decode("utf-8"))
+            except (ValueError, UnicodeDecodeError):
+                self.fehler_melden(400, "Das waren keine Einstellungen.")
+                return
+            if not einstellungen_schreiben(werte):
+                self.fehler_melden(500, "Die Einstellungen ließen sich nicht schreiben.")
+                return
+            self.send_response(204)
+            self.end_headers()
+            return
 
         # „Fenster → Neues Fenster": noch ein Fenster auf dasselbe Programm.
         # Der zweite Aufruf sieht, dass hier schon jemand liefert, und startet
