@@ -28,7 +28,7 @@ Nicht *für* Menschen mit Legasthenie gebaut, sondern *von* einem —
 [wie es dazu kam](doku/ENTSTEHUNG.md).
 Kein Konto, keine Anmeldung, kein Internet nötig.
 
-![Lunivo-Office mit einem Brief im Blatt und der Schreibhilfe rechts an der Seite](bilder/uebersicht.png)
+![Lunivo-Office mit zwei Dokumenten als Reiter oben, einem Widerspruchsbrief im Blatt und der Schreibhilfe rechts an der Seite](bilder/uebersicht.png)
 
 > Das Repository wurde in `Lunivo-Office` umbenannt.
 > Link brechen, der schon irgendwo steht. Und wer nach „Schreibprogramm"
@@ -93,6 +93,21 @@ Tabellen, Bilder, Diagramme, Formen, Formeln, Kopf- und Fußzeilen,
 Fußnoten, Endnoten, Inhalts-, Abbildungs- und Stichwortverzeichnis,
 Zitate mit Quellenverwaltung, Seriendruck, Umschläge, Etiketten.
 
+**Mehrere Dokumente in einem Fenster.** Ganz oben steht für jedes offene
+Dokument ein Reiter — wie im WPS Writer. `Strg+N` legt eins an, `Strg+W`
+schließt es, `Strg+Tab` wechselt; Ziehen ordnet um, die mittlere Maustaste
+schließt. Ein Punkt auf dem Reiter heißt: Hier steht etwas, das in keiner
+Datei steht.
+
+Jedes Dokument bringt seine ganze Seite mit — Papierformat, Ränder, Kopf-
+und Fußzeile, Abschnitte, Formatvorlagen. Ein Brief auf A4 und ein Zettel
+auf A5 stören einander nicht. Was dagegen dem Menschen gehört, wechselt
+nicht mit: Vergrößerung, Helligkeit, welche Leisten er mag.
+
+*Ansicht ▸ Fenster ▸ Neues Fenster* öffnet ein zweites Programmfenster mit
+eigener Reiterzeile. Auch die kommen einander nicht ins Gehege: Was im
+einen geschrieben wird, steht nur dort.
+
 **Nicht vor dem leeren Blatt stehen.** *Datei ▸ Neu aus Vorlage* legt alle
 Vorlagen als Blätter nebeneinander, mit Suchfeld — so, wie man es aus Word
 kennt. Zehn Gerüste sind dabei: Brief, Brief an eine Behörde, Widerspruch,
@@ -119,13 +134,26 @@ vorher in *Extras ▸ Beim Schreiben*, wo sie niemand fand. Daneben führt
 und dort lässt sich jede auch gleich umlegen oder auslösen.
 
 **Prüfen.** Der Knopf *Prüfen* (F7) legt jeden Fund als Karte in die
-Seitenleiste und zieht im Text eine Wellenlinie darunter. Rechtsklick auf
-ein angestrichenes Wort zeigt die Vorschläge — wie in Word. Auf jeder Karte
+Seitenleiste und zieht im Text eine Wellenlinie darunter. Auf jeder Karte
 steht ein **Ohr**: Es liest den Vorschlag samt Begründung vor. Wer zwischen
 „das" und „dass" unsicher ist, hört den Unterschied oft schneller, als er
 ihn sieht.
 
-![Rechtsklick auf ein angestrichenes Wort: darüber steht die Erklärung, darunter der Vorschlag „glaube, dass“ zum Übernehmen](bilder/rechtsklick.png)
+**Die rechte Maustaste.** Zwei Kästen, wie im WPS Writer: oben eine
+schwebende Formatleiste — Schriftart, Größe, fett, kursiv, Farbe, Marker,
+Ausrichtung, Pinsel —, darunter ein kurzes Menü mit Bild links und
+Tastenkombination rechts.
+
+Es zeigt nur, was an dieser Stelle etwas bewirkt: auf einem Hyperlink
+bearbeiten und entfernen, in einer Tabelle Zeilen und Spalten, auf einem
+Bild Größe und Umbruch. Was gerade nicht geht, steht **grau** da statt zu
+fehlen — ein Punkt, der mal da ist und mal nicht, lässt sich nicht lernen.
+
+Auf einem Wort sieht das Programm auch dann nach, wenn noch gar nicht
+geprüft wurde: Wer auf *garnicht* klickt, bekommt *gar nicht* — nicht eine
+Liste ähnlich klingender Wörter.
+
+![Rechtsklick auf „garnicht“: oben die schwebende Formatleiste mit Schriftart, Größe und fett/kursiv/unterstrichen, darunter das Menü mit dem Vorschlag „gar nicht“ und den Befehlen samt Tastenkombinationen](bilder/rechtsklick.png)
 
 **Vorlesen** (F4). Über einen Fehler liest das Auge hinweg; das Ohr stolpert
 darüber. Tempo einstellbar.
@@ -221,13 +249,15 @@ wird beim Aufklappen, nicht beim Merken.
 Symbolleisten (zwei Zeilen, alles sichtbar) und Registern (Reiter wie in
 Word) um. Dieselben Befehle, anders sortiert.
 
-Das Register hat neun Reiter — Datei, Start, Einfügen, Layout, Referenzen,
-Überprüfen, Schreibhilfe, Sendungen, Ansicht — und einen zehnten, der nur
-da ist, wenn er etwas zu sagen hat: **Tabelle** erscheint, sobald der
-Zeiger in einer Tabelle steht, und verschwindet wieder. Die Gruppen folgen
+Das Register hat neun Reiter — Datei, Start, Einfügen, Seitenlayout,
+Referenzen, Überprüfen, Schreibhilfe, Sendungen, Ansicht — und sechs
+weitere, die nur da sind, wenn sie etwas zu sagen haben:
+**Tabellenwerkzeuge** erscheinen, sobald der Zeiger in einer Tabelle steht,
+und verschwinden wieder; dazu Zeichentools, Diagrammtools, SmartArt-Tools,
+Gleichungswerkzeuge und Kopf- und Fußzeilenwerkzeuge. Die Gruppen folgen
 dem Menüband von Word: *Start* trägt Zwischenablage, Schriftart, Absatz,
 Formatvorlagen und Bearbeiten, *Ansicht* beginnt mit den Ansichten und
-nicht mit dem Zoom. Jeder der 185 Befehle ist von dort erreichbar. Auf *Start* steht der
+nicht mit dem Zoom. Jeder der 191 Befehle ist von dort erreichbar. Auf *Start* steht der
 **Formatvorlagen-Katalog**: Er zeigt die Vorlage, statt sie zu benennen.
 Wo eine Gruppe nicht alles zeigt, was es gibt, steht unten rechts ein
 **Pfeil ⭨** zum vollen Dialog. Ein **Doppelklick auf den Reiter** klappt
@@ -377,7 +407,7 @@ Die Prüfung und der Wortschatz stammen aus der
 über viele Fassungen gewachsen. Sie liegen hier als eigene Kopie: Dieses
 Programm ist eigenständig und braucht jenes Projekt nicht, um zu laufen.
 
-Die Wörterliste (`oberflaeche/daten/woerter.txt`, 355.321 Wörter) ist über viele Sitzungen
+Die Wörterliste (`oberflaeche/daten/woerter.txt`, 355.324 Wörter) ist über viele Sitzungen
 selbst aufgebaut worden. Sie stammt aus keiner fremden Quelle und steht
 deshalb wie der übrige Code unter MIT.
 
@@ -393,13 +423,16 @@ deshalb wie der übrige Code unter MIT.
       css/programm.css   das Aussehen
       js/programm.js     Menüs, Werkzeuge, Seitenleiste, Statuszeile
       js/dokument.js     das Dokument: lesen, zeigen, ersetzen, formatieren
+      js/dokumente.js    welche Dokumente offen sind — die Reiter oben
+      js/dokumentmodell.js  Abschnitte, Seitenaufbau, Kopf- und Fußzeilen
+      js/language-bridge.js  hält den Fehlerstand: was geprüft, was weggewinkt
       js/dateien.js      öffnen und speichern
       js/pruefung.js     die Prüfung, Phonetik, Wortvorhersage
       js/ki.js           Claude und Ollama, Gedächtnis, Sicherung
       js/einstellungen.js  die Einstellungsseite
       daten/regeln.js    der Wortschatz der Prüfung
-      daten/woerter.txt  355.321 deutsche Wörter
-      daten/symbole.js   die 150 Zeichnungen der Knöpfe
+      daten/woerter.txt  355.324 deutsche Wörter
+      daten/symbole.js   die 155 Zeichnungen der Knöpfe
       daten/symbolkatalog.js  1801 Zeichnungen zur Auswahl (erst bei Bedarf geladen)
 
     werkzeug/            nichts davon lädt das Programm — Werkzeug für die Werkstatt

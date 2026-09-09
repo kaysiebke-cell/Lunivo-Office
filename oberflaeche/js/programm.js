@@ -6778,16 +6778,27 @@ B.neuesFenster = async () => {
 B.tastenHilfe = () => {
   fenster('Tastenkombinationen', [
     { art: 'satz', text:
-        'Strg+N  Neu           Strg+O  Öffnen\n'
-      + 'Strg+S  Speichern     Strg+P  Drucken\n'
-      + 'Strg+Z  Rückgängig    Strg+Y  Wiederholen\n'
-      + 'Strg+B  Fett          Strg+I  Kursiv\n'
-      + 'Strg+U  Unterstrichen Strg+F  Suchen\n'
-      + 'Strg++  Größer        Strg+−  Kleiner\n'
+        'DOKUMENTE\n'
+      + 'Strg+N  Neues Dokument   Strg+W  Schließen\n'
+      + 'Strg+Tab  Nächstes       Strg+Umschalt+Tab  Voriges\n'
+      + 'Strg+O  Öffnen           Strg+S  Speichern\n'
+      + 'Strg+Umschalt+S  Speichern unter\n'
+      + 'Strg+P  Drucken\n'
+      + '\n'
+      + 'SCHREIBEN\n'
+      + 'Strg+Z  Rückgängig       Strg+Y  Wiederholen\n'
+      + 'Strg+B  Fett             Strg+I  Kursiv\n'
+      + 'Strg+U  Unterstrichen    Strg+K  Hyperlink\n'
+      + 'Strg+F  Suchen           Strg+A  Alles auswählen\n'
       + 'Strg+Enter  Seitenumbruch\n'
-      + 'F5  Seitenleiste      F6  Welche Hilfe wann\n'
-      + 'F4  Vorlesen          F7  Prüfen\n'
-      + 'F8  KI-Korrektur      F9  Einstellungen' },
+      + 'Strg++  Größer           Strg+−  Kleiner\n'
+      + 'Strg+0  Normalgröße      Strg+1…6  Vorschlag nehmen\n'
+      + 'F3  Textbaustein         Tab  Zur nächsten Lücke\n'
+      + '\n'
+      + 'HILFE\n'
+      + 'F4  Vorlesen             F5  Seitenleiste\n'
+      + 'F6  Welche Hilfe wann    F7  Prüfen\n'
+      + 'F8  KI-Korrektur         F9  Einstellungen' },
   ], () => {}, 'Schließen');
 };
 

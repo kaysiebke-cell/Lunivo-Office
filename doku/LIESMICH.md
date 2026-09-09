@@ -55,7 +55,18 @@ Kopf- und Fußzeilen mit Seitenzahl, Hyperlinks, Textmarken und Querverweise,
 Fußnoten, Kommentare, Deckblatt, Wasserzeichen und Seitenrahmen.
 
 Rückgängig und Wiederholen für alles — auch für das, was die Schreibhilfe
-oder die KI geändert hat.
+oder die KI geändert hat. Über einen Reiterwechsel hinaus reicht es nicht:
+Es hängt am Schreibfeld, nicht am Text.
+
+**Mehrere Dokumente.** Ein Fenster trägt mehrere; oben steht für jedes ein
+Reiter. Strg+N legt eins an, Strg+W schließt es, Strg+Tab wechselt, Ziehen
+ordnet um. Jedes bringt seine ganze Seite mit — Papier, Ränder, Kopf- und
+Fußzeile, Abschnitte, Formatvorlagen. Was dem Menschen gehört, wechselt
+nicht mit: Vergrößerung, Helligkeit, welche Leisten er mag.
+
+Auch mehrere **Fenster** kommen einander nicht ins Gehege, obwohl sie sich
+denselben Server teilen: Jedes nimmt beim Aufgehen einen Platz und schreibt
+nur dort hinein.
 
 **Prüfen.** Der Knopf *Prüfen* (oder F7) legt jeden Fund als eigene Karte in
 die Seitenleiste. Drei Sorten, und welche es ist, steht als Wort auf der
@@ -102,19 +113,18 @@ einmal. Kommentare lassen sich durchgehen und löschen.
 Tabelle daneben — daraus entsteht für jede Zeile ein Brief, getrennt durch
 Seitenumbrüche.
 
-**Makros.** Aufzeichnen, was man aus den Menüs wählt, unter einem Namen
-sichern und später wieder abspielen.
-
 ## Wie die Menüs aufgebaut sind
 
-Vierzehn Menüs, und was zusammengehört, steht in einem Untermenü statt
-untereinander. Das *Format*-Menü hatte zwischenzeitlich einunddreißig Zeilen
-— darin sucht man, statt zu finden. Jetzt sind es fünf: Schrift, Absatz,
-Listen, Rahmen und Farbe, und darunter das Zurücksetzen.
+Neun Menüs, und sie tragen dieselben Namen wie die Reiter im Register —
+die Vorlage dafür ist WPS Writer. Was zusammengehört, steht in einem
+Untermenü statt untereinander: Das *Format*-Menü hatte zwischenzeitlich
+einunddreißig Zeilen, und darin sucht man, statt zu finden.
 
-    Datei · Bearbeiten · Ansicht · Einfügen · Format · Formatvorlagen
-    Layout · Referenzen · Tabelle · Formular · Extras · Schreibhilfe
-    Fenster · Hilfe
+    Datei · Start · Einfügen · Seitenlayout · Referenzen
+    Überprüfen · Schreibhilfe · Sendungen · Ansicht
+
+Makros gibt es nicht. In einem Textdokument wird nicht programmiert —
+alles, was damit zu tun hatte, ist wieder heraus.
 
 ## Der Motor für Word und PDF
 
@@ -146,17 +156,22 @@ Leiste und Seitenleiste — und über „In Datei drucken" wird daraus ein PDF.
 
 | | |
 |---|---|
-| Strg+N / O / S / P | Neu, Öffnen, Speichern, Drucken |
+| Strg+N / O / S / P | Neues Dokument, Öffnen, Speichern, Drucken |
+| Strg+W | Dokument schließen |
+| Strg+Tab | Nächstes Dokument (mit Umschalt das vorige) |
 | Strg+Umschalt+S | Speichern unter (mit Formatauswahl) |
 | Strg+Z / Y | Rückgängig, Wiederholen |
 | Strg+B / I / U | Fett, Kursiv, Unterstrichen |
 | Strg+F, Strg+H | Suchen und Ersetzen |
+| Strg+K | Hyperlink einfügen |
 | Strg + + / − / 0 | Größer, kleiner, Normalgröße |
 | Strg+Enter | Seitenumbruch |
 | F7 | Prüfen |
 | F8 | KI-Korrektur |
 | F9 | Einstellungen |
 | F5 | Seitenleiste ein und aus |
+| F6 | Welche Hilfe wann |
+| F4 | Vorlesen |
 
 ## Was wo liegt
 
@@ -170,6 +185,11 @@ Leiste und Seitenleiste — und über „In Datei drucken" wird daraus ein PDF.
       css/programm.css  das Aussehen
       js/programm.js  Menüs, Werkzeuge, Seitenleiste, Statuszeile
       js/dokument.js  das Dokument: lesen, zeigen, ersetzen, formatieren
+      js/dokumente.js welche Dokumente offen sind, welches vorn liegt —
+                      die Reiterzeile oben und die Trennung der Fenster
+      js/dokumentmodell.js  Abschnitte, Seitenaufbau, Kopf- und Fußzeilen
+      js/language-bridge.js  hält den Fehlerstand: welche Fassung geprüft
+                      wurde, was weggewinkt und was angenommen ist
       js/dateien.js   öffnen und speichern — .odt, .fodt, .docx, .doc,
                       .rtf, .pdf, .epub, .html, .txt
       js/pruefung.js  die Prüfung selbst
@@ -182,7 +202,7 @@ Leiste und Seitenleiste — und über „In Datei drucken" wird daraus ein PDF.
       js/vorlagen.js  die Seite „Neu" mit den Vorlagen
       js/einstellungen.js  die Einstellungsseite
       daten/regeln.js   der Wortschatz der Prüfung
-      daten/woerter.txt die deutsche Wörterliste (355.322 Wörter)
+      daten/woerter.txt die deutsche Wörterliste (355.324 Wörter)
 
     werkzeug/         Prüfungen für den Quelltext, nicht für den Text
       namen-pruefen.py  sucht Namen, die zweimal im selben Bereich stehen
@@ -193,6 +213,18 @@ Leiste und Seitenleiste — und über „In Datei drucken" wird daraus ein PDF.
     symbole/          dasselbe in allen Größen (16 bis 512)
     bilder/marke.png  das freigestellte Zeichen, aus dem sie gerechnet sind
     doku/             diese Seite, ENTSTEHUNG und RICHTUNG
+
+## Prüfläufe
+
+Drei Stücke prüfen sich selbst, ohne Fenster und ohne Browser:
+
+    node oberflaeche/js/dokumente.test.js        die offenen Dokumente
+    node oberflaeche/js/dokumentmodell.test.js   Abschnitte und Seitenaufbau
+    node oberflaeche/js/language-bridge.test.js  der Fehlerstand
+
+Sie brauchen nichts als Node und laufen in Sekunden. Was sie nicht prüfen
+können, ist alles, was ein Fenster braucht — dafür gibt es keinen Ersatz
+außer Hinsehen.
 
 ## Namen prüfen, bevor man sich wundert
 

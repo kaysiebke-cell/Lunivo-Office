@@ -101,9 +101,11 @@ footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--linie);
 <nav>
   <b>Anfangen</b>
   <a href="#erstes">Das erste Blatt</a>
+  <a href="#reiter">Mehrere Dokumente</a>
   <a href="#oberflaeche">Die Oberfläche einrichten</a>
   <b>Schreiben</b>
   <a href="#schreiben">Text und Gestaltung</a>
+  <a href="#rechtsklick">Die rechte Maustaste</a>
   <a href="#vorlagenstile">Formatvorlagen</a>
   <a href="#seite">Die Seite</a>
   <b>Was hilft</b>
@@ -129,7 +131,7 @@ footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--linie);
 
 <h1>Lunivo-Office</h1>
 <p class="unterzeile">Ein Raum für Worte — das Handbuch</p>
-<p class="stand">Version 1.2</p>
+<p class="stand">Version 1.3</p>
 
 <p>Dieses Programm ist zum Schreiben da. Es öffnet ein leeres Blatt, und
 alles andere steht bereit, ohne sich vorzudrängen. Was hier geschrieben
@@ -154,14 +156,16 @@ ersetzt kein Speichern, aber es rettet den Nachmittag.</p>
 
 <table>
 <tr><td><span class="weg">Datei → Neu</span></td>
-    <td>Ein leeres Blatt. Steht schon eines da, sagt die Statuszeile das —
-        ein leeres Blatt noch einmal zu leeren ändert nichts.</td></tr>
+    <td>Ein leeres Blatt in einem <b>neuen Reiter</b>. Das, woran gerade
+        geschrieben wurde, bleibt offen — siehe
+        <a href="#reiter">Mehrere Dokumente</a>.</td></tr>
 <tr><td><span class="weg">Datei → Öffnen…</span></td>
     <td>Eine vorhandene Datei. Gelesen werden <code>.odt</code>,
         <code>.ott</code>, <code>.fodt</code>, <code>.docx</code>,
         <code>.dotx</code>, <code>.doc</code>, <code>.dot</code>,
         <code>.rtf</code>, <code>.html</code>, <code>.txt</code> und
-        <code>.md</code>.</td></tr>
+        <code>.md</code>. Steht im vordersten Reiter schon etwas, bekommt
+        die Datei einen eigenen.</td></tr>
 <tr><td><span class="weg">Datei → Zuletzt verwendet</span></td>
     <td>Die letzten zehn Dateien.</td></tr>
 <tr><td><span class="weg">Datei → Neu aus Vorlage…</span></td>
@@ -169,9 +173,68 @@ ersetzt kein Speichern, aber es rettet den Nachmittag.</p>
         <a href="#vorlagen">Vorlagen</a>.</td></tr>
 </table>
 
-<p>Steht ungesicherte Arbeit im Blatt, fragt das Programm nach, bevor sie
-weggeht. <b>Abbrechen</b> ist dabei die Vorgabe: Wer auf <kbd>Enter</kbd>
-haut, ohne zu lesen, verliert nichts.</p>
+<p>Gefragt wird nur noch dort, wo wirklich etwas weggehen könnte: beim
+<b>Schließen</b> eines Reiters und beim <b>Beenden</b>. „Neu" und „Öffnen"
+verwerfen nichts mehr — sie legen daneben. <b>Abbrechen</b> ist dabei die
+Vorgabe: Wer auf <kbd>Enter</kbd> haut, ohne zu lesen, verliert nichts.</p>
+
+
+<h2 id="reiter">Mehrere Dokumente</h2>
+
+<p>Ganz oben, über dem Menü, steht für jedes offene Dokument ein
+<b>Reiter</b>. Ein Klick darauf bringt es nach vorn. So lassen sich zwei
+Briefe nebeneinander offen halten und Sätze von einem in den anderen
+holen.</p>
+
+<table>
+<tr><td><b>+</b> rechts in der Reiterzeile</td>
+    <td>Ein neues, leeres Dokument. Dasselbe tut <kbd>Strg</kbd>+<kbd>N</kbd>.</td></tr>
+<tr><td><b>×</b> auf dem Reiter</td>
+    <td>Dieses Dokument schließen. Auch mit der <b>mittleren Maustaste</b>
+        auf den Reiter, oder mit <kbd>Strg</kbd>+<kbd>W</kbd>.</td></tr>
+<tr><td>Reiter ziehen</td>
+    <td>Ändert die Reihenfolge.</td></tr>
+<tr><td><kbd>Strg</kbd>+<kbd>Tab</kbd></td>
+    <td>Zum nächsten Dokument, mit <kbd>Umschalt</kbd> zum vorigen.</td></tr>
+<tr><td><span class="weg">Fenster</span></td>
+    <td>Führt die offenen Dokumente auch als Liste im Menü, mit einem Haken
+        beim vordersten.</td></tr>
+</table>
+
+<p>Ein <b>Punkt</b> auf dem Reiter heißt: Hier steht etwas, das in keiner
+Datei steht. Er verschwindet beim Speichern.</p>
+
+<div class="merk">
+<p><b>Jedes Dokument bringt seine ganze Seite mit.</b> Papierformat, Ränder,
+Kopf- und Fußzeile, Abschnitte, Formatvorlagen — das gehört zum Dokument
+und wechselt mit dem Reiter. Ein Brief auf A4 und ein Zettel auf A5 stören
+einander nicht.</p>
+<p>Was <b>dir</b> gehört, wechselt nicht mit: Vergrößerung, Helligkeit,
+welche Leisten du magst. Ein Reiterwechsel soll nicht die halbe Oberfläche
+umstellen.</p>
+</div>
+
+<p>Der letzte Reiter lässt sich nicht schließen — er wird geleert. Ein
+Fenster ohne Blatt hätte nichts, worin man schreiben könnte. Wer das
+Fenster loswerden will, nimmt <span class="weg">Datei → Beenden</span>.</p>
+
+<h3>Und mehrere Fenster</h3>
+
+<p><span class="weg">Ansicht → Fenster → Neues Fenster</span> öffnet ein
+zweites Programmfenster, mit eigener Reiterzeile und eigenen Dokumenten.
+Die Fenster kommen einander nicht ins Gehege: Was im einen geschrieben
+wird, steht nur dort. Ab dem zweiten trägt der Fenstertitel eine Nummer,
+damit sie in der Fensterliste des Systems auseinanderzuhalten sind.</p>
+
+<p class="dazu">Ein geschlossenes Fenster gibt seinen Platz zurück. Das
+nächste, das aufgeht, findet die Dokumente wieder, die dort offen
+waren.</p>
+
+<div class="merk">
+<p><b>Das Rückgängigmachen geht nicht über einen Reiterwechsel hinaus.</b>
+Es hängt am Schreibfeld, nicht am Text: Nach dem Wechsel ist der Text
+vollständig da, aber nicht mehr die Schrittfolge dorthin.</p>
+</div>
 
 
 <h2 id="oberflaeche">Die Oberfläche einrichten</h2>
@@ -181,8 +244,12 @@ haut, ohne zu lesen, verliert nichts.</p>
 
 <ul>
 <li><b>Symbolleisten</b> — zwei Zeilen, in denen alles immer dasteht.</li>
-<li><b>In Registern</b> — Reiter wie Datei, Start, Einfügen, Layout. Zeigt
-weniger auf einmal, dafür mit Namen neben den Zeichen.</li>
+<li><b>In Registern</b> — neun Reiter: Datei, Start, Einfügen,
+Seitenlayout, Referenzen, Überprüfen, Schreibhilfe, Sendungen, Ansicht.
+Zeigt weniger auf einmal, dafür mit Namen neben den Zeichen. Dazu sechs,
+die nur kommen, wenn sie etwas zu sagen haben — Tabellenwerkzeuge,
+Zeichentools, Diagrammtools, SmartArt-Tools, Gleichungswerkzeuge, Kopf-
+und Fußzeilenwerkzeuge.</li>
 </ul>
 
 <p>Die <b>Menüleiste</b> ganz oben bleibt in beiden Fällen. Sie ist der Weg
@@ -225,6 +292,55 @@ geändert wurde, und zeigt es farbig. Einzelne Änderungen lassen sich
 annehmen oder ablehnen — nützlich, wenn jemand anders gegenliest.</p>
 
 
+<h2 id="rechtsklick">Die rechte Maustaste</h2>
+
+<p>Für die meisten Befehle ist sie der kürzeste Weg: Wer sie drückt, hat
+den Zeiger schon dort, wo er etwas ändern will. Es gehen <b>zwei Kästen</b>
+auf.</p>
+
+<h3>Oben die Formatleiste</h3>
+
+<p>Schriftart, Größe, größer, kleiner, Zeilenabstand — darunter fett,
+kursiv, unterstrichen, hervorheben, Schriftfarbe, die vier Ausrichtungen
+und der Pinsel. Das sind die Sachen, die man beim Schreiben ständig
+anfasst. Sie <b>bleibt beim Klick offen</b>: Man macht selten nur eines.</p>
+
+<h3>Darunter das Menü</h3>
+
+<p>Links das Bild, rechts die Tastenkombination. Es zeigt nur, was an
+dieser Stelle etwas bewirkt:</p>
+
+<table>
+<tr><td>auf einem angestrichenen Wort</td>
+    <td>Der Vorschlag steht oben und fett. Dazu <b>Wort in Ruhe lassen</b>
+        und <b>Übergehen</b>.</td></tr>
+<tr><td>auf einem Wort ohne Anstrich</td>
+    <td>Das Programm sieht trotzdem nach. Findet es etwas, steht der
+        Vorschlag da — auch ohne vorher geprüft zu haben.</td></tr>
+<tr><td>auf einem Hyperlink</td>
+    <td>Die Adresse als Überschrift, dazu <b>bearbeiten</b>,
+        <b>Adresse kopieren</b>, <b>entfernen</b>.</td></tr>
+<tr><td>in einer Tabelle</td>
+    <td><b>Zellen einfügen</b>, <b>Zellen löschen</b> und <b>Tabelle</b> —
+        Zeilen, Spalten, Kopfzeile, Größe, Ausrichtung, Rahmen,
+        Sortieren.</td></tr>
+<tr><td>auf Bild, Zeichnung, Diagramm, SmartArt oder Formel</td>
+    <td>Was zu dem Ding gehört: Größe, Füllung, Kontur, Anordnen, Daten
+        bearbeiten.</td></tr>
+<tr><td>immer</td>
+    <td>Zwischenablage, <b>Absatz</b>, <b>Aufzählung und Nummerierung</b>,
+        <b>Formatvorlage</b>, Hyperlink, Kommentar, Thesaurus,
+        Rechtschreibung.</td></tr>
+</table>
+
+<p>Was gerade nicht geht — Kopieren ohne Markierung, alles Ändernde im
+Lesemodus — steht <b>grau</b> da statt zu fehlen. Ein Punkt, der mal da ist
+und mal nicht, lässt sich nicht lernen.</p>
+
+<p class="dazu">Ein Rechtsklick auf einen <b>Knopf</b> in der Leiste oder im
+Band macht etwas anderes auf: Dort lässt sich das Zeichen austauschen.</p>
+
+
 <h2 id="vorlagenstile">Formatvorlagen</h2>
 
 <p>Eine Formatvorlage ist ein Name für ein Aussehen: <b>Fließtext</b>,
@@ -242,9 +358,22 @@ Ausgangszustand wieder her.</p>
 
 <h2 id="seite">Die Seite</h2>
 
-<p>Unter <span class="weg">Layout</span>: Papiergröße (A4, A5, A3, Letter,
-Legal), Hoch- oder Querformat, Ränder, Spalten, Seitenfarbe, Wasserzeichen
-und Seitenrahmen.</p>
+<p>Unter <span class="weg">Seitenlayout</span>: Papiergröße (A4, A5, A3,
+Letter, Legal), Hoch- oder Querformat, Ränder, Spalten, Seitenfarbe,
+Wasserzeichen und Seitenrahmen.</p>
+
+<h3>Abschnitte</h3>
+
+<p>Ein Abschnitt ist der Teil eines Dokuments mit eigenem Seitenbild:
+eigene Ränder, eigene Ausrichtung, eigene Kopf- und Fußzeile. Ein Deckblatt
+ohne Seitenzahl, ein Hauptteil mit Zahlen ab eins, ein Anhang quer — das
+sind drei davon.</p>
+
+<p><span class="weg">Seitenlayout → Umbruch → Abschnittsumbruch</span> legt
+einen neuen an. Danach zeigt die Seite immer den Abschnitt, in dem
+geschrieben wird: Wer den Zeiger über die Trennlinie bewegt, sieht die
+Ränder wechseln. Was am Bogen eingestellt wird, gilt für diesen einen
+Abschnitt.</p>
 
 <div class="merk">
 <p><b>Kopf- und Fußzeile liegen im Rand.</b> Die Kopfzeile endet genau dort,
@@ -549,7 +678,10 @@ LibreOffice gilt dessen eigene Hilfe.</p>
 <div class="tafel">
 <table>
 <tr><th>Taste</th><th>Was sie tut</th></tr>
-<tr><td><kbd>Strg</kbd>+<kbd>N</kbd></td><td>Neues Blatt</td></tr>
+<tr><td><kbd>Strg</kbd>+<kbd>N</kbd></td><td>Neues Dokument (neuer Reiter)</td></tr>
+<tr><td><kbd>Strg</kbd>+<kbd>W</kbd></td><td>Dokument schließen</td></tr>
+<tr><td><kbd>Strg</kbd>+<kbd>Tab</kbd></td>
+    <td>Nächstes Dokument, mit <kbd>Umschalt</kbd> das vorige</td></tr>
 <tr><td><kbd>Strg</kbd>+<kbd>O</kbd></td><td>Öffnen</td></tr>
 <tr><td><kbd>Strg</kbd>+<kbd>S</kbd></td><td>Speichern</td></tr>
 <tr><td><kbd>Strg</kbd>+<kbd>Umschalt</kbd>+<kbd>S</kbd></td><td>Speichern unter</td></tr>
@@ -559,6 +691,8 @@ LibreOffice gilt dessen eigene Hilfe.</p>
 <tr><td><kbd>Strg</kbd>+<kbd>B</kbd> / <kbd>I</kbd> / <kbd>U</kbd></td>
     <td>Fett / Kursiv / Unterstrichen</td></tr>
 <tr><td><kbd>Strg</kbd>+<kbd>Enter</kbd></td><td>Seitenumbruch</td></tr>
+<tr><td><kbd>Strg</kbd>+<kbd>F</kbd></td><td>Suchen und Ersetzen</td></tr>
+<tr><td><kbd>Strg</kbd>+<kbd>K</kbd></td><td>Hyperlink einfügen</td></tr>
 <tr><td><kbd>Strg</kbd>+<kbd>+</kbd> / <kbd>−</kbd> / <kbd>0</kbd></td>
     <td>Größer / Kleiner / Normalgröße</td></tr>
 <tr><td><kbd>Strg</kbd>+<kbd>1</kbd> … <kbd>6</kbd></td>
@@ -567,7 +701,10 @@ LibreOffice gilt dessen eigene Hilfe.</p>
 <tr><td><kbd>Tab</kbd></td><td>Zur nächsten Lücke «…» springen</td></tr>
 <tr><td><kbd>F4</kbd></td><td>Vorlesen</td></tr>
 <tr><td><kbd>F5</kbd></td><td>Seitenleiste Schreibhilfe</td></tr>
+<tr><td><kbd>F6</kbd></td><td>Welche Hilfe wann</td></tr>
 <tr><td><kbd>F7</kbd></td><td>Prüfen</td></tr>
+<tr><td><kbd>F8</kbd></td><td>KI-Korrektur</td></tr>
+<tr><td><kbd>F9</kbd></td><td>Einstellungen</td></tr>
 <tr><td><kbd>Esc</kbd></td><td>Fenster schließen, ohne zu übernehmen</td></tr>
 </table>
 </div>
