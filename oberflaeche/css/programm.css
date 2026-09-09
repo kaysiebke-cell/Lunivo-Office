@@ -1919,16 +1919,16 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
   box-shadow:var(--schatten);
   padding:6px;
 }
-/* Nur die eigenen Vorlagen stehen hier — die acht mitgelieferten stehen
-   zwei Zentimeter darüber im Band, und zweimal dasselbe ist keine Hilfe.
-   Deshalb höchstens drei nebeneinander: Vier machten das Menü breiter,
-   als es Inhalt hat. */
+/* Die Überschrift steht da, weil das Menü an der Stelle der Gruppe aufgeht
+   und sie verdeckt — ohne sie wüsste man nicht, was gerade weg ist. */
 .katalogklappe__kopf{
-  margin:2px 4px 6px;font-size:11px;font-weight:600;
-  letter-spacing:.5px;text-transform:uppercase;color:var(--schrift-3);
+  margin:0 4px 8px;font-size:12px;font-weight:600;color:var(--schrift-2);
 }
+/* Vier nebeneinander, wie im Band — nur größer. Sind es viele eigene
+   Vorlagen, rollt das Gitter, statt das Menü über den Schirm zu treiben. */
 .katalogklappe__gitter{
-  display:grid;grid-template-columns:repeat(3, 1fr);gap:3px;
+  display:grid;grid-template-columns:repeat(4, 1fr);gap:3px;
+  max-height:210px;overflow-y:auto;
 }
 .katalogklappe__strich{height:1px;background:var(--rand);margin:6px 4px 4px}
 .katalogklappe__punkt{

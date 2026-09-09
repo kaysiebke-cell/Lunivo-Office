@@ -2483,22 +2483,26 @@ function katalogKlappeWeg() {
   if (katalogKlappe) { katalogKlappe.remove(); katalogKlappe = null; }
 }
 
-/* Das Klappmenü unter dem Pfeil.
+/* Das Klappmenü der Gruppe „Stile".
  *
- * Es zeigte erst ALLE acht Vorlagen noch einmal — dieselben, die zwei
- * Zentimeter darüber schon im Band stehen. „Das ist so doppelt gemoppelt,
- * deswegen hat WPS ein Klappmenü, du öffnest ein extra Fenster", und das
- * war richtig: Ein Aufklappen soll bringen, was oben NICHT steht.
+ * Es zeigt ALLE Vorlagen — und legt sich dabei ÜBER die Gruppe im Band.
+ * Das ist der Punkt, und er hat zwei Anläufe gekostet.
  *
- * Was oben nicht steht, sind die selbst angelegten Vorlagen (das Band
- * bleibt bei den acht mitgelieferten, sonst wüchse die Gruppe mit jeder
- * eigenen weiter hinein) und die drei Befehle. Genau das steht hier —
- * mehr nicht.
+ * Erst standen alle acht darin, während dieselben acht zwei Zentimeter
+ * darüber im Band stehen blieben: „das ist so doppelt gemoppelt". Dann
+ * habe ich die acht weggelassen — auch falsch, denn dann findet man im
+ * Klappmenü nicht, was man dort sucht.
  *
- * Es hängt am Fenster und nicht im Band, und das ist kein Schönheits-
- * fehler: Das Band rollt seitlich, und was auf einer Achse rollt,
- * schneidet der Browser auch auf der anderen ab. Genau daran war einmal
- * die Schriftliste als Streifen von zwanzig Pixeln geendet.
+ * Der WPS Writer macht es anders und besser: Das Menü geht an der STELLE
+ * der Gruppe auf und verdeckt sie. Es steht dann alles einmal da, nur
+ * größer und vollständig — mit den eigenen Vorlagen, die im Band keinen
+ * Platz haben, und den Befehlen darunter. Doppelt ist nichts, weil man
+ * beides nie zugleich sieht.
+ *
+ * Es hängt am Fenster und nicht im Band: Das Band rollt seitlich, und was
+ * auf einer Achse rollt, schneidet der Browser auch auf der anderen ab.
+ * Genau daran war einmal die Schriftliste als Streifen von zwanzig Pixeln
+ * geendet.
  */
 function katalogKlappeZeigen(knopf) {
   if (katalogKlappe) { katalogKlappeWeg(); return; }
@@ -2506,28 +2510,23 @@ function katalogKlappeZeigen(knopf) {
   const tafel = document.createElement('div');
   tafel.className = 'katalogklappe';
 
-  /* Die eigenen Vorlagen — nur die, und nur wenn es welche gibt. */
-  const eigene = katalogEintraege().slice(KATALOG.length);
-  if (eigene.length) {
-    const kopf = document.createElement('p');
-    kopf.className = 'katalogklappe__kopf';
-    kopf.textContent = 'Eigene Formatvorlagen';
-    tafel.appendChild(kopf);
+  /* Die Überschrift trägt den Namen der Gruppe — das Menü steht ja an
+     deren Stelle, und ohne sie wüsste man beim Aufgehen nicht, was gerade
+     verdeckt wurde. */
+  const kopf = document.createElement('p');
+  kopf.className = 'katalogklappe__kopf';
+  kopf.textContent = 'Stile';
+  tafel.appendChild(kopf);
 
-    const gitter = document.createElement('div');
-    gitter.className = 'katalogklappe__gitter';
-    for (const eintrag of eigene) gitter.appendChild(katalogStueck(eintrag, true));
-    tafel.appendChild(gitter);
+  const gitter = document.createElement('div');
+  gitter.className = 'katalogklappe__gitter';
+  for (const eintrag of katalogEintraege()) gitter.appendChild(katalogStueck(eintrag, true));
+  tafel.appendChild(gitter);
 
-    const strichchen = document.createElement('div');
-    strichchen.className = 'katalogklappe__strich';
-    tafel.appendChild(strichchen);
-  }
+  const strichchen = document.createElement('div');
+  strichchen.className = 'katalogklappe__strich';
+  tafel.appendChild(strichchen);
 
-  /* Im Aufbau hat die Gruppe „Stile" zwei Dinge: die Vorlagen zum
-     Aussuchen — das ist der Katalog — und den Weg, sie zu verwalten. Der
-     stand vorher unter Ansicht ▸ Oberfläche, also weit weg von dem, was
-     er verwaltet. */
   const punkt = (name, tun, aus) => {
     const k = document.createElement('button');
     k.className = 'katalogklappe__punkt' + (aus ? ' katalogklappe__punkt--aus' : '');
@@ -2540,28 +2539,38 @@ function katalogKlappeZeigen(knopf) {
   };
 
   punkt('Neue Formatvorlage…', () => B.vorlageNeu());
-  punkt('Formatvorlagen verwalten…', () => B.vorlagenVerwalten());
   /* Grau, solange es nichts zu löschen gibt: Die mitgelieferten Vorlagen
      bleiben. Ein Punkt, der mal da ist und mal nicht, lässt sich nicht
      lernen. */
   punkt('Formatvorlage löschen…', () => B.vorlageLoeschen(),
         !Object.values(vorlagenStile).some((wie) => wie.eigen));
+  punkt('Formatvorlagen verwalten…', () => B.vorlagenVerwalten());
 
   document.body.appendChild(tafel);
   katalogKlappe = tafel;
 
-  /* Erst einhängen, dann messen — vorher hat sie keine Breite. */
-  const platz = knopf.getBoundingClientRect();
+  /* An die Stelle der Gruppe, nicht unter den Pfeil. Erst einhängen, dann
+     messen — vorher hat die Tafel keine Breite. */
+  const gruppe = knopf.closest('.register__gruppe') || knopf;
+  const platz = gruppe.getBoundingClientRect();
   const masse = tafel.getBoundingClientRect();
   const rand = 6;
-  let links = platz.right - masse.width;
-  if (links < rand) links = rand;
+
+  let links = platz.left - 6;
   if (links + masse.width > window.innerWidth - rand) {
     links = Math.max(rand, window.innerWidth - rand - masse.width);
   }
+  if (links < rand) links = rand;
   tafel.style.left = links + 'px';
-  tafel.style.top = Math.min(platz.bottom + 4,
-                             window.innerHeight - rand - masse.height) + 'px';
+
+  /* Oben bündig mit der Gruppe. Reicht sie nach unten aus dem Fenster,
+     rutscht sie hinauf — lieber ein Stück über dem Band als halb
+     abgeschnitten. */
+  let oben = platz.top - 4;
+  if (oben + masse.height > window.innerHeight - rand) {
+    oben = Math.max(rand, window.innerHeight - rand - masse.height);
+  }
+  tafel.style.top = oben + 'px';
 
   setTimeout(() => {
     document.addEventListener('mousedown', function zu(ev) {
