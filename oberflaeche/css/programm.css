@@ -3448,36 +3448,4 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 .anp__fuss-links,.anp__fuss-rechts{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .anp__fuss-wort{font-size:12px;color:var(--schrift-2)}
 
-/* ---------- Der Lesehilfe-Knopf, immer sichtbar ----------
-
-   Er sitzt neben den Reitern und gehört zu keinem: Wer die Lesehilfe
-   braucht, soll sie nicht in einem Reiter suchen, den er erst öffnen
-   muss. Sie stand dort als kleiner Knopf zwischen sieben anderen.
-
-   Kräftiger als alles daneben — das ist Absicht. In einer Leiste aus
-   grauen Wörtern findet das Auge zuerst die Farbe, und genau darum geht
-   es hier. */
-.lesehilfe-knopf{
-  flex:0 0 auto;
-  display:flex;align-items:center;gap:7px;
-  /* Gleich hinter dem letzten Reiter, nicht am äußersten Rand.
-
-     Mit „margin-left:auto" stand er ganz rechts — vom Text aus der
-     weiteste Weg auf dem Bildschirm, und bei breitem Fenster verlor man
-     ihn aus dem Blick. Neben den Reitern ist er da, wo die Hand ohnehin
-     hinfährt. */
-  margin:0 8px 0 12px;
-  padding:5px 14px 5px 11px;
-  background:var(--blau);border:1px solid var(--blau);
-  color:#fff;border-radius:999px;
-  font:inherit;font-size:13px;font-weight:600;
-  cursor:pointer;white-space:nowrap;
-}
-.lesehilfe-knopf:hover{background:var(--blau-hell);border-color:var(--blau-hell)}
-.lesehilfe-knopf:focus-visible{outline:2px solid var(--schrift);outline-offset:2px}
-.lesehilfe-knopf__bild{font-size:15px;line-height:1}
-/* Auf schmalem Fenster nur die Brille — der Knopf bleibt, das Wort geht. */
-@media (max-width:900px){
-  .lesehilfe-knopf__wort{display:none}
-  .lesehilfe-knopf{padding:5px 10px}
 }

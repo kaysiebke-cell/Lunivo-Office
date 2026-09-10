@@ -106,6 +106,12 @@ const SYMBOLE = {
      sieht gedreht genauso aus — zwei gleiche Knöpfe nebeneinander sagen
      nicht, welcher welcher ist. Deshalb hier ein aufrechtes Band mit
      Strichen an der Seite: Man sieht die Richtung. */
+  /* Für den Reiter Schreibhilfe: Lesemodus, Silbentrennung, Thesaurus.
+     Sie standen dort mit Namen, die es hier nicht gab — ein Knopf ohne
+     Bild sieht aus, als wäre er nicht fertig. */
+  buch:        'M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z',
+  silben:      'M4 7h4 M10 7h4 M16 7h4 M4 12h7 M13 12h7 M4 17h4 M10 17h10 M8.5 7v0 M11.5 12v0',
+  woerterbuch: 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20 M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z M9 7h6 M9 11h4',
   linealHochIcon: 'M9 2h6v20H9z M9 6h3 M9 10h3 M9 14h3 M9 18h3',
   linealIcon:    'M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z M14.5 12.5 l2-2 M11.5 9.5 l2-2 M8.5 6.5 l2-2 M17.5 15.5 l2-2',   /* lucide: ruler */
   netz:          'M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2z M3 9h18 M3 15h18 M9 3v18 M15 3v18',   /* lucide: grid-3x3 */

@@ -2806,6 +2806,10 @@ const REGISTER = REGISTER_BAUEN(B, {
   setzeRandVorgabe: (art)  => setzeRandVorgabe(art),
   papierJetzt:      ()     => papier,
   querJetzt:        ()     => quer,
+  /* Die Optionen auf einer bestimmten Seite aufmachen. Ein Knopf im Band,
+     der die Optionen öffnet und den Menschen dann selbst suchen lässt,
+     bringt ihn nur einen halben Schritt weiter. */
+  optionenOeffnen:  (seite) => Einstellungen.oeffnen(seite),
   /* Ob ein Schalter im Band gerade an ist. Ein Zugang für alle statt
      zwanzig einzelne Namen — und register.js bleibt eine Liste, die
      nichts vom Programm wissen muss. */
@@ -4350,12 +4354,11 @@ B.registerAnpassen = () => {
   });
 };
 
-/* Der Lesehilfe-Knopf neben den Reitern. Er gehört zu keinem Reiter und
-   bleibt deshalb stehen, gleich welcher offen ist. */
-(() => {
-  const knopf = $('lesehilfe-knopf');
-  if (knopf) knopf.addEventListener('click', () => B.lesehilfe());
-})();
+/* Ein blauer Lesehilfe-Knopf stand hier einmal neben den Reitern, damit
+   sie von überall erreichbar ist. Er war gut gemeint und doppelt: Direkt
+   darunter steht im Reiter „Schreibhilfe" die Gruppe „Lesen" mit
+   demselben Knopf — und Platz nahm er auch noch. F6 tut dasselbe, ohne im
+   Weg zu stehen. */
 
 /* Die Pfeile werden einmal angeschlossen — registerBauen() leert nur das
    Band, nicht den Streifen darum. */

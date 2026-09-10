@@ -256,6 +256,17 @@ function REGISTER_BAUEN(B, w) {
   ]],
 
   ['Schreibhilfe', [
+    /* GANZ VORN: was das Lesen erleichtert.
+
+       Es lag über fünf Reiter verstreut — die Lesehilfe unter Ansicht, die
+       Silbentrennung im Seitenlayout, die Schriftwahl in den Optionen, der
+       Thesaurus unter Überprüfen. Jedes an seinem sachlich richtigen Platz,
+       zusammen aber nur zu finden, wenn man weiß, wo man sucht. */
+    ['Lesen', [['brille', 'Lesehilfe', () => B.lesehilfe(), 'gross'],
+                    ['zeile', 'Zeilenfokus', () => B.zeilenfokus(), false, () => w.an('zeilenfokus')],
+                    ['buch', 'Lesemodus', () => B.lesemodus(), false, () => w.an('lesemodus')],
+                    ['groesserA', 'Schrift zum Lesen', () => w.optionenOeffnen('schriften')]],
+                  () => B.lesehilfe()],
     ['Prüfen', [['haken', 'Dokumentprüfung', [
                       ['Prüfen', () => w.pruefen()],
                       ['Gründlich prüfen', () => B.gruendlichPruefen()],
@@ -275,6 +286,11 @@ function REGISTER_BAUEN(B, w) {
                       ['-'],
                       ['Stimme und Tempo', () => B.stimmeWaehlen()],
                     ], 'gross']]],
+    ['Sprache', [['silben', 'Silbentrennung', () => B.silbentrennung(), 'gross', () => w.an('silbentrennung')],
+                    ['uebersetzen', 'Übersetzen', () => w.kiUebersetzen()],
+                    ['woerterbuch', 'Thesaurus', () => B.thesaurus()],
+                    ['sprache', 'Sprache und Prüfung', () => w.optionenOeffnen('sprache')]],
+                  () => w.optionenOeffnen('sprache')],
     ['KI', [['ki', 'KI-Korrektur', () => w.kiKorrigieren(), 'gross'],
                     ['vorschlag', 'Vorschläge', () => w.kiVorschlaege(), 'gross']]],
     ['Anzeigen', [['tafel', 'Seitenleiste Schreibhilfe', () => B.tafelZeigen(), 'gross'],
@@ -295,16 +311,10 @@ function REGISTER_BAUEN(B, w) {
   ]],
 
   ['Ansicht', [
-    /* GANZ VORN, mit großem Knopf.
-
-       Lesehilfe und Zeilenfokus standen als zwei kleine Knöpfe am Ende der
-       Gruppe „Anzeigen", hinter Lineal, Gitternetz, Navigationsbereich,
-       Textbegrenzungen und Seitenleiste. Das ist die Stelle für etwas, das
-       man selten braucht — und nicht für das, wofür dieses Programm
-       gebaut ist. */
-    ['Lesehilfe', [['brille', 'Lesehilfe', () => B.lesehilfe(), 'gross'],
-                    ['zeile', 'Zeilenfokus', () => B.zeilenfokus(), false, () => w.an('zeilenfokus')],
-                    ['vorlesen', 'Vorlesen', () => B.vorlesen()]], () => B.lesehilfe()],
+    /* Die Lesehilfe stand hier kurz als eigene Gruppe. Sie ist nach
+       „Schreibhilfe" gewandert, wo jetzt alles beieinandersteht, was das
+       Lesen erleichtert — an zwei Stellen wäre es wieder verteilt. Der
+       blaue Knopf neben den Reitern führt von überall dorthin. */
     ['Dokumentansichten', [['blattansicht', 'Drucklayout', () => w.setzeLayout('blatt')(), 'gross'],
                     ['lesen', 'Lesemodus', () => B.lesemodus(), 'gross', () => w.an('lesemodus')],
                     ['zweiblatt', 'Zwei Seiten', () => w.setzeLayout('doppelt')()],
@@ -315,8 +325,7 @@ function REGISTER_BAUEN(B, w) {
                     ['netz', 'Gitternetzlinien', () => B.netzlinien(), false, () => w.an('netzlinien')],
                     ['navigation', 'Navigationsbereich', () => B.navigation(), false, () => w.an('navigation')],
                     ['ecken', 'Textbegrenzungen', () => B.markenZeigen(), false, () => w.an('textbegrenzungen')],
-                    ['tafel', 'Seitenleiste Schreibhilfe', () => B.tafelZeigen(), false, () => w.an('tafel')],
-                    ['zeile', 'Zeilenfokus', () => B.zeilenfokus(), false, () => w.an('zeilenfokus')]], () => B.lesehilfe()],
+                    ['tafel', 'Seitenleiste Schreibhilfe', () => B.tafelZeigen(), false, () => w.an('tafel')]], () => B.lesehilfe()],
     ['Zoom', [['lupe', 'Vergrößern', () => B.groesser(), 'gross'],
                     ['kleinerLupe', 'Verkleinern', () => B.kleiner(), 'gross'],
                     ['100 %', '100 %', () => B.normal()],
