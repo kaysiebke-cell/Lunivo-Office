@@ -86,287 +86,92 @@ und warum unter *Neu aus Vorlage* fertige Gerüste liegen.
 
 ## Was es kann
 
-**Schreiben.** A4, A5, A3, Letter, Legal — hoch oder quer. Überschriften,
-Titel, Untertitel, alle Schriften des Rechners mit Vorschau, Farben,
-Zeilen- und Absatzabstände, Spalten, Silbentrennung, Zeilennummern.
-Tabellen, Bilder, Diagramme, Formen, Formeln, Kopf- und Fußzeilen,
-Fußnoten, Endnoten, Inhalts-, Abbildungs- und Stichwortverzeichnis,
-Zitate mit Quellenverwaltung, Seriendruck, Umschläge, Etiketten.
+**Für Menschen, denen Lesen und Schreiben schwerfallen.** Die Grundschrift
+ist OpenDyslexic, die Lesehilfe liegt auf **F2**, und alles, was dabei
+hilft, steht im Reiter *Schreibhilfe* beieinander statt über fünf Reiter
+verteilt.
 
-**Mehrere Dokumente in einem Fenster.** Ganz oben steht für jedes offene
-Dokument ein Reiter — wie im WPS Writer. `Strg+N` legt eins an, `Strg+W`
-schließt es, `Strg+Tab` wechselt; Ziehen ordnet um, die mittlere Maustaste
-schließt. Ein Punkt auf dem Reiter heißt: Hier steht etwas, das in keiner
-Datei steht.
+**Prüfung ohne Internet.** 355.322 Wörter und eigene Regeln finden, was ein
+Rechtschreibprüfer nicht findet — das/dass, wider/wieder, Kommas. Die KI ist
+freiwillig und braucht einen eigenen Schlüssel; ohne sie läuft alles Übrige.
 
-Jedes Dokument bringt seine ganze Seite mit — Papierformat, Ränder, Kopf-
-und Fußzeile, Abschnitte, Formatvorlagen. Ein Brief auf A4 und ein Zettel
-auf A5 stören einander nicht. Was dagegen dem Menschen gehört, wechselt
-nicht mit: Vergrößerung, Helligkeit, welche Leisten er mag.
+**Ein vollständiges Schreibprogramm.** Neun Register nach dem Vorbild des
+WPS Writer, zwei Oberflächen zur Wahl, Formatvorlagen, Tabellen, Kopf- und
+Fußzeilen, Seriendruck, Druckvorschau, PDF-Export. Die Optionen tragen alle
+dreizehn Seiten von WPS, dazu drei eigene.
 
-*Ansicht ▸ Fenster ▸ Neues Fenster* öffnet ein zweites Programmfenster mit
-eigener Reiterzeile. Auch die kommen einander nicht ins Gehege: Was im
-einen geschrieben wird, steht nur dort.
+**Was geschrieben wird, bleibt hier.** Kein Konto, keine Cloud, kein
+Mitlesen. Die Einstellungen liegen als lesbare Datei unter
+`~/.config/lunivo-office/einstellungen.conf`.
 
-**Nicht vor dem leeren Blatt stehen.** *Datei ▸ Neu aus Vorlage* legt alle
-Vorlagen als Blätter nebeneinander, mit Suchfeld — so, wie man es aus Word
-kennt. Zehn Gerüste sind dabei: Brief, Brief an eine Behörde, Widerspruch,
-Bewerbung, Lebenslauf, Krankmeldung, Kündigung, Rechnung, Einladung,
-Protokoll.
+---
 
-Darin steht **kein fertiger Text** — nur der Aufbau nach DIN 5008 und in
-jeder Lücke ein Wort, das sagt, was dort hinkommt: `«Aktenzeichen des
-Bescheids»`. Tab springt zur nächsten Lücke, Tippen ersetzt sie, gedruckt
-wird sie nicht. Wer seine Anschrift einmal hinterlegt hat, findet sie samt
-Ort und heutigem Datum schon oben stehen.
+## Die Dokumentation
 
-Denn wer an einem Behördenbrief scheitert, scheitert selten am Schreiben.
-Er scheitert an einer Form, die man kennen muss und nirgends erklärt
-bekommt.
+Der README sagt, was es ist. Was es im Einzelnen tut, steht in den fünf
+Dateien darunter — sonst wäre er dreißig Seiten lang und niemand fände
+darin, was er sucht.
 
-Die Gerüste werden **nicht** in `~/Vorlagen` geschrieben — der Ordner
-gehört dem Menschen. Was dort liegt, steht im zweiten Reiter daneben.
+| | Worum es geht |
+|---|---|
+| 1 · [Lesen und Schreiben](doku/lesen-und-schreiben.md) | Lesehilfe, Schriften für Legasthenie, Vorlesen |
+| 2 · [Prüfung, Vorhersage und KI](doku/pruefung-und-ki.md) | Was gefunden wird, und was die KI dabei tut |
+| 3 · [Schreiben und Dokumente](doku/schreiben-und-dokumente.md) | Das Blatt, Vorlagen, Speichern, Drucken |
+| 4 · [Die Oberfläche](doku/oberflaeche.md) | Band und Leisten, Lineale, Formatvorlagen, Anpassen |
+| 5 · [Die Einstellungen](doku/einstellungen.md) | Das Optionen-Fenster, Sprachen, Kennwort |
 
-**Schnellzugriff.** Unter dem Prüfen-Knopf stehen drei Marken — Wellen,
-Vorhersage, AutoKorrektur. Grün heißt an, ein Klick schaltet. Sie lagen
-vorher in *Extras ▸ Beim Schreiben*, wo sie niemand fand. Daneben führt
-**Welche Hilfe wann?** (F6) auf die Seite, die alle sechs Stufen erklärt —
-und dort lässt sich jede auch gleich umlegen oder auslösen.
+Dazu im Programm selbst: **☰ Menü → Hilfe → Handbuch** — ausführlicher als alles
+hier, mit Bildern und Tastenkürzeln.
 
-**Prüfen.** Der Knopf *Prüfen* (F7) legt jeden Fund als Karte in die
-Seitenleiste und zieht im Text eine Wellenlinie darunter. Wer die
-Wellenlinien nicht mag, schaltet sie aus — über die Marke *Wellen*, über
-*Schreibhilfe ▸ Beim Schreiben ▸ Rechtschreibprüfung* oder über
-*Überprüfen ▸ Rechtschreibung*. Die Funde bleiben dann in der
-Seitenleiste; angestrichen wird nichts mehr, auch nicht nach *Prüfen*. Auf jeder Karte
-steht ein **Ohr**: Es liest den Vorschlag samt Begründung vor. Wer zwischen
-„das" und „dass" unsicher ist, hört den Unterschied oft schneller, als er
-ihn sieht.
+| Weiteres | |
+|---|---|
+| [Was zusätzlich geholt wird](doku/erweiterungen.md) | LibreOffice, LanguageTool, Stimmen, Schriften |
+| [Der Aufbau des Projekts](doku/projektaufbau.md) | Welche Datei was tut |
+| [Die lange Fassung](doku/LIESMICH.md) | Alles ausführlich, auf Deutsch |
+| [Wie es entstanden ist](doku/ENTSTEHUNG.md) | Die Geschichte dahinter |
+| [Wohin es geht](doku/RICHTUNG.md) | Was noch kommen soll |
+| [Der Aufbau des Bandes](doku/aufbau-band.md) | Alle acht Reiter, mit Tabelle „wo finde ich was" |
+| [Der Aufbau der Optionen](doku/aufbau-optionen.md) | Alle Seiten und Felder, ebenso |
+| [Der Ist-Stand am Stück](doku/aufbau-ist-stand.md) | Bänder und Optionen zusammen, wie sie gerade sind |
 
-**Die rechte Maustaste.** Zwei Kästen, wie im WPS Writer: oben eine
-schwebende Formatleiste — Schriftart, Größe, fett, kursiv, Farbe, Marker,
-Ausrichtung, Pinsel —, darunter ein kurzes Menü mit Bild links und
-Tastenkombination rechts.
-
-Es zeigt nur, was an dieser Stelle etwas bewirkt: auf einem Hyperlink
-bearbeiten und entfernen, in einer Tabelle Zeilen und Spalten, auf einem
-Bild Größe und Umbruch. Was gerade nicht geht, steht **grau** da statt zu
-fehlen — ein Punkt, der mal da ist und mal nicht, lässt sich nicht lernen.
-
-Auf einem Wort sieht das Programm auch dann nach, wenn noch gar nicht
-geprüft wurde: Wer auf *garnicht* klickt, bekommt *gar nicht* — nicht eine
-Liste ähnlich klingender Wörter.
-
-![Rechtsklick auf „garnicht“: oben die schwebende Formatleiste mit Schriftart, Größe und fett/kursiv/unterstrichen, darunter das Menü mit dem Vorschlag „gar nicht“ und den Befehlen samt Tastenkombinationen](bilder/rechtsklick.png)
-
-**Vorlesen** (F4). Über einen Fehler liest das Auge hinweg; das Ohr stolpert
-darüber. Tempo einstellbar.
-
-Die Stimmen des Systems (espeak-ng) klingen dabei zwangsläufig blechern — das
-ist Bauart, nicht Einstellung: Sie rechnen Laute zusammen, statt sie aus
-Aufnahmen zu setzen. Wer sich einen ganzen Brief anhören will, hört sonst vor
-allem espeak. Ein Aufruf holt deshalb eine aufgenommene Stimme:
-
-    ./stimme-holen.sh
-
-Das lädt Piper und die deutsche Stimme „Thorsten" nach `~/.local/share/` —
-90 MB, offline, kostenlos, nichts im System und nichts im Projekt. Danach
-spricht sie von selbst.
-
-Es gibt sieben deutsche Stimmen, männlich und weiblich:
-
-    ./stimme-holen.sh --liste          zeigen, was es gibt
-    ./stimme-holen.sh kerstin ramona   weitere dazu
-    ./stimme-holen.sh --alle           alle sieben (~450 MB)
-
-Nach jedem Laden kommt eine Probe. Gewählt wird unter *Schreibhilfe ▸
-Vorlesen ▸ Stimme und Tempo*; die espeak-Stimmen bleiben darunter stehen.
-Zum Entfernen genügt es, die `.onnx`-Datei zu löschen.
-
-**Lesehilfe** (*Ansicht ▸ Lesehilfe*). Was in jedem Ratgeber zu Legasthenie
-oben steht, an einer Stelle: kein reines Weiß, sondern ein Papierton für den
-Bildschirm — Creme, Sandgrau, Blassgelb, Blassblau, Blassgrün oder Blassrosa.
-Dazu mehr Luft zwischen Buchstaben, Wörtern und Zeilen, in vier Stufen.
-
-Und die **Schreibstelle**: Der Absatz, in dem der Zeiger steht, wird auf
-Wunsch etwas größer, der übrige Text tritt zurück. Ein Farbband allein sagt
-nur „hier" — lesbarer wird eine Stelle erst, wenn sie größer ist als das,
-was um sie herum steht. Vergrößert wird dabei nicht die Schrift, sondern
-das Bild: Eine größere Schrift bricht anders um, die Zeile wird eine
-andere, und beim Tippen schaukelt sich das auf.
-
-Passend dazu holt `./schrift-holen.sh` drei Schriften, die eigens fürs
-leichtere Lesen gemacht sind (siehe unten).
-
-Das alles ändert das Dokument **nicht**. Kein Buchstabe der Datei wird davon
-anders, und auf dem Papier steht nachher, was dort stehen soll. Das ist der
-Unterschied zu *Seitenfarbe*: Die färbt das Papier und kostet Tinte. Hier
-wird nur der Schirm freundlicher.
-
-**Wortvorhersage.** Ab drei Buchstaben stehen passende Wörter zur Wahl.
-Wiedererkennen ist leichter als Erinnern.
-
-**Phonetische Suche.** Wer „kwalität" schreibt, meint *Qualität*; wer
-„fileicht" schreibt, meint *vielleicht*. Ein Buchstabenabstand findet das
-nicht — der Klang schon (Kölner Phonetik).
-
-**KI, wenn man will.** Korrigieren, Umformulieren, Übersetzen — über Claude
-im Netz oder über ein Modell auf dem eigenen Rechner (Ollama). Die Korrektur
-richtet sich danach, **für wen** der Text ist: Ein Brief ans Amt wird anders
-korrigiert als eine Nachricht an einen Freund.
-
-**Speichern.** `.odt`, `.docx`, `.doc`, `.rtf`, `.fodt`, `.html`, `.txt`,
-PDF und EPUB. Word-Dateien öffnen und wieder als Word speichern.
-
-**Drucken.** Das Programm rechnet den Seitenumbruch selbst aus, statt ihn
-dem Browser zu überlassen: Es füllt ein Blatt, bis es voll ist, und fängt
-ein neues an. Kopfzeile, Fußzeile und die *wirkliche* Seitenzahl stehen
-deshalb auf jeder Seite. Die **Druckvorschau** zeigt den ganzen Stapel zum
-Durchblättern — eine, zwei oder vier Seiten nebeneinander, oder als
-aufgeschlagenes Buch.
-
-Das **Druckfenster** ist aufgeteilt wie im Writer: links das Blatt, rechts
-in drei Reitern die Einstellungen, unten die Knöpfe. Seitenbereich („1-3,
-5"), Kopien, Sortieren, nur gerade oder ungerade Blattseiten, Seiten pro
-Blatt. Dazu, was auf das Papier kommt: Seitenhintergrund, Bilder,
-Formularfelder, Kommentare, Text schwarz drucken, leere Seiten.
-
-Im dritten Reiter steht der **Drucker** selbst — Name, Zustand, Typ, Ort,
-mit Papierformat, beidseitigem Druck, Schacht und Auflösung. Diese Angaben
-sind nicht erfunden: Sie kommen von CUPS, dem Druckerdienst des Systems,
-derselben Quelle, aus der auch LibreOffice sie hat. Meldet ein Drucker
-keine Duplexeinheit, bleibt der Schalter dafür grau. Gedruckt wird direkt
-über den Druckerdienst; ist keiner eingerichtet, öffnet das Fenster des
-Systems.
-
-**Die beiden Lineale** messen wirklich: Zentimeter mit Zahlen, vom
-Satzspiegel aus gezählt wie im Writer, und drei Marken für die Einzüge,
-die sich ziehen lassen — erste Zeile, links, rechts. Das helle Band zeigt,
-wo Text steht, und wandert beim Ziehen mit. Das **senkrechte** misst von
-der ersten Zeile abwärts und scrollt mit dem Blatt; es lässt sich einzeln
-ein- und ausschalten, so wie WPS es hält.
-
-**Zuletzt verwendet.** Unter *Datei* stehen die letzten zehn Dokumente mit
-Namen — ein Klick, und das Blatt ist wieder da. Wer eine Datei inzwischen
-verschoben oder weggeworfen hat, findet sie nicht mehr in der Liste: Geprüft
-wird beim Aufklappen, nicht beim Merken.
-
-**Zwei Oberflächen.** *Ansicht ▸ Benutzeroberfläche* stellt zwischen
-Symbolleisten (zwei Zeilen, alles sichtbar) und Registern (Reiter wie in
-Word) um. Dieselben Befehle, anders sortiert.
-
-Das Register hat neun Reiter — Datei, Start, Einfügen, Seitenlayout,
-Referenzen, Überprüfen, Schreibhilfe, Sendungen, Ansicht — und sechs
-weitere, die nur da sind, wenn sie etwas zu sagen haben:
-**Tabellenwerkzeuge** erscheinen, sobald der Zeiger in einer Tabelle steht,
-und verschwinden wieder; dazu Zeichentools, Diagrammtools, SmartArt-Tools,
-Gleichungswerkzeuge und Kopf- und Fußzeilenwerkzeuge. Die Gruppen folgen
-dem Menüband von Word: *Start* trägt Zwischenablage, Schriftart, Absatz,
-Formatvorlagen und Bearbeiten, *Ansicht* beginnt mit den Ansichten und
-nicht mit dem Zoom. Jeder der 191 Befehle ist von dort erreichbar. Auf *Start* steht der
-**Formatvorlagen-Katalog**: Er zeigt die Vorlage, statt sie zu benennen —
-acht Kacheln in zwei Zeilen. Der Pfeil daneben klappt sie groß auf — an
-derselben Stelle, so dass das Menü die Gruppe verdeckt und nichts doppelt
-dasteht. Darin alle Vorlagen samt den eigenen, dazu *Neue Formatvorlage*,
-*löschen* und *verwalten*.
-
-**Eigene Formatvorlagen.** Was fehlt, legt man selbst an: eine
-*Anschrift*, die immer rechts steht, ein *Merksatz* in Grau. Der Dialog
-fragt nach Name und worauf sie aufbaut; die Formatierung steht darunter in
-zwei Leisten — oben die Schrift, darunter der Absatz — und ganz unten eine
-Vorschau, die sich beim Tippen mitändert. Wer „baut auf" umstellt, sieht
-die übrigen Felder mitgehen. Eigene Vorlagen gehören zum Dokument und
-wandern mit dem Reiter.
-Wo eine Gruppe nicht alles zeigt, was es gibt, steht unten rechts ein
-**Pfeil ⭨** zum vollen Dialog. Ein **Doppelklick auf den Reiter** klappt
-das Band weg und wieder auf.
-
-Im Register **tritt die Reiterzeile an die Stelle der Menüleiste** — sie
-kommt nicht dazu. Beides übereinander fräße genau den Platz, den das
-Register gewinnen soll. Das Menü bleibt über das Zeichen ☰ rechts in der
-Reiterzeile erreichbar, oder über die Alt-Taste. In der Symbolleisten-Ansicht lässt sich
-die Menüleiste ebenfalls ausblenden. Symbolgröße und die Schrift der
-Bedienung sind einstellbar — wer die Leisten nicht lesen kann, benutzt sie
-nicht.
-
-**Das Register anpassen.** Rechtsklick auf eine freie Stelle im Band, oder
-*Ansicht ▸ Oberfläche ▸ Anpassen*: Die Gruppen eines Reiters lassen sich
-umsortieren und einzeln ausblenden. Verschoben wird mit zwei Pfeilen und
-nicht mit der Maus — Ziehen und Ablegen verlangt eine ruhige Hand, ein
-Pfeil nach oben trifft immer. Ausgeblendetes bleibt blass in der Liste
-stehen, damit man es zurückholen kann.
-
-**Ein Symbol austauschen.** Rechtsklick auf einen Knopf — im Band wie in
-den Symbolleisten. Ein Fenster zeigt, wo die Zeichnung überall benutzt
-wird, dazu ein Suchfeld und **1801 Zeichnungen** zur Wahl. Ein Klick, und
-sie ist getauscht; „Zurücksetzen" holt die alte zurück. LibreOffice kann
-das für seine Symbolleisten, für sein Symbolband nicht — hier geht beides.
-
-**Optionen** — *Datei ▸ Optionen*, oder **F9**. Links die Seiten, rechts
-der Bereich, zweispaltig und kompakt wie im WPS Writer: **alle dreizehn
-Seiten**, in seiner Reihenfolge und mit seinen Namen — Ansicht,
-Bearbeiten, Allgemein und Speichern, Sicherungseinstellungen, Speicherort
-für Dateien, Änderungen verfolgen, In PDF exportieren,
-Benutzerinformationen, Drucken, Rechtschreibprüfung, Sicherheit, Menüband
-anpassen, Symbolleiste für den Schnellzugriff. Dazu drei eigene:
-Schreibhilfe und KI, Gedächtnis und *Erweitert*, wo steht, was zusätzlich
-geholt wurde und ob es da ist.
-
-86 Schalter und 20 Klapplisten, keiner davon eine Attrappe. Die Schalter
-sind dieselben wie im Menü und im Band — ein Schalter, drei Stellen, ein
-Zustand; wer ihn irgendwo umlegt, sieht ihn überall wechseln.
-
-*Menüband anpassen* und *Symbolleiste für den Schnellzugriff* sind nach
-demselben Bild gebaut: links die Befehle mit Klappliste, Suchfeld und
-ihren Zeichnungen, in der Mitte Hinzufügen und Entfernen, rechts das
-Ziel — beim Menüband ein Baum aus Registerkarten und Gruppen, bei der
-Leiste ihr Inhalt. Neue Registerkarten und Gruppen lassen sich anlegen
-und umbenennen.
-
-**Das Dokumentkennwort** verschlüsselt wirklich: AES-256, den Schlüssel
-mit PBKDF2 aus dem Kennwort, beides vom Browser selbst gerechnet. Ohne das
-Kennwort ist der Inhalt nicht mehr zu lesen, auch nicht von Lunivo — und
-ein vergessenes kann niemand wiederherstellen.
-
-**Die Einstellungen liegen in einer Datei**, lesbar, eine Zeile je
-Einstellung: `~/.config/lunivo-office/einstellungen.conf` — dort, wo auch
-WPS seine ablegt. Sie lässt sich sichern, auf einen zweiten Rechner
-mitnehmen und von Hand ändern. Der Speicher des Fensters bleibt, was er
-war; die Datei ist sein Abbild, beim Start gelesen und nach jeder
-Änderung neu geschrieben.
+Diese drei werden **erzeugt**, nicht geschrieben —
+`python3 werkzeug/aufbau-schreiben.py` liest sie aus dem Programm. Die
+Vorgabe daneben, `WPS Office/Lunivo-Office_WPS-Writer-Struktur.md`, ist
+von Hand geschrieben und sagt, wie es sein **soll**. Weichen die beiden
+voneinander ab, zieht der Code nach — nie die Vorgabe.
 
 ## So sieht es aus
 
-Die Menüs sind nach Themen geordnet und haben Untermenüs, damit keine Liste
-länger wird als der Bildschirm.
+Der Reiter **Schreibhilfe** trägt alles, was das Lesen und Schreiben
+erleichtert. Der Text steht in OpenDyslexic.
 
-![Das Menü Format ist offen, daneben das Untermenü Schrift mit Fett, Kursiv, Schriftfarbe und Effekten](bilder/menues.png)
+![Das Fenster mit dem offenen Reiter Schreibhilfe: die Gruppen Lesen, Prüfen, Beim Schreiben, Vorlesen, Sprache, KI und Anzeigen, rechts die Seitenleiste](bilder/uebersicht.png)
 
-Die Schriftauswahl zeigt jede Schrift in sich selbst — oben die vier für
-Fließtext, darunter alles, was auf dem Rechner liegt.
+Die **Lesehilfe** ist die erste Seite der Optionen (**F9**). Jede Wahl
+wirkt sofort auf dem Blatt — kein „Übernehmen", kein Fenster, das über dem
+Text liegt, den man beurteilen will.
 
-![Die Schriftliste mit Suchfeld; jeder Name ist in seiner eigenen Schrift gesetzt](bilder/schriften.png)
+![Die Optionen mit der offenen Seite Lesehilfe: Papierton, Buchstabenabstand, Wortabstand, Zeilenluft, Zeilenfokus und Vorlesen; links der Baum mit den drei Zweigen](bilder/lesehilfe.png)
 
-Wer die Reiter aus Word gewohnt ist, stellt unter *Ansicht ▸
-Benutzeroberfläche* um. Über dem Blatt liegt das Lineal mit den
-Einzugsmarken.
+Unter **Schriftarten** stehen die drei Leseschriften als Knöpfe, jede in
+ihrer eigenen Schrift — man muss ihren Namen nicht kennen.
 
-![Das Register mit dem Reiter Start: Zwischenablage, Schriftart, Absatz und Formatvorlagen, darüber die Reiterzeile, darunter das Lineal](bilder/register.png)
+![Die Seite Schriftarten mit der Schriftwahl und den drei Knöpfen OpenDyslexic, Lexend und Atkinson Hyperlegible, jeder in seiner eigenen Schrift](bilder/schriften.png)
 
-Gedruckt wird, was die Vorschau zeigt: links das Blatt, rechts die
-Einstellungen in drei Reitern.
+Die Optionen tragen **alle dreizehn Seiten** des WPS Writer, zweispaltig
+und kompakt wie dort — hier die Seite *Ansicht*.
 
-![Das Druckfenster: links die Seitenvorschau mit dem Brief, rechts Bereich, Kopien, Blattseiten und Seitenlayout](bilder/drucken.png)
+![Die Seite Ansicht der Optionen, zweispaltig: Anzeigen, Druckoptionen, Formatierungszeichen, Menübandoptionen und Darstellung](bilder/einstellungen.png)
 
-Hell oder dunkel, je nachdem, was den Augen bekommt. Das Blatt bleibt weiß —
-Papier ist weiß.
+Wer die Reiter aus Word gewohnt ist, findet sie unter *Ansicht ▸
+Darstellung ▸ Benutzeroberfläche*. Über dem Blatt liegt das Lineal mit den
+Einzugsmarken, links das senkrechte.
 
-![Dasselbe Fenster im dunklen Modus](bilder/dunkel.png)
+![Das Register mit dem Reiter Start: Zwischenablage, Schriftart, Absatz, Absatzlayout und Bearbeiten](bilder/register.png)
 
-Auf der Einstellungsseite stehen der Schlüssel für die KI, das Modell, der
-Verbrauch und alles zur Darstellung.
+Hell oder dunkel, je nachdem, was den Augen bekommt.
 
-![Die Einstellungsseite mit API-Schlüssel, KI-Modell, Verbrauch und Übersetzen](bilder/einstellungen.png)
+![Dasselbe Fenster im hellen Thema](bilder/hell.png)
 
 ## Starten
 
@@ -380,42 +185,6 @@ nicht beide nebeneinander stehen.
 Gebraucht wird GTK mit WebKit:
 
     sudo apt install python3-gi gir1.2-webkit2-4.1
-
-## Was zusätzlich geholt wird
-
-Zwei Dinge liegen **nicht** in diesem Verzeichnis, weil sie zu groß sind, und
-werden bei Bedarf nach `~/.local/share/schreibprogramm/` gelegt — der
-Ordner behält seinen alten Namen mit Absicht, denn dort liegt auch alles
-Geschriebene und Gelernte:
-
-| | wofür | Größe | nötig? |
-|---|---|---|---|
-| LibreOffice | Word-Dateien, PDF, EPUB | ~700 MB | nur dafür |
-| [LanguageTool](https://languagetool.org/) | „Gründlich prüfen" | ~400 MB | nein, freiwillig |
-| [Piper](https://github.com/rhasspy/piper) + Thorsten | eine Stimme, die nicht nach Maschine klingt | ~90 MB | nein, `./stimme-holen.sh` |
-| Schriften zum leichteren Lesen | OpenDyslexic, Lexend, Atkinson Hyperlegible | ~4 MB | nein, `./schrift-holen.sh` |
-
-Ist LibreOffice im System installiert, genügt das auch. LanguageTool läuft
-als **eigener Prozess** — seine LGPL-Lizenz berührt dieses Programm nicht.
-
-Schreiben, Prüfen, Vorlesen und die ODF-Formate gehen ohne alles davon.
-
-**Die Schriften** landen unter `~/.local/share/fonts/lunivo-office` und
-stehen danach oben in der Schriftliste unter *Leichter zu lesen*:
-
-    ./schrift-holen.sh                  OpenDyslexic
-    ./schrift-holen.sh lexend atkinson  weitere dazu
-    ./schrift-holen.sh --alle           alle drei (~4 MB)
-    ./schrift-holen.sh --liste          zeigen, was es gibt
-    ./schrift-holen.sh --weg            wieder entfernen
-
-**OpenDyslexic** macht die Buchstaben unten schwerer als oben. Das gibt
-ihnen ein Gewicht, und ein Gewicht hat eine Richtung — b und d, p und q
-lassen sich dann nicht mehr so leicht verwechseln. **Lexend** ist nicht
-gegen das Verwechseln gemacht, sondern für das Tempo: weite Buchstaben,
-viel Luft dazwischen. **Atkinson Hyperlegible** kommt vom Braille Institute
-und unterscheidet, was einander ähnelt — I, l und 1; O und 0. Alle drei
-stehen unter der SIL Open Font License.
 
 ## Eine Hilfe, kein Ersatz
 
@@ -455,42 +224,6 @@ Programm ist eigenständig und braucht jenes Projekt nicht, um zu laufen.
 Die Wörterliste (`oberflaeche/daten/woerter.txt`, 355.324 Wörter) ist über viele Sitzungen
 selbst aufgebaut worden. Sie stammt aus keiner fremden Quelle und steht
 deshalb wie der übrige Code unter MIT.
-
-## Aufbau
-
-    start.py             Fenster, Server, Schriften, LibreOffice, Vorlesen
-    starten.sh           startet es und schreibt den Menüeintrag
-    stimme-holen.sh      holt Piper und die Stimme „Thorsten“ (freiwillig)
-    schrift-holen.sh     holt Schriften zum leichteren Lesen (freiwillig)
-
-    oberflaeche/         alles, was im Fenster zu sehen ist
-      index.html         die Oberfläche
-      css/programm.css   das Aussehen
-      js/programm.js     Menüs, Werkzeuge, Seitenleiste, Statuszeile
-      js/dokument.js     das Dokument: lesen, zeigen, ersetzen, formatieren
-      js/dokumente.js    welche Dokumente offen sind — die Reiter oben
-      js/dokumentmodell.js  Abschnitte, Seitenaufbau, Kopf- und Fußzeilen
-      js/language-bridge.js  hält den Fehlerstand: was geprüft, was weggewinkt
-      js/dateien.js      öffnen und speichern
-      js/pruefung.js     die Prüfung, Phonetik, Wortvorhersage
-      js/ki.js           Claude und Ollama, Gedächtnis, Sicherung
-      js/einstellungen.js  die Einstellungsseite
-      daten/regeln.js    der Wortschatz der Prüfung
-      daten/woerter.txt  355.324 deutsche Wörter
-      daten/symbole.js   die 155 Zeichnungen der Knöpfe
-      daten/symbolkatalog.js  1801 Zeichnungen zur Auswahl (erst bei Bedarf geladen)
-
-    werkzeug/            nichts davon lädt das Programm — Werkzeug für die Werkstatt
-      symbole.html       den Symbolkatalog durchsehen, im Browser öffnen
-      katalog-bauen.py   baut den Katalog aus einem Ordner voller .svg neu
-      svg-zu-pfad.py     rechnet <circle>, <rect>, <line> in einen Pfad um
-      bildschirmfoto.py  nimmt die Bilder für dieses README auf
-
-    doku/                ENTSTEHUNG, RICHTUNG und das ausführliche LIESMICH
-    symbole/             das Symbol als SVG und in allen Größen
-    bilder/              Logo, Marke und die Bildschirmfotos
-
-Ausführlicher steht alles in [LIESMICH.md](doku/LIESMICH.md).
 
 ## Lizenz
 

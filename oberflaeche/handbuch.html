@@ -103,6 +103,7 @@ footer{margin-top:64px;padding-top:20px;border-top:1px solid var(--linie);
   <a href="#erstes">Das erste Blatt</a>
   <a href="#reiter">Mehrere Dokumente</a>
   <a href="#oberflaeche">Die Oberfläche einrichten</a>
+  <a href="#menue">Das ☰ Menü</a>
   <b>Schreiben</b>
   <a href="#schreiben">Text und Gestaltung</a>
   <a href="#rechtsklick">Die rechte Maustaste</a>
@@ -155,20 +156,22 @@ ersetzt kein Speichern, aber es rettet den Nachmittag.</p>
 <h3>Neu, Öffnen, Weitermachen</h3>
 
 <table>
-<tr><td><span class="weg">Datei → Neu</span></td>
+<tr><td><span class="weg">☰ Menü → Neu → Leeres Dokument</span></td>
     <td>Ein leeres Blatt in einem <b>neuen Reiter</b>. Das, woran gerade
         geschrieben wurde, bleibt offen — siehe
         <a href="#reiter">Mehrere Dokumente</a>.</td></tr>
-<tr><td><span class="weg">Datei → Öffnen…</span></td>
+<tr><td><span class="weg">☰ Menü → Öffnen…</span></td>
     <td>Eine vorhandene Datei. Gelesen werden <code>.odt</code>,
         <code>.ott</code>, <code>.fodt</code>, <code>.docx</code>,
         <code>.dotx</code>, <code>.doc</code>, <code>.dot</code>,
         <code>.rtf</code>, <code>.html</code>, <code>.txt</code> und
         <code>.md</code>. Steht im vordersten Reiter schon etwas, bekommt
         die Datei einen eigenen.</td></tr>
-<tr><td><span class="weg">Datei → Zuletzt verwendet</span></td>
-    <td>Die letzten zehn Dateien.</td></tr>
-<tr><td><span class="weg">Datei → Neu aus Vorlage…</span></td>
+<tr><td><span class="weg">☰ Menü</span>, rechte Spalte</td>
+    <td>Die letzten zehn Dateien stehen offen daneben, sobald das Menü
+        aufklappt — mit Ordner und einem <b>×</b>, das den Namen aus der
+        Liste nimmt. Die Datei selbst bleibt liegen.</td></tr>
+<tr><td><span class="weg">☰ Menü → Neu → Neu aus Vorlage</span></td>
     <td>Die Seite <b>Neu</b>: alle Vorlagen als Blätter nebeneinander. Siehe
         <a href="#vorlagen">Vorlagen</a>.</td></tr>
 </table>
@@ -216,7 +219,7 @@ umstellen.</p>
 
 <p>Der letzte Reiter lässt sich nicht schließen — er wird geleert. Ein
 Fenster ohne Blatt hätte nichts, worin man schreiben könnte. Wer das
-Fenster loswerden will, nimmt <span class="weg">Datei → Beenden</span>.</p>
+Fenster loswerden will, nimmt <span class="weg">☰ Menü → Beenden</span>.</p>
 
 <h3>Und mehrere Fenster</h3>
 
@@ -244,13 +247,35 @@ vollständig da, aber nicht mehr die Schrittfolge dorthin.</p>
 
 <ul>
 <li><b>Symbolleisten</b> — zwei Zeilen, in denen alles immer dasteht.</li>
-<li><b>In Registern</b> — neun Reiter: Datei, Start, Einfügen,
-Seitenlayout, Referenzen, Überprüfen, Schreibhilfe, Sendungen, Ansicht.
-Zeigt weniger auf einmal, dafür mit Namen neben den Zeichen. Dazu sechs,
-die nur kommen, wenn sie etwas zu sagen haben — Tabellenwerkzeuge,
-Zeichentools, Diagrammtools, SmartArt-Tools, Gleichungswerkzeuge, Kopf-
-und Fußzeilenwerkzeuge.</li>
+<li><b>In Registern</b> — acht Reiter: Start, Einfügen, Seitenlayout,
+Referenzen, Überprüfen, Schreibhilfe, Sendungen, Ansicht. Zeigt weniger
+auf einmal, dafür mit Namen neben den Zeichen. Dazu sechs, die nur
+kommen, wenn sie etwas zu sagen haben — Tabellenwerkzeuge, Zeichentools,
+Diagrammtools, SmartArt-Tools, Gleichungswerkzeuge, Kopf- und
+Fußzeilenwerkzeuge.</li>
 </ul>
+
+<h3 id="menue">Das ☰ Menü</h3>
+
+<p>Einen <b>Datei-Reiter gibt es nicht</b>, so wenig wie im WPS Writer.
+Links vor den Reitern steht <span class="weg">☰ Menü</span>, und in der
+Symbolleisten-Oberfläche am Anfang der oberen Leiste — dieselbe Stelle,
+derselbe Inhalt.</p>
+
+<p>Es klappt als <b>Tafel mit zwei Spalten</b> auf. Links die Befehle:
+Neu, Öffnen, Speichern, Speichern unter, Als PDF exportieren, Als Bild
+exportieren, Drucken, Dokumentverschlüsselung, Hilfe, Optionen, Beenden.
+Rechts die zuletzt benutzten Dateien.</p>
+
+<p>Ein Punkt mit einem <b>Pfeil</b> legt kein Fenster darüber — er füllt
+die rechte Spalte. Fährt man auf einen Punkt ohne Pfeil, stehen dort
+wieder die Dateien.</p>
+
+<p>Gleich neben dem ☰ liegt der <b>Schnellzugriff</b>: Öffnen, Speichern,
+Als PDF, Drucken, Druckvorschau, Rückgängig, Wiederholen.</p>
+
+<p>Ein Dokument <b>schließen</b> geht über das <b>×</b> an seinem Reiter,
+nicht über das Menü.</p>
 
 <p>Die <b>Menüleiste</b> ganz oben bleibt in beiden Fällen. Sie ist der Weg
 zu allem, was in keine Leiste passt — wenn ein Befehl in der Leiste nicht zu
@@ -269,33 +294,54 @@ Reihenfolge der Gruppen im Band ändern; unter
 
 <h3>Die Optionen (F9)</h3>
 
-<p>Links die Seiten, rechts der Bereich — dieselbe Reihenfolge und
-dieselben Namen wie im WPS Writer:</p>
+<p>Links der Baum mit drei Zweigen, rechts der Bereich. Ganz oben steht,
+wofür dieses Programm gebaut ist:</p>
 
 <table>
-<tr><td><b>Ansicht</b></td>
-    <td>Schrift und Helligkeit, Symbolgröße, Bedienschrift, Oberfläche —
-        dazu Lineal, Navigationsbereich, Textbegrenzungen,
-        Gitternetzlinien und Steuerzeichen.</td></tr>
-<tr><td><b>Bearbeiten</b></td>
-    <td>AutoKorrektur und Wortvorhersage.</td></tr>
-<tr><td><b>Allgemein und Speichern</b></td>
-    <td>Womit „Speichern unter" aufgeht, die Schrift für neuen Text,
-        und die Maßeinheit.</td></tr>
-<tr><td><b>Speicherort für Dateien</b></td>
-    <td>Der Ordner, in dem gespeichert wird, und der eigene
-        Vorlagenordner.</td></tr>
-<tr><td><b>Änderungen verfolgen</b></td>
-    <td>Verfolgen an oder aus, Markup anzeigen.</td></tr>
-<tr><td><b>Benutzerinformationen</b></td>
-    <td>Wer schreibt — steht als Verfasser im Dokument und füllt Umschlag,
-        Etiketten und Seriendruck vor.</td></tr>
+<tr><td colspan="2"><b>Leichter lesen</b></td></tr>
+<tr><td><b>Lesehilfe</b></td>
+    <td>Papierton, Buchstaben- und Wortabstand, Zeilenluft, Zeilenfokus,
+        Absatzvergrößerung. Jede Wahl wirkt sofort auf dem Blatt.</td></tr>
+<tr><td><b>Schriftarten</b></td>
+    <td>Schrift und Größe für neuen Text. Die drei Leseschriften stehen
+        als Knöpfe da, jede in ihrer eigenen Schrift — man muss ihren
+        Namen nicht kennen.</td></tr>
+<tr><td><b>Sprache</b></td>
+    <td>Korrektursprache, Übersetzen, Silbentrennung, Grammatik — alles
+        Sprachliche an einer Stelle.</td></tr>
 <tr><td><b>Rechtschreibprüfung</b></td>
-    <td>Korrektursprache, Wellenlinien beim Schreiben, und der Weg zum
-        Gedächtnis.</td></tr>
-<tr><td><b>Schreibhilfe und KI</b> · <b>Gedächtnis</b> · <b>Menüband
-        anpassen</b> · <b>Erweitert</b></td>
-    <td>Was Lunivo hat und WPS nicht.</td></tr>
+    <td>Was geprüft und was übergangen wird.</td></tr>
+
+<tr><td colspan="2"><b>Wie im WPS Writer</b> — alle dreizehn Seiten in
+    seiner Reihenfolge und mit seinen Namen</td></tr>
+<tr><td><b>Ansicht</b></td>
+    <td>Anzeigen, Druckoptionen, Formatierungszeichen, Menübandoptionen,
+        dazu Darstellung: Schriftgröße, Helligkeit, Symbolgröße,
+        Oberfläche.</td></tr>
+<tr><td><b>Bearbeiten</b></td>
+    <td>Bearbeitungsoptionen, AutoFormat, AutoKorrektur mit ihren
+        einzelnen Regeln, Ausschneiden und Einfügen.</td></tr>
+<tr><td><b>Allgemein und Speichern</b> · <b>Sicherungseinstellungen</b> ·
+    <b>Speicherort</b></td>
+    <td>Dateiformat, Maßeinheit, Kompatibilität; wann gesichert wird; wo
+        die Dateien und Vorlagen liegen.</td></tr>
+<tr><td><b>Änderungen verfolgen</b> · <b>In PDF exportieren</b> ·
+    <b>Drucken</b></td>
+    <td>Markup und Sprechblasen; was ins PDF mitgeht; womit das
+        Druckfenster aufgeht.</td></tr>
+<tr><td><b>Benutzerinformationen</b> · <b>Sicherheit</b></td>
+    <td>Wer schreibt; Dokumentkennwort mit echter AES-256-Verschlüsselung
+        und die Datenschutzoptionen.</td></tr>
+<tr><td><b>Menüband anpassen</b> · <b>Symbolleiste für den
+    Schnellzugriff</b></td>
+    <td>Zwei Listen wie bei WPS: links die Befehle mit Suche, rechts das
+        Ziel, dazwischen Hinzufügen und Entfernen.</td></tr>
+
+<tr><td colspan="2"><b>Nur bei Lunivo</b></td></tr>
+<tr><td><b>Schreibhilfe und KI</b> · <b>Gedächtnis</b> ·
+    <b>Erweitert</b></td>
+    <td>Schlüssel und Modell; die gelernten Wörter; was zusätzlich geholt
+        wurde.</td></tr>
 </table>
 
 <div class="merk">
@@ -305,13 +351,9 @@ Schalter, drei Stellen, ein Zustand — wer ihn irgendwo umlegt, sieht ihn
 nichts, sie legt zusammen, was sonst verstreut liegt.</p>
 </div>
 
-<p class="dazu">Was WPS dort hat und hier fehlt, fehlt mit Grund:
-<b>Sicherungseinstellungen</b> — Lunivo sichert von selbst, laufend; es
-gäbe nichts einzustellen. <b>Drucken</b> und <b>In PDF exportieren</b> —
-das steht im Druckfenster, wo man es beim Drucken braucht.
-<b>Sicherheit</b> — Kennwortschutz kann das Programm nicht.
-<b>Symbolleiste für den Schnellzugriff</b> — gibt es nicht. Ein Feld ohne
-Wirkung ist schlimmer als ein fehlendes.</p>
+<p class="dazu">86 Kästchen und 20 Klapplisten, und keines davon ist eine
+Attrappe. Wo Lunivo etwas nicht kann, steht das auf der Seite selbst statt
+in einem Feld, das nichts bewirkt.</p>
 
 
 <h2 id="schreiben">Text und Gestaltung</h2>
@@ -551,10 +593,19 @@ ankommt.</li>
 
 <h2 id="lesehilfe">Die Lesehilfe</h2>
 
-<p><span class="weg">Ansicht → Lesehilfe…</span>. Sie ändert, wie der Text
-<i>aussieht</i>, ohne das Dokument anzufassen: Nichts davon steht in der
-Datei, nichts davon wird gedruckt. Wer sie ausschaltet, hat denselben Text
-wie vorher.</p>
+<p><span class="weg">Schreibhilfe → Lesen → Lesehilfe</span>, oder
+<kbd>F2</kbd>. Sie ändert, wie der Text <i>aussieht</i>, ohne das Dokument
+anzufassen: Nichts davon steht in der Datei, nichts davon wird gedruckt.
+Wer sie ausschaltet, hat denselben Text wie vorher.</p>
+
+<p>Im Reiter <b>Schreibhilfe</b> steht alles beieinander, was das Lesen und
+Schreiben erleichtert — die Lesehilfe, der Zeilenfokus, der Lesemodus, die
+Schriftwahl, die Silbentrennung, das Übersetzen, der Thesaurus, das
+Vorlesen und die Prüfung. Vorher lag es über fünf Reiter verstreut.</p>
+
+<p>Dieselben Einstellungen stehen auch in den Optionen unter
+<b>Leichter lesen → Lesehilfe</b> (<kbd>F9</kbd>). Dort wirkt jede Wahl
+sofort auf dem Blatt, ohne dass ein Fenster darüber liegt.</p>
 
 <table>
 <tr><td><b>Papierton</b></td><td>Ein ruhigerer Grund als reines Weiß.</td></tr>
@@ -633,9 +684,8 @@ Sache für einen Baustein, sondern für eine <a href="#vorlagen">Vorlage</a>.</p
 Aufbau. Ein fertiges Muster aus dem Internet gehört hierher, nicht in einen
 Baustein.</p>
 
-<p><span class="weg">Datei → Neu aus Vorlage…</span> öffnet die Seite
-<b>Neu</b> — im Register-Band steht sie unter <span class="weg">Datei →
-Aus Vorlage…</span>. Dort liegen alle Vorlagen als Blätter nebeneinander,
+<p><span class="weg">☰ Menü → Neu → Neu aus Vorlage</span> öffnet die Seite
+<b>Neu</b>. Dort liegen alle Vorlagen als Blätter nebeneinander,
 mit einem Suchfeld darüber. Ein Klick auf ein Blatt öffnet die Abschrift,
 die Nadel unten rechts holt eine nach vorn. <kbd>Esc</kbd> führt zurück.</p>
 
@@ -739,8 +789,9 @@ Art, in der künftig gesichert wird.</p>
 <h2 id="drucken">Drucken</h2>
 
 <p><kbd>Strg</kbd>+<kbd>P</kbd>. Vorher zeigt
-<span class="weg">Datei → Druckvorschau</span>, was auf das Papier kommt.
-Unter <span class="weg">Druckereinstellungen…</span> stehen die
+<span class="weg">☰ Menü → Drucken → Druckvorschau</span>, was auf das
+Papier kommt. Unter <span class="weg">☰ Menü → Drucken →
+Druckereinstellungen</span> stehen die
 Möglichkeiten des angeschlossenen Druckers — Papierfach, beidseitig,
 Auflösung.</p>
 
@@ -809,6 +860,7 @@ LibreOffice gilt dessen eigene Hilfe.</p>
     <td>Vorschlag der Wortvorhersage nehmen</td></tr>
 <tr><td><kbd>F3</kbd></td><td>Textbaustein zum getippten Kürzel einsetzen</td></tr>
 <tr><td><kbd>Tab</kbd></td><td>Zur nächsten Lücke «…» springen</td></tr>
+<tr><td><kbd>F2</kbd></td><td>Lesehilfe</td></tr>
 <tr><td><kbd>F4</kbd></td><td>Vorlesen</td></tr>
 <tr><td><kbd>F5</kbd></td><td>Seitenleiste Schreibhilfe</td></tr>
 <tr><td><kbd>F6</kbd></td><td>Welche Hilfe wann</td></tr>

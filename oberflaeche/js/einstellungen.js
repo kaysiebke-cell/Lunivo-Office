@@ -872,6 +872,7 @@ function oeffnen(bereich) {
 
   benutzerZeigen();
   schriftenZeigen();
+  leseschriftenZeigen();
   spracheZeigen();
   pfadZeigen();
   bedienungZeigen();
@@ -924,24 +925,92 @@ function benutzerMerken() {
 /* ------------------------------------------------------------
    Schriftarten und Sprache
    ------------------------------------------------------------ */
+/* Die drei Leseschriften als Knöpfe, jede in ihrer eigenen Schrift.
+
+   Ein Name allein hilft nicht: „OpenDyslexic" fällt niemandem ein, wenn
+   er sie braucht — Kay ging es gerade so. Die Form dagegen erkennt man
+   sofort, und ein Klick stellt sie ein. */
+const LESESCHRIFTEN_SATZ = {
+  'OpenDyslexic': 'Die Buchstaben sind unten schwerer — sie kippen nicht.',
+  'Lexend': 'Weitere Abstände, ruhigeres Zeilenbild.',
+  'Atkinson Hyperlegible': 'Unterscheidet Zeichen, die sich ähneln: l, I und 1.',
+};
+
+function leseschriftenZeigen() {
+  const kasten = $('einst-leseschriften');
+  if (!kasten || !kasten.appendChild || !griffe.leseschriften) return;
+  const da = griffe.leseschriften();
+  const jetzt = griffe.schriftJetzt();
+  kasten.textContent = '';
+
+  for (const name of Object.keys(LESESCHRIFTEN_SATZ)) {
+    const vorhanden = da.includes(name);
+    const knopf = document.createElement('button');
+    knopf.type = 'button';
+    knopf.className = 'schriftprobe-knopf'
+                    + (name === jetzt ? ' schriftprobe-knopf--gewaehlt' : '')
+                    + (vorhanden ? '' : ' schriftprobe-knopf--fehlt');
+    knopf.disabled = !vorhanden;
+
+    const wort = document.createElement('span');
+    wort.className = 'schriftprobe-knopf__name';
+    wort.textContent = name;
+    /* In ihrer eigenen Schrift — sonst sieht man nicht, worum es geht. */
+    if (vorhanden) wort.style.fontFamily = '"' + name + '", serif';
+
+    const satz = document.createElement('span');
+    satz.className = 'schriftprobe-knopf__satz';
+    satz.textContent = vorhanden ? LESESCHRIFTEN_SATZ[name]
+                                 : 'Noch nicht geholt — siehe Erweitert.';
+
+    knopf.append(wort, satz);
+    knopf.addEventListener('click', () => {
+      if (!vorhanden || !griffe.grundschriftSetzen) return;
+      griffe.grundschriftSetzen(name === jetzt ? "" : name, undefined);
+      schriftenZeigen();
+      leseschriftenZeigen();
+    });
+    kasten.appendChild(knopf);
+  }
+}
+
 function schriftenZeigen() {
   const wahl = $('einst-schrift');
   const alle = griffe.schriften();
   const jetzt = griffe.schriftJetzt();
 
   wahl.innerHTML = '';
-  /* „Wie im Blatt" statt eines Namens: Wer nie etwas eingestellt hat, soll
-     nicht raten müssen, welche der 900 Schriften gerade gilt. */
+  /* „Wie voreingestellt" statt eines Namens: Wer nie etwas eingestellt
+     hat, soll nicht raten müssen, welche der 900 Schriften gerade gilt.
+     Voreingestellt ist seit dem Umbau OpenDyslexic — die Schrift, für
+     deren Leser dieses Programm gebaut ist. */
   const grund = document.createElement('option');
   grund.value = '';
-  grund.textContent = 'Wie voreingestellt (Georgia)';
+  grund.textContent = 'Wie voreingestellt (OpenDyslexic)';
   wahl.appendChild(grund);
-  for (const name of alle) {
-    const o = document.createElement('option');
-    o.value = name; o.textContent = name;
-    if (name === jetzt) o.selected = true;
-    wahl.appendChild(o);
-  }
+  /* Nach Gruppen, mit den Leseschriften zuoberst.
+
+     Vorher standen alle neunhundert in einer Reihe, alphabetisch. Wer
+     OpenDyslexic suchte — die Schrift, deretwegen viele überhaupt hier
+     sind —, musste bis zum O rollen und den Namen genau kennen. Die
+     Schriftkiste im Band macht es seit jeher richtig; diese Liste nicht. */
+  const lesbar = griffe.leseschriften ? griffe.leseschriften() : [];
+  const uebrige = alle.filter((n) => !lesbar.includes(n));
+
+  const gruppeBauen = (titel, namen) => {
+    if (!namen.length) return;
+    const kiste = document.createElement('optgroup');
+    kiste.label = titel;
+    for (const name of namen) {
+      const o = document.createElement('option');
+      o.value = name; o.textContent = name;
+      if (name === jetzt) o.selected = true;
+      kiste.appendChild(o);
+    }
+    wahl.appendChild(kiste);
+  };
+  gruppeBauen('Leichter zu lesen', lesbar);
+  gruppeBauen('Alle Schriften', uebrige);
   if (!jetzt) grund.selected = true;
 
   const gr = $('einst-schriftgroesse');

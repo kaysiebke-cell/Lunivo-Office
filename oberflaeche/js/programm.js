@@ -698,6 +698,10 @@ function formatFragen() {
    gespeichert. Deshalb merkt es sich das Programm auch nicht als die Art,
    in der künftig gesichert wird. */
 B.speichernPdf   = () => speichereAls('pdf');
+/* „Export as Image" aus dem Foto. LibreOffice wandelt das Blatt in ein
+   PNG; gebraucht wird es fuer Anhaenge und fuer alles, was kein PDF
+   annimmt. */
+B.speichernBild  = () => speichereAls('png');
 
 B.umbenennen = () => {
   fenster('Umbenennen', [
@@ -2732,8 +2736,9 @@ let menueleisteAn = Speicher.lies('menueleiste', true);
    Platz, den das Register gewinnen soll, und niemand baut es so: Weder Word
    noch der Writer zeigen Menü und Reiter zugleich.
 
-   Erreichbar bleibt sie über das Zeichen ☰ rechts in der Reiterzeile — dort
-   sitzt es auch im Writer. Ein Klick zeigt sie, der nächste nimmt sie weg. */
+   Erreichbar bleibt sie über Ansicht ▸ Oberfläche ▸ Menüleiste und über die
+   Alt-Taste. Das ☰ links in der Reiterzeile ist etwas anderes: Es klappt
+   das Datei-Menü auf, so wie im WPS Writer, und schaltet nichts um. */
 let menueImRegister = false;
 
 function menueleisteAnwenden() {
@@ -3197,12 +3202,392 @@ function felderKiste() {
   return kiste;
 }
 
+/* Die rechte Spalte der Tafel.
+
+   Sie hat zwei Zustaende. Im Ruhezustand stehen dort die zuletzt benutzten
+   Dateien. Faehrt man ueber einen Punkt mit Pfeil, stehen dort dessen
+   Unterpunkte.
+
+   WARUM NICHT ALS EIGENES FENSTER
+
+   Zuerst hingen die Untermenues als schwebende Klappen an den Punkten und
+   legten sich ueber die Dateiliste. Zwei Kaesten uebereinander, der untere
+   halb verdeckt — und die zweite Spalte, fuer die die Tafel ueberhaupt so
+   breit ist, stand nutzlos dahinter. Im WPS Writer fuellt das Untermenue
+   die rechte Spalte; die Tafel bleibt EIN Kasten. So jetzt auch hier. */
+function tafelRechtsLeeren(rechts) {
+  rechts.innerHTML = '';
+}
+
+/* Zustand eins: die zuletzt benutzten Dateien. */
+function tafelRechtsZuletzt(rechts) {
+  tafelRechtsLeeren(rechts);
+  rechts.classList.remove('tafel__zuletzt--unter');
+
+  const kopf = document.createElement('div');
+  kopf.className = 'tafel__titel';
+  kopf.textContent = 'Liste zuletzt verwendeter Dateien';
+
+  const frisch = document.createElement('button');
+  frisch.type = 'button';
+  frisch.className = 'tafel__frisch';
+  frisch.textContent = '↻';
+  frisch.title = 'Liste neu holen';
+  frisch.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    await zuletztHolen();
+    tafelRechtsZuletzt(rechts);
+  });
+  kopf.appendChild(frisch);
+  rechts.appendChild(kopf);
+
+  const rumpf = document.createElement('div');
+  rumpf.className = 'tafel__liste';
+  rechts.appendChild(rumpf);
+  tafelListeFuellen(rumpf, rechts);
+}
+
+function tafelListeFuellen(rumpf, rechts) {
+  rumpf.innerHTML = '';
+  if (!zuletztListe.length) {
+    const leer = document.createElement('div');
+    leer.className = 'tafel__leer';
+    leer.textContent = 'Noch nichts geöffnet.';
+    rumpf.appendChild(leer);
+    return;
+  }
+  zuletztListe.forEach((eintrag, nr) => {
+    const zeile = document.createElement('div');
+    zeile.className = 'tafel__zeile';
+
+    const auf = document.createElement('button');
+    auf.type = 'button';
+    auf.className = 'tafel__datei';
+    auf.addEventListener('click', () => { menueSchliessen(); B.zuletztOeffnen(nr); });
+
+    const name = document.createElement('span');
+    name.className = 'tafel__name';
+    name.textContent = eintrag.name;
+    auf.appendChild(name);
+
+    const ordner = document.createElement('span');
+    ordner.className = 'tafel__ordner';
+    ordner.textContent = eintrag.ordner || '';
+    auf.appendChild(ordner);
+    zeile.appendChild(auf);
+
+    const weg = document.createElement('button');
+    weg.type = 'button';
+    weg.className = 'tafel__weg';
+    weg.textContent = '×';
+    weg.title = 'Aus der Liste nehmen (die Datei bleibt)';
+    weg.setAttribute('aria-label', 'Aus der Liste nehmen');
+    weg.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      try {
+        const antwort = await fetch('zuletzt-weg?nr=' + nr, { method: 'POST' });
+        if (antwort.ok) zuletztListe = await antwort.json();
+      } catch (f) { /* kein Server - dann bleibt die Liste, wie sie ist */ }
+      tafelListeFuellen(rumpf, rechts);
+    });
+    zeile.appendChild(weg);
+    rumpf.appendChild(zeile);
+  });
+}
+
+/* Zustand zwei: die Unterpunkte eines Punktes mit Pfeil. */
+function tafelRechtsUnter(rechts, titel, punkte) {
+  tafelRechtsLeeren(rechts);
+  rechts.classList.add('tafel__zuletzt--unter');
+
+  const kopf = document.createElement('div');
+  kopf.className = 'tafel__titel';
+  kopf.textContent = titel;
+  rechts.appendChild(kopf);
+
+  const rumpf = document.createElement('div');
+  rumpf.className = 'tafel__liste';
+  for (const punkt of punkte) {
+    if (punkt === strich) {
+      const linie = document.createElement('div');
+      linie.className = 'menue__strich';
+      rumpf.appendChild(linie);
+      continue;
+    }
+    const knopf = document.createElement('button');
+    knopf.className = 'menue__punkt';
+    knopf.setAttribute('role', 'menuitem');
+
+    const haken = document.createElement('span');
+    haken.className = 'haken';
+    haken.textContent = punkt.haken && punkt.haken() ? '✓' : '';
+    knopf.appendChild(haken);
+    knopf.appendChild(document.createTextNode(punkt.name));
+
+    if (punkt.taste) {
+      const taste = document.createElement('span');
+      taste.className = 'taste';
+      taste.textContent = punkt.taste;
+      knopf.appendChild(taste);
+    }
+    knopf.addEventListener('click', () => { menueSchliessen(); menuePunktTun(punkt); });
+    rumpf.appendChild(knopf);
+  }
+  rechts.appendChild(rumpf);
+}
+
+/* Die linke Spalte. Eigener Bauer statt punkteBauen(): Der haengt an einen
+   Punkt mit Unterpunkten eine schwebende Klappe, und genau die soll hier
+   nicht entstehen. Punkte ohne Pfeil verhalten sich wie ueberall. */
+function tafelBefehleBauen(links, rechts, punkte) {
+  links.innerHTML = '';
+
+  const nichtsOffen = () => {
+    for (const a of links.querySelectorAll('.menue__punkt--offen')) {
+      a.classList.remove('menue__punkt--offen');
+    }
+  };
+
+  for (const punkt of punkte) {
+    if (punkt === strich) {
+      const linie = document.createElement('div');
+      linie.className = 'menue__strich';
+      links.appendChild(linie);
+      continue;
+    }
+
+    const knopf = document.createElement('button');
+    knopf.className = 'menue__punkt' + (punkt.unter ? ' menue__punkt--auf' : '');
+    knopf.setAttribute('role', 'menuitem');
+
+    const haken = document.createElement('span');
+    haken.className = 'haken';
+    haken.textContent = punkt.haken && punkt.haken() ? '✓' : '';
+    knopf.appendChild(haken);
+    knopf.appendChild(document.createTextNode(punkt.name));
+
+    if (punkt.unter) {
+      knopf.setAttribute('aria-haspopup', 'true');
+      const pfeil = document.createElement('span');
+      pfeil.className = 'menue__pfeil';
+      pfeil.textContent = '›';
+      knopf.appendChild(pfeil);
+
+      const zeigen = () => {
+        nichtsOffen();
+        knopf.classList.add('menue__punkt--offen');
+        tafelRechtsUnter(rechts, punkt.name,
+                         typeof punkt.unter === 'function' ? punkt.unter() : punkt.unter);
+      };
+      knopf.addEventListener('mouseenter', zeigen);
+      /* Ein Klick auf den Kopf fuehrt nichts aus und schliesst nichts —
+         er zeigt nur, was rechts steht. Fuer die Tastatur und fuer den,
+         der lieber klickt als faehrt. */
+      knopf.addEventListener('click', (e) => { e.stopPropagation(); zeigen(); });
+    } else {
+      if (punkt.taste) {
+        const taste = document.createElement('span');
+        taste.className = 'taste';
+        taste.textContent = punkt.taste;
+        knopf.appendChild(taste);
+      }
+      /* Zurueck zur Dateiliste: Wer von "Drucken" nach "Oeffnen" faehrt,
+         soll nicht die Druckpunkte rechts stehen lassen. */
+      knopf.addEventListener('mouseenter', () => {
+        if (!links.querySelector('.menue__punkt--offen')) return;
+        nichtsOffen();
+        tafelRechtsZuletzt(rechts);
+      });
+      knopf.addEventListener('click', () => { menueSchliessen(); menuePunktTun(punkt); });
+    }
+    links.appendChild(knopf);
+  }
+}
+
+/* Die Befehle links in der Tafel — nach dem Foto des WPS-Menues.
+
+   Elf Punkte, drei Striche, in genau dieser Reihenfolge. Das Foto ist die
+   Vorgabe, nicht der Aufbau-Baum: Der fuehrt DATEI als flache Liste von
+   siebzehn Punkten, und die stehen weiter so in der Menueleiste. Hier
+   nicht.
+
+   WAS AUS DEN SIEBZEHN WURDE
+
+   Kein Befehl ist weggefallen, sie liegen nur anders. Die vier Pfeile des
+   Fotos nehmen auf, was auf der ersten Ebene keinen Platz mehr hat:
+   Vorlagen unter "Neu", Umbenennen und Eigenschaften unter "Speichern
+   unter", Vorschau und Einstellungen unter "Drucken".
+
+   Zwei Punkte des Fotos gab es hier nicht und sind gebaut worden: der
+   Bild-Export (LibreOffice wandelt nach PNG) und die Verschluesselung
+   (fuehrt auf die vorhandene Kennwort-Seite).
+
+   "Zuletzt geoeffnet" ist kein Punkt mehr, sondern die rechte Spalte —
+   auch das steht so im Foto. Und "Schliessen" fehlt dort; ein Dokument
+   schliesst man ueber das Kreuz an seinem Reiter. */
+function dateiTafelPunkte() {
+  return [
+    { name: 'Neu', unter: [
+      { name: 'Leeres Dokument', tun: B.neu, taste: 'Strg+N' },
+      { name: 'Neu aus Vorlage', tun: B.vorlagenWaehlen },
+      { name: 'Vorlagenordner', tun: B.vorlagenOrdner },
+    ] },
+    { name: 'Öffnen', tun: B.oeffnen, taste: 'Strg+O' },
+    { name: 'Speichern', tun: B.speichern, taste: 'Strg+S' },
+    { name: 'Speichern unter', unter: [
+      { name: 'Speichern unter …', tun: B.speichernUnter, taste: 'Strg+Umschalt+S' },
+      { name: 'Umbenennen', tun: B.umbenennen },
+      { name: 'Dokumenteigenschaften', tun: B.eigenschaften },
+    ] },
+    { name: 'Als PDF exportieren', tun: B.speichernPdf },
+    /* Im Foto steht hier "Export as Image" — Englisch, weil WPS diese eine
+       Zeile nicht uebersetzt hat. Eine fremde Luecke schreibe ich nicht ab. */
+    { name: 'Als Bild exportieren', tun: B.speichernBild },
+    { name: 'Drucken', unter: [
+      { name: 'Drucken …', tun: B.drucken, taste: 'Strg+P' },
+      { name: 'Druckvorschau', tun: B.vorschau },
+      { name: 'Druckereinstellungen', tun: B.druckerEinrichten },
+    ] },
+    strich,
+    { name: 'Dokumentverschlüsselung', unter: [
+      { name: 'Kennwort setzen oder entfernen …',
+        tun: () => Einstellungen.oeffnen('sicherheit') },
+    ] },
+    strich,
+    { name: 'Hilfe', unter: [
+      { name: 'Handbuch', tun: B.handbuch },
+      { name: 'Tastenkürzel', tun: B.tastenHilfe },
+      { name: 'Erweiterungen', tun: B.erweiterungen },
+      { name: 'Über Lunivo Office', tun: B.ueber },
+    ] },
+    { name: 'Optionen', tun: () => Einstellungen.oeffnen(), taste: 'F9' },
+    { name: 'Beenden', tun: B.beenden },
+  ];
+}
+
+/* Der Schnellzugriff rechts vom Menuezeichen - die Handvoll Befehle, die
+   man staendig braucht, ohne dafuer den Reiter zu wechseln. So steht er im
+   Foto: gleich neben dem Menuezeichen, in derselben Zeile. */
+const SCHNELLZUGRIFF = [
+  ['oeffnen', 'Öffnen', () => B.oeffnen()],
+  ['speichern', 'Speichern', () => B.speichern()],
+  ['pdf', 'Als PDF exportieren', () => B.speichernPdf()],
+  ['drucken', 'Drucken', () => B.drucken()],
+  ['vorschau', 'Druckvorschau', () => B.vorschau()],
+  ['zurueck', 'Rückgängig', () => B.rueckgaengig()],
+  ['vor', 'Wiederholen', () => B.wiederholen()],
+];
+
+function schnellleisteBauen() {
+  const leiste = $('register-schnell');
+  if (!leiste) return;
+  leiste.innerHTML = '';
+  for (const [kennung, name, tun] of SCHNELLZUGRIFF) {
+    const k = document.createElement('button');
+    k.type = 'button';
+    k.className = 'register__schnellknopf';
+    k.title = name;
+    k.setAttribute('aria-label', name);
+    const bild = symbol(kennung);
+    if (bild) k.appendChild(bild); else k.textContent = name;
+    k.addEventListener('mousedown', (e) => e.preventDefault());
+    k.addEventListener('click', tun);
+    leiste.appendChild(k);
+  }
+}
+
+
+/* Das ☰ Menü. Es steht an ZWEI Stellen, und das ist Absicht:
+
+   Register       links vor den Reitern
+   Symbolleisten  links am Anfang der oberen Leiste
+
+   Vorher hing es nur am Register. Wer mit Symbolleisten arbeitete, hatte
+   kein ☰ — die Datei-Befehle lagen dort verstreut zwischen den Symbolen,
+   und der ganze Weg dorthin war die Menüleiste, die sich abschalten
+   laesst. Damit trugen die drei Oberflaechen nicht mehr denselben Aufbau.
+
+   Jeder Aufruf baut einen eigenen Kasten; geteilt wird nur die Liste der
+   Punkte. Zwei Kaesten stoeren sich nicht: Offen ist immer nur einer,
+   darauf passt menueSchliessen() auf. */
+function menueKnopfBauen() {
+  const kasten = document.createElement('div');
+  kasten.className = 'menue menue--haupt';
+
+  const knopf = document.createElement('button');
+  knopf.type = 'button';
+  knopf.className = 'menue__titel menue__hauptknopf';
+  knopf.textContent = '\u2630 Menü \u25be';
+  knopf.title = 'Neu, öffnen, speichern, drucken, Optionen, beenden';
+  knopf.setAttribute('aria-haspopup', 'true');
+  kasten.appendChild(knopf);
+
+  /* Zwei Spalten, wie im Foto: links die Befehle, rechts die zuletzt
+     benutzten Dateien. */
+  const klappe = document.createElement('div');
+  klappe.className = 'menue__klappe menue__tafel';
+  klappe.setAttribute('role', 'menu');
+
+  const links = document.createElement('div');
+  links.className = 'tafel__befehle';
+  klappe.appendChild(links);
+
+  const rechts = document.createElement('div');
+  rechts.className = 'tafel__zuletzt';
+  klappe.appendChild(rechts);
+
+  /* Erst die rechte Spalte, dann die linke: Die Punkte mit Pfeil brauchen
+     beim Bauen schon den Kasten, den sie fuellen sollen. */
+  tafelRechtsZuletzt(rechts);
+  tafelBefehleBauen(links, rechts, dateiTafelPunkte());
+
+  /* Faehrt der Zeiger aus der Tafel heraus, steht wieder die Dateiliste da
+     — sonst begruesst das naechste Aufklappen mit den Druckpunkten. */
+  klappe.addEventListener('mouseleave', () => {
+    for (const a of links.querySelectorAll('.menue__punkt--offen')) {
+      a.classList.remove('menue__punkt--offen');
+    }
+    tafelRechtsZuletzt(rechts);
+  });
+
+  kasten.appendChild(klappe);
+
+  knopf.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const warOffen = kasten.classList.contains('menue--offen');
+    menueSchliessen();
+    if (!warOffen) {
+      kasten.classList.add('menue--offen');
+      offenesMenue = kasten;
+      seiteWaehlen(klappe);
+    }
+  });
+  return kasten;
+}
+
 function registerBauen() {
   const reiter = $('register-reiter');
   const band = $('register-band');
   if (!reiter || !band) return;
 
   reiter.innerHTML = '';
+
+  /* Links vor den Reitern das ☰ Menü. Es ist KEIN Reiter: Es schaltet das
+     Band nicht um, es klappt senkrecht auf, und es bleibt stehen, welcher
+     Reiter auch offen ist. So steht es im WPS Writer.
+
+     Hier lag ein Reiter „Datei" mit sieben Gruppen. Wer speichern wollte,
+     musste das Band wegschalten, speichern, und den alten Reiter wieder
+     suchen — für einen Befehl, der im Menü einen Klick weit weg liegt.
+
+     Die Punkte kommen aus MENUES, damit Menüleiste und ☰ nicht
+     auseinanderlaufen. */
+  const menueStelle = $('register-menue');
+  if (menueStelle) {
+    menueStelle.innerHTML = '';
+    menueStelle.appendChild(menueKnopfBauen());
+  }
+  schnellleisteBauen();
 
   const zusatz = zusammenhangReiter();
   const alle = REGISTER.map(([name]) => [name, false])
@@ -3241,21 +3626,12 @@ function registerBauen() {
     reiter.appendChild(knopf);
   }
 
-  /* Ganz rechts, abgesetzt: der Weg zu allem, was in kein Register passt.
-     Ohne ihn wäre die Register-Ansicht eine Sackgasse — die Verzeichnisse
-     und einiges andere stehen nur im Menü. */
-  const menueKnopf = document.createElement('button');
-  menueKnopf.type = 'button';
-  menueKnopf.className = 'register__menue' + (menueImRegister ? ' register--offen' : '');
-  menueKnopf.textContent = '☰';
-  menueKnopf.title = 'Menüleiste zeigen (auch mit der Alt-Taste)';
-  menueKnopf.setAttribute('aria-label', 'Menüleiste zeigen');
-  menueKnopf.addEventListener('click', () => {
-    menueImRegister = !menueImRegister;
-    menueleisteAnwenden();
-    registerBauen();
-  });
-  reiter.appendChild(menueKnopf);
+  /* Hier stand ein zweites ☰ ganz rechts, das die ganze Menüleiste ein- und
+     ausblendete. Neben dem ☰ Menü links sind das zwei gleiche Zeichen mit
+     zwei verschiedenen Bedeutungen in einer Zeile — das erklärt niemand.
+
+     Weggenommen, nicht versteckt: Die Menüleiste kommt über
+     Ansicht ▸ Oberfläche ▸ Menüleiste und über die Alt-Taste. */
 
   band.hidden = registerEingeklappt;
   document.body.classList.toggle('register--zu', registerEingeklappt);
@@ -3268,7 +3644,7 @@ function registerBauen() {
   const gewaehlt = ausZusatz
     ? ausZusatz.gruppen
     : registerGruppenFuer(registerOffen,
-        (REGISTER.find(([name]) => name === registerOffen) || REGISTER[1])[1]);
+        (REGISTER.find(([name]) => name === registerOffen) || REGISTER[0])[1]);
 
   for (const [gruppenName, eintraege, oeffner] of gewaehlt) {
     const gruppe = document.createElement('div');
@@ -4004,6 +4380,10 @@ function flaecheAnwenden() {
     const reiter = $('register-reiter');
     if (band) band.innerHTML = '';
     if (reiter) reiter.innerHTML = '';
+    const menueStelle = $('register-menue');
+    if (menueStelle) menueStelle.innerHTML = '';
+    const schnell = $('register-schnell');
+    if (schnell) schnell.innerHTML = '';
     werkzeugeBauen();
     werkzeugeAuffrischen();
   }
@@ -9002,7 +9382,7 @@ const MENUES = [
     ] },
     /* Ganz oben im Ansicht-Menü, mit Taste — nicht im Untermenü
        „Anzeigen", wo sie zwei Ebenen tief stand. */
-    { name: 'Lesehilfe', tun: B.lesehilfe, taste: 'F6' },
+    { name: 'Lesehilfe', tun: B.lesehilfe, taste: 'F2' },
     strich,
     { name: 'Anzeigen', unter: [
       { name: 'Lineal', tun: B.linealZeigen, haken: () => lineal },
@@ -9321,7 +9701,13 @@ function auswahlZurueck() {
   if (gemerkteAuswahl) Dokument.waehle(gemerkteAuswahl);
 }
 let alleSchriften = SCHRIFTEN.slice();
-let schriftJetzt = Speicher.lies('schrift', SCHRIFTEN[0]);
+/* Was im Schriftknopf steht, wenn noch nie etwas gewählt wurde.
+
+   Es war SCHRIFTEN[0] — Georgia. Seit die Grundschrift OpenDyslexic ist,
+   stand dort ein Name, der nicht stimmte: Das Blatt zeigte die eine
+   Schrift, der Knopf nannte die andere. Liegt OpenDyslexic auf diesem
+   Rechner nicht, fällt es weiter unten auf die erste zurück, die da ist. */
+let schriftJetzt = Speicher.lies('schrift', 'OpenDyslexic');
 
 /* ------------------------------------------------------------
    Die Grundschrift des Blattes
@@ -9589,7 +9975,10 @@ async function schriftenNachtragen() {
      Entsprechung — und im Knopf stünde ein Name, den es hier gar nicht
      gibt. Also die erste, die wirklich da ist. */
   if (!alle.includes(schriftJetzt)) {
-    schriftJetzt = SCHRIFTEN.find((s) => alle.includes(s)) || alle[0];
+    /* Erst die Leseschriften, dann die bewährten: Fehlt OpenDyslexic,
+       ist Lexend die nächste, die demselben Zweck dient. */
+    schriftJetzt = LESESCHRIFTEN.find((s) => alle.includes(s))
+                || SCHRIFTEN.find((s) => alle.includes(s)) || alle[0];
     wzSchrift.textContent = schriftJetzt;
   }
 
@@ -9726,7 +10115,12 @@ function leisteBauen(wohin, aufbau) {
    blind an dieselbe Stelle.
    ------------------------------------------------------------ */
 function werkzeugeBauen() {
-  leisteBauen('werkzeugleiste', ({ knopf, trenner }) => {
+  leisteBauen('werkzeugleiste', ({ knopf, trenner, leiste }) => {
+    /* Ganz vorn dasselbe ☰ wie im Register — gleicher Aufbau, gleiche
+       Stelle, gleiche Tafel. */
+    leiste.appendChild(menueKnopfBauen());
+    trenner();
+
     /* Die Reihenfolge und die Benennung stammen aus dem Aufbau — DATEI,
        dann START ▸ ZWISCHENABLAGE und ▸ BEARBEITEN, dann das aus
        EINFÜGEN und ÜBERPRÜFEN, was man ständig braucht. Die Leiste ist
@@ -11108,9 +11502,14 @@ document.addEventListener('keydown', (e) => {
     e.preventDefault(); dokumentSchliessen(); return;
   }
   if (e.key === 'F4') { e.preventDefault(); B.vorlesen(); return; }
-  /* F6: die Lesehilfe. Sie hatte als einzige der großen Hilfen keine
-     Taste — F4 liest vor, F5 öffnet die Seitenleiste, F7 prüft. */
-  if (e.key === 'F6') { e.preventDefault(); B.lesehilfe(); return; }
+  /* F2: die Lesehilfe. Sie hatte als einzige der großen Hilfen keine
+     Taste — F4 liest vor, F5 öffnet die Seitenleiste, F7 prüft.
+
+     Erst stand sie auf F6. Das war ein Fehler: F6 hatte „Welche Hilfe
+     wann" schon, und weil dieser Zuhörer weiter oben steht, war der
+     andere damit tot — ohne dass es jemandem aufgefallen wäre. F2 ist
+     frei. */
+  if (e.key === 'F2') { e.preventDefault(); B.lesehilfe(); return; }
   if (e.key === 'F7') { e.preventDefault(); pruefen(); return; }
   /* Kürzel tippen, F3 drücken — wie in LibreOffice. Findet sich kein
      Baustein zu dem Wort, passiert nichts; F3 ist sonst nicht belegt. */
@@ -11498,6 +11897,11 @@ Einstellungen.verbinde({
   kennwortSetzen: (kennwort, hinweis) => window.Kennwort.setzen(kennwort, hinweis),
 
   schriften: () => (alleSchriften && alleSchriften.length ? alleSchriften : SCHRIFTEN),
+  /* Die drei, die fürs Lesen gemacht sind — und ob sie auf diesem Rechner
+     überhaupt liegen. Die Schriftkiste im Band stellt sie längst nach oben;
+     die Optionenseite tat es nicht, und dort ging OpenDyslexic zwischen
+     neunhundert anderen unter. */
+  leseschriften: () => LESESCHRIFTEN.filter((s) => alleSchriften.includes(s)),
   groessen: () => GROESSEN,
   pruefsprachen: () => SPRACHEN_PRUEFUNG,
   schriftJetzt: () => Speicher.lies('grundschrift', ''),

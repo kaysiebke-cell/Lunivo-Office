@@ -53,7 +53,18 @@
      Symbolleisten. Sichtbar ist immer nur eines von beidem — welches, sagt
      Ansicht ▸ Benutzeroberfläche. -->
 <div class="register" id="register" role="toolbar" aria-label="Register">
-  <div class="register__reiter" id="register-reiter" role="tablist"></div>
+  <!-- Das ☰ steht NEBEN der Reiterzeile, nicht darin: .register__reiter
+       rollt waagerecht (overflow-x), und ein Kasten, der rollt, schneidet
+       auch senkrecht ab. Die Klappe des Menues waere an der Unterkante
+       der Reiterzeile abgeschnitten worden. -->
+  <div class="register__kopf">
+    <div class="register__menuestelle" id="register-menue"></div>
+    <!-- Der Schnellzugriff steht im WPS Writer in derselben Zeile, gleich
+         rechts vom Menue: die paar Befehle, die man staendig braucht. -->
+    <div class="register__schnell" id="register-schnell" role="toolbar"
+         aria-label="Schnellzugriff"></div>
+    <div class="register__reiter" id="register-reiter" role="tablist"></div>
+  </div>
 
   <div class="register__streifen">
     <button class="register__pfeil register__pfeil--links" id="register-links"
@@ -400,14 +411,17 @@
         </div>
       </div>
 
+      <!-- Direkt anklickbar, nicht bloß beschrieben.
+
+           Hier stand nur, DASS es die drei gibt — wer sie wollte, musste
+           danach in der Liste oben suchen und den Namen genau kennen.
+           „OpenDyslexic" fällt einem nicht ein, wenn man es braucht. -->
       <span class="gruppe__titel">Zum leichteren Lesen</span>
       <div class="karte">
-        <div class="feld">
+        <div class="feld feld--proben">
           <span class="feld__name">Drei Schriften sind dafür gemacht</span>
-          <em class="feld__satz"><b>OpenDyslexic</b> beschwert die Buchstaben unten,
-            damit sie nicht kippen. <b>Lexend</b> weitet die Abstände. <b>Atkinson
-            Hyperlegible</b> unterscheidet Zeichen, die sich ähneln — l, I und 1.
-            Sie stehen in der Liste oben, sobald sie geholt sind.</em>
+          <em class="feld__satz">Ein Klick stellt sie ein. Was gerade gilt, steht oben.</em>
+          <div class="schriftproben" id="einst-leseschriften"></div>
         </div>
         <div class="feld">
           <span class="feld__name">Sind sie da?</span>

@@ -87,6 +87,14 @@ body{
   min-width:250px;width:max-content;max-width:min(420px, 90vw);
   background:var(--leiste);border:1px solid var(--rand);border-radius:6px;
   box-shadow:var(--schatten);padding:5px;display:none;
+  /* HIER KEIN overflow UND KEIN max-height.
+
+     Beides stand hier einen Tag lang, gegen ein „Beenden", das auf einem
+     niedrigen Fenster unter die Unterkante rutschte. Der Preis war viel
+     hoeher als der Gewinn: Ein Kasten, der rollt, schneidet auch seitlich
+     ab — und damit war JEDES Untermenue unsichtbar. „Hilfe" liess sich
+     aufklappen und zeigte nichts. Aus einem Menue mit einem schwer
+     erreichbaren Punkt war eins ohne Untermenues geworden. */
 }
 /* Nur die eigene Klappe des Menüs, nicht die der Untermenüs darin: Mit
    einem Nachfahren-Selektor klappten beim Öffnen von „Format" alle vier
@@ -275,9 +283,19 @@ select option{background:var(--karte);color:var(--schrift)}
 .blatt__marken span:nth-child(4){bottom:calc(2cm - 7px);right:calc(2cm - 7px);border-right-width:1px;border-bottom-width:1px}
 .blatt--ohne-marken .blatt__marken{display:none}
 
+/* Die Grundschrift ist OpenDyslexic.
+
+   Sie war Georgia — eine schöne Schrift, aber eine für Leute, denen Lesen
+   leichtfällt. Lunivo ist für die anderen gebaut: Bei OpenDyslexic sind
+   die Buchstaben unten schwerer als oben, damit sie nicht kippen, und b/d
+   und p/q sehen verschieden aus statt gespiegelt gleich.
+
+   Georgia steht als Rückfall dahinter: Liegt OpenDyslexic auf diesem
+   Rechner nicht, sieht niemand ein kaputtes Blatt, sondern das, was vorher
+   da war. Holen lässt sie sich unter Optionen ▸ Erweitert. */
 .dokument{
   outline:0;flex:1 1 auto;
-  font:12pt/1.55 Georgia,"Liberation Serif","Times New Roman",serif;
+  font:12pt/1.55 OpenDyslexic,Georgia,"Liberation Serif","Times New Roman",serif;
   white-space:pre-wrap;word-wrap:break-word;
 }
 .dokument p{margin:0 0 .35em}
@@ -932,7 +950,7 @@ button.wz-wahl--schrift{
   padding:2mm var(--rand-rechts,2cm) 2mm var(--rand-links,2cm);
   background:rgba(127,127,127,.055);
   color:var(--blatt-schrift);
-  font:10pt/1.4 Georgia,"Liberation Serif",serif;
+  font:10pt/1.4 OpenDyslexic,Georgia,"Liberation Serif",serif;
   outline:none;
 }
 .kopfzeile{
@@ -1977,10 +1995,18 @@ body.flaeche--register .register{display:block}
 body.flaeche--register .werkzeugleiste,
 body.flaeche--register .werkzeugleiste--zwei{display:none}
 
+/* Der Strich unter der Reiterzeile sitzt jetzt an der Kopfzeile, damit er
+   unter dem ☰ nicht abreisst. */
+.register__kopf{
+  display:flex;align-items:stretch;
+  border-bottom:1px solid var(--rand);
+  min-width:0;
+}
 .register__reiter{
   display:flex;align-items:stretch;gap:2px;
-  padding:0 6px;border-bottom:1px solid var(--rand);
+  padding:0 6px;
   overflow-x:auto;
+  flex:1 1 auto;min-width:0;
 }
 .register__reiter::-webkit-scrollbar{display:none}
 .register__reiter button{
@@ -2002,13 +2028,143 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 .menueleiste[hidden],
 .werkzeugleiste[hidden]{display:none}
 
-/* Das Menü-Zeichen sitzt ganz rechts und abgesetzt — es ist kein Reiter,
-   sondern der Weg zu allem, was in kein Register passt. */
-.register__reiter .register__menue{
-  margin-left:auto;font-size:16px;line-height:1;
-  padding:6px 12px;border-bottom-color:transparent;
+/* Das ☰ Menü steht LINKS und als Erstes, vor allen Reitern — so, wie es im
+   WPS Writer steht. Es stand hier einmal rechts außen (margin-left:auto),
+   abgesetzt vom Rest. Das war die Stelle, an der man es nicht sucht: Wer
+   speichern will, greift nach links oben, nicht nach rechts.
+
+   Es ist kein Reiter und darf auch nicht wie einer aussehen — kein blauer
+   Strich darunter, wenn es offen ist, sonst liest man es als „siebter
+   Reiter, gerade gewählt". Offen wird es durch die Fläche, wie jedes
+   andere Menü auch. */
+.register__menuestelle{display:flex;align-items:stretch;flex:0 0 auto}
+
+/* Der Schnellzugriff, gleich rechts vom Menuezeichen und vor den Reitern. */
+.register__schnell{
+  display:flex;align-items:center;gap:1px;flex:0 0 auto;
+  padding:0 8px;margin-right:6px;
+  border-right:1px solid var(--rand);
 }
-.register__reiter .register__menue.register--offen{border-bottom-color:var(--blau)}
+.register__schnellknopf{
+  background:none;border:0;cursor:pointer;color:var(--schrift-2);
+  padding:5px 6px;border-radius:4px;line-height:0;
+}
+.register__schnellknopf:hover{background:rgba(255,255,255,.10);color:var(--schrift)}
+:root[data-theme="light"] .register__schnellknopf:hover{background:rgba(0,0,0,.08)}
+.register__schnellknopf svg{width:16px;height:16px}
+
+/* Die Menuetafel: links die Befehle, rechts die zuletzt benutzten Dateien.
+   Die Breite steht fest, damit die Liste nicht bei jedem Namen springt. */
+/* Achtung: Kein display hier. .menue__klappe steht auf display:none, und
+   diese Regel ist die genauere — ein display:flex an dieser Stelle liess
+   die Tafel dauerhaft offen stehen, ohne dass jemand geklickt hatte. Das
+   Aufklappen macht die Zeile darunter, wie bei jedem anderen Menue auch. */
+.menue__klappe.menue__tafel{
+  align-items:stretch;gap:0;
+  width:min(760px, 94vw);max-width:none;padding:0;
+  /* overflow bleibt sichtbar: Die Untermenues von „Neu", „Speichern
+     unter", „Drucken", „Dokumentverschluesselung" und „Hilfe" klappen
+     nach rechts aus der Tafel heraus. Mit overflow:hidden waren sie
+     abgeschnitten, und fuenf der elf Punkte taten scheinbar nichts.
+     Die runden Ecken macht statt dessen jede Spalte fuer sich. */
+  overflow:visible;
+}
+.tafel__befehle{border-radius:6px 0 0 6px}
+.tafel__zuletzt{border-radius:0 6px 6px 0}
+.menue--offen > .menue__klappe.menue__tafel{display:flex}
+.tafel__befehle{
+  flex:0 0 300px;padding:6px;
+  border-right:1px solid var(--rand);
+  /* Kein overflow. Hier haengen die Untermenues dran; ein rollender
+     Kasten haette sie genauso abgeschnitten wie die Tafel selbst.
+     Dreizehn Zeilen passen in jedes Fenster, in dem man schreiben kann. */
+}
+.tafel__zuletzt{
+  flex:1 1 auto;min-width:0;display:flex;flex-direction:column;
+  padding:10px 6px 6px;
+}
+.tafel__titel{
+  display:flex;align-items:center;gap:8px;
+  font-size:.85em;color:var(--schrift-2);
+  padding:0 8px 8px;
+}
+.tafel__frisch{
+  background:none;border:0;cursor:pointer;color:var(--schrift-2);
+  font-size:1.1em;line-height:1;padding:2px 5px;border-radius:4px;
+}
+.tafel__frisch:hover{background:rgba(255,255,255,.10);color:var(--schrift)}
+:root[data-theme="light"] .tafel__frisch:hover{background:rgba(0,0,0,.08)}
+.tafel__liste{overflow-y:auto;flex:1 1 auto}
+.tafel__zeile{display:flex;align-items:center;gap:2px}
+.tafel__datei{
+  flex:1 1 auto;min-width:0;
+  display:flex;flex-direction:column;align-items:flex-start;gap:1px;
+  background:none;border:0;cursor:pointer;color:var(--schrift);
+  font:inherit;text-align:left;padding:6px 8px;border-radius:4px;
+}
+.tafel__datei:hover{background:rgba(255,255,255,.09)}
+:root[data-theme="light"] .tafel__datei:hover{background:rgba(0,0,0,.06)}
+/* Beide Zeilen einzeilig: Ein langer Pfad darf die Tafel nicht auseinander-
+   ziehen, und ein Name, der umbricht, macht die Liste unruhig. */
+.tafel__name,.tafel__ordner{
+  max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.tafel__ordner{font-size:.82em;color:var(--schrift-2)}
+.tafel__weg{
+  flex:0 0 auto;
+  background:none;border:0;cursor:pointer;color:var(--schrift-2);
+  font-size:1.1em;line-height:1;padding:4px 8px;border-radius:4px;
+}
+.tafel__weg:hover{background:rgba(255,255,255,.14);color:var(--schrift)}
+:root[data-theme="light"] .tafel__weg:hover{background:rgba(0,0,0,.10)}
+.tafel__leer{padding:8px;color:var(--schrift-2);font-size:.9em}
+
+/* Der Punkt mit Pfeil, dessen Unterpunkte gerade rechts stehen. Er bleibt
+   hervorgehoben, solange man drueben ist — sonst weiss man nicht mehr,
+   wozu die Liste rechts gehoert. */
+.tafel__befehle .menue__punkt--offen{
+  background:var(--blau);color:#fff;
+}
+.tafel__befehle .menue__punkt--offen .taste,
+.tafel__befehle .menue__punkt--offen .menue__pfeil{color:#fff;opacity:.85}
+
+/* Rechts als Unterpunkte: dieselben Zeilen wie links, nur eine Spur luftiger
+   — es sind wenige, und sie duerfen die halbe Tafel nicht leer lassen. */
+.tafel__zuletzt--unter .menue__punkt{width:100%}
+.tafel__zuletzt--unter .tafel__liste{padding:0 2px}
+
+/* Auf einem schmalen Fenster steht die Liste unter den Befehlen statt
+   daneben — nebeneinander waeren beide Spalten zu eng zum Lesen. */
+@media (max-width: 720px){
+  .menue__klappe.menue__tafel{flex-direction:column;width:min(340px, 94vw)}
+  .tafel__befehle{flex:0 0 auto;border-right:0;border-bottom:1px solid var(--rand)}
+}
+.register__menuestelle .menue--haupt{
+  flex:0 0 auto;
+  margin-right:8px;
+  display:flex;align-items:center;
+  border-right:1px solid var(--rand);
+  padding-right:8px;
+}
+.menue__hauptknopf{
+  border-bottom:none;
+  font-weight:600;
+  padding:6px 12px;
+  border-radius:4px;
+  color:var(--schrift);
+  white-space:nowrap;
+}
+/* Die Klappe hängt unter der Reiterzeile, nicht unter dem Knopf allein. */
+.menue--haupt > .menue__klappe{top:calc(100% + 4px)}
+
+/* Dasselbe ☰ am Anfang der oberen Symbolleiste. Dort ist es kein Reiter
+   neben Reitern, sondern ein Knopf neben Knoepfen — es bekommt deshalb die
+   Hoehe der Leiste und keinen eigenen Strich; den setzt der Trenner. */
+.werkzeugleiste .menue--haupt{
+  flex:0 0 auto;display:flex;align-items:center;
+  border-right:0;padding-right:0;margin-right:0;
+}
+.werkzeugleiste .menue__hauptknopf{height:28px;display:flex;align-items:center}
 
 /* Die Wähler aus der Werkzeugleiste, wenn sie im Register stehen. */
 .register__felder{
@@ -3449,3 +3605,27 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 .anp__fuss-wort{font-size:12px;color:var(--schrift-2)}
 
 }
+
+/* ---------- Die drei Leseschriften zum Anklicken ----------
+   Jede in ihrer eigenen Schrift, mit einem Satz darunter, was sie tut.
+   Ein Name allein sagt nichts: „OpenDyslexic" fällt niemandem ein, wenn
+   er sie braucht — die Form dagegen erkennt man sofort. */
+.feld--proben{display:block}
+.schriftproben{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.schriftprobe-knopf{
+  flex:1 1 190px;min-width:0;
+  display:block;text-align:left;
+  padding:9px 12px;
+  background:transparent;border:1px solid var(--rand);border-radius:8px;
+  color:var(--schrift);cursor:pointer;font:inherit;
+}
+.schriftprobe-knopf:hover{border-color:var(--blau-hell)}
+.schriftprobe-knopf--gewaehlt{
+  border-color:var(--blau);box-shadow:inset 0 0 0 1px var(--blau);
+}
+.schriftprobe-knopf__name{display:block;font-size:17px;line-height:1.3}
+.schriftprobe-knopf__satz{
+  display:block;font-size:11.5px;color:var(--schrift-3);margin-top:3px;
+  font-family:inherit;
+}
+.schriftprobe-knopf--fehlt{opacity:.5;cursor:default}

@@ -660,7 +660,10 @@ const Dateien = (() => {
      kann: Über LibreOffice bleiben auch Tabellen und Bilder erhalten. Gibt es
      den Motor nicht, fällt das Speichern auf den eigenen Schreiber zurück —
      dann eben ohne Tabellen, aber es geht. */
-  const MIT_MOTOR = { docx: 'docx', doc: 'doc', rtf: 'rtf', pdf: 'pdf', epub: 'epub', odt: 'odt' };
+  /* png steht mit dabei fuer „Export as Image" im Menue hinter dem
+     Menuezeichen. LibreOffice wandelt die erste Seite in ein Bild. */
+  const MIT_MOTOR = { docx: 'docx', doc: 'doc', rtf: 'rtf', pdf: 'pdf', epub: 'epub',
+                      odt: 'odt', png: 'png' };
 
   const brauchtMotor = (endung) => Object.hasOwn(MIT_MOTOR, endung);
 

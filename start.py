@@ -88,6 +88,10 @@ FORMAT_LISTE = [
     ("txt",  "Reiner Text (.txt)"),
     ("pdf",  "PDF-Dokument (.pdf)"),
     ("epub", "E-Book (.epub)"),
+    # „Export as Image" im Menue hinter dem Menuezeichen. LibreOffice
+    # wandelt auch nach PNG und JPEG; es braucht dafuer nichts Neues.
+    ("png",  "Bild (.png)"),
+    ("jpg",  "Bild (.jpg)"),
 ]
 
 # Die Filter im Öffnen-Dialog. Oben das Nützlichste: alles, was das
@@ -1212,7 +1216,7 @@ FILTER = {
 # Woraus und wohin umgewandelt werden darf. Eine feste Liste, keine freie
 # Angabe: Was hier hereinkommt, geht als Dateiname an ein anderes Programm.
 FORMATE = {"odt", "fodt", "docx", "doc", "rtf", "html", "txt", "pdf", "epub", "odf",
-           "xlsx", "xls", "ods", "csv", "fods", "dotx", "docm"}
+           "xlsx", "xls", "ods", "csv", "fods", "dotx", "docm", "png", "jpg"}
 
 # ============================================================
 # Vorlagen
@@ -2013,6 +2017,30 @@ class Leise(http.server.SimpleHTTPRequestHandler):
             LETZTER_ORDNER["weg"] = os.path.dirname(pfad)
             zuletzt_merken(pfad)
             self.auskunft({"pfad": pfad, "name": os.path.basename(pfad)})
+            return
+
+        # Einen Eintrag aus der Liste nehmen. Das Kreuz neben jeder Zeile in
+        # der Menuetafel haengt hier dran. Es wirft nichts weg — es nimmt
+        # den Namen nur aus der Liste; die Datei bleibt, wo sie ist.
+        if adresse.path == "/zuletzt-weg":
+            liste = zuletzt_lesen()
+            try:
+                nummer = int((urllib.parse.parse_qs(adresse.query)
+                              .get("nr") or ["-1"])[0])
+            except ValueError:
+                nummer = -1
+            if nummer < 0 or nummer >= len(liste):
+                self.fehler_melden(404, "Diesen Eintrag gibt es nicht.")
+                return
+            del liste[nummer]
+            try:
+                os.makedirs(DATEN, exist_ok=True)
+                with open(ZULETZT_DATEI, "w", encoding="utf-8") as datei:
+                    json.dump(liste, datei, ensure_ascii=False)
+            except OSError:
+                pass
+            self.auskunft([{"name": os.path.basename(weg),
+                            "ordner": os.path.dirname(weg)} for weg in liste])
             return
 
         # Einen Eintrag aus der Liste öffnen. Herein kommt eine Nummer, nie

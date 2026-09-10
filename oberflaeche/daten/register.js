@@ -40,45 +40,20 @@
 function REGISTER_BAUEN(B, w) {
   return [
   /* ------------------------------------------------------------
-     DATEI
+     KEIN DATEI-REITER
 
-     Der Aufbau führt die Punkte hier ohne Gruppen auf. Ein Band braucht
-     aber welche, sonst stünden sechzehn Knöpfe in einer Reihe. Die Namen
-     der Gruppen sind deshalb die einzige Zutat — die Punkte selbst stehen
-     in der Reihenfolge und mit den Namen des Aufbaus.
+     Hier stand einmal ein Reiter „Datei" mit sieben Gruppen. Das war der
+     Fehler, an dem der ganze Aufbau hing: WPS Writer hat keinen
+     Datei-Reiter. Links vor den Reitern sitzt ein ☰ Menü, und das klappt
+     senkrecht auf — Kay hat es abfotografiert.
+
+     Deshalb führt der Aufbau DATEI auch ohne Gruppen auf, als flache
+     Liste, während START und EINFÜGEN Gruppen tragen. Das war die
+     Ansage, und ich habe sie als Formsache gelesen und Gruppen erfunden.
+
+     Die Punkte des Menüs stehen in MENUES['Datei'] in programm.js —
+     einmal, für die Menüleiste und für das ☰ gleichermaßen.
      ------------------------------------------------------------ */
-  ['Datei', [
-    ['Öffnen', [['neu', 'Neu', () => B.neu(), 'gross'],
-                    ['oeffnen', 'Öffnen', () => B.oeffnen(), 'gross'],
-                    ['zuletzt', 'Zuletzt geöffnet', () => B.zuletztOeffnen()],
-                    ['deckblatt', 'Neu aus Vorlage', () => B.vorlagenWaehlen()],
-                    ['ordner', 'Vorlagenordner', () => B.vorlagenOrdner()]]],
-    ['Speichern', [['speichern', 'Speichern', () => B.speichern(), 'gross'],
-                    ['unter', 'Speichern unter', () => B.speichernUnter(), 'gross']],
-                  () => B.speichernUnter()],
-    ['Drucken', [['drucken', 'Drucken', () => B.drucken(), 'gross'],
-                    ['vorschau', 'Druckvorschau', () => B.vorschau(), 'gross'],
-                    ['pdf', 'Als PDF exportieren', () => B.speichernPdf()],
-                    ['drucker2', 'Druckereinstellungen', () => B.druckerEinrichten()]],
-                  () => B.druckerEinrichten()],
-    ['Dokument', [['notiz', 'Dokumenteigenschaften', () => B.eigenschaften(), 'gross'],
-                    ['umbenennen', 'Umbenennen', () => B.umbenennen()]]],
-    /* Nach der Hilfe, vor dem Beenden — die Reihenfolge aus dem WPS-Menü,
-       das Kay abfotografiert hat: Hilfe, Optionen, Beenden.
-
-       Einen Datei-REITER hat WPS nicht; dort sitzt bei ihm das ☰-Menü, und
-       genau das ist hier der Datei-Reiter. Deshalb steht sie hier und nicht
-       unter Start: Die Bandgruppe „Einstellungen", die WPS im Start führt,
-       enthält anderes — die Optionen liegen bei ihm allein im Menü. */
-    ['Hilfe', [['handbuch', 'Handbuch', () => B.handbuch(), 'gross'],
-                    ['tasten', 'Tastenkürzel', () => B.tastenHilfe()],
-                    ['Teile', 'Erweiterungen', () => B.erweiterungen()],
-                    ['ueberprog', 'Über Lunivo Office', () => B.ueber()]]],
-    ['Einstellungen', [['optionen', 'Optionen', () => Einstellungen.oeffnen(), 'gross']]],
-    ['Beenden', [['schliessen', 'Schließen', () => B.schliessen(), 'gross'],
-                    ['beenden', 'Beenden', () => B.beenden()]]],
-  ]],
-
   ['Start', [
     ['Zwischenablage', [['kleben', 'Einfügen', () => B.einfuegen(), 'gross'],
                     ['ohneformat', 'Einfügen ohne Formatierung', () => B.einfuegenOhne()],
@@ -117,18 +92,26 @@ function REGISTER_BAUEN(B, w) {
                     ['mitte', 'Zentriert', () => B.mitte()],
                     ['rechts', 'Rechtsbündig', () => B.rechts()],
                     ['block', 'Blocksatz', () => B.block()],
+                    ['abstand', 'Zeilenabstand', () => B.absatzabstand()],
+                    ['rahmen', 'Absatzrahmen', () => B.absatzRahmen()],
+                    ['toenung', 'Absatzschattierung', () => B.absatzSchattierung()],
                     ['sortieren', 'Sortieren', () => B.sortieren()],
                     ['¶', 'Steuerzeichen', () => B.steuerzeichenZeigen(), false, () => w.an('steuerzeichen')]], () => B.einzugGenau()],
-    /* Bei WPS eine eigene Gruppe zwischen Formatvorlagen und Bearbeiten:
-       was den Absatz als Block betrifft, nicht seine Zeilen. Sie fehlte
-       hier ganz — Abstand, Rahmen und Schattierung standen mit unter
-       „Absatz", wo schon Ausrichtung und Aufzählung liegen. */
-    ['Stile', 'katalog'],
+    /* ABSATZLAYOUT steht in der Vorlage VOR den Stilen, nicht dahinter.
+       Hier stand es einmal umgekehrt, mit der Begründung, es gehöre
+       „zwischen Formatvorlagen und Bearbeiten" — das war falsch gelesen.
+
+       Und Zeilenabstand, Absatzrahmen und Absatzschattierung stehen in
+       der Vorlage in BEIDEN Gruppen: oben in ABSATZ, wo man sie beim
+       Schreiben sucht, und noch einmal hier. Sie waren aus ABSATZ
+       herausgenommen worden, weil das doppelt aussah. Es ist nicht
+       doppelt, es ist so gewollt. */
     ['Absatzlayout', [['abstand', 'Zeilenabstand', () => B.absatzabstand(), 'gross'],
                     ['einzug', 'Einzug genau', () => B.einzugGenau()],
                     ['rahmen', 'Absatzrahmen', () => B.absatzRahmen()],
                     ['toenung', 'Absatzschattierung', () => B.absatzSchattierung()]],
                   () => B.einzugGenau()],
+    ['Stile', 'katalog'],
     ['Bearbeiten', [['lupe', 'Suchen', () => B.suchen(), 'gross'],
                     ['uebersetzen', 'Ersetzen', () => B.ersetzen()],
                     ['lupe', 'Suchen und Ersetzen', () => w.sucheZeigen(true)],
