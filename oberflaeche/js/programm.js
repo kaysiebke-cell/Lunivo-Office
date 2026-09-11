@@ -1096,17 +1096,85 @@ function tabellenKlappeZeigen(knopf) {
    Tabelle, die nicht über die ganze Breite geht, steht sonst immer links.
    ============================================================ */
 
-let tabellenGriff = null;
-let griffZiel = null;       /* die Tabelle, an der der Griff hängt */
+/* Die Griffe, die an einer Tabelle hängen. Vorlage ist WPS: links oben
+   der Griff zum Verschieben, rechts oben das ⊗ zum Löschen, unten und
+   rechts je ein + für eine weitere Zeile oder Spalte.
+
+   Warum überhaupt Griffe, wo es die Befehle doch in der Leiste gibt: Weil
+   „hier noch eine Zeile" ein Gedanke am Ort ist. Der Weg über eine Leiste
+   verlangt, ihn zu übersetzen — erst hinsehen, dann hinaufsehen, dann den
+   richtigen von dreizehn Knöpfen finden und darauf vertrauen, dass er die
+   Zeile dort einfügt, wo man gerade steht. Ein + an der Kante fragt
+   nichts und erklärt nichts; es ist da, wo es wirkt. */
+const TABELLENGRIFFE = [
+  { art: 'schieben', zeichen: '✥', name: 'Tabelle verschieben — ziehen' },
+  { art: 'weg',      zeichen: '×', name: 'Ganze Tabelle löschen' },
+  { art: 'zeile',    zeichen: '+', name: 'Zeile anhängen' },
+  { art: 'spalte',   zeichen: '+', name: 'Spalte anhängen' },
+];
+
+let griffe = {};            /* art → Knopf */
+let griffZiel = null;       /* die Tabelle, an der sie hängen */
 let legeMarke = null;       /* die Linie, die zeigt, wo sie landet */
 
 function griffWeg() {
-  if (tabellenGriff) { tabellenGriff.remove(); tabellenGriff = null; }
+  for (const k of Object.values(griffe)) k.remove();
+  griffe = {};
   griffZiel = null;
 }
 
 function legeMarkeWeg() {
   if (legeMarke) { legeMarke.remove(); legeMarke = null; }
+}
+
+/* Eine Zeile unten anhängen: so breit wie die breiteste Zeile, damit
+   keine Lücke entsteht. */
+function zeileAnhaengen(tabelle) {
+  const spalten = Math.max(...[...tabelle.rows].map((r) => r.cells.length));
+  const zeile = tabelle.insertRow(-1);
+  for (let i = 0; i < spalten; i++) {
+    const z = zeile.insertCell(-1);
+    z.innerHTML = '<br>';
+    /* Die Maße der Zelle darüber übernehmen — sonst steht die neue Zeile
+       ohne Rahmen und ohne Luft unter einer gestalteten Tabelle. */
+    const vorbild = tabelle.rows[tabelle.rows.length - 2];
+    const muster = vorbild && vorbild.cells[i];
+    if (muster) {
+      z.style.border = muster.style.border;
+      z.style.padding = muster.style.padding;
+    }
+  }
+  geaendertMelden();
+  melde('Zeile angehängt.');
+}
+
+function spalteAnhaengen(tabelle) {
+  for (const zeile of tabelle.rows) {
+    const muster = zeile.cells[zeile.cells.length - 1];
+    /* In der Kopfzeile ein <th>, sonst ein <td>: Die Bedeutung der Zeile
+       gilt auch für die neue Spalte. */
+    const neu = document.createElement(muster && muster.tagName === 'TH' ? 'th' : 'td');
+    neu.innerHTML = '<br>';
+    if (muster) {
+      neu.style.border = muster.style.border;
+      neu.style.padding = muster.style.padding;
+      neu.style.background = muster.style.background;
+    }
+    zeile.appendChild(neu);
+  }
+  geaendertMelden();
+  melde('Spalte angehängt.');
+}
+
+function griffTun(art, tabelle) {
+  if (art === 'zeile') { zeileAnhaengen(tabelle); griffNachmessen(); return; }
+  if (art === 'spalte') { spalteAnhaengen(tabelle); griffNachmessen(); return; }
+  if (art === 'weg') {
+    tabelle.remove();
+    griffWeg();
+    geaendertMelden();
+    melde('Tabelle gelöscht.');
+  }
 }
 
 /* Der Block, vor oder hinter dem die Tabelle landen soll.
@@ -1142,27 +1210,54 @@ function griffAuffrischen() {
   const tabelle = zelle && zelle.closest('table');
   if (!tabelle || !feld.contains(tabelle)) { griffWeg(); return; }
 
-  if (!tabellenGriff) {
-    tabellenGriff = document.createElement('button');
-    tabellenGriff.type = 'button';
-    tabellenGriff.className = 'tabellengriff';
-    tabellenGriff.title = 'Tabelle verschieben — ziehen';
-    tabellenGriff.setAttribute('aria-label', 'Tabelle verschieben');
-    tabellenGriff.textContent = '✥';
-    tabellenGriff.addEventListener('mousedown', griffZiehenBeginnen);
-    document.body.appendChild(tabellenGriff);
+  if (!griffe.schieben) {
+    for (const { art, zeichen, name } of TABELLENGRIFFE) {
+      const k = document.createElement('button');
+      k.type = 'button';
+      k.className = 'tabellengriff tabellengriff--' + art;
+      k.title = name;
+      k.setAttribute('aria-label', name);
+      k.textContent = zeichen;
+      if (art === 'schieben') k.addEventListener('mousedown', griffZiehenBeginnen);
+      else {
+        /* Die Auswahl behalten: Sonst ist der Zeiger nach dem Klick nicht
+           mehr in der Tabelle, und beim nächsten Messen verschwinden alle
+           Griffe unter der Hand. */
+        k.addEventListener('mousedown', (e) => e.preventDefault());
+        k.addEventListener('click', () => griffTun(art, griffZiel));
+      }
+      griffe[art] = k;
+      document.body.appendChild(k);
+    }
   }
   griffZiel = tabelle;
 
   /* Fest am Fenster ausgerichtet und nicht im Blatt eingehängt: Das Blatt
      wird gezoomt (CSS-zoom), und ein Kind darin bekäme dieselbe Verzerrung
-     — der Griff wäre bei 200 % doppelt so groß wie ein Knopf daneben. */
+     — die Griffe wären bei 200 % doppelt so groß wie ein Knopf daneben. */
   const r = tabelle.getBoundingClientRect();
-  tabellenGriff.style.left = (r.left - 20) + 'px';
-  tabellenGriff.style.top = (r.top - 20) + 'px';
-  /* Rutscht die Tabelle aus dem sichtbaren Bereich, geht der Griff mit. */
   const flaeche = $('arbeitsflaeche').getBoundingClientRect();
-  tabellenGriff.hidden = r.bottom < flaeche.top || r.top > flaeche.bottom;
+
+  /* Im Arbeitsbereich bleiben.
+
+     Eine breite Tabelle ragt über das Blatt hinaus — und mit ihr ragten
+     die Griffe hinaus: Nach der dritten Spalte lagen × und + über der
+     Schreibhilfe rechts daneben. Sie sind am Fenster ausgerichtet und
+     wissen von sich aus nichts davon, wo das Blatt aufhört. */
+  const GRIFF = 17;
+  const halten = (x, links, rechts) => Math.max(links, Math.min(x, rechts - GRIFF));
+  const stelle = (art, x, y) => {
+    griffe[art].style.left = Math.round(halten(x, flaeche.left + 2, flaeche.right - 2)) + 'px';
+    griffe[art].style.top = Math.round(y) + 'px';
+  };
+  stelle('schieben', r.left - 20, r.top - 20);
+  stelle('weg',      r.right + 3,  r.top - 20);
+  stelle('zeile',    r.left + r.width / 2 - 8, r.bottom + 3);
+  stelle('spalte',   r.right + 3,  r.top + r.height / 2 - 8);
+
+  /* Rutscht die Tabelle aus dem sichtbaren Bereich, gehen die Griffe mit. */
+  const versteckt = r.bottom < flaeche.top || r.top > flaeche.bottom;
+  for (const k of Object.values(griffe)) k.hidden = versteckt;
 }
 
 function griffZiehenBeginnen(fall) {

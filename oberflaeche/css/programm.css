@@ -483,11 +483,20 @@ select option{background:var(--karte);color:var(--schrift)}
   display:flex;align-items:center;justify-content:center;
   background:var(--leiste);color:var(--schrift-2);
   border:1px solid var(--rand);border-radius:3px;
-  font-size:11px;line-height:1;
-  cursor:move;
+  font-size:12px;line-height:1;
+  cursor:pointer;
   box-shadow:var(--schatten);
 }
+.tabellengriff--schieben{cursor:move}
+/* Die beiden + sind rund: Sie fügen etwas hinzu und sollen sich von den
+   eckigen Griffen unterscheiden, die etwas mit der ganzen Tabelle tun. */
+.tabellengriff--zeile,.tabellengriff--spalte{border-radius:50%;font-weight:600}
 .tabellengriff:hover{background:var(--blau);color:#fff;border-color:var(--blau-hell)}
+/* Löschen ist rot — aber erst beim Überfahren. Ein dauerhaft rotes Kreuz
+   an jeder Tabelle sähe aus wie eine Fehlermeldung.
+   NACH der allgemeinen Regel, nicht davor: Bei gleicher Stärke gewinnt
+   die spätere, und davor stehend hätte Blau das Rot überschrieben. */
+.tabellengriff--weg:hover{background:#B3372F;border-color:#C9493F;color:#fff}
 .tabellengriff:focus-visible{outline:2px solid var(--blau-hell);outline-offset:1px}
 
 /* Die Linie, die beim Ziehen zeigt, wo die Tabelle landet. Sie liegt über
