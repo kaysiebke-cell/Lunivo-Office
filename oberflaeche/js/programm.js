@@ -1262,11 +1262,20 @@ function griffAuffrischen() {
      beim nächsten Umstellen falsch. */
   const GRIFF = griffe.schieben.offsetWidth || 24;
   const luft = 3;
-  const halten = (x) => Math.max(flaeche.left + 2,
-                                 Math.min(x, flaeche.right - 2 - GRIFF));
+  const haltenX = (x) => Math.max(flaeche.left + 2,
+                                  Math.min(x, flaeche.right - 2 - GRIFF));
+  /* AUCH NACH OBEN UND UNTEN HALTEN.
+
+     Hier wurde nur waagerecht geklemmt. Steht die Tabelle dicht unter der
+     Werkzeugleiste, landete der Griff darueber — also ausserhalb der
+     Arbeitsflaeche, halb hinter der Leiste. Sichtbar war er dann noch,
+     greifbar nicht mehr, und genau das ist die Klage: "ich kann links
+     oben die Tabelle nicht erfassen". */
+  const haltenY = (y) => Math.max(flaeche.top + 2,
+                                  Math.min(y, flaeche.bottom - 2 - GRIFF));
   const stelle = (art, x, y) => {
-    griffe[art].style.left = Math.round(halten(x)) + 'px';
-    griffe[art].style.top = Math.round(y) + 'px';
+    griffe[art].style.left = Math.round(haltenX(x)) + 'px';
+    griffe[art].style.top = Math.round(haltenY(y)) + 'px';
   };
   stelle('schieben', r.left - GRIFF - luft, r.top - GRIFF - luft);
   stelle('weg',      r.right + luft,        r.top - GRIFF - luft);
