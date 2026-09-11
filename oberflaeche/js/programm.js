@@ -1107,10 +1107,11 @@ function tabellenKlappeZeigen(knopf) {
    Zeile dort einfügt, wo man gerade steht. Ein + an der Kante fragt
    nichts und erklärt nichts; es ist da, wo es wirkt. */
 const TABELLENGRIFFE = [
-  { art: 'schieben', zeichen: '✥', name: 'Tabelle verschieben — ziehen' },
+  { art: 'schieben', zeichen: '✥', name: 'Tabelle frei verschieben — ziehen' },
   { art: 'weg',      zeichen: '×', name: 'Ganze Tabelle löschen' },
   { art: 'zeile',    zeichen: '+', name: 'Zeile anhängen' },
   { art: 'spalte',   zeichen: '+', name: 'Spalte anhängen' },
+  { art: 'groesse',  zeichen: '⤡', name: 'Tabelle größer oder kleiner ziehen' },
 ];
 
 /* Die Tabelle, ueber der die Maus gerade steht. Sie wird verfolgt, damit
@@ -1215,6 +1216,15 @@ function legeMarkeZeigen(ziel) {
   legeMarke.style.top = (ziel.dahinter ? r.bottom : r.top) - 1 + 'px';
 }
 
+/* Die Griffe an der Tabelle ausrichten — OHNE die Sperre fuer das
+   Ziehen. Waehrend gezogen wird, bewegt sich die Tabelle ja, und die
+   Griffe muessen mit; nur das Wegraeumen darf dann nicht passieren. */
+function griffAuffrischenRoh() {
+  const merk = zieht;
+  zieht = false;
+  try { griffAuffrischen(); } finally { zieht = merk; }
+}
+
 function griffAuffrischen() {
   /* MITTEN IM ZIEHEN NICHT ANFASSEN.
 
@@ -1254,6 +1264,7 @@ function griffAuffrischen() {
       k.setAttribute('aria-label', name);
       k.textContent = zeichen;
       if (art === 'schieben') k.addEventListener('pointerdown', griffZiehenBeginnen);
+      else if (art === 'groesse') k.addEventListener('pointerdown', groesseZiehenBeginnen);
       else {
         /* Die Auswahl behalten: Sonst ist der Zeiger nach dem Klick nicht
            mehr in der Tabelle, und beim nächsten Messen verschwinden alle
@@ -1303,6 +1314,7 @@ function griffAuffrischen() {
   stelle('weg',      r.right + luft,        r.top - GRIFF - luft);
   stelle('zeile',    r.left + r.width / 2 - GRIFF / 2, r.bottom + luft);
   stelle('spalte',   r.right + luft,        r.top + r.height / 2 - GRIFF / 2);
+  stelle('groesse',  r.right + luft,        r.bottom + luft);
 
   /* Rutscht die Tabelle aus dem sichtbaren Bereich, gehen die Griffe mit. */
   const versteckt = r.bottom < flaeche.top || r.top > flaeche.bottom;
@@ -1311,109 +1323,196 @@ function griffAuffrischen() {
 
 let zieht = false;
 
-/* ZIEHEN MIT POINTER-EREIGNISSEN, NICHT MIT MAUS-EREIGNISSEN.
+/* ============================================================
+   FREI VERSCHIEBEN UND AUFZIEHEN
 
-   Hier stand mousedown/mousemove/mouseup. Das reicht für eine Maus auf
-   einem Tisch — aber Kay arbeitet am ThinkPad mit dem Zeigestab, und dort
-   ging es nicht: Die Tabelle ließ sich nicht fassen.
+   Kay hat es dreimal gesagt: "ich kann die Tabelle nicht frei
+   verschieben" und "nicht gross und klein ziehen". Ich habe zweimal
+   etwas anderes gebaut — ein Verschieben zwischen den Absaetzen — und
+   dabei erklaert, warum das besser sei. Das war nicht meine
+   Entscheidung.
 
-   Der Grund: Maus-Ereignisse sind bei Zeigestab, Trackpad und Finger nur
-   eine Nachbildung. Sie kommen verzögert, unvollständig, und sobald der
-   Zeiger den Knopf verlässt, hört die Folge auf. Pointer-Ereignisse sind
-   das Echte — und setPointerCapture sagt dem Browser: Alles, was dieser
-   Zeiger von jetzt an tut, gehört diesem Knopf, egal wo er hinfährt. Das
-   ist genau die Zusage, die ein Zug braucht.
+   WIE ES JETZT GEHT. Beim Zug am Griff loest sich die Tabelle aus dem
+   Textfluss: Sie bekommt position:absolute im Blatt und liegt von da an
+   dort, wo man sie hinzieht — WAEHREND des Zuges, nicht erst beim
+   Loslassen. Genau das hat gefehlt; vorher bewegte sich nichts ausser
+   einer Linie, und es fuehlte sich an wie festgenagelt.
 
-   Damit funktioniert derselbe Griff auch mit dem Finger auf einem
-   Bildschirm, den man anfassen kann. */
+   Gerechnet wird in Millimetern, nicht in Bildpunkten: Das Blatt wird
+   gezoomt, und bei 75 % ist ein Bildpunkt etwas anderes als bei 150 %.
+   Millimeter gelten auf dem Papier.
+
+   DER RUECKWEG IST PFLICHT. Eine Tabelle, die einmal schwebt, muss sich
+   wieder einreihen lassen — sonst ist der erste Zug eine Einbahnstrasse.
+
+   WAS DAS KOSTET, und das gehoert dazugesagt: Eine schwebende Tabelle
+   wandert beim Schreiben nicht mehr mit. Wer oberhalb Zeilen einfuegt,
+   schiebt sie nicht nach unten. Deshalb ist es in Word die Ausnahme —
+   aber es ist seine Entscheidung, nicht meine.
+   ============================================================ */
+
+function istFrei(tabelle) {
+  return tabelle.classList.contains('tabelle--frei');
+}
+
+function inMillimeter(px) {
+  return Math.round((px / 96) * 25.4 * 10) / 10;
+}
+
+function freiMachen(tabelle) {
+  if (istFrei(tabelle)) return;
+  const bogen = tabelle.closest('.dokument') || feld;
+  const t = tabelle.getBoundingClientRect();
+  const b = bogen.getBoundingClientRect();
+  const massstab = (zoom || 100) / 100;
+  /* Erst die Breite festhalten, dann loesen: Eine Tabelle ueber die ganze
+     Breite schrumpft sonst im Moment des Loesens auf ihren Inhalt
+     zusammen und springt unter der Hand weg. */
+  tabelle.style.width = inMillimeter(t.width / massstab) + 'mm';
+  tabelle.style.left = inMillimeter((t.left - b.left) / massstab) + 'mm';
+  tabelle.style.top = inMillimeter((t.top - b.top) / massstab) + 'mm';
+  tabelle.style.marginLeft = '';
+  tabelle.style.marginRight = '';
+  tabelle.classList.add('tabelle--frei');
+}
+
+B.tabelleEinreihen = () => mitTabelle((zelle, zeile, tabelle) => {
+  if (!istFrei(tabelle)) { melde('Diese Tabelle steht schon im Text.'); return; }
+  tabelle.classList.remove('tabelle--frei');
+  tabelle.style.left = '';
+  tabelle.style.top = '';
+  tabelle.style.width = '100%';
+  geaendertMelden();
+  melde('Tabelle wieder im Text — sie wandert jetzt wieder mit.');
+  griffNachmessen();
+});
+
 function griffZiehenBeginnen(fall) {
   fall.preventDefault();
   if (!griffZiel) return;
   const tabelle = griffZiel;
-  const vorher = tabelle.previousElementSibling;
+  const knopf = fall.currentTarget;
+  try { knopf.setPointerCapture(fall.pointerId); } catch (e) { /* aelter */ }
+
+  const warFrei = istFrei(tabelle);
+  const zurueck = { links: tabelle.style.left, oben: tabelle.style.top,
+                    breite: tabelle.style.width };
+  const davor = tabelle.previousElementSibling;
+
+  freiMachen(tabelle);
   zieht = true;
   document.body.classList.add('zieht-tabelle');
 
-  const knopf = fall.currentTarget;
-  try { knopf.setPointerCapture(fall.pointerId); } catch (e) { /* ältere Fassung */ }
-
-  let letztesY = fall.clientY;
-  let rollUhr = null;
-
-  /* AM RAND ROLLEN. Ohne das reicht ein Zug nur so weit, wie das Fenster
-     hoch ist — bei einem Brief ueber zwei Seiten kommt man vom Ende nicht
-     an den Anfang. Solange der Zeiger in den oberen oder unteren vierzig
-     Pixeln der Arbeitsflaeche steht, rollt sie von selbst weiter. */
-  const rollen = () => {
-    const f = $('arbeitsflaeche');
-    const r = f.getBoundingClientRect();
-    const oben = letztesY - r.top;
-    const unten = r.bottom - letztesY;
-    let schritt = 0;
-    if (oben < 40) schritt = -Math.max(4, (40 - oben) / 2);
-    else if (unten < 40) schritt = Math.max(4, (40 - unten) / 2);
-    if (schritt) {
-      f.scrollTop += schritt;
-      legeMarkeZeigen(blockUnter(letztesY, tabelle));
-    }
-  };
+  const massstab = (zoom || 100) / 100;
+  const start = { x: fall.clientX, y: fall.clientY };
+  const anfang = { links: parseFloat(tabelle.style.left) || 0,
+                   oben: parseFloat(tabelle.style.top) || 0 };
 
   const bewegen = (e) => {
-    letztesY = e.clientY;
-    legeMarkeZeigen(blockUnter(letztesY, tabelle));
+    const dx = inMillimeter((e.clientX - start.x) / massstab);
+    const dy = inMillimeter((e.clientY - start.y) / massstab);
+    tabelle.style.left = Math.round((anfang.links + dx) * 10) / 10 + 'mm';
+    tabelle.style.top = Math.round((anfang.oben + dy) * 10) / 10 + 'mm';
+    griffAuffrischenRoh();
   };
 
   const aufhoeren = () => {
     zieht = false;
-    clearInterval(rollUhr);
     knopf.removeEventListener('pointermove', bewegen);
     knopf.removeEventListener('pointerup', loslassen);
     knopf.removeEventListener('pointercancel', abbrechen);
     document.removeEventListener('keydown', tasteAb);
-    try { knopf.releasePointerCapture(fall.pointerId); } catch (e) { /* schon weg */ }
     document.body.classList.remove('zieht-tabelle');
-    legeMarkeWeg();
+    try { knopf.releasePointerCapture(fall.pointerId); } catch (e) { /* weg */ }
   };
 
-  /* ESCAPE BRICHT AB. Wer beim Ziehen merkt, dass er die falsche Stelle
-     trifft, haette sonst nur den Weg ueber „Rueckgaengig" — und muesste
-     erst loslassen, um ihn zu finden. */
-  const abbrechen = () => {
-    aufhoeren();
-    griffNachmessen();
+  const zuruecksetzen = () => {
+    if (!warFrei) {
+      tabelle.classList.remove('tabelle--frei');
+      if (davor) davor.after(tabelle);
+    }
+    tabelle.style.left = zurueck.links;
+    tabelle.style.top = zurueck.oben;
+    tabelle.style.width = zurueck.breite;
   };
+
+  const abbrechen = () => { aufhoeren(); zuruecksetzen(); griffNachmessen(); };
 
   const tasteAb = (e) => {
     if (e.key !== 'Escape') return;
     e.preventDefault();
-    aufhoeren();
-    griffNachmessen();
+    aufhoeren(); zuruecksetzen(); griffNachmessen();
     melde('Verschieben abgebrochen.');
   };
 
-  const loslassen = (e) => {
-    const y = e.clientY;
+  const loslassen = () => {
     aufhoeren();
-
-    const ziel = blockUnter(y, tabelle);
-    if (!ziel) { griffNachmessen(); return; }
-
-    if (ziel.dahinter) ziel.block.after(tabelle);
-    else ziel.block.before(tabelle);
-
-    /* Stand sie schon da, ist nichts geschehen — dann auch nichts melden. */
-    if (tabelle.previousElementSibling === vorher) { griffNachmessen(); return; }
-
-    tabelleAbschliessen(tabelle);
-    melde('Tabelle verschoben. Rueckgaengig mit Strg+Z.');
+    geaendertMelden();
+    melde(warFrei ? 'Tabelle verschoben.'
+                  : 'Tabelle schwebt jetzt frei. Zurueck mit "Wieder in den Text".');
     griffNachmessen();
   };
 
-  rollUhr = setInterval(rollen, 60);
   knopf.addEventListener('pointermove', bewegen);
   knopf.addEventListener('pointerup', loslassen);
-  /* Reißt die Verbindung ab — Finger vom Rand gerutscht, System
-     dazwischengefunkt —, soll nicht irgendwo etwas landen. */
+  knopf.addEventListener('pointercancel', abbrechen);
+  document.addEventListener('keydown', tasteAb);
+}
+
+/* GROESSER UND KLEINER ZIEHEN, am Eck unten rechts.
+
+   Geaendert wird die Breite; die Hoehe ergibt sich aus dem Inhalt, wie
+   bei jeder Tabelle. Wer sie schmaler zieht, bekommt mehr Zeilen je
+   Zelle — das ist richtig so und kein Fehler. */
+function groesseZiehenBeginnen(fall) {
+  fall.preventDefault();
+  if (!griffZiel) return;
+  const tabelle = griffZiel;
+  const knopf = fall.currentTarget;
+  try { knopf.setPointerCapture(fall.pointerId); } catch (e) { /* aelter */ }
+
+  const zurueck = tabelle.style.width;
+  const massstab = (zoom || 100) / 100;
+  const startX = fall.clientX;
+  const anfangsBreite = tabelle.getBoundingClientRect().width / massstab;
+  const bogen = (tabelle.closest('.dokument') || feld).getBoundingClientRect();
+  const grenze = bogen.width / massstab;
+  zieht = true;
+  document.body.classList.add('zieht-tabelle');
+
+  const bewegen = (e) => {
+    const neu = anfangsBreite + (e.clientX - startX) / massstab;
+    const mindestens = 20 * 96 / 25.4;          /* zwei Zentimeter */
+    tabelle.style.width =
+      inMillimeter(Math.max(mindestens, Math.min(neu, grenze))) + 'mm';
+    griffAuffrischenRoh();
+  };
+
+  const aufhoeren = () => {
+    zieht = false;
+    knopf.removeEventListener('pointermove', bewegen);
+    knopf.removeEventListener('pointerup', loslassen);
+    knopf.removeEventListener('pointercancel', abbrechen);
+    document.removeEventListener('keydown', tasteAb);
+    document.body.classList.remove('zieht-tabelle');
+    try { knopf.releasePointerCapture(fall.pointerId); } catch (e) { /* weg */ }
+  };
+
+  const abbrechen = () => {
+    aufhoeren(); tabelle.style.width = zurueck; griffNachmessen();
+  };
+  const tasteAb = (e) => {
+    if (e.key !== 'Escape') return;
+    e.preventDefault(); abbrechen(); melde('Aufziehen abgebrochen.');
+  };
+  const loslassen = () => {
+    aufhoeren(); geaendertMelden();
+    melde('Tabellenbreite: ' + tabelle.style.width);
+    griffNachmessen();
+  };
+
+  knopf.addEventListener('pointermove', bewegen);
+  knopf.addEventListener('pointerup', loslassen);
   knopf.addEventListener('pointercancel', abbrechen);
   document.addEventListener('keydown', tasteAb);
 }
@@ -1437,6 +1536,183 @@ function tabelleAbschliessen(tabelle) {
    soll, darf das nicht der einzige Weg sein. Diese beiden schieben die
    Tabelle um einen Block — im Menue, in der Leiste, und damit auch ueber
    die Tastatur erreichbar. */
+/* ============================================================
+   ZELLEN ZUSAMMENFÜHREN UND TEILEN
+
+   Die größte Lücke aus dem Abgleich mit WPS
+   (doku/wps-tabellen-und-steuerung.md). Ohne Zusammenführen lässt sich
+   keine Überschrift über zwei Spalten bauen — und das braucht jeder, der
+   je eine Tabelle mit einem Titel gemacht hat.
+
+   Beides gehört zusammen und wird deshalb zusammen gebaut: Ein Befehl,
+   den man nicht zurücknehmen kann, ist eine Falle. Wer zwei Zellen
+   zusammenführt und es sich anders überlegt, teilt sie wieder.
+
+   WIE DIE AUSWAHL GELESEN WIRD. In einem contenteditable gibt es keine
+   „markierten Zellen" wie in einer Tabellenkalkulation — es gibt einen
+   Textbereich, der über mehrere Zellen reicht. containsNode(zelle, true)
+   fragt genau das ab: Liegt diese Zelle ganz oder teilweise in dem, was
+   markiert ist.
+   ============================================================ */
+
+/* Die Zellen, die gerade markiert sind — oder die eine unter dem Zeiger. */
+function zellenGewaehlt(tabelle) {
+  const auswahl = window.getSelection();
+  const alle = [...tabelle.querySelectorAll('td, th')];
+  if (!auswahl || auswahl.isCollapsed || !auswahl.rangeCount) {
+    const eine = zelleOderZuletzt();
+    return eine && tabelle.contains(eine) ? [eine] : [];
+  }
+  return alle.filter((z) => {
+    try { return auswahl.containsNode(z, true); } catch (e) { return false; }
+  });
+}
+
+/* Wo eine Zelle im Raster wirklich sitzt.
+
+   cellIndex zählt nur die Zellen der Zeile — bei einer Tabelle mit
+   zusammengeführten Zellen ist das nicht die Spalte. Eine Zelle mit
+   colSpan=2 belegt zwei Spalten, und alles dahinter rutscht. Ohne dieses
+   Raster meldet „rechteckig?" bei jeder schon einmal zusammengeführten
+   Tabelle Unsinn. */
+function tabellenRaster(tabelle) {
+  const raster = [];
+  const belegt = {};
+  [...tabelle.rows].forEach((zeile, z) => {
+    raster[z] = raster[z] || [];
+    let sp = 0;
+    for (const zelle of zeile.cells) {
+      while (belegt[z + ':' + sp]) sp++;
+      const breit = zelle.colSpan || 1;
+      const hoch = zelle.rowSpan || 1;
+      for (let dz = 0; dz < hoch; dz++) {
+        for (let ds = 0; ds < breit; ds++) {
+          belegt[(z + dz) + ':' + (sp + ds)] = zelle;
+          (raster[z + dz] = raster[z + dz] || [])[sp + ds] = zelle;
+        }
+      }
+      sp += breit;
+    }
+  });
+  return raster;
+}
+
+function zelleImRaster(raster, gesucht) {
+  for (let z = 0; z < raster.length; z++) {
+    const reihe = raster[z] || [];
+    for (let sp = 0; sp < reihe.length; sp++) {
+      if (reihe[sp] === gesucht) return { zeile: z, spalte: sp };
+    }
+  }
+  return null;
+}
+
+B.zellenVerbinden = () => mitTabelle((zelle, zeile, tabelle) => {
+  const gewaehlt = zellenGewaehlt(tabelle);
+  if (gewaehlt.length < 2) {
+    melde('Dafür müssen zwei oder mehr Zellen markiert sein — '
+        + 'mit gedrückter Maustaste über sie fahren.');
+    return;
+  }
+
+  const raster = tabellenRaster(tabelle);
+  const stellen = gewaehlt.map((z) => zelleImRaster(raster, z)).filter(Boolean);
+  const zeilen = stellen.map((s) => s.zeile);
+  const spalten = stellen.map((s) => s.spalte);
+  const z1 = Math.min(...zeilen), z2 = Math.max(...zeilen);
+  const s1 = Math.min(...spalten), s2 = Math.max(...spalten);
+
+  /* Nur ein Rechteck lässt sich zusammenführen. Eine Treppe ergäbe eine
+     Zelle, die es in HTML nicht gibt — und in Word bekommt man dort
+     dieselbe Absage. */
+  const felder = (z2 - z1 + 1) * (s2 - s1 + 1);
+  const eindeutig = new Set();
+  for (let z = z1; z <= z2; z++) {
+    for (let sp = s1; sp <= s2; sp++) {
+      const da = (raster[z] || [])[sp];
+      if (!da || !gewaehlt.includes(da)) {
+        melde('Zusammenführen geht nur bei einem Rechteck aus Zellen.');
+        return;
+      }
+      eindeutig.add(da);
+    }
+  }
+  if (!felder) return;
+
+  const erste = (raster[z1] || [])[s1];
+  /* Der Inhalt aller Zellen wandert in die erste, jeder in einem eigenen
+     Absatz. Ihn einfach aneinanderzuhängen ergäbe einen Wortbrei — und
+     wer zusammenführt, will die Texte behalten, nicht verschmelzen. */
+  const stuecke = [];
+  for (const z of eindeutig) {
+    const text = z.innerHTML.replace(/<br\s*\/?>/gi, '').trim();
+    if (text) stuecke.push(text);
+  }
+  erste.innerHTML = stuecke.length ? stuecke.join('<br>') : '<br>';
+  erste.colSpan = s2 - s1 + 1;
+  erste.rowSpan = z2 - z1 + 1;
+
+  for (const z of eindeutig) if (z !== erste) z.remove();
+
+  window.getSelection().removeAllRanges();
+  melde('Zellen zusammengeführt. Rückgängig mit Strg+Z, '
+      + 'oder mit „Zellen teilen".');
+  griffNachmessen();
+});
+
+B.zellenTeilen = () => mitTabelle((zelle, zeile, tabelle) => {
+  const ziel = zellenGewaehlt(tabelle)[0] || zelle;
+  if (!ziel) return;
+
+  fenster('Zellen teilen', [
+    { art: 'satz', text: 'In wie viele Teile soll diese Zelle zerfallen?' },
+    { schluessel: 'spalten', name: 'Spalten', art: 'number', wert: '2' },
+    { schluessel: 'zeilen', name: 'Zeilen', art: 'number', wert: '1' },
+  ], (werte) => {
+    const spalten = Math.max(1, Math.min(20, parseInt(werte.spalten, 10) || 1));
+    const zeilen = Math.max(1, Math.min(20, parseInt(werte.zeilen, 10) || 1));
+    if (spalten === 1 && zeilen === 1) { melde('Dann bleibt alles, wie es ist.'); return; }
+
+    /* Erst die Spannweiten zurücknehmen — eine zusammengeführte Zelle zu
+       teilen heißt, sie wieder aufzumachen. */
+    const warBreit = ziel.colSpan || 1;
+    const warHoch = ziel.rowSpan || 1;
+    ziel.colSpan = 1;
+    ziel.rowSpan = 1;
+
+    const neueInZeile = Math.max(spalten, warBreit);
+    const muster = () => {
+      const n = document.createElement(ziel.tagName.toLowerCase());
+      n.innerHTML = '<br>';
+      n.style.border = ziel.style.border;
+      n.style.padding = ziel.style.padding;
+      n.style.background = ziel.style.background;
+      return n;
+    };
+
+    /* Die zusätzlichen Spalten kommen direkt hinter die Zelle. */
+    let letzte = ziel;
+    for (let i = 1; i < neueInZeile; i++) {
+      const n = muster();
+      letzte.after(n);
+      letzte = n;
+    }
+
+    /* Und die zusätzlichen Zeilen darunter — nur so breit wie das
+       geteilte Stück, nicht wie die ganze Tabelle. */
+    const zeileVon = ziel.parentElement;
+    for (let i = 1; i < Math.max(zeilen, warHoch); i++) {
+      const neueZeile = document.createElement('tr');
+      for (let j = 0; j < neueInZeile; j++) neueZeile.appendChild(muster());
+      zeileVon.after(neueZeile);
+    }
+
+    melde('Zelle geteilt: ' + neueInZeile + ' Spalten, '
+        + Math.max(zeilen, warHoch) + ' Zeilen.');
+    griffNachmessen();
+  }, 'Teilen');
+});
+
 B.tabelleHoch = () => mitTabelle((zelle, zeile, tabelle) => {
   const davor = tabelle.previousElementSibling;
   if (!davor) { melde('Die Tabelle steht schon ganz oben.'); return; }
@@ -3633,10 +3909,13 @@ const REGISTER_IM_ZUSAMMENHANG = [
        einer, der noch nicht fertig ist. */
     gruppen: [
       ['Tabelle', [['kopfz', 'Erste Zeile als Kopf', () => B.kopfzeileTabelle(), 'gross'],
+                   ['fortlaufend', 'Wieder in den Text einreihen', () => B.tabelleEinreihen()],
                    ['ebeneHoch', 'Tabelle nach oben', () => B.tabelleHoch()],
                    ['ebeneTief', 'Tabelle nach unten', () => B.tabelleRunter()],
                    ['sortieren', 'Sortieren', () => B.sortieren()],
                    ['radierer', 'Ganze Tabelle löschen', () => B.tabelleWeg()]]],
+      ['Zellen', [['zweiblatt', 'Zellen zusammenführen', () => B.zellenVerbinden(), 'gross'],
+                   ['spalten', 'Zellen teilen', () => B.zellenTeilen(), 'gross']]],
       ['Zeilen und Spalten', [['tabelle', 'Zeile darüber', () => B.zeileOben(), 'gross'],
                    ['tabelle', 'Zeile darunter', () => B.zeileUnten(), 'gross'],
                    ['spalten', 'Spalte links', () => B.spalteLinks(), 'gross'],
@@ -12283,6 +12562,9 @@ function rechtsMenueZeigen(e) {
       { name: 'Erste Zeile als Kopf', tun: () => B.kopfzeileTabelle(), aus: gesperrt },
       { name: 'Zellengröße…', tun: () => B.zellengroesse(), aus: gesperrt },
       { name: 'Ausrichtung…', tun: () => B.zellenAusrichtung(), aus: gesperrt },
+      { name: 'Zellen zusammenführen', tun: () => B.zellenVerbinden(), aus: gesperrt },
+      { name: 'Zellen teilen…', tun: () => B.zellenTeilen(), aus: gesperrt },
+      { name: 'Wieder in den Text einreihen', tun: () => B.tabelleEinreihen(), aus: gesperrt },
       { name: 'Tabelle nach oben', tun: () => B.tabelleHoch(), aus: gesperrt },
       { name: 'Tabelle nach unten', tun: () => B.tabelleRunter(), aus: gesperrt },
       { name: 'Rahmen ein/aus', tun: () => B.tabelleRahmen(), aus: gesperrt },

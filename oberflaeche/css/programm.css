@@ -549,6 +549,16 @@ select option{background:var(--karte);color:var(--schrift)}
 /* Die beiden + sind rund: Sie fügen etwas hinzu und sollen sich von den
    eckigen Griffen unterscheiden, die etwas mit der ganzen Tabelle tun. */
 .tabellengriff--zeile,.tabellengriff--spalte{border-radius:50%;font-weight:600}
+.tabellengriff--groesse{cursor:nwse-resize;touch-action:none}
+
+/* Eine Tabelle, die frei liegt. Sie haengt am Bogen (.dokument hat
+   position:relative) und nicht mehr im Textfluss — deshalb kann sie
+   ueberall stehen, und deshalb wandert sie beim Schreiben nicht mit. */
+.tabelle--frei{
+  position:absolute;
+  z-index:2;
+  margin:0;
+}
 /* Löschen ist rot — aber erst beim Überfahren. Ein dauerhaft rotes Kreuz
    an jeder Tabelle sähe aus wie eine Fehlermeldung.
    NACH der allgemeinen Regel: Bei gleicher Stärke gewinnt die spätere. */
