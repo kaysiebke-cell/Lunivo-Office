@@ -2365,6 +2365,44 @@ def speichern_fragen(_umgebung, ladung):
     ladung.connect("decide-destination", ziel_waehlen)
 
 
+def fenstersymbol_suchen():
+    """Die Bilddatei für das Fenstersymbol — oder None.
+
+    Hier stand eine feste Liste: symbole/icon-256.png, icon-128.png,
+    icon-512.png. Beim Icon-Wechsel sind diese Dateien aus symbole/
+    verschwunden und nach symbole/varianten/<fassung>/ gewandert. Die Liste
+    fand seither nichts mehr, und das Fenster lief ohne Symbol — ohne
+    Fehlermeldung, denn das Symbol ist ja „optional".
+
+    Deshalb wird jetzt gesucht statt geraten:
+
+      1. symbole/ selbst. Wer eine Fassung ausgewählt hat, legt sie
+         dorthin, und sie gilt — der Schalter, den es vorher nicht gab.
+      2. sonst die Fassungen unter symbole/varianten/, alphabetisch.
+         Lieber irgendein Symbol als keines.
+
+    Die Größen in dieser Reihenfolge: 256 ist groß genug, dass der
+    Arbeitsplatz sauber herunterrechnen kann, und klein genug, dass er es
+    nicht erst muss.
+    """
+    groessen = ("icon-256.png", "icon-128.png", "icon-512.png", "icon-64.png")
+
+    orte = [os.path.join(HIER, "symbole")]
+    varianten = os.path.join(HIER, "symbole", "varianten")
+    if os.path.isdir(varianten):
+        for name in sorted(os.listdir(varianten)):
+            weg = os.path.join(varianten, name)
+            if os.path.isdir(weg):
+                orte.append(weg)
+
+    for ort in orte:
+        for groesse in groessen:
+            datei = os.path.join(ort, groesse)
+            if os.path.isfile(datei):
+                return datei
+    return None
+
+
 def main():
     for noetig in ("oberflaeche/index.html", "oberflaeche/js/pruefung.js",
                    "oberflaeche/daten/regeln.js", "oberflaeche/daten/woerter.txt"):
@@ -2415,14 +2453,12 @@ def main():
     # Solange der Menüeintrag noch nicht geschrieben wurde, kennt der
     # Arbeitsplatz den Namen nicht. Dann tut es die Datei aus dem Ordner.
     if not Gtk.IconTheme.get_default().has_icon("lunivo-office"):
-        for groesse in ("symbole/icon-256.png", "symbole/icon-128.png", "symbole/icon-512.png"):
-            symbol = os.path.join(HIER, groesse)
-            if os.path.isfile(symbol):
-                try:
-                    fenster.set_icon_from_file(symbol)
-                except Exception:
-                    pass
-                break
+        symbol = fenstersymbol_suchen()
+        if symbol:
+            try:
+                fenster.set_icon_from_file(symbol)
+            except Exception:
+                pass
     # Ohne das bleiben confirm() und prompt() der Seite unsichtbar hängen.
     ansicht.connect("script-dialog", seiten_dialog)
 
