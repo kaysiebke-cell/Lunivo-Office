@@ -4389,25 +4389,18 @@ function flaecheAnwenden() {
   }
 }
 
-B.benutzeroberflaeche = () => {
-  fenster('Benutzeroberfläche', [
-    { art: 'satz', text:
-        'Dieselben Befehle, anders sortiert. Die Symbolleisten stehen in '
-      + 'zwei Zeilen immer alle da; die Register zeigen weniger auf einmal, '
-      + 'dafür mit Namen daneben.\n\n'
-      + 'Die Menüleiste bleibt in beiden Fällen — sie ist der Weg zu allem, '
-      + 'was in keine Leiste passt.' },
-    { schluessel: 'wahl', name: 'Ansicht', art: 'auswahl',
-      werte: [['leisten', 'Symbolleisten (wie bisher)'],
-              ['register', 'In Registern (wie Word)']],
-      wert: flaeche },
-  ], (werte) => {
-    flaeche = werte.wahl === 'register' ? 'register' : 'leisten';
-    Speicher.schreib('flaeche', flaeche);
-    flaecheAnwenden();
-    menueBauen();
-  });
-};
+/* Ansicht ▸ Oberfläche ▸ Benutzeroberfläche.
+
+   Hier stand ein eigenes Fenster: zwei Absätze Text und ein Klappfeld mit
+   den Wörtern „Symbolleisten" und „In Registern". Dieselbe Einstellung
+   steht seit dem Umbau in den Optionen — dort aber mit zwei gezeichneten
+   Fassungen, die zeigen, was man bekommt.
+
+   Zwei Türen zu einer Einstellung sind in Ordnung. Zwei Türen zu ZWEI
+   verschieden guten Fassungen derselben Einstellung sind es nicht: Wer
+   den Menüweg nimmt, bekäme die schlechtere und wüsste nie, dass es die
+   bessere gibt. Also führt der Menüweg jetzt an dieselbe Stelle. */
+B.benutzeroberflaeche = () => Einstellungen.flaecheAnspringen();
 
 /* ------------------------------------------------------------
    Das Register anpassen
@@ -6136,7 +6129,12 @@ function layoutAnwenden() {
   menueBauen();
 }
 
-const setzeLayout = (wahl) => () => { layout = wahl; layoutAnwenden(); };
+/* statuszeileAuffrischen() mit dazu: Wird die Ansicht über das Menü
+   gewechselt, muss unten rechts derselbe Knopf aufleuchten. */
+const setzeLayout = (wahl) => () => {
+  layout = wahl; layoutAnwenden();
+  if (typeof statuszeileAuffrischen === 'function') statuszeileAuffrischen();
+};
 
 /* ============================================================
    Aus dem Start-Tab von Word
@@ -6790,6 +6788,7 @@ B.lesemodus = () => {
   feld.contentEditable = lesemodus ? 'false' : 'true';
   melde(lesemodus ? 'Lesemodus — Escape beendet ihn.' : 'Lesemodus beendet.');
   menueBauen();
+  if (typeof statuszeileAuffrischen === 'function') statuszeileAuffrischen();
 };
 
 /* ============================================================
@@ -6846,6 +6845,65 @@ let lesehilfe = Object.assign(
   { ton: 'weiss', zeichen: 'keine', wort: 'keine', zeilen: 'keine',
     fokus: false, groesser: 'keine', zurueck: 'keine' },
   Speicher.lies('lesehilfe', {}));
+
+/* ------------------------------------------------------------
+   DIE DREI LESESTUFEN
+
+   Sieben Einstellungen ergeben zusammen ein Schriftbild. Wer weiß, was
+   „Buchstabenabstand: deutlich mehr" mit einem Text macht, stellt sie
+   einzeln. Wer es nicht weiß — und das ist die Zielgruppe dieses
+   Programms —, muss sie erst einzeln ausprobieren, um herauszufinden, was
+   ihm hilft. Sechs Klappfelder sind dafür der falsche Anfang.
+
+   Deshalb drei fertige Stufen. Sie stellen dieselben Felder, die man auch
+   von Hand stellen kann, und sie sind KEIN Käfig: Jedes Feld bleibt
+   darunter stehen und veränderbar. Wer eines anfasst, steht auf „Eigene
+   Einstellung", und keine Stufe ist mehr angekreuzt — nichts wird
+   versteckt, nichts geht verloren.
+
+   WARUM „SEHR LEICHT LESEN" NICHT DEN HÄRTESTEN WERT NIMMT
+
+   Bei „Übriger Text" gibt es „deutlich blasser" (0,38). In der Probe war
+   zu sehen, was das heißt: Die Nachbarabsätze sind fast weg. Als Maximum
+   von Hand ist das richtig — als Voreinstellung, die jemand anklickt,
+   ohne zu wissen, was kommt, ist es zu viel. Die Stufe nimmt deshalb
+   „etwas blasser"; der harte Wert bleibt eine Handbreite entfernt.
+
+   WAS DIE STUFEN NICHT ANFASSEN: die Schrift. Sie steht ohnehin schon auf
+   OpenDyslexic (siehe schriftJetzt weiter unten) — und hat jemand für ein
+   Schreiben bewusst eine andere gewählt, hat eine Darstellungsstufe sie
+   nicht hinter seinem Rücken zurückzustellen.
+   ------------------------------------------------------------ */
+const LESESTUFEN = [
+  ['standard', 'Standard',
+   { ton: 'weiss', zeichen: 'keine', wort: 'keine', zeilen: 'keine',
+     groesser: 'keine', zurueck: 'keine' }],
+  ['leichter', 'Leichter lesen',
+   { ton: 'creme', zeichen: 'etwas', wort: 'etwas', zeilen: 'etwas',
+     groesser: 'etwas', zurueck: 'etwas' }],
+  ['sehr', 'Sehr leicht lesen',
+   { ton: 'gelb', zeichen: 'mehr', wort: 'mehr', zeilen: 'viel',
+     groesser: 'deutlich', zurueck: 'etwas' }],
+];
+
+/* Auf welcher Stufe steht die Lesehilfe gerade — oder auf keiner.
+
+   Gefragt wird nur nach den Feldern, die eine Stufe stellt. Der
+   Zeilenfokus gehört nicht dazu: Er ist ein eigener Schalter, und wer ihn
+   anhat, soll deswegen nicht aus seiner Stufe fallen. */
+function lesestufeJetzt() {
+  const treffer = LESESTUFEN.find(([, , werte]) =>
+    Object.keys(werte).every((feld) => lesehilfe[feld] === werte[feld]));
+  return treffer ? treffer[0] : '';
+}
+
+function lesestufeSetzen(marke) {
+  const stufe = LESESTUFEN.find(([m]) => m === marke);
+  if (!stufe) return;
+  Object.assign(lesehilfe, stufe[2]);
+  lesehilfeAnwenden();
+  Speicher.schreib('lesehilfe', lesehilfe);
+}
 
 /* Wie stark der Absatz wächst, in dem der Zeiger steht. Vergrößert wird
    mit „transform" und nicht mit einer größeren Schrift: Eine größere
@@ -8226,6 +8284,7 @@ B.gliederung = () => {
     melde(gliederung ? 'Gliederung — nur die Überschriften.' : 'Wieder der ganze Text.');
   }
   menueBauen();
+  if (typeof statuszeileAuffrischen === 'function') statuszeileAuffrischen();
 };
 
 /* ---- Fenster anordnen ----
@@ -9003,11 +9062,198 @@ B.ueber = () => {
 function setzeZoom(wert) {
   zoom = Math.max(50, Math.min(300, Math.round(wert)));
   $('blatt').style.zoom = (zoom / 100).toFixed(2);
-  $('status-zoom').textContent = zoom + ' %';
+  /* Zahl und Schieber unten rechts entstehen erst in statuszeileBauen(),
+     ganz am Ende der Datei — setzeZoom() läuft aber schon vorher, wenn
+     der gespeicherte Wert angewandt wird. Ohne diese zwei Prüfungen warf
+     der Start hier und brach ab: Die Statuszeile blieb leer, und mit ihr
+     alles, was danach kam. */
+  const szZahl = document.getElementById('status-zoom');
+  if (szZahl) szZahl.textContent = zoom + ' %';
+  const szSchieber = document.getElementById('status-schieber');
+  if (szSchieber) szSchieber.value = String(zoom);
   Speicher.schreib('zoom', zoom);
   linealAuffrischen();
   fokusAuffrischen();
 }
+/* ------------------------------------------------------------
+   UNTEN RECHTS: die Ansichten und der Vergrößerungsschieber
+
+   Beides gab es schon: die vier Ansichten unter Ansicht ▸
+   Dokumentansichten, die Vergrößerung über Strg+ und Strg−. Nur stand
+   unten rechts eine Zahl, die man nicht anfassen konnte — und die vier
+   Ansichten zwei Menüebenen tief.
+
+   Diese Ecke sieht in jedem Schreibprogramm gleich aus: links die
+   Ansichten, rechts der Schieber. Wer von Word oder WPS kommt, greift
+   dorthin, ohne nachzudenken. Sie nachzubauen kostet nichts an neuer
+   Fähigkeit — es ist ein zweiter, sichtbarer Weg zu dem, was da ist.
+   ------------------------------------------------------------ */
+
+/* Die vier Ansichten. „Zwei Seiten" bleibt im Menü: In Word stehen unten
+   auch nur vier, und die fünfte hätte die Reihe überladen. */
+const SZ_ANSICHTEN = [
+  ['blatt',      'blattansicht', 'Drucklayout'],
+  ['gliederung', 'gliederung',   'Gliederung'],
+  ['lesen',      'lesen',        'Lesemodus'],
+  ['web',        'weblayout',    'Weblayout'],
+];
+
+function szKnopf(bild, name, tun) {
+  const k = document.createElement('button');
+  k.type = 'button';
+  k.className = 'sz-knopf';
+  k.title = name;
+  k.setAttribute('aria-label', name);
+  k.appendChild(symbol(bild));
+  k.addEventListener('click', tun);
+  return k;
+}
+
+/* Welche Ansicht gerade gilt. Lesemodus und Gliederung sind Schalter mit
+   eigenem Zustand, Drucklayout und Weblayout zwei Werte von „layout" —
+   unten rechts sollen sie trotzdem wie vier Geschwister aussehen. */
+function szAnsichtJetzt() {
+  if (lesemodus) return 'lesen';
+  if (gliederung) return 'gliederung';
+  return layout === 'web' ? 'web' : 'blatt';
+}
+
+function szAnsichtWaehlen(wahl) {
+  /* Erst die beiden Sonderzustände abräumen, dann den neuen setzen. Ohne
+     das säße man im Lesemodus UND in der Gliederung, und kein Knopf käme
+     wieder heraus. */
+  if (lesemodus && wahl !== 'lesen') B.lesemodus();
+  if (gliederung && wahl !== 'gliederung') B.gliederung();
+  if (wahl === 'lesen' && !lesemodus) B.lesemodus();
+  else if (wahl === 'gliederung' && !gliederung) B.gliederung();
+  else if (wahl === 'blatt' || wahl === 'web') setzeLayout(wahl)();
+  statuszeileAuffrischen();
+}
+
+/* An die Fensterbreite anpassen: die Vergrößerung so wählen, dass das
+   Blatt gerade hineinpasst. Gerechnet wird mit der ungezoomten Breite —
+   offsetWidth ist bereits gezoomt, und zweimal zu zoomen schaukelt sich
+   bei jedem Klick weiter auf. */
+B.einpassen = () => {
+  const flaeche = $('arbeitsflaeche');
+  const blatt = $('blatt');
+  if (!flaeche || !blatt) return;
+  /* offsetWidth ist hier bereits die UNGEZOOMTE Breite: CSS-zoom skaliert
+     die Darstellung, nicht das Layout — anders als transform:scale, das
+     offsetWidth ebenfalls unberührt lässt, aber getBoundingClientRect()
+     verkleinert. Nachgemessen: offsetWidth 449 bei zoom 0.5, während das
+     Rechteck 225 breit ist. Wer hier noch einmal durch zoom teilt, rechnet
+     zweimal und der Wert schaukelt sich bei jedem Klick auf. */
+  const breiteRoh = blatt.offsetWidth;
+  if (!breiteRoh) return;
+  /* 48 px Luft: der Rollbalken rechts und ein Rand, damit das Blatt nicht
+     an der Kante klebt. */
+  setzeZoom(((flaeche.clientWidth - 48) / breiteRoh) * 100);
+};
+
+const SZ_STUFEN = [50, 75, 100, 125, 150, 200, 300];
+
+function statuszeileBauen() {
+  const kasten = $('status-werkzeuge');
+  if (!kasten || !kasten.appendChild) return;
+  kasten.innerHTML = '';
+
+  const gruppe = document.createElement('span');
+  gruppe.className = 'sz-gruppe';
+  gruppe.setAttribute('role', 'group');
+  gruppe.setAttribute('aria-label', 'Ansicht');
+  for (const [marke, bild, name] of SZ_ANSICHTEN) {
+    const k = szKnopf(bild, name, () => szAnsichtWaehlen(marke));
+    k.dataset.ansicht = marke;
+    gruppe.appendChild(k);
+  }
+  kasten.appendChild(gruppe);
+
+  const strich = document.createElement('span');
+  strich.className = 'sz-trenner';
+  kasten.appendChild(strich);
+
+  kasten.appendChild(szKnopf('einpassen', 'An die Fensterbreite anpassen',
+                             () => B.einpassen()));
+
+  /* Die Zahl ist ein Knopf: Sie führt durch die üblichen Stufen. Ein
+     Klappmenü wäre an dieser Stelle eine Klappe von zwei Zentimetern
+     Breite am unteren Bildschirmrand — schwer zu treffen. */
+  const prozent = document.createElement('button');
+  prozent.type = 'button';
+  prozent.className = 'sz-prozent';
+  prozent.id = 'status-zoom';
+  prozent.title = 'Vergrößerung — klicken für die nächste Stufe';
+  prozent.textContent = zoom + ' %';
+  prozent.addEventListener('click', () => {
+    const naechste = SZ_STUFEN.find((s) => s > zoom) || SZ_STUFEN[0];
+    setzeZoom(naechste);
+  });
+  kasten.appendChild(prozent);
+
+  kasten.appendChild(szKnopfText('−', 'Kleiner', () => B.kleiner()));
+
+  const schieber = document.createElement('input');
+  schieber.type = 'range';
+  schieber.className = 'sz-schieber';
+  schieber.id = 'status-schieber';
+  /* Schrittweite 5 und nicht 10: Sonst rastet der Schieber bei 125 % auf
+     130 — die Zahl daneben sagte „125 %", der Knopf stand woanders, und
+     beide meinten dasselbe. Mit 5 sind alle Stufen aus SZ_STUFEN
+     erreichbar. */
+  schieber.min = '50'; schieber.max = '300'; schieber.step = '5';
+  schieber.value = String(zoom);
+  schieber.title = 'Vergrößerung';
+  schieber.setAttribute('aria-label', 'Vergrößerung');
+  schieber.addEventListener('input', () => setzeZoom(Number(schieber.value)));
+  kasten.appendChild(schieber);
+
+  kasten.appendChild(szKnopfText('+', 'Größer', () => B.groesser()));
+
+  kasten.appendChild(szKnopf('vollbild', 'Vollbild', () => B.vollbild()));
+
+  statuszeileAuffrischen();
+}
+
+/* Plus und Minus als Zeichen und nicht als Zeichnung: Sie sind in jedem
+   Programm Schrift, und ein gezeichnetes Plus sähe daneben fremd aus. */
+function szKnopfText(zeichen, name, tun) {
+  const k = document.createElement('button');
+  k.type = 'button';
+  k.className = 'sz-knopf sz-knopf--zeichen';
+  k.title = name;
+  k.setAttribute('aria-label', name);
+  k.textContent = zeichen;
+  k.addEventListener('click', tun);
+  return k;
+}
+
+function statuszeileAuffrischen() {
+  const jetzt = szAnsichtJetzt();
+  for (const k of document.querySelectorAll('.sz-knopf[data-ansicht]')) {
+    const an = k.dataset.ansicht === jetzt;
+    k.classList.toggle('sz-knopf--an', an);
+    k.setAttribute('aria-pressed', an ? 'true' : 'false');
+  }
+  const schieber = document.getElementById('status-schieber');
+  if (schieber) schieber.value = String(zoom);
+}
+
+/* Vollbild. Der Ausstieg ist Escape — das macht der Browser selbst, und
+   der Knopf wechselt sein Bild nicht: Er ist ein Umschalter. */
+B.vollbild = () => {
+  if (document.fullscreenElement) {
+    if (document.exitFullscreen) document.exitFullscreen();
+    return;
+  }
+  const wurzel = document.documentElement;
+  if (wurzel.requestFullscreen) {
+    wurzel.requestFullscreen().catch(() => melde('Vollbild geht hier nicht.'));
+  } else {
+    melde('Vollbild geht in diesem Fenster nicht.');
+  }
+};
+
 B.groesser = () => setzeZoom(zoom + 10);
 B.kleiner  = () => setzeZoom(zoom - 10);
 B.normal   = () => setzeZoom(100);
@@ -11706,6 +11952,32 @@ Einstellungen.verbinde({
     lesehilfeAnwenden();
     Speicher.schreib('lesehilfe', lesehilfe);
   },
+  /* Die fertig gerechneten Werte für das Probeblatt der Einstellungsseite.
+
+     Die Formeln (0,03em je Stufe, 1,55 + 0,22 je Stufe …) stehen in
+     lesehilfeAnwenden() und sollen an genau einer Stelle stehen. Gäbe ich
+     die Marken heraus und rechnete die Einstellungsseite selbst, wäre es
+     eine zweite Abschrift — und beim nächsten Verstellen einer Zahl
+     stimmte die Probe nicht mehr mit dem Blatt überein. */
+  leseprobeWerte: () => {
+    const stufe = (marke) => (ABSTUFUNG.find(([m]) => m === marke) || ABSTUFUNG[0])[2];
+    const ton = PAPIERTOENE.find(([m]) => m === lesehilfe.ton);
+    return {
+      ton: (ton && ton[2]) || '',
+      zeichen: stufe(lesehilfe.zeichen) ? (stufe(lesehilfe.zeichen) * 0.03) + 'em' : 'normal',
+      wort: stufe(lesehilfe.wort) ? (stufe(lesehilfe.wort) * 0.12) + 'em' : 'normal',
+      zeilen: stufe(lesehilfe.zeilen)
+        ? (1.55 + stufe(lesehilfe.zeilen) * 0.22).toFixed(2) : '1.55',
+      wachstum: String((VERGROESSERN.find(([m]) => m === lesehilfe.groesser)
+                        || VERGROESSERN[0])[2]),
+      blaesse: String((ZURUECKNEHMEN.find(([m]) => m === lesehilfe.zurueck)
+                       || ZURUECKNEHMEN[0])[2]),
+      schrift: schriftJetzt,
+    };
+  },
+  lesestufen: () => LESESTUFEN.map(([marke, name]) => [marke, name]),
+  lesestufeJetzt: () => lesestufeJetzt(),
+  lesestufeSetzen: (marke) => lesestufeSetzen(marke),
   stimmeWaehlen: () => B.stimmeWaehlen(),
 
   bandReiter: () => REGISTER.map(([name]) => name),
@@ -12384,6 +12656,9 @@ if (Bruecke) Bruecke.textSetzen(Dokument.lies().text);
 menueleisteAnwenden();
 bedienungAnwenden();
 flaecheAnwenden();
+/* Unten rechts: Ansichten und Schieber. Auch hier erst jetzt, weil die
+   Knöpfe ihre Zeichnungen aus SYMBOLE holen. */
+statuszeileBauen();
 
 /* Die Reiter der offenen Dokumente. Ganz zuletzt, weil sie Namen und
    Änderungsstand aller Dokumente zeigt — beides steht erst jetzt fest. */

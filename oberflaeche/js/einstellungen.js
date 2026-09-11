@@ -55,6 +55,10 @@ let griffe = {
   registerAnpassen: () => {},
   vorlagenOrdner: () => {},
   vorlagenOrdnerWeg: () => '',
+  /* Die Wahl der Oberfläche wird beim Aufgehen der Seite gelesen — vor
+     dem Reichen der Griffe wäre das ein Absturz statt einer Vorauswahl. */
+  flaecheJetzt: () => 'leisten',
+  flaecheSetzen: () => {},
 };
 
 const verbinde = (neue) => { griffe = Object.assign(griffe, neue); };
@@ -430,6 +434,109 @@ function tooltipsSetzen() {
    Dialog, damit nicht zwei Listen nebeneinanderstehen und auseinander
    laufen. Und jede Wahl wirkt sofort: Wer sehen will, ob ihm mehr
    Buchstabenabstand hilft, muss dafür nicht erst „Übernehmen" drücken. */
+/* ------------------------------------------------------------
+   DIE DREI LESESTUFEN
+
+   Die Wahl steht oben auf der Seite „Lesehilfe", die sechs Klappfelder
+   darunter. Sie stellt dieselben Felder, die man auch einzeln stellen
+   kann — und wer eines von Hand anfasst, landet auf „Eigene Einstellung":
+   Dann ist keine Stufe mehr angekreuzt, und nichts ist verschwunden.
+
+   Das Probeblatt daneben ist kein Bild, sondern ein Stück Blatt mit den
+   echten Werten. Es stimmt deshalb auch auf „Eigene Einstellung", wo eine
+   Zeichnung je Stufe nichts mehr zu zeigen hätte.
+   ------------------------------------------------------------ */
+
+const LESESTUFE_SATZ = {
+  standard:
+    'Weißes Blatt, normale Abstände, kein Absatzfokus. So, wie jedes '
+  + 'andere Schreibprogramm es zeigt.\n'
+  + 'Vorgesehen für alle, die beim Lesen keine Hilfe brauchen.',
+  leichter:
+    'Cremefarbenes Blatt, etwas mehr Luft zwischen Buchstaben, Wörtern und '
+  + 'Zeilen. Der Absatz, in dem du stehst, tritt hervor; die übrigen treten '
+  + 'zurück — aber sie bleiben lesbar.\n'
+  + 'Vorgesehen als der Normalfall dieses Programms.',
+  sehr:
+    'Blassgelbes Blatt, deutlich mehr Luft, starker Absatzfokus. Auf das '
+  + 'Blatt passt weniger Text — das ist der Preis und der Zweck zugleich.\n'
+  + 'Vorgesehen, wenn Lesen wirklich schwerfällt.',
+  '':
+    'Eigene Einstellung: Die Felder darunter stehen auf einer Mischung, die '
+  + 'zu keiner der drei Stufen passt. Das ist kein Fehler — so sieht es aus, '
+  + 'wenn man selbst gestellt hat.\n'
+  + 'Eine Stufe anklicken stellt alle sechs Felder auf einmal um.',
+};
+
+let lesestufenGebaut = false;
+
+function lesestufenBauen() {
+  if (lesestufenGebaut || !griffe.lesestufen) return;
+  const kasten = $('einst-lesestufe');
+  if (!kasten || !kasten.querySelector) return;
+  const liste = kasten.querySelector('.flaechenwahl__liste');
+  if (!liste) return;
+
+  for (const [marke, name] of griffe.lesestufen()) {
+    const wahl = document.createElement('label');
+    wahl.className = 'flaechenwahl__wahl';
+    const knopf = document.createElement('input');
+    knopf.type = 'radio';
+    knopf.name = 'einst-lesestufe-wahl';
+    knopf.value = marke;
+    const wort = document.createElement('span');
+    wort.textContent = name;
+    wahl.append(knopf, wort);
+    liste.appendChild(wahl);
+  }
+  lesestufenGebaut = true;
+}
+
+function leseprobeZeigen() {
+  if (!griffe.leseprobeWerte) return;
+  const probe = $('einst-leseprobe');
+  if (!probe || !probe.style || !probe.style.setProperty) return;
+  const w = griffe.leseprobeWerte();
+  /* Ohne Ton bleibt das Blatt weiß — dann darf hier NICHTS stehen, sonst
+     wäre die Farbe die leere Zeichenkette und das Blatt durchsichtig. */
+  if (w.ton) probe.style.setProperty('--probe-ton', w.ton);
+  else probe.style.removeProperty('--probe-ton');
+  probe.style.setProperty('--probe-schrift', w.schrift ? '"' + w.schrift + '"' : '');
+  probe.style.setProperty('--lese-zeichen', w.zeichen);
+  probe.style.setProperty('--lese-wort', w.wort);
+  probe.style.setProperty('--lese-zeilen', w.zeilen);
+  probe.style.setProperty('--fokus-wachstum', w.wachstum);
+  probe.style.setProperty('--rest-blaesse', w.blaesse);
+}
+
+function lesestufeZeigen() {
+  if (!griffe.lesestufeJetzt) return;
+  lesestufenBauen();
+  const jetzt = griffe.lesestufeJetzt();
+  for (const knopf of document.querySelectorAll('input[name="einst-lesestufe-wahl"]')) {
+    knopf.checked = knopf.value === jetzt;
+  }
+  const satz = $('einst-lesestufe-satz');
+  if (satz) satz.textContent = LESESTUFE_SATZ[jetzt] || LESESTUFE_SATZ[''];
+  leseprobeZeigen();
+}
+
+function lesestufeVerdrahten() {
+  const kasten = $('einst-lesestufe');
+  if (!kasten || !kasten.addEventListener) return;
+  /* Ein Horcher am Kasten, nicht drei einzelne: Die Knöpfe entstehen erst
+     beim Aufgehen, und eine vierte Stufe soll nichts weiter kosten. */
+  kasten.addEventListener('change', (fall) => {
+    const knopf = fall.target;
+    if (!knopf || knopf.name !== 'einst-lesestufe-wahl') return;
+    if (griffe.lesestufeSetzen) griffe.lesestufeSetzen(knopf.value);
+    /* Die sechs Klappfelder darunter zeigen jetzt etwas anderes an — sie
+       müssen mitgeführt werden, sonst stünde dort der alte Stand. */
+    lesehilfeZeigen();
+    lesestufeZeigen();
+  });
+}
+
 let lesehilfeGefuellt = false;
 
 function lesehilfeZeigen() {
@@ -456,6 +563,11 @@ function lesehilfeVerdrahten() {
   for (const feld of document.querySelectorAll('#einst-bereiche [data-lesehilfe]')) {
     feld.addEventListener('change', () => {
       if (griffe.lesehilfeSetzen) griffe.lesehilfeSetzen(feld.dataset.lesehilfe, feld.value);
+      /* Wer hier von Hand stellt, fällt womöglich aus seiner Stufe — dann
+         muss oben das Kreuz verschwinden und die Probe nachziehen. Ohne
+         das stünde dort weiter „Leichter lesen", während das Blatt längst
+         etwas anderes zeigt. */
+      lesestufeZeigen();
     });
   }
   const zurPruefung = $('einst-zur-pruefung');
@@ -824,6 +936,7 @@ function werteVerdrahten() {
 function schalterZeigen() {
   werteZeigen();
   lesehilfeZeigen();
+  lesestufeZeigen();
   tooltipsSetzen();
   for (const kasten of document.querySelectorAll('#einst-bereiche [data-schalter]')) {
     const griff = schalterGriff(kasten);
@@ -840,6 +953,7 @@ function schalterZeigen() {
 function schalterVerdrahten() {
   werteVerdrahten();
   lesehilfeVerdrahten();
+  lesestufeVerdrahten();
   bandListeVerdrahten();
   schnellzugriffVerdrahten();
   kennwortVerdrahten();
@@ -886,6 +1000,10 @@ function oeffnen(bereich) {
   gedaechtnisZeigen();
   darstellungZeigen();
   speichernZeigen();
+
+  /* Beim Aufgehen steht dort die Anleitung, nicht der Satz von letztem
+     Mal — der gehörte zu einem Feld, auf das jetzt niemand zeigt. */
+  erklaerungLeeren();
 
   /* Dauert einen Moment und darf das Aufgehen nicht aufhalten. */
   lokaleModelleNachtragen();
@@ -1032,8 +1150,173 @@ function bedienungZeigen() {
     skala.value = String(griffe.skalierungJetzt());
     $('einst-skalierung-stand').textContent = skala.value + ' %';
   }
-  const fl = $('einst-flaeche');
-  if (fl) fl.value = griffe.flaecheJetzt();
+  flaecheZeigen();
+}
+
+/* Die Wahl der Oberfläche: welches Bild den Rand trägt, und welcher Satz
+   darunter steht.
+
+   Die beiden Sätze stehen hier und nicht im Fenster, weil sie zusammen
+   gelesen werden müssen — sie sind ein Vergleich, kein Beipackzettel.
+   Getrennt in zwei <p> im HTML wären sie beim nächsten Umbau auseinander
+   gelaufen. */
+/* Die Sätze sind nach der Vorlage gebaut: erst, was die Fassung IST,
+   dann, für WEN sie gedacht ist. LibreOffice schreibt „Die standardmäßige
+   Benutzeroberfläche … Vorgesehen für Benutzer, die mit der klassischen
+   Oberfläche vertraut sind." Dieselben zwei Sätze, in Kays Sprache. */
+const FLAECHEN_SATZ = {
+  leisten:
+    'Menüleiste oben, darunter zwei Zeilen mit allen Werkzeugen. Nichts '
+  + 'ist weggeklappt, nichts muss man aufsuchen — dafür ist es viel auf '
+  + 'einmal.\n'
+  + 'Vorgesehen für alle, denen die klassische Oberfläche vertraut ist — '
+  + 'etwa aus LibreOffice.',
+  register:
+    'Menüleiste oben, darunter Reiter: Start, Einfügen, Layout. Jeder '
+  + 'Reiter zeigt nur seine eigenen Werkzeuge, in Gruppen mit Namen '
+  + 'darunter.\n'
+  + 'Vorgesehen für alle, die weniger auf einmal sehen wollen — und für '
+  + 'alle, die es aus Word kennen.',
+};
+
+/* ------------------------------------------------------------
+   DIE ERKLÄRZEILE
+
+   Zu fast jedem Feld dieser Seiten steht im Fenster ein
+   <em class="feld__satz"> mit einem Satz, der sagt, was die Einstellung
+   tut — hundertvierzig Stück. Die Stilvorlage blendet sie aus, und das aus
+   gutem Grund: untereinander gestellt brauchten sie die dreifache Höhe,
+   und aus der Seite wurde eine Wand.
+
+   Hier wird immer nur EINER hervorgeholt: der zu dem Feld, auf dem der
+   Zeiger steht oder das den Tastaturfokus hat. Die Seite wird dadurch
+   keine Zeile höher, nichts klappt auf, nichts springt.
+
+   EIN HORCHER AM GANZEN BEREICH, nicht hundertvierzig einzelne. Teile der
+   Seiten entstehen erst beim Aufgehen; einzeln angehängte Horcher hätten
+   die später gebauten Felder nicht erwischt.
+   ------------------------------------------------------------ */
+
+const ERKLAERUNG_LEER = 'Zeig auf eine Einstellung — hier steht, was sie tut.';
+
+/* Der Name des Feldes ohne seinen Satz.
+
+   Bei den Schaltern steckt der Satz INNERHALB der Beschriftung:
+   <span class="feld__name">Lineal <em class="feld__satz">…</em></span>.
+   Einfach textContent zu nehmen ergäbe „Lineal Zentimeter über dem
+   Blatt…" — Name und Erklärung in einem Wortbrei. Also eine Kopie machen,
+   den Satz herausnehmen, dann lesen. */
+function feldName(feld) {
+  const name = feld.querySelector('.feld__name');
+  if (!name) return '';
+  const kopie = name.cloneNode(true);
+  for (const satz of kopie.querySelectorAll('.feld__satz')) satz.remove();
+  return kopie.textContent.replace(/\s+/g, ' ').trim();
+}
+
+function erklaerungLeeren() {
+  const zeile = $('einst-erklaerung');
+  if (!zeile || !zeile.classList) return;
+  zeile.textContent = ERKLAERUNG_LEER;
+  zeile.classList.add('erklaerzeile--leer');
+}
+
+function erklaerungSetzen(feld) {
+  const zeile = $('einst-erklaerung');
+  if (!zeile || !zeile.classList) return;
+  const kasten = feld && feld.querySelector ? feld.querySelector('.feld__satz') : null;
+  const satz = kasten ? kasten.textContent.replace(/\s+/g, ' ').trim() : '';
+  /* Kein Satz geschrieben: dann die Anleitung stehen lassen statt den
+     Namen allein — „Lineal" erklärt nichts. */
+  if (!satz) { erklaerungLeeren(); return; }
+
+  zeile.classList.remove('erklaerzeile--leer');
+  zeile.textContent = '';
+  /* Alles in EIN Stück: Die Zeile ist ein Flex-Kasten, damit ein kurzer
+     Satz senkrecht in der Mitte steht. Name und Satz einzeln hineingelegt
+     wären zwei Flex-Teile — der Name bekäme eine eigene Spalte und bräche
+     darin um, statt im Fließtext zu stehen. */
+  const stueck = document.createElement('span');
+  const name = feldName(feld);
+  if (name) {
+    const fett = document.createElement('b');
+    fett.textContent = name;
+    stueck.append(fett, document.createTextNode(' — '));
+  }
+  stueck.append(document.createTextNode(satz));
+  zeile.append(stueck);
+}
+
+function erklaerzeileVerdrahten() {
+  const bereich = $('einst-bereiche');
+  if (!bereich || !bereich.addEventListener) return;
+
+  const feldUnter = (fall) => {
+    const ziel = fall.target;
+    return ziel && ziel.closest ? ziel.closest('.feld') : null;
+  };
+
+  /* Die Maus. pointerover statt mouseover: So zählt auch der Finger auf
+     einem Bildschirm, den man anfassen kann. */
+  bereich.addEventListener('pointerover', (fall) => {
+    const feld = feldUnter(fall);
+    if (feld) erklaerungSetzen(feld);
+  });
+  bereich.addEventListener('pointerleave', erklaerungLeeren);
+
+  /* Die Tastatur. Wer sich mit Tabulator durch die Seite arbeitet, braucht
+     dieselbe Erklärung — und für ihn ist sie wichtiger als für den, der
+     mit der Maus darüberfährt. */
+  bereich.addEventListener('focusin', (fall) => {
+    const feld = feldUnter(fall);
+    if (feld) erklaerungSetzen(feld);
+  });
+  bereich.addEventListener('focusout', (fall) => {
+    /* Nur leeren, wenn der Fokus den Bereich wirklich verlässt — sonst
+       flackerte die Zeile bei jedem Sprung von Feld zu Feld. */
+    const hin = fall.relatedTarget;
+    if (!hin || !bereich.contains(hin)) erklaerungLeeren();
+  });
+
+  erklaerungLeeren();
+}
+
+/* Der Weg zur Wahl der Oberfläche.
+
+   Sie steht unten auf der Seite „Ansicht", hinter sechsundzwanzig
+   Häkchen — Kay hat sie beim ersten Hinsehen nicht gefunden, und das
+   war kein Zufall: Die Seite ist doppelt so hoch wie das Fenster. Wer
+   die Oberfläche umstellen will, sucht sie im Menü, nicht am Fuß einer
+   Optionenseite.
+
+   Deshalb springt Ansicht ▸ Oberfläche ▸ Benutzeroberfläche hierher,
+   statt ein zweites, ärmeres Fenster mit denselben zwei Wörtern
+   aufzumachen. Eine Einstellung, eine Stelle — aber zwei Wege dorthin. */
+function flaecheAnspringen() {
+  /* Aus dem Menü heraus steht die Seite noch zu — dann muss sie erst
+     aufgehen. Vom Knopf auf der Schnellzugriff-Seite aus ist sie längst
+     offen, und oeffnen() frischt sie nur auf. Beides ist gutartig. */
+  if (!offen) oeffnen('ansicht');
+  bereichZeigen('ansicht');
+  const wahl = $('einst-flaeche');
+  if (!wahl || !wahl.scrollIntoView) return;
+  wahl.scrollIntoView({ block: 'center' });
+  /* Auf den Knopf der gewählten Fassung, nicht auf den Kasten: Ein <div>
+     nimmt keinen Fokus an, und die Tastatur stünde im Leeren. */
+  const gewaehlt = wahl.querySelector('input:checked')
+                || wahl.querySelector('input');
+  if (gewaehlt) gewaehlt.focus();
+}
+
+function flaecheZeigen() {
+  const jetzt = griffe.flaecheJetzt();
+  for (const knopf of document.querySelectorAll('input[name="einst-flaeche-wahl"]')) {
+    knopf.checked = knopf.value === jetzt;
+  }
+  /* Welches Bild in der Vorschau steht, sagt das Attribut am Kasten — das
+     Umschalten selbst macht die Stilvorlage. */
+  $('einst-flaeche').dataset.fassung = jetzt;
+  $('einst-flaeche-satz').textContent = FLAECHEN_SATZ[jetzt] || '';
 }
 
 /* Die Prüfsprache steht an zwei Stellen: auf der Seite „Sprache", wo man
@@ -1270,15 +1553,19 @@ function verdrahten() {
   /* „Zur Benutzeroberfläche" auf der Schnellzugriff-Seite: Sie steht auf
      der Seite Ansicht, und dorthin führt der Knopf. Ein Verweis, dem man
      nicht folgen kann, ist keiner. */
-  const zurFlaeche = $('einst-zur-flaeche');
-  if (zurFlaeche) zurFlaeche.addEventListener('click', () => {
-    bereichZeigen('ansicht');
-    const wahl = $('einst-flaeche');
-    if (wahl) { wahl.scrollIntoView({ block: 'center' }); wahl.focus(); }
-  });
+  erklaerzeileVerdrahten();
 
-  $('einst-flaeche').addEventListener('change', () => {
-    griffe.flaecheSetzen($('einst-flaeche').value);
+  const zurFlaeche = $('einst-zur-flaeche');
+  if (zurFlaeche) zurFlaeche.addEventListener('click', flaecheAnspringen);
+
+  /* Ein Horcher für beide Knöpfe, am gemeinsamen Kasten. Zwei einzelne
+     hätten beim nächsten Zuwachs — eine dritte Fassung — vergessen werden
+     können. */
+  $('einst-flaeche').addEventListener('change', (fall) => {
+    const knopf = fall.target;
+    if (!knopf || knopf.name !== 'einst-flaeche-wahl') return;
+    griffe.flaecheSetzen(knopf.value);
+    flaecheZeigen();
   });
 
   const zweite = $('einst-pruefsprache2');
@@ -1314,5 +1601,6 @@ function verdrahten() {
 
 verdrahten();
 
-return { oeffnen, schliessen, verbinde, offen: () => offen, gedaechtnisZeigen };
+return { oeffnen, schliessen, verbinde, offen: () => offen, gedaechtnisZeigen,
+         flaecheAnspringen };
 })();

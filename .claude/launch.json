@@ -4,8 +4,11 @@
     {
       "name": "oberflaeche",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8777", "--directory", "oberflaeche"],
-      "port": 8777
+      "runtimeArgs": [
+        ".claude/vorschau-server.py",
+        "8791"
+      ],
+      "port": 8791
     }
   ]
 }

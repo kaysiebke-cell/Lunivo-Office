@@ -233,6 +233,53 @@
          Text legt, den man beurteilen will.
          ============================================================ -->
     <div class="gruppe" data-bereich="lesehilfe">
+
+      <!-- DIE DREI LESESTUFEN.
+
+           Darunter stehen sechs Klappfelder, die zusammen ein Schriftbild
+           ergeben. Wer weiß, was „Buchstabenabstand: deutlich mehr" mit
+           einem Text macht, stellt sie einzeln — wer es nicht weiß, muss
+           sie erst einzeln ausprobieren. Für die Zielgruppe dieses
+           Programms ist das der falsche Anfang.
+
+           Deshalb zuerst die drei Stufen, und erst darunter die Felder.
+           Der Aufbau ist derselbe wie bei der Wahl der Oberfläche: Liste
+           links, Vorschau rechts, Satz darunter. Zwei Stellen, an denen
+           man zwischen fertigen Fassungen wählt, sollen auch gleich
+           aussehen. -->
+      <span class="gruppe__titel">Lesestufe</span>
+      <div class="karte">
+        <div class="feld feld--flaeche">
+          <span class="feld__name">Wie leicht soll es zu lesen sein?</span>
+          <div class="flaechenwahl" id="einst-lesestufe">
+            <p class="flaechenwahl__kopf flaechenwahl__kopf--liste">Lesestufe</p>
+            <p class="flaechenwahl__kopf flaechenwahl__kopf--bild">Vorschau</p>
+
+            <div class="flaechenwahl__liste" role="radiogroup" aria-label="Lesestufe">
+              <!-- Die Knöpfe entstehen aus LESESTUFEN in programm.js. Hier
+                   stünden sie sonst ein zweites Mal, und beim nächsten
+                   Zuwachs stimmte eine der beiden Listen nicht mehr. -->
+            </div>
+
+            <div class="flaechenwahl__vorschau">
+              <!-- Das Probeblatt liest dieselben Werte wie das echte Blatt:
+                   --lese-zeichen, --lese-wort, --lese-zeilen und den
+                   Papierton. Es ist keine Zeichnung — es ist ein Stück
+                   Blatt in Originalgröße. Deshalb stimmt es immer, auch
+                   wenn jemand die Felder darunter von Hand verstellt. -->
+              <div class="leseprobe" id="einst-leseprobe">
+                <p>Sehr geehrte Damen und Herren, hiermit kündige ich meinen
+                  Vertrag fristgerecht zum nächstmöglichen Termin.</p>
+                <p class="leseprobe__jetzt">Bitte bestätigen Sie mir den Eingang
+                  und das Datum, zu dem die Kündigung wirksam wird.</p>
+                <p>Mit freundlichen Grüßen</p>
+              </div>
+              <p class="flaechenwahl__satz" id="einst-lesestufe-satz"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <span class="gruppe__titel">Leichter lesen</span>
       <div class="karte">
         <div class="feld">
@@ -1391,13 +1438,94 @@
           </div>
         </div>
 
-        <div class="feld">
-          <label class="feld__name" for="einst-flaeche">Benutzeroberfläche</label>
-          <em class="feld__satz">Dieselben Befehle, anders sortiert.</em>
-          <select id="einst-flaeche">
-            <option value="leisten">Symbolleisten</option>
-            <option value="register">In Registern</option>
-          </select>
+        <!-- DIE WAHL DER OBERFLÄCHE — nach der Vorlage, die Kay geschickt
+             hat: LibreOffice, „Bevorzugte Benutzeroberfläche auswählen".
+
+             Sein Aufbau, Stück für Stück:
+               · zwei Überschriften — „Benutzeroberflächen-Varianten" links,
+                 „Vorschau" rechts
+               · links die Liste der Fassungen, eine unter der anderen,
+                 die gewählte umrandet
+               · rechts EIN Bild: das der gewählten Fassung
+               · darunter der Satz, der sie beschreibt
+
+             Vorher standen hier zwei Bilder nebeneinander. Das war meine
+             Idee, nicht seine — er hat den Dialog als Vorlage geschickt,
+             nicht als Anregung. -->
+        <div class="feld feld--flaeche">
+          <!-- Bei LibreOffice trägt das Fenster den Namen im Titelbalken.
+               Hier ist es kein Fenster, sondern ein Feld auf einer Seite —
+               also braucht es seine Beschriftung. Sie steht außerdem in der
+               erzeugten Landkarte (doku/aufbau-optionen.md), und die liest
+               `feld__name`: Ohne diese Zeile fiele die Einstellung dort
+               heraus, und „Wo finde ich was?" wüsste sie nicht mehr. -->
+          <span class="feld__name">Benutzeroberfläche</span>
+          <div class="flaechenwahl" id="einst-flaeche" data-fassung="leisten">
+
+            <p class="flaechenwahl__kopf flaechenwahl__kopf--liste">Benutzeroberflächen-Varianten</p>
+            <p class="flaechenwahl__kopf flaechenwahl__kopf--bild">Vorschau</p>
+
+            <div class="flaechenwahl__liste" role="radiogroup"
+                 aria-label="Benutzeroberflächen-Varianten">
+              <label class="flaechenwahl__wahl">
+                <input type="radio" name="einst-flaeche-wahl" value="leisten">
+                <span>Symbolleisten</span>
+              </label>
+              <label class="flaechenwahl__wahl">
+                <input type="radio" name="einst-flaeche-wahl" value="register">
+                <span>In Registern</span>
+              </label>
+            </div>
+
+            <div class="flaechenwahl__vorschau">
+              <!-- DIE VORSCHAU IST KEINE ZEICHNUNG.
+
+                   Hier standen erst zwei SVG-Skizzen mit festen Kästchen.
+                   Sie zeigten die Anordnung — aber nicht die Größe, und die
+                   ist zwei Zeilen weiter oben einstellbar. Kay: „wie soll
+                   der Anwender wissen wie groß alles wird?" Er hatte recht:
+                   Man stellte „Extra groß" ein, und das Bild rührte sich
+                   nicht.
+
+                   Jetzt ist die Vorschau aus denselben Teilen gebaut wie
+                   die Leisten selbst und hängt an denselben zwei Werten,
+                   --symbolgroesse und --bedienschrift. In Originalgröße,
+                   nicht verkleinert: Ein Symbol im Bild ist genau so groß
+                   wie danach in der Leiste. Wer die Größe umstellt, sieht
+                   es hier sofort. -->
+              <div class="fwv" aria-hidden="true">
+                <div class="fwv__menue">
+                  <span>Datei</span><span>Start</span><span>Einfügen</span><span>Ansicht</span>
+                </div>
+
+                <!-- Symbolleisten: zwei Zeilen, alle Werkzeuge immer da. -->
+                <div class="fwv__leisten">
+                  <div class="fwv__reihe">
+                    <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+                  </div>
+                  <div class="fwv__reihe">
+                    <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+                  </div>
+                </div>
+
+                <!-- In Registern: Reiter, darunter das Band mit Gruppen. -->
+                <div class="fwv__register">
+                  <div class="fwv__reiter">
+                    <span class="fwv__reiter--offen">Start</span><span>Einfügen</span><span>Layout</span>
+                  </div>
+                  <div class="fwv__band">
+                    <span class="fwv__gruppe"><i></i><i></i><i></i></span>
+                    <span class="fwv__gruppe"><i></i><i></i></span>
+                    <span class="fwv__gruppe"><i></i><i></i><i></i></span>
+                  </div>
+                </div>
+
+                <div class="fwv__blatt"><b></b><b></b><b></b></div>
+              </div>
+
+              <p class="flaechenwahl__satz" id="einst-flaeche-satz"></p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1665,6 +1793,22 @@
     <p class="hinweis" id="einst-fassung"></p>
 
     <div class="seite__fuss">
+      <!-- DIE ERKLÄRZEILE.
+
+           Zu fast jedem Schalter auf diesen Seiten ist ein Satz
+           geschrieben, der sagt, was er tut — hundertvierzig Stück. Sie
+           standen alle da und wurden ausgeblendet, weil sie untereinander
+           die dreifache Höhe brauchten: Aus der Seite wurde eine Wand.
+
+           Hier erscheint immer nur EINER: der zu der Einstellung, auf der
+           der Zeiger steht oder die gerade den Tastaturfokus hat. Die Seite
+           wird dadurch keine Zeile höher, nichts springt, nichts klappt auf
+           — und die Erklärung ist da, wo das Auge ohnehin gerade ist.
+
+           Sie steht unten im Fuß und nicht neben dem Feld: ein Ort, der
+           sich nie ändert. Wer einmal gelernt hat, wo die Erklärung
+           erscheint, muss sie nicht jedes Mal suchen. -->
+      <p class="erklaerzeile" id="einst-erklaerung"></p>
       <button class="knopf" id="einst-schluessel-weg" type="button">Schlüssel löschen</button>
       <button class="knopf knopf--haupt" id="einst-fertig" type="button">Fertig</button>
     </div>
@@ -2022,7 +2166,19 @@
   <span class="statuszeile__rechts">
     <span id="status-zahl">0 Wörter, 0 Zeichen</span>
     <span id="status-seiten">Seite 1 von 1</span>
-    <span id="status-zoom">100 %</span>
+
+    <!-- UNTEN RECHTS: Ansicht und Vergrößerung.
+
+         Beides gab es schon — die vier Ansichten unter Ansicht ▸
+         Dokumentansichten, die Vergrößerung über Strg+ und Strg−. Nur
+         standen sie da, wo man sie nicht sieht, und unten rechts stand
+         bloß eine Zahl, die man nicht anfassen konnte.
+
+         Diese Ecke ist in jedem Schreibprogramm dieselbe: links die
+         Ansichten, rechts der Schieber. Wer von Word oder WPS kommt,
+         greift dorthin, ohne nachzudenken. Die Knöpfe entstehen in
+         programm.js, weil sie ihre Zeichnungen aus SYMBOLE holen. -->
+    <span class="sz-werkzeuge" id="status-werkzeuge"></span>
   </span>
 </div>
 

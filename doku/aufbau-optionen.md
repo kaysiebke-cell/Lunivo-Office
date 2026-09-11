@@ -22,6 +22,8 @@ Links ein Baum mit drei Zweigen, rechts der Bereich.
 ### Lesehilfe
 
 ```
+├── Lesestufe
+│   └── Wie leicht soll es zu lesen sein?
 ├── Leichter lesen
 │   ├── Papierton
 │   ├── Buchstabenabstand
@@ -454,6 +456,7 @@ Alphabetisch, mit Seite und Gruppe.
 | Weggewinkte Funde wieder anzeigen | Rechtschreibprüfung ▸ Rechtschreibprüfung |
 | Wer schreibt | Benutzerinformationen ▸ Benutzerdaten |
 | Wie lange (Tage) | Sicherungseinstellungen ▸ Zwischenstände aufheben |
+| Wie leicht soll es zu lesen sein? | Lesehilfe ▸ Lesestufe |
 | Wo die Einstellungen liegen | Sicherungseinstellungen ▸ Sicherung |
 | Wochentage immer großschreiben | Bearbeiten ▸ AutoKorrektur |
 | Womit das Druckfenster aufgeht | Drucken ▸ Druckoptionen |

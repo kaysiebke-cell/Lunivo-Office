@@ -395,6 +395,83 @@ select option{background:var(--karte);color:var(--schrift)}
 .statuszeile__fund{color:var(--gruen)}
 .statuszeile__rechts{margin-left:auto;display:flex;align-items:center;gap:14px}
 
+/* ---------- Unten rechts: Ansichten und Vergrößerung ----------
+
+   Die Ecke, die in jedem Schreibprogramm gleich aussieht: links die vier
+   Ansichten, dann ein Strich, dann Einpassen, Zahl, Minus, Schieber,
+   Plus, Vollbild. Wer von Word oder WPS kommt, greift dorthin, ohne
+   nachzudenken. */
+.sz-werkzeuge{display:flex;align-items:center;gap:4px}
+.sz-gruppe{display:flex;align-items:center;gap:2px}
+
+.sz-knopf{
+  display:flex;align-items:center;justify-content:center;
+  width:24px;height:22px;padding:0;
+  background:none;border:1px solid transparent;border-radius:4px;
+  color:var(--schrift-2);cursor:pointer;
+}
+.sz-knopf:hover{background:rgba(127,127,127,.16);color:var(--schrift)}
+.sz-knopf svg{width:16px;height:16px}
+/* Die geltende Ansicht ist hinterlegt, nicht eingefärbt: Vier Knöpfe, von
+   denen einer blau leuchtet, sehen aus wie vier Zustände statt wie eine
+   Wahl. */
+.sz-knopf--an{
+  background:rgba(127,127,127,.22);
+  border-color:var(--rand);
+  color:var(--schrift);
+}
+.sz-knopf--zeichen{
+  font-size:15px;line-height:1;font-weight:500;
+  font-family:-apple-system,"Segoe UI",Cantarell,Ubuntu,Roboto,sans-serif;
+}
+
+.sz-trenner{
+  width:1px;height:15px;margin:0 5px;
+  background:var(--rand);
+}
+
+/* Die Zahl ist ein Knopf und soll trotzdem wie Text aussehen — sie steht
+   in einer Zeile mit Wortzahl und Seitenzahl. */
+.sz-prozent{
+  min-width:46px;padding:2px 5px;
+  background:none;border:1px solid transparent;border-radius:4px;
+  color:var(--schrift-2);font:inherit;text-align:center;cursor:pointer;
+}
+.sz-prozent:hover{background:rgba(127,127,127,.16);color:var(--schrift)}
+
+/* Der Schieber. Eigene Zeichnung, weil der mitgelieferte im dunklen
+   Fenster ein weißer Balken ist — dieselbe Falle wie bei den
+   Klappfeldern. */
+.sz-schieber{
+  -webkit-appearance:none;appearance:none;
+  width:96px;height:14px;margin:0;
+  background:none;cursor:pointer;
+}
+.sz-schieber::-webkit-slider-runnable-track{
+  height:3px;border-radius:2px;background:var(--rand);
+}
+.sz-schieber::-webkit-slider-thumb{
+  -webkit-appearance:none;appearance:none;
+  width:13px;height:13px;margin-top:-5px;border-radius:50%;
+  background:var(--schrift-2);border:0;
+}
+.sz-schieber:hover::-webkit-slider-thumb{background:var(--schrift)}
+.sz-schieber::-moz-range-track{height:3px;border-radius:2px;background:var(--rand)}
+.sz-schieber::-moz-range-thumb{
+  width:13px;height:13px;border-radius:50%;
+  background:var(--schrift-2);border:0;
+}
+.sz-schieber:focus-visible{outline:2px solid var(--blau-hell);outline-offset:3px}
+
+/* Im schmalen Fenster tritt zuerst der Schieber zurück, dann die
+   Ansichten — die Zahl und Plus/Minus bleiben am längsten. */
+@media (max-width:860px){
+  .sz-schieber{width:64px}
+}
+@media (max-width:680px){
+  .sz-schieber,.sz-trenner{display:none}
+}
+
 /* ---------- Suchen und Ersetzen ---------- */
 .suchleiste{
   display:flex;align-items:center;gap:8px;flex-wrap:wrap;
@@ -647,6 +724,196 @@ select option{background:var(--karte);color:var(--schrift)}
   font-family:Georgia,"Liberation Serif",serif;
 }
 
+/* ---------- Die Wahl der Oberfläche ----------
+
+   Der Aufbau ist der aus LibreOffice, „Bevorzugte Benutzeroberfläche
+   auswählen": zwei Spalten mit je einer Überschrift, links die Liste der
+   Fassungen, rechts die Vorschau der gewählten, darunter ihr Satz.
+
+   Das Feld sprengt die Zeile, auf der sonst Beschriftung links und
+   Klappfeld rechts stehen — dafür ist hier kein Platz. */
+.feld--flaeche{flex-wrap:wrap;align-items:flex-start}
+/* Die Beschriftung nimmt eine eigene Zeile, sonst stünde sie neben
+   den zwei Spalten und drückte sie zusammen. */
+.karte > .feld--flaeche > .feld__name{flex:1 1 100%;margin:0 0 10px;font-weight:500}
+
+.flaechenwahl{
+  flex:1 1 100%;
+  display:grid;
+  grid-template-columns:minmax(150px,1fr) minmax(0,1.5fr);
+  grid-template-rows:auto 1fr;
+  column-gap:16px;row-gap:6px;
+}
+
+/* Die zwei Überschriften über den Spalten. */
+.flaechenwahl__kopf{
+  margin:0;font-weight:600;color:var(--schrift);
+}
+.flaechenwahl__kopf--liste{grid-column:1;grid-row:1}
+.flaechenwahl__kopf--bild{grid-column:2;grid-row:1}
+
+/* Links: die Fassungen untereinander, wie eine Liste — nicht als Kacheln.
+   Bei LibreOffice sind es sieben Zeilen; hier zwei, und sie sollen
+   aussehen, als könnten es morgen mehr sein. */
+.flaechenwahl__liste{
+  grid-column:1;grid-row:2;
+  display:flex;flex-direction:column;gap:2px;align-self:start;
+}
+.flaechenwahl__wahl{
+  display:flex;align-items:center;gap:8px;
+  padding:5px 8px;border:1px solid transparent;border-radius:5px;
+  cursor:pointer;
+}
+.flaechenwahl__wahl:hover{background:rgba(127,127,127,.10)}
+.flaechenwahl__wahl input[type="radio"]{
+  margin:0;flex:0 0 auto;accent-color:var(--blau-hell);
+}
+/* Die gewählte Zeile bekommt einen Rahmen — genau so steht es in der
+   Vorlage, wo „Symbolleisten" umrandet ist. */
+.flaechenwahl__wahl:has(input:checked){
+  border-color:var(--blau-hell);background:rgba(47,111,181,.14);
+  font-weight:600;
+}
+.flaechenwahl__wahl:has(input:focus-visible){
+  outline:2px solid var(--blau-hell);outline-offset:1px;
+}
+
+/* Rechts die Vorschau, darunter der Satz.
+
+   DIE VORSCHAU HÄNGT AN DENSELBEN WERTEN WIE DIE LEISTEN.
+
+   --symbolgroesse und --bedienschrift stehen auf dem Wurzelelement und
+   werden von „Größe der Symbole" und „Schrift der Bedienung" gesetzt. Die
+   Vorschau liest sie genauso wie die echte Werkzeugleiste — also stimmt
+   sie immer, ohne dass jemand sie nachführen müsste.
+
+   Und sie ist NICHT verkleinert: Ein Kästchen hier ist genau so breit wie
+   ein Symbol dort. Eine geschrumpfte Vorschau beantwortet die Frage „wie
+   groß wird das?" gerade nicht. */
+.flaechenwahl__vorschau{grid-column:2;grid-row:2;min-width:0}
+
+.fwv{
+  background:var(--leiste);
+  border:1px solid var(--rand);border-radius:5px;
+  /* Der Ausschnitt ist ein Fensterrand: Was rechts nicht mehr hineinpasst,
+     hört auf — so wie in einem schmalen Fenster auch. Hier hängen keine
+     Klappmenüs daran, das Abschneiden ist also gefahrlos. */
+  overflow:hidden;
+}
+
+/* Die Menüleiste: echte Wörter in der echten Bedienschrift. */
+.fwv__menue{
+  display:flex;gap:14px;
+  padding:5px 10px;
+  font-size:var(--bedienschrift);color:var(--schrift-2);
+  border-bottom:1px solid var(--rand);
+  white-space:nowrap;
+}
+
+/* Ein Symbol im Bild: genau die Maße eines Knopfes in der Leiste
+   (.wz weiter unten in dieser Datei rechnet mit denselben zwei Zeilen). */
+.fwv i{
+  display:block;
+  width:var(--symbolgroesse);height:var(--symbolgroesse);
+  border-radius:3px;
+  background:var(--schrift-3);opacity:.65;
+  flex:0 0 auto;
+}
+.fwv__reihe{display:flex;gap:5px;padding:4px 10px;white-space:nowrap}
+.fwv__leisten{border-bottom:1px solid var(--rand);padding:2px 0}
+
+/* Die Reiter tragen Wörter — das ist der sichtbare Unterschied zu den
+   Leisten, und deshalb stehen sie hier als Text und nicht als Kasten. */
+.fwv__reiter{
+  display:flex;gap:4px;padding:4px 10px 0;
+  font-size:var(--bedienschrift);color:var(--schrift-2);white-space:nowrap;
+}
+.fwv__reiter span{padding:3px 8px;border-radius:4px 4px 0 0}
+.fwv__reiter--offen{
+  background:var(--tafel);color:var(--schrift);
+  border:1px solid var(--rand);border-bottom-color:transparent;
+}
+.fwv__band{
+  display:flex;gap:0;
+  background:var(--tafel);
+  border-top:1px solid var(--rand);border-bottom:1px solid var(--rand);
+  padding:5px 10px;white-space:nowrap;
+}
+/* Die Trennstriche zwischen den Gruppen: Sie sind der Grund, warum das
+   Band Gruppennamen tragen kann. */
+.fwv__gruppe{display:flex;gap:5px;padding:0 9px}
+.fwv__gruppe + .fwv__gruppe{border-left:1px solid var(--rand)}
+
+/* Ein Stück Blatt, damit man sieht, wie viel Platz zum Schreiben bleibt —
+   der eigentliche Preis der breiteren Leiste. */
+.fwv__blatt{
+  background:var(--blatt);
+  margin:9px 22px 0;padding:10px 12px 12px;
+  border:1px solid var(--rand);border-bottom:0;
+  border-radius:2px 2px 0 0;
+}
+.fwv__blatt b{
+  display:block;height:4px;border-radius:2px;
+  background:var(--marke);opacity:.5;
+}
+.fwv__blatt b + b{margin-top:7px}
+.fwv__blatt b:last-child{width:62%}
+
+/* Sichtbar ist nur die Fassung, die links gewählt ist. Der Umschalter ist
+   ein data-Attribut am Kasten und keine zweite Abschrift in JavaScript. */
+.flaechenwahl[data-fassung] .fwv__leisten,
+.flaechenwahl[data-fassung] .fwv__register{display:none}
+.flaechenwahl[data-fassung="leisten"]  .fwv__leisten{display:block}
+.flaechenwahl[data-fassung="register"] .fwv__register{display:block}
+
+/* ---------- Das Probeblatt der Lesestufen ----------
+
+   Kein Bild, sondern ein Stück Blatt: dieselbe Schrift, derselbe
+   Papierton, dieselben drei Abstände wie im echten Text. Die Werte kommen
+   über --lese-zeichen, --lese-wort und --lese-zeilen, die die Lesehilfe
+   ohnehin setzt — hier auf das Probeblatt statt auf das Schreibfeld.
+
+   Damit stimmt die Probe auch dann, wenn jemand die Felder darunter von
+   Hand verstellt und auf „Eigene Einstellung" landet. Eine Zeichnung je
+   Stufe hätte in diesem Fall gelogen. */
+.leseprobe{
+  background:var(--probe-ton,var(--blatt));color:var(--blatt-schrift);
+  border:1px solid var(--rand);border-radius:3px;
+  padding:16px 18px;
+  font-family:var(--probe-schrift,Georgia,"Liberation Serif",serif);
+  font-size:14px;
+  letter-spacing:var(--lese-zeichen,normal);
+  word-spacing:var(--lese-wort,normal);
+  line-height:var(--lese-zeilen,1.55);
+}
+.leseprobe p{margin:0 0 .7em}
+.leseprobe p:last-child{margin-bottom:0}
+/* Die Nachbarabsätze treten zurück, der mittlere tritt hervor — genau die
+   zwei Werte, die „Absatz beim Schreiben" und „Übriger Text" stellen. */
+.leseprobe p{opacity:var(--rest-blaesse,1)}
+.leseprobe__jetzt{
+  opacity:1 !important;
+  transform:scale(var(--fokus-wachstum,1));transform-origin:center;
+}
+
+.flaechenwahl__satz{
+  margin:10px 0 0;font-size:12px;line-height:1.5;color:var(--schrift-2);
+  /* Der zweite Satz („Vorgesehen für …") steht auf einer eigenen Zeile,
+     wie in der Vorlage. Ohne pre-line liefe er hinten an. */
+  white-space:pre-line;
+}
+
+/* Schmales Fenster: die Vorschau rutscht unter die Liste, sonst ist das
+   Bild briefmarkengroß. */
+@media (max-width:620px){
+  .flaechenwahl{grid-template-columns:1fr;grid-template-rows:auto auto auto auto}
+  .flaechenwahl__kopf--liste{grid-row:1}
+  .flaechenwahl__liste{grid-column:1;grid-row:2}
+  .flaechenwahl__kopf--bild{grid-column:1;grid-row:3;margin-top:8px}
+  .flaechenwahl__vorschau{grid-column:1;grid-row:4}
+}
+
+
 /* Der Fuß klebt unten. „Fertig" ist der Weg zurück — der darf nicht erst
    nach zwei Bildschirmlängen Scrollen auftauchen. */
 /* Die Fußleiste: fest unten, mit Trennlinie und vollem Grund — wie die
@@ -661,7 +928,42 @@ select option{background:var(--karte);color:var(--schrift)}
   padding:12px 16px;margin-top:8px;
   background:var(--grund);
   border-top:1px solid var(--rand);
+  /* Die Erklärzeile bekommt eine eigene Zeile über den Knöpfen. Neben
+     ihnen stehend wurde sie in einem schmalen Fenster auf null Breite
+     gequetscht — der Satz lief dann einbuchstabig in die Höhe. */
+  flex-wrap:wrap;
 }
+
+/* ---------- Die Erklärzeile ----------
+
+   Zu fast jedem Schalter der Optionen ist ein Satz geschrieben; sichtbar
+   ist immer nur der zu der Einstellung, auf der der Zeiger oder der
+   Tastaturfokus steht. Hier steht er.
+
+   DIE HÖHE IST FEST. Zwei Zeilen, immer, auch wenn nichts dasteht. Eine
+   Zeile, die mitwächst, schiebt beim Überfahren die Knöpfe darunter hin
+   und her — und etwas, das sich bewegt, während man darauf zielt, ist für
+   die Zielgruppe dieses Programms das Gegenteil von Hilfe. */
+.erklaerzeile{
+  /* Eigene Zeile, und zwar ÜBER den Knöpfen: Sie gehört zu dem, was
+     darüber steht, nicht zu „Fertig". */
+  flex:1 1 100%;order:-1;min-width:0;margin:0;
+  /* Zwei Zeilen à 1.45 — dieselbe Zeilenhöhe wie der Fließtext des
+     Fensters, damit die Rechnung stimmt, wenn sich die Schrift ändert. */
+  min-height:calc(2 * 1.45em);
+  font-size:12px;line-height:1.45;color:var(--schrift-2);
+  display:flex;align-items:center;
+}
+/* Der Name der Einstellung vor ihrem Satz: Er sagt, WOZU die Erklärung
+   gehört. Ohne ihn liest man unten einen Satz und weiß nicht, zu welchem
+   der zwölf Häkchen darüber er gehört. */
+.erklaerzeile b{color:var(--schrift);font-weight:600}
+/* Solange nichts gezeigt wird, steht dort die Anleitung zur Zeile selbst
+   — blasser, damit sie nicht mit einer Erklärung verwechselt wird. */
+.erklaerzeile--leer{color:var(--schrift-3);font-style:italic}
+
+/* Die Knöpfe daneben behalten ihre Größe; gestaucht wird die Zeile. */
+.seite__fuss > .knopf{flex:0 0 auto}
 .knopf--haupt{
   background:var(--blau);border-color:var(--blau);
   color:#fff;font-weight:600;

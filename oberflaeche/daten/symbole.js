@@ -162,6 +162,11 @@ const SYMBOLE = {
   seriefeld:     'M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1 M16 21h1a2 2 0 0 0 2-2v-5c0-1.1.9-2 2-2a2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1',   /* lucide: braces */
   formfeld:      'M12 20h-1a2 2 0 0 1-2-2 2 2 0 0 1-2 2H6 M13 8h7a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-7 M5 16H4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h1 M6 4h1a2 2 0 0 1 2 2 2 2 0 0 1 2-2h1 M9 6v12',   /* lucide: text-cursor-input */
   aufnahme:      'M11 12a1 1 0 1 0 2 0a1 1 0 1 0 -2 0 M2 12a10 10 0 1 0 20 0a10 10 0 1 0 -20 0',   /* lucide: circle-dot */
+  /* Die drei für die Statuszeile unten rechts. Weblayout hatte bisher
+     kein Bild, weil es nur im Menü stand — dort trägt es seinen Namen. */
+  weblayout:     'M12 2a10 10 0 0 1 0 20 a10 10 0 0 1 0-20 M2 12h20 M12 2a15.3 15.3 0 0 1 4 10 a15.3 15.3 0 0 1-4 10 a15.3 15.3 0 0 1-4-10 a15.3 15.3 0 0 1 4-10',   /* lucide: globe */
+  einpassen:     'M3 7V5a2 2 0 0 1 2-2h2 M17 3h2a2 2 0 0 1 2 2v2 M21 17v2a2 2 0 0 1-2 2h-2 M7 21H5a2 2 0 0 1-2-2v-2',   /* lucide: scan */
+  vollbild:      'M15 3h6v6 M9 21H3v-6 M21 3l-7 7 M3 21l7-7',   /* lucide: maximize-2 */
   blattansicht:  'M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z M14 2v5a1 1 0 0 0 1 1h5 M10 9H8 M16 13H8 M16 17H8',   /* lucide: file-text */
   lesen:         'M12 5v16 M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z',   /* lucide: book-open */
   kleinerLupe:   'M3 11a8 8 0 1 0 16 0a8 8 0 1 0 -16 0 M21 21L16.65 16.65 M8 11L14 11',   /* lucide: zoom-out */

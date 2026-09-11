@@ -277,6 +277,8 @@ DAS OPTIONEN-FENSTER — Datei ▸ Optionen (F9)
 │
 ├── Leichter lesen
 │   ├── Lesehilfe
+│   │   ├── Lesestufe
+│   │   │   └── Wie leicht soll es zu lesen sein?
 │   │   ├── Leichter lesen
 │   │   │   ├── Papierton
 │   │   │   ├── Buchstabenabstand
