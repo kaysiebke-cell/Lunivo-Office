@@ -1765,28 +1765,214 @@ B.zellenAusrichtung = () => mitTabelle((zelle, zeile, tabelle) => {
   });
 });
 
-B.tabelleFormat = () => mitTabelle((zelle, zeile, tabelle) => {
-  fenster('Tabellenformatierung', [
-    { schluessel: 'streifen', name: 'Zeilen abwechselnd tönen', art: 'auswahl', werte: [
-      ['nein', 'Nein'], ['ja', 'Ja'] ] },
-    { schluessel: 'linien', name: 'Rahmenlinien', art: 'auswahl', werte: [
+/* ============================================================
+   DIE EIGENSCHAFTEN EINER TABELLE
+
+   Hier stand „Tabellenformatierung": zwei Klappfelder, Streifen und
+   Rahmen. Zwei Dinge fehlten, und beide hat Kay benannt — eine Vorlage,
+   die man der Tabelle im Ganzen geben kann, und eine farbige erste Zeile.
+
+   Ein dritter Fehler fiel dabei auf: Das alte Fenster LAS den Zustand
+   nicht. Es ging an einer gestreiften Tabelle mit „Nein" auf, und wer
+   nur den Rahmen ändern wollte, nahm die Streifen versehentlich mit.
+   Ein Fenster, das den Ist-Zustand nicht zeigt, ist kein Fenster zum
+   Ändern, sondern eines zum Neusetzen.
+
+   ES ZEIGT, WÄHREND ES OFFEN STEHT. fenster() kann das über „beiWechsel":
+   Jede Änderung wirkt sofort auf die Tabelle im Blatt. Wer eine Farbe
+   wählt, sieht sie an seiner eigenen Tabelle, nicht an einem Muster.
+   „Abbrechen" setzt über „beiAb" den Stand von vorher zurück — dafür wird
+   beim Aufgehen das ganze outerHTML weggelegt.
+   ============================================================ */
+
+/* Die Vorlagen. Jede ist nur ein Satz Werte für dieselben Felder — wer
+   eine wählt, sieht die Felder darunter mitwandern und kann danach
+   einzeln nachbessern. Genau das meint „Vorlage": ein Anfang, keine
+   Sperre. */
+const TABELLENVORLAGEN = {
+  einfach:   { kopf: 'nein', kopffarbe: '#E8EDF3', streifen: 'nein',
+               streifenfarbe: '#F2F4F7', linien: 'alle', linienfarbe: '#9AA3AB',
+               breite: 'ganz', abstand: '6' },
+  kopfzeile: { kopf: 'ja',   kopffarbe: '#D6E4F0', streifen: 'nein',
+               streifenfarbe: '#F2F4F7', linien: 'alle', linienfarbe: '#9AA3AB',
+               breite: 'ganz', abstand: '6' },
+  gestreift: { kopf: 'ja',   kopffarbe: '#D6E4F0', streifen: 'ja',
+               streifenfarbe: '#F2F4F7', linien: 'keine', linienfarbe: '#9AA3AB',
+               breite: 'ganz', abstand: '7' },
+  liste:     { kopf: 'ja',   kopffarbe: '#FFFFFF', streifen: 'nein',
+               streifenfarbe: '#F2F4F7', linien: 'aussen', linienfarbe: '#4C555E',
+               breite: 'ganz', abstand: '7' },
+  ohne:      { kopf: 'nein', kopffarbe: '#E8EDF3', streifen: 'nein',
+               streifenfarbe: '#F2F4F7', linien: 'keine', linienfarbe: '#9AA3AB',
+               breite: 'inhalt', abstand: '4' },
+};
+
+/* Eine Farbe aus dem Blatt in die Form bringen, die <input type="color">
+   versteht: immer #rrggbb. Der Browser gibt "rgb(214, 228, 240)" zurück,
+   und ein leeres Feld gibt "" — beides würde den Farbwähler auf Schwarz
+   stellen, und der Anwender bekäme eine Farbe, die er nie gewählt hat. */
+function farbeAlsHex(wert, ersatz) {
+  if (!wert) return ersatz;
+  const t = String(wert).trim();
+  if (/^#[0-9a-f]{6}$/i.test(t)) return t;
+  const m = t.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+  if (!m) return ersatz;
+  const hex = (n) => Number(n).toString(16).padStart(2, '0');
+  return '#' + hex(m[1]) + hex(m[2]) + hex(m[3]);
+}
+
+/* Den Ist-Zustand aus der Tabelle herauslesen. Gefragt wird das Blatt
+   selbst, nicht ein gemerkter Wert: Eine Tabelle kann aus einem Word-
+   Dokument gekommen sein, und dann hat nie jemand hier etwas eingestellt. */
+/* NICHT „tabelleLesen" — den Namen gibt es weiter unten schon, und zwar
+   fuer etwas ganz anderes: Sie macht aus Rohdaten eine Tabelle. Zwei
+   Funktionen desselben Namens in derselben Datei sind kein Fehler, den
+   irgendwer meldet — die spaetere gewinnt stillschweigend, und der
+   Aufruf hier bekam ploetzlich null zurueck. */
+function tabellenstandLesen(tabelle) {
+  const ersteZeile = tabelle.rows[0];
+  const kopf = !!(ersteZeile && ersteZeile.children[0]
+                  && ersteZeile.children[0].tagName === 'TH');
+  const kopfZelle = ersteZeile && ersteZeile.children[0];
+  const zweiteZeile = tabelle.rows[1];
+  const zweiteZelle = zweiteZeile && zweiteZeile.cells[0];
+
+  const irgendeine = tabelle.querySelector('td, th');
+  const randStil = irgendeine ? getComputedStyle(irgendeine) : null;
+  const zelleRand = randStil && randStil.borderTopStyle !== 'none'
+                 && parseFloat(randStil.borderTopWidth) > 0;
+  const tabelleRand = getComputedStyle(tabelle).borderTopStyle !== 'none'
+                   && parseFloat(getComputedStyle(tabelle).borderTopWidth) > 0;
+
+  return {
+    vorlage: 'eigene',
+    kopf: kopf ? 'ja' : 'nein',
+    kopffarbe: farbeAlsHex(kopfZelle && kopfZelle.style.background, '#D6E4F0'),
+    /* Gestreift heißt: die ZWEITE Zeile ist getönt. Die erste kann die
+       Kopfzeile sein und hat ihre eigene Farbe. */
+    streifen: (zweiteZelle && zweiteZelle.style.background) ? 'ja' : 'nein',
+    streifenfarbe: farbeAlsHex(zweiteZelle && zweiteZelle.style.background, '#F2F4F7'),
+    linien: zelleRand ? 'alle' : (tabelleRand ? 'aussen' : 'keine'),
+    linienfarbe: farbeAlsHex(randStil && randStil.borderTopColor, '#9AA3AB'),
+    breite: tabelle.style.width === 'auto' ? 'inhalt' : 'ganz',
+    abstand: String(Math.round(parseFloat(
+      (irgendeine && getComputedStyle(irgendeine).paddingTop) || '6')) || 6),
+  };
+}
+
+/* Die erste Zeile zu <th> machen oder zurück zu <td>.
+
+   Der Inhalt wandert mit, die Auszeichnung nicht: Ein <th> ist fett und
+   mittig, weil es eine Überschrift IST — das gehört zur Bedeutung, nicht
+   zur Farbe. */
+function kopfzeileSetzen(tabelle, an) {
+  const erste = tabelle.rows[0];
+  if (!erste) return;
+  const istKopf = erste.children[0] && erste.children[0].tagName === 'TH';
+  if (istKopf === an) return;
+  for (const z of [...erste.children]) {
+    const neu = document.createElement(an ? 'th' : 'td');
+    neu.innerHTML = z.innerHTML;
+    neu.style.cssText = z.style.cssText;
+    z.replaceWith(neu);
+  }
+}
+
+function tabelleAnwenden(tabelle, w) {
+  kopfzeileSetzen(tabelle, w.kopf === 'ja');
+
+  const abstand = Math.max(0, Math.min(40, parseInt(w.abstand, 10) || 0));
+  tabelle.style.width = w.breite === 'inhalt' ? 'auto' : '100%';
+  tabelle.style.borderCollapse = 'collapse';
+  tabelle.style.border = w.linien === 'keine'
+    ? 'none' : '1px solid ' + w.linienfarbe;
+
+  [...tabelle.rows].forEach((zeile, nr) => {
+    const istKopf = nr === 0 && w.kopf === 'ja';
+    for (const z of zeile.cells) {
+      z.style.border = w.linien === 'alle' ? '1px solid ' + w.linienfarbe : 'none';
+      z.style.padding = abstand + 'px';
+      /* Die Reihenfolge entscheidet: Die Kopfzeile hat ihre eigene Farbe
+         und wird vom Streifenmuster nicht überschrieben. Sonst bekäme sie
+         bei „gestreift" die Streifenfarbe, obwohl daneben eine eigene
+         Kopffarbe steht — und die Einstellung sähe kaputt aus. */
+      if (istKopf) z.style.background = w.kopffarbe;
+      else if (w.streifen === 'ja' && nr % 2 === 1) z.style.background = w.streifenfarbe;
+      else z.style.background = '';
+    }
+  });
+}
+
+B.tabelleEigenschaften = () => mitTabelle((zelle, zeile, tabelle) => {
+  /* Der Rückweg für „Abbrechen": der ganze Stand von vorher. */
+  const vorher = tabelle.outerHTML;
+  const ist = tabellenstandLesen(tabelle);
+  /* Damit die Tabelle nicht beim Aufgehen des Fensters schon springt,
+     merkt sich diese Liste, welche Vorlage zuletzt gewählt war. Erst wenn
+     jemand sie umstellt, werden die anderen Felder überschrieben. */
+  let vorlageVorher = 'eigene';
+
+  fenster('Eigenschaften der Tabelle', [
+    { schluessel: 'vorlage', name: 'Vorlage', art: 'auswahl', wert: 'eigene', werte: [
+      ['eigene',    'Eigene Einstellung'],
+      ['einfach',   'Einfach — Raster, ohne Farbe'],
+      ['kopfzeile', 'Mit Kopfzeile — erste Zeile getönt'],
+      ['gestreift', 'Gestreift — jede zweite Zeile getönt'],
+      ['liste',     'Liste — nur Linie oben und unten'],
+      ['ohne',      'Ohne Rahmen'],
+    ] },
+
+    { art: 'satz', text: 'Die erste Zeile' },
+    { schluessel: 'kopf', name: 'Erste Zeile als Kopf', art: 'auswahl', wert: ist.kopf,
+      werte: [['ja', 'Ja — fett und mittig'], ['nein', 'Nein']] },
+    { schluessel: 'kopffarbe', name: 'Farbe der Kopfzeile', art: 'color', wert: ist.kopffarbe },
+
+    { art: 'satz', text: 'Die übrigen Zeilen' },
+    { schluessel: 'streifen', name: 'Jede zweite Zeile tönen', art: 'auswahl',
+      wert: ist.streifen, werte: [['nein', 'Nein'], ['ja', 'Ja']] },
+    { schluessel: 'streifenfarbe', name: 'Farbe der Streifen', art: 'color',
+      wert: ist.streifenfarbe },
+
+    { art: 'satz', text: 'Rahmen und Maße' },
+    { schluessel: 'linien', name: 'Rahmenlinien', art: 'auswahl', wert: ist.linien, werte: [
       ['alle', 'Um jede Zelle'], ['aussen', 'Nur außen'], ['keine', 'Keine'] ] },
-  ], (werte) => {
-    const zellen = [...tabelle.querySelectorAll('td, th')];
-    for (const z of zellen) {
-      z.style.border = werte.linien === 'alle' ? '1px solid currentColor' : 'none';
-      z.style.background = '';
-    }
-    tabelle.style.border = werte.linien === 'keine' ? 'none' : '1px solid currentColor';
-    if (werte.streifen === 'ja') {
-      [...tabelle.rows].forEach((r, i) => {
-        if (i % 2 === 1) for (const z of r.cells) z.style.background = 'rgba(127,127,127,.12)';
-      });
-    }
+    { schluessel: 'linienfarbe', name: 'Farbe der Linien', art: 'color', wert: ist.linienfarbe },
+    { schluessel: 'breite', name: 'Breite', art: 'auswahl', wert: ist.breite, werte: [
+      ['ganz', 'Über die ganze Textbreite'], ['inhalt', 'So breit wie der Inhalt'] ] },
+    { schluessel: 'abstand', name: 'Luft in den Zellen (Punkt)', art: 'number',
+      wert: ist.abstand },
+  ],
+  () => {
     geaendertMelden();
-    melde('Tabelle formatiert.');
+    melde('Eigenschaften der Tabelle übernommen.');
+  },
+  'Übernehmen', true,
+  /* Abbrechen: den gemerkten Stand zurückschreiben. */
+  () => {
+    const jetzt = zelleJetzt() && zelleJetzt().closest('table');
+    const ziel = jetzt || tabelle;
+    if (ziel && ziel.outerHTML !== vorher) {
+      const huelle = document.createElement('div');
+      huelle.innerHTML = vorher;
+      if (huelle.firstElementChild) ziel.replaceWith(huelle.firstElementChild);
+    }
+  },
+  /* Bei jeder Änderung: sofort anwenden. */
+  (werte, eingaben) => {
+    if (werte.vorlage !== vorlageVorher && werte.vorlage !== 'eigene') {
+      const v = TABELLENVORLAGEN[werte.vorlage];
+      if (v) for (const [name, wert] of Object.entries(v)) {
+        if (eingaben[name]) { eingaben[name].value = wert; werte[name] = wert; }
+      }
+    }
+    vorlageVorher = werte.vorlage;
+    tabelleAnwenden(tabelle, werte);
   });
 });
+
+/* Der alte Name bleibt als Weg bestehen: Er steht im Rechtsklickmenü und
+   im Band, und ein Befehl, den jemand kennt, soll nicht verschwinden. */
+B.tabelleFormat = () => B.tabelleEigenschaften();
 
 /* ---- Gleichungswerkzeuge ---- */
 
@@ -1846,6 +2032,9 @@ function ansichtExtras() {
   zeichenAnwenden();
   $('werkzeugleiste').hidden = !leistenAn;
   $('werkzeugleiste2').hidden = !leistenAn;
+  /* Die dritte Leiste haengt an denselben Schalter — und daran, ob es
+     ueberhaupt etwas zu zeigen gibt. */
+  if (typeof zusammenhangsleisteBauen === 'function') zusammenhangsleisteBauen();
   Speicher.schreib('lineal', lineal);
   Speicher.schreib('linealHoch', linealHoch);
   Speicher.schreib('steuerzeichen', steuerzeichen);
@@ -2863,7 +3052,7 @@ const REGISTER_IM_ZUSAMMENHANG = [
       ['Zellengröße', [['ecken', 'Zellengröße', () => B.zellengroesse(), 'gross']]],
       ['Ausrichtung', [['ausrichtung', 'Ausrichtung', () => B.zellenAusrichtung(), 'gross']]],
       ['Tabellenformatierung', [['rahmen', 'Rahmen ein/aus', () => B.tabelleRahmen(), 'gross'],
-                   ['toenung', 'Tabellenformatierung', () => B.tabelleFormat(), 'gross']]],
+                   ['toenung', 'Eigenschaften', () => B.tabelleEigenschaften(), 'gross']]],
     ],
   },
   {
@@ -4348,12 +4537,69 @@ function registerSchalterAuffrischen() {
   }
 }
 
+/* ------------------------------------------------------------
+   DIE LEISTE ZUM GEWÄHLTEN (nur bei „Symbolleisten")
+
+   REGISTER_IM_ZUSAMMENHANG kannte bisher nur eine Oberfläche: In
+   Registern erschien „Tabellenwerkzeuge", sobald der Zeiger in einer
+   Tabelle stand. Bei Symbolleisten erschien nichts — die Befehle waren
+   gebaut und für diese Hälfte der Anwender unerreichbar. Kay hat es
+   gemerkt und gefragt, warum er die Tabelle nicht einstellen kann.
+
+   Dieselbe Liste, zweite Darstellung: eine dritte Leiste, die auftaucht,
+   wenn es etwas zu sagen gibt, und sonst weg ist. Vorn steht, wozu sie
+   gehört — „Tabellenwerkzeuge" —, denn eine Leiste, die kommt und geht,
+   muss sagen, warum.
+   ------------------------------------------------------------ */
+function zusammenhangsleisteBauen() {
+  const leiste = $('werkzeugleiste3');
+  if (!leiste || !leiste.appendChild) return;
+
+  /* Nur bei Symbolleisten: In Registern sagen die Reiter dasselbe, und
+     zweimal dasselbe untereinander ist keine Hilfe, sondern Lärm. */
+  const reiter = flaeche === 'register' ? [] : zusammenhangReiter();
+  if (!reiter.length || !leistenAn) {
+    leiste.hidden = true;
+    leiste.innerHTML = '';
+    return;
+  }
+
+  leisteBauen('werkzeugleiste3', ({ knopf, trenner, leiste: l }) => {
+    let ersterReiter = true;
+    for (const r of reiter) {
+      if (!ersterReiter) trenner();
+      ersterReiter = false;
+
+      const marke = document.createElement('span');
+      marke.className = 'wz__marke';
+      marke.textContent = r.name;
+      l.appendChild(marke);
+
+      for (const [, befehle] of r.gruppen) {
+        trenner();
+        for (const [bild, name, tun] of befehle) knopf(bild, name, tun);
+      }
+    }
+  });
+  leiste.hidden = false;
+}
+
+let zusammenhangStandLeiste = '';
+
 function zusammenhangPruefen() {
-  if (flaeche !== 'register') return;
   const jetzt = zusammenhangReiter().map((r) => r.name).join(',');
-  if (jetzt === zusammenhangStand) return;
-  zusammenhangStand = jetzt;
-  registerBauen();
+  if (flaeche === 'register') {
+    if (jetzt === zusammenhangStand) return;
+    zusammenhangStand = jetzt;
+    registerBauen();
+    return;
+  }
+  /* Bei Symbolleisten: nur neu bauen, wenn sich wirklich etwas ändert.
+     Ein „selectionchange" feuert bei jedem Tastendruck — die Leiste bei
+     jedem Buchstaben neu zu zeichnen ließe sie flackern. */
+  if (jetzt === zusammenhangStandLeiste) return;
+  zusammenhangStandLeiste = jetzt;
+  zusammenhangsleisteBauen();
 }
 
 document.addEventListener('selectionchange', zusammenhangPruefen);
@@ -4387,6 +4633,10 @@ function flaecheAnwenden() {
     werkzeugeBauen();
     werkzeugeAuffrischen();
   }
+  /* Beim Wechsel zwischen den Oberflaechen: In Registern verschwindet die
+     dritte Leiste, bei Symbolleisten kommt sie zurueck. */
+  zusammenhangStandLeiste = '';
+  zusammenhangsleisteBauen();
 }
 
 /* Ansicht ▸ Oberfläche ▸ Benutzeroberfläche.
@@ -4813,8 +5063,37 @@ function zelleJetzt() {
   return null;
 }
 
+/* Die zuletzt besuchte Zelle.
+
+   Jeder Tabellenbefehl fragt „steht der Zeiger in einer Tabelle?" — und
+   bekam beim Weg über die Menüleiste „nein". Der Grund: Ein Klick auf
+   „Einfügen" nimmt dem Blatt die Auswahl, und bis der Befehl feuert, weiß
+   niemand mehr, wo man war. Wer also über das Menü ging statt über den
+   Rechtsklick, bekam bei JEDEM Tabellenbefehl dieselbe Absage — Rahmen,
+   Kopfzeile, Zeile einfügen, alles.
+
+   Deshalb wird die Zelle gemerkt, solange der Zeiger darin steht. Sie
+   gilt nur, wenn sie noch im Blatt hängt: Eine gelöschte Tabelle darf
+   nicht als „die aktuelle" weiterleben. */
+let letzteZelle = null;
+
+document.addEventListener('selectionchange', () => {
+  const z = zelleJetzt();
+  if (z) letzteZelle = z;
+});
+
+function zelleOderZuletzt() {
+  const jetzt = zelleJetzt();
+  if (jetzt) return jetzt;
+  if (letzteZelle && letzteZelle.isConnected && feld.contains(letzteZelle)) {
+    return letzteZelle;
+  }
+  letzteZelle = null;
+  return null;
+}
+
 function mitTabelle(tun) {
-  const zelle = zelleJetzt();
+  const zelle = zelleOderZuletzt();
   if (!zelle) { melde('Dafür muss der Zeiger in einer Tabelle stehen.'); return; }
   tun(zelle, zelle.parentElement, zelle.closest('table'));
   geaendertMelden();
@@ -9411,6 +9690,9 @@ const MENUES = [
     ] },
     { name: 'Tabellen', unter: [
       { name: 'Tabelle einfügen', tun: B.tabelle },
+      /* Gleich darunter: Wer eine Tabelle eingefügt hat, will als
+         Nächstes, dass sie aussieht wie gewünscht. */
+      { name: 'Eigenschaften der Tabelle', tun: B.tabelleEigenschaften },
       { name: 'Schnelltabelle', tun: B.schnelltabelle },
       { name: 'Tabellenblatt', tun: B.tabellenblatt },
     ] },
@@ -11356,7 +11638,7 @@ function rechtsMenueZeigen(e) {
       { name: 'Zellengröße…', tun: () => B.zellengroesse(), aus: gesperrt },
       { name: 'Ausrichtung…', tun: () => B.zellenAusrichtung(), aus: gesperrt },
       { name: 'Rahmen ein/aus', tun: () => B.tabelleRahmen(), aus: gesperrt },
-      { name: 'Tabellenformatierung…', tun: () => B.tabelleFormat(), aus: gesperrt },
+      { name: 'Eigenschaften der Tabelle…', tun: () => B.tabelleEigenschaften(), aus: gesperrt },
       strich,
       { name: 'Sortieren…', tun: () => B.sortieren(), aus: gesperrt },
     ]);

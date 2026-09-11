@@ -69,7 +69,8 @@ DIE BÄNDER
 │   ├── Tabellen
 │   │   ├── Tabelle einfügen
 │   │   ├── Schnelltabelle
-│   │   └── Tabellenblatt
+│   │   ├── Tabellenblatt
+│   │   └── Eigenschaften
 │   ├── Illustrationen
 │   │   ├── Bild
 │   │   ├── Zeichnen

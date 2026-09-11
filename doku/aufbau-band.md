@@ -95,7 +95,8 @@ EINFÜGEN
 ├── Tabellen
 │   ├── Tabelle einfügen
 │   ├── Schnelltabelle
-│   └── Tabellenblatt
+│   ├── Tabellenblatt
+│   └── Eigenschaften
 ├── Illustrationen
 │   ├── Bild
 │   ├── Zeichnen
@@ -373,6 +374,7 @@ genannt — das ist Absicht: ein Schalter, mehrere Stellen, ein Zustand.
 | Drucklayout | Ansicht ▸ Dokumentansichten |
 | Durchgestrichen | Start ▸ Schriftart |
 | Eigene Ränder… | Seitenlayout ▸ Seite einrichten |
+| Eigenschaften | Einfügen ▸ Tabellen |
 | Eine Seite | Ansicht ▸ Zoom |
 | Einfügen | Start ▸ Zwischenablage |
 | Einfügen ohne Formatierung | Start ▸ Zwischenablage |

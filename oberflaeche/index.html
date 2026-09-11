@@ -48,6 +48,20 @@
 <div class="werkzeugleiste" id="werkzeugleiste" role="toolbar" aria-label="Standard"></div>
 <div class="werkzeugleiste werkzeugleiste--zwei" id="werkzeugleiste2" role="toolbar" aria-label="Format"></div>
 
+<!-- DIE LEISTE, DIE NUR BEI BEDARF DA IST.
+
+     Word und WPS blenden „Tabellentools" ein, sobald der Zeiger in einer
+     Tabelle steht. In Lunivo gab es das bereits — aber nur in der
+     Oberfläche „In Registern". Wer mit Symbolleisten arbeitet, und das
+     tut Kay, sah davon nie etwas: Die Befehle waren gebaut und
+     unerreichbar.
+
+     Diese dritte Leiste zeigt dieselben Gruppen, aus derselben Liste
+     (REGISTER_IM_ZUSAMMENHANG in programm.js). Eine Quelle, zwei
+     Oberflächen — sonst laufen sie beim nächsten Befehl auseinander. -->
+<div class="werkzeugleiste werkzeugleiste--zusammenhang" id="werkzeugleiste3"
+     role="toolbar" aria-label="Werkzeuge zum Gewählten" hidden></div>
+
 <!-- Dieselben Befehle noch einmal, nur in Reitern statt in zwei Zeilen. Wer
      von Word kommt, sucht die Reiter; wer sie nicht mag, bleibt bei den
      Symbolleisten. Sichtbar ist immer nur eines von beidem — welches, sagt
