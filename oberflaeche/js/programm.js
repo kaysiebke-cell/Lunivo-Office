@@ -9159,13 +9159,275 @@ B.bildGroesseZurueck = () => {
    übersetzen.
    ------------------------------------------------------------ */
 const BILDSCHNELL = [
-  { art: 'umbruch', bild: 'anordnen', name: 'Textumbruch und Anordnen',
-    tun: () => B.anordnen() },
-  { art: 'groesse', bild: 'lupe', name: 'Größe genau angeben',
-    tun: () => B.bildGroesse() },
+  { art: 'umbruch', bild: 'anordnen', name: 'Layoutoptionen — wie der Text läuft',
+    tun: (k) => B.layoutoptionen(k) },
+  { art: 'lupe', bild: 'lupe', name: 'Bild groß ansehen',
+    tun: () => B.bildVorschau() },
   { art: 'schnitt', bild: 'schere', name: 'Zuschneiden',
-    tun: () => B.bildZuschneiden() },
+    tun: (k) => B.bildZuschneiden(k) },
 ];
+
+/* ------------------------------------------------------------
+   DIE LAYOUTOPTIONEN
+
+   Die kleine Tafel, die in WPS am ersten Schnellknopf aufgeht. Sie
+   zeigt den Textumbruch als BILDER, nicht als Wörter — und das ist der
+   ganze Punkt: „Quadrat", „Eng", „Transparent" sagt niemandem etwas,
+   ein Bildchen mit Text drumherum sofort.
+
+   Darunter die zwei Knöpfe, die es in WPS auch gibt: Wandert das Bild
+   mit dem Text mit, oder bleibt es auf der Seite stehen?
+   ------------------------------------------------------------ */
+const UMBRUCH_ARTEN = [
+  { art: 'zeile',  name: 'Mit Text in Zeile',
+    satz: 'Das Bild steht wie ein großer Buchstabe mitten im Text.' },
+  { art: 'links',  name: 'Rechts umfließen',
+    satz: 'Das Bild steht links, der Text läuft rechts daran vorbei.' },
+  { art: 'rechts', name: 'Links umfließen',
+    satz: 'Das Bild steht rechts, der Text läuft links daran vorbei.' },
+  { art: 'oben',   name: 'Oben und unten',
+    satz: 'Der Text hört über dem Bild auf und geht darunter weiter.' },
+  { art: 'hinter', name: 'Hinter dem Text',
+    satz: 'Das Bild liegt unter dem Text — für Hintergründe.' },
+  { art: 'vor',    name: 'Vor dem Text',
+    satz: 'Das Bild liegt über dem Text und verdeckt ihn.' },
+];
+
+/* Ein kleines Bild des Umbruchs: graue Zeilen, ein blauer Kasten. So
+   sieht man in einem Blick, was passiert. */
+function umbruchBildchen(art) {
+  const zeile = (x, y, b) =>
+    '<rect x="' + x + '" y="' + y + '" width="' + b + '" height="2.4" rx="1.2"/>';
+  let text = '';
+  let kasten = '';
+  if (art === 'zeile') {
+    text = zeile(2, 3, 40) + zeile(2, 9, 40) + zeile(20, 15, 22) + zeile(2, 27, 40);
+    kasten = '<rect x="2" y="13" width="15" height="9" rx="1.5" class="uv-kasten"/>';
+  } else if (art === 'links') {
+    text = zeile(20, 3, 22) + zeile(20, 9, 22) + zeile(20, 15, 22) + zeile(2, 27, 40);
+    kasten = '<rect x="2" y="3" width="15" height="18" rx="1.5" class="uv-kasten"/>';
+  } else if (art === 'rechts') {
+    text = zeile(2, 3, 22) + zeile(2, 9, 22) + zeile(2, 15, 22) + zeile(2, 27, 40);
+    kasten = '<rect x="27" y="3" width="15" height="18" rx="1.5" class="uv-kasten"/>';
+  } else if (art === 'oben') {
+    text = zeile(2, 3, 40) + zeile(2, 27, 40);
+    kasten = '<rect x="10" y="9" width="24" height="12" rx="1.5" class="uv-kasten"/>';
+  } else {
+    text = zeile(2, 3, 40) + zeile(2, 9, 40) + zeile(2, 15, 40) + zeile(2, 21, 40)
+         + zeile(2, 27, 40);
+    kasten = '<rect x="12" y="7" width="20" height="17" rx="1.5" class="uv-kasten"'
+           + (art === 'hinter' ? ' opacity=".45"' : '') + '/>';
+  }
+  const reihenfolge = art === 'hinter' ? kasten + text : text + kasten;
+  return '<svg viewBox="0 0 44 32" class="uv-bild"><g class="uv-zeilen">'
+       + (art === 'hinter' ? '' : '') + reihenfolge + '</g></svg>';
+}
+
+function bildUmbruchJetzt(bild) {
+  for (const k of ['links', 'rechts', 'oben', 'hinter', 'vor']) {
+    if (bild.classList.contains('bild--' + k)) return k;
+  }
+  return 'zeile';
+}
+
+function bildUmbruchSetzen(bild, art) {
+  for (const k of ['links', 'rechts', 'oben', 'hinter', 'vor']) {
+    bild.classList.remove('bild--' + k);
+  }
+  if (art !== 'zeile') bild.classList.add('bild--' + art);
+  /* „Mit Text in Zeile" und ein schwebendes Bild schliessen einander aus:
+     Was im Textfluss steht, kann nicht gleichzeitig frei liegen. */
+  if (art === 'zeile' && bildIstFrei(bild)) {
+    bild.classList.remove('bild--frei');
+    bild.style.left = '';
+    bild.style.top = '';
+  }
+  geaendertMelden();
+  bildGriffeNachmessen();
+}
+
+let layoutTafel = null;
+
+function layoutTafelWeg() {
+  if (layoutTafel) { layoutTafel.remove(); layoutTafel = null; }
+}
+
+B.layoutoptionen = (knopf) => {
+  const bild = bildZiel || bildAnStelle();
+  if (!bild || bild.tagName !== 'IMG') { melde('Im Text steht kein Bild.'); return; }
+  if (layoutTafel) { layoutTafelWeg(); return; }
+
+  const tafel = document.createElement('div');
+  tafel.className = 'layouttafel';
+
+  const kopf = document.createElement('div');
+  kopf.className = 'layouttafel__kopf';
+  const titel = document.createElement('span');
+  titel.textContent = 'Layoutoptionen';
+  const zu = document.createElement('button');
+  zu.type = 'button';
+  zu.className = 'layouttafel__zu';
+  zu.textContent = '×';
+  zu.title = 'Schließen';
+  zu.addEventListener('click', layoutTafelWeg);
+  kopf.append(titel, zu);
+  tafel.appendChild(kopf);
+
+  const satzzeile = document.createElement('p');
+  satzzeile.className = 'layouttafel__satz';
+
+  const gruppe = (name, arten) => {
+    const h = document.createElement('p');
+    h.className = 'layouttafel__gruppe';
+    h.textContent = name;
+    tafel.appendChild(h);
+    const kasten = document.createElement('div');
+    kasten.className = 'layouttafel__gitter';
+    for (const art of arten) {
+      const eintrag = UMBRUCH_ARTEN.find((u) => u.art === art);
+      const k = document.createElement('button');
+      k.type = 'button';
+      k.className = 'layouttafel__wahl';
+      k.title = eintrag.name;
+      k.setAttribute('aria-label', eintrag.name);
+      k.innerHTML = umbruchBildchen(art);
+      if (bildUmbruchJetzt(bild) === art) k.classList.add('layouttafel__wahl--an');
+      k.addEventListener('mouseenter', () => { satzzeile.textContent = eintrag.satz; });
+      k.addEventListener('focus', () => { satzzeile.textContent = eintrag.satz; });
+      k.addEventListener('mousedown', (e) => e.preventDefault());
+      k.addEventListener('click', () => {
+        bildUmbruchSetzen(bild, art);
+        for (const anderer of tafel.querySelectorAll('.layouttafel__wahl')) {
+          anderer.classList.remove('layouttafel__wahl--an');
+        }
+        k.classList.add('layouttafel__wahl--an');
+        melde(eintrag.name + ' — ' + eintrag.satz);
+      });
+      kasten.appendChild(k);
+    }
+    tafel.appendChild(kasten);
+  };
+
+  gruppe('Mit Text in Zeile', ['zeile']);
+  gruppe('Zeilenumbruch', ['links', 'rechts', 'oben', 'hinter', 'vor']);
+
+  tafel.appendChild(satzzeile);
+  satzzeile.textContent = UMBRUCH_ARTEN.find(
+    (u) => u.art === bildUmbruchJetzt(bild)).satz;
+
+  /* Die zwei Knöpfe aus WPS: Wandert das Bild mit dem Text mit, oder
+     bleibt es stehen, wo es liegt? */
+  const strich = document.createElement('div');
+  strich.className = 'layouttafel__strich';
+  tafel.appendChild(strich);
+
+  const wahlKasten = document.createElement('div');
+  wahlKasten.className = 'layouttafel__stellung';
+  for (const [wert, name, satz] of [
+    ['mit', 'Mit Text verschieben',
+     'Fügst du oberhalb Zeilen ein, wandert das Bild mit nach unten.'],
+    ['fest', 'Fester Text',
+     'Das Bild bleibt auf der Seite stehen, egal was darüber geschrieben wird.'],
+  ]) {
+    const l = document.createElement('label');
+    const r = document.createElement('input');
+    r.type = 'radio';
+    r.name = 'bild-stellung';
+    r.checked = (wert === 'fest') === bildIstFrei(bild);
+    r.addEventListener('change', () => {
+      if (wert === 'fest') bildFreiMachen(bild);
+      else B.bildEinreihen();
+      melde(satz);
+    });
+    const t = document.createElement('span');
+    t.textContent = name;
+    l.append(r, t);
+    wahlKasten.appendChild(l);
+  }
+  tafel.appendChild(wahlKasten);
+
+  document.body.appendChild(tafel);
+  layoutTafel = tafel;
+
+  const r = (knopf && knopf.getBoundingClientRect)
+    ? knopf.getBoundingClientRect() : bild.getBoundingClientRect();
+  const m = tafel.getBoundingClientRect();
+  let links = r.right + 8;
+  if (links + m.width > window.innerWidth - 8) links = Math.max(8, r.left - m.width - 8);
+  tafel.style.left = Math.round(links) + 'px';
+  tafel.style.top = Math.round(Math.max(8,
+    Math.min(r.top, window.innerHeight - 8 - m.height))) + 'px';
+
+  setTimeout(() => {
+    document.addEventListener('mousedown', function zuMachen(ev) {
+      if (tafel.contains(ev.target) || (knopf && knopf.contains(ev.target))) return;
+      layoutTafelWeg();
+      document.removeEventListener('mousedown', zuMachen);
+    });
+  }, 0);
+};
+
+/* ------------------------------------------------------------
+   BILD GROSS ANSEHEN
+
+   Der zweite Schnellknopf, die Lupe. In WPS legt sie das Bild groß über
+   das Fenster, mit „1:1" und „einpassen" darunter. Das ist keine
+   Spielerei: Wer prüfen will, ob ein eingescanntes Schreiben lesbar ist,
+   muss es groß sehen, ohne es dafür im Dokument zu vergrößern.
+   ------------------------------------------------------------ */
+B.bildVorschau = () => {
+  const bild = bildZiel || bildAnStelle();
+  if (!bild || bild.tagName !== 'IMG') { melde('Im Text steht kein Bild.'); return; }
+
+  const grund = document.createElement('div');
+  grund.className = 'bildschau';
+
+  const gross = document.createElement('img');
+  gross.src = bild.src;
+  gross.alt = bild.alt || '';
+  gross.className = 'bildschau__bild';
+  grund.appendChild(gross);
+
+  const leiste = document.createElement('div');
+  leiste.className = 'bildschau__leiste';
+  const knopf = (text, titel, tun) => {
+    const k = document.createElement('button');
+    k.type = 'button';
+    k.className = 'bildschau__knopf';
+    k.textContent = text;
+    k.title = titel;
+    k.addEventListener('click', tun);
+    leiste.appendChild(k);
+    return k;
+  };
+  knopf('1:1', 'In Originalgröße zeigen', () => {
+    gross.classList.add('bildschau__bild--echt');
+  });
+  knopf('⛶', 'Ins Fenster einpassen', () => {
+    gross.classList.remove('bildschau__bild--echt');
+  });
+  grund.appendChild(leiste);
+
+  const zu = document.createElement('button');
+  zu.type = 'button';
+  zu.className = 'bildschau__zu';
+  zu.textContent = '×';
+  zu.title = 'Schließen (Escape)';
+  grund.appendChild(zu);
+
+  const weg = () => {
+    grund.remove();
+    document.removeEventListener('keydown', taste);
+  };
+  const taste = (e) => { if (e.key === 'Escape') { e.preventDefault(); weg(); } };
+  zu.addEventListener('click', weg);
+  grund.addEventListener('click', (e) => { if (e.target === grund) weg(); });
+  document.addEventListener('keydown', taste);
+
+  document.body.appendChild(grund);
+  zu.focus();
+};
+
 
 /* Die Größe in Zahlen — für alle, die nicht ziehen wollen oder können.
 
@@ -9228,21 +9490,201 @@ function schnittAnwenden(bild, s) {
   bild.style.clipPath = 'inset(' + alle.map((w) => w + '%').join(' ') + ')';
 }
 
-B.bildZuschneiden = () => {
+/* ------------------------------------------------------------
+   ZUSCHNEIDEN — NACH FORM UND NACH VERHÄLTNIS
+
+   In WPS hat der Schnitt zwei Karten: „Nach Form zuschneiden" mit
+   Rechteck, Kreis, Dreieck, Stern und so weiter — und „Nach Skala
+   zuschneiden" mit 1:1, 4:3, 16:9.
+
+   Beides geht über clip-path. Das Bild bleibt unangetastet: Der Schnitt
+   ist eine Anweisung an die Darstellung, keine Änderung an den Daten.
+   Deshalb ist er jederzeit rücknehmbar, und die Datei wird nicht größer.
+   ------------------------------------------------------------ */
+const SCHNITTFORMEN = [
+  ['keine',    'Ganz (kein Schnitt)', ''],
+  ['rechteck', 'Rechteck mit runden Ecken',
+   'inset(0 0 0 0 round 8%)'],
+  ['kreis',    'Kreis',      'circle(50% at 50% 50%)'],
+  ['ellipse',  'Ellipse',    'ellipse(50% 50% at 50% 50%)'],
+  ['dreieck',  'Dreieck',    'polygon(50% 0%, 100% 100%, 0% 100%)'],
+  ['raute',    'Raute',      'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)'],
+  ['fuenfeck', 'Fünfeck',
+   'polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)'],
+  ['sechseck', 'Sechseck',
+   'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)'],
+  ['stern',    'Stern',
+   'polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, '
+   + '21% 91%, 32% 57%, 2% 35%, 39% 35%)'],
+  ['herz',     'Herz',
+   'polygon(50% 100%, 10% 60%, 0% 35%, 10% 12%, 30% 8%, 50% 25%, '
+   + '70% 8%, 90% 12%, 100% 35%, 90% 60%)'],
+  ['pfeil',    'Pfeil nach rechts',
+   'polygon(0% 25%, 60% 25%, 60% 0%, 100% 50%, 60% 100%, 60% 75%, 0% 75%)'],
+];
+
+/* Seitenverhältnisse. Geschnitten wird mittig — was übersteht, fällt
+   links und rechts oder oben und unten gleichmäßig weg. Alles andere
+   müsste man verschieben können, und das ist ein eigenes Stück Arbeit. */
+const SCHNITTMASSE = [
+  ['1:1',  1],
+  ['4:3',  4 / 3],
+  ['3:2',  3 / 2],
+  ['16:9', 16 / 9],
+  ['3:4',  3 / 4],
+  ['9:16', 9 / 16],
+];
+
+function schnittNachMass(bild, verhaeltnis) {
+  const r = bild.getBoundingClientRect();
+  const ist = r.width / r.height;
+  let oben = 0, unten = 0, links = 0, rechts = 0;
+  if (ist > verhaeltnis) {
+    /* Zu breit: an den Seiten wegnehmen. */
+    const weg = (1 - verhaeltnis / ist) / 2 * 100;
+    links = rechts = Math.round(weg * 10) / 10;
+  } else {
+    const weg = (1 - ist / verhaeltnis) / 2 * 100;
+    oben = unten = Math.round(weg * 10) / 10;
+  }
+  bild.dataset.schnitt = JSON.stringify({ oben, rechts, unten, links });
+  bild.style.clipPath = 'inset(' + oben + '% ' + rechts + '% '
+                      + unten + '% ' + links + '%)';
+}
+
+let schnittTafel = null;
+function schnittTafelWeg() {
+  if (schnittTafel) { schnittTafel.remove(); schnittTafel = null; }
+}
+
+B.bildZuschneiden = (knopf) => {
+  const bild = bildZiel || bildAnStelle();
+  if (!bild || bild.tagName !== 'IMG') { melde('Im Text steht kein Bild.'); return; }
+  if (schnittTafel) { schnittTafelWeg(); return; }
+
+  const tafel = document.createElement('div');
+  tafel.className = 'layouttafel schnitttafel';
+
+  const kopf = document.createElement('div');
+  kopf.className = 'layouttafel__kopf';
+  const titel = document.createElement('span');
+  titel.textContent = 'Zuschneiden';
+  const zu = document.createElement('button');
+  zu.type = 'button';
+  zu.className = 'layouttafel__zu';
+  zu.textContent = '×';
+  zu.addEventListener('click', schnittTafelWeg);
+  kopf.append(titel, zu);
+  tafel.appendChild(kopf);
+
+  const ueber = (name) => {
+    const h = document.createElement('p');
+    h.className = 'layouttafel__gruppe';
+    h.textContent = name;
+    tafel.appendChild(h);
+  };
+
+  ueber('Nach Form');
+  const formen = document.createElement('div');
+  formen.className = 'schnitttafel__formen';
+  for (const [art, name, pfad] of SCHNITTFORMEN) {
+    const k = document.createElement('button');
+    k.type = 'button';
+    k.className = 'schnitttafel__form';
+    k.title = name;
+    k.setAttribute('aria-label', name);
+    const innen = document.createElement('span');
+    innen.className = 'schnitttafel__probe';
+    if (pfad) innen.style.clipPath = pfad;
+    k.appendChild(innen);
+    k.addEventListener('mousedown', (e) => e.preventDefault());
+    k.addEventListener('click', () => {
+      bild.style.clipPath = pfad;
+      if (pfad) bild.dataset.form = art; else delete bild.dataset.form;
+      delete bild.dataset.schnitt;
+      geaendertMelden();
+      melde(pfad ? 'Zugeschnitten: ' + name : 'Das Bild ist wieder ganz.');
+      bildGriffeNachmessen();
+    });
+    formen.appendChild(k);
+  }
+  tafel.appendChild(formen);
+
+  ueber('Nach Verhältnis');
+  const masse = document.createElement('div');
+  masse.className = 'schnitttafel__masse';
+  for (const [name, wert] of SCHNITTMASSE) {
+    const k = document.createElement('button');
+    k.type = 'button';
+    k.className = 'schnitttafel__mass';
+    k.textContent = name;
+    k.title = 'Mittig auf ' + name + ' schneiden';
+    k.addEventListener('mousedown', (e) => e.preventDefault());
+    k.addEventListener('click', () => {
+      delete bild.dataset.form;
+      schnittNachMass(bild, wert);
+      geaendertMelden();
+      melde('Zugeschnitten auf ' + name + '.');
+      bildGriffeNachmessen();
+    });
+    masse.appendChild(k);
+  }
+  tafel.appendChild(masse);
+
+  const strich = document.createElement('div');
+  strich.className = 'layouttafel__strich';
+  tafel.appendChild(strich);
+
+  const zurueck = document.createElement('button');
+  zurueck.type = 'button';
+  zurueck.className = 'layouttafel__weiter';
+  zurueck.textContent = 'Zuschnitt aufheben';
+  zurueck.addEventListener('click', () => { B.bildSchnittWeg(); schnittTafelWeg(); });
+  tafel.appendChild(zurueck);
+
+  const genau = document.createElement('button');
+  genau.type = 'button';
+  genau.className = 'layouttafel__weiter';
+  genau.textContent = 'Kante für Kante in Prozent…';
+  genau.addEventListener('click', () => { schnittTafelWeg(); B.bildSchnittGenau(); });
+  tafel.appendChild(genau);
+
+  document.body.appendChild(tafel);
+  schnittTafel = tafel;
+
+  const r = (knopf && knopf.getBoundingClientRect)
+    ? knopf.getBoundingClientRect() : bild.getBoundingClientRect();
+  const m = tafel.getBoundingClientRect();
+  let links = r.right + 8;
+  if (links + m.width > window.innerWidth - 8) links = Math.max(8, r.left - m.width - 8);
+  tafel.style.left = Math.round(links) + 'px';
+  tafel.style.top = Math.round(Math.max(8,
+    Math.min(r.top, window.innerHeight - 8 - m.height))) + 'px';
+
+  setTimeout(() => {
+    document.addEventListener('mousedown', function zuMachen(ev) {
+      if (tafel.contains(ev.target) || (knopf && knopf.contains(ev.target))) return;
+      schnittTafelWeg();
+      document.removeEventListener('mousedown', zuMachen);
+    });
+  }, 0);
+};
+
+/* Der genaue Weg bleibt daneben stehen: Wer weiss, dass oben zwölf
+   Prozent wegsollen, soll nicht mit der Maus zielen muessen. */
+B.bildSchnittGenau = () => {
   const bild = bildZiel || bildAnStelle();
   if (!bild || bild.tagName !== 'IMG') { melde('Im Text steht kein Bild.'); return; }
   const jetzt = schnittLesen(bild);
-
-  fenster('Zuschneiden', [
-    { art: 'satz', text: 'Wie viel von jeder Kante soll wegfallen? '
-        + 'In Prozent — 0 heißt: nichts.\nDas Bild selbst bleibt ganz; '
-        + 'der Schnitt lässt sich jederzeit wieder aufheben.' },
+  fenster('Zuschneiden — Kante für Kante', [
+    { art: 'satz', text: 'Wie viel von jeder Kante soll wegfallen? In Prozent.' },
     { schluessel: 'oben', name: 'Oben (%)', art: 'number', wert: String(jetzt.oben) },
     { schluessel: 'unten', name: 'Unten (%)', art: 'number', wert: String(jetzt.unten) },
     { schluessel: 'links', name: 'Links (%)', art: 'number', wert: String(jetzt.links) },
     { schluessel: 'rechts', name: 'Rechts (%)', art: 'number', wert: String(jetzt.rechts) },
   ], (werte) => {
     const zahl = (x) => Math.max(0, Math.min(45, parseFloat(x) || 0));
+    delete bild.dataset.form;
     schnittAnwenden(bild, { oben: zahl(werte.oben), rechts: zahl(werte.rechts),
                             unten: zahl(werte.unten), links: zahl(werte.links) });
     geaendertMelden();
@@ -9254,6 +9696,10 @@ B.bildZuschneiden = () => {
 B.bildSchnittWeg = () => {
   const bild = bildZiel || bildAnStelle();
   if (!bild || bild.tagName !== 'IMG') { melde('Im Text steht kein Bild.'); return; }
+  /* Auch eine Form ist ein Schnitt — sonst bliebe der Kreis stehen und
+     „aufheben" täte scheinbar nichts. */
+  delete bild.dataset.form;
+  bild.style.clipPath = '';
   schnittAnwenden(bild, { oben: 0, rechts: 0, unten: 0, links: 0 });
   geaendertMelden();
   melde('Zuschnitt aufgehoben — das Bild ist wieder ganz.');
@@ -9285,7 +9731,9 @@ function bildGriffeBauen() {
     k.classList.add('bildgriff--schnell');
     if (SYMBOLE[symbolName]) k.appendChild(symbol(symbolName));
     k.addEventListener('mousedown', (e) => e.preventDefault());
-    k.addEventListener('click', tun);
+    /* Der Knopf reicht sich selbst mit: Die Tafel soll neben ihm aufgehen
+       und nicht irgendwo. */
+    k.addEventListener('click', () => tun(k));
   }
 
   machen('weg', 'Bild löschen', 'pointer', '×').addEventListener('click', () => {
