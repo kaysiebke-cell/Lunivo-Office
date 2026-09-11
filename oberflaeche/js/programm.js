@@ -1219,10 +1219,23 @@ function legeMarkeZeigen(ziel) {
 /* Die Griffe an der Tabelle ausrichten — OHNE die Sperre fuer das
    Ziehen. Waehrend gezogen wird, bewegt sich die Tabelle ja, und die
    Griffe muessen mit; nur das Wegraeumen darf dann nicht passieren. */
+/* NUR STELLEN, NICHT NEU ENTSCHEIDEN.
+
+   Hier stand: Sperre kurz aufheben, griffAuffrischen() laufen lassen,
+   Sperre zurueck. Das war ein schwerer Fehler. griffAuffrischen()
+   entscheidet naemlich auch, OB es Griffe gibt — und waehrend eines Zuges
+   steht der Zeiger auf dem Griff und nicht in einer Zelle. Also raeumte
+   es die Griffe weg, mitten im Zug. Der Knopf, der den Zeiger gefangen
+   hielt, verschwand damit aus dem Dokument, sein pointerup kam nie an,
+   und „aufhoeren" lief nie: Die Klasse zieht-tabelle blieb auf dem body
+   liegen, mit cursor:move und user-select:none ueber allem. Der Zeiger
+   war gefangen, und Text liess sich nicht mehr markieren.
+
+   Diese Fassung stellt die Griffe nur um. Sie nimmt nichts weg und baut
+   nichts auf. */
 function griffAuffrischenRoh() {
-  const merk = zieht;
-  zieht = false;
-  try { griffAuffrischen(); } finally { zieht = merk; }
+  if (!griffZiel || !griffe.schieben) return;
+  griffeStellen(griffZiel);
 }
 
 function griffAuffrischen() {
@@ -1281,6 +1294,11 @@ function griffAuffrischen() {
   /* Fest am Fenster ausgerichtet und nicht im Blatt eingehängt: Das Blatt
      wird gezoomt (CSS-zoom), und ein Kind darin bekäme dieselbe Verzerrung
      — die Griffe wären bei 200 % doppelt so groß wie ein Knopf daneben. */
+  griffeStellen(tabelle);
+}
+
+/* Die Griffe an das Rechteck der Tabelle setzen. */
+function griffeStellen(tabelle) {
   const r = tabelle.getBoundingClientRect();
   const flaeche = $('arbeitsflaeche').getBoundingClientRect();
 
@@ -1322,6 +1340,38 @@ function griffAuffrischen() {
 }
 
 let zieht = false;
+
+/* ------------------------------------------------------------
+   DAS SICHERHEITSNETZ: DEN ZEIGER IMMER WIEDER FREIGEBEN
+
+   Kay: „kannst du mal den Cursor loslassen!" — und er hatte recht. Beim
+   Ziehen liegt die Klasse „zieht-tabelle" auf dem body; sie setzt
+   cursor:move und user-select:none ueber ALLES. Bleibt sie liegen, ist
+   der Zeiger gefangen und Text laesst sich nicht mehr markieren.
+
+   Liegenbleiben kann sie, wenn das abschliessende pointerup nicht
+   ankommt — weil der Knopf verschwunden ist, weil das System
+   dazwischenfunkt, weil das Fenster den Fokus verliert. Die Ursache ist
+   behoben (siehe griffeStellen); trotzdem gehoert hier ein Netz
+   darunter. Ein Programm darf den Zeiger nicht behalten — und wenn doch,
+   dann hoechstens bis zum naechsten Loslassen der Taste.
+   ------------------------------------------------------------ */
+function zugBeenden() {
+  if (!zieht && !document.body.classList.contains('zieht-tabelle')) return;
+  zieht = false;
+  document.body.classList.remove('zieht-tabelle');
+  if (typeof legeMarkeWeg === 'function') legeMarkeWeg();
+}
+
+window.addEventListener('pointerup', zugBeenden, true);
+window.addEventListener('pointercancel', zugBeenden, true);
+window.addEventListener('blur', zugBeenden);
+/* Auch die Maus-Nachbildung: Wer mit gedrueckter Taste ueber den
+   Fensterrand hinausfaehrt und dort loslaesst, bekommt manchmal nur
+   dieses hier. */
+window.addEventListener('mouseup', zugBeenden, true);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') zugBeenden(); });
+
 
 /* ============================================================
    FREI VERSCHIEBEN UND AUFZIEHEN
@@ -9129,7 +9179,14 @@ function bildGriffeAuffrischen() {
 
   if (!bildGriffe.nw) bildGriffeBauen();
   bildZiel = bild;
+  bildGriffeStellen(bild);
+}
 
+/* Nur stellen, nicht neu entscheiden — siehe griffeStellen(). Waehrend
+   eines Zuges darf nichts weggeraeumt werden: Der Knopf, der den Zeiger
+   gefangen haelt, verschwaende sonst mitsamt seinem pointerup, und der
+   Zeiger bliebe im Zieh-Zustand haengen. */
+function bildGriffeStellen(bild) {
   const r = bild.getBoundingClientRect();
   const flaeche = $('arbeitsflaeche').getBoundingClientRect();
   const G = 11;
@@ -9175,7 +9232,7 @@ function bildZiehenBeginnen(fall) {
       + inMillimeter((e.clientX - start.x) / massstab)) * 10) / 10 + 'mm';
     bild.style.top = Math.round((anfang.oben
       + inMillimeter((e.clientY - start.y) / massstab)) * 10) / 10 + 'mm';
-    const merk = zieht; zieht = false; bildGriffeAuffrischen(); zieht = merk;
+    bildGriffeStellen(bild);
   };
   const aufhoeren = () => {
     zieht = false;
@@ -9247,7 +9304,7 @@ function bildGroesseZiehen(fall, art) {
     const mind = 10 * 96 / 25.4;          /* ein Zentimeter */
     bild.style.width = inMillimeter(Math.max(mind, breite)) + 'mm';
     bild.style.height = inMillimeter(Math.max(mind, hoehe)) + 'mm';
-    const merk = zieht; zieht = false; bildGriffeAuffrischen(); zieht = merk;
+    bildGriffeStellen(bild);
   };
   const aufhoeren = () => {
     zieht = false;
@@ -9295,7 +9352,7 @@ function bildDrehenZiehen(fall) {
     const fein = e.shiftKey ? winkel : Math.round(winkel / 5) * 5;
     bild.dataset.drehung = String(Math.round(fein));
     bild.style.transform = 'rotate(' + Math.round(fein) + 'deg)';
-    const merk = zieht; zieht = false; bildGriffeAuffrischen(); zieht = merk;
+    bildGriffeStellen(bild);
   };
   const aufhoeren = () => {
     zieht = false;

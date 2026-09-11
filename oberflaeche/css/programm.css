@@ -616,8 +616,18 @@ select option{background:var(--karte);color:var(--schrift)}
 }
 /* Während gezogen wird, soll nichts markiert werden — sonst zieht man
    blaue Textauswahl hinter sich her statt der Tabelle. */
+/* Waehrend eines Zuges: nichts markieren.
+
+   cursor:move stand hier frueher auf ALLEM — auch auf den Knoepfen der
+   Leisten und auf den anderen Griffen. Blieb die Klasse einmal liegen,
+   war der Zeiger im ganzen Fenster gefangen. Jetzt bekommt nur das Blatt
+   den Zeiger; die Bedienung behaelt ihren eigenen, und ein Missgriff
+   faellt weniger hart aus. */
 .zieht-tabelle, .zieht-tabelle *{
-  user-select:none !important;cursor:move !important;
+  user-select:none !important;
+}
+.zieht-tabelle .dokument, .zieht-tabelle .dokument *{
+  cursor:move !important;
 }
 
 /* ---------- Der Rasterwähler für Tabellen ----------
