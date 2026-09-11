@@ -500,6 +500,46 @@ select option{background:var(--karte);color:var(--schrift)}
   .sz-schieber,.sz-trenner{display:none}
 }
 
+/* ---------- Die Griffe am Bild ----------
+
+   Acht ringsum wie in WPS, darüber der zum Drehen, daneben das Kreuz.
+   Weiß mit dunklem Rand — so sehen sie auf hellen wie auf dunklen
+   Bildern gleich gut aus, und so kennt man sie aus jedem Programm.
+
+   Sie hängen am Fenster (position:fixed), nicht im Blatt: Das Blatt wird
+   über CSS-zoom vergrößert, und ein Kind darin wäre bei 200 % doppelt so
+   groß. */
+.bildgriff{
+  position:fixed;z-index:60;
+  width:11px;height:11px;padding:0;
+  display:flex;align-items:center;justify-content:center;
+  background:#fff;
+  border:1px solid #4C555E;border-radius:50%;
+  color:#4C555E;font-size:10px;line-height:1;
+  box-shadow:0 1px 2px rgba(0,0,0,.3);
+  touch-action:none;
+}
+.bildgriff:hover{background:var(--blau-hell);border-color:#fff}
+/* Auch hier ein größeres Ziel, ohne größer auszusehen: Elf Pixel trifft
+   niemand mit einem Zeigestab. */
+.bildgriff::before{content:'';position:absolute;inset:-8px}
+
+.bildgriff--drehen{
+  width:17px;height:17px;font-size:12px;
+  background:var(--blatt);
+}
+.bildgriff--weg{
+  width:17px;height:17px;font-size:13px;border-radius:4px;
+}
+.bildgriff--weg:hover{background:#B3372F;border-color:#C9493F;color:#fff}
+
+/* Ein Bild, das frei liegt — wie eine freie Tabelle. */
+.bild--frei{
+  position:absolute;
+  z-index:3;
+  margin:0;
+}
+
 /* ---------- Der Griff zum Verschieben einer Tabelle ----------
 
    Links oben an der Tabelle, wie in WPS. Er hängt am Fenster und nicht im

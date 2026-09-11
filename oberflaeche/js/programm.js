@@ -3929,6 +3929,24 @@ const REGISTER_IM_ZUSAMMENHANG = [
     ],
   },
   {
+    /* Wie „Tabellenwerkzeuge", nur fuer Bilder. Bisher gab es fuer sie
+       nur das Fenster „Anordnen" — die Befehle, die man staendig
+       braucht, standen nirgends griffbereit. */
+    name: 'Bildtools',
+    gilt: () => {
+      const b = bildAnStelle();
+      return !!(b && b.tagName === 'IMG');
+    },
+    gruppen: [
+      ['Bild', [['bild', 'Bild einfügen', () => B.bild(), 'gross'],
+                ['anordnen', 'Anordnen', () => B.anordnen(), 'gross']]],
+      ['Größe', [['ecken', 'Größe zurücksetzen', () => B.bildGroesseZurueck(), 'gross']]],
+      ['Drehen', [['zurueck', 'Drehung zurücksetzen', () => B.bildDrehenZurueck(), 'gross']]],
+      ['Stellung', [['fortlaufend', 'Wieder in den Text einreihen',
+                     () => B.bildEinreihen(), 'gross']]],
+    ],
+  },
+  {
     name: 'Zeichentools',
     gilt: () => !!formJetzt(),
     gruppen: [
@@ -5462,6 +5480,7 @@ function zusammenhangsleisteBauen() {
   /* Die Leiste hat das Blatt verschoben — der Griff der Tabelle sitzt
      jetzt falsch und muss neu gemessen werden. */
   if (typeof griffAuffrischen === 'function') requestAnimationFrame(griffAuffrischen);
+  if (typeof bildGriffeAuffrischen === 'function') requestAnimationFrame(bildGriffeAuffrischen);
 }
 
 let zusammenhangStandLeiste = '';
@@ -8986,6 +9005,352 @@ B.abschnittsumbruch = () => {
 /* ---- Bilder anordnen ----
    Wie der Text um ein Bild läuft, welche Ebene es hat, wie es gedreht ist.
    In Word ist das die Gruppe „Anordnen". */
+/* ============================================================
+   DIE GRIFFE AM BILD
+
+   Dasselbe wie bei den Tabellen, und aus demselben Grund: Kay hat es
+   verlangt, und bei Bildern ist es noch selbstverstaendlicher. Ein Bild
+   ist ein Gegenstand auf dem Blatt; man fasst es an und schiebt es
+   hin. Bisher ging das nur ueber ein Fenster mit Zahlen.
+
+   Acht Griffe ringsum wie in WPS: vier Ecken halten das Seitenverhaeltnis,
+   vier Kanten ziehen nur in eine Richtung. Darueber der Griff zum Drehen,
+   daneben das Kreuz zum Loeschen. Das Bild selbst ist der Griff zum
+   Verschieben — man packt an, was man meint.
+
+   Gerechnet wird in Millimetern, aus demselben Grund wie bei den
+   Tabellen: Das Blatt wird gezoomt, Millimeter gelten auf dem Papier.
+   ============================================================ */
+
+const BILDGRIFFE = [
+  { art: 'nw', x: 0,   y: 0,   zeiger: 'nwse-resize', name: 'Ecke oben links' },
+  { art: 'n',  x: 0.5, y: 0,   zeiger: 'ns-resize',   name: 'Oberkante' },
+  { art: 'ne', x: 1,   y: 0,   zeiger: 'nesw-resize', name: 'Ecke oben rechts' },
+  { art: 'e',  x: 1,   y: 0.5, zeiger: 'ew-resize',   name: 'Rechte Kante' },
+  { art: 'se', x: 1,   y: 1,   zeiger: 'nwse-resize', name: 'Ecke unten rechts' },
+  { art: 's',  x: 0.5, y: 1,   zeiger: 'ns-resize',   name: 'Unterkante' },
+  { art: 'sw', x: 0,   y: 1,   zeiger: 'nesw-resize', name: 'Ecke unten links' },
+  { art: 'w',  x: 0,   y: 0.5, zeiger: 'ew-resize',   name: 'Linke Kante' },
+];
+
+let bildGriffe = {};
+let bildZiel = null;
+let bildUnterMaus = null;
+
+function bildGriffeWeg() {
+  for (const k of Object.values(bildGriffe)) k.remove();
+  bildGriffe = {};
+  bildZiel = null;
+}
+
+function bildIstFrei(bild) {
+  return bild.classList.contains('bild--frei');
+}
+
+function bildFreiMachen(bild) {
+  if (bildIstFrei(bild)) return;
+  const bogen = bild.closest('.dokument') || feld;
+  const r = bild.getBoundingClientRect();
+  const b = bogen.getBoundingClientRect();
+  const massstab = (zoom || 100) / 100;
+  bild.style.width = inMillimeter(r.width / massstab) + 'mm';
+  bild.style.height = inMillimeter(r.height / massstab) + 'mm';
+  bild.style.left = inMillimeter((r.left - b.left) / massstab) + 'mm';
+  bild.style.top = inMillimeter((r.top - b.top) / massstab) + 'mm';
+  bild.classList.add('bild--frei');
+}
+
+B.bildEinreihen = () => {
+  const bild = bildZiel || bildAnStelle();
+  if (!bild) { melde('Im Text steht kein Bild.'); return; }
+  if (!bildIstFrei(bild)) { melde('Dieses Bild steht schon im Text.'); return; }
+  bild.classList.remove('bild--frei');
+  bild.style.left = '';
+  bild.style.top = '';
+  geaendertMelden();
+  melde('Bild wieder im Text — es wandert jetzt wieder mit.');
+  bildGriffeAuffrischen();
+};
+
+B.bildDrehenZurueck = () => {
+  const bild = bildZiel || bildAnStelle();
+  if (!bild) { melde('Im Text steht kein Bild.'); return; }
+  bild.style.transform = '';
+  bild.dataset.drehung = '0';
+  geaendertMelden();
+  melde('Drehung zurückgesetzt.');
+  bildGriffeAuffrischen();
+};
+
+B.bildGroesseZurueck = () => {
+  const bild = bildZiel || bildAnStelle();
+  if (!bild) { melde('Im Text steht kein Bild.'); return; }
+  bild.style.width = '';
+  bild.style.height = '';
+  geaendertMelden();
+  melde('Größe zurückgesetzt.');
+  bildGriffeAuffrischen();
+};
+
+function bildGriffeBauen() {
+  const machen = (art, name, zeiger, zeichen) => {
+    const k = document.createElement('button');
+    k.type = 'button';
+    k.className = 'bildgriff bildgriff--' + art;
+    k.title = name;
+    k.setAttribute('aria-label', name);
+    if (zeichen) k.textContent = zeichen;
+    if (zeiger) k.style.cursor = zeiger;
+    bildGriffe[art] = k;
+    document.body.appendChild(k);
+    return k;
+  };
+
+  for (const { art, zeiger, name } of BILDGRIFFE) {
+    const k = machen(art, 'Größe ziehen — ' + name, zeiger, '');
+    k.addEventListener('pointerdown', (e) => bildGroesseZiehen(e, art));
+  }
+  machen('drehen', 'Bild drehen — ziehen', 'grab', '↻')
+    .addEventListener('pointerdown', bildDrehenZiehen);
+  machen('weg', 'Bild löschen', 'pointer', '×').addEventListener('click', () => {
+    if (!bildZiel) return;
+    bildZiel.remove();
+    bildGriffeWeg();
+    geaendertMelden();
+    melde('Bild gelöscht. Rückgängig mit Strg+Z.');
+  });
+}
+
+function bildGriffeAuffrischen() {
+  if (zieht) return;
+  const bild = bildUnterMaus
+    || (() => { const b = bildAnStelle(); return b && b.tagName === 'IMG' ? b : null; })();
+  if (!bild || !feld.contains(bild)) { bildGriffeWeg(); return; }
+
+  if (!bildGriffe.nw) bildGriffeBauen();
+  bildZiel = bild;
+
+  const r = bild.getBoundingClientRect();
+  const flaeche = $('arbeitsflaeche').getBoundingClientRect();
+  const G = 11;
+  const setz = (art, x, y) => {
+    const k = bildGriffe[art];
+    if (!k) return;
+    k.style.left = Math.round(x - G / 2) + 'px';
+    k.style.top = Math.round(y - G / 2) + 'px';
+  };
+  for (const { art, x, y } of BILDGRIFFE) {
+    setz(art, r.left + r.width * x, r.top + r.height * y);
+  }
+  setz('drehen', r.left + r.width / 2, r.top - 22);
+  setz('weg', r.right + 14, r.top - 14);
+
+  const versteckt = r.bottom < flaeche.top || r.top > flaeche.bottom;
+  for (const k of Object.values(bildGriffe)) k.hidden = versteckt;
+}
+
+/* Das Bild selbst ist der Griff zum Verschieben. */
+function bildZiehenBeginnen(fall) {
+  const bild = fall.target;
+  if (!bild || bild.tagName !== 'IMG' || !feld.contains(bild)) return;
+  fall.preventDefault();
+  bildUnterMaus = bild;
+  bildGriffeAuffrischen();
+
+  const warFrei = bildIstFrei(bild);
+  const zurueck = { links: bild.style.left, oben: bild.style.top };
+  bildFreiMachen(bild);
+  zieht = true;
+  document.body.classList.add('zieht-tabelle');
+
+  const massstab = (zoom || 100) / 100;
+  const start = { x: fall.clientX, y: fall.clientY };
+  const anfang = { links: parseFloat(bild.style.left) || 0,
+                   oben: parseFloat(bild.style.top) || 0 };
+
+  try { bild.setPointerCapture(fall.pointerId); } catch (e) { /* aelter */ }
+
+  const bewegen = (e) => {
+    bild.style.left = Math.round((anfang.links
+      + inMillimeter((e.clientX - start.x) / massstab)) * 10) / 10 + 'mm';
+    bild.style.top = Math.round((anfang.oben
+      + inMillimeter((e.clientY - start.y) / massstab)) * 10) / 10 + 'mm';
+    const merk = zieht; zieht = false; bildGriffeAuffrischen(); zieht = merk;
+  };
+  const aufhoeren = () => {
+    zieht = false;
+    bild.removeEventListener('pointermove', bewegen);
+    bild.removeEventListener('pointerup', fertig);
+    document.removeEventListener('keydown', taste);
+    document.body.classList.remove('zieht-tabelle');
+    try { bild.releasePointerCapture(fall.pointerId); } catch (e) { /* weg */ }
+  };
+  const taste = (e) => {
+    if (e.key !== 'Escape') return;
+    e.preventDefault();
+    aufhoeren();
+    if (!warFrei) bild.classList.remove('bild--frei');
+    bild.style.left = zurueck.links; bild.style.top = zurueck.oben;
+    bildGriffeAuffrischen();
+    melde('Verschieben abgebrochen.');
+  };
+  const fertig = () => {
+    aufhoeren();
+    geaendertMelden();
+    melde(warFrei ? 'Bild verschoben.'
+                  : 'Bild schwebt jetzt frei. Zurück mit „Wieder in den Text".');
+    bildGriffeAuffrischen();
+  };
+
+  bild.addEventListener('pointermove', bewegen);
+  bild.addEventListener('pointerup', fertig);
+  document.addEventListener('keydown', taste);
+}
+
+function bildGroesseZiehen(fall, art) {
+  fall.preventDefault();
+  const bild = bildZiel;
+  if (!bild) return;
+  const knopf = fall.currentTarget;
+  try { knopf.setPointerCapture(fall.pointerId); } catch (e) { /* aelter */ }
+
+  const massstab = (zoom || 100) / 100;
+  const r = bild.getBoundingClientRect();
+  const anfang = { breite: r.width / massstab, hoehe: r.height / massstab };
+  const verhaeltnis = anfang.hoehe / anfang.breite || 1;
+  const start = { x: fall.clientX, y: fall.clientY };
+  const zurueck = { b: bild.style.width, h: bild.style.height };
+  const ecke = art.length === 2;         /* nw, ne, se, sw */
+  const nachWesten = art.indexOf('w') > -1;
+  const nachNorden = art.indexOf('n') === 0;
+  zieht = true;
+  document.body.classList.add('zieht-tabelle');
+
+  const bewegen = (e) => {
+    let dx = (e.clientX - start.x) / massstab;
+    let dy = (e.clientY - start.y) / massstab;
+    if (nachWesten) dx = -dx;
+    if (nachNorden) dy = -dy;
+
+    let breite = anfang.breite;
+    let hoehe = anfang.hoehe;
+    if (ecke) {
+      /* Ecken halten das Seitenverhaeltnis — sonst wird jedes Bild beim
+         Ziehen schief, und niemand will ein verzerrtes Foto. */
+      breite = anfang.breite + dx;
+      hoehe = breite * verhaeltnis;
+    } else if (art === 'e' || art === 'w') {
+      breite = anfang.breite + dx;
+    } else {
+      hoehe = anfang.hoehe + dy;
+    }
+    const mind = 10 * 96 / 25.4;          /* ein Zentimeter */
+    bild.style.width = inMillimeter(Math.max(mind, breite)) + 'mm';
+    bild.style.height = inMillimeter(Math.max(mind, hoehe)) + 'mm';
+    const merk = zieht; zieht = false; bildGriffeAuffrischen(); zieht = merk;
+  };
+  const aufhoeren = () => {
+    zieht = false;
+    knopf.removeEventListener('pointermove', bewegen);
+    knopf.removeEventListener('pointerup', fertig);
+    document.removeEventListener('keydown', taste);
+    document.body.classList.remove('zieht-tabelle');
+    try { knopf.releasePointerCapture(fall.pointerId); } catch (e) { /* weg */ }
+  };
+  const taste = (e) => {
+    if (e.key !== 'Escape') return;
+    e.preventDefault(); aufhoeren();
+    bild.style.width = zurueck.b; bild.style.height = zurueck.h;
+    bildGriffeAuffrischen(); melde('Größe abgebrochen.');
+  };
+  const fertig = () => {
+    aufhoeren(); geaendertMelden();
+    melde('Bild: ' + bild.style.width + ' breit, ' + bild.style.height + ' hoch.');
+    bildGriffeAuffrischen();
+  };
+
+  knopf.addEventListener('pointermove', bewegen);
+  knopf.addEventListener('pointerup', fertig);
+  document.addEventListener('keydown', taste);
+}
+
+function bildDrehenZiehen(fall) {
+  fall.preventDefault();
+  const bild = bildZiel;
+  if (!bild) return;
+  const knopf = fall.currentTarget;
+  try { knopf.setPointerCapture(fall.pointerId); } catch (e) { /* aelter */ }
+
+  const r = bild.getBoundingClientRect();
+  const mitte = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  const zurueck = bild.style.transform;
+  zieht = true;
+  document.body.classList.add('zieht-tabelle');
+
+  const bewegen = (e) => {
+    const winkel = Math.atan2(e.clientY - mitte.y, e.clientX - mitte.x)
+                 * 180 / Math.PI + 90;
+    /* In Schritten von fuenf Grad, solange Umschalt nicht gedrueckt ist:
+       Ein Bild, das um 1,7 Grad schief haengt, sieht nach Versehen aus. */
+    const fein = e.shiftKey ? winkel : Math.round(winkel / 5) * 5;
+    bild.dataset.drehung = String(Math.round(fein));
+    bild.style.transform = 'rotate(' + Math.round(fein) + 'deg)';
+    const merk = zieht; zieht = false; bildGriffeAuffrischen(); zieht = merk;
+  };
+  const aufhoeren = () => {
+    zieht = false;
+    knopf.removeEventListener('pointermove', bewegen);
+    knopf.removeEventListener('pointerup', fertig);
+    document.removeEventListener('keydown', taste);
+    document.body.classList.remove('zieht-tabelle');
+    try { knopf.releasePointerCapture(fall.pointerId); } catch (e) { /* weg */ }
+  };
+  const taste = (e) => {
+    if (e.key !== 'Escape') return;
+    e.preventDefault(); aufhoeren();
+    bild.style.transform = zurueck; bildGriffeAuffrischen();
+    melde('Drehen abgebrochen.');
+  };
+  const fertig = () => {
+    aufhoeren(); geaendertMelden();
+    melde('Bild um ' + (bild.dataset.drehung || 0) + ' Grad gedreht.');
+    bildGriffeAuffrischen();
+  };
+
+  knopf.addEventListener('pointermove', bewegen);
+  knopf.addEventListener('pointerup', fertig);
+  document.addEventListener('keydown', taste);
+}
+
+/* Beim Fahren ueber das Blatt: Steht der Zeiger auf einem Bild, gehoeren
+   ihm die Griffe — wie bei den Tabellen, und aus demselben Grund. */
+feld.addEventListener('pointerover', (e) => {
+  if (zieht) return;
+  const ziel = e.target && e.target.tagName === 'IMG' ? e.target : null;
+  const neu = ziel && feld.contains(ziel) ? ziel : null;
+  if (neu === bildUnterMaus) return;
+  bildUnterMaus = neu;
+  bildGriffeNachmessen();
+});
+
+feld.addEventListener('pointerdown', bildZiehenBeginnen);
+/* Zweimal messen — genau wie bei den Tabellen, und aus demselben Grund:
+   Beim ersten Berühren eines Bildes taucht gleichzeitig die Leiste
+   „Bildtools" auf und schiebt das Blatt nach unten. Wer nur einmal misst,
+   setzt die Griffe dorthin, wo das Bild eine Zwanzigstelsekunde vorher
+   war — und sie liegen als Punkte verstreut daneben. */
+function bildGriffeNachmessen() {
+  if (zieht) return;
+  bildGriffeAuffrischen();
+  requestAnimationFrame(bildGriffeAuffrischen);
+}
+
+document.addEventListener('selectionchange', bildGriffeNachmessen);
+window.addEventListener('resize', bildGriffeNachmessen);
+$('arbeitsflaeche').addEventListener('scroll', () => {
+  if (!zieht) bildGriffeAuffrischen();
+});
+
 function bildAnStelle() {
   const auswahl = window.getSelection();
   if (!auswahl.rangeCount) return null;
