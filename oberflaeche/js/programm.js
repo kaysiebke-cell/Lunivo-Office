@@ -1211,6 +1211,14 @@ function legeMarkeZeigen(ziel) {
 }
 
 function griffAuffrischen() {
+  /* MITTEN IM ZIEHEN NICHT ANFASSEN.
+
+     Das Rollen am Rand setzt scrollTop, das löst „scroll" aus, und der
+     Horcher dort rief diese Funktion ungeschützt auf. Steht der Zeiger
+     dabei nicht mehr in einer Zelle, räumt sie die Griffe weg — mitten
+     im Zug, an dem die Hand gerade hängt. Der Zug endete dann ins Leere,
+     und es sah aus, als ließe sich die Tabelle nicht fassen. */
+  if (zieht) return;
   const zelle = zelleJetzt();
   const tabelle = zelle && zelle.closest('table');
   if (!tabelle || !feld.contains(tabelle)) { griffWeg(); return; }
@@ -1223,7 +1231,7 @@ function griffAuffrischen() {
       k.title = name;
       k.setAttribute('aria-label', name);
       k.textContent = zeichen;
-      if (art === 'schieben') k.addEventListener('mousedown', griffZiehenBeginnen);
+      if (art === 'schieben') k.addEventListener('pointerdown', griffZiehenBeginnen);
       else {
         /* Die Auswahl behalten: Sonst ist der Zeiger nach dem Klick nicht
            mehr in der Tabelle, und beim nächsten Messen verschwinden alle
@@ -1272,6 +1280,21 @@ function griffAuffrischen() {
 
 let zieht = false;
 
+/* ZIEHEN MIT POINTER-EREIGNISSEN, NICHT MIT MAUS-EREIGNISSEN.
+
+   Hier stand mousedown/mousemove/mouseup. Das reicht für eine Maus auf
+   einem Tisch — aber Kay arbeitet am ThinkPad mit dem Zeigestab, und dort
+   ging es nicht: Die Tabelle ließ sich nicht fassen.
+
+   Der Grund: Maus-Ereignisse sind bei Zeigestab, Trackpad und Finger nur
+   eine Nachbildung. Sie kommen verzögert, unvollständig, und sobald der
+   Zeiger den Knopf verlässt, hört die Folge auf. Pointer-Ereignisse sind
+   das Echte — und setPointerCapture sagt dem Browser: Alles, was dieser
+   Zeiger von jetzt an tut, gehört diesem Knopf, egal wo er hinfährt. Das
+   ist genau die Zusage, die ein Zug braucht.
+
+   Damit funktioniert derselbe Griff auch mit dem Finger auf einem
+   Bildschirm, den man anfassen kann. */
 function griffZiehenBeginnen(fall) {
   fall.preventDefault();
   if (!griffZiel) return;
@@ -1279,6 +1302,9 @@ function griffZiehenBeginnen(fall) {
   const vorher = tabelle.previousElementSibling;
   zieht = true;
   document.body.classList.add('zieht-tabelle');
+
+  const knopf = fall.currentTarget;
+  try { knopf.setPointerCapture(fall.pointerId); } catch (e) { /* ältere Fassung */ }
 
   let letztesY = fall.clientY;
   let rollUhr = null;
@@ -1309,9 +1335,11 @@ function griffZiehenBeginnen(fall) {
   const aufhoeren = () => {
     zieht = false;
     clearInterval(rollUhr);
-    document.removeEventListener('mousemove', bewegen);
-    document.removeEventListener('mouseup', loslassen);
+    knopf.removeEventListener('pointermove', bewegen);
+    knopf.removeEventListener('pointerup', loslassen);
+    knopf.removeEventListener('pointercancel', abbrechen);
     document.removeEventListener('keydown', tasteAb);
+    try { knopf.releasePointerCapture(fall.pointerId); } catch (e) { /* schon weg */ }
     document.body.classList.remove('zieht-tabelle');
     legeMarkeWeg();
   };
@@ -1319,6 +1347,11 @@ function griffZiehenBeginnen(fall) {
   /* ESCAPE BRICHT AB. Wer beim Ziehen merkt, dass er die falsche Stelle
      trifft, haette sonst nur den Weg ueber „Rueckgaengig" — und muesste
      erst loslassen, um ihn zu finden. */
+  const abbrechen = () => {
+    aufhoeren();
+    griffNachmessen();
+  };
+
   const tasteAb = (e) => {
     if (e.key !== 'Escape') return;
     e.preventDefault();
@@ -1346,8 +1379,11 @@ function griffZiehenBeginnen(fall) {
   };
 
   rollUhr = setInterval(rollen, 60);
-  document.addEventListener('mousemove', bewegen);
-  document.addEventListener('mouseup', loslassen);
+  knopf.addEventListener('pointermove', bewegen);
+  knopf.addEventListener('pointerup', loslassen);
+  /* Reißt die Verbindung ab — Finger vom Rand gerutscht, System
+     dazwischengefunkt —, soll nicht irgendwo etwas landen. */
+  knopf.addEventListener('pointercancel', abbrechen);
   document.addEventListener('keydown', tasteAb);
 }
 

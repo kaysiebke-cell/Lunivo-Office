@@ -536,7 +536,10 @@ select option{background:var(--karte);color:var(--schrift)}
   opacity:1;
   background:var(--blau);color:#fff;border-color:var(--blau-hell);
 }
-.tabellengriff--schieben{cursor:move}
+/* touch-action:none — ohne das behandelt der Browser den Zug als
+   Blättern und liefert die Pointer-Ereignisse gar nicht erst aus. Das
+   gilt fuer den Finger ebenso wie fuer das Trackpad. */
+.tabellengriff--schieben{cursor:move;touch-action:none}
 /* Ein größeres Ziel, ohne größer auszusehen: sieben Pixel unsichtbarer
    Rand ringsum — aus 24 wird ein Ziel von 38, während das Bild klein
    bleibt und die Tabelle nicht verdeckt. */
