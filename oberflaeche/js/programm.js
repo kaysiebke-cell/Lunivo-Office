@@ -3990,7 +3990,10 @@ const REGISTER_IM_ZUSAMMENHANG = [
     gruppen: [
       ['Bild', [['bild', 'Bild einfügen', () => B.bild(), 'gross'],
                 ['anordnen', 'Anordnen', () => B.anordnen(), 'gross']]],
-      ['Größe', [['ecken', 'Größe zurücksetzen', () => B.bildGroesseZurueck(), 'gross']]],
+      ['Größe', [['lupe', 'Größe genau angeben', () => B.bildGroesse(), 'gross'],
+                 ['ecken', 'Größe zurücksetzen', () => B.bildGroesseZurueck()]]],
+      ['Zuschneiden', [['schere', 'Zuschneiden', () => B.bildZuschneiden(), 'gross'],
+                       ['zurueck', 'Zuschnitt aufheben', () => B.bildSchnittWeg()]]],
       ['Drehen', [['zurueck', 'Drehung zurücksetzen', () => B.bildDrehenZurueck(), 'gross']]],
       ['Stellung', [['fortlaufend', 'Wieder in den Text einreihen',
                      () => B.bildEinreihen(), 'gross']]],
@@ -9142,6 +9145,121 @@ B.bildGroesseZurueck = () => {
   bildGriffeAuffrischen();
 };
 
+/* ------------------------------------------------------------
+   DIE DREI SCHNELLKNÖPFE NEBEN DEM BILD
+
+   Vorlage ist WPS: Neben einem gewählten Bild steht eine kleine
+   senkrechte Leiste mit den drei Dingen, die man an einem Bild fast
+   immer will — wie der Text drumherum läuft, wie groß es ist, und was
+   davon zu sehen sein soll.
+
+   Warum neben dem Bild und nicht nur oben in der Leiste: Es ist
+   derselbe Gedanke wie beim + an der Tabelle. „Dieses Bild etwas
+   kleiner" ist ein Gedanke am Ort. Der Weg nach oben verlangt, ihn zu
+   übersetzen.
+   ------------------------------------------------------------ */
+const BILDSCHNELL = [
+  { art: 'umbruch', bild: 'anordnen', name: 'Textumbruch und Anordnen',
+    tun: () => B.anordnen() },
+  { art: 'groesse', bild: 'lupe', name: 'Größe genau angeben',
+    tun: () => B.bildGroesse() },
+  { art: 'schnitt', bild: 'schere', name: 'Zuschneiden',
+    tun: () => B.bildZuschneiden() },
+];
+
+/* Die Größe in Zahlen — für alle, die nicht ziehen wollen oder können.
+
+   Das Seitenverhältnis ist standardmäßig gesperrt, wie in WPS: Ein
+   verzerrtes Foto ist fast nie gewollt, und wer es doch will, nimmt den
+   Haken heraus. */
+B.bildGroesse = () => {
+  const bild = bildZiel || bildAnStelle();
+  if (!bild || bild.tagName !== 'IMG') { melde('Im Text steht kein Bild.'); return; }
+  const massstab = (zoom || 100) / 100;
+  const r = bild.getBoundingClientRect();
+  const breite = inMillimeter(r.width / massstab);
+  const hoehe = inMillimeter(r.height / massstab);
+  const verhaeltnis = hoehe / breite || 1;
+
+  fenster('Größe des Bildes', [
+    { schluessel: 'breite', name: 'Breite (mm)', art: 'number', wert: String(breite) },
+    { schluessel: 'hoehe', name: 'Höhe (mm)', art: 'number', wert: String(hoehe) },
+    { schluessel: 'sperre', name: 'Seitenverhältnis sperren', art: 'auswahl',
+      wert: 'ja', werte: [['ja', 'Ja'], ['nein', 'Nein']] },
+  ], (werte) => {
+    let b = Math.max(5, parseFloat(werte.breite) || breite);
+    let h = Math.max(5, parseFloat(werte.hoehe) || hoehe);
+    /* Gesperrt heißt: Die Breite führt. Wer beide Felder ändert und die
+       Sperre stehen lässt, bekommt sonst eine Höhe, die er nicht wollte,
+       und weiß nicht, welche der beiden Zahlen gewonnen hat. */
+    if (werte.sperre === 'ja') h = Math.round(b * verhaeltnis * 10) / 10;
+    bild.style.width = b + 'mm';
+    bild.style.height = h + 'mm';
+    geaendertMelden();
+    melde('Bild: ' + b + ' mm breit, ' + h + ' mm hoch.');
+    bildGriffeNachmessen();
+  });
+};
+
+/* ZUSCHNEIDEN.
+
+   Geschnitten wird mit clip-path und nicht durch Neuberechnen der
+   Bilddaten: Das Bild bleibt unangetastet, der Schnitt ist jederzeit
+   rücknehmbar, und die Datei wird nicht größer. Wer zurückwill, nimmt
+   „Zuschnitt aufheben" — in WPS heißt das „Bild zurücksetzen".
+
+   Angegeben wird in Prozent je Kante, weil das Bild danach noch
+   vergrößert werden kann und Prozent das überleben. */
+function schnittLesen(bild) {
+  const roh = bild.dataset.schnitt;
+  if (!roh) return { oben: 0, rechts: 0, unten: 0, links: 0 };
+  try { return JSON.parse(roh); }
+  catch (e) { return { oben: 0, rechts: 0, unten: 0, links: 0 }; }
+}
+
+function schnittAnwenden(bild, s) {
+  const alle = [s.oben, s.rechts, s.unten, s.links];
+  bild.dataset.schnitt = JSON.stringify(s);
+  if (alle.every((w) => !w)) {
+    bild.style.clipPath = '';
+    delete bild.dataset.schnitt;
+    return;
+  }
+  bild.style.clipPath = 'inset(' + alle.map((w) => w + '%').join(' ') + ')';
+}
+
+B.bildZuschneiden = () => {
+  const bild = bildZiel || bildAnStelle();
+  if (!bild || bild.tagName !== 'IMG') { melde('Im Text steht kein Bild.'); return; }
+  const jetzt = schnittLesen(bild);
+
+  fenster('Zuschneiden', [
+    { art: 'satz', text: 'Wie viel von jeder Kante soll wegfallen? '
+        + 'In Prozent — 0 heißt: nichts.\nDas Bild selbst bleibt ganz; '
+        + 'der Schnitt lässt sich jederzeit wieder aufheben.' },
+    { schluessel: 'oben', name: 'Oben (%)', art: 'number', wert: String(jetzt.oben) },
+    { schluessel: 'unten', name: 'Unten (%)', art: 'number', wert: String(jetzt.unten) },
+    { schluessel: 'links', name: 'Links (%)', art: 'number', wert: String(jetzt.links) },
+    { schluessel: 'rechts', name: 'Rechts (%)', art: 'number', wert: String(jetzt.rechts) },
+  ], (werte) => {
+    const zahl = (x) => Math.max(0, Math.min(45, parseFloat(x) || 0));
+    schnittAnwenden(bild, { oben: zahl(werte.oben), rechts: zahl(werte.rechts),
+                            unten: zahl(werte.unten), links: zahl(werte.links) });
+    geaendertMelden();
+    melde(bild.dataset.schnitt ? 'Bild zugeschnitten.' : 'Zuschnitt aufgehoben.');
+    bildGriffeNachmessen();
+  }, 'Zuschneiden');
+};
+
+B.bildSchnittWeg = () => {
+  const bild = bildZiel || bildAnStelle();
+  if (!bild || bild.tagName !== 'IMG') { melde('Im Text steht kein Bild.'); return; }
+  schnittAnwenden(bild, { oben: 0, rechts: 0, unten: 0, links: 0 });
+  geaendertMelden();
+  melde('Zuschnitt aufgehoben — das Bild ist wieder ganz.');
+  bildGriffeNachmessen();
+};
+
 function bildGriffeBauen() {
   const machen = (art, name, zeiger, zeichen) => {
     const k = document.createElement('button');
@@ -9162,6 +9280,14 @@ function bildGriffeBauen() {
   }
   machen('drehen', 'Bild drehen — ziehen', 'grab', '↻')
     .addEventListener('pointerdown', bildDrehenZiehen);
+  for (const { art, bild: symbolName, name, tun } of BILDSCHNELL) {
+    const k = machen('schnell-' + art, name, 'pointer', '');
+    k.classList.add('bildgriff--schnell');
+    if (SYMBOLE[symbolName]) k.appendChild(symbol(symbolName));
+    k.addEventListener('mousedown', (e) => e.preventDefault());
+    k.addEventListener('click', tun);
+  }
+
   machen('weg', 'Bild löschen', 'pointer', '×').addEventListener('click', () => {
     if (!bildZiel) return;
     bildZiel.remove();
@@ -9200,7 +9326,12 @@ function bildGriffeStellen(bild) {
     setz(art, r.left + r.width * x, r.top + r.height * y);
   }
   setz('drehen', r.left + r.width / 2, r.top - 22);
-  setz('weg', r.right + 14, r.top - 14);
+  setz('weg', r.right + 20, r.top - 14);
+  /* Die drei Schnellknöpfe untereinander an der rechten Seite, unter dem
+     Kreuz — so steht es in WPS, und so verdecken sie das Bild nicht. */
+  BILDSCHNELL.forEach(({ art }, i) => {
+    setz('schnell-' + art, r.right + 20, r.top + 18 + i * 26);
+  });
 
   const versteckt = r.bottom < flaeche.top || r.top > flaeche.bottom;
   for (const k of Object.values(bildGriffe)) k.hidden = versteckt;
