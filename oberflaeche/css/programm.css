@@ -46,6 +46,34 @@
   --schatten:0 2px 8px rgba(0,0,0,.18);
 }
 
+/* ---------- Weicher Kontrast ----------
+
+   Ein Schalter unter Ansicht ▸ Helligkeit und in den Optionen. Er ändert
+   kein Thema, er dämpft das eingestellte.
+
+   DUNKEL: aus fast Schwarz (#1F2225) wird ein Grau (#343A40). Der Sprung
+   vom cremefarbenen Blatt zur Leiste daneben wird kleiner — und genau
+   dieser Sprung ist das Anstrengende, nicht die Dunkelheit an sich. Das
+   Auge stellt sich sonst bei jedem Blick zwischen Blatt und Leiste neu
+   ein.
+
+   HELL: aus dem kühlen Grau (#C9CCD0) wird ein warmes (#D7D2C8). Das
+   Blatt ist in aller Regel creme oder sandfarben; ein kühlgrauer Rahmen
+   darum wirkt daneben schmutzig.
+
+   Nur die Farben werden ersetzt, keine Maße — deshalb genügen hier zwei
+   Blöcke und nichts weiter in der ganzen Datei. */
+:root[data-weich]{
+  --grund:#D7D2C8;  --leiste:#EFEBE3;  --tafel:#F5F2EC;  --karte:#FFFFFF;
+  --rand:#C9C3B8;   --schrift:#232019;  --schrift-2:#5A5449; --schrift-3:#86806F;
+  --marke:#9A9383;
+}
+:root[data-weich][data-theme="dark"]{
+  --grund:#343A40;  --leiste:#3D444B;  --tafel:#394046;  --karte:#434B53;
+  --rand:#525B63;   --schrift:#DDE2E6;  --schrift-2:#AFB7BE; --schrift-3:#8C949B;
+  --marke:#9AA3AB;
+}
+
 *{box-sizing:border-box}
 html,body{height:100%}
 body{
@@ -479,44 +507,48 @@ select option{background:var(--karte);color:var(--schrift)}
    bei 200 % doppelt so groß wie jeder Knopf daneben. */
 .tabellengriff{
   position:fixed;z-index:60;
-  /* NICHT KLEINER ALS 24 PIXEL.
+  /* GROSS GENUG, ABER NICHT LAUT.
 
-     Sie waren siebzehn — so groß wie in WPS. Kay: „deine Symbole sind
-     auch recht klein, um die Tabelle am Icon zu erfassen." Er hat recht,
-     und WPS ist hier kein gutes Vorbild: Wer eine Tabelle verschieben
-     will, zielt auf etwas, das er nur aus dem Augenwinkel sieht, und
-     dieses Programm ist für Menschen gebaut, denen genau das schwerfällt.
+     Erst waren sie siebzehn Pixel — zu klein zum Treffen. Dann vierund-
+     zwanzig, aber in den Farben der Leiste: vier fast schwarze Kästen um
+     ein cremefarbenes Blatt. Kay: „die Symbole an der Tabelle, das
+     erschlägt einen." Stimmt — sie hatten das Gewicht von Knöpfen,
+     obwohl sie nur Griffe sind.
 
-     Wer größere Symbole eingestellt hat, bekommt sie auch hier größer —
-     unter 24 fällt es aber nie. */
+     Jetzt in den Farben des Blattes: heller Grund, dünner Rand, graues
+     Zeichen. Sie liegen ruhig daneben, bis man sie braucht — und erst
+     beim Überfahren werden sie deutlich. Die Größe bleibt. */
   width:max(24px, var(--symbolgroesse));
   height:max(24px, var(--symbolgroesse));
   padding:0;
   display:flex;align-items:center;justify-content:center;
-  background:var(--leiste);color:var(--schrift);
-  border:1px solid var(--rand);border-radius:4px;
-  font-size:15px;line-height:1;
+  background:var(--blatt);
+  color:var(--schrift-3);
+  border:1px solid var(--marke);border-radius:4px;
+  font-size:14px;line-height:1;
   cursor:pointer;
-  box-shadow:var(--schatten);
+  opacity:.72;
+  box-shadow:0 1px 2px rgba(0,0,0,.14);
+  transition:opacity .12s, background .12s, color .12s, border-color .12s;
+}
+/* Beim Überfahren treten sie hervor — dann will jemand etwas von ihnen. */
+.tabellengriff:hover{
+  opacity:1;
+  background:var(--blau);color:#fff;border-color:var(--blau-hell);
 }
 .tabellengriff--schieben{cursor:move}
-/* Ein größeres Ziel, ohne größer auszusehen.
-
-   Siebzehn Pixel sind schnell hingeschrieben und schwer getroffen — für
-   die Zielgruppe dieses Programms erst recht. Dieses unsichtbare Feld
-   legt sieben Pixel ringsum dazu: aus 17 × 17 wird ein Ziel von 31 × 31,
-   während das Bild klein bleibt und die Tabelle nicht verdeckt. */
+/* Ein größeres Ziel, ohne größer auszusehen: sieben Pixel unsichtbarer
+   Rand ringsum — aus 24 wird ein Ziel von 38, während das Bild klein
+   bleibt und die Tabelle nicht verdeckt. */
 .tabellengriff::before{
   content:'';position:absolute;inset:-7px;
 }
 /* Die beiden + sind rund: Sie fügen etwas hinzu und sollen sich von den
    eckigen Griffen unterscheiden, die etwas mit der ganzen Tabelle tun. */
 .tabellengriff--zeile,.tabellengriff--spalte{border-radius:50%;font-weight:600}
-.tabellengriff:hover{background:var(--blau);color:#fff;border-color:var(--blau-hell)}
 /* Löschen ist rot — aber erst beim Überfahren. Ein dauerhaft rotes Kreuz
    an jeder Tabelle sähe aus wie eine Fehlermeldung.
-   NACH der allgemeinen Regel, nicht davor: Bei gleicher Stärke gewinnt
-   die spätere, und davor stehend hätte Blau das Rot überschrieben. */
+   NACH der allgemeinen Regel: Bei gleicher Stärke gewinnt die spätere. */
 .tabellengriff--weg:hover{background:#B3372F;border-color:#C9493F;color:#fff}
 .tabellengriff:focus-visible{outline:2px solid var(--blau-hell);outline-offset:1px}
 

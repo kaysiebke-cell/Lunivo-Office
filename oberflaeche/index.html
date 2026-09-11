@@ -25,6 +25,12 @@
     var dunkel = wahl === 'dark'
       || (wahl === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
     document.documentElement.dataset.theme = dunkel ? 'dark' : 'light';
+    // Der weiche Kontrast muss hier mit gesetzt werden, aus demselben
+    // Grund: Sonst blitzt beim Start eine Sekunde lang das harte Schwarz
+    // auf, das man gerade abgestellt hat.
+    if (JSON.parse(localStorage.getItem('sp.weicherKontrast') || 'false')) {
+      document.documentElement.dataset.weich = 'ja';
+    }
   } catch (e) { document.documentElement.dataset.theme = 'dark'; }
 </script>
 </head>
@@ -1428,6 +1434,16 @@
           <p class="schriftprobe" id="einst-probe">So groß schreibst du.</p>
           <p class="hinweis" id="einst-zoom-stand"></p>
         </div>
+
+        <!-- Der weiche Kontrast. Er steht direkt unter „Hell/Dunkel", weil
+             er dasselbe betrifft — und weil man ihn dort sucht, nachdem
+             man mit Hell und Dunkel nicht zufrieden war. -->
+        <label class="feld feld--schalter">
+          <span class="feld__name">Weicher Kontrast
+            <em class="feld__satz">Dämpft den Rand um das Blatt: Dunkel wird grau statt fast schwarz, Hell wird warm statt kühlgrau. Der Sprung zwischen Blatt und Leiste wird kleiner — und der ist das Anstrengende, nicht die Dunkelheit.</em>
+          </span>
+          <input type="checkbox" data-schalter="weicherKontrast">
+        </label>
 
         <!-- Das Blatt und die Bedienung sind zweierlei. A+ macht den Text
              größer; wer die Knöpfe nicht lesen kann, ist damit nicht

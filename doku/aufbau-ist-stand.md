@@ -360,6 +360,7 @@ DAS OPTIONEN-FENSTER — Datei ▸ Optionen (F9)
 │   │   │   └── Strg+Klick folgt einem Verweis
 │   │   └── Darstellung
 │   │       ├── Schrift und Helligkeit
+│   │       ├── Weicher Kontrast
 │   │       ├── Größe der Symbole
 │   │       ├── Schrift der Bedienung
 │   │       └── Benutzeroberfläche

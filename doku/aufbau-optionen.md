@@ -121,6 +121,7 @@ Links ein Baum mit drei Zweigen, rechts der Bereich.
 │   └── Strg+Klick folgt einem Verweis
 └── Darstellung
     ├── Schrift und Helligkeit
+    ├── Weicher Kontrast
     ├── Größe der Symbole
     ├── Schrift der Bedienung
     └── Benutzeroberfläche
@@ -454,6 +455,7 @@ Alphabetisch, mit Seite und Gruppe.
 | Was zusätzlich geholt wurde | Erweitert ▸ Erweitert |
 | Webseitencodierung | Allgemein und Speichern ▸ Webseite |
 | Weggewinkte Funde wieder anzeigen | Rechtschreibprüfung ▸ Rechtschreibprüfung |
+| Weicher Kontrast | Ansicht ▸ Darstellung |
 | Wer schreibt | Benutzerinformationen ▸ Benutzerdaten |
 | Wie lange (Tage) | Sicherungseinstellungen ▸ Zwischenstände aufheben |
 | Wie leicht soll es zu lesen sein? | Lesehilfe ▸ Lesestufe |

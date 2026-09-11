@@ -2553,6 +2553,23 @@ B.linealHochZeigen = () => { linealHoch = !linealHoch; ansichtExtras(); };
    ------------------------------------------------------------ */
 const SCHALTER = {
 
+  /* ---- Ansicht ▸ Darstellung ---- */
+
+  /* Der weiche Kontrast. Er hängt nicht an einer Klasse am body, sondern
+     an einem Attribut an der Wurzel — die Farben sind dort definiert, und
+     dort muss auch der Schalter greifen. Deshalb ruft er den Befehl, statt
+     selbst etwas umzustellen: Sonst stünde dieselbe Logik an zwei Stellen,
+     und die eine wäre irgendwann anders als die andere. */
+  weicherKontrast: {
+    standard: false,
+    wirkt: (an) => {
+      /* An der Wurzel und nicht am body: Die Farben sind dort definiert,
+         und dort muss der Schalter greifen. */
+      if (an) document.documentElement.dataset.weich = 'ja';
+      else delete document.documentElement.dataset.weich;
+    },
+  },
+
   /* ---- Ansicht ▸ Anzeigen ---- */
 
   /* Bei WPS „Statusleiste". Sie trägt Seitenzahl, Wortzahl und den Zoom;
@@ -10046,12 +10063,50 @@ B.markenZeigen = () => {
 };
 
 const THEMEN = ['auto', 'light', 'dark'];
+
+/* ------------------------------------------------------------
+   WEICHER KONTRAST
+
+   Kay: „bitte nicht mit diesem Schwarz, das erschlägt einen" — und
+   gleich darauf: „es sei denn, du machst das optional."
+
+   Er hat mit beidem recht. Der dunkle Grund ist #1F2225, also fast
+   schwarz, und daneben steht ein cremefarbenes Blatt. Nicht die Dunkelheit
+   erschlägt, sondern der SPRUNG dazwischen: Das Auge stellt sich bei
+   jedem Blick vom Blatt zur Leiste neu ein. Für ein Programm, dessen
+   Anwender ohnehin länger auf einer Zeile brauchen, ist das teuer.
+
+   Aber es ist Geschmack, und Geschmack gehört nicht in eine Vorgabe.
+   Deshalb ein Schalter statt einer Entscheidung — und deshalb auch kein
+   viertes und fünftes Thema: Wer „hell" und „dunkel" kennt, soll nicht
+   plötzlich zwischen fünf Wörtern wählen müssen. Der Schalter dämpft das,
+   was gerade eingestellt ist.
+
+   Dunkel wird dabei nicht heller im Sinne von blasser — es wird ein
+   Grauton statt eines Schwarztons. Hell wird warm statt kühlgrau, damit
+   es zum Papierton des Blattes passt.
+   ------------------------------------------------------------ */
+/* Der Schalter selbst liegt in SCHALTER („weicherKontrast") und wird von
+   dort gespeichert und angewandt — hier steht nur, was das Thema angeht.
+   Zwei Stellen, die dasselbe Attribut setzen, wären eine zu viel. */
+function themaAnwenden() {
+  const dunkel = thema === 'dark'
+    || (thema === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.dataset.theme = dunkel ? 'dark' : 'light';
+}
+
+B.weicherKontrast = () => {
+  schalterUmlegen('weicherKontrast');
+  menueBauen();
+  melde(schalterAn('weicherKontrast')
+    ? 'Weicher Kontrast an — der Rand um das Blatt ist jetzt gedämpft.'
+    : 'Weicher Kontrast aus.');
+};
+
 const setzeThema = (wahl) => () => {
   thema = wahl;
   Speicher.schreib('thema', wahl);
-  const dunkel = wahl === 'dark'
-    || (wahl === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
-  document.documentElement.dataset.theme = dunkel ? 'dark' : 'light';
+  themaAnwenden();
   menueBauen();
 };
 
@@ -10461,6 +10516,10 @@ const MENUES = [
       { name: 'Wie das System', tun: setzeThema('auto'), haken: () => thema === 'auto' },
       { name: 'Immer hell', tun: setzeThema('light'), haken: () => thema === 'light' },
       { name: 'Immer dunkel', tun: setzeThema('dark'), haken: () => thema === 'dark' },
+      /* Kein viertes Thema, sondern ein Schalter daneben: Wer „hell" und
+         „dunkel" kennt, soll nicht plötzlich zwischen fünf Wörtern wählen. */
+      { name: 'Weicher Kontrast', tun: () => B.weicherKontrast(),
+        haken: () => schalterAn('weicherKontrast') },
     ] },
     { name: 'Oberfläche', unter: [
       { name: 'Register anpassen', tun: B.registerAnpassen },
