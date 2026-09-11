@@ -1113,6 +1113,11 @@ const TABELLENGRIFFE = [
   { art: 'spalte',   zeichen: '+', name: 'Spalte anhängen' },
 ];
 
+/* Die Tabelle, ueber der die Maus gerade steht. Sie wird verfolgt, damit
+   die Griffe schon beim Hinfahren dastehen und nicht erst nach einem
+   Klick — so haelt es WPS, und so sucht man sie. */
+let tabelleUnterMaus = null;
+
 let griffe = {};            /* art → Knopf */
 let griffZiel = null;       /* die Tabelle, an der sie hängen */
 let legeMarke = null;       /* die Linie, die zeigt, wo sie landet */
@@ -1219,8 +1224,25 @@ function griffAuffrischen() {
      im Zug, an dem die Hand gerade hängt. Der Zug endete dann ins Leere,
      und es sah aus, als ließe sich die Tabelle nicht fassen. */
   if (zieht) return;
+
+  /* WELCHE TABELLE GEMEINT IST — und das war der eigentliche Fehler.
+
+     Bisher hing das allein am Zeiger IM Text: Erst hineinklicken, dann
+     erscheinen die Griffe. In WPS ist es umgekehrt — man faehrt mit der
+     Maus ueber die Tabelle, und der Griff links oben ist da. Wer also
+     nach WPS-Art hinfaehrt und zugreifen will, greift bei mir ins Leere:
+     Es steht dort nichts, weil noch nicht hineingeklickt wurde.
+
+     Genau das meinte Kay mit „ich kann links oben die Tabelle nicht
+     erfassen" — und alles, was ich vorher repariert habe (Pointer-
+     Ereignisse, Klemmen, Rollen), war richtig und half ihm trotzdem
+     nicht, weil die Griffe zu diesem Zeitpunkt gar nicht dastanden.
+
+     Jetzt zaehlt beides: die Tabelle unter dem Zeiger der Maus ODER die,
+     in der die Schreibmarke steht. Die Maus hat Vorrang, denn wer
+     hinfaehrt, meint die dort. */
   const zelle = zelleJetzt();
-  const tabelle = zelle && zelle.closest('table');
+  const tabelle = tabelleUnterMaus || (zelle && zelle.closest('table'));
   if (!tabelle || !feld.contains(tabelle)) { griffWeg(); return; }
 
   if (!griffe.schieben) {
@@ -1444,6 +1466,26 @@ function griffNachmessen() {
   griffAuffrischen();
   requestAnimationFrame(griffAuffrischen);
 }
+
+/* Beim Fahren ueber das Blatt: Steht der Zeiger ueber einer Tabelle,
+   gehoeren ihr die Griffe. Verlaesst er das Blatt, bleiben sie an der
+   Tabelle, in der die Schreibmarke steht — sonst blitzten sie bei jeder
+   Mausbewegung auf und wieder weg. */
+feld.addEventListener('pointerover', (e) => {
+  if (zieht) return;
+  const ziel = e.target && e.target.closest ? e.target.closest('table') : null;
+  const neuTab = ziel && feld.contains(ziel) ? ziel : null;
+  if (neuTab === tabelleUnterMaus) return;
+  tabelleUnterMaus = neuTab;
+  griffAuffrischen();
+});
+
+feld.addEventListener('pointerleave', () => {
+  if (zieht) return;
+  if (!tabelleUnterMaus) return;
+  tabelleUnterMaus = null;
+  griffAuffrischen();
+});
 
 document.addEventListener('selectionchange', griffNachmessen);
 window.addEventListener('resize', griffNachmessen);
