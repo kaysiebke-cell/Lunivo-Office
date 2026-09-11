@@ -934,6 +934,151 @@ B.bild = () => {
   waehler.click();
 };
 
+/* ============================================================
+   DER RASTER-WÄHLER FÜR TABELLEN
+
+   Vorlage ist WPS: Ein Klick auf „Tabelle ▾" öffnet ein Raster. Man fährt
+   darüber, oben steht mitlaufend „2 * 3 Tabelle", man klickt, und die
+   Tabelle steht.
+
+   Warum das besser ist als zwei Zahlenfelder — und es GAB hier zwei
+   Zahlenfelder: Man muss sich nichts vorstellen. Eine Tabelle ist etwas
+   Räumliches; „3 Zeilen, 4 Spalten" ist die Übersetzung davon in Zahlen,
+   und wer mit Zahlen schlechter umgeht als mit Formen, übersetzt zweimal.
+   Für ein Programm, das für Legastheniker gebaut ist, ist das Raster
+   nicht Zierde, sondern der eigentliche Weg.
+
+   Die Zahlenfelder bleiben darunter stehen („Tabelle einfügen…"): Für
+   zwölf Spalten ist Zielen mit der Maus mühsam, und wer mit der Tastatur
+   arbeitet, kommt über das Raster gar nicht hin.
+   ============================================================ */
+
+const RASTER_ZEILEN = 10;
+const RASTER_SPALTEN = 10;
+
+let tabellenKlappe = null;
+
+function tabellenKlappeWeg() {
+  if (tabellenKlappe) { tabellenKlappe.remove(); tabellenKlappe = null; }
+}
+
+function tabelleBauen(zeilen, spalten) {
+  auswahlZurueck();
+  const zeile = '<tr>' + '<td><br></td>'.repeat(spalten) + '</tr>';
+  Dokument.einfuegen('<table>' + zeile.repeat(zeilen) + '</table><p><br></p>');
+  melde('Tabelle mit ' + zeilen + ' Zeilen und ' + spalten + ' Spalten eingefügt.');
+}
+
+function tabellenKlappeZeigen(knopf) {
+  if (tabellenKlappe) { tabellenKlappeWeg(); return; }
+  auswahlMerken();
+
+  const tafel = document.createElement('div');
+  tafel.className = 'katalogklappe tabellenklappe';
+
+  /* Die Überschrift läuft mit: Sie sagt, was der Klick jetzt ergäbe.
+     Ohne sie müsste man die Kästchen zählen. */
+  const kopf = document.createElement('p');
+  kopf.className = 'katalogklappe__kopf';
+  kopf.textContent = 'Tabelle einfügen';
+  tafel.appendChild(kopf);
+
+  const gitter = document.createElement('div');
+  gitter.className = 'tabellenklappe__gitter';
+  gitter.style.setProperty('--spalten', String(RASTER_SPALTEN));
+
+  const kaestchen = [];
+  const zeigen = (zeilen, spalten) => {
+    kopf.textContent = (zeilen && spalten)
+      ? zeilen + ' × ' + spalten + ' Tabelle'
+      : 'Tabelle einfügen';
+    for (const k of kaestchen) {
+      k.classList.toggle('tabellenklappe__feld--an',
+        k.dataset.zeile <= zeilen && k.dataset.spalte <= spalten);
+    }
+  };
+
+  for (let z = 1; z <= RASTER_ZEILEN; z++) {
+    for (let sp = 1; sp <= RASTER_SPALTEN; sp++) {
+      const k = document.createElement('button');
+      k.type = 'button';
+      k.className = 'tabellenklappe__feld';
+      k.dataset.zeile = String(z);
+      k.dataset.spalte = String(sp);
+      k.title = z + ' × ' + sp;
+      k.setAttribute('aria-label', z + ' Zeilen, ' + sp + ' Spalten');
+      k.addEventListener('mouseenter', () => zeigen(z, sp));
+      /* Auch für die Tastatur: Wer sich mit Tabulator durch das Raster
+         bewegt, soll dieselbe Rückmeldung bekommen wie mit der Maus. */
+      k.addEventListener('focus', () => zeigen(z, sp));
+      k.addEventListener('mousedown', (e) => e.preventDefault());
+      k.addEventListener('click', () => {
+        tabellenKlappeWeg();
+        tabelleBauen(z, sp);
+      });
+      kaestchen.push(k);
+      gitter.appendChild(k);
+    }
+  }
+  /* Fährt die Maus aus dem Raster heraus, ohne zu klicken, soll die
+     Vorschau nicht stehenbleiben — sonst behauptet die Überschrift eine
+     Größe, die niemand mehr meint. */
+  gitter.addEventListener('mouseleave', () => zeigen(0, 0));
+  tafel.appendChild(gitter);
+
+  const strich = document.createElement('div');
+  strich.className = 'katalogklappe__strich';
+  tafel.appendChild(strich);
+
+  const punkt = (name, tun, aus) => {
+    const k = document.createElement('button');
+    k.type = 'button';
+    k.className = 'katalogklappe__punkt' + (aus ? ' katalogklappe__punkt--aus' : '');
+    k.textContent = name;
+    if (aus) { k.disabled = true; tafel.appendChild(k); return; }
+    k.addEventListener('mousedown', (e) => e.preventDefault());
+    k.addEventListener('click', () => { tabellenKlappeWeg(); tun(); });
+    tafel.appendChild(k);
+  };
+
+  punkt('Tabelle einfügen…', () => B.tabelle());
+  punkt('Schnelltabelle…', () => B.schnelltabelle());
+  punkt('Eigenschaften der Tabelle…', () => B.tabelleEigenschaften(),
+        !zelleOderZuletzt());
+
+  document.body.appendChild(tafel);
+  tabellenKlappe = tafel;
+
+  /* Unter den Knopf, und nach innen gerückt, wenn rechts kein Platz mehr
+     ist. Erst einhängen, dann messen — vorher hat die Tafel keine Maße. */
+  const platz = knopf.getBoundingClientRect();
+  const masse = tafel.getBoundingClientRect();
+  const rand = 6;
+  let links = platz.left;
+  if (links + masse.width > window.innerWidth - rand) {
+    links = Math.max(rand, window.innerWidth - rand - masse.width);
+  }
+  tafel.style.left = Math.max(rand, links) + 'px';
+  let oben = platz.bottom + 2;
+  if (oben + masse.height > window.innerHeight - rand) {
+    oben = Math.max(rand, platz.top - masse.height - 2);
+  }
+  tafel.style.top = oben + 'px';
+
+  setTimeout(() => {
+    document.addEventListener('mousedown', function zu(ev) {
+      if (tafel.contains(ev.target) || knopf.contains(ev.target)) return;
+      tabellenKlappeWeg();
+      document.removeEventListener('mousedown', zu);
+    });
+  }, 0);
+}
+
+/* Der Weg von außen: Band und Leiste rufen ihn, und beide reichen ihren
+   eigenen Knopf mit — die Klappe soll unter dem stehen, den man gedrückt
+   hat, nicht unter irgendeinem. */
+B.tabelleRaster = (knopf) => tabellenKlappeZeigen(knopf || wzTabelle);
+
 B.tabelle = () => {
   auswahlMerken();
   /* Zwei Fragen nacheinander waren zwei Fenster. Eines mit zwei Zeilen ist
@@ -3932,7 +4077,11 @@ function registerBauen() {
         /* Nach dem Klick nachsehen, was jetzt an ist. Ein Schalter, der
            seinen Zustand erst beim nächsten Neubau des Bandes zeigt,
            leuchtet noch, wenn er längst aus ist. */
-        k.addEventListener('click', () => { tun(); registerSchalterAuffrischen(); });
+        /* Der Knopf wird mitgereicht: Wer eine Klappe darunter aufgehen
+           lässt — der Rasterwähler der Tabellen —, muss wissen, wo er
+           steht. Alle anderen Befehle nehmen kein Argument und merken
+           nichts davon. */
+        k.addEventListener('click', () => { tun(k); registerSchalterAuffrischen(); });
       }
       return k;
     };
@@ -10569,6 +10718,7 @@ function fuelleAuswahl(w, eintraege) {
 
 let wzVorlage = null;
 let wzPinsel = null;
+let wzTabelle = null;
 let wzVerfolgt = null;
 let wzGroesse = null;
 
@@ -10676,7 +10826,9 @@ function werkzeugeBauen() {
     knopf('gruendlich', 'Gründlich prüfen', B.gruendlichPruefen);
     trenner();
     knopf('umbruch', 'Seitenumbruch (Strg+Enter)', B.seitenumbruch);
-    knopf('tabelle', 'Tabelle einfügen', B.tabelle);
+    /* Der Knopf öffnet das Raster, nicht mehr sofort die zwei
+       Zahlenfelder — die stehen im Raster als erster Punkt darunter. */
+    wzTabelle = knopf('tabelle', 'Tabelle einfügen', () => B.tabelleRaster(wzTabelle));
     knopf('bild', 'Bild', B.bild);
     knopf('stift', 'Zeichnen', B.zeichnen);
     knopf('saeule', 'Diagramm', B.diagramm);

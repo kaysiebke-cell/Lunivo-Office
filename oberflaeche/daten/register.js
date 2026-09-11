@@ -123,7 +123,7 @@ function REGISTER_BAUEN(B, w) {
     ['Seiten', [['deckblatt', 'Deckblatt', () => B.deckblatt(), 'gross'],
                     ['leereseite', 'Leere Seite', () => B.leereSeite()],
                     ['umbruch', 'Seitenumbruch', () => B.seitenumbruch()]]],
-    ['Tabellen', [['tabelle', 'Tabelle einfügen', () => B.tabelle(), 'gross'],
+    ['Tabellen', [['tabelle', 'Tabelle einfügen', (knopf) => B.tabelleRaster(knopf), 'gross'],
                     ['schnelltab', 'Schnelltabelle', () => B.schnelltabelle()],
                     ['tabellenblatt', 'Tabellenblatt', () => B.tabellenblatt()],
                     ['toenung', 'Eigenschaften', () => B.tabelleEigenschaften()]]],

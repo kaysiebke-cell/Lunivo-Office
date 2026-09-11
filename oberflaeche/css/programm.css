@@ -472,6 +472,33 @@ select option{background:var(--karte);color:var(--schrift)}
   .sz-schieber,.sz-trenner{display:none}
 }
 
+/* ---------- Der Rasterwähler für Tabellen ----------
+
+   Vorlage ist WPS: ein Raster zum Überfahren, darüber mitlaufend die
+   Größe, darunter die Punkte für den genauen Weg. Er benutzt den Kasten
+   der Katalogklappe weiter — dieselbe Form für dieselbe Sache. */
+.tabellenklappe__gitter{
+  display:grid;
+  grid-template-columns:repeat(var(--spalten,10), 1fr);
+  gap:2px;
+  padding:2px 0 6px;
+}
+.tabellenklappe__feld{
+  width:17px;height:17px;padding:0;
+  background:var(--blatt);
+  border:1px solid var(--rand);border-radius:2px;
+  cursor:pointer;
+}
+/* Die Kästchen, die der Klick ergäbe. Gefüllt und nicht nur umrandet:
+   Man soll die Form der künftigen Tabelle sehen, nicht ihre Ecken. */
+.tabellenklappe__feld--an{
+  background:var(--blau);
+  border-color:var(--blau-hell);
+}
+.tabellenklappe__feld:focus-visible{
+  outline:2px solid var(--blau-hell);outline-offset:1px;
+}
+
 /* ---------- Die Leiste zum Gewählten ----------
 
    Sie taucht auf, wenn der Zeiger in einer Tabelle, einer Form oder einem
