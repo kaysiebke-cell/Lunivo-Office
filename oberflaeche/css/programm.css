@@ -479,15 +479,36 @@ select option{background:var(--karte);color:var(--schrift)}
    bei 200 % doppelt so groß wie jeder Knopf daneben. */
 .tabellengriff{
   position:fixed;z-index:60;
-  width:17px;height:17px;padding:0;
+  /* NICHT KLEINER ALS 24 PIXEL.
+
+     Sie waren siebzehn — so groß wie in WPS. Kay: „deine Symbole sind
+     auch recht klein, um die Tabelle am Icon zu erfassen." Er hat recht,
+     und WPS ist hier kein gutes Vorbild: Wer eine Tabelle verschieben
+     will, zielt auf etwas, das er nur aus dem Augenwinkel sieht, und
+     dieses Programm ist für Menschen gebaut, denen genau das schwerfällt.
+
+     Wer größere Symbole eingestellt hat, bekommt sie auch hier größer —
+     unter 24 fällt es aber nie. */
+  width:max(24px, var(--symbolgroesse));
+  height:max(24px, var(--symbolgroesse));
+  padding:0;
   display:flex;align-items:center;justify-content:center;
-  background:var(--leiste);color:var(--schrift-2);
-  border:1px solid var(--rand);border-radius:3px;
-  font-size:12px;line-height:1;
+  background:var(--leiste);color:var(--schrift);
+  border:1px solid var(--rand);border-radius:4px;
+  font-size:15px;line-height:1;
   cursor:pointer;
   box-shadow:var(--schatten);
 }
 .tabellengriff--schieben{cursor:move}
+/* Ein größeres Ziel, ohne größer auszusehen.
+
+   Siebzehn Pixel sind schnell hingeschrieben und schwer getroffen — für
+   die Zielgruppe dieses Programms erst recht. Dieses unsichtbare Feld
+   legt sieben Pixel ringsum dazu: aus 17 × 17 wird ein Ziel von 31 × 31,
+   während das Bild klein bleibt und die Tabelle nicht verdeckt. */
+.tabellengriff::before{
+  content:'';position:absolute;inset:-7px;
+}
 /* Die beiden + sind rund: Sie fügen etwas hinzu und sollen sich von den
    eckigen Griffen unterscheiden, die etwas mit der ganzen Tabelle tun. */
 .tabellengriff--zeile,.tabellengriff--spalte{border-radius:50%;font-weight:600}

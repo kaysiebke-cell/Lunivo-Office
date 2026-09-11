@@ -1182,9 +1182,14 @@ function griffTun(art, tabelle) {
    Gesucht wird unter den direkten Kindern des Schreibfeldes: Absätze,
    Überschriften, andere Tabellen. Tiefer zu greifen hieße, die Tabelle in
    eine Zelle einer anderen Tabelle zu legen — das will niemand, der zieht. */
-function blockUnter(y) {
+function blockUnter(y, ausser) {
   let treffer = null;
   for (const block of feld.children) {
+    /* Die Tabelle, die man zieht, ist kein Ziel — sie kann nicht vor sich
+       selbst landen. Vorher zeigte die Linie beim Überfahren der eigenen
+       Tabelle deren Oberkante, und beim Loslassen geschah nichts: eine
+       Rückmeldung, die etwas verspricht und nichts hält. */
+    if (block === ausser) continue;
     const r = block.getBoundingClientRect();
     if (y >= r.top) treffer = { block, dahinter: y > r.top + r.height / 2 };
     else if (!treffer) return { block, dahinter: false };
@@ -1244,64 +1249,153 @@ function griffAuffrischen() {
      die Griffe hinaus: Nach der dritten Spalte lagen × und + über der
      Schreibhilfe rechts daneben. Sie sind am Fenster ausgerichtet und
      wissen von sich aus nichts davon, wo das Blatt aufhört. */
-  const GRIFF = 17;
-  const halten = (x, links, rechts) => Math.max(links, Math.min(x, rechts - GRIFF));
+  /* Die Größe wird gemessen, nicht angenommen: Sie hängt an der
+     Symbolgröße, die der Anwender einstellt — eine feste Zahl hier wäre
+     beim nächsten Umstellen falsch. */
+  const GRIFF = griffe.schieben.offsetWidth || 24;
+  const luft = 3;
+  const halten = (x) => Math.max(flaeche.left + 2,
+                                 Math.min(x, flaeche.right - 2 - GRIFF));
   const stelle = (art, x, y) => {
-    griffe[art].style.left = Math.round(halten(x, flaeche.left + 2, flaeche.right - 2)) + 'px';
+    griffe[art].style.left = Math.round(halten(x)) + 'px';
     griffe[art].style.top = Math.round(y) + 'px';
   };
-  stelle('schieben', r.left - 20, r.top - 20);
-  stelle('weg',      r.right + 3,  r.top - 20);
-  stelle('zeile',    r.left + r.width / 2 - 8, r.bottom + 3);
-  stelle('spalte',   r.right + 3,  r.top + r.height / 2 - 8);
+  stelle('schieben', r.left - GRIFF - luft, r.top - GRIFF - luft);
+  stelle('weg',      r.right + luft,        r.top - GRIFF - luft);
+  stelle('zeile',    r.left + r.width / 2 - GRIFF / 2, r.bottom + luft);
+  stelle('spalte',   r.right + luft,        r.top + r.height / 2 - GRIFF / 2);
 
   /* Rutscht die Tabelle aus dem sichtbaren Bereich, gehen die Griffe mit. */
   const versteckt = r.bottom < flaeche.top || r.top > flaeche.bottom;
   for (const k of Object.values(griffe)) k.hidden = versteckt;
 }
 
+let zieht = false;
+
 function griffZiehenBeginnen(fall) {
   fall.preventDefault();
   if (!griffZiel) return;
   const tabelle = griffZiel;
+  const vorher = tabelle.previousElementSibling;
+  zieht = true;
   document.body.classList.add('zieht-tabelle');
 
-  const bewegen = (e) => legeMarkeZeigen(blockUnter(e.clientY));
+  let letztesY = fall.clientY;
+  let rollUhr = null;
 
-  const loslassen = (e) => {
+  /* AM RAND ROLLEN. Ohne das reicht ein Zug nur so weit, wie das Fenster
+     hoch ist — bei einem Brief ueber zwei Seiten kommt man vom Ende nicht
+     an den Anfang. Solange der Zeiger in den oberen oder unteren vierzig
+     Pixeln der Arbeitsflaeche steht, rollt sie von selbst weiter. */
+  const rollen = () => {
+    const f = $('arbeitsflaeche');
+    const r = f.getBoundingClientRect();
+    const oben = letztesY - r.top;
+    const unten = r.bottom - letztesY;
+    let schritt = 0;
+    if (oben < 40) schritt = -Math.max(4, (40 - oben) / 2);
+    else if (unten < 40) schritt = Math.max(4, (40 - unten) / 2);
+    if (schritt) {
+      f.scrollTop += schritt;
+      legeMarkeZeigen(blockUnter(letztesY, tabelle));
+    }
+  };
+
+  const bewegen = (e) => {
+    letztesY = e.clientY;
+    legeMarkeZeigen(blockUnter(letztesY, tabelle));
+  };
+
+  const aufhoeren = () => {
+    zieht = false;
+    clearInterval(rollUhr);
     document.removeEventListener('mousemove', bewegen);
     document.removeEventListener('mouseup', loslassen);
+    document.removeEventListener('keydown', tasteAb);
     document.body.classList.remove('zieht-tabelle');
     legeMarkeWeg();
+  };
 
-    const ziel = blockUnter(e.clientY);
-    if (!ziel || ziel.block === tabelle) { griffAuffrischen(); return; }
+  /* ESCAPE BRICHT AB. Wer beim Ziehen merkt, dass er die falsche Stelle
+     trifft, haette sonst nur den Weg ueber „Rueckgaengig" — und muesste
+     erst loslassen, um ihn zu finden. */
+  const tasteAb = (e) => {
+    if (e.key !== 'Escape') return;
+    e.preventDefault();
+    aufhoeren();
+    griffNachmessen();
+    melde('Verschieben abgebrochen.');
+  };
+
+  const loslassen = (e) => {
+    const y = e.clientY;
+    aufhoeren();
+
+    const ziel = blockUnter(y, tabelle);
+    if (!ziel) { griffNachmessen(); return; }
 
     if (ziel.dahinter) ziel.block.after(tabelle);
     else ziel.block.before(tabelle);
 
-    /* Hinter einer verschobenen Tabelle muss ein Absatz stehen, sonst
-       kommt man mit dem Zeiger nicht mehr dahinter — das ist die alte
-       Falle jedes Editors mit Tabellen am Textende. */
-    if (!tabelle.nextElementSibling) {
-      const p = document.createElement('p');
-      p.innerHTML = '<br>';
-      tabelle.after(p);
-    }
-    geaendertMelden();
-    melde('Tabelle verschoben.');
-    griffAuffrischen();
+    /* Stand sie schon da, ist nichts geschehen — dann auch nichts melden. */
+    if (tabelle.previousElementSibling === vorher) { griffNachmessen(); return; }
+
+    tabelleAbschliessen(tabelle);
+    melde('Tabelle verschoben. Rueckgaengig mit Strg+Z.');
+    griffNachmessen();
   };
 
+  rollUhr = setInterval(rollen, 60);
   document.addEventListener('mousemove', bewegen);
   document.addEventListener('mouseup', loslassen);
+  document.addEventListener('keydown', tasteAb);
 }
+
+/* Nach jedem Verschieben dasselbe: Hinter einer Tabelle muss ein Absatz
+   stehen, sonst kommt man mit dem Zeiger nicht mehr dahinter — die alte
+   Falle jedes Editors mit Tabellen am Textende. */
+function tabelleAbschliessen(tabelle) {
+  if (!tabelle.nextElementSibling) {
+    const p = document.createElement('p');
+    p.innerHTML = '<br>';
+    tabelle.after(p);
+  }
+  geaendertMelden();
+}
+
+/* DER WEG OHNE MAUS.
+
+   Einen Griff von siebzehn Pixeln zu treffen und zielgenau abzulegen ist
+   Feinmotorik. Fuer ein Programm, das Menschen die Arbeit leichter machen
+   soll, darf das nicht der einzige Weg sein. Diese beiden schieben die
+   Tabelle um einen Block — im Menue, in der Leiste, und damit auch ueber
+   die Tastatur erreichbar. */
+B.tabelleHoch = () => mitTabelle((zelle, zeile, tabelle) => {
+  const davor = tabelle.previousElementSibling;
+  if (!davor) { melde('Die Tabelle steht schon ganz oben.'); return; }
+  davor.before(tabelle);
+  tabelleAbschliessen(tabelle);
+  melde('Tabelle eins nach oben.');
+  griffNachmessen();
+});
+
+B.tabelleRunter = () => mitTabelle((zelle, zeile, tabelle) => {
+  const dahinter = tabelle.nextElementSibling;
+  if (!dahinter) { melde('Die Tabelle steht schon ganz unten.'); return; }
+  dahinter.after(tabelle);
+  tabelleAbschliessen(tabelle);
+  melde('Tabelle eins nach unten.');
+  griffNachmessen();
+});
 
 /* Zweimal messen, und das ist kein Luxus: Beim ersten Klick in eine
    Tabelle taucht gleichzeitig die Leiste „Tabellenwerkzeuge" auf und
    schiebt das Blatt nach unten. Wer nur einmal misst, setzt den Griff an
    die Stelle, an der die Tabelle eine Zwanzigstelsekunde vorher war. */
 function griffNachmessen() {
+  /* Nicht mitten im Ziehen: Die Griffe sitzen an der Tabelle, die gerade
+     unterwegs ist — sie wuerden unter der Hand wegspringen. */
+  if (zieht) return;
   griffAuffrischen();
   requestAnimationFrame(griffAuffrischen);
 }
@@ -3435,6 +3529,8 @@ const REGISTER_IM_ZUSAMMENHANG = [
        einer, der noch nicht fertig ist. */
     gruppen: [
       ['Tabelle', [['kopfz', 'Erste Zeile als Kopf', () => B.kopfzeileTabelle(), 'gross'],
+                   ['ebeneHoch', 'Tabelle nach oben', () => B.tabelleHoch()],
+                   ['ebeneTief', 'Tabelle nach unten', () => B.tabelleRunter()],
                    ['sortieren', 'Sortieren', () => B.sortieren()],
                    ['radierer', 'Ganze Tabelle löschen', () => B.tabelleWeg()]]],
       ['Zeilen und Spalten', [['tabelle', 'Zeile darüber', () => B.zeileOben(), 'gross'],
@@ -12041,6 +12137,8 @@ function rechtsMenueZeigen(e) {
       { name: 'Erste Zeile als Kopf', tun: () => B.kopfzeileTabelle(), aus: gesperrt },
       { name: 'Zellengröße…', tun: () => B.zellengroesse(), aus: gesperrt },
       { name: 'Ausrichtung…', tun: () => B.zellenAusrichtung(), aus: gesperrt },
+      { name: 'Tabelle nach oben', tun: () => B.tabelleHoch(), aus: gesperrt },
+      { name: 'Tabelle nach unten', tun: () => B.tabelleRunter(), aus: gesperrt },
       { name: 'Rahmen ein/aus', tun: () => B.tabelleRahmen(), aus: gesperrt },
       { name: 'Eigenschaften der Tabelle…', tun: () => B.tabelleEigenschaften(), aus: gesperrt },
       strich,
