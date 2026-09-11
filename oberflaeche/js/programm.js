@@ -1077,6 +1077,143 @@ function tabellenKlappeZeigen(knopf) {
 /* Der Weg von außen: Band und Leiste rufen ihn, und beide reichen ihren
    eigenen Knopf mit — die Klappe soll unter dem stehen, den man gedrückt
    hat, nicht unter irgendeinem. */
+/* ============================================================
+   DIE TABELLE VERSCHIEBEN
+
+   Kay: „ich kann die Tabelle nicht frei verschieben." Stimmt — sie stand
+   da, wo sie eingefügt wurde, und kam von dort nur weg, indem man sie
+   ausschnitt und woanders einfügte. In WPS hat jede Tabelle links oben
+   einen Griff, an dem man sie zieht.
+
+   WAS „FREI" HIER HEISST. Eine Tabelle mitten in den Text zu legen und
+   den Text drumherum fließen zu lassen, wäre das eine — es ist in Word
+   die Ausnahme, macht Ärger beim Drucken und ist selten das, was jemand
+   will. Gemeint ist fast immer: an eine andere Stelle im Text. Genau das
+   macht dieser Griff, und weil die Tabelle dabei im Textfluss bleibt,
+   bleibt auch alles heil — Seitenumbruch, Vorlesen, Export.
+
+   Für das andere gibt es die Ausrichtung: links, mittig, rechts. Eine
+   Tabelle, die nicht über die ganze Breite geht, steht sonst immer links.
+   ============================================================ */
+
+let tabellenGriff = null;
+let griffZiel = null;       /* die Tabelle, an der der Griff hängt */
+let legeMarke = null;       /* die Linie, die zeigt, wo sie landet */
+
+function griffWeg() {
+  if (tabellenGriff) { tabellenGriff.remove(); tabellenGriff = null; }
+  griffZiel = null;
+}
+
+function legeMarkeWeg() {
+  if (legeMarke) { legeMarke.remove(); legeMarke = null; }
+}
+
+/* Der Block, vor oder hinter dem die Tabelle landen soll.
+
+   Gesucht wird unter den direkten Kindern des Schreibfeldes: Absätze,
+   Überschriften, andere Tabellen. Tiefer zu greifen hieße, die Tabelle in
+   eine Zelle einer anderen Tabelle zu legen — das will niemand, der zieht. */
+function blockUnter(y) {
+  let treffer = null;
+  for (const block of feld.children) {
+    const r = block.getBoundingClientRect();
+    if (y >= r.top) treffer = { block, dahinter: y > r.top + r.height / 2 };
+    else if (!treffer) return { block, dahinter: false };
+  }
+  return treffer;
+}
+
+function legeMarkeZeigen(ziel) {
+  if (!ziel) { legeMarkeWeg(); return; }
+  if (!legeMarke) {
+    legeMarke = document.createElement('div');
+    legeMarke.className = 'legemarke';
+    document.body.appendChild(legeMarke);
+  }
+  const r = ziel.block.getBoundingClientRect();
+  legeMarke.style.left = r.left + 'px';
+  legeMarke.style.width = r.width + 'px';
+  legeMarke.style.top = (ziel.dahinter ? r.bottom : r.top) - 1 + 'px';
+}
+
+function griffAuffrischen() {
+  const zelle = zelleJetzt();
+  const tabelle = zelle && zelle.closest('table');
+  if (!tabelle || !feld.contains(tabelle)) { griffWeg(); return; }
+
+  if (!tabellenGriff) {
+    tabellenGriff = document.createElement('button');
+    tabellenGriff.type = 'button';
+    tabellenGriff.className = 'tabellengriff';
+    tabellenGriff.title = 'Tabelle verschieben — ziehen';
+    tabellenGriff.setAttribute('aria-label', 'Tabelle verschieben');
+    tabellenGriff.textContent = '✥';
+    tabellenGriff.addEventListener('mousedown', griffZiehenBeginnen);
+    document.body.appendChild(tabellenGriff);
+  }
+  griffZiel = tabelle;
+
+  /* Fest am Fenster ausgerichtet und nicht im Blatt eingehängt: Das Blatt
+     wird gezoomt (CSS-zoom), und ein Kind darin bekäme dieselbe Verzerrung
+     — der Griff wäre bei 200 % doppelt so groß wie ein Knopf daneben. */
+  const r = tabelle.getBoundingClientRect();
+  tabellenGriff.style.left = (r.left - 20) + 'px';
+  tabellenGriff.style.top = (r.top - 20) + 'px';
+  /* Rutscht die Tabelle aus dem sichtbaren Bereich, geht der Griff mit. */
+  const flaeche = $('arbeitsflaeche').getBoundingClientRect();
+  tabellenGriff.hidden = r.bottom < flaeche.top || r.top > flaeche.bottom;
+}
+
+function griffZiehenBeginnen(fall) {
+  fall.preventDefault();
+  if (!griffZiel) return;
+  const tabelle = griffZiel;
+  document.body.classList.add('zieht-tabelle');
+
+  const bewegen = (e) => legeMarkeZeigen(blockUnter(e.clientY));
+
+  const loslassen = (e) => {
+    document.removeEventListener('mousemove', bewegen);
+    document.removeEventListener('mouseup', loslassen);
+    document.body.classList.remove('zieht-tabelle');
+    legeMarkeWeg();
+
+    const ziel = blockUnter(e.clientY);
+    if (!ziel || ziel.block === tabelle) { griffAuffrischen(); return; }
+
+    if (ziel.dahinter) ziel.block.after(tabelle);
+    else ziel.block.before(tabelle);
+
+    /* Hinter einer verschobenen Tabelle muss ein Absatz stehen, sonst
+       kommt man mit dem Zeiger nicht mehr dahinter — das ist die alte
+       Falle jedes Editors mit Tabellen am Textende. */
+    if (!tabelle.nextElementSibling) {
+      const p = document.createElement('p');
+      p.innerHTML = '<br>';
+      tabelle.after(p);
+    }
+    geaendertMelden();
+    melde('Tabelle verschoben.');
+    griffAuffrischen();
+  };
+
+  document.addEventListener('mousemove', bewegen);
+  document.addEventListener('mouseup', loslassen);
+}
+
+/* Zweimal messen, und das ist kein Luxus: Beim ersten Klick in eine
+   Tabelle taucht gleichzeitig die Leiste „Tabellenwerkzeuge" auf und
+   schiebt das Blatt nach unten. Wer nur einmal misst, setzt den Griff an
+   die Stelle, an der die Tabelle eine Zwanzigstelsekunde vorher war. */
+function griffNachmessen() {
+  griffAuffrischen();
+  requestAnimationFrame(griffAuffrischen);
+}
+
+document.addEventListener('selectionchange', griffNachmessen);
+window.addEventListener('resize', griffNachmessen);
+
 B.tabelleRaster = (knopf) => tabellenKlappeZeigen(knopf || wzTabelle);
 
 B.tabelle = () => {
@@ -1937,19 +2074,19 @@ B.zellenAusrichtung = () => mitTabelle((zelle, zeile, tabelle) => {
 const TABELLENVORLAGEN = {
   einfach:   { kopf: 'nein', kopffarbe: '#E8EDF3', streifen: 'nein',
                streifenfarbe: '#F2F4F7', linien: 'alle', linienfarbe: '#9AA3AB',
-               breite: 'ganz', abstand: '6' },
+               breite: 'ganz', stellung: 'links', abstand: '6' },
   kopfzeile: { kopf: 'ja',   kopffarbe: '#D6E4F0', streifen: 'nein',
                streifenfarbe: '#F2F4F7', linien: 'alle', linienfarbe: '#9AA3AB',
-               breite: 'ganz', abstand: '6' },
+               breite: 'ganz', stellung: 'links', abstand: '6' },
   gestreift: { kopf: 'ja',   kopffarbe: '#D6E4F0', streifen: 'ja',
                streifenfarbe: '#F2F4F7', linien: 'keine', linienfarbe: '#9AA3AB',
-               breite: 'ganz', abstand: '7' },
+               breite: 'ganz', stellung: 'links', abstand: '7' },
   liste:     { kopf: 'ja',   kopffarbe: '#FFFFFF', streifen: 'nein',
                streifenfarbe: '#F2F4F7', linien: 'aussen', linienfarbe: '#4C555E',
-               breite: 'ganz', abstand: '7' },
+               breite: 'ganz', stellung: 'links', abstand: '7' },
   ohne:      { kopf: 'nein', kopffarbe: '#E8EDF3', streifen: 'nein',
                streifenfarbe: '#F2F4F7', linien: 'keine', linienfarbe: '#9AA3AB',
-               breite: 'inhalt', abstand: '4' },
+               breite: 'inhalt', stellung: 'links', abstand: '4' },
 };
 
 /* Eine Farbe aus dem Blatt in die Form bringen, die <input type="color">
@@ -2000,6 +2137,8 @@ function tabellenstandLesen(tabelle) {
     linien: zelleRand ? 'alle' : (tabelleRand ? 'aussen' : 'keine'),
     linienfarbe: farbeAlsHex(randStil && randStil.borderTopColor, '#9AA3AB'),
     breite: tabelle.style.width === 'auto' ? 'inhalt' : 'ganz',
+    stellung: tabelle.style.marginLeft === 'auto'
+      ? (tabelle.style.marginRight === 'auto' ? 'mitte' : 'rechts') : 'links',
     abstand: String(Math.round(parseFloat(
       (irgendeine && getComputedStyle(irgendeine).paddingTop) || '6')) || 6),
   };
@@ -2028,6 +2167,11 @@ function tabelleAnwenden(tabelle, w) {
 
   const abstand = Math.max(0, Math.min(40, parseInt(w.abstand, 10) || 0));
   tabelle.style.width = w.breite === 'inhalt' ? 'auto' : '100%';
+  /* Ausrichten geht über die Außenabstände: „auto" links UND rechts ist
+     mittig, nur links ist rechtsbündig. Das ist die Art, wie ein Blatt
+     rechnet — nicht text-align, das richtet den Inhalt der Zellen aus. */
+  tabelle.style.marginLeft = (w.stellung === 'mitte' || w.stellung === 'rechts') ? 'auto' : '';
+  tabelle.style.marginRight = (w.stellung === 'mitte') ? 'auto' : '';
   tabelle.style.borderCollapse = 'collapse';
   tabelle.style.border = w.linien === 'keine'
     ? 'none' : '1px solid ' + w.linienfarbe;
@@ -2084,6 +2228,12 @@ B.tabelleEigenschaften = () => mitTabelle((zelle, zeile, tabelle) => {
     { schluessel: 'linienfarbe', name: 'Farbe der Linien', art: 'color', wert: ist.linienfarbe },
     { schluessel: 'breite', name: 'Breite', art: 'auswahl', wert: ist.breite, werte: [
       ['ganz', 'Über die ganze Textbreite'], ['inhalt', 'So breit wie der Inhalt'] ] },
+    /* Nur sinnvoll, wenn die Tabelle nicht die ganze Breite einnimmt —
+       sonst gibt es nichts auszurichten. Das Feld bleibt trotzdem stehen:
+       Ein Feld, das mal da ist und mal nicht, lässt sich nicht lernen. */
+    { schluessel: 'stellung', name: 'Stellung auf der Seite', art: 'auswahl',
+      wert: ist.stellung, werte: [
+      ['links', 'Links'], ['mitte', 'Mittig'], ['rechts', 'Rechts'] ] },
     { schluessel: 'abstand', name: 'Luft in den Zellen (Punkt)', art: 'number',
       wert: ist.abstand },
   ],
@@ -2936,6 +3086,10 @@ function linealHochZeichnen() {
 
    „passive": Das Lineal hält das Scrollen nicht auf, es sieht nur zu. */
 $('arbeitsflaeche').addEventListener('scroll', () => {
+  /* Der Griff der Tabelle ist am Fenster ausgerichtet und muss beim
+     Rollen nachgeführt werden — sonst bleibt er stehen, während die
+     Tabelle darunter wegwandert. */
+  if (typeof griffAuffrischen === 'function') griffAuffrischen();
   if (!$('lineal-hoch').hidden) linealHochZeichnen();
 }, { passive: true });
 
@@ -4731,6 +4885,9 @@ function zusammenhangsleisteBauen() {
     }
   });
   leiste.hidden = false;
+  /* Die Leiste hat das Blatt verschoben — der Griff der Tabelle sitzt
+     jetzt falsch und muss neu gemessen werden. */
+  if (typeof griffAuffrischen === 'function') requestAnimationFrame(griffAuffrischen);
 }
 
 let zusammenhangStandLeiste = '';
