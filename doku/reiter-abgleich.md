@@ -1,0 +1,540 @@
+# Reiter für Reiter: WPS gegen Lunivo
+
+Geschrieben von `werkzeug/reiter-abgleich.py`. Das SOLL kommt aus
+seinem Prüfkatalog (Lesekopie in `doku/wps-soll-lesekopie.txt`),
+der IST-Stand aus `oberflaeche/daten/register.js`.
+
+**206 gleich · 5 fehlen · 36 eigen · 0 ohne Bild**
+
+- **fehlt** — steht im SOLL, nicht im Band. Kein Ermessen.
+- **eigen** — steht im Band, nicht im SOLL.
+- **ohne Bild** — der Symbolname steht in keiner Zeile von `symbole.js`;
+  das Band zeichnet dann das Wort.
+
+Wenn ein Punkt als **fehlt** dasteht, den es im Band gibt, ist er
+umbenannt worden — meist nach einer neueren Aufnahme, die das SOLL
+noch nicht kennt: „Mittel" heißt in WPS heute „Moderat",
+„Seitenrahmen" heißt „Seitenränder", „Textumbruch" heißt
+„Textfluss". Dann gehört die Zeile im SOLL nachgezogen, nicht der
+Name im Band zurückgedreht. Das entscheidet er, nicht ich.
+
+## Start
+
+### Zwischenablage
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Einfügen | gleich | `kleben` |
+| Einfügen ohne Formatierung | gleich | `ohneformat` |
+| Ausschneiden | gleich | `schere` |
+| Kopieren | gleich | `kopie` |
+| Format übertragen | gleich | `pinsel` |
+| Verlauf | gleich | `zurueck` |
+| Rückgängig | gleich | — |
+| Wiederholen | gleich | — |
+
+### Schriftart
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Formatvorlage | gleich | — |
+| Schriftart | gleich | — |
+| Schriftgröße | gleich | — |
+| Schrift vergrößern | gleich | `groesserA` |
+| Schrift verkleinern | gleich | `kleinerA` |
+| Formatierung löschen | gleich | `radierer` |
+| Fett | gleich | Buchstabe `F` |
+| Kursiv | gleich | Buchstabe `K` |
+| Unterstrichen | gleich | Buchstabe `U` |
+| Durchgestrichen | gleich | Buchstabe `S` |
+| Hochgestellt | gleich | Buchstabe `X²` |
+| Tiefgestellt | gleich | Buchstabe `X₂` |
+| Hervorheben | gleich | `marker` |
+| Schriftfarbe | gleich | `farbe` |
+| Groß-/Kleinschreibung | gleich | Buchstabe `Aa` |
+| Unterstreichungsart | gleich | `unterart` |
+| Texteffekte | gleich | `texteffekt` |
+
+### Absatz
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Aufzählung | gleich | `punkte` |
+| Nummerierung | gleich | `zahlen` |
+| Einzug & Listenebene | gleich | `einzug` |
+| Einzug verringern | gleich | — |
+| Einzug vergrößern | gleich | — |
+| Listenebene erhöhen | gleich | — |
+| Listenebene verringern | gleich | — |
+| Linksbündig | gleich | `links` |
+| Zentriert | gleich | `mitte` |
+| Rechtsbündig | gleich | `rechts` |
+| Blocksatz | gleich | `block` |
+| Zeilenabstand | gleich | `abstand` |
+| Absatzrahmen | gleich | `rahmen` |
+| Absatzschattierung | gleich | `toenung` |
+| Sortieren | gleich | `sortieren` |
+| Steuerzeichen | gleich | Buchstabe `¶` |
+
+### Absatzlayout
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Zeilenabstand | gleich | `abstand` |
+| Einzug genau | gleich | `einzug` |
+| Absatzrahmen | gleich | `rahmen` |
+| Absatzschattierung | gleich | `toenung` |
+
+### Stile
+
+| Punkt | Stand | Bild |
+|---|---|---|
+
+### Bearbeiten
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Suchen | gleich | `lupe` |
+| Ersetzen | gleich | `uebersetzen` |
+| Suchen und Ersetzen | gleich | `lupe` |
+| Alles auswählen | gleich | `allesmark` |
+| Objekte auswählen | gleich | `objekte` |
+
+### Eigen — im Band, nicht im SOLL
+
+- katalog
+- Katalog
+
+## Einfügen
+
+### Seiten
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Deckblatt | gleich | `deckblatt` |
+| Leere Seite | gleich | `leereseite` |
+| Seitenumbruch | gleich | `umbruch` |
+
+### Tabellen
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Tabelle einfügen | gleich | `tabelle` |
+| Schnelltabelle | gleich | `schnelltab` |
+| Tabellenblatt | gleich | `tabellenblatt` |
+
+### Illustrationen
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Bild | gleich | `bild` |
+| Zeichnen | **fehlt** (eigen vorgesehen) | — |
+| Diagramm | gleich | `saeule` |
+| Bildschirmfoto | gleich | `bildfoto` |
+| SmartArt | gleich | `smartart` |
+| Piktogramm | gleich | `piktogramm` |
+| WordArt | gleich | `wordart` |
+
+### Links
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Hyperlink | gleich | `kette` |
+| Lesezeichen / Textmarke | gleich | `textmarke` |
+| Querverweis | gleich | `querverweis` |
+
+### Kopf- Und Fusszeile
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Kopfzeile | gleich | `kopfz` |
+| Fußzeile | gleich | `fussz` |
+| Seitenzahl | gleich | `zahl` |
+
+### Text
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Textfeld | gleich | `textrahmen` |
+| Bausteine | gleich | `baustein` |
+| Textbaustein | gleich | — |
+| Schnellbaustein | gleich | — |
+| Initiale | gleich | `initiale` |
+| Datum | gleich | `datum` |
+| Uhrzeit | gleich | `uhrzeit` |
+| Text aus Datei | gleich | `ausdatei` |
+
+### Symbole
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Sonderzeichen | gleich | `omega` |
+| Formel | gleich | `formel` |
+
+### Eigen — im Band, nicht im SOLL
+
+- Eigenschaften
+- Formen
+- Form mit eigener Farbe…
+
+## Seitenlayout
+
+### Seite Einrichten
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Seitenränder | gleich | `rahmen` |
+| Normal | gleich | — |
+| Schmal | gleich | — |
+| Mittel | **fehlt** | — |
+| Breit | gleich | — |
+| Eigene Ränder … | gleich | `raender` |
+| Ausrichtung | gleich | `ausrichtung` |
+| Hochformat | gleich | — |
+| Querformat | gleich | `querformat` |
+| Papierformat | gleich | `papiergroesse` |
+| A4 | gleich | `papiergroesse` |
+| A5 | gleich | `papiergroesse` |
+| A3 | gleich | `papiergroesse` |
+| Letter | gleich | `papiergroesse` |
+| Legal | gleich | `papiergroesse` |
+| Spalten | gleich | `spalten` |
+| Umbruch | gleich | `textflussumbruch` |
+| Seitenumbruch | gleich | `umbruch` |
+| Spaltenumbruch | gleich | `spaltenumbruch` |
+| Abschnittsumbruch | gleich | `abschnitt` |
+
+### Absatz
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Einzug | gleich | `einzug` |
+| Absatzabstand | gleich | `abstand` |
+| Zeilennummern | gleich | `zeilennr` |
+| Silbentrennung | gleich | `trennung` |
+
+### Textumbruch
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Textumbruch | **fehlt** | — |
+
+### Seitenhintergrund
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Seitenfarbe | gleich | `farbe` |
+| Wasserzeichen | gleich | `wasserzeichen` |
+| Seitenrahmen | **fehlt** | — |
+
+### Anordnen
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Bild/Objekt anordnen | **fehlt** (eigen vorgesehen) | — |
+
+### Eigen — im Band, nicht im SOLL
+
+- Designs
+- Farben
+- Schriftarten
+- Effekte
+- raender
+- Größe
+- Textrichtung
+- Umbrüche
+- Textfluss
+- Ausrichten
+- Gruppieren
+- Drehen
+- Moderat
+- Benutzerdefinierte Seitenränder…
+- B5
+- Umschlag DIN lang
+- Umschlag C5
+- Umschlag C6
+- Eins
+- Zwei
+- Drei
+- Mehr Spalten…
+- Fortlaufender Abschnittsumbruch
+- Abschnittsumbruch (gerade Seite)
+- Abschnittsumbruch auf ungerader Seite
+
+## Referenzen
+
+### Inhaltsverzeichnis
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Inhaltsverzeichnis | gleich | `inhalt` |
+| Verzeichnisse aktualisieren | gleich | `haken` |
+
+### Fussnoten
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Fußnote | gleich | `fussnote` |
+| Endnote | gleich | `endnote` |
+| Nächste Note | gleich | `vor` |
+| Vorige Note | gleich | `zurueck` |
+| Notenbereich | gleich | `bereich` |
+
+### Zitate Und Literatur
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Zitat einfügen | gleich | `zitat` |
+| Neue Quelle | gleich | `eintrag` |
+| Quellen verwalten | gleich | `anpassen` |
+| Zitierweise | gleich | `Stil` |
+| Literaturverzeichnis | gleich | `inhalt` |
+
+### Beschriftungen
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Beschriftung | gleich | `beschriftung` |
+| Abbildungsverzeichnis | gleich | `bild` |
+| Querverweis | gleich | `querverweis` |
+
+### Index
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Indexeintrag | gleich | `eintrag` |
+| Stichwortverzeichnis | gleich | `inhalt` |
+
+## Überprüfen
+
+### Dokumentprüfung
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Prüfen | gleich | `haken` |
+| Gründlich prüfen | gleich | `gruendlich` |
+| Rechtschreibung | gleich | `Duden` |
+| Thesaurus | gleich | `thesaurus` |
+| Wörter zählen | gleich | `woerter` |
+
+### Sprache
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Korrektursprache | gleich | `sprache` |
+
+### Barrierefreiheit
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Barrierefreiheit prüfen | gleich | `barrierefrei` |
+
+### Kommentare
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Neuer Kommentar | gleich | `notiz` |
+| Nächster Kommentar | gleich | `vor` |
+| Voriger Kommentar | gleich | `zurueck` |
+| Kommentar löschen | gleich | `kommentarweg` |
+| Alle Kommentare löschen | gleich | `kommentareweg` |
+
+### Änderungen
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Änderungen verfolgen | gleich | `verfolgt` |
+| Markup anzeigen | gleich | `markup` |
+| Überarbeitungsbereich | gleich | `bereich` |
+| Änderung annehmen | gleich | `annehmen` |
+| Änderung ablehnen | gleich | `ablehnen` |
+| Nächste Änderung | gleich | `vor` |
+| Vorige Änderung | gleich | `zurueck` |
+| Alle annehmen | gleich | `alleAn` |
+| Alle verwerfen | gleich | `alleAb` |
+
+### Schützen
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Bearbeitung sperren | gleich | `sperren` |
+
+## Schreibhilfe
+
+### Lesen
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Lesehilfe | gleich | `brille` |
+| Zeilenfokus | gleich | `zeile` |
+| Lesemodus | gleich | `buch` |
+| Schrift zum Lesen | gleich | `groesserA` |
+
+### Prüfen
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Dokumentprüfung | gleich | `haken` |
+| Prüfen | gleich | — |
+| Gründlich prüfen | gleich | — |
+| Welche Hilfe wann | gleich | — |
+
+### Beim Schreiben
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Rechtschreibprüfung | gleich | `wellen` |
+| Wortvorhersage | gleich | `Vorhersage` |
+| AutoKorrektur | gleich | `autokorr` |
+
+### Vorlesen
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Vorlesen | gleich | `vorlesen` |
+| Ab hier vorlesen | gleich | — |
+| Anhalten | gleich | — |
+| Stimme und Tempo | gleich | — |
+
+### Sprache
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Silbentrennung | gleich | `silben` |
+| Übersetzen | gleich | `uebersetzen` |
+| Thesaurus | gleich | `woerterbuch` |
+| Sprache und Prüfung | gleich | `sprache` |
+
+### Ki
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| KI-Korrektur | gleich | Buchstabe `ki` |
+| Vorschläge | gleich | `vorschlag` |
+
+### Anzeigen
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Seitenleiste Schreibhilfe | gleich | `tafel` |
+| Optionen | gleich | `optionen` |
+
+### Eigen — im Band, nicht im SOLL
+
+- Vorlesen
+
+## Sendungen
+
+### Erstellen
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Umschlag | gleich | `kette` |
+| Etiketten | gleich | `etiketten` |
+
+### Seriendruck
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Seriendruck-Assistent | gleich | `serie` |
+| Seriendruckfeld | gleich | `seriefeld` |
+| Adressblock | gleich | `adressblock` |
+| Regeln | gleich | `eintrag` |
+
+### Vorschau
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Ergebnisse anzeigen | gleich | `vorschau` |
+
+### Formular
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Textfeld | gleich | `formfeld` |
+| Kontrollkästchen | gleich | `kaestchen` |
+| Schaltfläche | gleich | `formknopf` |
+
+## Ansicht
+
+### Dokumentansichten
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Drucklayout | gleich | `blattansicht` |
+| Lesemodus | gleich | `lesen` |
+| Zwei Seiten | gleich | `zweiblatt` |
+| Weblayout | gleich | `fortlaufend` |
+| Gliederung | gleich | `gliederung` |
+
+### Anzeigen
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Lineal | gleich | `linealIcon` |
+| Vertikales Lineal | gleich | `linealHochIcon` |
+| Gitternetzlinien | gleich | `netz` |
+| Navigationsbereich | gleich | `navigation` |
+| Textbegrenzungen | gleich | `ecken` |
+| Seitenleiste Schreibhilfe | gleich | `tafel` |
+
+### Zoom
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Vergrößern | gleich | `lupe` |
+| Verkleinern | gleich | `kleinerLupe` |
+| Seitenbreite | gleich | `seitenbreite` |
+| Eine Seite | gleich | `eineSeite` |
+| Zoom | gleich | `Prozent` |
+
+### Fenster
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Neues Fenster | gleich | `neuesfenster` |
+| Anordnen | gleich | `kacheln` |
+| Nebeneinander | gleich | `fensterNeben` |
+| Untereinander | gleich | `fensterUnter` |
+| Kacheln | gleich | `kacheln` |
+| Fensterliste | gleich | `fensterliste` |
+
+### Helligkeit
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Wie das System | gleich | `automatisch` |
+| Immer hell | gleich | `hell` |
+| Immer dunkel | gleich | `dunkel` |
+
+### Oberfläche
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Register anpassen | gleich | `anpassen` |
+| Symbol austauschen | gleich | `piktogramm` |
+| Benutzeroberfläche | gleich | `Oberfläche` |
+| Menüleiste | gleich | `menueleiste` |
+| Symbolleisten | gleich | `leisten` |
+| Vorlagen zurücksetzen | gleich | `Zurück` |
+
+### Eigen — im Band, nicht im SOLL
+
+- Textbegrenzungen
+- 100 %
+- Nebeneinander
+- Untereinander
+- Kacheln
+
+## Tabellenwerkzeuge  — **im Band nicht gefunden**
+
+## Zeichentools  — **im Band nicht gefunden**
+
+## Diagrammtools  — **im Band nicht gefunden**
+
+## Smartart-Tools  — **im Band nicht gefunden**
+
+## Gleichungswerkzeuge  — **im Band nicht gefunden**
+
+## Kopf- Und Fusszeilenwerkzeuge  — **im Band nicht gefunden**
+

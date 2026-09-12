@@ -230,4 +230,14 @@ const SYMBOLE = {
   abschnittlaufend: 'M3 4h18 M3 9h18 M3 14h18 M3 19h18 M8 11.5h8',   /* eigen: laeuft weiter */
   abschnittgerade: 'M3 4h18 M3 9h18 M3 14h11 M3 19h11 M17 15 h3 v5 h-3 z',   /* eigen: gerade Seite */
   abschnittungerade: 'M3 4h18 M3 9h18 M3 14h11 M3 19h11 M18.5 15 v5 M17 16 l1.5 -1',   /* eigen: ungerade Seite */
+  /* Sechs, die register.js beim Namen nannte, die es aber nicht gab.
+     Das Band zeichnet dann das Wort — „Duden", „Oberfläche", „Zurück" —
+     und die Knopfreihe wird zur Textzeile. Gefunden hat sie
+     werkzeug/reiter-abgleich.py, nicht ich. */
+  Stil:          'M4 20 l7-16 h2 l7 16 M7.5 14h9 M4 20h4 M16 20h4',   /* eigen: A mit Serifen, für die Zitierweise */
+  Duden:         'M4 19.5A2.5 2.5 0 0 1 6.5 17H20 M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z M9 7h6 M9 11h4',   /* lucide: book, das Wörterbuch */
+  Vorhersage:    'M5 7h9 M5 12h5 M12.5 14.5 l6.5-6.5 2 2 -6.5 6.5 -2.8 .8 .8-2.8 M5 17h3',   /* eigen: Zeile, die weitergeschrieben wird */
+  Prozent:       'M19 5 L5 19 M6.5 6.5a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0 -3 0 M14.5 17.5a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0 -3 0',   /* lucide: percent */
+  Oberfläche:    'M3 4h18v16H3z M3 9h18 M8 9v11',   /* eigen: Fenster mit Leiste und Spalte */
+  Zurück:        'M3 12a9 9 0 1 0 9-9 c-2.52 0-4.93 1-6.74 2.74L3 8 M3 3v5h5',   /* lucide: rotate-ccw */
 };

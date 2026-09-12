@@ -1,0 +1,729 @@
+LESEKOPIE — NICHT DIE QUELLE
+
+Das SOLL steht in seinem Prüfkatalog-Artifact:
+https://claude.ai/code/artifact/7f30cf12-e292-49eb-9957-092686178552
+
+Diese Datei ist ein Auszug davon, eingefroren am 12.09.2026, damit
+werkzeug/reiter-abgleich.py etwas zum Vergleichen hat, ohne ins Netz zu
+müssen. Sie ist NICHT die Vorgabe — wenn beide auseinandergehen, gilt
+das Artifact.
+
+Kein Werkzeug schreibt hierher. Am 09.09.2026 hat aufbau-schreiben.py
+genau das mit der damaligen SOLL-Datei getan: Es schrieb den IST-Stand
+hinein, und damit war jede Abweichung rückwirkend zur Vorgabe erklärt.
+Der Maßstab maß sich selbst.
+
+═══════════════════════════════════════════════════════════════
+
+WPS WRITER + LUNIVO OFFICE
+DIESE DATEI IST VON HAND GESCHRIEBEN. Sie ist die Vorgabe — das SOLL.
+Kein Werkzeug darf sie überschreiben.
+Am 09.09.2026 hat werkzeug/aufbau-schreiben.py genau das getan: Es las
+den Aufbau aus dem Programm und schrieb ihn hierher. Damit stand hier
+plötzlich, was das Programm gerade TUT, statt dessen, was es tun SOLL —
+und jede Abweichung war rückwirkend zur Vorgabe erklärt. Der Maßstab
+maß sich selbst. Zurückgeholt wurde die Datei aus Commit 75438b6.
+Das Werkzeug schreibt heute nur noch nach doku/:
+    doku/aufbau-band.md          die Reiter, mit Suchtabelle
+    doku/aufbau-optionen.md      das Optionen-Fenster
+    doku/aufbau-ist-stand.md     beides am Stück — das IST
+Vergleichen heißt: diese Datei gegen doku/aufbau-ist-stand.md halten.
+Nie überschreiben.
+Stand dieses Abgleichs: 10.09.2026.
+„← Lunivo" heißt: gibt es im WPS Writer nicht, ist eigen.
+═══════════════════════════════════════════════════════════════
+DIE REITERZEILE
+═══════════════════════════════════════════════════════════════
+Von links nach rechts, alles in einer Zeile:
+    ☰ Menü ▾ │ Schnellzugriff │ Start  Einfügen  Seitenlayout  …
+In der Symbolleisten-Oberfläche steht dasselbe ☰ am Anfang der oberen
+Leiste, gefolgt von einem Trenner und den Symbolen.
+WPS Writer hat KEINEN Datei-Reiter. Was in kein Band gehört, liegt
+hinter dem ☰ ganz links. Hier stand eine Zeit lang ein Reiter „DATEI"
+mit sieben Gruppen — das war der Fehler, an dem der ganze Aufbau hing.
+Dass DATEI in dieser Datei immer schon OHNE Gruppen stand, während
+START und EINFÜGEN welche tragen, war genau die Ansage.
+SCHNELLZUGRIFF — die Handvoll Befehle in der Reiterzeile
+│
+├── Öffnen
+├── Speichern
+├── Als PDF exportieren
+├── Drucken
+├── Druckvorschau
+├── Rückgängig
+└── Wiederholen
+═══════════════════════════════════════════════════════════════
+☰ MENÜ — an zwei Stellen, und immer dieselbe Tafel
+═══════════════════════════════════════════════════════════════
+    Register        links vor den Reitern
+    Symbolleisten   links am Anfang der oberen Leiste
+    Menüleiste      dort heißt es „Datei" und steht als erstes Menü
+Alle drei Oberflächen tragen denselben Aufbau. Vorher hing das ☰ nur am
+Register; wer mit Symbolleisten arbeitete, kam an die Datei-Befehle nur
+über die Menüleiste — und die lässt sich abschalten. Da drifteten die
+Oberflächen auseinander.
+Die Tafel hat ZWEI SPALTEN, wie im Writer. Links die Befehle, rechts
+der Inhalt. Ein Punkt mit Pfeil legt KEIN eigenes Fenster darüber — er
+füllt die rechte Spalte. Fährt man auf einen Punkt ohne Pfeil oder aus
+der Tafel heraus, stehen dort wieder die Dateien.
+LINKE SPALTE — elf Punkte, zwei Striche
+│
+├── Neu ▸
+│   ├── Leeres Dokument                 (Strg+N)
+│   ├── Neu aus Vorlage ← Lunivo
+│   └── Vorlagenordner ← Lunivo
+├── Öffnen                              (Strg+O)
+├── Speichern                           (Strg+S)
+├── Speichern unter ▸
+│   ├── Speichern unter …               (Strg+Umschalt+S)
+│   ├── Umbenennen ← Lunivo
+│   └── Dokumenteigenschaften ← Lunivo
+├── Als PDF exportieren ← Lunivo
+├── Als Bild exportieren ← Lunivo
+├── Drucken ▸
+│   ├── Drucken …                       (Strg+P)
+│   ├── Druckvorschau ← Lunivo
+│   └── Druckereinstellungen ← Lunivo
+│  ──────────────────────────────────
+├── Dokumentverschlüsselung ▸
+│   └── Kennwort setzen oder entfernen …
+│  ──────────────────────────────────
+├── Hilfe ▸
+│   ├── Handbuch ← Lunivo
+│   ├── Tastenkürzel ← Lunivo
+│   ├── Erweiterungen ← Lunivo
+│   └── Über Lunivo Office ← Lunivo
+├── Optionen                            (F9)
+└── Beenden ← Lunivo
+RECHTE SPALTE
+│
+└── Liste zuletzt verwendeter Dateien
+    ├── ↻  holt die Liste neu
+    └── je Zeile: Name, Ordner und ein ×
+        Das × nimmt den Namen aus der Liste. Die Datei bleibt liegen.
+„Schließen" steht nicht mehr im Menü — ein Dokument schließt man über
+das × an seinem Reiter. „Zuletzt geöffnet" ist kein Punkt mehr,
+sondern die rechte Spalte.
+═══════════════════════════════════════════════════════════════
+DIE BÄNDER — acht Reiter
+═══════════════════════════════════════════════════════════════
+├── START
+│   │
+│   ├── ZWISCHENABLAGE
+│   │   ├── Einfügen
+│   │   ├── Einfügen ohne Formatierung ← Lunivo
+│   │   ├── Ausschneiden
+│   │   ├── Kopieren
+│   │   ├── Format übertragen
+│   │   └── Verlauf ← Lunivo
+│   │       ├── Rückgängig
+│   │       └── Wiederholen
+│   │
+│   ├── SCHRIFTART
+│   │   ├── Formatvorlage               (Wähler)
+│   │   ├── Schriftart                  (Wähler)
+│   │   ├── Schriftgröße                (Wähler)
+│   │   ├── Schrift vergrößern
+│   │   ├── Schrift verkleinern
+│   │   ├── Formatierung löschen
+│   │   ├── Fett
+│   │   ├── Kursiv
+│   │   ├── Unterstrichen
+│   │   ├── Durchgestrichen
+│   │   ├── Hochgestellt
+│   │   ├── Tiefgestellt
+│   │   ├── Hervorheben
+│   │   ├── Schriftfarbe
+│   │   ├── Groß-/Kleinschreibung ← Lunivo
+│   │   ├── Unterstreichungsart ← Lunivo
+│   │   └── Texteffekte ← Lunivo
+│   │
+│   ├── ABSATZ
+│   │   ├── Aufzählung
+│   │   ├── Nummerierung
+│   │   ├── Einzug & Listenebene ← Lunivo
+│   │   │   ├── Einzug verringern
+│   │   │   ├── Einzug vergrößern
+│   │   │   ├── Listenebene erhöhen
+│   │   │   └── Listenebene verringern
+│   │   ├── Linksbündig
+│   │   ├── Zentriert
+│   │   ├── Rechtsbündig
+│   │   ├── Blocksatz
+│   │   ├── Zeilenabstand
+│   │   ├── Absatzrahmen ← Lunivo
+│   │   ├── Absatzschattierung ← Lunivo
+│   │   ├── Sortieren ← Lunivo
+│   │   └── Steuerzeichen ← Lunivo
+│   │
+│   ├── ABSATZLAYOUT
+│   │   ├── Zeilenabstand
+│   │   ├── Einzug genau
+│   │   ├── Absatzrahmen
+│   │   └── Absatzschattierung
+│   │
+│   ├── STILE
+│   │   └── Katalog — zeigt die Vorlagen, statt sie zu benennen:
+│   │       Standard, Überschrift 1–3, Titel, Untertitel, Zitat,
+│   │       Kein Abstand. „Formatvorlagen verwalten" liegt in der
+│   │       Klappe des Katalogs.
+│   │
+│   └── BEARBEITEN
+│       ├── Suchen
+│       ├── Ersetzen
+│       ├── Suchen und Ersetzen
+│       ├── Alles auswählen
+│       └── Objekte auswählen ← Lunivo
+│
+├── EINFÜGEN
+│   │
+│   ├── SEITEN
+│   │   ├── Deckblatt ← Lunivo
+│   │   ├── Leere Seite ← Lunivo
+│   │   └── Seitenumbruch
+│   │
+│   ├── TABELLEN
+│   │   ├── Tabelle einfügen
+│   │   ├── Schnelltabelle ← Lunivo
+│   │   └── Tabellenblatt ← Lunivo
+│   │
+│   ├── ILLUSTRATIONEN
+│   │   ├── Bild
+│   │   ├── Zeichnen ← Lunivo
+│   │   ├── Diagramm
+│   │   ├── Bildschirmfoto ← Lunivo
+│   │   ├── SmartArt
+│   │   ├── Piktogramm ← Lunivo
+│   │   └── WordArt ← Lunivo
+│   │
+│   ├── LINKS
+│   │   ├── Hyperlink
+│   │   ├── Lesezeichen / Textmarke
+│   │   └── Querverweis
+│   │
+│   ├── KOPF- UND FUSSZEILE
+│   │   ├── Kopfzeile
+│   │   ├── Fußzeile
+│   │   └── Seitenzahl
+│   │
+│   ├── TEXT
+│   │   ├── Textfeld
+│   │   ├── Bausteine ← Lunivo
+│   │   │   ├── Textbaustein
+│   │   │   └── Schnellbaustein
+│   │   ├── Initiale ← Lunivo
+│   │   ├── Datum
+│   │   ├── Uhrzeit ← Lunivo
+│   │   └── Text aus Datei ← Lunivo
+│   │
+│   └── SYMBOLE
+│       ├── Sonderzeichen
+│       └── Formel
+│
+├── SEITENLAYOUT
+│   │
+│   ├── SEITE EINRICHTEN
+│   │   ├── Seitenränder
+│   │   │   ├── Normal (2,5 cm)
+│   │   │   ├── Schmal (1,3 cm)
+│   │   │   ├── Mittel
+│   │   │   ├── Breit
+│   │   │   └── Eigene Ränder …
+│   │   ├── Ausrichtung
+│   │   │   ├── Hochformat
+│   │   │   └── Querformat
+│   │   ├── Papierformat
+│   │   │   ├── A4 (21 × 29,7 cm)
+│   │   │   ├── A5 (14,8 × 21 cm)
+│   │   │   ├── A3 (29,7 × 42 cm)
+│   │   │   ├── Letter (21,6 × 27,9 cm)
+│   │   │   └── Legal (21,6 × 35,6 cm)
+│   │   ├── Spalten
+│   │   └── Umbruch ← Lunivo
+│   │       ├── Seitenumbruch
+│   │       ├── Spaltenumbruch
+│   │       └── Abschnittsumbruch
+│   │
+│   ├── ABSATZ
+│   │   ├── Einzug ← Lunivo
+│   │   ├── Absatzabstand ← Lunivo
+│   │   ├── Zeilennummern ← Lunivo
+│   │   └── Silbentrennung ← Lunivo
+│   │
+│   ├── TEXTUMBRUCH
+│   │   └── Textumbruch
+│   │
+│   ├── SEITENHINTERGRUND
+│   │   ├── Seitenfarbe
+│   │   ├── Wasserzeichen ← Lunivo
+│   │   └── Seitenrahmen
+│   │
+│   └── ANORDNEN
+│       └── Bild/Objekt anordnen ← Lunivo
+│
+├── REFERENZEN
+│   │
+│   ├── INHALTSVERZEICHNIS
+│   │   ├── Inhaltsverzeichnis
+│   │   └── Verzeichnisse aktualisieren ← Lunivo
+│   │
+│   ├── FUSSNOTEN
+│   │   ├── Fußnote
+│   │   ├── Endnote ← Lunivo
+│   │   ├── Nächste Note ← Lunivo
+│   │   ├── Vorige Note ← Lunivo
+│   │   └── Notenbereich ← Lunivo
+│   │
+│   ├── ZITATE UND LITERATUR
+│   │   ├── Zitat einfügen
+│   │   ├── Neue Quelle
+│   │   ├── Quellen verwalten
+│   │   ├── Zitierweise
+│   │   └── Literaturverzeichnis
+│   │
+│   ├── BESCHRIFTUNGEN
+│   │   ├── Beschriftung
+│   │   ├── Abbildungsverzeichnis
+│   │   └── Querverweis
+│   │
+│   └── INDEX
+│       ├── Indexeintrag ← Lunivo
+│       └── Stichwortverzeichnis ← Lunivo
+│
+├── ÜBERPRÜFEN
+│   │
+│   ├── DOKUMENTPRÜFUNG
+│   │   ├── Prüfen ← Lunivo (gemeinsame Prüf-Engine)
+│   │   ├── Gründlich prüfen ← Lunivo
+│   │   ├── Rechtschreibung
+│   │   ├── Thesaurus ← Lunivo
+│   │   └── Wörter zählen ← Lunivo
+│   │
+│   ├── SPRACHE
+│   │   └── Korrektursprache ← Lunivo
+│   │
+│   ├── BARRIEREFREIHEIT
+│   │   └── Barrierefreiheit prüfen ← Lunivo
+│   │
+│   ├── KOMMENTARE
+│   │   ├── Neuer Kommentar
+│   │   ├── Nächster Kommentar ← Lunivo
+│   │   ├── Voriger Kommentar ← Lunivo
+│   │   ├── Kommentar löschen
+│   │   └── Alle Kommentare löschen ← Lunivo
+│   │
+│   ├── ÄNDERUNGEN
+│   │   ├── Änderungen verfolgen
+│   │   ├── Markup anzeigen ← Lunivo
+│   │   ├── Überarbeitungsbereich ← Lunivo
+│   │   ├── Änderung annehmen
+│   │   ├── Änderung ablehnen
+│   │   ├── Nächste Änderung ← Lunivo
+│   │   ├── Vorige Änderung ← Lunivo
+│   │   ├── Alle annehmen ← Lunivo
+│   │   └── Alle verwerfen ← Lunivo
+│   │
+│   └── SCHÜTZEN
+│       └── Bearbeitung sperren ← Lunivo
+│
+├── SCHREIBHILFE ← Lunivo
+│   │
+│   │   Der zentrale Reiter. Hier steht beieinander, was das Lesen und
+│   │   Schreiben leichter macht — vorher lag es über fünf Reiter
+│   │   verstreut. Sieben Gruppen, nicht fünf.
+│   │
+│   ├── LESEN
+│   │   ├── Lesehilfe                   (war unter Ansicht)
+│   │   ├── Zeilenfokus                 (war unter Ansicht)
+│   │   ├── Lesemodus
+│   │   └── Schrift zum Lesen           (war in den Optionen)
+│   │
+│   ├── PRÜFEN
+│   │   ├── Dokumentprüfung
+│   │   ├── Prüfen
+│   │   ├── Gründlich prüfen
+│   │   └── Welche Hilfe wann
+│   │
+│   ├── BEIM SCHREIBEN
+│   │   ├── Rechtschreibprüfung
+│   │   ├── Wortvorhersage
+│   │   └── AutoKorrektur
+│   │
+│   ├── VORLESEN
+│   │   ├── Vorlesen
+│   │   ├── Ab hier vorlesen
+│   │   ├── Anhalten
+│   │   └── Stimme und Tempo
+│   │
+│   ├── SPRACHE
+│   │   ├── Silbentrennung              (war im Seitenlayout)
+│   │   ├── Übersetzen
+│   │   ├── Thesaurus                   (war unter Überprüfen)
+│   │   └── Sprache und Prüfung
+│   │
+│   ├── KI
+│   │   ├── KI-Korrektur
+│   │   └── Vorschläge
+│   │
+│   └── ANZEIGEN
+│       ├── Seitenleiste Schreibhilfe
+│       └── Optionen                    (auch im ☰ Menü)
+│
+├── SENDUNGEN ← Lunivo
+│   │
+│   ├── ERSTELLEN
+│   │   ├── Umschlag
+│   │   └── Etiketten
+│   │
+│   ├── SERIENDRUCK
+│   │   ├── Seriendruck-Assistent
+│   │   ├── Seriendruckfeld
+│   │   ├── Adressblock
+│   │   └── Regeln
+│   │
+│   ├── VORSCHAU
+│   │   └── Ergebnisse anzeigen
+│   │
+│   └── FORMULAR
+│       ├── Textfeld
+│       ├── Kontrollkästchen
+│       └── Schaltfläche
+│
+└── ANSICHT
+    │
+    ├── DOKUMENTANSICHTEN
+    │   ├── Drucklayout
+    │   ├── Lesemodus
+    │   ├── Zwei Seiten
+    │   ├── Weblayout
+    │   └── Gliederung ← Lunivo
+    │
+    ├── ANZEIGEN
+    │   ├── Lineal
+    │   ├── Vertikales Lineal
+    │   ├── Gitternetzlinien ← Lunivo
+    │   ├── Navigationsbereich ← Lunivo
+    │   ├── Textbegrenzungen ← Lunivo
+    │   └── Seitenleiste Schreibhilfe ← Lunivo
+    │
+    │   Lesehilfe und Zeilenfokus stehen NICHT mehr hier.
+    │   Sie sind nach Schreibhilfe ▸ Lesen gewandert.
+    │
+    ├── ZOOM
+    │   ├── Vergrößern
+    │   ├── Verkleinern
+    │   ├── Seitenbreite
+    │   ├── Eine Seite
+    │   └── Zoom
+    │
+    ├── FENSTER
+    │   ├── Neues Fenster ← Lunivo
+    │   ├── Anordnen ← Lunivo
+    │   ├── Nebeneinander ← Lunivo
+    │   ├── Untereinander ← Lunivo
+    │   ├── Kacheln ← Lunivo
+    │   └── Fensterliste ← Lunivo
+    │
+    ├── HELLIGKEIT ← Lunivo
+    │   ├── Wie das System
+    │   ├── Immer hell
+    │   └── Immer dunkel
+    │
+    └── OBERFLÄCHE ← Lunivo
+        ├── Register anpassen
+        ├── Symbol austauschen
+        ├── Benutzeroberfläche
+        ├── Menüleiste
+        ├── Symbolleisten
+        └── Vorlagen zurücksetzen
+═══════════════════════════════════════════════════════════════
+KONTEXTABHÄNGIGE REGISTER — sechs, je nachdem, wo der Zeiger steht
+═══════════════════════════════════════════════════════════════
+├── TABELLENWERKZEUGE          (Zeiger in einer Tabelle)
+│   ├── Tabelle
+│   ├── Zeilen und Spalten
+│   ├── Zellengröße
+│   ├── Ausrichtung
+│   └── Tabellenformatierung
+│
+├── ZEICHENTOOLS               (Zeiger auf einer Form)
+│   ├── Formen
+│   ├── Füllung
+│   ├── Kontur
+│   ├── Anordnen
+│   └── Größe
+│
+├── DIAGRAMMTOOLS
+│   ├── Diagrammentwurf
+│   ├── Daten
+│   ├── Diagrammtyp
+│   └── Formatierung
+│
+├── SMARTART-TOOLS
+│   ├── SmartArt-Entwurf
+│   └── SmartArt-Format
+│
+├── GLEICHUNGSWERKZEUGE
+│   └── Formeleditor-Funktionen
+│
+└── KOPF- UND FUSSZEILENWERKZEUGE
+    ├── Kopfzeile
+    ├── Fußzeile
+    ├── Seitenzahl
+    └── Navigation
+═══════════════════════════════════════════════════════════════
+OPTIONEN — das Fenster hinter „☰ Menü ▸ Optionen"
+═══════════════════════════════════════════════════════════════
+Erreichbar an vier Stellen, und an allen vieren dieselbe Seite:
+  Band            ☰ Menü ▸ Optionen
+  Menüleiste      Datei ▸ Optionen
+  Symbolleiste    ☰ Menü ▸ Optionen — und der letzte Knopf der Leiste
+  Tastatur        F9
+Überall an derselben Stelle in der Reihenfolge: nach der Hilfe, vor dem
+Beenden. So steht es im WPS-Menü auf dem Foto — ganz unten, mit
+Zahnrad, gleich über dem Ausgang.
+DREI ZWEIGE, NEUNZEHN SEITEN. Das Fenster hatte lange eine flache
+Liste; die Zweige sagen jetzt, wonach man sucht. „Leichter lesen" steht
+zuoberst, weil das der Grund für dieses Programm ist. Alle dreizehn
+Seiten des WPS Writer sind gebaut, dazu sechs eigene.
+├── LEICHTER LESEN ← Lunivo
+│   │
+│   ├── LESEHILFE
+│   │   ├── Leichter lesen
+│   │   │   ├── Papierton
+│   │   │   ├── Buchstabenabstand
+│   │   │   ├── Wortabstand
+│   │   │   └── Zeilenluft
+│   │   ├── Beim Schreiben
+│   │   │   ├── Zeilenfokus
+│   │   │   ├── Absatz beim Schreiben
+│   │   │   └── Übriger Text
+│   │   ├── Schrift und Sprache
+│   │   │   ├── Schrift zum leichteren Lesen
+│   │   │   ├── Silbentrennung
+│   │   │   └── Rechtschreibung während der Eingabe prüfen
+│   │   └── Vorlesen
+│   │       └── Den Text hören
+│   │
+│   ├── SCHRIFTARTEN
+│   │   ├── Schrift für neuen Text
+│   │   │   ├── Schrift
+│   │   │   └── Größe
+│   │   └── Zum leichteren Lesen
+│   │       ├── Drei Schriften sind dafür gemacht
+│   │       └── Sind sie da?
+│   │
+│   ├── SPRACHE
+│   │   ├── Sprache
+│   │   │   ├── Sprache für die Prüfung
+│   │   │   └── Übersetzen nach
+│   │   ├── Was geprüft wird
+│   │   │   ├── Rechtschreibung während der Eingabe
+│   │   │   ├── Grammatik mitprüfen
+│   │   │   ├── Silbentrennung
+│   │   │   └── Alle Prüfoptionen
+│   │   └── Wörter, die Lunivo kennt
+│   │       ├── Dein eigener Wortschatz
+│   │       └── Gründlich prüfen
+│   │
+│   └── RECHTSCHREIBPRÜFUNG
+│       ├── Rechtschreibprüfung
+│       │   ├── Sprache für die Prüfung
+│       │   ├── Rechtschreibung während der Eingabe prüfen
+│       │   ├── Immer Korrekturvorschläge unterbreiten
+│       │   ├── Grammatik mitprüfen
+│       │   ├── Wörter in GROSSBUCHSTABEN ignorieren
+│       │   ├── Wörter mit Zahlen ignorieren
+│       │   ├── Internet- und Netzwerkpfade ignorieren
+│       │   └── Weggewinkte Funde wieder anzeigen
+│       └── Benutzerwörterbuch
+│           └── Was das Programm gelernt hat
+│
+├── WIE IM WPS WRITER
+│   │
+│   ├── ANSICHT
+│   │   ├── Anzeigen
+│   │   │   ├── Lineal
+│   │   │   ├── Vertikales Lineal
+│   │   │   ├── Navigationsbereich
+│   │   │   ├── Textbegrenzungen
+│   │   │   ├── Gitternetzlinien
+│   │   │   ├── Statusleiste
+│   │   │   ├── Seitenleiste beim Start
+│   │   │   ├── QuickInfo
+│   │   │   ├── Live-Vorschau
+│   │   │   ├── Minisymbolleiste bei Auswahl
+│   │   │   ├── Minisymbolleiste bei Rechtsklick
+│   │   │   └── Tipp für Kopf- bzw. Fußzeile
+│   │   ├── Druckoptionen
+│   │   │   ├── Hervorhebungen drucken
+│   │   │   ├── Textbegrenzungen drucken
+│   │   │   ├── Zuschnittsmarken anzeigen
+│   │   │   ├── Feldfunktionen drucken
+│   │   │   ├── Textmarken drucken
+│   │   │   └── Feldschattierung
+│   │   ├── Formatierungszeichen
+│   │   │   ├── Alle anzeigen
+│   │   │   ├── Absatzmarken
+│   │   │   ├── Leerzeichen
+│   │   │   ├── Tabstoppzeichen
+│   │   │   ├── Objektanker
+│   │   │   └── Ausgeblendeter Text
+│   │   ├── Menübandoptionen
+│   │   │   ├── Doppelklick blendet das Band aus
+│   │   │   └── Strg+Klick folgt einem Verweis
+│   │   └── Darstellung
+│   │       ├── Schrift und Helligkeit
+│   │       ├── Größe der Symbole
+│   │       ├── Schrift der Bedienung
+│   │       └── Benutzeroberfläche
+│   │
+│   ├── BEARBEITEN
+│   │   ├── Bearbeitungsoptionen
+│   │   │   ├── Wortweise markieren
+│   │   │   ├── Text mit der Maus verschieben
+│   │   │   ├── Tippen ersetzt die Auswahl
+│   │   │   └── Maximale Rückgängig-Schritte
+│   │   ├── AutoFormat
+│   │   │   ├── Automatisch nummerierte Listen
+│   │   │   ├── Aufzählungen erkennen
+│   │   │   └── Zahl automatisch im Kreis
+│   │   ├── AutoKorrektur
+│   │   │   ├── AutoKorrektur
+│   │   │   ├── Typografische Anführungszeichen
+│   │   │   ├── Gedankenstriche
+│   │   │   ├── Auslassungspunkte
+│   │   │   ├── Jeden Satz mit einem Großbuchstaben beginnen
+│   │   │   ├── Wochentage immer großschreiben
+│   │   │   ├── Englische Ordnungszahlen hochstellen
+│   │   │   ├── Feststelltaste korrigieren
+│   │   │   ├── Internet- und Netzwerkpfade durch Hyperlinks ersetzen
+│   │   │   ├── Leerzeichen am Absatzanfang mit Erstzeileneinzug
+│   │   │   ├── Leerzeichenformat am Ende rechtsbündiger Zeilen anpassen
+│   │   │   ├── Bei zentriertem Ausrichten Erstzeileneinzug löschen
+│   │   │   ├── Tabulator und Rücktaste setzen den Einzug
+│   │   │   └── Wortvorhersage
+│   │   └── Ausschneiden und Einfügen
+│   │       ├── Schaltfläche nach dem Einfügen
+│   │       ├── Mittlere Maustaste fügt ein
+│   │       ├── Standardeinfügeformat
+│   │       └── Ohne Formatierung einfügen
+│   │
+│   ├── ALLGEMEIN UND SPEICHERN
+│   │   ├── Speichern
+│   │   │   └── Dateien als Standard speichern
+│   │   ├── Allgemeine Optionen
+│   │   │   ├── Maßeinheit
+│   │   │   ├── Bilder in der Datei nicht komprimieren
+│   │   │   └── Standard-Ausgabeziel
+│   │   ├── Webseite
+│   │   │   └── Webseitencodierung
+│   │   └── Kompatibilitätsoptionen
+│   │       ├── Seitenumbruch und Absatzmarke aufteilen
+│   │       ├── Hängenden Einzug nicht als Tabstopp verwenden
+│   │       ├── Nachstehende Leerstellen unterstreichen
+│   │       ├── Layout von Fußnoten wie Word 6/95/97
+│   │       └── Zeilenhöhe in Tabellen auf Rasterhöhe anpassen
+│   │
+│   ├── SICHERUNGSEINSTELLUNGEN
+│   │   ├── Sicherung
+│   │   │   ├── Wann gesichert wird
+│   │   │   ├── Abstand (Minuten)
+│   │   │   └── Wo die Einstellungen liegen
+│   │   ├── Zwischenstände aufheben
+│   │   │   ├── Wie lange (Tage)
+│   │   │   └── Zwischenstände löschen
+│   │   └── Was im Speicher steht
+│   │       └── Sichern und zurückholen
+│   │
+│   ├── SPEICHERORT FÜR DATEIEN
+│   │   └── Speicherort für Dateien
+│   │       ├── Ordner zum Speichern
+│   │       └── Eigene Vorlagen
+│   │
+│   ├── ÄNDERUNGEN VERFOLGEN
+│   │   ├── Änderungen verfolgen
+│   │   │   ├── Änderungen verfolgen
+│   │   │   └── Markup anzeigen
+│   │   ├── Markup
+│   │   │   ├── Einfügungen
+│   │   │   ├── Löschvorgänge
+│   │   │   ├── Geänderte Zeilen
+│   │   │   └── Farbe
+│   │   ├── Sprechblasen
+│   │   │   ├── Sprechblasen verwenden
+│   │   │   ├── Empfohlene Breite verwenden
+│   │   │   ├── Bevorzugte Breite (mm)
+│   │   │   ├── Seitenrand
+│   │   │   └── Verbindungslinien zum Text anzeigen
+│   │   └── Drucken (mit Sprechblasen)
+│   │       └── Papierausrichtung
+│   │
+│   ├── IN PDF EXPORTIEREN
+│   │   └── Exportoptionen
+│   │       ├── Hyperlinks
+│   │       ├── Überschriften als Lesezeichen
+│   │       ├── Kommentare mitnehmen
+│   │       ├── Dokumenteigenschaften mitnehmen
+│   │       ├── Verknüpfung von Fuß- und Endnoten
+│   │       ├── Textmarken übernehmen
+│   │       ├── Andere Formatvorlagen in Lesezeichen umwandeln
+│   │       ├── Eigene Formatvorlagen in Lesezeichen umwandeln
+│   │       └── PDF nach dem Export öffnen
+│   │
+│   ├── BENUTZERINFORMATIONEN
+│   │   └── Benutzerdaten
+│   │       ├── Wer schreibt
+│   │       ├── Initialen
+│   │       └── Diese Benutzerinformationen verwenden
+│   │
+│   ├── DRUCKEN
+│   │   ├── Druckoptionen
+│   │   │   ├── Womit das Druckfenster aufgeht
+│   │   │   ├── Hohe Qualität
+│   │   │   ├── Umgekehrte Reihenfolge
+│   │   │   ├── Zeichnungsobjekte drucken
+│   │   │   ├── Hintergrundfarben und -bilder drucken
+│   │   │   ├── Leere Seiten mitdrucken
+│   │   │   ├── Felder vor dem Drucken aktualisieren
+│   │   │   ├── Feldfunktionen drucken
+│   │   │   ├── Ausgeblendeter Text
+│   │   │   └── Autor der Kommentare und Überarbeitungen
+│   │   ├── Nur für das aktuelle Dokument
+│   │   │   └── Nur Formulardaten drucken
+│   │   └── Duplexdruck
+│   │       ├── Blattvorderseite
+│   │       └── Blattrückseite
+│   │
+│   ├── SICHERHEIT
+│   │   ├── Kennwortschutz
+│   │   │   ├── Dokumentkennwort
+│   │   │   └── Bearbeitung sperren
+│   │   └── Datenschutz
+│   │       ├── Ausgeblendete Markups beim Öffnen anzeigen
+│   │       └── Beim Speichern persönliche Daten entfernen
+│   │
+│   ├── MENÜBAND ANPASSEN
+│   │   ├── Befehle auswählen
+│   │   └── Menüband anpassen
+│   │
+│   └── SYMBOLLEISTE FÜR DEN SCHNELLZUGRIFF
+│       ├── Befehle auswählen
+│       └── Derzeit angezeigte Optionen
+│
+└── NUR BEI LUNIVO ← Lunivo
+    │
+    ├── SCHREIBHILFE UND KI
+    │   └── Prüfung und KI
+    │       ├── API-Schlüssel
+    │       ├── KI-Modell
+    │       ├── Für wen der Text ist
+    │       └── Verbrauch
+    │
+    ├── GEDÄCHTNIS
+    │   └── Gedächtnis
+    │       └── Gelernte Schreibweisen
+    │
+    └── ERWEITERT
+        └── Erweitert
+            └── Was zusätzlich geholt wurde
