@@ -142,6 +142,50 @@ def zusatz_soll():
     return baum
 
 
+def optionen_soll():
+    """Der Optionen-Baum aus der Lesekopie: Seite -> [Gruppe -> [Feld]]."""
+    text = SOLL.read_text(encoding='utf-8')
+    block = text[text.index('OPTIONEN —'):]
+    seiten, seite, gruppe = {}, None, None
+    for zeile in block.split('\n'):
+        if re.match(r'^│   [├└]── [A-ZÄÖÜ]', zeile) or re.match(r'^    [├└]── [A-ZÄÖÜ]', zeile):
+            seite = zeile.split('── ', 1)[1].split('←')[0].strip()
+            seite = seite[0] + seite[1:].lower()
+            seiten[seite] = {}
+            gruppe = None
+        elif seite is not None and re.match(r'^[│ ]   [│ ]   [├└]── ', zeile):
+            gruppe = zeile.split('── ', 1)[1].strip()
+            seiten[seite][gruppe] = []
+        elif gruppe is not None and re.match(r'^[│ ]   [│ ]   [│ ]   [├└]── ', zeile):
+            seiten[seite][gruppe].append(zeile.split('── ', 1)[1].strip())
+    return seiten
+
+
+def optionen_ist():
+    """Dasselbe aus doku/aufbau-optionen.md, das aufbau-schreiben.py
+    aus dem laufenden Programm zieht."""
+    text = (WURZEL / 'doku' / 'aufbau-optionen.md').read_text(encoding='utf-8')
+    seiten, seite, gruppe = {}, None, None
+    for zeile in text.split('\n'):
+        m = re.match(r'^### (.+)$', zeile)
+        if m:
+            seite = m.group(1).strip()
+            seiten[seite] = {}
+            gruppe = None
+            continue
+        if seite is None:
+            continue
+        m = re.match(r'^[├└]── (.+)$', zeile)
+        if m:
+            gruppe = m.group(1).strip()
+            seiten[seite][gruppe] = []
+            continue
+        m = re.match(r'^[│ ]   [├└]── (.+)$', zeile)
+        if m and gruppe is not None:
+            seiten[seite][gruppe].append(m.group(1).strip())
+    return seiten
+
+
 def band_lesen():
     """Aus register.js: Reiter -> [(Symbolname, Titel)].
 
@@ -196,6 +240,23 @@ def istBuchstabe(zeichen):
     return zeichen in BUCHSTABEN or len(zeichen) <= 2
 
 
+def finde(namen, gesucht):
+    """Erst auf den Buchstaben genau, dann ungefähr.
+
+    „Sprechblasen" steckt in „Drucken (mit Sprechblasen)". Wer beide in
+    einem Durchgang sucht, greift die falsche Gruppe und meldet danach,
+    die Papierausrichtung fehle — sie stand die ganze Zeit da.
+
+    Denselben Fehler hatte ich weiter oben schon bei „Umbruch" und
+    „Seitenumbruch" gemacht und dort behoben, hier aber neu gebaut. Also
+    steht er jetzt an einer Stelle, für alle drei Vergleiche."""
+    for streng in (True, False):
+        for n in namen:
+            if gleich(n, gesucht, genau=streng):
+                return n
+    return None
+
+
 def gleich(a, b, genau=False):
     """Namen vergleichen, ohne an einem Bindestrich oder einer Klammer zu
     scheitern — aber streng genug, dass „A4" nicht auf „Farben" passt.
@@ -240,7 +301,7 @@ def main():
 
     for reiter, gruppen in baum.items():
         # Der Reiter kann im Band anders heißen (Verweise/Referenzen).
-        treffer = next((r for r in band if gleich(r, reiter)), None)
+        treffer = finde(band, reiter)
         hat = band.get(treffer, []) if treffer else []
         zeilen.append('## ' + reiter
                       + ('' if treffer else '  — **im Band nicht gefunden**'))
@@ -329,7 +390,7 @@ def main():
     zeilen.append('| Leiste | Gruppe | Stand |')
     zeilen.append('|---|---|---|')
     for name, gruppen in zusollen.items():
-        treffer = next((r for r in zusatz if gleich(r, name)), None)
+        treffer = finde(zusatz, name)
         if not treffer:
             zeilen.append('| %s | — | **fehlt ganz** |' % name)
             summe['fehlt'] += 1
@@ -343,6 +404,39 @@ def main():
             if not any(gleich(h, g) for g in gruppen):
                 zeilen.append('| %s | %s | eigen |' % (name, h))
                 summe['eigen'] += 1
+    zeilen.append('')
+
+    # --- Das Optionen-Fenster: drei Zweige, neunzehn Seiten ---
+    osoll, oist = optionen_soll(), optionen_ist()
+    zeilen.append('## Optionen')
+    zeilen.append('')
+    zeilen.append('Neunzehn Seiten. Der IST-Stand kommt aus `doku/aufbau-optionen.md`,')
+    zeilen.append('das `aufbau-schreiben.py` aus dem laufenden Programm zieht.')
+    zeilen.append('')
+    zeilen.append('| Seite | Gruppe | Stand |')
+    zeilen.append('|---|---|---|')
+    for seite, gruppen in osoll.items():
+        treffer = finde(oist, seite)
+        if not treffer:
+            zeilen.append('| %s | — | **fehlt ganz** |' % seite)
+            summe['fehlt'] += 1
+            continue
+        hat = oist[treffer]
+        for g, felder in gruppen.items():
+            hatG = finde(hat, g)
+            if not hatG:
+                zeilen.append('| %s | %s | **fehlt** |' % (seite, g))
+                summe['fehlt'] += 1
+                continue
+            fehlen = [f for f in felder if not any(gleich(x, f) for x in hat[hatG])]
+            if fehlen:
+                zeilen.append('| %s | %s | **fehlt darin:** %s |'
+                              % (seite, g, ', '.join(fehlen)))
+                summe['fehlt'] += len(fehlen)
+            else:
+                zeilen.append('| %s | %s | gleich (%d Felder) |'
+                              % (seite, g, len(felder)))
+                summe['gleich'] += 1
     zeilen.append('')
 
     zeilen[6] = ('**%d gleich · %d fehlen · %d eigen · %d ohne Bild**'

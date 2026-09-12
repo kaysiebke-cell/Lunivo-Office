@@ -4,7 +4,7 @@ Geschrieben von `werkzeug/reiter-abgleich.py`. Das SOLL kommt aus
 seinem Prüfkatalog (Lesekopie in `doku/wps-soll-lesekopie.txt`),
 der IST-Stand aus `oberflaeche/daten/register.js`.
 
-**234 gleich · 0 fehlen · 27 eigen · 0 ohne Bild**
+**280 gleich · 0 fehlen · 27 eigen · 0 ohne Bild**
 
 - **fehlt** — steht im SOLL, nicht im Band. Kein Ermessen.
 - **eigen** — steht im Band, nicht im SOLL. Das heißt nicht
@@ -557,4 +557,58 @@ und fehlten darum im Bogen ganz.
 | Kopf- und Fußzeilenwerkzeuge | Fußzeile | gleich |
 | Kopf- und Fußzeilenwerkzeuge | Seitenzahl | gleich |
 | Kopf- und Fußzeilenwerkzeuge | Navigation | gleich |
+
+## Optionen
+
+Neunzehn Seiten. Der IST-Stand kommt aus `doku/aufbau-optionen.md`,
+das `aufbau-schreiben.py` aus dem laufenden Programm zieht.
+
+| Seite | Gruppe | Stand |
+|---|---|---|
+| Lesehilfe | Leichter lesen | gleich (4 Felder) |
+| Lesehilfe | Beim Schreiben | gleich (3 Felder) |
+| Lesehilfe | Schrift und Sprache | gleich (3 Felder) |
+| Lesehilfe | Vorlesen | gleich (1 Felder) |
+| Schriftarten | Schrift für neuen Text | gleich (2 Felder) |
+| Schriftarten | Zum leichteren Lesen | gleich (2 Felder) |
+| Sprache | Sprache | gleich (2 Felder) |
+| Sprache | Was geprüft wird | gleich (4 Felder) |
+| Sprache | Wörter, die Lunivo kennt | gleich (2 Felder) |
+| Rechtschreibprüfung | Rechtschreibprüfung | gleich (8 Felder) |
+| Rechtschreibprüfung | Benutzerwörterbuch | gleich (1 Felder) |
+| Ansicht | Anzeigen | gleich (12 Felder) |
+| Ansicht | Druckoptionen | gleich (6 Felder) |
+| Ansicht | Formatierungszeichen | gleich (6 Felder) |
+| Ansicht | Menübandoptionen | gleich (2 Felder) |
+| Ansicht | Darstellung | gleich (4 Felder) |
+| Bearbeiten | Bearbeitungsoptionen | gleich (4 Felder) |
+| Bearbeiten | AutoFormat | gleich (3 Felder) |
+| Bearbeiten | AutoKorrektur | gleich (14 Felder) |
+| Bearbeiten | Ausschneiden und Einfügen | gleich (4 Felder) |
+| Allgemein und speichern | Speichern | gleich (1 Felder) |
+| Allgemein und speichern | Allgemeine Optionen | gleich (3 Felder) |
+| Allgemein und speichern | Webseite | gleich (1 Felder) |
+| Allgemein und speichern | Kompatibilitätsoptionen | gleich (5 Felder) |
+| Sicherungseinstellungen | Sicherung | gleich (3 Felder) |
+| Sicherungseinstellungen | Zwischenstände aufheben | gleich (2 Felder) |
+| Sicherungseinstellungen | Was im Speicher steht | gleich (1 Felder) |
+| Speicherort für dateien | Speicherort für Dateien | gleich (2 Felder) |
+| Änderungen verfolgen | Änderungen verfolgen | gleich (2 Felder) |
+| Änderungen verfolgen | Markup | gleich (4 Felder) |
+| Änderungen verfolgen | Sprechblasen | gleich (5 Felder) |
+| Änderungen verfolgen | Drucken (mit Sprechblasen) | gleich (1 Felder) |
+| In pdf exportieren | Exportoptionen | gleich (9 Felder) |
+| Benutzerinformationen | Benutzerdaten | gleich (3 Felder) |
+| Drucken | Druckoptionen | gleich (10 Felder) |
+| Drucken | Nur für das aktuelle Dokument | gleich (1 Felder) |
+| Drucken | Duplexdruck | gleich (2 Felder) |
+| Sicherheit | Kennwortschutz | gleich (2 Felder) |
+| Sicherheit | Datenschutz | gleich (2 Felder) |
+| Menüband anpassen | Befehle auswählen | gleich (0 Felder) |
+| Menüband anpassen | Menüband anpassen | gleich (0 Felder) |
+| Symbolleiste für den schnellzugriff | Befehle auswählen | gleich (0 Felder) |
+| Symbolleiste für den schnellzugriff | Derzeit angezeigte Optionen | gleich (0 Felder) |
+| Schreibhilfe und ki | Prüfung und KI | gleich (4 Felder) |
+| Gedächtnis | Gedächtnis | gleich (1 Felder) |
+| Erweitert | Erweitert | gleich (1 Felder) |
 
