@@ -103,3 +103,61 @@ Sonderfall aus dem chinesischen Formularwesen.
 ---
 
 [← Zurück zum README](../README.md) · [Der Aufbau der Optionen](aufbau-optionen.md)
+
+---
+
+## Bilder — nachgetragen am 12.09.2026
+
+Kay: *„warum hast du nicht zu diesem Thema der Bildbearbeitung alles aus
+dem WPS-Ordner?"* — Berechtigt. Das Werkzeug lag da, ich hatte es nur
+für Tabellen benutzt. `werkzeug/wps-befehle-lesen.py` kennt jetzt auch
+die Gruppe **BILDER UND OBJEKTE**.
+
+### Was Lunivo hat
+
+| WPS | Lunivo |
+|---|---|
+| Picture Tools | Reiter **Bildtools** |
+| Insert Picture | Bild einfügen |
+| Picture Size | Acht Griffe, dazu „Größe genau angeben" |
+| Rotate · Rotate Left/Right 90 | Griff zum Drehen, in Fünf-Grad-Schritten |
+| Crop by Shape | Elf Formen |
+| Crop by Scale | Sechs Verhältnisse (1:1 bis 9:16) |
+| Crop (Kante für Kante) | „Kante für Kante in Prozent…" |
+| Reset Picture / Reset Size | Zuschnitt aufheben · Größe zurücksetzen |
+| Wrap Text (Square, Tight, Top and Bottom, Behind, In Front) | Layoutoptionen, sechs Fassungen mit Bildchen |
+| Lock anchor / Move with text | „Mit Text verschieben" / „Fester Text" |
+| Picture Preview | Bild groß ansehen (1:1 · einpassen) |
+
+### Was fehlt — nach Dringlichkeit
+
+1. **Flip Horizontal / Flip Vertical** — spiegeln. Ein Zweizeiler über
+   `transform: scaleX(-1)`, und man braucht es öfter, als man denkt.
+2. **Rotate Left 90 / Right 90** — die zwei festen Knöpfe neben dem
+   freien Drehgriff. Wer ein hochkant fotografiertes Blatt einfügt, will
+   nicht zielen müssen.
+3. **Bring Forward / Send Backward / Bring to Front / Send to Back** —
+   die Ebenen. Lunivo kennt bisher nur „vor" und „hinter dem Text", nicht
+   die Reihenfolge mehrerer Bilder untereinander.
+4. **Alt-Text** (Alternativtext). Steht in WPS unter den Bildoptionen.
+   Für ein Programm mit diesem Zweck gehört er eigentlich nach vorn: Er
+   ist das, was das Vorlesen aus einem Bild machen kann.
+5. **Set Transparent Color** — eine Farbe im Bild durchsichtig machen.
+   Geht über einen SVG-Filter, ist aber ein eigenes Stück.
+6. **Color · Grayscale · Black and White · Washout** — die vier
+   Farbfassungen. Über CSS-Filter machbar: `grayscale(1)`,
+   `contrast(...)`, `opacity(...)`.
+7. **Brightness / Contrast** — Helligkeit und Kontrast, ebenfalls
+   CSS-Filter.
+8. **Picture Effects**: Shadow, Reflection, Glow, Soft Edges, Bevel.
+   Schatten und weiche Kanten sind billig (`box-shadow`, `mask`), der
+   Rest ist Zierde.
+9. **Compress Pictures** — verkleinert die Datei. Lohnt erst, wenn
+   jemand Fotos aus der Kamera einfügt.
+10. **Group / Ungroup**, **Align Objects** — erst sinnvoll, wenn mehrere
+    Objekte frei auf der Seite liegen können. Das können sie seit heute.
+
+**Bewusst weggelassen:** *Convert Picture to Text* (Texterkennung — ein
+eigenes Programm), die zwanzig *Shadow Styles* und *Artistic Effects*.
+Nicht alles, was WPS hat, gehört in ein Programm für Menschen mit
+Legasthenie.

@@ -4036,7 +4036,14 @@ const REGISTER_IM_ZUSAMMENHANG = [
                  ['ecken', 'Größe zurücksetzen', () => B.bildGroesseZurueck()]]],
       ['Zuschneiden', [['schere', 'Zuschneiden', () => B.bildZuschneiden(), 'gross'],
                        ['zurueck', 'Zuschnitt aufheben', () => B.bildSchnittWeg()]]],
-      ['Drehen', [['zurueck', 'Drehung zurücksetzen', () => B.bildDrehenZurueck(), 'gross']]],
+      ['Drehen und Spiegeln',
+        [['zurueck', 'Nach links drehen (90°)', () => B.bildLinks90(), 'gross'],
+         ['vor', 'Nach rechts drehen (90°)', () => B.bildRechts90(), 'gross'],
+         ['ebeneHoch', 'Waagerecht spiegeln', () => B.bildSpiegelnWaagerecht()],
+         ['ebeneTief', 'Senkrecht spiegeln', () => B.bildSpiegelnSenkrecht()],
+         ['radierer', 'Drehung zurücksetzen', () => B.bildDrehenZurueck()]]],
+      ['Farbe', [['toenung', 'Farbe, Helligkeit, Kontrast', () => B.bildFarbe(), 'gross'],
+                 ['radierer', 'Farbe zurücksetzen', () => B.bildFarbeZurueck()]]],
       ['Stellung', [['fortlaufend', 'Wieder in den Text einreihen',
                      () => B.bildEinreihen(), 'gross']]],
     ],
@@ -9167,13 +9174,155 @@ B.bildEinreihen = () => {
   bildGriffeAuffrischen();
 };
 
+/* ------------------------------------------------------------
+   SPIEGELN, DREHEN IN SCHRITTEN, FARBE
+
+   Aus dem Abgleich mit WPS (doku/wps-tabellen-und-steuerung.md). Alle
+   vier sind billig, weil das Blatt sie ohnehin kann — sie mussten nur
+   erreichbar werden.
+
+   Drehung und Spiegelung stehen zusammen in EINER transform-Angabe: Zwei
+   getrennte Anweisungen ueberschreiben einander, und das Bild waere nach
+   dem Spiegeln wieder gerade. Deshalb werden beide gemerkt und jedes Mal
+   zusammen gesetzt.
+   ------------------------------------------------------------ */
+function bildVerwandlung(bild) {
+  const grad = Number(bild.dataset.drehung || 0);
+  const wx = bild.dataset.spiegelX === 'ja' ? -1 : 1;
+  const wy = bild.dataset.spiegelY === 'ja' ? -1 : 1;
+  const teile = [];
+  if (grad) teile.push('rotate(' + grad + 'deg)');
+  if (wx < 0 || wy < 0) teile.push('scale(' + wx + ',' + wy + ')');
+  bild.style.transform = teile.join(' ');
+}
+
+function bildJetzt() {
+  const b = bildZiel || bildAnStelle();
+  if (!b || b.tagName !== 'IMG') { melde('Im Text steht kein Bild.'); return null; }
+  return b;
+}
+
+B.bildSpiegelnWaagerecht = () => {
+  const bild = bildJetzt();
+  if (!bild) return;
+  bild.dataset.spiegelX = bild.dataset.spiegelX === 'ja' ? 'nein' : 'ja';
+  bildVerwandlung(bild);
+  geaendertMelden();
+  melde('Bild waagerecht gespiegelt — links und rechts vertauscht.');
+  bildGriffeNachmessen();
+};
+
+B.bildSpiegelnSenkrecht = () => {
+  const bild = bildJetzt();
+  if (!bild) return;
+  bild.dataset.spiegelY = bild.dataset.spiegelY === 'ja' ? 'nein' : 'ja';
+  bildVerwandlung(bild);
+  geaendertMelden();
+  melde('Bild senkrecht gespiegelt — oben und unten vertauscht.');
+  bildGriffeNachmessen();
+};
+
+/* Die zwei festen Knoepfe neben dem freien Drehgriff. Wer ein hochkant
+   fotografiertes Blatt einfuegt, will nicht zielen muessen. */
+function bildDrehenUm(grad) {
+  const bild = bildJetzt();
+  if (!bild) return;
+  const neu = (Number(bild.dataset.drehung || 0) + grad + 360) % 360;
+  bild.dataset.drehung = String(neu);
+  bildVerwandlung(bild);
+  geaendertMelden();
+  melde('Bild steht auf ' + neu + ' Grad.');
+  bildGriffeNachmessen();
+}
+
+B.bildLinks90 = () => bildDrehenUm(-90);
+B.bildRechts90 = () => bildDrehenUm(90);
+
+/* ------------------------------------------------------------
+   DIE FARBE EINES BILDES
+
+   Graustufen, Schwarzweiss, verblasst — und Helligkeit und Kontrast.
+   Alles ueber CSS-Filter: Das Bild bleibt unangetastet, die Datei wird
+   nicht groesser, und jeder Schritt ist ruecknehmbar.
+
+   „Verblasst" ist der, den man wirklich braucht: Ein Bild hinter dem
+   Text muss zurueckgenommen werden, sonst ist der Text nicht mehr
+   lesbar — und das ist in diesem Programm kein Schoenheitsfehler. */
+const BILDFARBEN = [
+  ['keine',   'Wie aufgenommen', ''],
+  ['grau',    'Graustufen',      'grayscale(1)'],
+  ['sw',      'Schwarzweiß',     'grayscale(1) contrast(2.6)'],
+  ['blass',   'Verblasst',       'opacity(.42) saturate(.6)'],
+  ['warm',    'Warm',            'sepia(.45) saturate(1.3)'],
+  ['kalt',    'Kühl',            'hue-rotate(-12deg) saturate(1.2)'],
+];
+
+function bildFilterSetzen(bild) {
+  const grund = BILDFARBEN.find(([m]) => m === (bild.dataset.farbe || 'keine'));
+  const teile = [];
+  if (grund && grund[2]) teile.push(grund[2]);
+  const hell = Number(bild.dataset.helligkeit || 100);
+  const kontrast = Number(bild.dataset.kontrast || 100);
+  if (hell !== 100) teile.push('brightness(' + (hell / 100).toFixed(2) + ')');
+  if (kontrast !== 100) teile.push('contrast(' + (kontrast / 100).toFixed(2) + ')');
+  bild.style.filter = teile.join(' ');
+}
+
+B.bildFarbe = () => {
+  const bild = bildJetzt();
+  if (!bild) return;
+  fenster('Farbe des Bildes', [
+    { schluessel: 'farbe', name: 'Fassung', art: 'auswahl',
+      wert: bild.dataset.farbe || 'keine',
+      werte: BILDFARBEN.map(([m, n]) => [m, n]) },
+    { schluessel: 'hell', name: 'Helligkeit (%)', art: 'number',
+      wert: String(bild.dataset.helligkeit || 100), schritt: '5' },
+    { schluessel: 'kontrast', name: 'Kontrast (%)', art: 'number',
+      wert: String(bild.dataset.kontrast || 100), schritt: '5' },
+  ], () => {
+    geaendertMelden();
+    melde('Farbe übernommen.');
+  }, 'Übernehmen', false,
+  /* Abbrechen: zurueck auf den Stand von vorher. */
+  ((alt) => () => {
+    bild.dataset.farbe = alt.farbe;
+    bild.dataset.helligkeit = alt.hell;
+    bild.dataset.kontrast = alt.kontrast;
+    bildFilterSetzen(bild);
+  })({ farbe: bild.dataset.farbe || 'keine',
+       hell: bild.dataset.helligkeit || '100',
+       kontrast: bild.dataset.kontrast || '100' }),
+  /* Und waehrend das Fenster offen steht, sofort zeigen. */
+  (werte) => {
+    bild.dataset.farbe = werte.farbe;
+    bild.dataset.helligkeit = String(Math.max(20, Math.min(200,
+      parseInt(werte.hell, 10) || 100)));
+    bild.dataset.kontrast = String(Math.max(20, Math.min(200,
+      parseInt(werte.kontrast, 10) || 100)));
+    bildFilterSetzen(bild);
+  });
+};
+
+B.bildFarbeZurueck = () => {
+  const bild = bildJetzt();
+  if (!bild) return;
+  delete bild.dataset.farbe;
+  delete bild.dataset.helligkeit;
+  delete bild.dataset.kontrast;
+  bild.style.filter = '';
+  geaendertMelden();
+  melde('Farbe zurückgesetzt.');
+};
+
 B.bildDrehenZurueck = () => {
   const bild = bildZiel || bildAnStelle();
   if (!bild) { melde('Im Text steht kein Bild.'); return; }
-  bild.style.transform = '';
   bild.dataset.drehung = '0';
+  delete bild.dataset.spiegelX;
+  delete bild.dataset.spiegelY;
+  bildVerwandlung(bild);
   geaendertMelden();
-  melde('Drehung zurückgesetzt.');
+  melde('Drehung und Spiegelung zurückgesetzt.');
   bildGriffeAuffrischen();
 };
 
@@ -9973,7 +10122,8 @@ function bildDrehenZiehen(fall) {
        Ein Bild, das um 1,7 Grad schief haengt, sieht nach Versehen aus. */
     const fein = e.shiftKey ? winkel : Math.round(winkel / 5) * 5;
     bild.dataset.drehung = String(Math.round(fein));
-    bild.style.transform = 'rotate(' + Math.round(fein) + 'deg)';
+    /* Ueber bildVerwandlung, damit eine Spiegelung nicht verlorengeht. */
+    bildVerwandlung(bild);
     bildGriffeStellen(bild);
   };
   const aufhoeren = () => {

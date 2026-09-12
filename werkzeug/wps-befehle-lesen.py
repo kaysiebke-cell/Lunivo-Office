@@ -33,6 +33,12 @@ GRUPPEN = {
         r"(?i)\b(table|cell|row|column|merge|split|gridline)\b",
         r"(?i)chart|series|axis|smartart|pivot|mail|sql|database|formula|\(|%|<",
     ),
+    "BILDER UND OBJEKTE": (
+        r"(?i)\b(picture|image|crop|rotate|flip|wrap|transparen|brightness"
+        r"|contrast|artistic|shadow|reflection|glow|3-?d|bevel|compress"
+        r"|alt text|shape|group|align|layer|bring|send|anchor|frame|border)\b",
+        r"(?i)chart|smartart|mail|pdf|slide|\(|%|<|error|cannot|failed",
+    ),
     "DOKUMENTENSTEUERUNG": (
         r"(?i)\b(section|break|header|footer|page setup|watermark|protect"
         r"|track changes|restrict|navigation|outline|bookmark)\b",
