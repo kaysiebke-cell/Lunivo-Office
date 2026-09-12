@@ -2447,7 +2447,20 @@ body.lesen .arbeitsflaeche{padding:40px 24px}
 hr.abschnitt{
   border:0;border-top:2px dashed var(--rand);
   margin:6mm 0;break-after:page;
+  position:relative;overflow:visible;
 }
+/* Der Name der Umbruchart am Strich. Ein gestrichelter Strich allein
+   sagt nicht, ob der Abschnitt auf der naechsten Seite beginnt oder
+   auf derselben weiterlaeuft. */
+hr.abschnitt::after{
+  content:attr(data-name);
+  position:absolute;top:-.75em;left:0;
+  background:var(--blatt, #fff);
+  padding:0 3px;
+  color:#9AA3AB;font-size:.7rem;
+}
+/* Fortlaufend heisst: kein Seitenwechsel. */
+hr.abschnitt[data-art="Continuous"]{break-after:auto}
 .dokument--steuerzeichen .spaltenumbruch::after{
   content:'⇥ Spaltenumbruch';color:#9AA3AB;font-size:.75em;
 }

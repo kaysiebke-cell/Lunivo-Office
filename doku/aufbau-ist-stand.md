@@ -114,6 +114,7 @@ DIE BÄNDER
 │   │   ├── Ausrichtung
 │   │   ├── Papierformat
 │   │   ├── Spalten
+│   │   ├── Textrichtung
 │   │   ├── Umbruch
 │   │   ├── Normal (2,5 cm)
 │   │   ├── Schmal (1,3 cm)
@@ -129,7 +130,10 @@ DIE BÄNDER
 │   │   ├── Legal (21,6 × 35,6 cm)
 │   │   ├── Seitenumbruch
 │   │   ├── Spaltenumbruch
-│   │   └── Abschnittsumbruch
+│   │   ├── Abschnitt: nächste Seite
+│   │   ├── Abschnitt: fortlaufend
+│   │   ├── Abschnitt: gerade Seite
+│   │   └── Abschnitt: ungerade Seite
 │   ├── Absatz
 │   │   ├── Einzug
 │   │   ├── Absatzabstand

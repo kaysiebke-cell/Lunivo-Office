@@ -145,6 +145,7 @@ SEITENLAYOUT
 │   ├── Ausrichtung
 │   ├── Papierformat
 │   ├── Spalten
+│   ├── Textrichtung
 │   ├── Umbruch
 │   ├── Normal (2,5 cm)
 │   ├── Schmal (1,3 cm)
@@ -160,7 +161,10 @@ SEITENLAYOUT
 │   ├── Legal (21,6 × 35,6 cm)
 │   ├── Seitenumbruch
 │   ├── Spaltenumbruch
-│   └── Abschnittsumbruch
+│   ├── Abschnitt: nächste Seite
+│   ├── Abschnitt: fortlaufend
+│   ├── Abschnitt: gerade Seite
+│   └── Abschnitt: ungerade Seite
 ├── Absatz
 │   ├── Einzug
 │   ├── Absatzabstand
@@ -354,7 +358,10 @@ genannt — das ist Absicht: ein Schalter, mehrere Stellen, ein Zustand.
 | Absatzabstand | Seitenlayout ▸ Absatz |
 | Absatzrahmen | Start ▸ Absatz · Start ▸ Absatzlayout |
 | Absatzschattierung | Start ▸ Absatz · Start ▸ Absatzlayout |
-| Abschnittsumbruch | Seitenlayout ▸ Seite einrichten |
+| Abschnitt: fortlaufend | Seitenlayout ▸ Seite einrichten |
+| Abschnitt: gerade Seite | Seitenlayout ▸ Seite einrichten |
+| Abschnitt: nächste Seite | Seitenlayout ▸ Seite einrichten |
+| Abschnitt: ungerade Seite | Seitenlayout ▸ Seite einrichten |
 | Adressblock | Sendungen ▸ Seriendruck |
 | Alle annehmen | Überprüfen ▸ Änderungen |
 | Alle Kommentare löschen | Überprüfen ▸ Kommentare |
@@ -510,6 +517,7 @@ genannt — das ist Absicht: ein Schalter, mehrere Stellen, ein Zustand.
 | Textbegrenzungen | Ansicht ▸ Anzeigen |
 | Texteffekte | Start ▸ Schriftart |
 | Textfeld | Einfügen ▸ Text · Sendungen ▸ Formular |
+| Textrichtung | Seitenlayout ▸ Seite einrichten |
 | Textumbruch | Seitenlayout ▸ Textumbruch |
 | Thesaurus | Überprüfen ▸ Dokumentprüfung · Schreibhilfe ▸ Sprache |
 | Tiefgestellt | Start ▸ Schriftart |

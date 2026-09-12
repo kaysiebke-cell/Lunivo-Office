@@ -8348,6 +8348,71 @@ B.objektDrehen = (knopf) => {
   });
 };
 
+/* ============================================================
+   TEXTRICHTUNG
+
+   Aus WPS: Text laesst sich in einer Tabellenzelle oder in einem
+   Textrahmen um eine Vierteldrehung kippen. Gebraucht wird das fuer
+   schmale Kopfspalten — eine Tabelle mit zwoelf Monaten passt sonst
+   nicht auf die Seite.
+
+   NUR IN ZELLE UND RAHMEN, nicht im laufenden Text: Ein gekippter
+   Absatz mitten im Fliesstext hat keine Hoehe, an der die Zeile
+   danach sich ausrichten koennte.
+   ============================================================ */
+const TEXTRICHTUNGEN = [
+  ['waagerecht', 'Waagerecht', ''],
+  ['abwaerts',   'Nach unten gedreht (90°)', 'vertical-rl'],
+  ['aufwaerts',  'Nach oben gedreht (270°)', 'vertical-rl-180'],
+];
+
+function richtungsziel() {
+  const zelle = (typeof zelleOderZuletzt === 'function') ? zelleOderZuletzt() : null;
+  if (zelle) return zelle;
+  const auswahl = window.getSelection();
+  let k = auswahl && auswahl.anchorNode;
+  if (k && k.nodeType === Node.TEXT_NODE) k = k.parentElement;
+  const rahmen = k && k.closest ? k.closest('.textrahmen') : null;
+  return (rahmen && feld.contains(rahmen)) ? rahmen : null;
+}
+
+B.textrichtung = (knopf) => {
+  const ziel = richtungsziel();
+  if (!ziel) {
+    melde('Dafür muss der Zeiger in einer Tabellenzelle oder in einem Textrahmen stehen.');
+    return;
+  }
+  designTafelZeigen(knopf, 'Textrichtung', (tafel) => {
+    for (const [kuerzel, name, wert] of TEXTRICHTUNGEN) {
+      const k = document.createElement('button');
+      k.type = 'button';
+      k.className = 'designtafel__zeile';
+      k.textContent = name;
+      if ((ziel.dataset.richtung || 'waagerecht') === kuerzel) k.setAttribute('aria-checked', 'true');
+      k.addEventListener('mousedown', (e) => e.preventDefault());
+      k.addEventListener('click', () => {
+        ziel.dataset.richtung = kuerzel;
+        if (!wert) {
+          ziel.style.writingMode = '';
+          ziel.style.transform = '';
+        } else {
+          ziel.style.writingMode = 'vertical-rl';
+          ziel.style.transform = (wert === 'vertical-rl-180') ? 'rotate(180deg)' : '';
+        }
+        geaendertMelden();
+        designTafelWeg();
+        melde('Textrichtung: ' + name + '.');
+      });
+      tafel.appendChild(k);
+    }
+    const satz = document.createElement('p');
+    satz.className = 'layouttafel__satz';
+    satz.textContent = 'Gilt für die Zelle oder den Rahmen, in dem der Zeiger steht. '
+                     + 'Die Zeile darunter wird dabei meist höher.';
+    tafel.appendChild(satz);
+  });
+};
+
 B.seitenfarbe = () => {
   fenster('Seitenfarbe', [
     { art: 'satz', text: 'Färbt das Blatt. Beim Drucken kostet das Farbe —\nfür ein Schreiben ans Amt lieber weiß lassen.' },
@@ -9669,7 +9734,18 @@ B.spaltenumbruch = () => {
   melde('Spaltenumbruch gesetzt — er wirkt, sobald mehrere Spalten eingestellt sind.');
 };
 
-B.abschnittsumbruch = () => {
+/* Die vier Arten, die Word und WPS kennen. Der Name steht am Strich,
+   damit man auf dem Blatt sieht, welche es war — ein gestrichelter
+   Strich allein sagt das nicht. */
+const ABSCHNITTSARTEN = {
+  NextPage:   ['Nächste Seite', 'Der Abschnitt beginnt auf einer neuen Seite.'],
+  Continuous: ['Fortlaufend', 'Der Abschnitt beginnt auf derselben Seite.'],
+  EvenPage:   ['Gerade Seite', 'Der Abschnitt beginnt auf der nächsten geraden Seite.'],
+  OddPage:    ['Ungerade Seite', 'Der Abschnitt beginnt auf der nächsten ungeraden Seite.'],
+};
+
+B.abschnittsumbruch = (art = 'NextPage') => {
+  if (!ABSCHNITTSARTEN[art]) art = 'NextPage';
   /* Ein Abschnitt trennt Teile mit eigenem Aussehen — etwa ein Deckblatt
      vom Rest. Sichtbar als Linie, im Druck als Seitenwechsel.
 
@@ -9691,12 +9767,16 @@ B.abschnittsumbruch = () => {
       neuer.header.linkedToPrevious = true;
       neuer.footer.linkedToPrevious = true;
     }
-    neuer.insertBreak(Dokumentmodell.SectionBreakType.NextPage);
+    neuer.insertBreak(Dokumentmodell.SectionBreakType[art]);
     abschnitteSichern();
   }
-  Dokument.einfuegen('<hr class="abschnitt" data-abschnitt="1"><p><br></p>');
-  melde(Aufbau ? 'Abschnitt ' + Aufbau.getSections().length + ' beginnt hier.'
-               : 'Abschnittsumbruch gesetzt.');
+  /* Fortlaufend heisst: kein Seitenwechsel. Das muss der Strich selbst
+     wissen, sonst druckt er trotzdem eine neue Seite. */
+  Dokument.einfuegen('<hr class="abschnitt" data-abschnitt="1" data-art="'
+    + art + '" data-name="' + ABSCHNITTSARTEN[art][0] + '"><p><br></p>');
+  melde(Aufbau ? 'Abschnitt ' + Aufbau.getSections().length + ' beginnt hier: '
+                 + ABSCHNITTSARTEN[art][0] + '.'
+               : 'Abschnittsumbruch: ' + ABSCHNITTSARTEN[art][0] + '.');
 };
 
 /* ---- Bilder anordnen ----
@@ -12757,10 +12837,14 @@ const MENUES = [
         { name: 'Legal', tun: setzePapier('legal'), haken: () => papier === 'legal' },
       ] },
       { name: 'Spalten', tun: B.spalten },
+      { name: 'Textrichtung', tun: () => B.textrichtung(null) },
       { name: 'Umbruch', unter: [
         { name: 'Seitenumbruch', tun: B.seitenumbruch },
         { name: 'Spaltenumbruch', tun: B.spaltenumbruch },
-        { name: 'Abschnittsumbruch', tun: B.abschnittsumbruch },
+        { name: 'Abschnitt: nächste Seite', tun: () => B.abschnittsumbruch('NextPage') },
+        { name: 'Abschnitt: fortlaufend', tun: () => B.abschnittsumbruch('Continuous') },
+        { name: 'Abschnitt: gerade Seite', tun: () => B.abschnittsumbruch('EvenPage') },
+        { name: 'Abschnitt: ungerade Seite', tun: () => B.abschnittsumbruch('OddPage') },
       ] },
     ] },
     { name: 'Absatz', unter: [
