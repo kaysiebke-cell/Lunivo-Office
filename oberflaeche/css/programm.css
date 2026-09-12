@@ -2514,7 +2514,6 @@ body.lesen .arbeitsflaeche{padding:40px 24px}
 [data-richtung="vlr"]{writing-mode:vertical-lr}
 [data-richtung="d90"]{writing-mode:vertical-rl;text-orientation:mixed}
 [data-richtung="d270"]{writing-mode:vertical-rl;transform:rotate(180deg)}
-[data-richtung="asia270"]{writing-mode:vertical-rl;text-orientation:sideways}
 /* Steht die Seite senkrecht, braucht sie eine Hoehe — sonst faellt der
    Text aus dem Blatt heraus. */
 .dokument[data-richtung]{min-height:240mm}

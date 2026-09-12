@@ -8602,11 +8602,20 @@ B.objektDrehen = (knopf) => {
    aus. Steht der Zeiger in einer Zelle oder einem Rahmen, gilt sie nur
    dort; sonst fuer das Blatt.
    ============================================================ */
-/* Jede Richtung zeigt sich an sich selbst — ein Kaestchen mit „文字"
-   und „ABC", genau so gekippt, wie der Text danach steht. Das ist der
-   Grund, warum in WPS neben jedem Punkt ein Bild steht und nicht nur
-   ein Wort: „Vertikal von rechts nach links" und „Vertikal von links
-   nach rechts" sind als Saetze kaum zu unterscheiden, als Bild sofort. */
+/* Jede Richtung zeigt sich an sich selbst — ein Kaestchen mit dem Wort
+   „Abc", genau so gekippt, wie der Text danach steht. Das ist der Grund,
+   warum in WPS neben jedem Punkt ein Bild steht und nicht nur ein Wort:
+   „Vertikal von rechts nach links" und „Vertikal von links nach rechts"
+   sind als Saetze kaum zu unterscheiden, als Bild sofort.
+
+   MIT DEUTSCHEN BUCHSTABEN. In WPS steht in den Kaestchen „文字" neben
+   „ABC" — das Programm kommt aus China und zeigt beide Schriften. Hier
+   schreibt niemand chinesisch. Ich hatte die Zeichen mitgenommen, weil
+   sie im Bild standen; abmalen ist nicht dasselbe wie uebernehmen.
+
+   Zwei Woerter je Kaestchen, weil eine einzelne Spalte nicht verraet, ob
+   der Text rechts oder links anfaengt: „Abc" ist die erste Spalte, „def"
+   die zweite. */
 function richtungsbild(kuerzel) {
   const ns = 'http://www.w3.org/2000/svg';
   const sv = document.createElementNS(ns, 'svg');
@@ -8621,14 +8630,13 @@ function richtungsbild(kuerzel) {
   rahmen.setAttribute('stroke', 'currentColor');
   sv.appendChild(rahmen);
 
-  /* x, y, Drehung, Ausrichtung — je Richtung anders gestellt. */
+  /* Wort, x, y, Drehung — erst die erste Zeile/Spalte, dann die zweite. */
   const stand = {
-    horizontal: [['文字', 10, 13, 0], ['ABC', 10, 24, 0]],
-    vrl:        [['文字', 22, 12, 0], ['ABC', 11, 12, 90]],
-    vlr:        [['文字', 11, 12, 0], ['ABC', 22, 12, 90]],
-    d90:        [['ABC', 11, 10, 90], ['文字', 22, 10, 90]],
-    d270:       [['ABC', 11, 22, 270], ['文字', 22, 22, 270]],
-    asia270:    [['文字', 11, 10, 90], ['ABC', 10, 24, 0]],
+    horizontal: [['Abc', 6, 14, 0], ['def', 6, 25, 0]],
+    vrl:        [['Abc', 22, 7, 90], ['def', 11, 7, 90]],
+    vlr:        [['Abc', 11, 7, 90], ['def', 22, 7, 90]],
+    d90:        [['Abc', 22, 7, 90], ['def', 11, 7, 90]],
+    d270:       [['Abc', 11, 25, 270], ['def', 22, 25, 270]],
   }[kuerzel] || [];
 
   for (const [wort, x, y, grad] of stand) {
@@ -8649,7 +8657,10 @@ const TEXTRICHTUNGEN = [
   ['vlr',        'Vertikal von links nach rechts'],
   ['d90',        'Gesamten Text um 90 Grad drehen'],
   ['d270',       'Gesamten Text um 270 Grad drehen'],
-  ['asia270',    'Asiatische Zeichen um 270 Grad drehen'],
+  /* WPS hat hier noch „Asiatische Zeichen um 270 Grad drehen". Der Punkt
+     dreht ausschliesslich chinesische, japanische und koreanische
+     Zeichen und laesst lateinische stehen — in einem deutschen
+     Schreibprogramm eine Zeile, die nie etwas tut. */
 ];
 
 function richtungsziel() {
