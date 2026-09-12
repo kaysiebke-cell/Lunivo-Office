@@ -19,21 +19,18 @@ Ein Schreibprogramm wie LibreOffice Writer oder Word — mit einem Unterschied:
 Die **Schreibhilfe** sitzt fest an der Seite und sucht die Fehler, die ein
 Rechtschreibprüfer **nicht** finden kann.
 
-    das / dass       seit / seid       wider / wieder
-    „wir hat"  →  „wir haben"          „größer wie"  →  „größer als"
-    fehlende Kommas vor weil, dass, wenn, aber
-    zusammengetippte Wörter, doppelte Wörter, Satzanfänge
+```text
+das / dass       seit / seid       wider / wieder
+„wir hat"  →  „wir haben"          „größer wie"  →  „größer als"
+fehlende Kommas vor weil, dass, wenn, aber
+zusammengetippte Wörter, doppelte Wörter, Satzanfänge
+```
 
 Nicht *für* Menschen mit Legasthenie gebaut, sondern *von* einem —
 [wie es dazu kam](doku/ENTSTEHUNG.md).
 Kein Konto, keine Anmeldung, kein Internet nötig.
 
 ![Lunivo-Office mit zwei Dokumenten als Reiter oben, einem Widerspruchsbrief im Blatt und der Schreibhilfe rechts an der Seite](bilder/uebersicht.png)
-
-> Das Repository wurde in `Lunivo-Office` umbenannt.
-> Link brechen, der schon irgendwo steht. Und wer nach „Schreibprogramm"
-> sucht, soll es weiter finden.
-
 
 ## Mach mit
 
@@ -55,6 +52,19 @@ niemand darauf angesprochen.
 Gebraucht wird außerdem: Regeln für die Prüfung (samt der Frage, wann sie
 falsch wären), Ausprobieren auf anderen Linux-Systemen, ein Flatpak oder
 AppImage, und andere Sprachen von Leuten, die sie sprechen.
+
+## Deine Erfahrung zählt
+
+Du möchtest erst einmal lesen, was hinter Lunivo-Office steckt, Fragen
+stellen oder deine Erfahrungen teilen?
+
+Dann komm in die [**GitHub Discussions**](../../discussions).
+
+Dort kannst du erzählen, was dir beim Schreiben schwerfällt, Fragen stellen,
+Vorschläge machen oder einfach mit anderen über das Projekt sprechen.
+
+**Besonders wichtig:** Du musst dafür kein Programmierer sein. Und deine
+Rechtschreibung spielt hier keine Rolle.
 
 * [**RICHTUNG.md**](doku/RICHTUNG.md) — wohin das gehen soll, und was es *nicht* wird
 * [MITMACHEN](.github/CONTRIBUTING.md) — wie, im Einzelnen
@@ -112,27 +122,27 @@ Der README sagt, was es ist. Was es im Einzelnen tut, steht in den fünf
 Dateien darunter — sonst wäre er dreißig Seiten lang und niemand fände
 darin, was er sucht.
 
-| | Worum es geht |
-|---|---|
-| 1 · [Lesen und Schreiben](doku/lesen-und-schreiben.md) | Lesehilfe, Schriften für Legasthenie, Vorlesen |
-| 2 · [Prüfung, Vorhersage und KI](doku/pruefung-und-ki.md) | Was gefunden wird, und was die KI dabei tut |
-| 3 · [Schreiben und Dokumente](doku/schreiben-und-dokumente.md) | Das Blatt, Vorlagen, Speichern, Drucken |
-| 4 · [Die Oberfläche](doku/oberflaeche.md) | Band und Leisten, Lineale, Formatvorlagen, Anpassen |
-| 5 · [Die Einstellungen](doku/einstellungen.md) | Das Optionen-Fenster, Sprachen, Kennwort |
+|                                                                | Worum es geht                                       |
+| -------------------------------------------------------------- | --------------------------------------------------- |
+| 1 · [Lesen und Schreiben](doku/lesen-und-schreiben.md)         | Lesehilfe, Schriften für Legasthenie, Vorlesen      |
+| 2 · [Prüfung, Vorhersage und KI](doku/pruefung-und-ki.md)      | Was gefunden wird, und was die KI dabei tut         |
+| 3 · [Schreiben und Dokumente](doku/schreiben-und-dokumente.md) | Das Blatt, Vorlagen, Speichern, Drucken             |
+| 4 · [Die Oberfläche](doku/oberflaeche.md)                      | Band und Leisten, Lineale, Formatvorlagen, Anpassen |
+| 5 · [Die Einstellungen](doku/einstellungen.md)                 | Das Optionen-Fenster, Sprachen, Kennwort            |
 
 Dazu im Programm selbst: **☰ Menü → Hilfe → Handbuch** — ausführlicher als alles
 hier, mit Bildern und Tastenkürzeln.
 
-| Weiteres | |
-|---|---|
-| [Was zusätzlich geholt wird](doku/erweiterungen.md) | LibreOffice, LanguageTool, Stimmen, Schriften |
-| [Der Aufbau des Projekts](doku/projektaufbau.md) | Welche Datei was tut |
-| [Die lange Fassung](doku/LIESMICH.md) | Alles ausführlich, auf Deutsch |
-| [Wie es entstanden ist](doku/ENTSTEHUNG.md) | Die Geschichte dahinter |
-| [Wohin es geht](doku/RICHTUNG.md) | Was noch kommen soll |
-| [Der Aufbau des Bandes](doku/aufbau-band.md) | Alle acht Reiter, mit Tabelle „wo finde ich was" |
-| [Der Aufbau der Optionen](doku/aufbau-optionen.md) | Alle Seiten und Felder, ebenso |
-| [Der Ist-Stand am Stück](doku/aufbau-ist-stand.md) | Bänder und Optionen zusammen, wie sie gerade sind |
+| Weiteres                                            |                                                   |
+| --------------------------------------------------- | ------------------------------------------------- |
+| [Was zusätzlich geholt wird](doku/erweiterungen.md) | LibreOffice, LanguageTool, Stimmen, Schriften     |
+| [Der Aufbau des Projekts](doku/projektaufbau.md)    | Welche Datei was tut                              |
+| [Die lange Fassung](doku/LIESMICH.md)               | Alles ausführlich, auf Deutsch                    |
+| [Wie es entstanden ist](doku/ENTSTEHUNG.md)         | Die Geschichte dahinter                           |
+| [Wohin es geht](doku/RICHTUNG.md)                   | Was noch kommen soll                              |
+| [Der Aufbau des Bandes](doku/aufbau-band.md)        | Alle acht Reiter, mit Tabelle „wo finde ich was"  |
+| [Der Aufbau der Optionen](doku/aufbau-optionen.md)  | Alle Seiten und Felder, ebenso                    |
+| [Der Ist-Stand am Stück](doku/aufbau-ist-stand.md)  | Bänder und Optionen zusammen, wie sie gerade sind |
 
 Diese drei werden **erzeugt**, nicht geschrieben —
 `python3 werkzeug/aufbau-schreiben.py` liest sie aus dem Programm. Die
@@ -175,7 +185,9 @@ Hell oder dunkel, je nachdem, was den Augen bekommt.
 
 ## Starten
 
-    ./starten.sh
+```text
+./starten.sh
+```
 
 Das legt beim ersten Mal auch den Menüeintrag an; danach steht
 *Lunivo-Office* im Startmenü unter „Büro". Wer noch den alten Eintrag
@@ -184,7 +196,9 @@ nicht beide nebeneinander stehen.
 
 Gebraucht wird GTK mit WebKit:
 
-    sudo apt install python3-gi gir1.2-webkit2-4.1
+```text
+sudo apt install python3-gi gir1.2-webkit2-4.1
+```
 
 ## Eine Hilfe, kein Ersatz
 
