@@ -99,7 +99,8 @@ EINFÜGEN
 │   └── Eigenschaften
 ├── Illustrationen
 │   ├── Bild
-│   ├── Zeichnen
+│   ├── Formen
+│   ├── Form mit eigener Farbe…
 │   ├── Diagramm
 │   ├── Bildschirmfoto
 │   ├── SmartArt
@@ -389,9 +390,11 @@ genannt — das ist Absicht: ein Schalter, mehrere Stellen, ein Zustand.
 | Etiketten | Sendungen ▸ Erstellen |
 | Fensterliste | Ansicht ▸ Fenster |
 | Fett | Start ▸ Schriftart |
+| Form mit eigener Farbe… | Einfügen ▸ Illustrationen |
 | Format übertragen | Start ▸ Zwischenablage |
 | Formatierung löschen | Start ▸ Schriftart |
 | Formel | Einfügen ▸ Symbole |
+| Formen | Einfügen ▸ Illustrationen |
 | Fußnote | Referenzen ▸ Fußnoten |
 | Fußzeile | Einfügen ▸ Kopf- und Fußzeile |
 | Gitternetzlinien | Ansicht ▸ Anzeigen |
@@ -521,7 +524,6 @@ genannt — das ist Absicht: ein Schalter, mehrere Stellen, ein Zustand.
 | WordArt | Einfügen ▸ Illustrationen |
 | Wortvorhersage | Schreibhilfe ▸ Beim Schreiben |
 | Wörter zählen | Überprüfen ▸ Dokumentprüfung |
-| Zeichnen | Einfügen ▸ Illustrationen |
 | Zeilenabstand | Start ▸ Absatz · Start ▸ Absatzlayout |
 | Zeilenfokus | Schreibhilfe ▸ Lesen |
 | Zeilennummern | Seitenlayout ▸ Absatz |

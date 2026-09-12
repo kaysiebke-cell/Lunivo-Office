@@ -73,7 +73,8 @@ DIE BÄNDER
 │   │   └── Eigenschaften
 │   ├── Illustrationen
 │   │   ├── Bild
-│   │   ├── Zeichnen
+│   │   ├── Formen
+│   │   ├── Form mit eigener Farbe…
 │   │   ├── Diagramm
 │   │   ├── Bildschirmfoto
 │   │   ├── SmartArt

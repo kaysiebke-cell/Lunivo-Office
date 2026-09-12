@@ -830,6 +830,34 @@ select option{background:var(--karte);color:var(--schrift)}
   cursor:move !important;
 }
 
+/* ---------- Die Formen-Galerie ----------
+
+   Acht Gruppen, rund siebzig Formen. Jede als Zeichnung, nicht als
+   Name: „Vorbereitung" oder „Gespeicherte Daten" sagt niemandem etwas,
+   die Form sofort.
+
+   Die Tafel rollt, weil sie nicht auf jeden Bildschirm passt — hier
+   hängt kein Untermenü daran, das abgeschnitten würde. */
+.formenklappe{
+  width:296px;max-height:72vh;overflow-y:auto;
+}
+.formenklappe__gruppe{
+  margin:9px 0 5px;padding:3px 7px;
+  background:rgba(127,127,127,.12);border-radius:4px;
+  color:var(--schrift-2);font-size:11.5px;
+  position:sticky;top:0;
+}
+.formenklappe__gitter{display:flex;flex-wrap:wrap;gap:4px}
+.formenklappe__form{
+  width:32px;height:32px;padding:3px;
+  background:var(--karte);color:var(--schrift-2);
+  border:1px solid var(--rand);border-radius:5px;cursor:pointer;
+}
+.formenklappe__form svg{width:100%;height:100%;display:block}
+.formenklappe__form:hover{
+  background:var(--blau);color:#fff;border-color:var(--blau-hell);
+}
+
 /* ---------- Der Rasterwähler für Tabellen ----------
 
    Vorlage ist WPS: ein Raster zum Überfahren, darüber mitlaufend die

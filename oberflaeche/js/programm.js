@@ -6514,32 +6514,231 @@ B.formel = () => {
    Vier Formen, die in einem Schreibprogramm wirklich vorkommen: Linie,
    Pfeil, Rechteck, Kreis. Auch sie sind SVG und damit Teil des Textes.
    ============================================================ */
-const FORMEN = {
-  linie:    '<line x1="6" y1="34" x2="114" y2="6" stroke="COLOR" stroke-width="2"/>',
-  pfeil:    '<defs><marker id="MID" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">'
-          + '<path d="M0,0 L7,3 L0,6 Z" fill="COLOR"/></marker></defs>'
-          + '<line x1="6" y1="20" x2="106" y2="20" stroke="COLOR" stroke-width="2" marker-end="url(#MID)"/>',
-  rechteck: '<rect x="6" y="6" width="108" height="48" fill="none" stroke="COLOR" stroke-width="2"/>',
-  kreis:    '<circle cx="60" cy="30" r="26" fill="none" stroke="COLOR" stroke-width="2"/>',
+/* ============================================================
+   DIE FORMEN-GALERIE
+
+   WPS bietet acht Gruppen mit rund hundertfuenfzig Formen. Lunivo hatte
+   vier: Linie, Pfeil, Rechteck, Kreis — in einem Klappfeld, in dem man
+   den Namen lesen und sich die Form vorstellen musste.
+
+   Jede Form ist ein Pfad in einem Feld von 100 x 100 und wird beim
+   Einfuegen auf die gewuenschte Groesse gezogen. Ein Pfad statt eines
+   fertigen SVG je Form: So lassen sie sich alle gleich behandeln —
+   faerben, umranden, spaeter drehen.
+
+   VIERECKIGE UND RUNDE FORMEN sind Pfade; die Linie und der Pfeil
+   bleiben Sonderfaelle, weil sie keine Flaeche haben und der Pfeil eine
+   Spitze braucht.
+   ============================================================ */
+const FORMGRUPPEN = [
+  ['Linie', [
+    ['linie',       'Linie',              'M4 96 L96 4'],
+    ['linie-waag',  'Waagerechte Linie',  'M4 50 L96 50'],
+    ['linie-senk',  'Senkrechte Linie',   'M50 4 L50 96'],
+    ['winkel',      'Winkel',             'M4 4 L4 96 L96 96'],
+    ['zickzack',    'Zickzack',           'M4 76 L28 24 L52 76 L76 24 L96 60'],
+    ['bogen',       'Bogen',              'M6 92 Q50 -12 94 92'],
+    ['welle',       'Welle',              'M4 50 Q20 14 36 50 T68 50 T96 50'],
+  ]],
+  ['Rechteck', [
+    ['rechteck',    'Rechteck',           'M6 18 H94 V82 H6 Z'],
+    ['rund',        'Abgerundet',         'M20 18 H80 A14 14 0 0 1 94 32 V68 A14 14 0 0 1 80 82 H20 A14 14 0 0 1 6 68 V32 A14 14 0 0 1 20 18 Z'],
+    ['ecke-ab',     'Ecke abgeschnitten', 'M6 18 H78 L94 34 V82 H6 Z'],
+    ['ecke-rund',   'Eine Ecke rund',     'M6 18 H78 A16 16 0 0 1 94 34 V82 H6 Z'],
+    ['raute-recht', 'Parallelogramm',     'M22 18 H94 L78 82 H6 Z'],
+    ['trapez',      'Trapez',             'M22 18 H78 L94 82 H6 Z'],
+  ]],
+  ['Standardformen', [
+    ['kreis',       'Kreis',              'M50 6 A44 44 0 1 1 49.9 6 Z'],
+    ['ellipse',     'Ellipse',            'M50 18 A44 32 0 1 1 49.9 18 Z'],
+    ['dreieck',     'Dreieck',            'M50 8 L94 92 H6 Z'],
+    ['dreieck-r',   'Rechtwinkliges Dreieck', 'M6 92 V8 L94 92 Z'],
+    ['raute',       'Raute',              'M50 6 L94 50 L50 94 L6 50 Z'],
+    ['fuenfeck',    'Fünfeck',            'M50 6 L94 39 L77 92 H23 L6 39 Z'],
+    ['sechseck',    'Sechseck',           'M28 10 H72 L94 50 L72 90 H28 L6 50 Z'],
+    ['achteck',     'Achteck',            'M32 6 H68 L94 32 V68 L68 94 H32 L6 68 V32 Z'],
+    ['kreuz',       'Kreuz',              'M36 6 H64 V36 H94 V64 H64 V94 H36 V64 H6 V36 H36 Z'],
+    ['herz',        'Herz',               'M50 92 C10 62 6 36 22 22 C34 12 46 18 50 30 C54 18 66 12 78 22 C94 36 90 62 50 92 Z'],
+    ['mond',        'Mond',               'M62 6 A46 46 0 1 0 62 94 A36 36 0 1 1 62 6 Z'],
+    ['tropfen',     'Tropfen',            'M50 6 C74 34 88 50 88 64 A38 38 0 0 1 12 64 C12 50 26 34 50 6 Z'],
+    ['wolke',       'Wolke',              'M26 78 A18 18 0 0 1 24 44 A20 20 0 0 1 60 30 A18 18 0 0 1 86 48 A16 16 0 0 1 80 78 Z'],
+    ['blitz',       'Blitz',              'M56 4 L26 54 H48 L40 96 L74 42 H52 Z'],
+    ['klammer-a',   'Geschweifte Klammer auf', 'M62 6 C46 6 50 44 34 50 C50 56 46 94 62 94'],
+    ['klammer-z',   'Geschweifte Klammer zu',  'M38 6 C54 6 50 44 66 50 C50 56 54 94 38 94'],
+  ]],
+  ['Blockpfeile', [
+    ['pfeil-r',     'Pfeil nach rechts',  'M6 36 H58 V16 L94 50 L58 84 V64 H6 Z'],
+    ['pfeil-l',     'Pfeil nach links',   'M94 36 H42 V16 L6 50 L42 84 V64 H94 Z'],
+    ['pfeil-o',     'Pfeil nach oben',    'M36 94 V42 H16 L50 6 L84 42 H64 V94 Z'],
+    ['pfeil-u',     'Pfeil nach unten',   'M36 6 V58 H16 L50 94 L84 58 H64 V6 Z'],
+    ['pfeil-lr',    'Pfeil nach links und rechts', 'M6 50 L30 24 V38 H70 V24 L94 50 L70 76 V62 H30 V76 Z'],
+    ['pfeil-ou',    'Pfeil nach oben und unten',   'M50 6 L76 30 H62 V70 H76 L50 94 L24 70 H38 V30 H24 Z'],
+    ['pfeil-kreuz', 'Pfeil in vier Richtungen',    'M50 4 L68 26 H58 V42 H74 V32 L96 50 L74 68 V58 H58 V74 H68 L50 96 L32 74 H42 V58 H26 V68 L4 50 L26 32 V42 H42 V26 H32 Z'],
+    ['pfeil-ecke',  'Pfeil um die Ecke',  'M6 94 V40 A30 30 0 0 1 36 10 H58 V0 L94 22 L58 44 V34 H40 A8 8 0 0 0 32 42 V94 Z'],
+  ]],
+  ['Formelformen', [
+    ['plus',        'Plus',               'M40 14 H60 V40 H86 V60 H60 V86 H40 V60 H14 V40 H40 Z'],
+    ['minus',       'Minus',              'M14 40 H86 V60 H14 Z'],
+    ['mal',         'Mal',                'M22 8 L50 36 L78 8 L92 22 L64 50 L92 78 L78 92 L50 64 L22 92 L8 78 L36 50 L8 22 Z'],
+    ['geteilt',     'Geteilt',            'M40 14 A10 10 0 1 1 60 14 A10 10 0 1 1 40 14 Z M14 40 H86 V60 H14 Z M40 86 A10 10 0 1 1 60 86 A10 10 0 1 1 40 86 Z'],
+    ['gleich',      'Gleich',             'M14 28 H86 V44 H14 Z M14 56 H86 V72 H14 Z'],
+    ['ungleich',    'Ungleich',           'M14 28 H86 V44 H14 Z M14 56 H86 V72 H14 Z M34 92 L58 8 H70 L46 92 Z'],
+  ]],
+  ['Flussdiagramm', [
+    ['fd-prozess',  'Prozess',            'M6 24 H94 V76 H6 Z'],
+    ['fd-ent',      'Entscheidung',       'M50 10 L94 50 L50 90 L6 50 Z'],
+    ['fd-daten',    'Daten',              'M24 24 H94 L76 76 H6 Z'],
+    ['fd-start',    'Anfang oder Ende',   'M30 24 H70 A26 26 0 0 1 70 76 H30 A26 26 0 0 1 30 24 Z'],
+    ['fd-doku',     'Dokument',           'M6 20 H94 V72 Q72 88 50 76 T6 80 Z'],
+    ['fd-hand',     'Manuelle Eingabe',   'M6 36 L94 18 V80 H6 Z'],
+    ['fd-vor',      'Vorbereitung',       'M24 24 H76 L94 50 L76 76 H24 L6 50 Z'],
+    ['fd-speicher', 'Gespeicherte Daten', 'M18 24 H94 A14 26 0 0 0 94 76 H18 A14 26 0 0 1 18 24 Z'],
+    ['fd-verbind',  'Verbindung',         'M50 12 A38 38 0 1 1 49.9 12 Z'],
+  ]],
+  ['Sterne und Banner', [
+    ['stern4',      'Stern mit 4 Zacken', 'M50 4 L62 38 L96 50 L62 62 L50 96 L38 62 L4 50 L38 38 Z'],
+    ['stern5',      'Stern mit 5 Zacken', 'M50 4 L61 36 L96 36 L68 57 L79 90 L50 69 L21 90 L32 57 L4 36 L39 36 Z'],
+    ['stern6',      'Stern mit 6 Zacken', 'M50 4 L65 30 L95 30 L80 56 L95 82 L65 82 L50 108 L35 82 L5 82 L20 56 L5 30 L35 30 Z'],
+    ['stern8',      'Stern mit 8 Zacken', 'M50 4 L59 32 L86 18 L72 45 L96 50 L72 55 L86 82 L59 68 L50 96 L41 68 L14 82 L28 55 L4 50 L28 45 L14 18 L41 32 Z'],
+    ['explosion',   'Explosion',          'M50 2 L58 26 L78 12 L74 36 L98 34 L82 50 L98 66 L74 64 L78 88 L58 74 L50 98 L42 74 L22 88 L26 64 L2 66 L18 50 L2 34 L26 36 L22 12 L42 26 Z'],
+    ['band',        'Band',               'M6 28 H94 V72 H76 L84 86 L60 72 H6 Z'],
+    ['schriftrolle','Schriftrolle',       'M14 26 A8 8 0 0 1 14 42 H86 A8 8 0 0 1 86 58 H14 A8 8 0 0 1 14 74 H86'],
+  ]],
+  ['Legenden', [
+    ['legende-e',   'Legende, eckig',     'M6 14 H94 V64 H56 L40 86 L38 64 H6 Z'],
+    ['legende-r',   'Legende, rund',      'M50 14 A44 26 0 1 1 49.9 14 Z M36 62 L30 88 L52 66 Z'],
+    ['legende-w',   'Gedankenblase',      'M50 12 A40 26 0 1 1 49.9 12 Z M30 66 A7 7 0 1 1 29.9 66 Z M20 82 A5 5 0 1 1 19.9 82 Z'],
+    ['legende-l',   'Linienlegende',      'M34 14 H94 V54 H34 Z M34 34 L6 86'],
+  ]],
+];
+
+/* Die Linie und der Pfeil haben keine Flaeche — sie werden nur
+   gestrichelt gezeichnet, nie gefuellt. */
+const NUR_STRICH = new Set(['linie', 'linie-waag', 'linie-senk', 'winkel',
+  'zickzack', 'bogen', 'welle', 'klammer-a', 'klammer-z', 'schriftrolle']);
+
+function formPfad(kennung) {
+  for (const [, formen] of FORMGRUPPEN) {
+    for (const [k, , d] of formen) if (k === kennung) return d;
+  }
+  return null;
+}
+
+function formBauen(kennung, fuellung, strichfarbe, breite, hoehe) {
+  const d = formPfad(kennung);
+  if (!d) return null;
+  const nurStrich = NUR_STRICH.has(kennung);
+  return '<svg class="zeichnung" xmlns="http://www.w3.org/2000/svg" '
+       + 'viewBox="0 0 100 100" preserveAspectRatio="none" '
+       + 'width="' + breite + '" height="' + hoehe + '">'
+       + '<path d="' + d + '" fill="' + (nurStrich ? 'none' : fuellung) + '" '
+       + 'stroke="' + strichfarbe + '" stroke-width="3" '
+       + 'stroke-linejoin="round" stroke-linecap="round" '
+       + 'vector-effect="non-scaling-stroke"/></svg>';
+}
+
+/* Die Galerie. Aufbau wie bei WPS: Gruppenueberschrift, darunter die
+   Formen als Bildchen — man sieht, was man bekommt, statt einen Namen
+   zu lesen und sich die Form vorzustellen. */
+let formenKlappe = null;
+
+function formenKlappeWeg() {
+  if (formenKlappe) { formenKlappe.remove(); formenKlappe = null; }
+}
+
+B.formenGalerie = (knopf) => {
+  if (formenKlappe) { formenKlappeWeg(); return; }
+  auswahlMerken();
+
+  const tafel = document.createElement('div');
+  tafel.className = 'katalogklappe formenklappe';
+
+  const kopf = document.createElement('p');
+  kopf.className = 'katalogklappe__kopf';
+  kopf.textContent = 'Form einfügen';
+  tafel.appendChild(kopf);
+
+  for (const [name, formen] of FORMGRUPPEN) {
+    const h = document.createElement('p');
+    h.className = 'formenklappe__gruppe';
+    h.textContent = name;
+    tafel.appendChild(h);
+
+    const gitter = document.createElement('div');
+    gitter.className = 'formenklappe__gitter';
+    for (const [kennung, anzeige, d] of formen) {
+      const k = document.createElement('button');
+      k.type = 'button';
+      k.className = 'formenklappe__form';
+      k.title = anzeige;
+      k.setAttribute('aria-label', anzeige);
+      k.innerHTML = '<svg viewBox="-6 -6 112 112" aria-hidden="true">'
+        + '<path d="' + d + '" fill="none" stroke="currentColor" '
+        + 'stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/></svg>';
+      k.addEventListener('mousedown', (e) => e.preventDefault());
+      k.addEventListener('click', () => {
+        formenKlappeWeg();
+        formEinfuegen(kennung, anzeige);
+      });
+      gitter.appendChild(k);
+    }
+    tafel.appendChild(gitter);
+  }
+
+  document.body.appendChild(tafel);
+  formenKlappe = tafel;
+
+  const r = (knopf && knopf.getBoundingClientRect)
+    ? knopf.getBoundingClientRect()
+    : { left: 200, bottom: 120, top: 120, right: 240 };
+  const m = tafel.getBoundingClientRect();
+  let links = r.left;
+  if (links + m.width > window.innerWidth - 8) {
+    links = Math.max(8, window.innerWidth - 8 - m.width);
+  }
+  tafel.style.left = Math.round(links) + 'px';
+  tafel.style.top = Math.round(Math.min(r.bottom + 4,
+    Math.max(8, window.innerHeight - 8 - m.height))) + 'px';
+
+  setTimeout(() => {
+    document.addEventListener('mousedown', function zu(ev) {
+      if (tafel.contains(ev.target) || (knopf && knopf.contains(ev.target))) return;
+      formenKlappeWeg();
+      document.removeEventListener('mousedown', zu);
+    });
+  }, 0);
 };
 
+function formEinfuegen(kennung, anzeige) {
+  const roh = formBauen(kennung, '#D6E4F0', '#2F6FB5', 120, 90);
+  if (!roh) return;
+  auswahlZurueck();
+  Dokument.einfuegen(merkeQuelle(roh,
+    { form: kennung, farbe: '#2F6FB5', fuellung: '#D6E4F0', strich: 3 }));
+  melde(anzeige + ' eingefügt — anfassen und ziehen wie ein Bild.');
+}
+
+/* Der alte Weg bleibt: Wer eine Farbe gleich mitgeben will, bekommt
+   weiter das Fenster. */
 B.zeichnen = () => {
   auswahlMerken();
+  const alle = [];
+  for (const [gruppe, formen] of FORMGRUPPEN) {
+    for (const [k, n] of formen) alle.push([k, gruppe + ' — ' + n]);
+  }
   fenster('Form einfügen', [
-    { art: 'satz', text: 'Die Form kommt an die Stelle des Zeigers und lässt sich danach wie ein Bild behandeln.' },
-    { schluessel: 'form', name: 'Form', art: 'auswahl',
-      werte: [['linie', 'Linie'], ['pfeil', 'Pfeil'], ['rechteck', 'Rechteck'], ['kreis', 'Kreis']] },
-    { schluessel: 'farbe', name: 'Farbe', art: 'color', wert: '#2F6FB5' },
+    { art: 'satz', text: 'Die Form kommt an die Stelle des Zeigers und '
+        + 'lässt sich danach wie ein Bild behandeln.\n'
+        + 'Schneller geht es über das Formen-Raster in der Leiste.' },
+    { schluessel: 'form', name: 'Form', art: 'auswahl', werte: alle },
+    { schluessel: 'fuellung', name: 'Füllung', art: 'color', wert: '#D6E4F0' },
+    { schluessel: 'farbe', name: 'Linie', art: 'color', wert: '#2F6FB5' },
   ], (werte) => {
-    const kennung = 'p' + Date.now().toString(36);
-    const innen = (FORMEN[werte.form] || FORMEN.linie)
-      .replace(/COLOR/g, werte.farbe)
-      .replace(/MID/g, kennung);
+    const roh = formBauen(werte.form, werte.fuellung, werte.farbe, 120, 90);
+    if (!roh) { melde('Diese Form kenne ich nicht.'); return; }
     auswahlZurueck();
-    Dokument.einfuegen(merkeQuelle(
-      '<svg class="zeichnung" xmlns="http://www.w3.org/2000/svg" '
-      + 'viewBox="0 0 120 60" width="120" height="60">' + innen + '</svg>',
-      { form: werte.form, farbe: werte.farbe, fuellung: 'none', strich: 2 }));
+    Dokument.einfuegen(merkeQuelle(roh,
+      { form: werte.form, farbe: werte.farbe, fuellung: werte.fuellung, strich: 3 }));
     melde('Form eingefügt.');
   }, 'Einfügen');
 };
@@ -12106,7 +12305,8 @@ const MENUES = [
     ] },
     { name: 'Illustrationen', unter: [
       { name: 'Bild', tun: B.bild },
-      { name: 'Zeichnen', tun: B.zeichnen },
+      { name: 'Formen', tun: () => B.formenGalerie() },
+      { name: 'Form mit eigener Farbe…', tun: B.zeichnen },
       { name: 'Diagramm', tun: B.diagramm },
       { name: 'Bildschirmfoto', tun: B.screenshot },
       { name: 'SmartArt', tun: B.smartart },
@@ -12982,6 +13182,7 @@ function fuelleAuswahl(w, eintraege) {
 let wzVorlage = null;
 let wzPinsel = null;
 let wzTabelle = null;
+let wzFormen = null;
 let wzVerfolgt = null;
 let wzGroesse = null;
 
@@ -13093,7 +13294,7 @@ function werkzeugeBauen() {
        Zahlenfelder — die stehen im Raster als erster Punkt darunter. */
     wzTabelle = knopf('tabelle', 'Tabelle einfügen', () => B.tabelleRaster(wzTabelle));
     knopf('bild', 'Bild', B.bild);
-    knopf('stift', 'Zeichnen', B.zeichnen);
+    wzFormen = knopf('stift', 'Formen', () => B.formenGalerie(wzFormen));
     knopf('saeule', 'Diagramm', B.diagramm);
     trenner();
     knopf('kette', 'Hyperlink', B.hyperlink);
