@@ -9357,8 +9357,10 @@ const BILDSCHNELL = [
     tun: () => B.bildVorschau() },
   { art: 'schnitt', bild: 'schere', name: 'Zuschneiden — Winkel nach innen ziehen',
     tun: () => B.schnittModus() },
-  { art: 'form', bild: 'ecken', name: 'Nach Form oder Verhältnis zuschneiden',
-    tun: (k) => B.bildZuschneiden(k) },
+  /* KEIN VIERTER KNOPF. Ich hatte „Nach Form" hier danebengestellt — in
+     WPS stehen drei, und Kay hat das Bild ein zweites Mal geschickt.
+     Formen und Verhältnisse stehen im Reiter Bildtools; der Schnittmodus
+     ist der Weg, den man am Bild braucht. */
 ];
 
 /* ------------------------------------------------------------
@@ -9961,7 +9963,7 @@ function bildGriffeAuffrischen() {
    gefangen haelt, verschwaende sonst mitsamt seinem pointerup, und der
    Zeiger bliebe im Zieh-Zustand haengen. */
 function bildGriffeStellen(bild) {
-  const r = bild.getBoundingClientRect();
+  const voll = bild.getBoundingClientRect();
   const flaeche = $('arbeitsflaeche').getBoundingClientRect();
   const G = 11;
   const setz = (art, x, y) => {
@@ -9970,18 +9972,41 @@ function bildGriffeStellen(bild) {
     k.style.left = Math.round(x - G / 2) + 'px';
     k.style.top = Math.round(y - G / 2) + 'px';
   };
+
+  /* DIE MARKEN SITZEN AM AUSSCHNITT, NICHT AM BILD.
+
+     clip-path schneidet die Darstellung, nicht das Kaestchen:
+     getBoundingClientRect() liefert weiter das ganze Bild. Die acht
+     Marken standen deshalb an der Bildkante und sprangen beim Ziehen
+     sofort dorthin zurueck — es sah aus, als liesse sich nichts
+     zuschneiden. Genau das war Kays Befund.
+
+     Im Schnittmodus wird das Rechteck deshalb um den Schnitt
+     eingerueckt. Ausserhalb des Modus ist der Schnitt null und es
+     aendert sich nichts. */
+  const sch = schnittModus ? schnittLesen(bild)
+                           : { oben: 0, rechts: 0, unten: 0, links: 0 };
+  const r = {
+    left: voll.left + voll.width * sch.links / 100,
+    top: voll.top + voll.height * sch.oben / 100,
+    width: voll.width * (100 - sch.links - sch.rechts) / 100,
+    height: voll.height * (100 - sch.oben - sch.unten) / 100,
+  };
+  r.right = r.left + r.width;
+  r.bottom = r.top + r.height;
+
   for (const { art, x, y } of BILDGRIFFE) {
     setz(art, r.left + r.width * x, r.top + r.height * y);
   }
-  setz('drehen', r.left + r.width / 2, r.top - 22);
-  setz('weg', r.right + 20, r.top - 14);
+  setz('drehen', voll.left + voll.width / 2, voll.top - 22);
+  setz('weg', voll.right + 20, voll.top - 14);
   /* Die drei Schnellknöpfe untereinander an der rechten Seite, unter dem
      Kreuz — so steht es in WPS, und so verdecken sie das Bild nicht. */
   BILDSCHNELL.forEach(({ art }, i) => {
-    setz('schnell-' + art, r.right + 20, r.top + 18 + i * 26);
+    setz('schnell-' + art, voll.right + 20, voll.top + 18 + i * 26);
   });
 
-  const versteckt = r.bottom < flaeche.top || r.top > flaeche.bottom;
+  const versteckt = voll.bottom < flaeche.top || voll.top > flaeche.bottom;
   for (const k of Object.values(bildGriffe)) k.hidden = versteckt;
 }
 

@@ -692,7 +692,6 @@ select option{background:var(--karte);color:var(--schrift)}
 .schneidet .bildgriff--weg,
 .schneidet .bildgriff--schnell-umbruch,
 .schneidet .bildgriff--schnell-lupe,
-.schneidet .bildgriff--schnell-form{display:none}
 /* Der Schnittknopf bleibt und zeigt, dass er jetzt beendet. */
 .schneidet .bildgriff--schnell-schnitt{
   background:var(--blau);color:#fff;border-color:var(--blau-hell);
