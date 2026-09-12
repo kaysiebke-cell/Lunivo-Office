@@ -101,6 +101,11 @@ DIE BÄNDER
 │       ├── Sonderzeichen
 │       └── Formel
 ├── Seitenlayout
+│   ├── Designs
+│   │   ├── Designs
+│   │   ├── Farben
+│   │   ├── Schriftarten
+│   │   └── Effekte
 │   ├── Seite einrichten
 │   │   ├── Seitenränder
 │   │   ├── Ausrichtung

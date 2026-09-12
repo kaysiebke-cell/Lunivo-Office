@@ -830,6 +830,47 @@ select option{background:var(--karte);color:var(--schrift)}
   cursor:move !important;
 }
 
+/* ---------- Designs: Farben, Schriften, Effekte ----------
+
+   Die vier Tafeln aus dem Seitenlayout. Farben als Streifen, Schriften
+   als Probe, Effekte als Kästchen — jedes Mal sieht man, was man
+   bekommt.
+
+   Was sie setzen, sind vier Eigenschaften am Blatt. Die Regeln darunter
+   greifen sie ab; im Text selbst steht nichts davon, und ein Wechsel
+   ändert kein einziges Zeichen. */
+.dokument h1, .dokument h2, .dokument h3, .dokument h4{
+  color:var(--ds-ueberschrift, inherit);
+  font-family:var(--ds-schrift-ueber, inherit), Georgia, serif;
+}
+.dokument th{background:var(--ds-akzent-hell, transparent)}
+.dokument svg.zeichnung, .dokument img{filter:var(--ds-effekt, none)}
+
+.designtafel{width:268px;max-height:70vh;overflow-y:auto}
+.designtafel__gitter{display:flex;flex-direction:column;gap:3px}
+.designtafel__wahl,.designtafel__zeile{
+  display:flex;align-items:center;gap:9px;width:100%;
+  padding:5px 7px;
+  background:none;border:1px solid transparent;border-radius:5px;
+  color:var(--schrift);font:inherit;text-align:left;cursor:pointer;
+}
+.designtafel__wahl:hover,.designtafel__zeile:hover{background:rgba(127,127,127,.12)}
+.designtafel__wahl--an,.designtafel__zeile--an{
+  border-color:var(--blau-hell);background:rgba(47,111,181,.14);
+}
+.designtafel__streifen{display:flex;flex:0 0 auto;border-radius:3px;overflow:hidden}
+.designtafel__streifen i{display:block;width:14px;height:18px}
+.designtafel__name{font-size:12px;color:var(--schrift-2)}
+.designtafel__zeile{flex-wrap:wrap}
+.designtafel__probe{
+  flex:1 1 100%;font-size:15px;color:var(--schrift);line-height:1.25;
+}
+.designtafel__probe--klein{font-size:11.5px;color:var(--schrift-2)}
+.designtafel__effektprobe{
+  display:block;width:34px;height:22px;flex:0 0 auto;
+  background:var(--blau);border-radius:3px;
+}
+
 /* ---------- Die Formen-Galerie ----------
 
    Acht Gruppen, rund siebzig Formen. Jede als Zeichnung, nicht als

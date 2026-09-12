@@ -155,6 +155,11 @@ function REGISTER_BAUEN(B, w) {
   ]],
 
   ['Seitenlayout', [
+    /* Ganz links, wie in WPS: Designs, Farben, Schriftarten, Effekte. */
+    ['Designs', [['toenung', 'Designs', (k) => B.designs(k), 'gross'],
+                 ['farbe', 'Farben', (k) => B.farbschema(k)],
+                 ['Aa', 'Schriftarten', (k) => B.designSchriften(k)],
+                 ['texteffekt', 'Effekte', (k) => B.designEffekte(k)]]],
     ['Seite einrichten', [
                     ['raender', 'Seitenränder', [
                       ['Normal (2,5 cm)', () => w.setzeRandVorgabe('normal')()],

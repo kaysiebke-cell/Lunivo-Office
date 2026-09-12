@@ -7953,6 +7953,275 @@ function seitenfarbeAnwenden() {
   lesehilfeAnwenden();
 }
 
+/* ============================================================
+   DESIGNS: FARBEN, SCHRIFTEN, EFFEKTE
+
+   Der groesste fehlende Block aus dem Abgleich mit WPS. Dort steht er
+   ganz links im Seitenlayout: Designs, Farben, Schriftarten, Effekte.
+
+   WAS EIN DESIGN IST. Kein Aussehen des Programms, sondern eines des
+   DOKUMENTS: Welche Farbe haben die Ueberschriften, welche Schrift die
+   Ueberschriften und welche der Fliesstext, wie sind Tabellen getoent.
+   Wer ein Design waehlt, trifft ein Dutzend Entscheidungen mit einem
+   Klick — und genau darum geht es hier: Fuer jemanden, der an der Form
+   scheitert und nicht am Schreiben, ist das der Unterschied zwischen
+   "sieht aus wie ein Brief" und "sieht aus wie Text auf Papier".
+
+   WIE ES WIRKT. Ueber vier Eigenschaften am Blatt: --ds-akzent,
+   --ds-akzent-hell, --ds-ueberschrift, --ds-text. Die Stilvorlage
+   greift sie ab. Nichts davon steht im Text selbst — ein Wechsel des
+   Designs aendert kein einziges Zeichen, und Word-Dateien bringen ihre
+   eigene Formatierung weiter mit.
+   ============================================================ */
+
+/* Die Farbschemata. Die Namen sind die aus WPS — wer von dort kommt,
+   findet seines wieder. Je Schema: Akzent, heller Akzent, Farbe der
+   Ueberschriften, Farbe des Fliesstexts. */
+const FARBSCHEMATA = [
+  ['standard',   'Standard',     ['#2F6FB5', '#D6E4F0', '#1F4E79', '#111417']],
+  ['larissa',    'Larissa',      ['#37618E', '#DCE6F1', '#1F3864', '#14181C']],
+  ['naehe',      'Nähe',         ['#8C7B62', '#EAE3D8', '#5C4E3A', '#1B1A17']],
+  ['winkel',     'Winkel',       ['#2E5E4E', '#D9E8E1', '#1B4132', '#12201A']],
+  ['ananke',     'Ananke',       ['#6D5B8E', '#E3DCEE', '#453868', '#1A1622']],
+  ['apotheke',   'Apotheke',     ['#A34A3C', '#F2DFDB', '#71271C', '#201310']],
+  ['ganymed',    'Ganymed',      ['#1F6F78', '#D5EBED', '#0F484F', '#0E1E20']],
+  ['austin',     'Austin',       ['#7A8C2E', '#E8EFCF', '#4C5A14', '#191D0C']],
+  ['smoking',    'Smoking',      ['#4A4A4A', '#E2E2E2', '#232323', '#111111']],
+  ['kalligrafie','Kalligrafie',  ['#7B2D3B', '#F0DCE0', '#4E121C', '#1E0D11']],
+  ['cronus',     'Cronus',       ['#B07A1E', '#F6E8CC', '#7A5210', '#22190A']],
+  ['klarheit',   'Klarheit',     ['#C24A3A', '#FADFDA', '#8A2818', '#1F100D']],
+  ['deimos',     'Deimos',       ['#2B4C7E', '#D8E2F0', '#16305A', '#101722']],
+  ['couture',    'Couture',      ['#8E7F6B', '#EDE7DD', '#5E5243', '#1C1917']],
+  ['drachen',    'Drachen',      ['#1D4E6B', '#D6E7F0', '#0D3145', '#0E1A21']],
+  ['elementar',  'Elementar',    ['#3E7CB1', '#DEEBF5', '#22557E', '#121B22']],
+  ['dactylos',   'Dactylos',     ['#8C4A3F', '#F0DFDB', '#5E2A21', '#1E1310']],
+  ['essenz',     'Essenz',       ['#C0392B', '#FADBD8', '#85251B', '#200F0D']],
+  ['executive',  'Executive',    ['#3D5A80', '#DCE4EE', '#22374F', '#111720']],
+  ['lueftung',   'Lüftung',      ['#6E8B3D', '#E6EDD6', '#455A22', '#161B0F']],
+  ['fluss',      'Fluss',        ['#0E7C86', '#D2EDEF', '#06515A', '#0B1E20']],
+  ['phoebe',     'Phoebe',       ['#7E6B8F', '#E7E0EC', '#50415E', '#1A1620']],
+  ['graustufen', 'Graustufen',   ['#5A5A5A', '#E4E4E4', '#2E2E2E', '#141414']],
+  ['raster',     'Raster',       ['#7D6E5D', '#EAE4DC', '#4F443A', '#1A1714']],
+  ['hardcover',  'Hardcover',    ['#8A3324', '#F1DED9', '#5C1F14', '#1D100C']],
+  ['horizon',    'Horizon',      ['#C87A1E', '#F8E5CB', '#8A5010', '#22170A']],
+  ['galathea',   'Galathea',     ['#4A6FA5', '#DEE6F2', '#2A4670', '#131A24']],
+];
+
+/* Die Schriftpaare: eine fuer die Ueberschriften, eine fuer den Text.
+
+   Die Leseschriften stehen vorn und werden auch so benannt — in diesem
+   Programm sind sie nicht eine Moeglichkeit unter vielen. */
+const DESIGNSCHRIFTEN = [
+  ['lesen',    'Zum leichteren Lesen', 'OpenDyslexic', 'OpenDyslexic'],
+  ['lexend',   'Lexend',               'Lexend', 'Lexend'],
+  ['atkinson', 'Atkinson Hyperlegible','Atkinson Hyperlegible', 'Atkinson Hyperlegible'],
+  ['klassisch','Klassisch',            'Georgia', 'Georgia'],
+  ['amt',      'Amtlich',              'Liberation Sans', 'Liberation Serif'],
+  ['modern',   'Modern',               'Lexend', 'Liberation Sans'],
+  ['buch',     'Wie ein Buch',         'Liberation Serif', 'Liberation Serif'],
+  ['gemischt', 'Überschrift serifenlos','Liberation Sans', 'Liberation Serif'],
+];
+
+/* Die Effekte gelten fuer Formen und Bilder — das ist in WPS dasselbe. */
+const DESIGNEFFEKTE = [
+  ['keiner',  'Kein Effekt',    ''],
+  ['schatten','Schatten',       'drop-shadow(2px 3px 4px rgba(0,0,0,.35))'],
+  ['weich',   'Weicher Rand',   'blur(0.4px) drop-shadow(0 0 3px rgba(0,0,0,.25))'],
+  ['leuchten','Leuchten',       'drop-shadow(0 0 6px rgba(47,111,181,.65))'],
+  ['tief',    'Tiefer Schatten','drop-shadow(4px 6px 8px rgba(0,0,0,.45))'],
+];
+
+/* DIESE DREI STEHEN NEBEN dem vorhandenen Design, nicht darueber.
+
+   Lunivo hatte bereits DESIGNS (Amtlich, Klassisch, Modern, Warm,
+   Ruhig): ein Schriftpaar und zwei Farben, die auf die Formatvorlagen
+   wirken. Das bleibt, wie es ist. Ich hatte beinahe ein zweites daneben
+   gebaut — und das waere genau der Fehler gewesen, den ich mir schon
+   notiert habe: erst nachsehen, was da ist.
+
+   Was hier dazukommt, ist das Feinere: ein Farbschema fuer Akzente und
+   Tabellen, ein Schriftpaar zur Auswahl und ein Effekt fuer Formen und
+   Bilder. Der Designkatalog weiter unten setzt beides zusammen. */
+let designFein = Object.assign(
+  { farben: 'standard', schriften: 'lesen', effekt: 'keiner' },
+  Speicher.lies('designFein', {}));
+
+function designFeinAnwenden() {
+  const blatt = $('blatt');
+  if (!blatt) return;
+  const f = FARBSCHEMATA.find(([m]) => m === designFein.farben) || FARBSCHEMATA[0];
+  blatt.style.setProperty('--ds-akzent', f[2][0]);
+  blatt.style.setProperty('--ds-akzent-hell', f[2][1]);
+  blatt.style.setProperty('--ds-ueberschrift', f[2][2]);
+  blatt.style.setProperty('--ds-text', f[2][3]);
+
+  const sch = DESIGNSCHRIFTEN.find(([m]) => m === designFein.schriften) || DESIGNSCHRIFTEN[0];
+  blatt.style.setProperty('--ds-schrift-ueber', '"' + sch[2] + '"');
+  blatt.style.setProperty('--ds-schrift-text', '"' + sch[3] + '"');
+
+  const ef = DESIGNEFFEKTE.find(([m]) => m === designFein.effekt) || DESIGNEFFEKTE[0];
+  blatt.style.setProperty('--ds-effekt', ef[2] || 'none');
+}
+
+function designFeinSetzen(teil, wert) {
+  designFein[teil] = wert;
+  Speicher.schreib('designFein', designFein);
+  designFeinAnwenden();
+  geaendertMelden();
+}
+
+/* Eine Tafel mit Proben — wie bei WPS: Man sieht die Farben, statt einen
+   Namen zu lesen. */
+let designTafel = null;
+function designTafelWeg() {
+  if (designTafel) { designTafel.remove(); designTafel = null; }
+}
+
+function designTafelZeigen(knopf, titel, bauen) {
+  if (designTafel) { designTafelWeg(); return; }
+  const tafel = document.createElement('div');
+  tafel.className = 'katalogklappe designtafel';
+  const kopf = document.createElement('p');
+  kopf.className = 'katalogklappe__kopf';
+  kopf.textContent = titel;
+  tafel.appendChild(kopf);
+  bauen(tafel);
+  document.body.appendChild(tafel);
+  designTafel = tafel;
+
+  const r = (knopf && knopf.getBoundingClientRect)
+    ? knopf.getBoundingClientRect() : { left: 120, bottom: 120 };
+  const m = tafel.getBoundingClientRect();
+  tafel.style.left = Math.round(Math.max(8,
+    Math.min(r.left, window.innerWidth - 8 - m.width))) + 'px';
+  tafel.style.top = Math.round(Math.max(8,
+    Math.min(r.bottom + 4, window.innerHeight - 8 - m.height))) + 'px';
+
+  setTimeout(() => {
+    document.addEventListener('mousedown', function zu(ev) {
+      if (tafel.contains(ev.target) || (knopf && knopf.contains(ev.target))) return;
+      designTafelWeg();
+      document.removeEventListener('mousedown', zu);
+    });
+  }, 0);
+}
+
+B.farbschema = (knopf) => designTafelZeigen(knopf, 'Farben', (tafel) => {
+  const gitter = document.createElement('div');
+  gitter.className = 'designtafel__gitter';
+  for (const [marke, name, farben] of FARBSCHEMATA) {
+    const k = document.createElement('button');
+    k.type = 'button';
+    k.className = 'designtafel__wahl'
+      + (designFein.farben === marke ? ' designtafel__wahl--an' : '');
+    k.title = name;
+    const streifen = document.createElement('span');
+    streifen.className = 'designtafel__streifen';
+    for (const c of farben) {
+      const stueck = document.createElement('i');
+      stueck.style.background = c;
+      streifen.appendChild(stueck);
+    }
+    const wort = document.createElement('span');
+    wort.className = 'designtafel__name';
+    wort.textContent = name;
+    k.append(streifen, wort);
+    k.addEventListener('mousedown', (e) => e.preventDefault());
+    k.addEventListener('click', () => {
+      designFeinSetzen('farben', marke);
+      designTafelWeg();
+      melde('Farben: ' + name);
+    });
+    gitter.appendChild(k);
+  }
+  tafel.appendChild(gitter);
+});
+
+B.designSchriften = (knopf) => designTafelZeigen(knopf, 'Schriftarten', (tafel) => {
+  for (const [marke, name, ueber, text] of DESIGNSCHRIFTEN) {
+    const k = document.createElement('button');
+    k.type = 'button';
+    k.className = 'designtafel__zeile'
+      + (designFein.schriften === marke ? ' designtafel__zeile--an' : '');
+    k.innerHTML = '<span class="designtafel__probe" style="font-family:\''
+      + ueber + '\',serif">Überschrift</span>'
+      + '<span class="designtafel__probe designtafel__probe--klein" '
+      + 'style="font-family:\'' + text + '\',serif">Fließtext, wie er '
+      + 'auf dem Blatt steht</span>'
+      + '<span class="designtafel__name">' + name + '</span>';
+    k.addEventListener('mousedown', (e) => e.preventDefault());
+    k.addEventListener('click', () => {
+      designFeinSetzen('schriften', marke);
+      designTafelWeg();
+      melde('Schriftarten: ' + name);
+    });
+    tafel.appendChild(k);
+  }
+});
+
+B.designEffekte = (knopf) => designTafelZeigen(knopf, 'Effekte', (tafel) => {
+  for (const [marke, name, filter] of DESIGNEFFEKTE) {
+    const k = document.createElement('button');
+    k.type = 'button';
+    k.className = 'designtafel__zeile'
+      + (designFein.effekt === marke ? ' designtafel__zeile--an' : '');
+    k.innerHTML = '<span class="designtafel__effektprobe" style="filter:'
+      + (filter || 'none') + '"></span>'
+      + '<span class="designtafel__name">' + name + '</span>';
+    k.addEventListener('mousedown', (e) => e.preventDefault());
+    k.addEventListener('click', () => {
+      designFeinSetzen('effekt', marke);
+      designTafelWeg();
+      melde('Effekt: ' + name + ' — gilt für Formen und Bilder.');
+    });
+    tafel.appendChild(k);
+  }
+});
+
+/* „Designs" ist das Ganze auf einmal: Farben und Schriften zusammen.
+   Wer nicht einzeln waehlen will, nimmt eines von hier.
+
+   NICHT „DESIGNS" — den Namen gibt es weiter unten schon. Zum zweiten
+   Mal an einem Tag dieselbe Falle: Zwei gleichnamige Konstanten in einer
+   Datei sind kein stiller Fehler wie bei Funktionen, sondern ein
+   Absturz beim Laden. Der faellt wenigstens sofort auf. */
+const DESIGNPAARE = [
+  ['modern',    'Schlicht',    'standard',   'lesen'],
+  ['amt',       'Amtlich',     'deimos',     'amt'],
+  ['warm',      'Warm',        'naehe',      'klassisch'],
+  ['ruhig',     'Ruhig',       'winkel',     'lexend'],
+  ['klassisch', 'Klassisch',   'kalligrafie','buch'],
+];
+
+B.designs = (knopf) => designTafelZeigen(knopf, 'Designs', (tafel) => {
+  for (const [grund, name, farben, schriften] of DESIGNPAARE) {
+    const f = FARBSCHEMATA.find(([m]) => m === farben) || FARBSCHEMATA[0];
+    const sch = DESIGNSCHRIFTEN.find(([m]) => m === schriften) || DESIGNSCHRIFTEN[0];
+    const k = document.createElement('button');
+    k.type = 'button';
+    k.className = 'designtafel__zeile';
+    k.innerHTML = '<span class="designtafel__probe" style="font-family:\''
+      + sch[2] + '\',serif;color:' + f[2][2] + '">Überschrift</span>'
+      + '<span class="designtafel__streifen">'
+      + f[2].map((c) => '<i style="background:' + c + '"></i>').join('')
+      + '</span><span class="designtafel__name">' + name + '</span>';
+    k.addEventListener('mousedown', (e) => e.preventDefault());
+    k.addEventListener('click', () => {
+      /* Beides auf einmal: das vorhandene Design fuer die Vorlagen,
+         das Feine fuer Akzente und Schriften. */
+      designAnwenden(grund);
+      designFein.farben = farben;
+      designFein.schriften = schriften;
+      Speicher.schreib('designFein', designFein);
+      designFeinAnwenden();
+      geaendertMelden();
+      designTafelWeg();
+      melde('Design: ' + name);
+    });
+    tafel.appendChild(k);
+  }
+});
+
 B.seitenfarbe = () => {
   fenster('Seitenfarbe', [
     { art: 'satz', text: 'Färbt das Blatt. Beim Drucken kostet das Farbe —\nfür ein Schreiben ans Amt lieber weiß lassen.' },
@@ -15559,6 +15828,8 @@ if (Bruecke) Bruecke.textSetzen(Dokument.lies().text);
 menueleisteAnwenden();
 bedienungAnwenden();
 flaecheAnwenden();
+/* Farbschema, Schriftpaar und Effekt auf das Blatt legen. */
+designFeinAnwenden();
 /* Unten rechts: Ansichten und Schieber. Auch hier erst jetzt, weil die
    Knöpfe ihre Zeichnungen aus SYMBOLE holen. */
 statuszeileBauen();

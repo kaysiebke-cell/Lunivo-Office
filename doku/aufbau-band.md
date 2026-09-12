@@ -132,6 +132,11 @@ EINFÜGEN
 
 ```
 SEITENLAYOUT
+├── Designs
+│   ├── Designs
+│   ├── Farben
+│   ├── Schriftarten
+│   └── Effekte
 ├── Seite einrichten
 │   ├── Seitenränder
 │   ├── Ausrichtung
@@ -370,10 +375,12 @@ genannt — das ist Absicht: ein Schalter, mehrere Stellen, ein Zustand.
 | Breit | Seitenlayout ▸ Seite einrichten |
 | Datum | Einfügen ▸ Text |
 | Deckblatt | Einfügen ▸ Seiten |
+| Designs | Seitenlayout ▸ Designs |
 | Diagramm | Einfügen ▸ Illustrationen |
 | Dokumentprüfung | Schreibhilfe ▸ Prüfen |
 | Drucklayout | Ansicht ▸ Dokumentansichten |
 | Durchgestrichen | Start ▸ Schriftart |
+| Effekte | Seitenlayout ▸ Designs |
 | Eigene Ränder… | Seitenlayout ▸ Seite einrichten |
 | Eigenschaften | Einfügen ▸ Tabellen |
 | Eine Seite | Ansicht ▸ Zoom |
@@ -388,6 +395,7 @@ genannt — das ist Absicht: ein Schalter, mehrere Stellen, ein Zustand.
 | Ergebnisse anzeigen | Sendungen ▸ Vorschau |
 | Ersetzen | Start ▸ Bearbeiten |
 | Etiketten | Sendungen ▸ Erstellen |
+| Farben | Seitenlayout ▸ Designs |
 | Fensterliste | Ansicht ▸ Fenster |
 | Fett | Start ▸ Schriftart |
 | Form mit eigener Farbe… | Einfügen ▸ Illustrationen |
@@ -465,6 +473,7 @@ genannt — das ist Absicht: ein Schalter, mehrere Stellen, ein Zustand.
 | Schrift vergrößern | Start ▸ Schriftart |
 | Schrift verkleinern | Start ▸ Schriftart |
 | Schrift zum Lesen | Schreibhilfe ▸ Lesen |
+| Schriftarten | Seitenlayout ▸ Designs |
 | Schriftfarbe | Start ▸ Schriftart |
 | Seitenbreite | Ansicht ▸ Zoom |
 | Seitenfarbe | Seitenlayout ▸ Seitenhintergrund |
