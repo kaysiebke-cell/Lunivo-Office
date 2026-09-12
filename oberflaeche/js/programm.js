@@ -4034,7 +4034,8 @@ const REGISTER_IM_ZUSAMMENHANG = [
                 ['anordnen', 'Anordnen', () => B.anordnen(), 'gross']]],
       ['Größe', [['lupe', 'Größe genau angeben', () => B.bildGroesse(), 'gross'],
                  ['ecken', 'Größe zurücksetzen', () => B.bildGroesseZurueck()]]],
-      ['Zuschneiden', [['schere', 'Zuschneiden', () => B.bildZuschneiden(), 'gross'],
+      ['Zuschneiden', [['schere', 'Zuschneiden (Winkel ziehen)', () => B.schnittModus(), 'gross'],
+                       ['ecken', 'Nach Form oder Verhältnis', () => B.bildZuschneiden()],
                        ['zurueck', 'Zuschnitt aufheben', () => B.bildSchnittWeg()]]],
       ['Drehen und Spiegeln',
         [['zurueck', 'Nach links drehen (90°)', () => B.bildLinks90(), 'gross'],
@@ -9354,7 +9355,9 @@ const BILDSCHNELL = [
     tun: (k) => B.layoutoptionen(k) },
   { art: 'lupe', bild: 'lupe', name: 'Bild groß ansehen',
     tun: () => B.bildVorschau() },
-  { art: 'schnitt', bild: 'schere', name: 'Zuschneiden',
+  { art: 'schnitt', bild: 'schere', name: 'Zuschneiden — Winkel nach innen ziehen',
+    tun: () => B.schnittModus() },
+  { art: 'form', bild: 'ecken', name: 'Nach Form oder Verhältnis zuschneiden',
     tun: (k) => B.bildZuschneiden(k) },
 ];
 
@@ -9913,7 +9916,13 @@ function bildGriffeBauen() {
 
   for (const { art, zeiger, name } of BILDGRIFFE) {
     const k = machen(art, 'Größe ziehen — ' + name, zeiger, '');
-    k.addEventListener('pointerdown', (e) => bildGroesseZiehen(e, art));
+    k.addEventListener('pointerdown', (e) => {
+      /* Im Schnittmodus ziehen dieselben acht Griffe den Schnitt statt
+         der Groesse. Zwei Saetze Griffe uebereinander waeren ein Gewirr;
+         in WPS wechseln sie ebenfalls ihre Bedeutung. */
+      if (schnittModus) bildSchnittZiehen(e, art);
+      else bildGroesseZiehen(e, art);
+    });
   }
   machen('drehen', 'Bild drehen — ziehen', 'grab', '↻')
     .addEventListener('pointerdown', bildDrehenZiehen);
@@ -10034,6 +10043,160 @@ function bildZiehenBeginnen(fall) {
   bild.addEventListener('pointerup', fertig);
   document.addEventListener('keydown', taste);
 }
+
+/* ============================================================
+   DER SCHNITTMODUS
+
+   Kay: „wenn ich auf Zuschneiden klicke, fehlen die Marker am Bild."
+   Stimmt — ich hatte nur eine Tafel gebaut. In WPS werden beim
+   Zuschneiden die acht runden Griffe zu WINKELN, und man zieht sie nach
+   innen: Das Bild bleibt stehen, der Ausschnitt wird kleiner.
+
+   Warum das besser ist als vier Prozentzahlen: Man sieht, was wegfaellt,
+   waehrend man es wegnimmt. Prozente muss man sich vorstellen.
+
+   Waehrend des Schnittmodus bleibt das ganze Bild sichtbar, nur blasser
+   ausserhalb des Ausschnitts — sonst schneidet man blind und weiss nicht,
+   was noch da waere. Dafuer liegt eine zweite, ungeschnittene Fassung
+   hinter dem Bild.
+   ============================================================ */
+let schnittModus = false;
+let schnittSchatten = null;      /* die blasse Fassung dahinter */
+
+function schnittModusAn(bild) {
+  if (schnittModus) return;
+  schnittModus = true;
+  document.body.classList.add('schneidet');
+  /* NUR die acht Ziehgriffe werden zu Winkeln. Die Schnellknoepfe
+     daneben sind keine Griffe am Bild, sondern Knoepfe — sie hatten die
+     Marken-Form mitbekommen und sahen aus wie leere Kaesten. */
+  for (const { art } of BILDGRIFFE) {
+    if (bildGriffe[art]) bildGriffe[art].classList.add('bildgriff--marke');
+  }
+
+  /* Die blasse Fassung: dasselbe Bild, an derselben Stelle, ohne
+     Schnitt. Sie liegt darunter und zeigt, was wegfaellt. */
+  schnittSchatten = bild.cloneNode(false);
+  schnittSchatten.className = 'schnittschatten';
+  schnittSchatten.style.cssText = bild.style.cssText;
+  schnittSchatten.style.clipPath = '';
+  schnittSchatten.style.filter = '';
+  schnittSchatten.style.position = 'absolute';
+  schnittSchatten.style.pointerEvents = 'none';
+  const r = bild.getBoundingClientRect();
+  const bogen = (bild.closest('.dokument') || feld).getBoundingClientRect();
+  const massstab = (zoom || 100) / 100;
+  schnittSchatten.style.left = inMillimeter((r.left - bogen.left) / massstab) + 'mm';
+  schnittSchatten.style.top = inMillimeter((r.top - bogen.top) / massstab) + 'mm';
+  (bild.closest('.dokument') || feld).appendChild(schnittSchatten);
+
+  melde('Schnittmodus: die Winkel nach innen ziehen. '
+      + 'Eingabetaste beendet, Escape bricht ab.');
+}
+
+function schnittModusAus() {
+  if (!schnittModus) return;
+  schnittModus = false;
+  document.body.classList.remove('schneidet');
+  for (const { art } of BILDGRIFFE) {
+    if (bildGriffe[art]) bildGriffe[art].classList.remove('bildgriff--marke');
+  }
+  if (schnittSchatten) { schnittSchatten.remove(); schnittSchatten = null; }
+}
+
+B.schnittModus = () => {
+  const bild = bildJetzt();
+  if (!bild) return;
+  if (schnittModus) {
+    schnittModusAus();
+    geaendertMelden();
+    melde('Zuschnitt übernommen.');
+    return;
+  }
+  /* Eine Form und ein Kantenschnitt schliessen einander aus. */
+  if (bild.dataset.form) {
+    delete bild.dataset.form;
+    bild.style.clipPath = '';
+  }
+  schnittModusAn(bild);
+  bildGriffeNachmessen();
+};
+
+/* Einen der acht Winkel ziehen: Er verschiebt genau die Kante, an der er
+   sitzt. Die Ecken verschieben zwei. */
+function bildSchnittZiehen(fall, art) {
+  fall.preventDefault();
+  const bild = bildZiel;
+  if (!bild) return;
+  const knopf = fall.currentTarget;
+  try { knopf.setPointerCapture(fall.pointerId); } catch (e) { /* aelter */ }
+
+  const r = bild.getBoundingClientRect();
+  const anfang = schnittLesen(bild);
+  const zurueck = Object.assign({}, anfang);
+  const start = { x: fall.clientX, y: fall.clientY };
+  zieht = true;
+  document.body.classList.add('zieht-tabelle');
+
+  const bewegen = (e) => {
+    const dx = (e.clientX - start.x) / r.width * 100;
+    const dy = (e.clientY - start.y) / r.height * 100;
+    const s = Object.assign({}, anfang);
+    if (art.indexOf('w') > -1) s.links = anfang.links + dx;
+    if (art.indexOf('e') > -1) s.rechts = anfang.rechts - dx;
+    if (art.indexOf('n') === 0) s.oben = anfang.oben + dy;
+    if (art === 's' || art === 'se' || art === 'sw') s.unten = anfang.unten - dy;
+    /* Nie mehr als 90 Prozent wegnehmen, und nie ins Negative: Ein Bild
+       ohne Flaeche liesse sich nicht mehr anfassen. */
+    for (const k of ['oben', 'rechts', 'unten', 'links']) {
+      s[k] = Math.max(0, Math.min(90, Math.round(s[k] * 10) / 10));
+    }
+    if (s.oben + s.unten > 90) { s.oben = anfang.oben; s.unten = anfang.unten; }
+    if (s.links + s.rechts > 90) { s.links = anfang.links; s.rechts = anfang.rechts; }
+    schnittAnwenden(bild, s);
+    bildGriffeStellen(bild);
+  };
+
+  const aufhoeren = () => {
+    zieht = false;
+    knopf.removeEventListener('pointermove', bewegen);
+    knopf.removeEventListener('pointerup', fertig);
+    document.removeEventListener('keydown', taste);
+    document.body.classList.remove('zieht-tabelle');
+    try { knopf.releasePointerCapture(fall.pointerId); } catch (e) { /* weg */ }
+  };
+  const taste = (e) => {
+    if (e.key !== 'Escape') return;
+    e.preventDefault(); aufhoeren();
+    schnittAnwenden(bild, zurueck); bildGriffeStellen(bild);
+    melde('Schnitt abgebrochen.');
+  };
+  const fertig = () => {
+    aufhoeren(); geaendertMelden();
+    const s = schnittLesen(bild);
+    melde('Schnitt: oben ' + s.oben + ' %, unten ' + s.unten
+        + ' %, links ' + s.links + ' %, rechts ' + s.rechts + ' %.');
+  };
+
+  knopf.addEventListener('pointermove', bewegen);
+  knopf.addEventListener('pointerup', fertig);
+  document.addEventListener('keydown', taste);
+}
+
+/* Eingabetaste beendet den Schnittmodus, Escape auch — so wie in jedem
+   Programm, das einen Modus kennt. */
+document.addEventListener('keydown', (e) => {
+  if (!schnittModus) return;
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    schnittModusAus();
+    geaendertMelden();
+    melde('Zuschnitt übernommen.');
+  } else if (e.key === 'Escape') {
+    schnittModusAus();
+    melde('Schnittmodus beendet.');
+  }
+});
 
 function bildGroesseZiehen(fall, art) {
   fall.preventDefault();
