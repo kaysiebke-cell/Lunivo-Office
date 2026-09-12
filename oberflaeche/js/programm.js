@@ -9144,6 +9144,8 @@ function bildGriffeWeg() {
   for (const k of Object.values(bildGriffe)) k.remove();
   bildGriffe = {};
   bildZiel = null;
+  if (bildBeobachter) { bildBeobachter.disconnect(); bildBeobachter = null; }
+  bildBewacht = null;
 }
 
 function bildIstFrei(bild) {
@@ -9987,7 +9989,37 @@ function bildGriffeAuffrischen() {
 
   if (!bildGriffe.nw) bildGriffeBauen();
   bildZiel = bild;
+  bildWache(bild);
   bildGriffeStellen(bild);
+}
+
+/* EINE WACHE AM BILD.
+
+   Die Griffe wurden einmal gemessen und blieben dann liegen. Ein Bild
+   aendert seine Groesse aber noch, nachdem gemessen wurde: Es laedt
+   fertig, das Blatt wird gezoomt, eine Zeile darueber kommt dazu. Dann
+   steht das Rechteck der Griffe um ein Vielfaches neben dem Bild — genau
+   das war auf Kays Bildschirmfoto zu sehen.
+
+   Ein ResizeObserver meldet jede Aenderung, und load faengt den Fall ab,
+   dass das Bild beim Messen noch gar nicht da war. */
+let bildBeobachter = null;
+let bildBewacht = null;
+
+function bildWache(bild) {
+  if (bildBewacht === bild) return;
+  if (bildBeobachter) bildBeobachter.disconnect();
+  bildBewacht = bild;
+  if (typeof ResizeObserver === 'undefined') return;
+  bildBeobachter = new ResizeObserver(() => {
+    if (!zieht && bildZiel === bild) bildGriffeStellen(bild);
+  });
+  bildBeobachter.observe(bild);
+  if (!bild.complete) {
+    bild.addEventListener('load', () => {
+      if (bildZiel === bild) bildGriffeStellen(bild);
+    }, { once: true });
+  }
 }
 
 /* Nur stellen, nicht neu entscheiden — siehe griffeStellen(). Waehrend
