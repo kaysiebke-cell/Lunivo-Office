@@ -188,7 +188,38 @@
   pruefe('Blasse Fassung weg', !document.querySelector('.schnittschatten'),
          'noch da');
 
-  /* 11 — Der Zeiger ist frei. */
+  /* 11 — Ein Klick waehlt aus, ohne das Bild zu loesen, und die
+     Schnellknoepfe bleiben erreichbar. */
+  bild = await aufbauen();
+  let br = bild.getBoundingClientRect();
+  zeiger('pointerdown', bild, br.x + 20, br.y + 20, 21);
+  zeiger('pointerup', bild, br.x + 20, br.y + 20, 21);
+  await warte(300);
+  pruefe('Klick loest das Bild nicht aus dem Text',
+         !bild.classList.contains('bild--frei'), 'es schwebt jetzt');
+  /* Maus weit weg vom Blatt — die Griffe muessen bleiben, sonst kommt
+     man nie an die Knoepfe. */
+  document.body.dispatchEvent(new PointerEvent('pointerover',
+    { bubbles: true, pointerId: 1, pointerType: 'mouse' }));
+  feld.dispatchEvent(new PointerEvent('pointerleave',
+    { bubbles: false, pointerId: 1, pointerType: 'mouse' }));
+  await warte(400);
+  pruefe('Griffe bleiben, wenn die Maus zu den Knoepfen wandert',
+         document.querySelectorAll('.bildgriff--schnell').length === 3,
+         document.querySelectorAll('.bildgriff--schnell').length + ' Knoepfe');
+  const schnellKnopf = document.querySelector('.bildgriff--schnell-lupe');
+  pruefe('Der Lupenknopf laesst sich erreichen',
+         !!schnellKnopf && !schnellKnopf.hidden, 'fehlt oder versteckt');
+  if (schnellKnopf) {
+    schnellKnopf.click();
+    await warte(300);
+    pruefe('Die Lupe geht auf', !!document.querySelector('.bildschau'), 'keine Schau');
+    const zu = document.querySelector('.bildschau__zu');
+    if (zu) zu.click();
+    await warte(200);
+  }
+
+  /* 12 — Der Zeiger ist frei. */
   pruefe('Kein gefangener Zeiger',
          !document.body.classList.contains('zieht-tabelle'), 'zieht-tabelle liegt an');
 

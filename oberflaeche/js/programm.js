@@ -9139,8 +9139,10 @@ const BILDGRIFFE = [
 let bildGriffe = {};
 let bildZiel = null;
 let bildUnterMaus = null;
+let bildGewaehlt = null;        /* bleibt, bis woanders hingeklickt wird */
 
 function bildGriffeWeg() {
+  bildGewaehlt = null;
   for (const k of Object.values(bildGriffe)) k.remove();
   bildGriffe = {};
   bildZiel = null;
@@ -9959,6 +9961,18 @@ function bildGriffeBauen() {
    Jetzt zaehlt nur, was wirklich gemeint ist: das Bild unter der Maus
    oder das, IN dem die Schreibmarke steht — nicht irgendeines. */
 function bildGemeint() {
+  /* EIN ANGEKLICKTES BILD BLEIBT GEWAEHLT.
+
+     Kay: „ich kann die Symbole nicht erreichen, wenn ich das Bild
+     anklicke." Der Grund: Ein Klick auf ein Bild setzt die Schreibmarke
+     NEBEN das Bild, nicht darauf. Bewegte er die Maus dann zu den
+     Knoepfen, verliess er das Blatt — und die Griffe verschwanden auf
+     halbem Weg, weil weder Maus noch Schreibmarke auf dem Bild standen.
+
+     Deshalb wird ein angeklicktes Bild gemerkt und bleibt gewaehlt, bis
+     woanders hingeklickt wird. So haelt es jedes Programm mit
+     Gegenstaenden auf einem Blatt. */
+  if (bildGewaehlt && feld.contains(bildGewaehlt)) return bildGewaehlt;
   if (bildUnterMaus && feld.contains(bildUnterMaus)) return bildUnterMaus;
   const auswahl = window.getSelection();
   if (!auswahl || !auswahl.rangeCount) return null;
@@ -10078,24 +10092,37 @@ function bildGriffeStellen(bild) {
 function bildZiehenBeginnen(fall) {
   const bild = fall.target;
   if (!bild || bild.tagName !== 'IMG' || !feld.contains(bild)) return;
+  bildGewaehlt = bild;
   fall.preventDefault();
   bildUnterMaus = bild;
   bildGriffeAuffrischen();
 
   const warFrei = bildIstFrei(bild);
   const zurueck = { links: bild.style.left, oben: bild.style.top };
-  bildFreiMachen(bild);
+  /* ERST BEWEGEN, DANN LOESEN.
+
+     Hier wurde das Bild schon beim Druck aus dem Textfluss geloest. Ein
+     blosser Klick — zum Auswaehlen, um an die Knoepfe zu kommen —
+     machte es damit schwebend, ohne dass jemand gezogen haette. Erst ab
+     vier Pixeln Bewegung ist es ein Zug. */
+  let geloest = false;
   zieht = true;
   document.body.classList.add('zieht-tabelle');
 
   const massstab = (zoom || 100) / 100;
   const start = { x: fall.clientX, y: fall.clientY };
-  const anfang = { links: parseFloat(bild.style.left) || 0,
-                   oben: parseFloat(bild.style.top) || 0 };
+  let anfang = { links: 0, oben: 0 };
 
   try { bild.setPointerCapture(fall.pointerId); } catch (e) { /* aelter */ }
 
   const bewegen = (e) => {
+    if (!geloest) {
+      if (Math.abs(e.clientX - start.x) < 4 && Math.abs(e.clientY - start.y) < 4) return;
+      bildFreiMachen(bild);
+      anfang = { links: parseFloat(bild.style.left) || 0,
+                 oben: parseFloat(bild.style.top) || 0 };
+      geloest = true;
+    }
     const gehalten = imBlattHalten(bild,
       anfang.links + inMillimeter((e.clientX - start.x) / massstab),
       anfang.oben + inMillimeter((e.clientY - start.y) / massstab));
@@ -10115,13 +10142,16 @@ function bildZiehenBeginnen(fall) {
     if (e.key !== 'Escape') return;
     e.preventDefault();
     aufhoeren();
-    if (!warFrei) bild.classList.remove('bild--frei');
+    if (!warFrei && geloest) bild.classList.remove('bild--frei');
     bild.style.left = zurueck.links; bild.style.top = zurueck.oben;
     bildGriffeAuffrischen();
     melde('Verschieben abgebrochen.');
   };
   const fertig = () => {
     aufhoeren();
+    /* Ohne Bewegung war es ein Klick zum Auswaehlen — nichts geaendert,
+       also auch nichts gemeldet. */
+    if (!geloest) { bildGriffeNachmessen(); return; }
     geaendertMelden();
     melde(warFrei ? 'Bild verschoben.'
                   : 'Bild schwebt jetzt frei. Zurück mit „Wieder in den Text".');
@@ -10415,6 +10445,20 @@ feld.addEventListener('pointerover', (e) => {
 });
 
 feld.addEventListener('pointerdown', bildZiehenBeginnen);
+
+/* Abgewaehlt wird nur durch einen Druck woanders — nicht dadurch, dass
+   die Maus ueber den Rand faehrt. Griffe, Tafeln und die Bildtools-
+   Leiste zaehlen dabei zum Bild: Wer sie drueckt, meint es ja. */
+document.addEventListener('pointerdown', (e) => {
+  if (zieht || !bildGewaehlt) return;
+  const z = e.target;
+  if (!z || !z.closest) return;
+  if (z.tagName === 'IMG' && feld.contains(z)) return;
+  if (z.closest('.bildgriff, .layouttafel, .schnitttafel, .bildschau')) return;
+  if (z.closest('#werkzeugleiste3')) return;
+  bildGewaehlt = null;
+  bildGriffeNachmessen();
+}, true);
 /* Zweimal messen — genau wie bei den Tabellen, und aus demselben Grund:
    Beim ersten Berühren eines Bildes taucht gleichzeitig die Leiste
    „Bildtools" auf und schiebt das Blatt nach unten. Wer nur einmal misst,
