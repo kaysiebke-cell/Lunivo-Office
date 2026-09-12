@@ -160,6 +160,10 @@ function REGISTER_BAUEN(B, w) {
                  ['farbe', 'Farben', (k) => B.farbschema(k)],
                  ['Aa', 'Schriftarten', (k) => B.designSchriften(k)],
                  ['texteffekt', 'Effekte', (k) => B.designEffekte(k)]]],
+    /* „Anordnen" wie in WPS: Was frei auf der Seite liegt, laesst sich
+       stellen und drehen. */
+    ['Anordnen', [['ausrichten', 'Ausrichten', (k) => B.objektAusrichten(k)],
+                  ['objektdrehen', 'Drehen', (k) => B.objektDrehen(k)]]],
     ['Seite einrichten', [
                     ['raender', 'Seitenränder', [
                       ['Normal (2,5 cm)', () => w.setzeRandVorgabe('normal')()],

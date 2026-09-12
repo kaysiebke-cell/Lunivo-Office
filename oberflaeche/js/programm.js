@@ -8222,6 +8222,132 @@ B.designs = (knopf) => designTafelZeigen(knopf, 'Designs', (tafel) => {
   }
 });
 
+/* ============================================================
+   OBJEKTE AUSRICHTEN UND DREHEN
+
+   Aus dem Abgleich: WPS hat im Seitenlayout rechts „Ausrichten",
+   „Gruppieren", „Drehen". Ausrichten und Drehen gehen hier, sobald ein
+   Gegenstand frei auf der Seite liegt — und das koennen Bilder,
+   Tabellen und Formen seit dieser Sitzung.
+
+   AUSGERICHTET WIRD AM BLATT, nicht an anderen Gegenstaenden. Das
+   Zweite braucht eine Mehrfachauswahl, die es hier nicht gibt; das
+   Erste ist ohnehin der haeufigere Fall — ein Bild mittig setzen.
+   ============================================================ */
+function gegenstandJetzt() {
+  const b = (typeof bildGemeint === 'function') ? bildGemeint() : null;
+  if (b) return b;
+  const auswahl = window.getSelection();
+  let k = auswahl && auswahl.anchorNode;
+  if (k && k.nodeType === Node.TEXT_NODE) k = k.parentElement;
+  const form = k && k.closest ? k.closest('svg.zeichnung, table') : null;
+  if (form && feld.contains(form)) return form;
+  const letzte = feld.querySelector('svg.zeichnung');
+  return letzte || null;
+}
+
+const OBJEKT_STELLEN = [
+  ['links',  'Links am Rand',   (b, g) => ({ x: 0 })],
+  ['mitte',  'Waagerecht mittig', (b, g) => ({ x: (b.breite - g.breite) / 2 })],
+  ['rechts', 'Rechts am Rand',  (b, g) => ({ x: b.breite - g.breite })],
+  ['oben',   'Oben',            (b, g) => ({ y: 0 })],
+  ['mitte-s','Senkrecht mittig', (b, g) => ({ y: (b.hoehe - g.hoehe) / 2 })],
+  ['unten',  'Unten',           (b, g) => ({ y: b.hoehe - g.hoehe })],
+];
+
+B.objektAusrichten = (knopf) => {
+  const g = gegenstandJetzt();
+  if (!g) { melde('Dafür muss ein Bild, eine Form oder eine Tabelle gewählt sein.'); return; }
+
+  designTafelZeigen(knopf, 'Ausrichten', (tafel) => {
+    const satz = document.createElement('p');
+    satz.className = 'layouttafel__satz';
+    satz.textContent = 'Ausgerichtet wird am Blatt. Der Gegenstand löst sich '
+                     + 'dafür aus dem Textfluss, falls er noch darin steht.';
+    for (const [, name, rechne] of OBJEKT_STELLEN) {
+      const k = document.createElement('button');
+      k.type = 'button';
+      k.className = 'designtafel__zeile';
+      k.textContent = name;
+      k.addEventListener('mousedown', (e) => e.preventDefault());
+      k.addEventListener('click', () => {
+        objektStellen(g, rechne);
+        designTafelWeg();
+        melde(name + '.');
+      });
+      tafel.appendChild(k);
+    }
+    tafel.appendChild(satz);
+  });
+};
+
+function objektStellen(g, rechne) {
+  /* Erst loesen: Was im Textfluss steht, laesst sich nicht stellen. */
+  if (g.tagName === 'TABLE') { if (!istFrei(g)) freiMachen(g); }
+  else if (!bildIstFrei(g)) bildFreiMachen(g);
+
+  const bogen = g.closest('.dokument') || feld;
+  const massstab = (zoom || 100) / 100;
+  const br = bogen.getBoundingClientRect();
+  const gr = g.getBoundingClientRect();
+  const blatt = { breite: inMillimeter(br.width / massstab),
+                  hoehe: inMillimeter(br.height / massstab) };
+  const gegen = { breite: inMillimeter(gr.width / massstab),
+                  hoehe: inMillimeter(gr.height / massstab) };
+  const neu = rechne(blatt, gegen);
+  if (neu.x !== undefined) g.style.left = Math.round(neu.x * 10) / 10 + 'mm';
+  if (neu.y !== undefined) g.style.top = Math.round(neu.y * 10) / 10 + 'mm';
+  geaendertMelden();
+  if (typeof bildGriffeNachmessen === 'function') bildGriffeNachmessen();
+  if (typeof griffNachmessen === 'function') griffNachmessen();
+}
+
+const OBJEKT_DREHUNGEN = [
+  ['Nach rechts drehen (90°)',  90],
+  ['Nach links drehen (90°)',  -90],
+  ['Um 180 Grad',              180],
+];
+
+B.objektDrehen = (knopf) => {
+  const g = gegenstandJetzt();
+  if (!g) { melde('Dafür muss ein Bild, eine Form oder eine Tabelle gewählt sein.'); return; }
+  designTafelZeigen(knopf, 'Drehen', (tafel) => {
+    for (const [name, grad] of OBJEKT_DREHUNGEN) {
+      const k = document.createElement('button');
+      k.type = 'button';
+      k.className = 'designtafel__zeile';
+      k.textContent = name;
+      k.addEventListener('mousedown', (e) => e.preventDefault());
+      k.addEventListener('click', () => {
+        const jetzt = (Number(g.dataset.drehung || 0) + grad + 360) % 360;
+        g.dataset.drehung = String(jetzt);
+        if (typeof bildVerwandlung === 'function' && g.tagName === 'IMG') {
+          bildVerwandlung(g);
+        } else {
+          g.style.transform = jetzt ? 'rotate(' + jetzt + 'deg)' : '';
+        }
+        geaendertMelden();
+        designTafelWeg();
+        melde('Steht auf ' + jetzt + ' Grad.');
+      });
+      tafel.appendChild(k);
+    }
+    const zurueck = document.createElement('button');
+    zurueck.type = 'button';
+    zurueck.className = 'layouttafel__weiter';
+    zurueck.textContent = 'Drehung zurücksetzen';
+    zurueck.addEventListener('click', () => {
+      g.dataset.drehung = '0';
+      if (typeof bildVerwandlung === 'function' && g.tagName === 'IMG') bildVerwandlung(g);
+      else g.style.transform = '';
+      geaendertMelden();
+      designTafelWeg();
+      melde('Drehung zurückgesetzt.');
+    });
+    tafel.appendChild(zurueck);
+  });
+};
+
 B.seitenfarbe = () => {
   fenster('Seitenfarbe', [
     { art: 'satz', text: 'Färbt das Blatt. Beim Drucken kostet das Farbe —\nfür ein Schreiben ans Amt lieber weiß lassen.' },
@@ -12643,8 +12769,11 @@ const MENUES = [
       { name: 'Zeilennummern', tun: B.zeilennummern },
       { name: 'Silbentrennung', tun: B.silbentrennung },
     ] },
-    { name: 'Textumbruch', unter: [
+    { name: 'Anordnen', unter: [
       { name: 'Textumbruch', tun: B.anordnen },
+      strich,
+      { name: 'Ausrichten', tun: () => B.objektAusrichten(null) },
+      { name: 'Drehen', tun: () => B.objektDrehen(null) },
     ] },
     { name: 'Seitenhintergrund', unter: [
       { name: 'Seitenfarbe', tun: B.seitenfarbe },

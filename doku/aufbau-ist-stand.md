@@ -106,6 +106,9 @@ DIE BÄNDER
 │   │   ├── Farben
 │   │   ├── Schriftarten
 │   │   └── Effekte
+│   ├── Anordnen
+│   │   ├── Ausrichten
+│   │   └── Drehen
 │   ├── Seite einrichten
 │   │   ├── Seitenränder
 │   │   ├── Ausrichtung

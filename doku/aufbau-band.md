@@ -137,6 +137,9 @@ SEITENLAYOUT
 │   ├── Farben
 │   ├── Schriftarten
 │   └── Effekte
+├── Anordnen
+│   ├── Ausrichten
+│   └── Drehen
 ├── Seite einrichten
 │   ├── Seitenränder
 │   ├── Ausrichtung
@@ -360,6 +363,7 @@ genannt — das ist Absicht: ein Schalter, mehrere Stellen, ein Zustand.
 | Anhalten | Schreibhilfe ▸ Vorlesen |
 | Anordnen | Ansicht ▸ Fenster |
 | Aufzählung | Start ▸ Absatz |
+| Ausrichten | Seitenlayout ▸ Anordnen |
 | Ausrichtung | Seitenlayout ▸ Seite einrichten |
 | Ausschneiden | Start ▸ Zwischenablage |
 | AutoKorrektur | Schreibhilfe ▸ Beim Schreiben |
@@ -378,6 +382,7 @@ genannt — das ist Absicht: ein Schalter, mehrere Stellen, ein Zustand.
 | Designs | Seitenlayout ▸ Designs |
 | Diagramm | Einfügen ▸ Illustrationen |
 | Dokumentprüfung | Schreibhilfe ▸ Prüfen |
+| Drehen | Seitenlayout ▸ Anordnen |
 | Drucklayout | Ansicht ▸ Dokumentansichten |
 | Durchgestrichen | Start ▸ Schriftart |
 | Effekte | Seitenlayout ▸ Designs |
