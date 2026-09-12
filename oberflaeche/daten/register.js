@@ -244,7 +244,7 @@ function REGISTER_BAUEN(B, w) {
     ['Absatz', [['einzug', 'Einzug', () => B.einzugGenau(), 'gross'],
                     ['abstand', 'Absatzabstand', () => B.absatzabstand()],
                     ['trennung', 'Silbentrennung', () => B.silbentrennung(), false, () => w.an('silbentrennung')]], () => B.einzugGenau()],
-    ['Seitenhintergrund', [['farbe', 'Seitenfarbe', () => B.seitenfarbe(), 'gross'],
+    ['Seitenhintergrund', [['farbe', 'Seitenfarbe', (k) => B.seitenfarbe(k), 'gross'],
                     ['wasserzeichen', 'Wasserzeichen', () => B.wasserzeichen()],
                     ['rahmen', 'Seitenränder', () => B.seitenraenderRahmen('seite')]]],
     /* Ganz rechts, wie in WPS: Textfluss, Ausrichten, Gruppieren, Drehen. */

@@ -8299,6 +8299,7 @@ const FARBSCHEMATA = [
   ['kalligrafie','Kalligrafie',  ['#7B2D3B', '#F0DCE0', '#4E121C', '#1E0D11']],
   ['cronus',     'Cronus',       ['#B07A1E', '#F6E8CC', '#7A5210', '#22190A']],
   ['klarheit',   'Klarheit',     ['#C24A3A', '#FADFDA', '#8A2818', '#1F100D']],
+  ['zusammen',   'Zusammenhalt', ['#5B7B7A', '#DFE9E8', '#33514F', '#141C1B']],
   ['deimos',     'Deimos',       ['#2B4C7E', '#D8E2F0', '#16305A', '#101722']],
   ['couture',    'Couture',      ['#8E7F6B', '#EDE7DD', '#5E5243', '#1C1917']],
   ['drachen',    'Drachen',      ['#1D4E6B', '#D6E7F0', '#0D3145', '#0E1A21']],
@@ -8314,7 +8315,59 @@ const FARBSCHEMATA = [
   ['hardcover',  'Hardcover',    ['#8A3324', '#F1DED9', '#5C1F14', '#1D100C']],
   ['horizon',    'Horizon',      ['#C87A1E', '#F8E5CB', '#8A5010', '#22170A']],
   ['galathea',   'Galathea',     ['#4A6FA5', '#DEE6F2', '#2A4670', '#131A24']],
+  ['lapetus',    'Lapetus',      ['#9A6B3F', '#F0E3D4', '#654122', '#1F1611']],
 ];
+
+/* ACHT FELDER JE ZEILE, wie auf seinem Bild.
+
+   In WPS zeigt jede Zeile acht Farbfelder und dahinter den Namen. Meine
+   Fassung zeigte vier. Vier Felder sehen bei zwoelf Schemata gleich aus;
+   acht unterscheiden sie.
+
+   Hinterlegt sind je Schema vier Farben mit einer Bedeutung — Akzent,
+   heller Akzent, Ueberschrift, Text. Die fehlenden vier entstehen
+   daraus: Weiss als Gegenstueck zum Text, und drei Geschwister des
+   Akzents, um den Farbkreis gedreht. So bleibt die Zeile bunt wie in
+   WPS, ohne dass ich 27 mal acht Farben erfinde, die dann doch nicht
+   die aus WPS waeren.
+
+   Die Reihenfolge folgt dem Bild: erst dunkel, dann hell, dann die
+   Akzente. */
+function hexZuHsl(hex) {
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  if (max === min) return [0, 0, l];
+  const d = max - min;
+  const sa = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  let h;
+  if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+  else if (max === g) h = ((b - r) / d + 2) / 6;
+  else h = ((r - g) / d + 4) / 6;
+  return [h, sa, l];
+}
+
+function hslZuHex(h, sa, l) {
+  h = ((h % 1) + 1) % 1;
+  const f = (n) => {
+    const k = (n + h * 12) % 12;
+    const a = sa * Math.min(l, 1 - l);
+    const v = l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
+    return Math.round(v * 255).toString(16).padStart(2, '0');
+  };
+  return '#' + f(0) + f(8) + f(4);
+}
+
+function schemaFelder(farben) {
+  const [akzent, hell, ueber, text] = farben;
+  const [h, sa, l] = hexZuHsl(akzent);
+  return [text, '#FFFFFF', ueber, hell, akzent,
+          hslZuHex(h + 0.11, sa, l),
+          hslZuHex(h - 0.11, sa, Math.min(0.72, l + 0.08)),
+          hslZuHex(h + 0.42, sa * 0.85, l)];
+}
 
 /* Die Schriftpaare: eine fuer die Ueberschriften, eine fuer den Text.
 
@@ -8351,6 +8404,9 @@ const DESIGNEFFEKTE = [
    Was hier dazukommt, ist das Feinere: ein Farbschema fuer Akzente und
    Tabellen, ein Schriftpaar zur Auswahl und ein Effekt fuer Formen und
    Bilder. Der Designkatalog weiter unten setzt beides zusammen. */
+const farbschemaEigen = Speicher.lies('farbschemaEigen', null);
+if (farbschemaEigen) FARBSCHEMATA.push(farbschemaEigen);
+
 let designFein = Object.assign(
   { farben: 'standard', schriften: 'lesen', effekt: 'keiner' },
   Speicher.lies('designFein', {}));
@@ -8416,6 +8472,13 @@ function designTafelZeigen(knopf, titel, bauen) {
 }
 
 B.farbschema = (knopf) => designTafelZeigen(knopf, 'Farben', (tafel) => {
+  tafel.classList.add('designtafel--farben');
+
+  const ueberschrift = document.createElement('p');
+  ueberschrift.className = 'designtafel__kopfzeile';
+  ueberschrift.textContent = 'Standardfarben';
+  tafel.appendChild(ueberschrift);
+
   const gitter = document.createElement('div');
   gitter.className = 'designtafel__gitter';
   for (const [marke, name, farben] of FARBSCHEMATA) {
@@ -8426,7 +8489,7 @@ B.farbschema = (knopf) => designTafelZeigen(knopf, 'Farben', (tafel) => {
     k.title = name;
     const streifen = document.createElement('span');
     streifen.className = 'designtafel__streifen';
-    for (const c of farben) {
+    for (const c of schemaFelder(farben)) {
       const stueck = document.createElement('i');
       stueck.style.background = c;
       streifen.appendChild(stueck);
@@ -8444,20 +8507,85 @@ B.farbschema = (knopf) => designTafelZeigen(knopf, 'Farben', (tafel) => {
     gitter.appendChild(k);
   }
   tafel.appendChild(gitter);
+
+  /* Unten in der Vorlage: „Custom color…". Auf Deutsch heisst das
+     „Eigene Farbe…", und es setzt den Akzent, an dem Ueberschriften,
+     Kopfzeilen von Tabellen und Formen haengen. */
+  const eigen = document.createElement('button');
+  eigen.type = 'button';
+  eigen.className = 'designtafel__zeile richtungszeile';
+  eigen.appendChild(symbol('farbe'));
+  const wort = document.createElement('span');
+  wort.textContent = 'Eigene Farbe…';
+  eigen.appendChild(wort);
+  eigen.addEventListener('mousedown', (e) => e.preventDefault());
+  eigen.addEventListener('click', () => { designTafelWeg(); B.eigeneAkzentfarbe(); });
+  tafel.appendChild(eigen);
 });
 
+B.eigeneAkzentfarbe = () => {
+  const jetzt = FARBSCHEMATA.find(([m]) => m === designFein.farben) || FARBSCHEMATA[0];
+  fenster('Eigene Farbe', [
+    { art: 'satz', text: 'Die Akzentfarbe. An ihr hängen Überschriften, die '
+                       + 'Kopfzeile einer Tabelle und die Farbe neuer Formen.' },
+    { schluessel: 'farbe', name: 'Akzent', art: 'color', wert: jetzt[2][0] },
+  ], (werte) => {
+    const [h, sa, l] = hexZuHsl(werte.farbe);
+    const eintrag = ['eigen', 'Eigene Farbe',
+      [werte.farbe, hslZuHex(h, Math.max(0.12, sa * 0.28), 0.90),
+       hslZuHex(h, sa, Math.max(0.18, l - 0.18)), '#14181C']];
+    const alt = FARBSCHEMATA.findIndex(([m]) => m === 'eigen');
+    if (alt >= 0) FARBSCHEMATA[alt] = eintrag; else FARBSCHEMATA.push(eintrag);
+    Speicher.schreib('farbschemaEigen', eintrag);
+    designFeinSetzen('farben', 'eigen');
+    melde('Eigene Farbe gesetzt.');
+  });
+};
+
+/* Aufgebaut wie in der Vorlage: links eine Kachel mit „Aa", rechts der
+   Name des Paares klein darueber, dann die Ueberschriftenschrift gross
+   und die Textschrift darunter — jede in sich selbst gesetzt.
+
+   MEINE FASSUNG SCHRIEB „Überschrift" und „Fließtext, wie er auf dem
+   Blatt steht". Das sagt, was die Zeile tut, aber nicht, WELCHE Schrift
+   man bekommt. In WPS steht dort der Name der Schrift, in dieser
+   Schrift — „Cambria" in Cambria. Das ist die Probe und die Antwort in
+   einem. */
 B.designSchriften = (knopf) => designTafelZeigen(knopf, 'Schriftarten', (tafel) => {
+  tafel.classList.add('designtafel--breit');
   for (const [marke, name, ueber, text] of DESIGNSCHRIFTEN) {
     const k = document.createElement('button');
     k.type = 'button';
-    k.className = 'designtafel__zeile'
-      + (designFein.schriften === marke ? ' designtafel__zeile--an' : '');
-    k.innerHTML = '<span class="designtafel__probe" style="font-family:\''
-      + ueber + '\',serif">Überschrift</span>'
-      + '<span class="designtafel__probe designtafel__probe--klein" '
-      + 'style="font-family:\'' + text + '\',serif">Fließtext, wie er '
-      + 'auf dem Blatt steht</span>'
-      + '<span class="designtafel__name">' + name + '</span>';
+    k.className = 'schriftzeile'
+      + (designFein.schriften === marke ? ' schriftzeile--an' : '');
+
+    const kachel = document.createElement('span');
+    kachel.className = 'schriftzeile__kachel';
+    kachel.textContent = 'Aa';
+    kachel.style.fontFamily = "'" + ueber + "', Georgia, serif";
+    k.appendChild(kachel);
+
+    const spalte = document.createElement('span');
+    spalte.className = 'schriftzeile__spalte';
+
+    const wort = document.createElement('em');
+    wort.className = 'schriftzeile__name';
+    wort.textContent = name;
+    spalte.appendChild(wort);
+
+    const oben = document.createElement('strong');
+    oben.className = 'schriftzeile__ueber';
+    oben.style.fontFamily = "'" + ueber + "', Georgia, serif";
+    oben.textContent = ueber;
+    spalte.appendChild(oben);
+
+    const unten = document.createElement('span');
+    unten.className = 'schriftzeile__text';
+    unten.style.fontFamily = "'" + text + "', Georgia, serif";
+    unten.textContent = text;
+    spalte.appendChild(unten);
+
+    k.appendChild(spalte);
     k.addEventListener('mousedown', (e) => e.preventDefault());
     k.addEventListener('click', () => {
       designFeinSetzen('schriften', marke);
@@ -8468,23 +8596,58 @@ B.designSchriften = (knopf) => designTafelZeigen(knopf, 'Schriftarten', (tafel) 
   }
 });
 
+/* Vier nebeneinander, jede Kachel mit demselben Pfeil — so steht es in
+   der Vorlage. Derselbe Gegenstand in jeder Kachel ist der Punkt: Nur
+   dann sieht man, was der Effekt aendert, und nicht, was die Form
+   aendert. */
+function effektpfeil() {
+  const ns = 'http://www.w3.org/2000/svg';
+  const sv = document.createElementNS(ns, 'svg');
+  sv.setAttribute('viewBox', '0 0 48 40');
+  sv.setAttribute('class', 'effektkachel__bild');
+  sv.setAttribute('aria-hidden', 'true');
+  const pfeil = document.createElementNS(ns, 'path');
+  pfeil.setAttribute('d', 'M4 14h22V6l16 14-16 14v-8H4z');
+  pfeil.setAttribute('fill', 'var(--ds-akzent, #4a90d9)');
+  pfeil.setAttribute('stroke', 'var(--ds-ueberschrift, #2a5f92)');
+  pfeil.setAttribute('stroke-width', '1.5');
+  pfeil.setAttribute('stroke-linejoin', 'round');
+  sv.appendChild(pfeil);
+  return sv;
+}
+
 B.designEffekte = (knopf) => designTafelZeigen(knopf, 'Effekte', (tafel) => {
+  tafel.classList.add('designtafel--breit');
+  const gitter = document.createElement('div');
+  gitter.className = 'effektgitter';
   for (const [marke, name, filter] of DESIGNEFFEKTE) {
     const k = document.createElement('button');
     k.type = 'button';
-    k.className = 'designtafel__zeile'
-      + (designFein.effekt === marke ? ' designtafel__zeile--an' : '');
-    k.innerHTML = '<span class="designtafel__effektprobe" style="filter:'
-      + (filter || 'none') + '"></span>'
-      + '<span class="designtafel__name">' + name + '</span>';
+    k.className = 'effektkachel'
+      + (designFein.effekt === marke ? ' effektkachel--an' : '');
+    k.title = name;
+
+    const rahmen = document.createElement('span');
+    rahmen.className = 'effektkachel__rahmen';
+    const bild = effektpfeil();
+    bild.style.filter = filter || 'none';
+    rahmen.appendChild(bild);
+    k.appendChild(rahmen);
+
+    const wort = document.createElement('span');
+    wort.className = 'effektkachel__name';
+    wort.textContent = name;
+    k.appendChild(wort);
+
     k.addEventListener('mousedown', (e) => e.preventDefault());
     k.addEventListener('click', () => {
       designFeinSetzen('effekt', marke);
       designTafelWeg();
       melde('Effekt: ' + name + ' — gilt für Formen und Bilder.');
     });
-    tafel.appendChild(k);
+    gitter.appendChild(k);
   }
+  tafel.appendChild(gitter);
 });
 
 /* „Designs" ist das Ganze auf einmal: Farben und Schriften zusammen.
@@ -8916,15 +9079,190 @@ B.seitenfarbeSetzen = (farbe) => {
   seitenfarbeAnwenden();
 };
 
-B.seitenfarbe = () => {
+/* ============================================================
+   SEITENFARBE
+
+   In der Vorlage keine Zeile, sondern eine Tafel: Keine Farbe, dann die
+   Themafarben als Gitter, die Standardfarben als Reihe, ein Verlauf,
+   Automatisch, Weitere Fuellfarben, Pipette, Hintergrundbild, Anderer
+   Hintergrund, Wasserzeichen.
+
+   Dahinter lag ein Fenster mit einem einzigen Farbfeld. Wer die Seite
+   hell beige haben wollte, musste die Zahl kennen.
+
+   DIE THEMAFARBEN KOMMEN AUS DEM GEWAEHLTEN SCHEMA, nicht aus einer
+   festen Liste. Das ist der Sinn von „Thema": Wer Apotheke gewaehlt hat,
+   bekommt hier die Toene von Apotheke — und die Seite passt zu den
+   Ueberschriften, ohne dass jemand Farben vergleicht.
+   ============================================================ */
+const STANDARDFARBEN = [
+  '#C00000', '#FF0000', '#FFC000', '#FFFF00', '#92D050',
+  '#00B050', '#00B0F0', '#0070C0', '#002060', '#7030A0',
+];
+
+/* Sechs Helligkeiten je Themafarbe — dieselbe Farbe, heller und
+   dunkler. Fuer ein Blatt taugt fast nur die helle Haelfte, darum
+   stehen die hellen oben. */
+function themareihe(hex) {
+  const [h, sa, l] = hexZuHsl(hex);
+  return [0.94, 0.86, 0.76, 0.62, l, Math.max(0.12, l - 0.14)]
+    .map((neu) => hslZuHex(h, sa, neu));
+}
+
+function farbfeld(hex, wie) {
+  const k = document.createElement('button');
+  k.type = 'button';
+  k.className = 'farbtafel__feld';
+  k.style.background = hex;
+  k.title = hex.toUpperCase();
+  k.setAttribute('aria-label', 'Seitenfarbe ' + hex.toUpperCase());
+  k.addEventListener('mousedown', (e) => e.preventDefault());
+  k.addEventListener('click', () => { wie(hex); });
+  return k;
+}
+
+B.seitenfarbe = (knopf) => designTafelZeigen(knopf, 'Seitenfarbe', (tafel) => {
+  tafel.classList.add('designtafel--breit', 'farbtafel');
+
+  const nehmen = (hex) => {
+    B.seitenfarbeSetzen(hex);
+    designTafelWeg();
+    melde(hex ? 'Seitenfarbe ' + hex.toUpperCase() + '.' : 'Seite wieder weiß.');
+  };
+
+  const zeile = (bild, name, tun) => {
+    const k = document.createElement('button');
+    k.type = 'button';
+    k.className = 'designtafel__zeile richtungszeile';
+    if (SYMBOLE[bild]) k.appendChild(symbol(bild));
+    const w = document.createElement('span');
+    w.textContent = name;
+    k.appendChild(w);
+    k.addEventListener('mousedown', (e) => e.preventDefault());
+    k.addEventListener('click', tun);
+    return k;
+  };
+
+  tafel.appendChild(zeile('radierer', 'Keine Farbe', () => nehmen('')));
+
+  const kopf = (text) => {
+    const p = document.createElement('p');
+    p.className = 'designtafel__kopfzeile';
+    p.textContent = text;
+    tafel.appendChild(p);
+  };
+
+  /* --- Themafarben: aus dem gewaehlten Schema --- */
+  kopf('Themafarben');
+  const schema = FARBSCHEMATA.find(([m]) => m === designFein.farben) || FARBSCHEMATA[0];
+  const grund = schemaFelder(schema[2]);
+  const gitter = document.createElement('div');
+  gitter.className = 'farbtafel__gitter';
+  for (let reihe = 0; reihe < 6; reihe++) {
+    for (const farbe of grund) {
+      gitter.appendChild(farbfeld(themareihe(farbe)[reihe], nehmen));
+    }
+  }
+  tafel.appendChild(gitter);
+
+  /* --- Standardfarben --- */
+  kopf('Standardfarben');
+  const reihe = document.createElement('div');
+  reihe.className = 'farbtafel__reihe';
+  for (const farbe of STANDARDFARBEN) reihe.appendChild(farbfeld(farbe, nehmen));
+  tafel.appendChild(reihe);
+
+  /* --- Verlauf ---
+     In WPS ist das eine Reihe von Farbverlaeufen. Auf dem Blatt ist ein
+     Verlauf selten das, was jemand will, aber er steht in der Vorlage —
+     also steht er hier, und er wirkt. */
+  kopf('Farbverlauf');
+  const verlaufe = document.createElement('div');
+  verlaufe.className = 'farbtafel__reihe';
+  for (const farbe of STANDARDFARBEN) {
+    const [h, sa, l] = hexZuHsl(farbe);
+    const hell = hslZuHex(h, sa, Math.min(0.95, l + 0.34));
+    const k = document.createElement('button');
+    k.type = 'button';
+    k.className = 'farbtafel__feld';
+    k.style.background = 'linear-gradient(180deg, ' + hell + ', ' + farbe + ')';
+    k.title = 'Verlauf';
+    k.addEventListener('mousedown', (e) => e.preventDefault());
+    k.addEventListener('click', () => {
+      seitenfarbe = 'linear-gradient(180deg, ' + hell + ', ' + farbe + ')';
+      seitenfarbeAnwenden();
+      designTafelWeg();
+      melde('Seitenfarbe: Verlauf.');
+    });
+    verlaufe.appendChild(k);
+  }
+  tafel.appendChild(verlaufe);
+
+  const strichel = document.createElement('hr');
+  strichel.className = 'designtafel__strich';
+  tafel.appendChild(strichel);
+
+  tafel.appendChild(zeile('farbe', 'Weitere Füllfarben…', () => {
+    designTafelWeg(); B.seitenfarbeFenster();
+  }));
+  tafel.appendChild(zeile('marker', 'Pipette', () => {
+    designTafelWeg(); B.seitenfarbePipette();
+  }));
+  tafel.appendChild(zeile('bild', 'Hintergrundbild…', () => {
+    designTafelWeg(); B.seitenbild();
+  }));
+  tafel.appendChild(zeile('wasserzeichen', 'Wasserzeichen…', () => {
+    designTafelWeg(); B.wasserzeichen();
+  }));
+});
+
+B.seitenfarbeFenster = () => {
   fenster('Seitenfarbe', [
-    { art: 'satz', text: 'Färbt das Blatt. Beim Drucken kostet das Farbe —\nfür ein Schreiben ans Amt lieber weiß lassen.' },
-    { schluessel: 'farbe', name: 'Farbe', art: 'color', wert: seitenfarbe || '#FFFFFF' },
+    { art: 'satz', text: 'Färbt das Blatt. Beim Drucken kostet das Farbe —\n'
+                       + 'für ein Schreiben ans Amt lieber weiß lassen.' },
+    { schluessel: 'farbe', name: 'Farbe', art: 'color',
+      wert: (seitenfarbe && seitenfarbe.startsWith('#')) ? seitenfarbe : '#FFFFFF' },
   ], (werte) => {
-    seitenfarbe = werte.farbe.toLowerCase() === '#ffffff' ? '' : werte.farbe;
-    seitenfarbeAnwenden();
+    B.seitenfarbeSetzen(werte.farbe);
     melde(seitenfarbe ? 'Seitenfarbe gesetzt.' : 'Seite wieder weiß.');
   });
+};
+
+/* Die Pipette nimmt die Farbe von irgendwo auf dem Blatt. Der Browser
+   hat dafuer ein eigenes Werkzeug; wo es fehlt, sagen wir das, statt
+   einen Knopf anzubieten, der nichts tut. */
+B.seitenfarbePipette = async () => {
+  if (typeof EyeDropper !== 'function') {
+    melde('Die Pipette gibt es in diesem Fenster nicht — „Weitere Füllfarben…" tut dasselbe von Hand.');
+    return;
+  }
+  try {
+    const griff = await new EyeDropper().open();
+    B.seitenfarbeSetzen(griff.sRGBHex);
+    melde('Seitenfarbe ' + griff.sRGBHex.toUpperCase() + ' aufgenommen.');
+  } catch (e) {
+    melde('Abgebrochen.');
+  }
+};
+
+/* „Hintergrundbild" in der Vorlage. Das Bild liegt hinter dem Text und
+   nimmt keine Klicks an — sonst koennte man nicht mehr schreiben. */
+B.seitenbild = () => {
+  const waehler = document.createElement('input');
+  waehler.type = 'file';
+  waehler.accept = 'image/*';
+  waehler.addEventListener('change', () => {
+    const datei = waehler.files && waehler.files[0];
+    if (!datei) return;
+    const leser = new FileReader();
+    leser.onload = () => {
+      seitenfarbe = 'url("' + leser.result + '") center / cover no-repeat';
+      seitenfarbeAnwenden();
+      melde('Hintergrundbild gesetzt. Über „Keine Farbe" wieder weg.');
+    };
+    leser.readAsDataURL(datei);
+  });
+  waehler.click();
 };
 
 let wasserzeichen = Speicher.lies('wasserzeichen', '');
@@ -13749,7 +14087,7 @@ const MENUES = [
       { name: 'Drehen', tun: () => B.objektDrehen(null) },
     ] },
     { name: 'Seitenhintergrund', unter: [
-      { name: 'Seitenfarbe', tun: B.seitenfarbe },
+      { name: 'Seitenfarbe', tun: () => B.seitenfarbe(null) },
       { name: 'Wasserzeichen', tun: B.wasserzeichen },
       { name: 'Seitenrahmen', tun: B.seitenrahmen },
     ] },

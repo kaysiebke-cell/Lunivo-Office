@@ -2477,6 +2477,92 @@ body.lesen .arbeitsflaeche{padding:40px 24px}
 }
 .register__einheit{color:#9AA3AB}
 
+/* ---- Die vier Tafeln im Designs-Block, nach der Vorlage ---- */
+
+/* Eine Überschrift über einem Abschnitt der Tafel: „Standardfarben",
+   „Themafarben", „Farbverlauf". */
+.designtafel__kopfzeile{
+  margin:8px 4px 4px;
+  font-size:.78rem;font-weight:700;
+  color:var(--schrift-2);
+  text-transform:none;
+}
+.designtafel--farben{width:auto;min-width:300px}
+.designtafel--farben .designtafel__streifen{flex:0 0 auto}
+.designtafel--farben .designtafel__streifen i{width:13px;height:19px}
+
+/* Schriftarten: Kachel links, drei Zeilen rechts — Name klein, die
+   Überschriftenschrift groß, die Textschrift darunter. Jede in sich
+   selbst gesetzt, damit man sie sieht statt sie zu lesen. */
+.schriftzeile{
+  display:flex;align-items:center;gap:11px;width:100%;
+  padding:6px 8px;
+  background:none;border:1px solid transparent;border-radius:6px;
+  color:var(--schrift);font:inherit;text-align:left;cursor:pointer;
+}
+.schriftzeile:hover{background:rgba(127,127,127,.12)}
+.schriftzeile--an{border-color:var(--blau-hell);background:rgba(47,111,181,.14)}
+.schriftzeile__kachel{
+  flex:0 0 auto;width:42px;height:42px;
+  display:flex;align-items:flex-end;justify-content:flex-start;
+  padding:4px 6px;
+  border:1px solid var(--rand);border-radius:4px;
+  background:var(--blatt);color:var(--blatt-schrift);
+  font-size:15px;line-height:1;
+}
+.schriftzeile__spalte{display:flex;flex-direction:column;gap:0;min-width:0}
+.schriftzeile__name{
+  font-style:normal;font-size:.72rem;
+  color:var(--schrift-2);
+}
+.schriftzeile__ueber{font-size:1.05rem;font-weight:400;line-height:1.25}
+.schriftzeile__text{font-size:.85rem;line-height:1.25;color:var(--schrift-2)}
+
+/* Effekte: vier nebeneinander, in jeder Kachel derselbe Pfeil. */
+.effektgitter{
+  display:grid;grid-template-columns:repeat(4, 1fr);
+  gap:6px;padding:2px;
+}
+.effektkachel{
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:6px 4px;
+  background:none;border:1px solid transparent;border-radius:6px;
+  color:var(--schrift);font:inherit;cursor:pointer;
+}
+.effektkachel:hover{background:rgba(127,127,127,.12)}
+.effektkachel--an{border-color:var(--blau-hell);background:rgba(47,111,181,.14)}
+.effektkachel__rahmen{
+  display:flex;align-items:center;justify-content:center;
+  width:100%;padding:8px 4px;
+  border:1px solid var(--rand);border-radius:4px;
+  background:var(--blatt);
+}
+.effektkachel__bild{width:44px;height:36px}
+.effektkachel__name{
+  font-size:.74rem;text-align:center;
+  max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+
+/* Seitenfarbe: Gitter, Reihe, Verlauf. */
+.farbtafel{min-width:326px}
+.farbtafel__gitter{
+  display:grid;grid-template-columns:repeat(8, 1fr);
+  gap:2px;padding:2px 4px;
+}
+.farbtafel__reihe{
+  display:grid;grid-template-columns:repeat(10, 1fr);
+  gap:2px;padding:2px 4px;
+}
+.farbtafel__feld{
+  width:100%;aspect-ratio:1;
+  border:1px solid rgba(127,127,127,.45);border-radius:2px;
+  padding:0;cursor:pointer;
+}
+.farbtafel__feld:hover{
+  outline:2px solid var(--blau);outline-offset:1px;
+  position:relative;z-index:1;
+}
+
 /* ---- Rahmen und Schattierung: drei Karten, wie in der Vorlage ---- */
 .rahmentafel__reiter{
   display:flex;gap:4px;
