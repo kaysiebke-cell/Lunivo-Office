@@ -334,7 +334,14 @@ select option{background:var(--karte);color:var(--schrift)}
 .dokument ul,.dokument ol{margin:0 0 .35em;padding-left:1.6em}
 .dokument table{border-collapse:collapse;margin:.4em 0}
 .dokument td,.dokument th{border:1px solid #9aa3ab;padding:3px 6px;min-width:2.4cm}
+/* max-width nur, solange niemand eine Breite gesetzt hat — sonst
+   schneidet die Regel jedes Aufziehen an der Blattbreite ab, und der Zug
+   endet unsichtbar. Eine eigene Breite gewinnt. */
 .dokument img{max-width:100%}
+.dokument img[style*="width"]{max-width:none}
+/* Und der Browser soll Bilder nicht selbst davontragen: Das Ziehen
+   gehoert dem Programm, nicht der eingebauten Verschiebe-Funktion. */
+.dokument img{-webkit-user-drag:none;user-drag:none}
 
 /* Die Stelle, die „Zeigen" gerade herholt. */
 .dokument ::selection{background:#B7D3F2;color:#111417}

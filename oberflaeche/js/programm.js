@@ -1401,6 +1401,32 @@ document.addEventListener('keydown', (e) => { if (e.key === 'Escape') zugBeenden
    aber es ist seine Entscheidung, nicht meine.
    ============================================================ */
 
+/* IM BLATT BLEIBEN.
+
+   „Frei verschieben" heisst frei AUF DER SEITE, nicht daneben. Beim
+   Pruefen ist ein Bild unter das Blatt gerutscht und war weg — die
+   Griffe standen noch da, das Bild nicht mehr. Wer etwas aus dem
+   Sichtbaren hinauszieht, hat es verloren und weiss nicht, wohin.
+
+   Geklemmt wird so, dass immer mindestens ein Zentimeter im Blatt
+   bleibt: Wer ueber den Rand hinaus will, darf das — aber der Griff
+   muss erreichbar bleiben. */
+function imBlattHalten(gegenstand, linksMm, obenMm) {
+  const bogen = gegenstand.closest('.dokument') || feld;
+  const massstab = (zoom || 100) / 100;
+  const b = bogen.getBoundingClientRect();
+  const g = gegenstand.getBoundingClientRect();
+  const breiteMm = inMillimeter(g.width / massstab);
+  const hoeheMm = inMillimeter(g.height / massstab);
+  const bogenBreite = inMillimeter(b.width / massstab);
+  const bogenHoehe = inMillimeter(b.height / massstab);
+  const rest = 10;                       /* ein Zentimeter bleibt drin */
+  return {
+    links: Math.max(rest - breiteMm, Math.min(linksMm, bogenBreite - rest)),
+    oben: Math.max(rest - hoeheMm, Math.min(obenMm, bogenHoehe - rest)),
+  };
+}
+
 function istFrei(tabelle) {
   return tabelle.classList.contains('tabelle--frei');
 }
@@ -1461,8 +1487,9 @@ function griffZiehenBeginnen(fall) {
   const bewegen = (e) => {
     const dx = inMillimeter((e.clientX - start.x) / massstab);
     const dy = inMillimeter((e.clientY - start.y) / massstab);
-    tabelle.style.left = Math.round((anfang.links + dx) * 10) / 10 + 'mm';
-    tabelle.style.top = Math.round((anfang.oben + dy) * 10) / 10 + 'mm';
+    const gehalten = imBlattHalten(tabelle, anfang.links + dx, anfang.oben + dy);
+    tabelle.style.left = Math.round(gehalten.links * 10) / 10 + 'mm';
+    tabelle.style.top = Math.round(gehalten.oben * 10) / 10 + 'mm';
     griffAuffrischenRoh();
   };
 
@@ -3406,6 +3433,21 @@ window.Optionen = {
   /* „Textbearbeitung durch Drag & Drop". Aus gesehen bleibt markierter
      Text liegen, wo er ist. */
   if (feld) feld.addEventListener('dragstart', (e) => {
+    /* BILDER GEHOEREN UNS.
+
+       Der Schalter "Textbearbeitung durch Drag & Drop" meint TEXT. Fuer
+       ein Bild startet der Browser sonst sein eigenes Ziehen — und das
+       schneidet unseres ab: pointerdown kommt noch an, pointermove nicht
+       mehr. Genau deshalb liess sich ein Bild nicht verschieben, obwohl
+       der Griff da war und der Code stimmte.
+
+       Auch eine Tabelle darf so nicht davongetragen werden. */
+    const ziel = e.target;
+    if (ziel && ziel.closest
+        && (ziel.tagName === 'IMG' || ziel.closest('table'))) {
+      e.preventDefault();
+      return;
+    }
     if (!schalterAn('ziehenUndLegen')) e.preventDefault();
   });
 
@@ -9807,10 +9849,11 @@ function bildZiehenBeginnen(fall) {
   try { bild.setPointerCapture(fall.pointerId); } catch (e) { /* aelter */ }
 
   const bewegen = (e) => {
-    bild.style.left = Math.round((anfang.links
-      + inMillimeter((e.clientX - start.x) / massstab)) * 10) / 10 + 'mm';
-    bild.style.top = Math.round((anfang.oben
-      + inMillimeter((e.clientY - start.y) / massstab)) * 10) / 10 + 'mm';
+    const gehalten = imBlattHalten(bild,
+      anfang.links + inMillimeter((e.clientX - start.x) / massstab),
+      anfang.oben + inMillimeter((e.clientY - start.y) / massstab));
+    bild.style.left = Math.round(gehalten.links * 10) / 10 + 'mm';
+    bild.style.top = Math.round(gehalten.oben * 10) / 10 + 'mm';
     bildGriffeStellen(bild);
   };
   const aufhoeren = () => {
