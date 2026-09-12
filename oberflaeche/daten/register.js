@@ -160,19 +160,18 @@ function REGISTER_BAUEN(B, w) {
                  ['farbe', 'Farben', (k) => B.farbschema(k)],
                  ['Aa', 'Schriftarten', (k) => B.designSchriften(k)],
                  ['texteffekt', 'Effekte', (k) => B.designEffekte(k)]]],
-    /* „Anordnen" wie in WPS: Was frei auf der Seite liegt, laesst sich
-       stellen und drehen. */
-    ['Anordnen', [['ausrichten', 'Ausrichten', (k) => B.objektAusrichten(k)],
-                  ['objektdrehen', 'Drehen', (k) => B.objektDrehen(k)]]],
-    ['Seite einrichten', [
-                    ['raender', 'Seitenränder', [
-                      ['Normal (2,5 cm)', () => w.setzeRandVorgabe('normal')()],
-                      ['Schmal (1,3 cm)', () => w.setzeRandVorgabe('schmal')()],
-                      ['Mittel', () => w.setzeRandVorgabe('mittel')()],
-                      ['Breit', () => w.setzeRandVorgabe('breit')()],
+    ['Ränder', [
+                    ['raender', 'Ränder', [
+                      ['Normal — oben/unten 25, links/rechts 32 mm', () => w.setzeRandVorgabe('normal')()],
+                      ['Schmal — 13 mm ringsum', () => w.setzeRandVorgabe('schmal')()],
+                      ['Moderat — oben/unten 25, links/rechts 19 mm', () => w.setzeRandVorgabe('moderat')()],
+                      ['Breit — oben/unten 25, links/rechts 51 mm', () => w.setzeRandVorgabe('breit')()],
                       ['-'],
-                      ['Eigene Ränder…', () => B.seitenraender()],
-                    ], 'gross'],
+                      ['Benutzerdefinierte Seitenränder…', () => B.seitenraender()],
+                    ], 'gross']]],
+    /* Die vier Raender als Zahlen, mitten im Band — so steht es in WPS. */
+    ['Seitenränder', 'raender'],
+    ['Seite einrichten', [
                     ['ausrichtung', 'Ausrichtung', [
                       ['Hochformat', () => { if (w.querJetzt()) B.querformat(); }, () => !w.querJetzt()],
                       ['Querformat', () => { if (!w.querJetzt()) B.querformat(); }, () => w.querJetzt()],
@@ -186,23 +185,28 @@ function REGISTER_BAUEN(B, w) {
                     ], 'gross'],
                     ['spalten', 'Spalten', () => B.spalten()],
                     ['textrichtung', 'Textrichtung', (k) => B.textrichtung(k)],
-                    ['umbruch', 'Umbruch', [
+                    ['umbruch', 'Umbrüche', [
                       ['Seitenumbruch', () => B.seitenumbruch()],
                       ['Spaltenumbruch', () => B.spaltenumbruch()],
-                      ['Abschnitt: nächste Seite', () => B.abschnittsumbruch('NextPage')],
-                      ['Abschnitt: fortlaufend', () => B.abschnittsumbruch('Continuous')],
-                      ['Abschnitt: gerade Seite', () => B.abschnittsumbruch('EvenPage')],
-                      ['Abschnitt: ungerade Seite', () => B.abschnittsumbruch('OddPage')],
-                    ]]], () => B.seitenraender()],
+                      ['Textflussumbruch', () => B.textflussumbruch()],
+                      ['-'],
+                      ['Abschnittsumbruch auf nächster Seite', () => B.abschnittsumbruch('NextPage')],
+                      ['Fortlaufender Abschnittsumbruch', () => B.abschnittsumbruch('Continuous')],
+                      ['Abschnittsumbruch (gerade Seite)', () => B.abschnittsumbruch('EvenPage')],
+                      ['Abschnittsumbruch auf ungerader Seite', () => B.abschnittsumbruch('OddPage')],
+                    ]],
+                    ['zeilennr', 'Zeilennummern', (k) => B.zeilennummern(k)]], () => B.seitenraender()],
     ['Absatz', [['einzug', 'Einzug', () => B.einzugGenau(), 'gross'],
                     ['abstand', 'Absatzabstand', () => B.absatzabstand()],
-                    ['zeilennr', 'Zeilennummern', () => B.zeilennummern(), false, () => w.an('zeilennummern')],
                     ['trennung', 'Silbentrennung', () => B.silbentrennung(), false, () => w.an('silbentrennung')]], () => B.einzugGenau()],
-    ['Textumbruch', [['anordnen', 'Textumbruch', () => B.anordnen(), 'gross']]],
     ['Seitenhintergrund', [['farbe', 'Seitenfarbe', () => B.seitenfarbe(), 'gross'],
                     ['wasserzeichen', 'Wasserzeichen', () => B.wasserzeichen()],
                     ['rahmen', 'Seitenrahmen', () => B.seitenrahmen()]]],
-    ['Anordnen', [['anordnen', 'Bild/Objekt anordnen', () => B.anordnen(), 'gross']]],
+    /* Ganz rechts, wie in WPS: Textfluss, Ausrichten, Gruppieren, Drehen. */
+    ['Anordnen', [['anordnen', 'Textfluss', () => B.anordnen(), 'gross'],
+                  ['ausrichten', 'Ausrichten', (k) => B.objektAusrichten(k)],
+                  ['gruppieren', 'Gruppieren', (k) => B.gruppieren(k)],
+                  ['objektdrehen', 'Drehen', (k) => B.objektDrehen(k)]]],
   ]],
 
   ['Referenzen', [

@@ -2233,7 +2233,16 @@ button.wz-wahl--schrift{
 
 /* ---- Zeilennummern ----
    Ein Zähler je Absatz, links neben dem Blatt. Beim Drucken bleibt er. */
-.dokument--zeilennummern{counter-reset:zeile}
+/* Der Zaehler beginnt, wo der Anwender ihn haben will. --nummern-beginn
+   ist die Zahl davor, weil counter-reset den Stand VOR dem ersten
+   Hochzaehlen setzt. */
+.dokument--zeilennummern{counter-reset:zeile var(--nummern-beginn, 0)}
+/* Leere Absaetze nicht mitzaehlen und Absaetze, die stumm geschaltet
+   sind, auch nicht. */
+.dokument--zeilennummern > .ohne-zeilennummer{counter-increment:none}
+.dokument--zeilennummern > .ohne-zeilennummer::before{content:none}
+.dokument--nummern-ohne-leere > p:empty{counter-increment:none}
+.dokument--nummern-ohne-leere > p:empty::before{content:none}
 .dokument--zeilennummern > p,
 .dokument--zeilennummern > h1,
 .dokument--zeilennummern > h2,
@@ -2441,6 +2450,49 @@ body.lesen .arbeitsflaeche{padding:40px 24px}
 .bild--hinter{
   position:absolute;z-index:0;opacity:.5;pointer-events:none;
 }
+
+/* Eine Gruppe ist eine Huelle um mehrere Gegenstaende. Sie soll sich
+   verhalten wie ein einzelnes Bild: greifbar, verschiebbar, drehbar. */
+.gruppe{display:inline-block;position:relative}
+.gruppe.bild--frei{position:absolute}
+
+/* Die vier Raender als Zahlen im Band. */
+.register__raender{
+  display:grid;grid-template-columns:auto auto;
+  gap:2px 8px;align-items:center;padding:2px 4px;
+}
+.register__rand{
+  display:flex;align-items:center;gap:4px;
+  font-size:var(--bedienschrift, .8rem);
+}
+.register__rand span:first-child{min-width:3.2em}
+.register__rand input{
+  width:3.6em;padding:1px 3px;
+  border:1px solid var(--rand);border-radius:3px;
+  /* Nicht weiss: Ein Feld in der Farbe des Blattes verschwindet in der
+     Leiste, und im dunklen Gewand blendet es. Dieselbe Farbe wie in den
+     Fenstern. */
+  background-color:var(--grund);color:var(--schrift);
+  font:inherit;text-align:right;
+}
+.register__einheit{color:#9AA3AB}
+
+/* Textrichtung — die sechs Richtungen aus WPS.
+   Ein Attribut am Ziel, sechs Regeln hier. So gilt dieselbe Richtung
+   fuer das Blatt, fuer eine Tabellenzelle und fuer einen Textrahmen,
+   ohne dass drei Stellen im Programm davon wissen muessen. */
+[data-richtung="vrl"]{writing-mode:vertical-rl}
+[data-richtung="vlr"]{writing-mode:vertical-lr}
+[data-richtung="d90"]{writing-mode:vertical-rl;text-orientation:mixed}
+[data-richtung="d270"]{writing-mode:vertical-rl;transform:rotate(180deg)}
+[data-richtung="asia270"]{writing-mode:vertical-rl;text-orientation:sideways}
+/* Steht die Seite senkrecht, braucht sie eine Hoehe — sonst faellt der
+   Text aus dem Blatt heraus. */
+.dokument[data-richtung]{min-height:240mm}
+
+/* Die Zeile, die gerade gilt, traegt einen Haken. */
+.designtafel__zeile--gilt::before{content:'✓ ';color:var(--blau)}
+.designtafel__zeile--gilt{font-weight:700}
 
 /* Umbrüche */
 .spaltenumbruch{display:block;break-after:column;height:0}

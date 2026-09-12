@@ -137,21 +137,22 @@ SEITENLAYOUT
 │   ├── Farben
 │   ├── Schriftarten
 │   └── Effekte
-├── Anordnen
-│   ├── Ausrichten
-│   └── Drehen
+├── Ränder
+│   ├── Ränder
+│   ├── Normal — oben/unten 25, links/rechts 32 mm
+│   ├── Schmal — 13 mm ringsum
+│   ├── Moderat — oben/unten 25, links/rechts 19 mm
+│   ├── Breit — oben/unten 25, links/rechts 51 mm
+│   └── Benutzerdefinierte Seitenränder…
+├── Seitenränder
+│   └── raender
 ├── Seite einrichten
-│   ├── Seitenränder
 │   ├── Ausrichtung
 │   ├── Papierformat
 │   ├── Spalten
 │   ├── Textrichtung
-│   ├── Umbruch
-│   ├── Normal (2,5 cm)
-│   ├── Schmal (1,3 cm)
-│   ├── Mittel
-│   ├── Breit
-│   ├── Eigene Ränder…
+│   ├── Umbrüche
+│   ├── Zeilennummern
 │   ├── Hochformat
 │   ├── Querformat
 │   ├── A4 (21 × 29,7 cm)
@@ -161,23 +162,24 @@ SEITENLAYOUT
 │   ├── Legal (21,6 × 35,6 cm)
 │   ├── Seitenumbruch
 │   ├── Spaltenumbruch
-│   ├── Abschnitt: nächste Seite
-│   ├── Abschnitt: fortlaufend
-│   ├── Abschnitt: gerade Seite
-│   └── Abschnitt: ungerade Seite
+│   ├── Textflussumbruch
+│   ├── Abschnittsumbruch auf nächster Seite
+│   ├── Fortlaufender Abschnittsumbruch
+│   ├── Abschnittsumbruch (gerade Seite)
+│   └── Abschnittsumbruch auf ungerader Seite
 ├── Absatz
 │   ├── Einzug
 │   ├── Absatzabstand
-│   ├── Zeilennummern
 │   └── Silbentrennung
-├── Textumbruch
-│   └── Textumbruch
 ├── Seitenhintergrund
 │   ├── Seitenfarbe
 │   ├── Wasserzeichen
 │   └── Seitenrahmen
 └── Anordnen
-    └── Bild/Objekt anordnen
+    ├── Textfluss
+    ├── Ausrichten
+    ├── Gruppieren
+    └── Drehen
 ```
 
 ## Referenzen
@@ -358,10 +360,9 @@ genannt — das ist Absicht: ein Schalter, mehrere Stellen, ein Zustand.
 | Absatzabstand | Seitenlayout ▸ Absatz |
 | Absatzrahmen | Start ▸ Absatz · Start ▸ Absatzlayout |
 | Absatzschattierung | Start ▸ Absatz · Start ▸ Absatzlayout |
-| Abschnitt: fortlaufend | Seitenlayout ▸ Seite einrichten |
-| Abschnitt: gerade Seite | Seitenlayout ▸ Seite einrichten |
-| Abschnitt: nächste Seite | Seitenlayout ▸ Seite einrichten |
-| Abschnitt: ungerade Seite | Seitenlayout ▸ Seite einrichten |
+| Abschnittsumbruch (gerade Seite) | Seitenlayout ▸ Seite einrichten |
+| Abschnittsumbruch auf nächster Seite | Seitenlayout ▸ Seite einrichten |
+| Abschnittsumbruch auf ungerader Seite | Seitenlayout ▸ Seite einrichten |
 | Adressblock | Sendungen ▸ Seriendruck |
 | Alle annehmen | Überprüfen ▸ Änderungen |
 | Alle Kommentare löschen | Überprüfen ▸ Kommentare |
@@ -377,13 +378,13 @@ genannt — das ist Absicht: ein Schalter, mehrere Stellen, ein Zustand.
 | Barrierefreiheit prüfen | Überprüfen ▸ Barrierefreiheit |
 | Bausteine | Einfügen ▸ Text |
 | Bearbeitung sperren | Überprüfen ▸ Schützen |
+| Benutzerdefinierte Seitenränder… | Seitenlayout ▸ Ränder |
 | Benutzeroberfläche | Ansicht ▸ Oberfläche |
 | Beschriftung | Referenzen ▸ Beschriftungen |
 | Bild | Einfügen ▸ Illustrationen |
-| Bild/Objekt anordnen | Seitenlayout ▸ Anordnen |
 | Bildschirmfoto | Einfügen ▸ Illustrationen |
 | Blocksatz | Start ▸ Absatz |
-| Breit | Seitenlayout ▸ Seite einrichten |
+| Breit — oben/unten 25, links/rechts 51 mm | Seitenlayout ▸ Ränder |
 | Datum | Einfügen ▸ Text |
 | Deckblatt | Einfügen ▸ Seiten |
 | Designs | Seitenlayout ▸ Designs |
@@ -393,7 +394,6 @@ genannt — das ist Absicht: ein Schalter, mehrere Stellen, ein Zustand.
 | Drucklayout | Ansicht ▸ Dokumentansichten |
 | Durchgestrichen | Start ▸ Schriftart |
 | Effekte | Seitenlayout ▸ Designs |
-| Eigene Ränder… | Seitenlayout ▸ Seite einrichten |
 | Eigenschaften | Einfügen ▸ Tabellen |
 | Eine Seite | Ansicht ▸ Zoom |
 | Einfügen | Start ▸ Zwischenablage |
@@ -415,11 +415,13 @@ genannt — das ist Absicht: ein Schalter, mehrere Stellen, ein Zustand.
 | Formatierung löschen | Start ▸ Schriftart |
 | Formel | Einfügen ▸ Symbole |
 | Formen | Einfügen ▸ Illustrationen |
+| Fortlaufender Abschnittsumbruch | Seitenlayout ▸ Seite einrichten |
 | Fußnote | Referenzen ▸ Fußnoten |
 | Fußzeile | Einfügen ▸ Kopf- und Fußzeile |
 | Gitternetzlinien | Ansicht ▸ Anzeigen |
 | Gliederung | Ansicht ▸ Dokumentansichten |
 | Groß-/Kleinschreibung | Start ▸ Schriftart |
+| Gruppieren | Seitenlayout ▸ Anordnen |
 | Gründlich prüfen | Überprüfen ▸ Dokumentprüfung · Schreibhilfe ▸ Prüfen |
 | Hervorheben | Start ▸ Schriftart |
 | Hochformat | Seitenlayout ▸ Seite einrichten |
@@ -452,13 +454,13 @@ genannt — das ist Absicht: ein Schalter, mehrere Stellen, ein Zustand.
 | Literaturverzeichnis | Referenzen ▸ Zitate und Literatur |
 | Markup anzeigen | Überprüfen ▸ Änderungen |
 | Menüleiste | Ansicht ▸ Oberfläche |
-| Mittel | Seitenlayout ▸ Seite einrichten |
+| Moderat — oben/unten 25, links/rechts 19 mm | Seitenlayout ▸ Ränder |
 | Navigationsbereich | Ansicht ▸ Anzeigen |
 | Nebeneinander | Ansicht ▸ Fenster |
 | Neue Quelle | Referenzen ▸ Zitate und Literatur |
 | Neuer Kommentar | Überprüfen ▸ Kommentare |
 | Neues Fenster | Ansicht ▸ Fenster |
-| Normal (2,5 cm) | Seitenlayout ▸ Seite einrichten |
+| Normal — oben/unten 25, links/rechts 32 mm | Seitenlayout ▸ Ränder |
 | Notenbereich | Referenzen ▸ Fußnoten |
 | Nummerierung | Start ▸ Absatz |
 | Nächste Note | Referenzen ▸ Fußnoten |
@@ -472,14 +474,16 @@ genannt — das ist Absicht: ein Schalter, mehrere Stellen, ein Zustand.
 | Quellen verwalten | Referenzen ▸ Zitate und Literatur |
 | Querformat | Seitenlayout ▸ Seite einrichten |
 | Querverweis | Einfügen ▸ Links · Referenzen ▸ Beschriftungen |
+| raender | Seitenlayout ▸ Seitenränder |
 | Rechtsbündig | Start ▸ Absatz |
 | Rechtschreibprüfung | Schreibhilfe ▸ Beim Schreiben |
 | Rechtschreibung | Überprüfen ▸ Dokumentprüfung |
 | Regeln | Sendungen ▸ Seriendruck |
 | Register anpassen | Ansicht ▸ Oberfläche |
+| Ränder | Seitenlayout ▸ Ränder |
 | Rückgängig | Start ▸ Zwischenablage |
 | Schaltfläche | Sendungen ▸ Formular |
-| Schmal (1,3 cm) | Seitenlayout ▸ Seite einrichten |
+| Schmal — 13 mm ringsum | Seitenlayout ▸ Ränder |
 | Schnellbaustein | Einfügen ▸ Text |
 | Schnelltabelle | Einfügen ▸ Tabellen |
 | Schrift vergrößern | Start ▸ Schriftart |
@@ -491,7 +495,6 @@ genannt — das ist Absicht: ein Schalter, mehrere Stellen, ein Zustand.
 | Seitenfarbe | Seitenlayout ▸ Seitenhintergrund |
 | Seitenleiste Schreibhilfe | Schreibhilfe ▸ Anzeigen · Ansicht ▸ Anzeigen |
 | Seitenrahmen | Seitenlayout ▸ Seitenhintergrund |
-| Seitenränder | Seitenlayout ▸ Seite einrichten |
 | Seitenumbruch | Einfügen ▸ Seiten · Seitenlayout ▸ Seite einrichten |
 | Seitenzahl | Einfügen ▸ Kopf- und Fußzeile |
 | Seriendruck-Assistent | Sendungen ▸ Seriendruck |
@@ -517,12 +520,13 @@ genannt — das ist Absicht: ein Schalter, mehrere Stellen, ein Zustand.
 | Textbegrenzungen | Ansicht ▸ Anzeigen |
 | Texteffekte | Start ▸ Schriftart |
 | Textfeld | Einfügen ▸ Text · Sendungen ▸ Formular |
+| Textfluss | Seitenlayout ▸ Anordnen |
+| Textflussumbruch | Seitenlayout ▸ Seite einrichten |
 | Textrichtung | Seitenlayout ▸ Seite einrichten |
-| Textumbruch | Seitenlayout ▸ Textumbruch |
 | Thesaurus | Überprüfen ▸ Dokumentprüfung · Schreibhilfe ▸ Sprache |
 | Tiefgestellt | Start ▸ Schriftart |
 | Uhrzeit | Einfügen ▸ Text |
-| Umbruch | Seitenlayout ▸ Seite einrichten |
+| Umbrüche | Seitenlayout ▸ Seite einrichten |
 | Umschlag | Sendungen ▸ Erstellen |
 | Untereinander | Ansicht ▸ Fenster |
 | Unterstreichungsart | Start ▸ Schriftart |
@@ -548,7 +552,7 @@ genannt — das ist Absicht: ein Schalter, mehrere Stellen, ein Zustand.
 | Wörter zählen | Überprüfen ▸ Dokumentprüfung |
 | Zeilenabstand | Start ▸ Absatz · Start ▸ Absatzlayout |
 | Zeilenfokus | Schreibhilfe ▸ Lesen |
-| Zeilennummern | Seitenlayout ▸ Absatz |
+| Zeilennummern | Seitenlayout ▸ Seite einrichten |
 | Zentriert | Start ▸ Absatz |
 | Zitat einfügen | Referenzen ▸ Zitate und Literatur |
 | Zitierweise | Referenzen ▸ Zitate und Literatur |

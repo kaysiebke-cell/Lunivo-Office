@@ -4376,6 +4376,54 @@ let registerEingeklappt = Speicher.lies('registerZu', false);
 /* Die drei Wähler — Formatvorlage, Schrift, Größe. Sie stehen bei Word in
    der Gruppe „Schriftart", zusammen mit F, K und U; hier ebenso. Deshalb
    sind sie ein Baustein und keine eigene Gruppe mehr. */
+/* Die vier Raender als Zahlenfelder, wie sie in WPS mitten im Band
+   stehen. Bisher lagen sie hinter „Eigene Raender…" in einem Fenster —
+   drei Klicks fuer eine Zahl, die man im Blick haben will, waehrend man
+   sie aendert. */
+function raenderKiste() {
+  const kiste = document.createElement('div');
+  kiste.className = 'register__raender';
+  for (const [seite, name] of [['oben', 'Oben'], ['unten', 'Unten'],
+                               ['links', 'Links'], ['rechts', 'Rechts']]) {
+    const zeile = document.createElement('label');
+    zeile.className = 'register__rand';
+
+    const wort = document.createElement('span');
+    wort.textContent = name + ':';
+    zeile.appendChild(wort);
+
+    const eingabe = document.createElement('input');
+    eingabe.type = 'number';
+    eingabe.min = '0'; eingabe.max = '90'; eingabe.step = '1';
+    eingabe.value = String(seitenrand[seite]);
+    eingabe.title = name + 'er Rand in Millimetern';
+    /* Erst beim Verlassen oder bei Enter — sonst springt die Seite bei
+       jedem getippten Zeichen, und aus „25" wird kurz „2". */
+    const uebernehmen = () => {
+      const zahl = parseFloat(String(eingabe.value).replace(',', '.'));
+      if (Number.isNaN(zahl)) { eingabe.value = String(seitenrand[seite]); return; }
+      seitenrand[seite] = Math.max(0, Math.min(90, zahl));
+      eingabe.value = String(seitenrand[seite]);
+      seiteAnwenden();
+      abschnittMerken(abschnittJetztNr);
+      melde(name + 'er Rand: ' + seitenrand[seite] + ' mm.');
+    };
+    eingabe.addEventListener('change', uebernehmen);
+    eingabe.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); uebernehmen(); }
+    });
+    zeile.appendChild(eingabe);
+
+    const mm = document.createElement('span');
+    mm.className = 'register__einheit';
+    mm.textContent = 'mm';
+    zeile.appendChild(mm);
+
+    kiste.appendChild(zeile);
+  }
+  return kiste;
+}
+
 function felderKiste() {
   const kiste = document.createElement('div');
   kiste.className = 'register__felder';
@@ -4851,6 +4899,17 @@ function registerBauen() {
 
     /* Die Wähler wandern aus der Werkzeugleiste hierher. Beim Zurückschalten
        baut werkzeugeBauen() sie ohnehin neu — es geht also nichts verloren. */
+    if (eintraege === 'raender') {
+      gruppe.appendChild(raenderKiste());
+
+      const name = document.createElement('span');
+      name.className = 'register__name';
+      name.textContent = gruppenName;
+      gruppe.appendChild(name);
+      band.appendChild(gruppe);
+      continue;
+    }
+
     if (eintraege === 'felder') {
       gruppe.appendChild(felderKiste());
 
@@ -7868,11 +7927,14 @@ B.querformat = () => {
 /* ---- Seitenränder als Vorgaben ----
    „Normal", „Schmal", „Mittel", „Breit" wie in Word — die eigenen Werte
    bleiben daneben bestehen. */
+/* Die Masse stehen in WPS in Zoll; hier in Millimetern, weil das
+   Programm ueberall in Millimetern rechnet. Die Namen und die Werte
+   sind dieselben. */
 const RANDVORGABEN = {
-  normal: { name: 'Normal (2,5 cm)', oben: 25, unten: 25, links: 25, rechts: 25 },
-  schmal: { name: 'Schmal (1,27 cm)', oben: 13, unten: 13, links: 13, rechts: 13 },
-  mittel: { name: 'Mittel (2,54 / 1,91 cm)', oben: 25, unten: 25, links: 19, rechts: 19 },
-  breit:  { name: 'Breit (2,54 / 5,08 cm)', oben: 25, unten: 25, links: 51, rechts: 51 },
+  normal:  { name: 'Normal',  oben: 25, unten: 25, links: 32, rechts: 32 },
+  schmal:  { name: 'Schmal',  oben: 13, unten: 13, links: 13, rechts: 13 },
+  moderat: { name: 'Moderat', oben: 25, unten: 25, links: 19, rechts: 19 },
+  breit:   { name: 'Breit',   oben: 25, unten: 25, links: 51, rechts: 51 },
 };
 
 const setzeRandVorgabe = (art) => () => {
@@ -7911,16 +7973,120 @@ B.einzugGenau = () => {
    kennt nur der Zeichensatz beim Umbrechen, und die Zahl stünde bei jeder
    Fensterbreite woanders. */
 let zeilennummern = Speicher.lies('zeilennummern', false);
+let zeilennummernArt = Speicher.lies('zeilennummernArt', 'keine');
+let zeilennummernBeginn = Speicher.lies('zeilennummernBeginn', 1);
+let zeilennummernSchritt = Speicher.lies('zeilennummernSchritt', 1);
+let zeilennummernOhneLeere = Speicher.lies('zeilennummernOhneLeere', false);
 
 function zeilennummernAnwenden() {
   feld.classList.toggle('dokument--zeilennummern', zeilennummern);
+  feld.classList.toggle('dokument--nummern-ohne-leere', zeilennummernOhneLeere);
+  feld.dataset.nummernart = zeilennummernArt;
+  /* Der Zaehler beginnt, wo der Anwender ihn haben will, und zeigt nur
+     jede n-te Nummer — beides ueber Eigenschaften, die das Stilblatt
+     abgreift. */
+  feld.style.setProperty('--nummern-beginn', String(zeilennummernBeginn - 1));
+  feld.style.setProperty('--nummern-schritt', String(zeilennummernSchritt));
   Speicher.schreib('zeilennummern', zeilennummern);
+  Speicher.schreib('zeilennummernArt', zeilennummernArt);
+  Speicher.schreib('zeilennummernBeginn', zeilennummernBeginn);
+  Speicher.schreib('zeilennummernSchritt', zeilennummernSchritt);
+  Speicher.schreib('zeilennummernOhneLeere', zeilennummernOhneLeere);
   menueBauen();
 }
-B.zeilennummern = () => {
-  zeilennummern = !zeilennummern;
-  zeilennummernAnwenden();
-  melde(zeilennummern ? 'Zeilennummern an — gezählt werden Absätze.' : 'Zeilennummern aus.');
+/* WPS hat hier keinen Schalter, sondern eine Liste. Die uebernehme ich:
+     Keine · Fortlaufend · Jede Seite neu beginnen · Jeden Abschnitt neu
+     beginnen · Für aktuellen Paragraphen unterdrücken · Verstecke
+     Zeilennummern für leere Zeilen · Einstellungen…
+   Gezaehlt wird hier der Absatz, nicht die gesetzte Zeile — der Browser
+   bricht selbst um, und wo er es tut, haengt vom Fenster ab. */
+const ZEILENNUMMERN_ARTEN = [
+  ['keine',     'Keine'],
+  ['laufend',   'Fortlaufend'],
+  ['proSeite',  'Jede Seite neu beginnen'],
+  ['proAbschnitt', 'Jeden Abschnitt neu beginnen'],
+];
+
+B.zeilennummern = (knopf) => {
+  designTafelZeigen(knopf, 'Zeilennummern', (tafel) => {
+    for (const [kuerzel, name] of ZEILENNUMMERN_ARTEN) {
+      const k = document.createElement('button');
+      k.type = 'button';
+      k.className = 'designtafel__zeile';
+      k.textContent = name;
+      if ((zeilennummernArt || 'keine') === kuerzel) k.classList.add('designtafel__zeile--gilt');
+      k.addEventListener('mousedown', (e) => e.preventDefault());
+      k.addEventListener('click', () => {
+        zeilennummernArt = kuerzel;
+        zeilennummern = kuerzel !== 'keine';
+        zeilennummernAnwenden();
+        designTafelWeg();
+        melde('Zeilennummern: ' + name + '.');
+      });
+      tafel.appendChild(k);
+    }
+
+    const strichel = document.createElement('hr');
+    strichel.className = 'designtafel__strich';
+    tafel.appendChild(strichel);
+
+    for (const [schluessel, name] of [
+      ['stumm', 'Für aktuellen Paragraphen unterdrücken'],
+      ['ohneLeere', 'Verstecke Zeilennummern für leere Zeilen'],
+    ]) {
+      const k = document.createElement('button');
+      k.type = 'button';
+      k.className = 'designtafel__zeile';
+      k.textContent = name;
+      if (schluessel === 'ohneLeere' && zeilennummernOhneLeere) k.classList.add('designtafel__zeile--gilt');
+      k.addEventListener('mousedown', (e) => e.preventDefault());
+      k.addEventListener('click', () => {
+        if (schluessel === 'ohneLeere') {
+          zeilennummernOhneLeere = !zeilennummernOhneLeere;
+          zeilennummernAnwenden();
+          melde(zeilennummernOhneLeere ? 'Leere Zeilen bekommen keine Nummer.'
+                                       : 'Leere Zeilen werden mitgezählt.');
+        } else {
+          const absatz = absatzJetzt();
+          if (!absatz) { melde('Dafür muss der Zeiger in einem Absatz stehen.'); return; }
+          absatz.classList.toggle('ohne-zeilennummer');
+          geaendertMelden();
+          melde(absatz.classList.contains('ohne-zeilennummer')
+            ? 'Dieser Absatz bekommt keine Nummer.' : 'Dieser Absatz wird wieder gezählt.');
+        }
+        designTafelWeg();
+      });
+      tafel.appendChild(k);
+    }
+
+    const mehr = document.createElement('button');
+    mehr.type = 'button';
+    mehr.className = 'layouttafel__weiter';
+    mehr.textContent = 'Zeilennummerierungs-Einstellungen…';
+    mehr.addEventListener('click', () => { designTafelWeg(); B.zeilennummernFenster(); });
+    tafel.appendChild(mehr);
+  });
+};
+
+B.zeilennummernFenster = () => {
+  fenster('Zeilennummerierung', [
+    { art: 'satz', text: 'Gezählt werden Absätze. Wo der Browser eine Zeile '
+                       + 'umbricht, hängt von der Fensterbreite ab — eine '
+                       + 'Nummer daran wäre nicht dieselbe wie im Druck.' },
+    { schluessel: 'art', name: 'Zählweise', art: 'auswahl',
+      werte: ZEILENNUMMERN_ARTEN, wert: zeilennummernArt || 'keine' },
+    { schluessel: 'beginn', name: 'Beginnen bei', art: 'number',
+      wert: String(zeilennummernBeginn) },
+    { schluessel: 'schritt', name: 'Nur jede n-te Nummer zeigen', art: 'number',
+      wert: String(zeilennummernSchritt) },
+  ], (werte) => {
+    zeilennummernArt = werte.art;
+    zeilennummern = werte.art !== 'keine';
+    zeilennummernBeginn = Math.max(0, parseInt(werte.beginn, 10) || 1);
+    zeilennummernSchritt = Math.max(1, parseInt(werte.schritt, 10) || 1);
+    zeilennummernAnwenden();
+    melde('Zeilennummerierung übernommen.');
+  });
 };
 
 /* ---- Silbentrennung ----
@@ -8302,6 +8468,74 @@ function objektStellen(g, rechne) {
   if (typeof griffNachmessen === 'function') griffNachmessen();
 }
 
+/* ============================================================
+   GRUPPIEREN
+
+   In WPS steht der Knopf neben Ausrichten und Drehen, und er ist grau,
+   solange nichts gewaehlt ist. Ich habe ihn beim letzten Mal ganz
+   weggelassen, weil es hier keine Mehrfachauswahl mit der Maus gibt.
+   Das war zu schnell aufgegeben: Eine Auswahl ueber mehrere Bilder
+   hinweg gibt es sehr wohl — mit gedrueckter Umschalttaste oder von
+   einer Stelle im Text bis zu einer anderen.
+
+   Was in dieser Auswahl an Bildern und Formen liegt, kommt in eine
+   Huelle. Die laesst sich danach als ein Stueck verschieben, stellen
+   und drehen, weil gegenstandJetzt() sie findet wie ein einzelnes Bild.
+   ============================================================ */
+function gegenstaendeInAuswahl() {
+  const auswahl = window.getSelection();
+  if (!auswahl || auswahl.rangeCount === 0 || auswahl.isCollapsed) return [];
+  const alle = [...feld.querySelectorAll('img, svg.zeichnung, .gruppe')];
+  return alle.filter((g) => auswahl.containsNode(g, true));
+}
+
+B.gruppieren = (knopf) => {
+  const huelle = (() => {
+    const g = gegenstandJetzt();
+    return g && g.closest ? g.closest('.gruppe') : null;
+  })();
+  const gewaehlt = gegenstaendeInAuswahl();
+
+  designTafelZeigen(knopf, 'Gruppieren', (tafel) => {
+    const zeile = (name, moeglich, tun) => {
+      const k = document.createElement('button');
+      k.type = 'button';
+      k.className = 'designtafel__zeile';
+      k.textContent = name;
+      k.disabled = !moeglich;
+      k.addEventListener('mousedown', (e) => e.preventDefault());
+      k.addEventListener('click', () => { tun(); designTafelWeg(); });
+      tafel.appendChild(k);
+    };
+
+    zeile('Gruppieren', gewaehlt.length > 1, () => {
+      const hu = document.createElement('span');
+      hu.className = 'gruppe';
+      gewaehlt[0].parentNode.insertBefore(hu, gewaehlt[0]);
+      for (const g of gewaehlt) hu.appendChild(g);
+      geaendertMelden();
+      melde(gewaehlt.length + ' Gegenstände sind jetzt ein Stück.');
+    });
+
+    zeile('Gruppierung aufheben', !!huelle, () => {
+      const eltern = huelle.parentNode;
+      const zahl = huelle.children.length;
+      while (huelle.firstChild) eltern.insertBefore(huelle.firstChild, huelle);
+      huelle.remove();
+      geaendertMelden();
+      melde(zahl + ' Gegenstände stehen wieder einzeln.');
+    });
+
+    const satz = document.createElement('p');
+    satz.className = 'layouttafel__satz';
+    satz.textContent = gewaehlt.length > 1
+      ? gewaehlt.length + ' Gegenstände liegen in der Auswahl.'
+      : 'Markieren Sie erst mehrere Bilder oder Formen — vom Text davor '
+        + 'bis hinter das letzte.';
+    tafel.appendChild(satz);
+  });
+};
+
 const OBJEKT_DREHUNGEN = [
   ['Nach rechts drehen (90°)',  90],
   ['Nach links drehen (90°)',  -90],
@@ -8351,19 +8585,30 @@ B.objektDrehen = (knopf) => {
 /* ============================================================
    TEXTRICHTUNG
 
-   Aus WPS: Text laesst sich in einer Tabellenzelle oder in einem
-   Textrahmen um eine Vierteldrehung kippen. Gebraucht wird das fuer
-   schmale Kopfspalten — eine Tabelle mit zwoelf Monaten passt sonst
-   nicht auf die Seite.
+   Sechs Punkte und ein Fenster, genau wie in WPS:
 
-   NUR IN ZELLE UND RAHMEN, nicht im laufenden Text: Ein gekippter
-   Absatz mitten im Fliesstext hat keine Hoehe, an der die Zeile
-   danach sich ausrichten koennte.
+     Horizontal
+     Vertikal von rechts nach links
+     Vertikal von links nach rechts
+     Gesamten Text um 90 Grad drehen
+     Gesamten Text um 270 Grad drehen
+     Asiatische Zeichen um 270 Grad drehen
+     Textrichtung ändern…
+
+   SIE GILT FÜR DIE SEITE, nicht fuer ein Wort. Meine erste Fassung
+   verlangte einen Zeiger in einer Tabellenzelle und tat sonst nichts —
+   wer sie aus dem Menue aufrief, bekam einen Satz statt einer Wirkung.
+   Das war falsch: In WPS richtet dieser Knopf den ganzen Text der Seite
+   aus. Steht der Zeiger in einer Zelle oder einem Rahmen, gilt sie nur
+   dort; sonst fuer das Blatt.
    ============================================================ */
 const TEXTRICHTUNGEN = [
-  ['waagerecht', 'Waagerecht', ''],
-  ['abwaerts',   'Nach unten gedreht (90°)', 'vertical-rl'],
-  ['aufwaerts',  'Nach oben gedreht (270°)', 'vertical-rl-180'],
+  ['horizontal', 'Horizontal'],
+  ['vrl',        'Vertikal von rechts nach links'],
+  ['vlr',        'Vertikal von links nach rechts'],
+  ['d90',        'Gesamten Text um 90 Grad drehen'],
+  ['d270',       'Gesamten Text um 270 Grad drehen'],
+  ['asia270',    'Asiatische Zeichen um 270 Grad drehen'],
 ];
 
 function richtungsziel() {
@@ -8373,43 +8618,59 @@ function richtungsziel() {
   let k = auswahl && auswahl.anchorNode;
   if (k && k.nodeType === Node.TEXT_NODE) k = k.parentElement;
   const rahmen = k && k.closest ? k.closest('.textrahmen') : null;
-  return (rahmen && feld.contains(rahmen)) ? rahmen : null;
+  if (rahmen && feld.contains(rahmen)) return rahmen;
+  return feld;   /* sonst das ganze Blatt — so hält es WPS */
+}
+
+function textrichtungSetzen(ziel, kuerzel) {
+  if (kuerzel === 'horizontal') delete ziel.dataset.richtung;
+  else ziel.dataset.richtung = kuerzel;
+  geaendertMelden();
+  if (typeof bildGriffeNachmessen === 'function') bildGriffeNachmessen();
+  if (typeof griffNachmessen === 'function') griffNachmessen();
 }
 
 B.textrichtung = (knopf) => {
   const ziel = richtungsziel();
-  if (!ziel) {
-    melde('Dafür muss der Zeiger in einer Tabellenzelle oder in einem Textrahmen stehen.');
-    return;
-  }
+  const jetzt = ziel.dataset.richtung || 'horizontal';
+
   designTafelZeigen(knopf, 'Textrichtung', (tafel) => {
-    for (const [kuerzel, name, wert] of TEXTRICHTUNGEN) {
+    for (const [kuerzel, name] of TEXTRICHTUNGEN) {
       const k = document.createElement('button');
       k.type = 'button';
       k.className = 'designtafel__zeile';
       k.textContent = name;
-      if ((ziel.dataset.richtung || 'waagerecht') === kuerzel) k.setAttribute('aria-checked', 'true');
+      if (kuerzel === jetzt) k.classList.add('designtafel__zeile--gilt');
       k.addEventListener('mousedown', (e) => e.preventDefault());
       k.addEventListener('click', () => {
-        ziel.dataset.richtung = kuerzel;
-        if (!wert) {
-          ziel.style.writingMode = '';
-          ziel.style.transform = '';
-        } else {
-          ziel.style.writingMode = 'vertical-rl';
-          ziel.style.transform = (wert === 'vertical-rl-180') ? 'rotate(180deg)' : '';
-        }
-        geaendertMelden();
+        textrichtungSetzen(ziel, kuerzel);
         designTafelWeg();
         melde('Textrichtung: ' + name + '.');
       });
       tafel.appendChild(k);
     }
-    const satz = document.createElement('p');
-    satz.className = 'layouttafel__satz';
-    satz.textContent = 'Gilt für die Zelle oder den Rahmen, in dem der Zeiger steht. '
-                     + 'Die Zeile darunter wird dabei meist höher.';
-    tafel.appendChild(satz);
+    const mehr = document.createElement('button');
+    mehr.type = 'button';
+    mehr.className = 'layouttafel__weiter';
+    mehr.textContent = 'Textrichtung ändern…';
+    mehr.addEventListener('click', () => { designTafelWeg(); B.textrichtungFenster(); });
+    tafel.appendChild(mehr);
+  });
+};
+
+B.textrichtungFenster = () => {
+  const ziel = richtungsziel();
+  const wohin = ziel === feld ? 'das ganze Blatt'
+              : (ziel.tagName === 'TD' || ziel.tagName === 'TH') ? 'die Zelle'
+              : 'den Rahmen';
+  fenster('Textrichtung ändern', [
+    { art: 'satz', text: 'Gilt für ' + wohin + '.' },
+    { schluessel: 'richtung', name: 'Richtung', art: 'auswahl',
+      werte: TEXTRICHTUNGEN, wert: ziel.dataset.richtung || 'horizontal' },
+  ], (werte) => {
+    const name = (TEXTRICHTUNGEN.find(([k]) => k === werte.richtung) || TEXTRICHTUNGEN[0])[1];
+    textrichtungSetzen(ziel, werte.richtung);
+    melde('Textrichtung: ' + name + '.');
   });
 };
 
@@ -9729,6 +9990,14 @@ B.effekt = () => {
 };
 
 /* ---- Umbrüche ---- */
+/* Der Textflussumbruch bricht die Zeile, ohne einen neuen Absatz zu
+   beginnen — Shift+Enter. In WPS steht er zwischen Spalten- und
+   Abschnittsumbruch; hier fehlte er ganz. */
+B.textflussumbruch = () => {
+  Dokument.einfuegen('<br>');
+  melde('Zeilenumbruch gesetzt — derselbe Absatz geht weiter.');
+};
+
 B.spaltenumbruch = () => {
   Dokument.einfuegen('<span class="spaltenumbruch"></span>');
   melde('Spaltenumbruch gesetzt — er wirkt, sobald mehrere Spalten eingestellt sind.');
@@ -12817,13 +13086,13 @@ const MENUES = [
 
   ['Seitenlayout', [
     { name: 'Seite einrichten', unter: [
-      { name: 'Seitenränder', unter: [
-        { name: 'Normal (2,5 cm)', tun: setzeRandVorgabe('normal') },
-        { name: 'Schmal (1,3 cm)', tun: setzeRandVorgabe('schmal') },
-        { name: 'Mittel', tun: setzeRandVorgabe('mittel') },
-        { name: 'Breit', tun: setzeRandVorgabe('breit') },
+      { name: 'Ränder', unter: [
+        { name: 'Normal — oben/unten 25, links/rechts 32 mm', tun: setzeRandVorgabe('normal') },
+        { name: 'Schmal — 13 mm ringsum', tun: setzeRandVorgabe('schmal') },
+        { name: 'Moderat — oben/unten 25, links/rechts 19 mm', tun: setzeRandVorgabe('moderat') },
+        { name: 'Breit — oben/unten 25, links/rechts 51 mm', tun: setzeRandVorgabe('breit') },
         strich,
-        { name: 'Eigene Ränder…', tun: B.seitenraender },
+        { name: 'Benutzerdefinierte Seitenränder…', tun: B.seitenraender },
       ] },
       { name: 'Ausrichtung', unter: [
         { name: 'Hochformat', tun: () => { if (quer) B.querformat(); }, haken: () => !quer },
@@ -12838,19 +13107,22 @@ const MENUES = [
       ] },
       { name: 'Spalten', tun: B.spalten },
       { name: 'Textrichtung', tun: () => B.textrichtung(null) },
-      { name: 'Umbruch', unter: [
+      /* Sieben Punkte, in der Reihenfolge aus WPS. */
+      { name: 'Umbrüche', unter: [
         { name: 'Seitenumbruch', tun: B.seitenumbruch },
         { name: 'Spaltenumbruch', tun: B.spaltenumbruch },
-        { name: 'Abschnitt: nächste Seite', tun: () => B.abschnittsumbruch('NextPage') },
-        { name: 'Abschnitt: fortlaufend', tun: () => B.abschnittsumbruch('Continuous') },
-        { name: 'Abschnitt: gerade Seite', tun: () => B.abschnittsumbruch('EvenPage') },
-        { name: 'Abschnitt: ungerade Seite', tun: () => B.abschnittsumbruch('OddPage') },
+        { name: 'Textflussumbruch', tun: B.textflussumbruch },
+        strich,
+        { name: 'Abschnittsumbruch auf nächster Seite', tun: () => B.abschnittsumbruch('NextPage') },
+        { name: 'Fortlaufender Abschnittsumbruch', tun: () => B.abschnittsumbruch('Continuous') },
+        { name: 'Abschnittsumbruch (gerade Seite)', tun: () => B.abschnittsumbruch('EvenPage') },
+        { name: 'Abschnittsumbruch auf ungerader Seite', tun: () => B.abschnittsumbruch('OddPage') },
       ] },
     ] },
     { name: 'Absatz', unter: [
       { name: 'Einzug', tun: B.einzugGenau },
       { name: 'Absatzabstand', tun: B.absatzabstand },
-      { name: 'Zeilennummern', tun: B.zeilennummern },
+      { name: 'Zeilennummern', tun: () => B.zeilennummern(null) },
       { name: 'Silbentrennung', tun: B.silbentrennung },
     ] },
     { name: 'Anordnen', unter: [

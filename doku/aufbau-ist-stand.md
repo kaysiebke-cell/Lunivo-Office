@@ -106,21 +106,22 @@ DIE BÄNDER
 │   │   ├── Farben
 │   │   ├── Schriftarten
 │   │   └── Effekte
-│   ├── Anordnen
-│   │   ├── Ausrichten
-│   │   └── Drehen
+│   ├── Ränder
+│   │   ├── Ränder
+│   │   ├── Normal — oben/unten 25, links/rechts 32 mm
+│   │   ├── Schmal — 13 mm ringsum
+│   │   ├── Moderat — oben/unten 25, links/rechts 19 mm
+│   │   ├── Breit — oben/unten 25, links/rechts 51 mm
+│   │   └── Benutzerdefinierte Seitenränder…
+│   ├── Seitenränder
+│   │   └── raender
 │   ├── Seite einrichten
-│   │   ├── Seitenränder
 │   │   ├── Ausrichtung
 │   │   ├── Papierformat
 │   │   ├── Spalten
 │   │   ├── Textrichtung
-│   │   ├── Umbruch
-│   │   ├── Normal (2,5 cm)
-│   │   ├── Schmal (1,3 cm)
-│   │   ├── Mittel
-│   │   ├── Breit
-│   │   ├── Eigene Ränder…
+│   │   ├── Umbrüche
+│   │   ├── Zeilennummern
 │   │   ├── Hochformat
 │   │   ├── Querformat
 │   │   ├── A4 (21 × 29,7 cm)
@@ -130,23 +131,24 @@ DIE BÄNDER
 │   │   ├── Legal (21,6 × 35,6 cm)
 │   │   ├── Seitenumbruch
 │   │   ├── Spaltenumbruch
-│   │   ├── Abschnitt: nächste Seite
-│   │   ├── Abschnitt: fortlaufend
-│   │   ├── Abschnitt: gerade Seite
-│   │   └── Abschnitt: ungerade Seite
+│   │   ├── Textflussumbruch
+│   │   ├── Abschnittsumbruch auf nächster Seite
+│   │   ├── Fortlaufender Abschnittsumbruch
+│   │   ├── Abschnittsumbruch (gerade Seite)
+│   │   └── Abschnittsumbruch auf ungerader Seite
 │   ├── Absatz
 │   │   ├── Einzug
 │   │   ├── Absatzabstand
-│   │   ├── Zeilennummern
 │   │   └── Silbentrennung
-│   ├── Textumbruch
-│   │   └── Textumbruch
 │   ├── Seitenhintergrund
 │   │   ├── Seitenfarbe
 │   │   ├── Wasserzeichen
 │   │   └── Seitenrahmen
 │   └── Anordnen
-│       └── Bild/Objekt anordnen
+│       ├── Textfluss
+│       ├── Ausrichten
+│       ├── Gruppieren
+│       └── Drehen
 ├── Referenzen
 │   ├── Inhaltsverzeichnis
 │   │   ├── Inhaltsverzeichnis
