@@ -8602,6 +8602,47 @@ B.objektDrehen = (knopf) => {
    aus. Steht der Zeiger in einer Zelle oder einem Rahmen, gilt sie nur
    dort; sonst fuer das Blatt.
    ============================================================ */
+/* Jede Richtung zeigt sich an sich selbst — ein Kaestchen mit „文字"
+   und „ABC", genau so gekippt, wie der Text danach steht. Das ist der
+   Grund, warum in WPS neben jedem Punkt ein Bild steht und nicht nur
+   ein Wort: „Vertikal von rechts nach links" und „Vertikal von links
+   nach rechts" sind als Saetze kaum zu unterscheiden, als Bild sofort. */
+function richtungsbild(kuerzel) {
+  const ns = 'http://www.w3.org/2000/svg';
+  const sv = document.createElementNS(ns, 'svg');
+  sv.setAttribute('viewBox', '0 0 32 32');
+  sv.setAttribute('class', 'richtungsbild');
+  sv.setAttribute('aria-hidden', 'true');
+
+  const rahmen = document.createElementNS(ns, 'rect');
+  rahmen.setAttribute('x', '1.5'); rahmen.setAttribute('y', '1.5');
+  rahmen.setAttribute('width', '29'); rahmen.setAttribute('height', '29');
+  rahmen.setAttribute('fill', 'none');
+  rahmen.setAttribute('stroke', 'currentColor');
+  sv.appendChild(rahmen);
+
+  /* x, y, Drehung, Ausrichtung — je Richtung anders gestellt. */
+  const stand = {
+    horizontal: [['文字', 10, 13, 0], ['ABC', 10, 24, 0]],
+    vrl:        [['文字', 22, 12, 0], ['ABC', 11, 12, 90]],
+    vlr:        [['文字', 11, 12, 0], ['ABC', 22, 12, 90]],
+    d90:        [['ABC', 11, 10, 90], ['文字', 22, 10, 90]],
+    d270:       [['ABC', 11, 22, 270], ['文字', 22, 22, 270]],
+    asia270:    [['文字', 11, 10, 90], ['ABC', 10, 24, 0]],
+  }[kuerzel] || [];
+
+  for (const [wort, x, y, grad] of stand) {
+    const t = document.createElementNS(ns, 'text');
+    t.setAttribute('x', String(x)); t.setAttribute('y', String(y));
+    t.setAttribute('font-size', '9');
+    t.setAttribute('fill', 'currentColor');
+    if (grad) t.setAttribute('transform', 'rotate(' + grad + ' ' + x + ' ' + y + ')');
+    t.textContent = wort;
+    sv.appendChild(t);
+  }
+  return sv;
+}
+
 const TEXTRICHTUNGEN = [
   ['horizontal', 'Horizontal'],
   ['vrl',        'Vertikal von rechts nach links'],
@@ -8635,12 +8676,16 @@ B.textrichtung = (knopf) => {
   const jetzt = ziel.dataset.richtung || 'horizontal';
 
   designTafelZeigen(knopf, 'Textrichtung', (tafel) => {
+    tafel.classList.add('designtafel--breit');
     for (const [kuerzel, name] of TEXTRICHTUNGEN) {
       const k = document.createElement('button');
       k.type = 'button';
-      k.className = 'designtafel__zeile';
-      k.textContent = name;
-      if (kuerzel === jetzt) k.classList.add('designtafel__zeile--gilt');
+      k.className = 'designtafel__zeile richtungszeile';
+      k.appendChild(richtungsbild(kuerzel));
+      const wort = document.createElement('span');
+      wort.textContent = name;
+      k.appendChild(wort);
+      if (kuerzel === jetzt) k.classList.add('richtungszeile--gilt');
       k.addEventListener('mousedown', (e) => e.preventDefault());
       k.addEventListener('click', () => {
         textrichtungSetzen(ziel, kuerzel);
@@ -8649,10 +8694,19 @@ B.textrichtung = (knopf) => {
       });
       tafel.appendChild(k);
     }
+
+    const strichel = document.createElement('hr');
+    strichel.className = 'designtafel__strich';
+    tafel.appendChild(strichel);
+
     const mehr = document.createElement('button');
     mehr.type = 'button';
-    mehr.className = 'layouttafel__weiter';
-    mehr.textContent = 'Textrichtung ändern…';
+    mehr.className = 'designtafel__zeile richtungszeile';
+    mehr.appendChild(symbol('textrichtung'));
+    const wort = document.createElement('span');
+    wort.textContent = 'Textrichtung ändern…';
+    mehr.appendChild(wort);
+    mehr.addEventListener('mousedown', (e) => e.preventDefault());
     mehr.addEventListener('click', () => { designTafelWeg(); B.textrichtungFenster(); });
     tafel.appendChild(mehr);
   });

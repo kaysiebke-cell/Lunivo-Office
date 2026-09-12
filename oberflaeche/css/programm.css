@@ -2477,6 +2477,35 @@ body.lesen .arbeitsflaeche{padding:40px 24px}
 }
 .register__einheit{color:#9AA3AB}
 
+/* Die Zeile in der Textrichtungs-Tafel: Bild links, Wort rechts —
+   wie in WPS. */
+.richtungszeile{
+  display:flex;align-items:center;gap:10px;
+  text-align:left;
+  /* Ohne das bricht „Asiatische Zeichen um 270 Grad drehen" um, und das
+     Bild steht ueber dem Satz statt daneben. */
+  white-space:nowrap;
+}
+/* .designtafel__zeile bricht um (flex-wrap:wrap) — das braucht die
+   Schriftenliste, die Textrichtung aber nicht. */
+.richtungszeile{flex-wrap:nowrap}
+.richtungszeile span{flex:1 1 auto;min-width:0}
+/* Und die Tafel ist sonst auf 268 px festgenagelt; die langen Saetze
+   aus WPS passen da nicht hinein. */
+.designtafel--breit{width:auto;min-width:268px;max-width:min(92vw,420px)}
+.richtungsbild{
+  width:26px;height:26px;flex:0 0 auto;
+  color:var(--schrift);opacity:.85;
+}
+.richtungszeile--gilt{
+  background:var(--blau);color:#fff;
+}
+.richtungszeile--gilt .richtungsbild{color:#fff;opacity:1}
+.designtafel__strich{
+  border:0;border-top:1px solid var(--rand);
+  margin:4px 0;
+}
+
 /* Textrichtung — die sechs Richtungen aus WPS.
    Ein Attribut am Ziel, sechs Regeln hier. So gilt dieselbe Richtung
    fuer das Blatt, fuer eine Tabellenzelle und fuer einen Textrahmen,
