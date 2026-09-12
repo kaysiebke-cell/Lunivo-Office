@@ -2195,6 +2195,39 @@ B.absatzabstand = () => {
 let seitenrand = Speicher.lies('seitenrand', { oben: 20, unten: 20, links: 20, rechts: 20 });
 let spalten = Speicher.lies('spalten', 1);
 
+/* ============================================================
+   DIE TEXTBEGRENZUNGEN
+
+   Die vier Winkel an den Ecken des Satzspiegels. In WPS stehen sie auf
+   jedem leeren Blatt und zeigen, wo der Text anfangen wird — bevor ein
+   einziges Zeichen da ist.
+
+   Bei Lunivo gab es sie nur als Druckschalter („Textbegrenzungen
+   drucken"), am Bildschirm aber nie. Damit war die Einstellung ein
+   Versprechen auf etwas, das man nicht sehen konnte, und die Raender
+   selbst waren unsichtbar: Wer sie auf 40 mm stellte, sah die Zahl im
+   Feld und sonst nichts.
+
+   Gezeichnet werden sie auf das Blatt, nicht in den Text — sonst
+   stuenden sie im Weg, sobald jemand schreibt.
+   ============================================================ */
+let textbegrenzungen = Speicher.lies('textbegrenzungen', true);
+
+function textbegrenzungenAnwenden() {
+  const blatt = $('blatt');
+  if (!blatt) return;
+  blatt.classList.toggle('blatt--begrenzungen', textbegrenzungen);
+  Speicher.schreib('textbegrenzungen', textbegrenzungen);
+}
+
+B.textbegrenzungen = () => {
+  textbegrenzungen = !textbegrenzungen;
+  textbegrenzungenAnwenden();
+  menueBauen();
+  melde(textbegrenzungen ? 'Textbegrenzungen an — die vier Ecken des Satzspiegels.'
+                         : 'Textbegrenzungen aus.');
+};
+
 function seiteAnwenden() {
   const blatt = $('blatt');
   blatt.style.paddingTop = seitenrand.oben + 'mm';
@@ -2230,6 +2263,14 @@ B.seitenraender = () => {
     abschnittMerken(abschnittJetztNr);
     melde('Seitenränder gesetzt.');
   });
+};
+
+/* Eins, zwei oder drei direkt aus der Klappe — ohne Fenster dazwischen.
+   In WPS sind das drei Klicks weniger als ueber „Mehr Spalten…". */
+B.spaltenSetzen = (zahl) => {
+  spalten = Math.max(1, Math.min(3, parseInt(zahl, 10) || 1));
+  seiteAnwenden();
+  melde(spalten === 1 ? 'Eine Spalte.' : spalten + ' Spalten.');
 };
 
 B.spalten = () => {
@@ -3959,6 +4000,18 @@ const REGISTER = REGISTER_BAUEN(B, {
   setzeThema:       (wahl) => setzeThema(wahl),
   setzeRandVorgabe: (art)  => setzeRandVorgabe(art),
   papierJetzt:      ()     => papier,
+  /* Welche Randvorgabe gerade gilt — damit die Klappe einen Haken setzen
+     kann. Verglichen wird ueber die Zahlen, nicht ueber einen Merker:
+     Wer die Raender von Hand auf Normal stellt, soll denselben Haken
+     sehen wie der, der auf „Normal" geklickt hat. */
+  randVorgabeJetzt: () => {
+    for (const [art, wie] of Object.entries(RANDVORGABEN)) {
+      if (wie.oben === seitenrand.oben && wie.unten === seitenrand.unten
+       && wie.links === seitenrand.links && wie.rechts === seitenrand.rechts) return art;
+    }
+    return '';
+  },
+  spaltenJetzt:     ()     => spalten,
   querJetzt:        ()     => quer,
   /* Die Optionen auf einer bestimmten Seite aufmachen. Ein Knopf im Band,
      der die Optionen öffnet und den Menschen dann selbst suchen lässt,
@@ -3969,6 +4022,7 @@ const REGISTER = REGISTER_BAUEN(B, {
      nichts vom Programm wissen muss. */
   an: (was) => ({
     zeilennummern:  () => zeilennummern,
+    textbegrenzungen: () => textbegrenzungen,
     silbentrennung: () => trennung,
     steuerzeichen:  () => steuerzeichen,
     lineal:         () => !$('lineal').hidden,
@@ -5502,6 +5556,38 @@ function klappeSchliessen() {
   klappeOffen = null;
 }
 
+/* Ein kleines Blatt mit angedeutetem Satzspiegel — vier Zahlen als Bild.
+   In WPS steht neben jedem Randmass so eine Kachel, und sie zeigt auf
+   einen Blick, was „Breit" bedeutet. */
+function randbild(rand) {
+  const ns = 'http://www.w3.org/2000/svg';
+  const sv = document.createElementNS(ns, 'svg');
+  sv.setAttribute('viewBox', '0 0 24 32');
+  sv.setAttribute('class', 'klappzeile__bild klappzeile__blatt');
+  sv.setAttribute('aria-hidden', 'true');
+
+  const blatt = document.createElementNS(ns, 'rect');
+  blatt.setAttribute('x', '1'); blatt.setAttribute('y', '1');
+  blatt.setAttribute('width', '22'); blatt.setAttribute('height', '30');
+  blatt.setAttribute('fill', 'none');
+  blatt.setAttribute('stroke', 'currentColor');
+  sv.appendChild(blatt);
+
+  /* Die Raender in Millimetern auf ein Blatt von 210 x 297 umgerechnet. */
+  const x = 1 + 22 * rand.links / 210;
+  const y = 1 + 30 * rand.oben / 297;
+  const b = 22 * (210 - rand.links - rand.rechts) / 210;
+  const h = 30 * (297 - rand.oben - rand.unten) / 297;
+  const satz = document.createElementNS(ns, 'rect');
+  satz.setAttribute('x', x.toFixed(1)); satz.setAttribute('y', y.toFixed(1));
+  satz.setAttribute('width', b.toFixed(1)); satz.setAttribute('height', h.toFixed(1));
+  satz.setAttribute('fill', 'currentColor');
+  satz.setAttribute('opacity', '.28');
+  satz.setAttribute('stroke', 'none');
+  sv.appendChild(satz);
+  return sv;
+}
+
 function registerKlappe(knopf, punkte) {
   const warOffen = klappeOffen && klappeOffen.dataset.von === knopf.title;
   klappeSchliessen();
@@ -5511,7 +5597,19 @@ function registerKlappe(knopf, punkte) {
   klappe.className = 'register__klappe';
   klappe.dataset.von = knopf.title;
 
-  for (const [name, tun, haken] of punkte) {
+  /* Ein Punkt ist entweder schlicht — [Name, tun, haken] — oder
+     ausfuehrlich: ein Kaestchen mit Bild, fettem Namen, einer Zeile mit
+     den Massen und rechts der Tastenfolge. So steht es in WPS bei
+     „Raender", „Groesse", „Ausrichtung", „Spalten" und „Umbrueche", und
+     es ist dort kein Schmuck: „Normal" und „Moderat" unterscheiden sich
+     nur in den Zahlen darunter. Ohne sie muesste man alle vier
+     ausprobieren. */
+  for (const punkt of punkte) {
+    const reich = !Array.isArray(punkt);
+    const name  = reich ? punkt.name : punkt[0];
+    const tun   = reich ? punkt.tun  : punkt[1];
+    const haken = reich ? punkt.haken : punkt[2];
+
     if (name === '-') {
       const strichEl = document.createElement('div');
       strichEl.className = 'menue__strich';
@@ -5520,18 +5618,53 @@ function registerKlappe(knopf, punkte) {
     }
     const zeile = document.createElement('button');
     zeile.type = 'button';
-    zeile.className = 'menue__punkt';
+    zeile.className = reich ? 'menue__punkt klappzeile' : 'menue__punkt';
 
-    const marke = document.createElement('span');
-    marke.className = 'haken';
     let gilt = false;
     try { gilt = typeof haken === 'function' && haken(); } catch (e) { gilt = false; }
-    marke.textContent = gilt ? '✓' : '';
-    zeile.appendChild(marke);
 
-    const wort = document.createElement('span');
-    wort.textContent = name;
-    zeile.appendChild(wort);
+    if (reich) {
+      if (punkt.bild && SYMBOLE[punkt.bild]) {
+        const b = symbol(punkt.bild);
+        b.classList.add('klappzeile__bild');
+        zeile.appendChild(b);
+      } else if (punkt.blatt) {
+        zeile.appendChild(randbild(punkt.blatt));
+      } else {
+        const leer = document.createElement('span');
+        leer.className = 'klappzeile__bild';
+        zeile.appendChild(leer);
+      }
+
+      const text = document.createElement('span');
+      text.className = 'klappzeile__text';
+      const oben = document.createElement('strong');
+      oben.textContent = (gilt ? '✓ ' : '') + name;
+      text.appendChild(oben);
+      if (punkt.mass) {
+        const unten = document.createElement('span');
+        unten.className = 'klappzeile__mass';
+        unten.textContent = punkt.mass;
+        text.appendChild(unten);
+      }
+      zeile.appendChild(text);
+
+      if (punkt.taste) {
+        const t = document.createElement('span');
+        t.className = 'klappzeile__taste';
+        t.textContent = punkt.taste;
+        zeile.appendChild(t);
+      }
+    } else {
+      const marke = document.createElement('span');
+      marke.className = 'haken';
+      marke.textContent = gilt ? '✓' : '';
+      zeile.appendChild(marke);
+
+      const wort = document.createElement('span');
+      wort.textContent = name;
+      zeile.appendChild(wort);
+    }
 
     zeile.addEventListener('mousedown', (e) => e.preventDefault());
     zeile.addEventListener('click', () => { klappeSchliessen(); tun(); });
@@ -7873,14 +8006,24 @@ B.absatzRahmen = () => {
 /* ---- Papierformat und Ausrichtung ----
    Das Blatt hatte bisher eine feste Größe: A4 hoch. Wer einen Aushang quer
    schreibt oder auf A5 druckt, braucht beides. */
+/* WPS zeigt hinter A4 und A3 acht chinesische Formate — 8开, 16开,
+   3号信封 und so fort. Hier stehen die, die in Deutschland jemand
+   braucht: die A- und B-Reihe, die amerikanischen zwei und die drei
+   Umschlaege nach DIN. */
 const PAPIERE = {
-  a4:     { name: 'A4 (21 × 29,7 cm)',      breite: 210, hoehe: 297 },
-  a5:     { name: 'A5 (14,8 × 21 cm)',      breite: 148, hoehe: 210 },
-  a3:     { name: 'A3 (29,7 × 42 cm)',      breite: 297, hoehe: 420 },
-  letter: { name: 'Letter (21,6 × 27,9 cm)', breite: 216, hoehe: 279 },
-  legal:  { name: 'Legal (21,6 × 35,6 cm)',  breite: 216, hoehe: 356 },
+  a4:      { name: 'A4',                breite: 210, hoehe: 297 },
+  a3:      { name: 'A3',                breite: 297, hoehe: 420 },
+  a5:      { name: 'A5',                breite: 148, hoehe: 210 },
+  b5:      { name: 'B5',                breite: 176, hoehe: 250 },
+  letter:  { name: 'Letter',            breite: 216, hoehe: 279 },
+  legal:   { name: 'Legal',             breite: 216, hoehe: 356 },
+  dinlang: { name: 'Umschlag DIN lang', breite: 220, hoehe: 110 },
+  c5:      { name: 'Umschlag C5',       breite: 229, hoehe: 162 },
+  c6:      { name: 'Umschlag C6',       breite: 162, hoehe: 114 },
 };
 
+const papierEigen = Speicher.lies('papierEigen', null);
+if (papierEigen) PAPIERE.eigen = papierEigen;
 let papier = Speicher.lies('papier', 'a4');
 let quer = Speicher.lies('quer', false);
 
@@ -8739,6 +8882,40 @@ B.textrichtungFenster = () => {
   });
 };
 
+/* „Weitere Papierformate…" — Breite und Hoehe von Hand, wie in WPS
+   hinter demselben Punkt. Etiketten, Klappkarten, alte Formate: Wer sie
+   braucht, braucht sie genau und nicht ungefaehr. */
+B.papierformatFenster = () => {
+  const jetzt = PAPIERE[papier] || PAPIERE.a4;
+  fenster('Papierformat', [
+    { art: 'satz', text: 'In Millimetern. Hochformat; für Querformat gibt es '
+                       + 'den eigenen Knopf daneben.' },
+    { schluessel: 'breite', name: 'Breite (mm)', art: 'number', wert: String(jetzt.breite) },
+    { schluessel: 'hoehe',  name: 'Höhe (mm)',   art: 'number', wert: String(jetzt.hoehe) },
+  ], (werte) => {
+    const zahl = (x, ersatz) => {
+      const n = parseFloat(String(x).replace(',', '.'));
+      return Number.isNaN(n) ? ersatz : Math.max(20, Math.min(1200, n));
+    };
+    PAPIERE.eigen = { name: 'Eigenes Format',
+                      breite: zahl(werte.breite, jetzt.breite),
+                      hoehe:  zahl(werte.hoehe,  jetzt.hoehe) };
+    papier = 'eigen';
+    Speicher.schreib('papier', papier);
+    Speicher.schreib('papierEigen', PAPIERE.eigen);
+    papierAnwenden();
+    abschnittMerken(abschnittJetztNr);
+    melde('Papier: ' + PAPIERE.eigen.breite + ' × ' + PAPIERE.eigen.hoehe + ' mm.');
+  });
+};
+
+/* Eine Farbe ohne Fenster setzen — die Schattierungskarte braucht das,
+   und die Farbtafel spaeter auch. */
+B.seitenfarbeSetzen = (farbe) => {
+  seitenfarbe = (!farbe || String(farbe).toLowerCase() === '#ffffff') ? '' : farbe;
+  seitenfarbeAnwenden();
+};
+
 B.seitenfarbe = () => {
   fenster('Seitenfarbe', [
     { art: 'satz', text: 'Färbt das Blatt. Beim Drucken kostet das Farbe —\nfür ein Schreiben ans Amt lieber weiß lassen.' },
@@ -8784,6 +8961,379 @@ function seitenrahmenAnwenden() {
   $('blatt').style.outline = seitenrahmen || '';
   $('blatt').style.outlineOffset = seitenrahmen ? '-8mm' : '';
   Speicher.schreib('seitenrahmen', seitenrahmen);
+}
+
+/* ============================================================
+   RAHMEN UND SCHATTIERUNG
+
+   Der Knopf „Seitenränder" rechts im Seitenlayout. In WPS oeffnet er ein
+   Fenster mit drei Karten — Rahmen, Seitenrand, Schattierung — und mit
+   einer Vorschau, in die man hineinklicken kann.
+
+   Vorher lag dahinter ein Fenster mit drei Feldern, das nur die Linie um
+   das ganze Blatt konnte. Alles andere, was der Knopf in der Vorlage
+   verspricht — ein Rahmen um einen Absatz, eine Hinterlegung —, fehlte.
+
+   DIE VORSCHAU IST KEINE ZIERDE. „Kontur" und „Anpassen" unterscheiden
+   sich nur darin, welche der vier Kanten stehen. Ohne Bild muesste man
+   das Fenster schliessen, hinsehen, wieder aufmachen.
+   ============================================================ */
+const RAHMEN_LINIEN = [
+  ['solid',  'durchgezogen'],
+  ['double', 'doppelt'],
+  ['dashed', 'gestrichelt'],
+  ['dotted', 'gepunktet'],
+  ['groove', 'vertieft'],
+  ['ridge',  'erhaben'],
+];
+
+const RAHMEN_KANTEN = [['oben', 'Oben'], ['unten', 'Unten'],
+                       ['links', 'Links'], ['rechts', 'Rechts']];
+
+let absatzrahmen = Speicher.lies('absatzrahmen',
+  { art: 'solid', farbe: '#7C858E', breite: 1, kanten: ['oben', 'unten', 'links', 'rechts'] });
+let blattrahmen = Speicher.lies('blattrahmen',
+  { art: 'solid', farbe: '#7C858E', breite: 2, kanten: ['oben', 'unten', 'links', 'rechts'] });
+let schattierung = Speicher.lies('schattierung', { farbe: '#FFF6D8', wohin: 'absatz' });
+
+function rahmenAlsCss(r, kante) {
+  if (!r.kanten.includes(kante)) return '0';
+  return r.breite + 'px ' + r.art + ' ' + r.farbe;
+}
+
+function blattrahmenAnwenden() {
+  const blatt = $('blatt');
+  if (!blatt) return;
+  const r = blattrahmen;
+  const an = r.kanten.length > 0 && r.art !== 'keine';
+  for (const [kante, seite] of [['oben', 'Top'], ['unten', 'Bottom'],
+                                ['links', 'Left'], ['rechts', 'Right']]) {
+    blatt.style['border' + seite] = an ? rahmenAlsCss(r, kante) : '';
+  }
+  Speicher.schreib('blattrahmen', blattrahmen);
+}
+
+/* Die Vorschau: ein Blatt mit angedeuteten Textzeilen und den Kanten,
+   die gerade gesetzt sind. Ein Klick auf eine Kante schaltet sie um —
+   genau wie in WPS, wo „Diagramm oder Schaltflaechen klicken" darueber
+   steht. */
+function rahmenVorschau(r, beiKlick) {
+  const kasten = document.createElement('div');
+  kasten.className = 'rahmentafel__vorschau';
+
+  const satz = document.createElement('p');
+  satz.className = 'rahmentafel__hinweis';
+  satz.textContent = 'Auf eine Kante klicken, um sie an- oder abzuschalten.';
+  kasten.appendChild(satz);
+
+  const blatt = document.createElement('div');
+  blatt.className = 'rahmenprobe';
+  for (let i = 0; i < 7; i++) {
+    const zeile = document.createElement('span');
+    zeile.className = 'rahmenprobe__zeile';
+    blatt.appendChild(zeile);
+  }
+
+  const auffrischen = () => {
+    for (const [kante, seite] of [['oben', 'Top'], ['unten', 'Bottom'],
+                                  ['links', 'Left'], ['rechts', 'Right']]) {
+      blatt.style['border' + seite] = r.kanten.includes(kante)
+        ? Math.max(1, r.breite) + 'px ' + r.art + ' ' + r.farbe : '1px dashed transparent';
+    }
+  };
+  auffrischen();
+
+  for (const [kante, name] of RAHMEN_KANTEN) {
+    const k = document.createElement('button');
+    k.type = 'button';
+    k.className = 'rahmenprobe__kante rahmenprobe__kante--' + kante;
+    k.title = name + ' an- oder abschalten';
+    k.setAttribute('aria-label', k.title);
+    k.addEventListener('click', () => {
+      const drin = r.kanten.indexOf(kante);
+      if (drin >= 0) r.kanten.splice(drin, 1); else r.kanten.push(kante);
+      auffrischen();
+      if (beiKlick) beiKlick();
+    });
+    blatt.appendChild(k);
+  }
+
+  kasten.appendChild(blatt);
+  kasten.auffrischen = auffrischen;
+  return kasten;
+}
+
+B.seitenraenderRahmen = (karteZuerst) => {
+  const grund = document.createElement('div');
+  grund.className = 'dialoggrund';
+  const kasten = document.createElement('div');
+  kasten.className = 'dialog dialog--breit rahmentafel';
+  kasten.innerHTML = '<h3 class="dialog__titel">Rahmen und Schattierung</h3>';
+
+  const reiter = document.createElement('div');
+  reiter.className = 'rahmentafel__reiter';
+  const buehne = document.createElement('div');
+  buehne.className = 'rahmentafel__buehne';
+
+  const KARTEN = [
+    ['rahmen',   'Rahmen',       () => karteRahmen(absatzrahmen, 'absatz')],
+    ['seite',    'Seitenrand',   () => karteRahmen(blattrahmen, 'blatt')],
+    ['schatten', 'Schattierung', () => karteSchatten()],
+  ];
+
+  function karteRahmen(r, wohin) {
+    const k = document.createElement('div');
+    k.className = 'rahmentafel__karte';
+
+    const links = document.createElement('div');
+    links.className = 'rahmentafel__spalte';
+    links.innerHTML = '<h4>Einstellung</h4>';
+    let vorschau = null;
+    for (const [wert, name, kanten] of [
+      ['ohne',    'Ohne',    []],
+      ['kontur',  'Kontur',  ['oben', 'unten', 'links', 'rechts']],
+      ['anpassen','Anpassen', null],
+    ]) {
+      const knopf = document.createElement('button');
+      knopf.type = 'button';
+      knopf.className = 'rahmentafel__wahl';
+      knopf.textContent = name;
+      knopf.addEventListener('click', () => {
+        if (kanten) r.kanten = kanten.slice();
+        if (wert === 'ohne') r.art = 'keine';
+        else if (r.art === 'keine') r.art = 'solid';
+        if (vorschau) vorschau.auffrischen();
+      });
+      links.appendChild(knopf);
+    }
+    k.appendChild(links);
+
+    const mitte = document.createElement('div');
+    mitte.className = 'rahmentafel__spalte';
+    mitte.innerHTML = '<h4>Formatvorlage</h4>';
+
+    const liste = document.createElement('div');
+    liste.className = 'rahmentafel__linien';
+    for (const [wert, name] of RAHMEN_LINIEN) {
+      const z = document.createElement('button');
+      z.type = 'button';
+      z.className = 'rahmentafel__linie';
+      z.title = name;
+      const strich = document.createElement('span');
+      strich.style.borderTop = '3px ' + wert + ' currentColor';
+      z.appendChild(strich);
+      const wort = document.createElement('em');
+      wort.textContent = name;
+      z.appendChild(wort);
+      z.addEventListener('click', () => {
+        r.art = wert;
+        if (!r.kanten.length) r.kanten = ['oben', 'unten', 'links', 'rechts'];
+        [...liste.children].forEach((c) => c.classList.remove('rahmentafel__linie--an'));
+        z.classList.add('rahmentafel__linie--an');
+        if (vorschau) vorschau.auffrischen();
+      });
+      if (r.art === wert) z.classList.add('rahmentafel__linie--an');
+      liste.appendChild(z);
+    }
+    mitte.appendChild(liste);
+
+    const farbzeile = document.createElement('label');
+    farbzeile.className = 'rahmentafel__feld';
+    farbzeile.innerHTML = '<span>Farbe</span>';
+    const farbe = document.createElement('input');
+    farbe.type = 'color'; farbe.value = r.farbe;
+    farbe.addEventListener('input', () => { r.farbe = farbe.value; if (vorschau) vorschau.auffrischen(); });
+    farbzeile.appendChild(farbe);
+    mitte.appendChild(farbzeile);
+
+    const breitzeile = document.createElement('label');
+    breitzeile.className = 'rahmentafel__feld';
+    breitzeile.innerHTML = '<span>Breite</span>';
+    const breit = document.createElement('input');
+    breit.type = 'number'; breit.min = '0.5'; breit.max = '12'; breit.step = '0.5';
+    breit.value = String(r.breite);
+    breit.addEventListener('input', () => {
+      r.breite = Math.max(0.5, Math.min(12, parseFloat(breit.value) || 1));
+      if (vorschau) vorschau.auffrischen();
+    });
+    breitzeile.appendChild(breit);
+    const pt = document.createElement('span');
+    pt.className = 'rahmentafel__einheit'; pt.textContent = 'px';
+    breitzeile.appendChild(pt);
+    mitte.appendChild(breitzeile);
+    k.appendChild(mitte);
+
+    const rechts = document.createElement('div');
+    rechts.className = 'rahmentafel__spalte rahmentafel__spalte--weit';
+    rechts.innerHTML = '<h4>Vorschau</h4>';
+    vorschau = rahmenVorschau(r);
+    rechts.appendChild(vorschau);
+
+    const wohinZeile = document.createElement('label');
+    wohinZeile.className = 'rahmentafel__feld';
+    wohinZeile.innerHTML = '<span>Übernehmen für</span>';
+    const wahl = document.createElement('select');
+    for (const [wert, name] of (wohin === 'blatt'
+        ? [['dokument', 'Gesamtes Dokument']]
+        : [['absatz', 'Absatz'], ['auswahl', 'Markierte Absätze']])) {
+      const o = document.createElement('option');
+      o.value = wert; o.textContent = name;
+      wahl.appendChild(o);
+    }
+    wohinZeile.appendChild(wahl);
+    rechts.appendChild(wohinZeile);
+    k.appendChild(rechts);
+
+    k.uebernehmen = () => {
+      if (wohin === 'blatt') {
+        blattrahmenAnwenden();
+        melde(r.kanten.length && r.art !== 'keine'
+          ? 'Seitenrand gesetzt.' : 'Seitenrand entfernt.');
+      } else {
+        const ziele = wahl.value === 'auswahl' ? absaetzeInAuswahl() : [absatzJetzt()].filter(Boolean);
+        if (!ziele.length) { melde('Dafür muss der Zeiger in einem Absatz stehen.'); return; }
+        for (const a of ziele) {
+          for (const [kante, seite] of [['oben', 'Top'], ['unten', 'Bottom'],
+                                        ['links', 'Left'], ['rechts', 'Right']]) {
+            a.style['border' + seite] = (r.art === 'keine') ? '' : rahmenAlsCss(r, kante);
+          }
+          a.style.padding = (r.art === 'keine') ? '' : '2mm 3mm';
+        }
+        Speicher.schreib('absatzrahmen', absatzrahmen);
+        geaendertMelden();
+        melde(ziele.length === 1 ? 'Rahmen um den Absatz.'
+                                 : 'Rahmen um ' + ziele.length + ' Absätze.');
+      }
+    };
+    return k;
+  }
+
+  function karteSchatten() {
+    const k = document.createElement('div');
+    k.className = 'rahmentafel__karte';
+
+    const links = document.createElement('div');
+    links.className = 'rahmentafel__spalte';
+    links.innerHTML = '<h4>Füllung</h4>';
+    const farbe = document.createElement('input');
+    farbe.type = 'color'; farbe.value = schattierung.farbe;
+    links.appendChild(farbe);
+
+    const keine = document.createElement('button');
+    keine.type = 'button';
+    keine.className = 'rahmentafel__wahl';
+    keine.textContent = 'Keine Füllung';
+    keine.addEventListener('click', () => { schattierung.farbe = ''; probe.style.background = ''; });
+    links.appendChild(keine);
+    k.appendChild(links);
+
+    const rechts = document.createElement('div');
+    rechts.className = 'rahmentafel__spalte rahmentafel__spalte--weit';
+    rechts.innerHTML = '<h4>Vorschau</h4>';
+    const probe = document.createElement('div');
+    probe.className = 'rahmenprobe rahmenprobe--satt';
+    probe.style.background = schattierung.farbe;
+    for (let i = 0; i < 7; i++) {
+      const zeile = document.createElement('span');
+      zeile.className = 'rahmenprobe__zeile';
+      probe.appendChild(zeile);
+    }
+    farbe.addEventListener('input', () => {
+      schattierung.farbe = farbe.value;
+      probe.style.background = farbe.value;
+    });
+    rechts.appendChild(probe);
+
+    const wohinZeile = document.createElement('label');
+    wohinZeile.className = 'rahmentafel__feld';
+    wohinZeile.innerHTML = '<span>Übernehmen für</span>';
+    const wahl = document.createElement('select');
+    for (const [wert, name] of [['absatz', 'Absatz'],
+                                ['auswahl', 'Markierte Absätze'],
+                                ['dokument', 'Gesamtes Dokument']]) {
+      const o = document.createElement('option');
+      o.value = wert; o.textContent = name;
+      if (schattierung.wohin === wert) o.selected = true;
+      wahl.appendChild(o);
+    }
+    wohinZeile.appendChild(wahl);
+    rechts.appendChild(wohinZeile);
+    k.appendChild(rechts);
+
+    k.uebernehmen = () => {
+      schattierung.wohin = wahl.value;
+      Speicher.schreib('schattierung', schattierung);
+      if (wahl.value === 'dokument') {
+        B.seitenfarbeSetzen(schattierung.farbe);
+        melde(schattierung.farbe ? 'Seitenfarbe gesetzt.' : 'Seitenfarbe entfernt.');
+        return;
+      }
+      const ziele = wahl.value === 'auswahl' ? absaetzeInAuswahl() : [absatzJetzt()].filter(Boolean);
+      if (!ziele.length) { melde('Dafür muss der Zeiger in einem Absatz stehen.'); return; }
+      for (const a of ziele) a.style.background = schattierung.farbe || '';
+      geaendertMelden();
+      melde(ziele.length === 1 ? 'Absatz hinterlegt.'
+                               : ziele.length + ' Absätze hinterlegt.');
+    };
+    return k;
+  }
+
+  let offen = null;
+  const zeige = (kuerzel) => {
+    const eintrag = KARTEN.find(([k]) => k === kuerzel) || KARTEN[0];
+    buehne.textContent = '';
+    offen = eintrag[2]();
+    buehne.appendChild(offen);
+    [...reiter.children].forEach((c) => {
+      c.classList.toggle('rahmentafel__reiter--an', c.dataset.karte === eintrag[0]);
+    });
+  };
+
+  for (const [kuerzel, name] of KARTEN) {
+    const k = document.createElement('button');
+    k.type = 'button';
+    k.className = 'rahmentafel__reiter-knopf';
+    k.dataset.karte = kuerzel;
+    k.textContent = name;
+    k.addEventListener('click', () => zeige(kuerzel));
+    reiter.appendChild(k);
+  }
+
+  kasten.appendChild(reiter);
+  kasten.appendChild(buehne);
+
+  const fuss = document.createElement('div');
+  fuss.className = 'dialog__knoepfe';
+  const ab = document.createElement('button');
+  ab.type = 'button'; ab.className = 'knopf'; ab.textContent = 'Abbrechen';
+  ab.addEventListener('click', () => grund.remove());
+  const ok = document.createElement('button');
+  ok.type = 'button'; ok.className = 'knopf knopf--haupt'; ok.textContent = 'Übernehmen';
+  ok.addEventListener('click', () => {
+    if (offen && offen.uebernehmen) offen.uebernehmen();
+    grund.remove();
+  });
+  fuss.appendChild(ab); fuss.appendChild(ok);
+  kasten.appendChild(fuss);
+
+  grund.appendChild(kasten);
+  grund.addEventListener('mousedown', (e) => { if (e.target === grund) grund.remove(); });
+  document.addEventListener('keydown', function zu(e) {
+    if (e.key === 'Escape' && grund.isConnected) { grund.remove(); document.removeEventListener('keydown', zu); }
+  });
+  document.body.appendChild(grund);
+  zeige(karteZuerst || 'seite');
+};
+
+/* Alle Absaetze, die die Auswahl beruehrt. */
+function absaetzeInAuswahl() {
+  const auswahl = window.getSelection();
+  if (!auswahl || auswahl.rangeCount === 0) return [];
+  const alle = [...feld.querySelectorAll('p, h1, h2, h3, h4, li')];
+  const drin = alle.filter((a) => auswahl.containsNode(a, true));
+  if (drin.length) return drin;
+  const einer = absatzJetzt();
+  return einer ? [einer] : [];
 }
 
 B.seitenrahmen = () => {
@@ -13188,6 +13738,8 @@ const MENUES = [
       { name: 'Einzug', tun: B.einzugGenau },
       { name: 'Absatzabstand', tun: B.absatzabstand },
       { name: 'Zeilennummern', tun: () => B.zeilennummern(null) },
+      { name: 'Textbegrenzungen', tun: B.textbegrenzungen,
+        haken: () => textbegrenzungen },
       { name: 'Silbentrennung', tun: B.silbentrennung },
     ] },
     { name: 'Anordnen', unter: [
@@ -16380,6 +16932,8 @@ bedienungAnwenden();
 flaecheAnwenden();
 /* Farbschema, Schriftpaar und Effekt auf das Blatt legen. */
 designFeinAnwenden();
+/* Die vier Winkel am Satzspiegel. */
+textbegrenzungenAnwenden();
 /* Unten rechts: Ansichten und Schieber. Auch hier erst jetzt, weil die
    Knöpfe ihre Zeichnungen aus SYMBOLE holen. */
 statuszeileBauen();

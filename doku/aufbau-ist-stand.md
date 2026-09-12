@@ -107,35 +107,16 @@ DIE BÄNDER
 │   │   ├── Schriftarten
 │   │   └── Effekte
 │   ├── Ränder
-│   │   ├── Ränder
-│   │   ├── Normal — oben/unten 25, links/rechts 32 mm
-│   │   ├── Schmal — 13 mm ringsum
-│   │   ├── Moderat — oben/unten 25, links/rechts 19 mm
-│   │   ├── Breit — oben/unten 25, links/rechts 51 mm
-│   │   └── Benutzerdefinierte Seitenränder…
+│   │   └── Ränder
 │   ├── Seitenränder
 │   │   └── raender
 │   ├── Seite einrichten
 │   │   ├── Ausrichtung
-│   │   ├── Papierformat
+│   │   ├── Größe
 │   │   ├── Spalten
 │   │   ├── Textrichtung
 │   │   ├── Umbrüche
-│   │   ├── Zeilennummern
-│   │   ├── Hochformat
-│   │   ├── Querformat
-│   │   ├── A4 (21 × 29,7 cm)
-│   │   ├── A5 (14,8 × 21 cm)
-│   │   ├── A3 (29,7 × 42 cm)
-│   │   ├── Letter (21,6 × 27,9 cm)
-│   │   ├── Legal (21,6 × 35,6 cm)
-│   │   ├── Seitenumbruch
-│   │   ├── Spaltenumbruch
-│   │   ├── Textflussumbruch
-│   │   ├── Abschnittsumbruch auf nächster Seite
-│   │   ├── Fortlaufender Abschnittsumbruch
-│   │   ├── Abschnittsumbruch (gerade Seite)
-│   │   └── Abschnittsumbruch auf ungerader Seite
+│   │   └── Zeilennummern
 │   ├── Absatz
 │   │   ├── Einzug
 │   │   ├── Absatzabstand
@@ -143,7 +124,7 @@ DIE BÄNDER
 │   ├── Seitenhintergrund
 │   │   ├── Seitenfarbe
 │   │   ├── Wasserzeichen
-│   │   └── Seitenrahmen
+│   │   └── Seitenränder
 │   └── Anordnen
 │       ├── Textfluss
 │       ├── Ausrichten
@@ -256,6 +237,7 @@ DIE BÄNDER
     │   └── Gliederung
     ├── Anzeigen
     │   ├── Lineal
+    │   ├── Textbegrenzungen
     │   ├── Vertikales Lineal
     │   ├── Gitternetzlinien
     │   ├── Navigationsbereich

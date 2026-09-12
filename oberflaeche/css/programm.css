@@ -2477,6 +2477,140 @@ body.lesen .arbeitsflaeche{padding:40px 24px}
 }
 .register__einheit{color:#9AA3AB}
 
+/* ---- Rahmen und Schattierung: drei Karten, wie in der Vorlage ---- */
+.rahmentafel__reiter{
+  display:flex;gap:4px;
+  border-bottom:1px solid var(--rand);
+  margin:0 0 12px;
+}
+.rahmentafel__reiter-knopf{
+  padding:7px 16px;border:1px solid transparent;border-bottom:0;
+  border-radius:6px 6px 0 0;margin-bottom:-1px;
+  background:none;color:var(--schrift);font:inherit;cursor:pointer;
+}
+.rahmentafel__reiter-knopf:hover{background:rgba(127,127,127,.12)}
+.rahmentafel__reiter--an{
+  border-color:var(--rand);background:var(--tafel, var(--leiste));
+  font-weight:700;
+}
+.rahmentafel__karte{display:flex;gap:18px;align-items:flex-start}
+.rahmentafel__spalte{display:flex;flex-direction:column;gap:7px;min-width:0}
+.rahmentafel__spalte--weit{flex:1 1 auto}
+.rahmentafel__spalte h4{margin:0 0 2px;font-size:.9rem;font-weight:700}
+.rahmentafel__wahl{
+  padding:6px 12px;border:1px solid var(--rand);border-radius:6px;
+  background-color:var(--grund);color:var(--schrift);font:inherit;
+  text-align:left;cursor:pointer;
+}
+.rahmentafel__wahl:hover{border-color:var(--blau)}
+.rahmentafel__linien{
+  display:flex;flex-direction:column;gap:2px;
+  max-height:180px;overflow-y:auto;
+  border:1px solid var(--rand);border-radius:6px;padding:4px;
+}
+.rahmentafel__linie{
+  display:flex;align-items:center;gap:8px;
+  padding:4px 6px;border:1px solid transparent;border-radius:4px;
+  background:none;color:var(--schrift);font:inherit;cursor:pointer;
+}
+.rahmentafel__linie span{width:64px;flex:0 0 auto}
+.rahmentafel__linie em{font-style:normal;font-size:.85em;color:var(--schrift-2)}
+.rahmentafel__linie:hover{background:rgba(127,127,127,.12)}
+.rahmentafel__linie--an{border-color:var(--blau);background:rgba(47,111,181,.14)}
+.rahmentafel__feld{display:flex;align-items:center;gap:8px}
+.rahmentafel__feld > span:first-child{min-width:8.5em}
+.rahmentafel__feld input[type=number]{
+  width:5em;padding:5px 8px;
+  border:1px solid var(--rand);border-radius:6px;
+  background-color:var(--grund);color:var(--schrift);font:inherit;
+}
+.rahmentafel__feld select{
+  flex:1 1 auto;min-width:0;padding:6px 10px;
+  border:1px solid var(--rand);border-radius:6px;
+  background-color:var(--grund);color:var(--schrift);font:inherit;
+}
+.rahmentafel__einheit{color:var(--schrift-2)}
+.rahmentafel__hinweis{margin:0 0 6px;font-size:.85em;color:var(--schrift-2)}
+.rahmentafel__vorschau{display:flex;flex-direction:column}
+
+/* Das Probeblatt mit den vier anklickbaren Kanten. */
+.rahmenprobe{
+  position:relative;
+  width:100%;min-height:150px;
+  padding:10px 12px;
+  background:var(--blatt);
+  display:flex;flex-direction:column;gap:7px;justify-content:center;
+}
+.rahmenprobe__zeile{
+  display:block;height:3px;border-radius:2px;
+  background:var(--schrift-2);opacity:.45;
+}
+.rahmenprobe__zeile:last-child{width:62%}
+.rahmenprobe__kante{
+  position:absolute;border:0;background:none;cursor:pointer;padding:0;
+}
+.rahmenprobe__kante:hover{background:rgba(47,111,181,.25)}
+.rahmenprobe__kante--oben{left:14px;right:14px;top:-7px;height:14px}
+.rahmenprobe__kante--unten{left:14px;right:14px;bottom:-7px;height:14px}
+.rahmenprobe__kante--links{top:14px;bottom:14px;left:-7px;width:14px}
+.rahmenprobe__kante--rechts{top:14px;bottom:14px;right:-7px;width:14px}
+
+/* ---- Textbegrenzungen: die vier Winkel am Satzspiegel ----
+
+   Gezeichnet mit zwei Lagen ueber dem Blatt. Jede Lage traegt zwei
+   Winkel als Rahmenstuecke; zusammen sind es vier Ecken.
+
+   Sie liegen ueber dem Blatt, aber unter dem Text und nehmen keine
+   Klicks an — sonst koennte man in der oberen Ecke nicht mehr
+   hinschreiben. */
+.blatt--begrenzungen{position:relative}
+.blatt--begrenzungen::before,
+.blatt--begrenzungen::after{
+  content:'';position:absolute;
+  top:var(--rand-oben,20mm);
+  left:var(--rand-links,20mm);
+  right:var(--rand-rechts,20mm);
+  bottom:var(--rand-unten,20mm);
+  pointer-events:none;z-index:1;
+  border:0 solid var(--begrenzung, #9AA3AB);
+  /* Nur die Ecken: Der Rahmen wird an den Seiten weggeschnitten und
+     bleibt in den vier Winkeln stehen. 6 mm Schenkellaenge, wie in WPS. */
+}
+.blatt--begrenzungen::before{
+  border-width:1px;
+  clip-path:polygon(
+    0 0, 6mm 0, 6mm 1px, 1px 1px, 1px 6mm, 0 6mm,
+    0 100%, 6mm 100%, 6mm calc(100% - 1px), 1px calc(100% - 1px), 1px calc(100% - 6mm), 0 calc(100% - 6mm));
+}
+.blatt--begrenzungen::after{
+  border-width:1px;
+  clip-path:polygon(
+    100% 0, calc(100% - 6mm) 0, calc(100% - 6mm) 1px, calc(100% - 1px) 1px, calc(100% - 1px) 6mm, 100% 6mm,
+    100% 100%, calc(100% - 6mm) 100%, calc(100% - 6mm) calc(100% - 1px), calc(100% - 1px) calc(100% - 1px), calc(100% - 1px) calc(100% - 6mm), 100% calc(100% - 6mm));
+}
+
+/* Die ausfuehrliche Zeile in einer Bandklappe: Bild, fetter Name, die
+   Masse darunter, rechts die Tastenfolge. */
+.klappzeile{
+  display:flex;align-items:center;gap:10px;
+  padding:6px 10px;text-align:left;
+}
+.klappzeile__bild{
+  width:22px;height:30px;flex:0 0 auto;
+  color:var(--schrift);opacity:.8;
+}
+.klappzeile__blatt{opacity:1}
+.klappzeile__text{display:flex;flex-direction:column;gap:1px;flex:1 1 auto;min-width:0}
+.klappzeile__text strong{font-weight:700}
+.klappzeile__mass{
+  font-size:.82em;color:var(--schrift-2, #9AA3AB);
+  white-space:nowrap;
+}
+.klappzeile__taste{
+  flex:0 0 auto;margin-left:14px;
+  font-size:.82em;color:var(--schrift-2, #9AA3AB);
+}
+
 /* Die Zeile in der Textrichtungs-Tafel: Bild links, Wort rechts —
    wie in WPS. */
 .richtungszeile{

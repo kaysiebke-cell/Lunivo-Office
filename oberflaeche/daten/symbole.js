@@ -219,4 +219,15 @@ const SYMBOLE = {
   ausrichten:    'M3 3v18 M7 8h11a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z M7 15h7a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1z',   /* lucide: align-horizontal-distribute-start */
   objektdrehen:  'M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8 M21 3v5h-5',   /* lucide: rotate-cw */
   textrichtung:  'M4 4v16 M8 4v16 M12.5 19 L17 6 L21.5 19 M14.2 15h5.6',   /* eigen: senkrechte Zeilen neben einem A, wie in WPS */
+  querformat:    'M2 6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z',   /* eigen: liegendes Blatt */
+  briefumschlag: 'M2 5a1 1 0 0 1 1-1h18a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1z M2 6 l10 7 l10-7',   /* lucide: mail */
+  spalte1:       'M4 3h16v18H4z',   /* eigen: eine Spalte */
+  spalte2:       'M4 3h7v18H4z M13 3h7v18h-7z',   /* eigen: zwei Spalten */
+  spalte3:       'M3 3h5v18H3z M9.5 3h5v18h-5z M16 3h5v18h-5z',   /* eigen: drei Spalten */
+  spaltenumbruch:'M4 4h7v7H4z M13 13h7v7h-7z M4 15h7 M13 9h7 M9 13 l2 2 -2 2',   /* eigen: Sprung in die naechste Spalte */
+  textflussumbruch: 'M4 6h16 M4 12h11a3 3 0 1 1 0 6h-4 M13 15 l-2 3 2 3',   /* eigen: Pfeil zurueck in dieselbe Zeile */
+  abschnitt:     'M3 4h18 M3 9h18 M3 14h11 M3 19h11 M17 14 v6 M20 17 h-6',   /* eigen: neuer Abschnitt, neue Seite */
+  abschnittlaufend: 'M3 4h18 M3 9h18 M3 14h18 M3 19h18 M8 11.5h8',   /* eigen: laeuft weiter */
+  abschnittgerade: 'M3 4h18 M3 9h18 M3 14h11 M3 19h11 M17 15 h3 v5 h-3 z',   /* eigen: gerade Seite */
+  abschnittungerade: 'M3 4h18 M3 9h18 M3 14h11 M3 19h11 M18.5 15 v5 M17 16 l1.5 -1',   /* eigen: ungerade Seite */
 };
