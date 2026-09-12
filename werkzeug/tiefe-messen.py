@@ -34,10 +34,62 @@ def koerper_lesen(quelle):
     return koerper
 
 
-def urteil(koerper, name):
+# Jeder Aufruf in einem kurzen Rumpf. Nicht nur der erste: Bei
+#   B.linealZeigen = () => { lineal = !lineal; ansichtExtras(); }
+# steht vor dem Aufruf noch eine Zuweisung, und ein Ausdruck, der am
+# Zeilenanfang festgemacht ist, findet ansichtExtras nie.
+AUFRUF = re.compile(r"\b([a-zA-Z_$][\w$]*)\s*\(")
+# Oder gleich ein anderer Name: B.zoomSeite = zoomGanzeSeite;
+GLEICHSETZUNG = re.compile(r"^\s*([a-zA-Z_$][\w$]*)\s*;?\s*$")
+# Was kein Weiterreichen ist, sondern Handwerkszeug.
+KEIN_ZIEL = {'if', 'for', 'while', 'switch', 'return', 'typeof', 'catch',
+             'melde', 'parseInt', 'parseFloat', 'String', 'Number'}
+
+
+def hinterher(quelle, name, tiefe=0):
+    """Wenn ein Befehl nur weiterreicht, misst der Bericht die falsche
+    Stelle.
+
+    B.groesser = () => setzeZoom(zoom + 10) ist eine Zeile lang und
+    vollstaendig richtig; die Arbeit steckt in setzeZoom. Fuenfzehn
+    solcher Einzeiler standen als DUENN im Bericht — Suchen, Ersetzen,
+    Kopfzeile, Lineal, Vergroessern. Wer dem geglaubt haette, haette
+    fuenfzehn fertige Befehle nachgebaut.
+
+    Also: dem Namen nachgehen, bis etwas kommt, das selbst arbeitet."""
+    if tiefe > 3:
+        return None
+    # „async function fensterOrdnen(" — das Wort davor gehoert dazu.
+    m = re.search(r"^(?:async\s+)?(?:function\s+)?" + re.escape(name)
+                  + r"\s*(?:=\s*)?(?:async\s*)?(?:function\s*)?\(", quelle, re.M)
+    if not m:
+        return None
+    start = m.start()
+    naechste = re.search(r"^(?:function\s+|B\.|const |let )", quelle[start + 1:], re.M)
+    return quelle[start:start + 1 + naechste.start()] if naechste else quelle[start:]
+
+
+def urteil(koerper, name, quelle=''):
     k = koerper.get(name)
     if k is None:
         return ('FEHLT', 0)
+
+    # Reicht der Befehl nur weiter? Dann zaehlt, wohin er reicht.
+    kern = [z for z in k.split('\n')
+            if z.strip() and not z.strip().startswith(('*', '/*', '//'))]
+    if len(kern) <= 2 and quelle:
+        # koerper_lesen schneidet hinter dem Gleichheitszeichen ab, der
+        # Rumpf faengt also schon mit „() =>" an.
+        rumpf = kern[0] if kern else ''
+        ziele = [g for g in AUFRUF.findall(rumpf) if g not in KEIN_ZIEL]
+        g = GLEICHSETZUNG.match(rumpf)
+        if g:
+            ziele.append(g.group(1))
+        for ziel in ziele:
+            weiter = hinterher(quelle, ziel)
+            if weiter and len([z for z in weiter.split('\n') if z.strip()]) > 2:
+                art, n = urteil({name: weiter}, name)
+                return (art, n)
     zeilen = [z for z in k.split('\n')
               if z.strip() and not z.strip().startswith(('*', '/*', '//'))]
     n = len(zeilen)
@@ -59,7 +111,21 @@ def urteil(koerper, name):
 
 
 def main():
-    quelle = io.open('oberflaeche/js/programm.js', encoding='utf-8').read()
+    # ALLE Module, nicht nur programm.js.
+    #
+    # Vorher las das Werkzeug eine einzige Datei — und meldete daraufhin
+    # neunzehn Befehle als FEHLT, darunter den ganzen Referenzen-Reiter:
+    # Fussnote, Endnote, Inhaltsverzeichnis, Beschriftung, Zitat. Die
+    # stehen seit je in oberflaeche/js/referenzen.js. Ich haette sie ein
+    # zweites Mal gebaut, schlechter, wenn ich dem Bericht geglaubt
+    # haette statt nachzusehen.
+    #
+    # Ein Massstab, der die halbe Werkstatt nicht kennt, misst nicht zu
+    # streng, sondern falsch.
+    from pathlib import Path
+    teile = sorted(Path('oberflaeche/js').glob('*.js'))
+    quelle = '\n'.join(t.read_text(encoding='utf-8')
+                       for t in teile if not t.name.endswith('.test.js'))
     register = io.open('oberflaeche/daten/register.js', encoding='utf-8').read()
     koerper = koerper_lesen(quelle)
 
@@ -80,7 +146,7 @@ def main():
     zaehler = {'FEHLT': 0, 'NUR MELDUNG': 0, 'DUENN': 0, 'KNAPP': 0, 'AUSGEBAUT': 0}
     zeilen = []
     for r, anzeige, fn in gefunden:
-        stufe, n = urteil(koerper, fn)
+        stufe, n = urteil(koerper, fn, quelle)
         zaehler[stufe] += 1
         zeilen.append((r, anzeige, fn, stufe, n))
 

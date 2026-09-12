@@ -4,7 +4,7 @@ Geschrieben von `werkzeug/reiter-abgleich.py`. Das SOLL kommt aus
 seinem Prüfkatalog (Lesekopie in `doku/wps-soll-lesekopie.txt`),
 der IST-Stand aus `oberflaeche/daten/register.js`.
 
-**213 gleich · 0 fehlen · 27 eigen · 0 ohne Bild**
+**234 gleich · 0 fehlen · 27 eigen · 0 ohne Bild**
 
 - **fehlt** — steht im SOLL, nicht im Band. Kein Ermessen.
 - **eigen** — steht im Band, nicht im SOLL. Das heißt nicht
@@ -527,4 +527,34 @@ Name im Band zurückgedreht. Das entscheidet er, nicht ich.
 ## Gleichungswerkzeuge  — **im Band nicht gefunden**
 
 ## Kopf- Und Fusszeilenwerkzeuge  — **im Band nicht gefunden**
+
+## Kontextabhängige Register
+
+Sechs Leisten, die nur erscheinen, wo der Zeiger steht. Sie stehen
+nicht in `register.js`, sondern in `REGISTER_IM_ZUSAMMENHANG` —
+und fehlten darum im Bogen ganz.
+
+| Leiste | Gruppe | Stand |
+|---|---|---|
+| Tabellenwerkzeuge | Tabelle | gleich |
+| Tabellenwerkzeuge | Zeilen und Spalten | gleich |
+| Tabellenwerkzeuge | Zellengröße | gleich |
+| Tabellenwerkzeuge | Ausrichtung | gleich |
+| Tabellenwerkzeuge | Tabellenformatierung | gleich |
+| Zeichentools | Formen | gleich |
+| Zeichentools | Füllung | gleich |
+| Zeichentools | Kontur | gleich |
+| Zeichentools | Anordnen | gleich |
+| Zeichentools | Größe | gleich |
+| Diagrammtools | Diagrammentwurf | gleich |
+| Diagrammtools | Daten | gleich |
+| Diagrammtools | Diagrammtyp | gleich |
+| Diagrammtools | Formatierung | gleich |
+| SmartArt-Tools | SmartArt-Entwurf | gleich |
+| SmartArt-Tools | SmartArt-Format | gleich |
+| Gleichungswerkzeuge | Formeleditor-Funktionen | gleich |
+| Kopf- und Fußzeilenwerkzeuge | Kopfzeile | gleich |
+| Kopf- und Fußzeilenwerkzeuge | Fußzeile | gleich |
+| Kopf- und Fußzeilenwerkzeuge | Seitenzahl | gleich |
+| Kopf- und Fußzeilenwerkzeuge | Navigation | gleich |
 
