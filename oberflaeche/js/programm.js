@@ -9947,11 +9947,43 @@ function bildGriffeBauen() {
   });
 }
 
+/* Das Bild, auf das sich die Griffe beziehen — oder keines.
+
+   Hier stand bildAnStelle() als Rueckfall. Die Funktion liefert aber,
+   wenn am Zeiger kein Bild steht, DAS ZULETZT EINGEFUEGTE. Damit gab es
+   immer ein Bild, also immer Griffe: Wer das Bild verliess, behielt die
+   Schnittmarken auf dem Blatt stehen. Genau das war Kays Befund.
+
+   Jetzt zaehlt nur, was wirklich gemeint ist: das Bild unter der Maus
+   oder das, IN dem die Schreibmarke steht — nicht irgendeines. */
+function bildGemeint() {
+  if (bildUnterMaus && feld.contains(bildUnterMaus)) return bildUnterMaus;
+  const auswahl = window.getSelection();
+  if (!auswahl || !auswahl.rangeCount) return null;
+  let k = auswahl.anchorNode;
+  if (k && k.nodeType === Node.TEXT_NODE) k = k.parentElement;
+  if (!k || !k.closest) return null;
+  /* Ein Bild ist markiert, wenn die Auswahl es umschliesst — dann steht
+     es als einziges Kind im Bereich. */
+  if (k.tagName === 'IMG') return feld.contains(k) ? k : null;
+  const drin = [...k.querySelectorAll('img')].filter((b) => {
+    try { return auswahl.containsNode(b, true); } catch (e) { return false; }
+  });
+  return drin.length === 1 && feld.contains(drin[0]) ? drin[0] : null;
+}
+
 function bildGriffeAuffrischen() {
   if (zieht) return;
-  const bild = bildUnterMaus
-    || (() => { const b = bildAnStelle(); return b && b.tagName === 'IMG' ? b : null; })();
-  if (!bild || !feld.contains(bild)) { bildGriffeWeg(); return; }
+  const bild = bildGemeint();
+  if (!bild || !feld.contains(bild)) {
+    /* Auch der Schnittmodus endet: Marken auf einem Blatt ohne gewaehltes
+       Bild sind Zierde, die niemand mehr wegbekommt. */
+    if (schnittModus) schnittModusAus();
+    bildGriffeWeg();
+    return;
+  }
+  /* Ein anderes Bild — der Schnitt am alten ist beendet. */
+  if (schnittModus && bildZiel && bildZiel !== bild) schnittModusAus();
 
   if (!bildGriffe.nw) bildGriffeBauen();
   bildZiel = bild;

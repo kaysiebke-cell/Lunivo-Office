@@ -673,26 +673,35 @@ select option{background:var(--karte);color:var(--schrift)}
   content:'';position:absolute;inset:0;
   border:3px solid #111417;
   /* Der Umriss in Weiß darunter, damit die Marke auch auf einem dunklen
-     Foto zu sehen ist. */
-  outline:1px solid rgba(255,255,255,.85);
+     Foto zu sehen ist — Kays Logo ist schwarz, dort waere sie sonst
+     unsichtbar. */
+  outline:1px solid rgba(255,255,255,.9);
+  box-shadow:0 0 0 1px rgba(255,255,255,.55);
 }
 /* Die Ecken zeigen nur zwei Kanten — daher der Name Winkel. */
 .bildgriff--marke.bildgriff--nw::after{border-right:0;border-bottom:0}
 .bildgriff--marke.bildgriff--ne::after{border-left:0;border-bottom:0}
 .bildgriff--marke.bildgriff--se::after{border-left:0;border-top:0}
 .bildgriff--marke.bildgriff--sw::after{border-right:0;border-top:0}
-/* Die Kanten sind Balken, keine Winkel. */
-.bildgriff--marke.bildgriff--n::after,
-.bildgriff--marke.bildgriff--s::after{border-left:0;border-right:0;inset:0 -4px}
-.bildgriff--marke.bildgriff--e::after,
-.bildgriff--marke.bildgriff--w::after{border-top:0;border-bottom:0;inset:-4px 0}
-/* Im Schnittmodus sind Drehen, Löschen und die anderen Schnellknöpfe
-   nicht gemeint — nur der Schnitt selbst bleibt, um ihn zu beenden. */
+/* Die Kanten sind EIN Balken, kein Rahmen.
+
+   Hier standen border-left:0 und border-right:0 — damit blieben oben UND
+   unten je ein Strich stehen, und die Marke sah aus wie ein
+   Gleichheitszeichen. Jede Kantenmarke zeigt genau die Kante, an der sie
+   sitzt. */
+.bildgriff--marke.bildgriff--n::after{border:0;border-top:3px solid #111417;inset:0 -5px auto}
+.bildgriff--marke.bildgriff--s::after{border:0;border-bottom:3px solid #111417;inset:auto -5px 0}
+.bildgriff--marke.bildgriff--w::after{border:0;border-left:3px solid #111417;inset:-5px auto 0 0}
+.bildgriff--marke.bildgriff--e::after{border:0;border-right:3px solid #111417;inset:-5px 0 0 auto}
+/* Im Schnittmodus sind Drehen, Löschen und die beiden anderen
+   Schnellknöpfe nicht gemeint. Nur der Schnittknopf bleibt — als Weg
+   heraus. */
 .schneidet .bildgriff--drehen,
 .schneidet .bildgriff--weg,
 .schneidet .bildgriff--schnell-umbruch,
-.schneidet .bildgriff--schnell-lupe,
-/* Der Schnittknopf bleibt und zeigt, dass er jetzt beendet. */
+.schneidet .bildgriff--schnell-lupe{display:none}
+
+/* Er zeigt dabei, dass er jetzt beendet statt beginnt. */
 .schneidet .bildgriff--schnell-schnitt{
   background:var(--blau);color:#fff;border-color:var(--blau-hell);
 }
@@ -4302,7 +4311,6 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 .anp__fuss-links,.anp__fuss-rechts{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .anp__fuss-wort{font-size:12px;color:var(--schrift-2)}
 
-}
 
 /* ---------- Die drei Leseschriften zum Anklicken ----------
    Jede in ihrer eigenen Schrift, mit einem Satz darunter, was sie tut.
