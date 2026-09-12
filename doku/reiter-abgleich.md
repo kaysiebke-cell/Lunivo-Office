@@ -4,10 +4,12 @@ Geschrieben von `werkzeug/reiter-abgleich.py`. Das SOLL kommt aus
 seinem Prüfkatalog (Lesekopie in `doku/wps-soll-lesekopie.txt`),
 der IST-Stand aus `oberflaeche/daten/register.js`.
 
-**206 gleich · 5 fehlen · 36 eigen · 0 ohne Bild**
+**213 gleich · 0 fehlen · 27 eigen · 0 ohne Bild**
 
 - **fehlt** — steht im SOLL, nicht im Band. Kein Ermessen.
-- **eigen** — steht im Band, nicht im SOLL.
+- **eigen** — steht im Band, nicht im SOLL. Das heißt nicht
+  „gibt es in WPS nicht": vieles davon steht dort sehr wohl,
+  nur führt das SOLL die Klappe nicht Punkt für Punkt auf.
 - **ohne Bild** — der Symbolname steht in keiner Zeile von `symbole.js`;
   das Band zeichnet dann das Wort.
 
@@ -102,7 +104,6 @@ Name im Band zurückgedreht. Das entscheidet er, nicht ich.
 
 ### Eigen — im Band, nicht im SOLL
 
-- katalog
 - Katalog
 
 ## Einfügen
@@ -128,7 +129,7 @@ Name im Band zurückgedreht. Das entscheidet er, nicht ich.
 | Punkt | Stand | Bild |
 |---|---|---|
 | Bild | gleich | `bild` |
-| Zeichnen | **fehlt** (eigen vorgesehen) | — |
+| Formen | gleich | `stift` |
 | Diagramm | gleich | `saeule` |
 | Bildschirmfoto | gleich | `bildfoto` |
 | SmartArt | gleich | `smartart` |
@@ -174,7 +175,6 @@ Name im Band zurückgedreht. Das entscheidet er, nicht ich.
 ### Eigen — im Band, nicht im SOLL
 
 - Eigenschaften
-- Formen
 - Form mit eigener Farbe…
 
 ## Seitenlayout
@@ -183,12 +183,12 @@ Name im Band zurückgedreht. Das entscheidet er, nicht ich.
 
 | Punkt | Stand | Bild |
 |---|---|---|
-| Seitenränder | gleich | `rahmen` |
+| Ränder | gleich | `raender` |
 | Normal | gleich | — |
 | Schmal | gleich | — |
-| Mittel | **fehlt** | — |
+| Moderat | gleich | — |
 | Breit | gleich | — |
-| Eigene Ränder … | gleich | `raender` |
+| Benutzerdefinierte Seitenränder … | gleich | `raender` |
 | Ausrichtung | gleich | `ausrichtung` |
 | Hochformat | gleich | — |
 | Querformat | gleich | `querformat` |
@@ -213,25 +213,22 @@ Name im Band zurückgedreht. Das entscheidet er, nicht ich.
 | Zeilennummern | gleich | `zeilennr` |
 | Silbentrennung | gleich | `trennung` |
 
-### Textumbruch
-
-| Punkt | Stand | Bild |
-|---|---|---|
-| Textumbruch | **fehlt** | — |
-
 ### Seitenhintergrund
 
 | Punkt | Stand | Bild |
 |---|---|---|
 | Seitenfarbe | gleich | `farbe` |
 | Wasserzeichen | gleich | `wasserzeichen` |
-| Seitenrahmen | **fehlt** | — |
+| Seitenränder | gleich | `rahmen` |
 
 ### Anordnen
 
 | Punkt | Stand | Bild |
 |---|---|---|
-| Bild/Objekt anordnen | **fehlt** (eigen vorgesehen) | — |
+| Textfluss | gleich | `anordnen` |
+| Ausrichten | gleich | `ausrichten` |
+| Gruppieren | gleich | `gruppieren` |
+| Drehen | gleich | `objektdrehen` |
 
 ### Eigen — im Band, nicht im SOLL
 
@@ -239,16 +236,9 @@ Name im Band zurückgedreht. Das entscheidet er, nicht ich.
 - Farben
 - Schriftarten
 - Effekte
-- raender
 - Größe
 - Textrichtung
 - Umbrüche
-- Textfluss
-- Ausrichten
-- Gruppieren
-- Drehen
-- Moderat
-- Benutzerdefinierte Seitenränder…
 - B5
 - Umschlag DIN lang
 - Umschlag C5

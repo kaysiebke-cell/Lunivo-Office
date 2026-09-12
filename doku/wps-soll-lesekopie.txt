@@ -15,6 +15,45 @@ Der Maßstab maß sich selbst.
 
 ═══════════════════════════════════════════════════════════════
 
+NACHGEZOGEN AM 12.09.2026 — auf seine Ansage „benenne um"
+
+Fünf Stellen trugen Namen, die neuere Aufnahmen widerlegt haben. Nicht
+der Name im Band wurde zurückgedreht, sondern die Zeile hier nachgezogen
+— die Bilder sind die Vorgabe, auch gegenüber einer älteren Zeile in
+diesem Baum.
+
+  Einfügen ▸ Illustrationen
+      Zeichnen                   →  Formen
+      (die Galerie mit 63 Formen; „Form mit eigener Farbe…" liegt
+       daneben und ist der alte Befehl)
+
+  Seitenlayout ▸ Seite einrichten
+      Seitenränder               →  Ränder
+      Normal (2,5 cm)            →  Normal
+      Schmal (1,3 cm)            →  Schmal
+      Mittel                     →  Moderat
+      Eigene Ränder …            →  Benutzerdefinierte Seitenränder …
+      (die Maße stehen jetzt in der Klappe unter jedem Namen, darum
+       nicht mehr im Namen selbst)
+
+  Seitenlayout ▸ Seitenhintergrund
+      Seitenrahmen               →  Seitenränder
+      (öffnet „Rahmen und Schattierung" mit drei Karten)
+
+  Seitenlayout ▸ Anordnen
+      Textumbruch                →  Textfluss
+      Bild/Objekt anordnen       →  entfällt, war derselbe Befehl
+      dazu:                         Ausrichten, Gruppieren, Drehen
+
+Die Gruppe TEXTUMBRUCH gibt es nicht mehr; ihr einziger Punkt steht
+jetzt in ANORDNEN, wo WPS ihn auch hat.
+
+DIESE DATEI IST NUR DIE LESEKOPIE. Im Prüfkatalog-Artifact stehen die
+alten Namen weiter — dort ändert sie niemand außer ihm, damit sein
+abgehakter Stand nicht verlorengeht.
+
+═══════════════════════════════════════════════════════════════
+
 WPS WRITER + LUNIVO OFFICE
 DIESE DATEI IST VON HAND GESCHRIEBEN. Sie ist die Vorgabe — das SOLL.
 Kein Werkzeug darf sie überschreiben.
@@ -189,7 +228,7 @@ DIE BÄNDER — acht Reiter
 │   │
 │   ├── ILLUSTRATIONEN
 │   │   ├── Bild
-│   │   ├── Zeichnen ← Lunivo
+│   │   ├── Formen ← Lunivo
 │   │   ├── Diagramm
 │   │   ├── Bildschirmfoto ← Lunivo
 │   │   ├── SmartArt
@@ -223,12 +262,12 @@ DIE BÄNDER — acht Reiter
 ├── SEITENLAYOUT
 │   │
 │   ├── SEITE EINRICHTEN
-│   │   ├── Seitenränder
-│   │   │   ├── Normal (2,5 cm)
-│   │   │   ├── Schmal (1,3 cm)
-│   │   │   ├── Mittel
+│   │   ├── Ränder
+│   │   │   ├── Normal
+│   │   │   ├── Schmal
+│   │   │   ├── Moderat
 │   │   │   ├── Breit
-│   │   │   └── Eigene Ränder …
+│   │   │   └── Benutzerdefinierte Seitenränder …
 │   │   ├── Ausrichtung
 │   │   │   ├── Hochformat
 │   │   │   └── Querformat
@@ -250,16 +289,16 @@ DIE BÄNDER — acht Reiter
 │   │   ├── Zeilennummern ← Lunivo
 │   │   └── Silbentrennung ← Lunivo
 │   │
-│   ├── TEXTUMBRUCH
-│   │   └── Textumbruch
-│   │
 │   ├── SEITENHINTERGRUND
 │   │   ├── Seitenfarbe
 │   │   ├── Wasserzeichen ← Lunivo
-│   │   └── Seitenrahmen
+│   │   └── Seitenränder
 │   │
 │   └── ANORDNEN
-│       └── Bild/Objekt anordnen ← Lunivo
+│       ├── Textfluss
+│       ├── Ausrichten
+│       ├── Gruppieren
+│       └── Drehen
 │
 ├── REFERENZEN
 │   │

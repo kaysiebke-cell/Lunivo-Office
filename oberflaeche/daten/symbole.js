@@ -240,4 +240,5 @@ const SYMBOLE = {
   Prozent:       'M19 5 L5 19 M6.5 6.5a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0 -3 0 M14.5 17.5a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0 -3 0',   /* lucide: percent */
   Oberfläche:    'M3 4h18v16H3z M3 9h18 M8 9v11',   /* eigen: Fenster mit Leiste und Spalte */
   Zurück:        'M3 12a9 9 0 1 0 9-9 c-2.52 0-4.93 1-6.74 2.74L3 8 M3 3v5h5',   /* lucide: rotate-ccw */
+  gruppieren:    'M3 3h6v6H3z M15 15h6v6h-6z M15 3h6v6h-6z M3 15h6v6H3z M9 6h6 M9 18h6 M6 9v6 M18 9v6',   /* eigen: vier Ecken, zu einem Stück verbunden */
 };

@@ -109,6 +109,13 @@ def band_lesen():
             bild = BILD_IM_REICHEN.search(p.group(2))
             punkte.append((bild.group(1) if bild else '', p.group(1)))
 
+        # Die Gruppenarten sind keine Befehle: ['Seitenränder', 'raender']
+        # sagt dem Band, welche Art Gruppe kommt. Sie standen als „eigen"
+        # in der Liste — vier Zeilen Rauschen in einem Bogen, den er
+        # abhaken soll.
+        punkte = [(z, t) for z, t in punkte
+                  if t not in ('raender', 'felder', 'katalog')]
+
         # Die Wähler stehen als Gruppenart „felder" im Band, nicht als Knopf.
         if "'felder'" in block:
             punkte += [('', 'Formatvorlage'), ('', 'Schriftart'), ('', 'Schriftgröße')]
@@ -159,7 +166,9 @@ def main():
               'seinem Prüfkatalog (Lesekopie in `doku/wps-soll-lesekopie.txt`),',
               'der IST-Stand aus `oberflaeche/daten/register.js`.', '',
               '- **fehlt** — steht im SOLL, nicht im Band. Kein Ermessen.',
-              '- **eigen** — steht im Band, nicht im SOLL.',
+              '- **eigen** — steht im Band, nicht im SOLL. Das heißt nicht',
+              '  „gibt es in WPS nicht": vieles davon steht dort sehr wohl,',
+              '  nur führt das SOLL die Klappe nicht Punkt für Punkt auf.',
               '- **ohne Bild** — der Symbolname steht in keiner Zeile von `symbole.js`;',
               '  das Band zeichnet dann das Wort.', '',
               'Wenn ein Punkt als **fehlt** dasteht, den es im Band gibt, ist er',
