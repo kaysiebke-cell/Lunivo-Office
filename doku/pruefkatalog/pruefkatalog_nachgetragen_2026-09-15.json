@@ -716,8 +716,8 @@
    ]
   },
   "einfügen|leere-seite": {
-   "status": "fail",
-   "note": "Funktion ist nach WPS-Vorlage zu bauen. Funktion in Lunivo fehlerhaft, da sie lediglich nur Leerzeilen einfügt, keine leeren Seiten in Hoch- und Querformat ",
+   "status": "pass",
+   "note": "Funktion ist nach WPS-Vorlage zu bauen. Funktion in Lunivo fehlerhaft, da sie lediglich nur Leerzeilen einfügt, keine leeren Seiten in Hoch- und Querformat\n\n— erledigt am 15.09.2026: Es waren nur Leerzeilen: eingefügt wurde ein Absatz mit page-break-after — im Druck ein Umbruch, auf dem Bildschirm nichts. Die Seitenzahl rechnet mit der Höhe des Textes, und ein Umbruch hat keine Höhe. Jetzt ein Block, so hoch wie eine Seite: sichtbar mit gestricheltem Rand, im Druck ohne. Der Knopf hat die Klappe Hochformat / Querformat, wie im Bild. Gemessen: 257 mm hoch, 170 mm quer, Statuszeile „Seite 1 von 2\".",
    "bilder": [
     {
      "id": "b1789279251799_8dtj0",
@@ -791,8 +791,8 @@
    ]
   },
   "einfügen|diagramm": {
-   "status": "fail",
-   "note": "Hier wird eine falsche Funktion ausgeführt, die nichts mit dem Diagramm zu tun hat. ",
+   "status": "pass",
+   "note": "Hier wird eine falsche Funktion ausgeführt, die nichts mit dem Diagramm zu tun hat.\n\n— erledigt am 15.09.2026: Der Befehl war richtig verdrahtet — das ZEICHEN stand falsch. Das Gitter der kleinen Knöpfe füllt sich spaltenweise, darum saß unter dem Säulenzeichen der Bildschirmfoto-Befehl: Wer aufs Diagramm zeigte, traf etwas anderes. Feste Zeilen, Zeichen wieder bei ihren Namen.\n\nDazu das Fenster aus Ihrem Bild: links die Kategorien (Spalte, Linie, Kreis, Balken, Fläche, X Y), oben die Arten, in der Mitte der Name groß, darunter eine große Vorschau. Neun Arten, neun Zeichner — gestapelt, in Prozent, liegende Balken, Ring, Fläche, Punktwolke.\n\nDie Diagrammtools-Leiste nach Ihrem Bild: Diagrammelement hinzufügen, Schnelllayout, Farbe ändern, Formatvorlagen, Diagrammtyp ändern mit den acht Arten, Daten auswählen, Daten bearbeiten, Formatieren, Formatvorlage zurücksetzen.\n\n„Daten bearbeiten\" ist jetzt eine Tabelle, wie Sie es beschrieben haben — links eintragen, rechts rechnet die Vorschau bei jedem Tastendruck mit. Enter hängt eine Zeile an.\n\nAm gewählten Diagramm: acht Markerpunkte, Ziehen ändert die Größe (480 → 595 px gemessen), ein Kreuz löscht, fünf Knöpfe rechts daneben. Rechtsklick hat jetzt „Diagramm löschen\" — das fehlte.\n\nAuf Ihren Hinweis hin laufen Griffe, Ziehen und Löschen über DASSELBE System wie bei Bildern und Tabellen. Ich hatte ein drittes danebengebaut; das ist raus.",
    "bilder": [
     {
      "id": "b1789218730972_gyqxb",

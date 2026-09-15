@@ -86,6 +86,39 @@ ERLEDIGT = {
         'Die Gruppe heißt jetzt „Anordnen" und hat vier Knöpfe wie in WPS: '
         'Textfluss, Ausrichten, Gruppieren, Drehen. Ausrichten und Drehen '
         'wirken auf Bilder, Formen und Tabellen.',
+    'einfügen|leere-seite':
+        'Es waren nur Leerzeilen: eingefügt wurde ein Absatz mit '
+        'page-break-after — im Druck ein Umbruch, auf dem Bildschirm nichts. '
+        'Die Seitenzahl rechnet mit der Höhe des Textes, und ein Umbruch hat '
+        'keine Höhe. Jetzt ein Block, so hoch wie eine Seite: sichtbar mit '
+        'gestricheltem Rand, im Druck ohne. Der Knopf hat die Klappe '
+        'Hochformat / Querformat, wie im Bild. Gemessen: 257 mm hoch, 170 mm '
+        'quer, Statuszeile „Seite 1 von 2".',
+
+    'einfügen|diagramm':
+        'Der Befehl war richtig verdrahtet — das ZEICHEN stand falsch. Das '
+        'Gitter der kleinen Knöpfe füllt sich spaltenweise, darum saß unter '
+        'dem Säulenzeichen der Bildschirmfoto-Befehl: Wer aufs Diagramm '
+        'zeigte, traf etwas anderes. Feste Zeilen, Zeichen wieder bei ihren '
+        'Namen.\n\n'
+        'Dazu das Fenster aus Ihrem Bild: links die Kategorien (Spalte, '
+        'Linie, Kreis, Balken, Fläche, X Y), oben die Arten, in der Mitte der '
+        'Name groß, darunter eine große Vorschau. Neun Arten, neun Zeichner — '
+        'gestapelt, in Prozent, liegende Balken, Ring, Fläche, Punktwolke.\n\n'
+        'Die Diagrammtools-Leiste nach Ihrem Bild: Diagrammelement '
+        'hinzufügen, Schnelllayout, Farbe ändern, Formatvorlagen, '
+        'Diagrammtyp ändern mit den acht Arten, Daten auswählen, Daten '
+        'bearbeiten, Formatieren, Formatvorlage zurücksetzen.\n\n'
+        '„Daten bearbeiten" ist jetzt eine Tabelle, wie Sie es beschrieben '
+        'haben — links eintragen, rechts rechnet die Vorschau bei jedem '
+        'Tastendruck mit. Enter hängt eine Zeile an.\n\n'
+        'Am gewählten Diagramm: acht Markerpunkte, Ziehen ändert die Größe '
+        '(480 → 595 px gemessen), ein Kreuz löscht, fünf Knöpfe rechts '
+        'daneben. Rechtsklick hat jetzt „Diagramm löschen" — das fehlte.\n\n'
+        'Auf Ihren Hinweis hin laufen Griffe, Ziehen und Löschen über '
+        'DASSELBE System wie bei Bildern und Tabellen. Ich hatte ein drittes '
+        'danebengebaut; das ist raus.',
+
     'start-zwischenablage|verlauf-rückgängig':
         'Aus dem Reiter entfernt. Rückgängig und Wiederholen stehen im '
         'Schnellzugriff ganz oben — dort sind sie in jedem Reiter erreichbar, '
