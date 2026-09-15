@@ -2936,7 +2936,18 @@ body.lesen .arbeitsflaeche{padding:40px 24px}
   border-color:var(--rand);background:var(--tafel, var(--leiste));
   font-weight:700;
 }
-.rahmentafel__karte{display:flex;gap:18px;align-items:flex-start}
+/* DAS FENSTER SPRINGT NICHT.
+
+   „unter Reiter Schattierung verkleinert sich das Fenster." Die drei
+   Karten sind verschieden hoch — Rahmen 312 Pixel, Schattierung 220 —,
+   und das Fenster folgte jeder. Wer zwischen den Karten wechselt, sieht
+   den Kasten zappeln und muss die Knoepfe unten neu suchen.
+
+   Die Buehne bekommt darum das Mass der hoechsten Karte. Leerer Platz
+   unter der Schattierung ist besser als ein Fenster, das die Groesse
+   wechselt. */
+.rahmentafel__buehne{min-height:312px}
+.rahmentafel__karte{display:flex;gap:18px;align-items:flex-start;min-height:100%}
 .rahmentafel__spalte{display:flex;flex-direction:column;gap:7px;min-width:0}
 .rahmentafel__spalte--weit{flex:1 1 auto}
 .rahmentafel__spalte h4{margin:0 0 2px;font-size:.9rem;font-weight:700}
