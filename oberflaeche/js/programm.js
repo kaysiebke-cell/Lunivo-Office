@@ -3081,165 +3081,13 @@ const DIAGRAMMSCHNELL = [
     tun: () => B.diagrammFormat() },
 ];
 
-let diagrammGewaehlt = null;
-let diagrammKnoepfe = null;
+/* Die Schnellknoepfe am Diagramm. Die Griffe, das Ziehen, das
+   Loeschkreuz kommen aus dem Bildsystem — siehe GEGENSTAENDE weiter
+   unten. Hier steht nur noch, WAS neben einem Diagramm zu stehen hat.
 
-/* DIE ACHT MARKERPUNKTE.
-
-   „es fehlen die Markerpunkte am Diagramm." Auf seinem WPS-Bild sitzen
-   acht Kreise an den Ecken und Kantenmitten des gewaehlten Diagramms.
-   Sie sagen zweierlei: dass etwas gewaehlt ist, und dass man daran
-   ziehen kann.
-
-   Gebaut mit denselben Klassen wie die Griffe am Bild — ein zweites
-   System dafuer waere der Fehler, den ich heute schon gemacht habe. */
-let diagrammZug = null;
-
-function diagrammGroesseZiehen(fall, art) {
-  if (!diagrammGewaehlt) return;
-  fall.preventDefault();
-  const el = diagrammGewaehlt;
-  const r = el.getBoundingClientRect();
-  const massstab = (zoom || 100) / 100;
-  diagrammZug = {
-    el, art,
-    x: fall.clientX, y: fall.clientY,
-    breite: r.width / massstab,
-    verhaeltnis: r.height / Math.max(1, r.width),
-  };
-  try { fall.target.setPointerCapture(fall.pointerId); } catch (e) { /* egal */ }
-  document.body.classList.add('zieht-tabelle');
-}
-
-function diagrammZiehen(fall) {
-  if (!diagrammZug) return;
-  const massstab = (zoom || 100) / 100;
-  const dx = (fall.clientX - diagrammZug.x) / massstab;
-  /* Links und oben ziehen andersherum als rechts und unten. */
-  const richtung = /w/.test(diagrammZug.art) ? -1 : 1;
-  const neu = Math.max(120, Math.min(1600, diagrammZug.breite + dx * richtung));
-  diagrammZug.el.style.width = Math.round(neu) + 'px';
-  diagrammZug.el.style.height = 'auto';
-  diagrammKnoepfeStellen();
-}
-
-function diagrammZugEnde() {
-  if (!diagrammZug) return;
-  diagrammZug = null;
-  document.body.classList.remove('zieht-tabelle');
-  geaendertMelden();
-}
-window.addEventListener('pointermove', diagrammZiehen);
-window.addEventListener('pointerup', diagrammZugEnde, true);
-window.addEventListener('pointercancel', diagrammZugEnde, true);
-
-function diagrammKnoepfeBauen() {
-  if (diagrammKnoepfe) return diagrammKnoepfe;
-  diagrammKnoepfe = {};
-
-  /* Erst die acht Punkte, dann die fuenf Knoepfe daneben. */
-  for (const { art, zeiger, name } of BILDGRIFFE) {
-    const k = document.createElement('span');
-    k.className = 'bildgriff diagrammgriff diagrammgriff--' + art;
-    k.title = name + ' — ziehen macht das Diagramm größer oder kleiner';
-    k.style.cursor = zeiger;
-    k.addEventListener('pointerdown', (e) => diagrammGroesseZiehen(e, art));
-    document.body.appendChild(k);
-    diagrammKnoepfe['griff-' + art] = k;
-  }
-
-  const weg = document.createElement('button');
-  weg.type = 'button';
-  weg.className = 'bildgriff bildgriff--schnell diagrammgriff--weg';
-  weg.title = 'Diagramm löschen';
-  weg.setAttribute('aria-label', 'Diagramm löschen');
-  weg.textContent = '×';
-  weg.addEventListener('mousedown', (e) => e.preventDefault());
-  weg.addEventListener('click', () => {
-    const el = diagrammGewaehlt;
-    diagrammGewaehlt = null;
-    objektLoeschen(el, 'Diagramm');
-    diagrammKnoepfeStellen();
-  });
-  document.body.appendChild(weg);
-  diagrammKnoepfe.weg = weg;
-  for (const { art, bild: symbolName, name, tun } of DIAGRAMMSCHNELL) {
-    const k = document.createElement('button');
-    k.type = 'button';
-    k.className = 'bildgriff bildgriff--schnell diagrammgriff--' + art;
-    k.title = name;
-    k.setAttribute('aria-label', name);
-    if (SYMBOLE[symbolName]) k.appendChild(symbol(symbolName));
-    k.addEventListener('mousedown', (e) => e.preventDefault());
-    k.addEventListener('click', () => tun(k));
-    document.body.appendChild(k);
-    diagrammKnoepfe[art] = k;
-  }
-  return diagrammKnoepfe;
-}
-
-function diagrammKnoepfeStellen() {
-  if (!diagrammGewaehlt || !diagrammGewaehlt.isConnected) {
-    if (diagrammKnoepfe) for (const k of Object.values(diagrammKnoepfe)) k.hidden = true;
-    return;
-  }
-  const knoepfe = diagrammKnoepfeBauen();
-  const r = diagrammGewaehlt.getBoundingClientRect();
-  const flaeche = (feld.closest('.blattflaeche') || feld).getBoundingClientRect();
-  const versteckt = r.bottom < flaeche.top || r.top > flaeche.bottom;
-
-  for (const { art, x, y } of BILDGRIFFE) {
-    const k = knoepfe['griff-' + art];
-    k.hidden = versteckt;
-    k.style.left = Math.round(r.left + r.width * x) + 'px';
-    k.style.top = Math.round(r.top + r.height * y) + 'px';
-  }
-  knoepfe.weg.hidden = versteckt;
-  knoepfe.weg.style.left = Math.round(r.right + 10) + 'px';
-  knoepfe.weg.style.top = Math.round(r.top - 14) + 'px';
-
-  DIAGRAMMSCHNELL.forEach(({ art }, i) => {
-    const k = knoepfe[art];
-    k.hidden = versteckt;
-    k.style.left = Math.round(r.right + 10) + 'px';
-    k.style.top = Math.round(r.top + 18 + i * 28) + 'px';
-  });
-  diagrammGewaehlt.classList.add('diagramm--gewaehlt');
-}
-
-function diagrammWaehlen(el) {
-  if (diagrammGewaehlt && diagrammGewaehlt !== el) {
-    diagrammGewaehlt.classList.remove('diagramm--gewaehlt');
-  }
-  diagrammGewaehlt = el;
-  diagrammKnoepfeStellen();
-  registerBauen();
-}
-
-/* Ein Klick auf das Diagramm waehlt es; ein Klick daneben laesst es los.
-   Dasselbe Muster wie beim Bild — sonst blieben die Knoepfe stehen,
-   nachdem man weitergeschrieben hat. */
-document.addEventListener('pointerdown', (e) => {
-  const auf = e.target && e.target.closest
-    ? e.target.closest('svg.diagramm') : null;
-  if (auf && feld.contains(auf)) { diagrammWaehlen(auf); return; }
-  /* Ein Klick auf einen der acht Markerpunkte ist kein Klick daneben —
-     sonst waere das Diagramm abgewaehlt, bevor das Ziehen anfaengt, und
-     „skalieren" ginge nie. Genau daran ist es beim ersten Versuch
-     gescheitert. */
-  if (e.target && e.target.closest
-      && e.target.closest('.bildgriff--schnell, .diagrammgriff')) return;
-  if (diagrammGewaehlt) {
-    diagrammGewaehlt.classList.remove('diagramm--gewaehlt');
-    diagrammGewaehlt = null;
-    diagrammKnoepfeStellen();
-    registerBauen();
-  }
-}, true);
-
-window.addEventListener('scroll', diagrammKnoepfeStellen, true);
-window.addEventListener('resize', diagrammKnoepfeStellen);
-
+   Vorher stand hier ein zweites Griffsystem, das ich neben das
+   vorhandene gebaut hatte. Er hat es gesehen: „schau doch einfach bei
+   den Bildern und Tabellen rein, da liegen die Funktionen schon." */
 B.diagrammEntwurf = () => diagrammFenster('Diagrammentwurf', false);
 B.diagrammDaten   = () => diagrammFenster('Daten', true);
 
@@ -13403,7 +13251,11 @@ function bildGriffeBauen() {
   }
   machen('drehen', 'Bild drehen — ziehen', 'grab', '↻')
     .addEventListener('pointerdown', bildDrehenZiehen);
-  for (const { art, bild: symbolName, name, tun } of BILDSCHNELL) {
+  /* Alle Schnellknoepfe beider Saetze anlegen; gezeigt wird je nach
+     Gegenstand nur einer. Zwei getrennte Bauten waeren wieder zwei
+     Systeme. */
+  const alleSchnell = [...BILDSCHNELL, ...DIAGRAMMSCHNELL];
+  for (const { art, bild: symbolName, name, tun } of alleSchnell) {
     const k = machen('schnell-' + art, name, 'pointer', '');
     k.classList.add('bildgriff--schnell');
     if (SYMBOLE[symbolName]) k.appendChild(symbol(symbolName));
@@ -13413,7 +13265,7 @@ function bildGriffeBauen() {
     k.addEventListener('click', () => tun(k));
   }
 
-  machen('weg', 'Bild löschen', 'pointer', '×').addEventListener('click', () => {
+  machen('weg', 'Löschen', 'pointer', '×').addEventListener('click', () => {
     if (!bildZiel) return;
     bildZiel.remove();
     bildGriffeWeg();
@@ -13431,6 +13283,33 @@ function bildGriffeBauen() {
 
    Jetzt zaehlt nur, was wirklich gemeint ist: das Bild unter der Maus
    oder das, IN dem die Schreibmarke steht — nicht irgendeines. */
+/* ============================================================
+   EIN SYSTEM FUER ALLE GEGENSTAENDE
+
+   „schau doch einfach bei den Bildern und Tabellen rein, da liegen die
+   Funktionen schon."
+
+   Er hat recht, und es war der dritte Anlauf: Griffe, Ziehen,
+   Groesse, Loeschkreuz — das steht hier seit Wochen fuer Bilder, und
+   nebenan noch einmal fuer Tabellen. Ich habe daneben ein DRITTES
+   gebaut, fuer Diagramme, statt das vorhandene zu oeffnen.
+
+   Jetzt nimmt es jeden Gegenstand an: ein Bild, ein Diagramm, eine
+   Zeichnung. Was sich unterscheidet, sind die Schnellknoepfe daneben —
+   ein Bild will zugeschnitten werden, ein Diagramm nicht.
+   ============================================================ */
+const GEGENSTAENDE = 'img, svg.diagramm, svg.zeichnung, svg.smartart';
+
+function istGegenstand(el) {
+  return !!(el && el.matches && el.matches(GEGENSTAENDE));
+}
+
+/* Welche Schnellknoepfe neben diesem Gegenstand stehen. */
+function schnellFuer(el) {
+  if (el && el.classList && el.classList.contains('diagramm')) return DIAGRAMMSCHNELL;
+  return BILDSCHNELL;
+}
+
 function bildGemeint() {
   /* EIN ANGEKLICKTES BILD BLEIBT GEWAEHLT.
 
@@ -13452,8 +13331,8 @@ function bildGemeint() {
   if (!k || !k.closest) return null;
   /* Ein Bild ist markiert, wenn die Auswahl es umschliesst — dann steht
      es als einziges Kind im Bereich. */
-  if (k.tagName === 'IMG') return feld.contains(k) ? k : null;
-  const drin = [...k.querySelectorAll('img')].filter((b) => {
+  if (istGegenstand(k)) return feld.contains(k) ? k : null;
+  const drin = [...k.querySelectorAll(GEGENSTAENDE)].filter((b) => {
     try { return auswahl.containsNode(b, true); } catch (e) { return false; }
   });
   return drin.length === 1 && feld.contains(drin[0]) ? drin[0] : null;
@@ -13500,7 +13379,7 @@ function bildWache(bild) {
     if (!zieht && bildZiel === bild) bildGriffeStellen(bild);
   });
   bildBeobachter.observe(bild);
-  if (!bild.complete) {
+  if (bild.tagName === 'IMG' && !bild.complete) {
     bild.addEventListener('load', () => {
       if (bildZiel === bild) bildGriffeStellen(bild);
     }, { once: true });
@@ -13551,18 +13430,26 @@ function bildGriffeStellen(bild) {
   setz('weg', voll.right + 20, voll.top - 14);
   /* Die drei Schnellknöpfe untereinander an der rechten Seite, unter dem
      Kreuz — so steht es in WPS, und so verdecken sie das Bild nicht. */
-  BILDSCHNELL.forEach(({ art }, i) => {
+  /* Nur die Knoepfe, die zu diesem Gegenstand gehoeren. Ein Diagramm
+     laesst sich nicht zuschneiden, ein Bild hat keine Datenreihe. */
+  const meine = schnellFuer(bild);
+  const fremd = new Set([...BILDSCHNELL, ...DIAGRAMMSCHNELL]
+    .filter((e) => !meine.includes(e)).map((e) => 'schnell-' + e.art));
+  meine.forEach(({ art }, i) => {
     setz('schnell-' + art, voll.right + 20, voll.top + 18 + i * 26);
   });
 
   const versteckt = voll.bottom < flaeche.top || voll.top > flaeche.bottom;
-  for (const k of Object.values(bildGriffe)) k.hidden = versteckt;
+  for (const [art, k] of Object.entries(bildGriffe)) {
+    k.hidden = versteckt || fremd.has(art);
+  }
 }
 
 /* Das Bild selbst ist der Griff zum Verschieben. */
 function bildZiehenBeginnen(fall) {
-  const bild = fall.target;
-  if (!bild || bild.tagName !== 'IMG' || !feld.contains(bild)) return;
+  const bild = fall.target && fall.target.closest
+    ? fall.target.closest(GEGENSTAENDE) : null;
+  if (!bild || !feld.contains(bild)) return;
   bildGewaehlt = bild;
   fall.preventDefault();
   bildUnterMaus = bild;
@@ -17228,9 +17115,10 @@ function objektLoeschen(el, wie) {
   if (absatz && !absatz.textContent.trim() && !absatz.querySelector('img, svg, table')) {
     absatz.remove();
   }
-  if (typeof diagrammGewaehlt !== 'undefined' && diagrammGewaehlt === el) {
-    diagrammGewaehlt = null;
-    diagrammKnoepfeStellen();
+  /* Griffe weg, wenn das Geloeschte das gewaehlte war. */
+  if (typeof bildGewaehlt !== 'undefined' && bildGewaehlt === el) {
+    bildGewaehlt = null;
+    bildGriffeAuffrischen();
   }
   geaendertMelden();
   melde(wie + ' gelöscht.');

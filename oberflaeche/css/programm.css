@@ -2575,24 +2575,6 @@ body.lesen .arbeitsflaeche{padding:40px 24px}
 }
 .diagrammfenster__vorschau svg{width:100%;height:auto;display:block}
 
-/* Die acht Markerpunkte am Diagramm — Kreise, wie in seinem Bild.
-   Sie sitzen MITTIG auf der Ecke, darum die Verschiebung um die halbe
-   Breite. */
-.diagrammgriff{
-  position:fixed;z-index:60;
-  width:11px;height:11px;margin:-6px 0 0 -6px;
-  border:1px solid var(--blau);border-radius:50%;
-  background:var(--blatt, #fff);
-  box-shadow:0 1px 3px rgba(0,0,0,.35);
-  pointer-events:auto;
-}
-.diagrammgriff--weg{
-  position:fixed;z-index:60;
-  width:22px;height:22px;line-height:1;
-  display:flex;align-items:center;justify-content:center;
-  font-size:15px;
-}
-
 /* Das gewaehlte Diagramm im Text — man soll sehen, woran die Knoepfe
    rechts daneben haengen. */
 .diagramm--gewaehlt{outline:2px solid var(--blau);outline-offset:3px}
