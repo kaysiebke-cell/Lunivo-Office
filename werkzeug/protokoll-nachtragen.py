@@ -86,6 +86,20 @@ ERLEDIGT = {
         'Die Gruppe heißt jetzt „Anordnen" und hat vier Knöpfe wie in WPS: '
         'Textfluss, Ausrichten, Gruppieren, Drehen. Ausrichten und Drehen '
         'wirken auf Bilder, Formen und Tabellen.',
+    'start-schriftart|durchgestrichen':
+        'Es war der Buchstabe S — für „Streichen", was man wissen muss. Jetzt '
+        'ein A mit einem Strich hindurch, wie in WPS.',
+
+    'start-schriftart|texteffekte':
+        'War ein Klappfeld mit fünf Wörtern: Schatten, Relief, Kontur, '
+        'Leuchten. Wer wissen wollte, wie „Relief" aussieht, musste es '
+        'ausprobieren, zurücknehmen, das nächste ausprobieren.\n\n'
+        'Jetzt eine Galerie wie in WPS: zwölf Kacheln, jede zeigt ein Aa in '
+        'genau ihrem Effekt. Dazugekommen sind weiter Schatten, vertieft, '
+        'starke Kontur, warmes Leuchten, Spiegelung, Farbverlauf und hohl mit '
+        'Schatten — eine Galerie mit fünf Kacheln ist keine. Unten führt '
+        '„Eigene Farbe und Stärke…" weiter ins Fenster.',
+
     'einfügen|leere-seite':
         'Es waren nur Leerzeilen: eingefügt wurde ein Absatz mit '
         'page-break-after — im Druck ein Umbruch, auf dem Bildschirm nichts. '
@@ -117,7 +131,13 @@ ERLEDIGT = {
         'daneben. Rechtsklick hat jetzt „Diagramm löschen" — das fehlte.\n\n'
         'Auf Ihren Hinweis hin laufen Griffe, Ziehen und Löschen über '
         'DASSELBE System wie bei Bildern und Tabellen. Ich hatte ein drittes '
-        'danebengebaut; das ist raus.',
+        'danebengebaut; das ist raus.\n\n'
+        'Und der Doppelklick aus Ihrer Beschreibung: Jedes Stück trägt seinen '
+        'Namen, ein Doppelklick auf eine einzelne Säule oder den Hintergrund '
+        'öffnet rechts die Formatleiste mit Farbe, Linienfarbe, Linienstärke '
+        'und Schatten. Was von Hand geändert ist, überlebt das Neuzeichnen — '
+        'wer eine Säule rot macht und danach die Zahlen ändert, findet sie '
+        'nicht wieder blau vor.',
 
     'start-zwischenablage|verlauf-rückgängig':
         'Aus dem Reiter entfernt. Rückgängig und Wiederholen stehen im '

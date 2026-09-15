@@ -382,8 +382,8 @@
    "bilder": []
   },
   "start-schriftart|durchgestrichen": {
-   "status": "fail",
-   "note": "Das Symbol ist als Funktion nicht zu erkennen.",
+   "status": "pass",
+   "note": "Das Symbol ist als Funktion nicht zu erkennen.\n\n— erledigt am 15.09.2026: Es war der Buchstabe S — für „Streichen\", was man wissen muss. Jetzt ein A mit einem Strich hindurch, wie in WPS.",
    "bilder": []
   },
   "start-schriftart|hochgestellt": {
@@ -446,8 +446,8 @@
    ]
   },
   "start-schriftart|texteffekte": {
-   "status": "fail",
-   "note": "ist nach WPS-Bildvorlage auszubauen",
+   "status": "pass",
+   "note": "ist nach WPS-Bildvorlage auszubauen\n\n— erledigt am 15.09.2026: War ein Klappfeld mit fünf Wörtern: Schatten, Relief, Kontur, Leuchten. Wer wissen wollte, wie „Relief\" aussieht, musste es ausprobieren, zurücknehmen, das nächste ausprobieren.\n\nJetzt eine Galerie wie in WPS: zwölf Kacheln, jede zeigt ein Aa in genau ihrem Effekt. Dazugekommen sind weiter Schatten, vertieft, starke Kontur, warmes Leuchten, Spiegelung, Farbverlauf und hohl mit Schatten — eine Galerie mit fünf Kacheln ist keine. Unten führt „Eigene Farbe und Stärke…\" weiter ins Fenster.",
    "bilder": [
     {
      "id": "b1789214774263_3nnb4",
@@ -792,7 +792,7 @@
   },
   "einfügen|diagramm": {
    "status": "pass",
-   "note": "Hier wird eine falsche Funktion ausgeführt, die nichts mit dem Diagramm zu tun hat.\n\n— erledigt am 15.09.2026: Der Befehl war richtig verdrahtet — das ZEICHEN stand falsch. Das Gitter der kleinen Knöpfe füllt sich spaltenweise, darum saß unter dem Säulenzeichen der Bildschirmfoto-Befehl: Wer aufs Diagramm zeigte, traf etwas anderes. Feste Zeilen, Zeichen wieder bei ihren Namen.\n\nDazu das Fenster aus Ihrem Bild: links die Kategorien (Spalte, Linie, Kreis, Balken, Fläche, X Y), oben die Arten, in der Mitte der Name groß, darunter eine große Vorschau. Neun Arten, neun Zeichner — gestapelt, in Prozent, liegende Balken, Ring, Fläche, Punktwolke.\n\nDie Diagrammtools-Leiste nach Ihrem Bild: Diagrammelement hinzufügen, Schnelllayout, Farbe ändern, Formatvorlagen, Diagrammtyp ändern mit den acht Arten, Daten auswählen, Daten bearbeiten, Formatieren, Formatvorlage zurücksetzen.\n\n„Daten bearbeiten\" ist jetzt eine Tabelle, wie Sie es beschrieben haben — links eintragen, rechts rechnet die Vorschau bei jedem Tastendruck mit. Enter hängt eine Zeile an.\n\nAm gewählten Diagramm: acht Markerpunkte, Ziehen ändert die Größe (480 → 595 px gemessen), ein Kreuz löscht, fünf Knöpfe rechts daneben. Rechtsklick hat jetzt „Diagramm löschen\" — das fehlte.\n\nAuf Ihren Hinweis hin laufen Griffe, Ziehen und Löschen über DASSELBE System wie bei Bildern und Tabellen. Ich hatte ein drittes danebengebaut; das ist raus.",
+   "note": "Hier wird eine falsche Funktion ausgeführt, die nichts mit dem Diagramm zu tun hat.\n\n— erledigt am 15.09.2026: Der Befehl war richtig verdrahtet — das ZEICHEN stand falsch. Das Gitter der kleinen Knöpfe füllt sich spaltenweise, darum saß unter dem Säulenzeichen der Bildschirmfoto-Befehl: Wer aufs Diagramm zeigte, traf etwas anderes. Feste Zeilen, Zeichen wieder bei ihren Namen.\n\nDazu das Fenster aus Ihrem Bild: links die Kategorien (Spalte, Linie, Kreis, Balken, Fläche, X Y), oben die Arten, in der Mitte der Name groß, darunter eine große Vorschau. Neun Arten, neun Zeichner — gestapelt, in Prozent, liegende Balken, Ring, Fläche, Punktwolke.\n\nDie Diagrammtools-Leiste nach Ihrem Bild: Diagrammelement hinzufügen, Schnelllayout, Farbe ändern, Formatvorlagen, Diagrammtyp ändern mit den acht Arten, Daten auswählen, Daten bearbeiten, Formatieren, Formatvorlage zurücksetzen.\n\n„Daten bearbeiten\" ist jetzt eine Tabelle, wie Sie es beschrieben haben — links eintragen, rechts rechnet die Vorschau bei jedem Tastendruck mit. Enter hängt eine Zeile an.\n\nAm gewählten Diagramm: acht Markerpunkte, Ziehen ändert die Größe (480 → 595 px gemessen), ein Kreuz löscht, fünf Knöpfe rechts daneben. Rechtsklick hat jetzt „Diagramm löschen\" — das fehlte.\n\nAuf Ihren Hinweis hin laufen Griffe, Ziehen und Löschen über DASSELBE System wie bei Bildern und Tabellen. Ich hatte ein drittes danebengebaut; das ist raus.\n\nUnd der Doppelklick aus Ihrer Beschreibung: Jedes Stück trägt seinen Namen, ein Doppelklick auf eine einzelne Säule oder den Hintergrund öffnet rechts die Formatleiste mit Farbe, Linienfarbe, Linienstärke und Schatten. Was von Hand geändert ist, überlebt das Neuzeichnen — wer eine Säule rot macht und danach die Zahlen ändert, findet sie nicht wieder blau vor.",
    "bilder": [
     {
      "id": "b1789218730972_gyqxb",
