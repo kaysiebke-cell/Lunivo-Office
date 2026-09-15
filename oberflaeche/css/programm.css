@@ -3005,13 +3005,14 @@ body.lesen .arbeitsflaeche{padding:40px 24px}
    Darum hier eine feste helle Flaeche, unabhaengig vom Gewand. Der
    einzige Fleck im Fenster, der nicht mitdunkelt — und er muss es
    sein. */
-.rahmentafel__vorschau{
-  display:flex;flex-direction:column;
+/* Die Spalte traegt den Satz und darunter das helle Feld — der Satz
+   steht AUSSERHALB, wie in WPS. */
+.rahmentafel__vorschau{display:flex;flex-direction:column;gap:8px}
+.rahmenfeld{
   background:#E9EBED;
   border:1px solid #B6BCC2;border-radius:6px;
   padding:16px;
 }
-.rahmentafel__vorschau .rahmentafel__hinweis{color:#4C555E}
 
 /* Das Probeblatt mit den vier anklickbaren Kanten. */
 /* Der Kasten steht mit Luft drumherum — die Klickflaechen liegen auf

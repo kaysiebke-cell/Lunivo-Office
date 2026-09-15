@@ -11917,11 +11917,24 @@ function rahmenVorschau(r, beiKlick) {
   const kasten = document.createElement('div');
   kasten.className = 'rahmentafel__vorschau';
 
+  /* DER SATZ STEHT UEBER DEM KASTEN, NICHT DARIN.
+
+     „was soll der Text da drin?" — In WPS steht die Zeile „Diagramm
+     oder Schaltflaechen klicken, um Rahmen hinzuzufuegen" unter der
+     Ueberschrift „Vorschau" und AUSSERHALB des Feldes. Bei mir stand
+     sie im Feld, nahm ein Drittel davon weg und schob das Blatt nach
+     unten.
+
+     Eine Anleitung gehoert neben das, was sie erklaert — nicht
+     hinein. */
   const satz = document.createElement('p');
   satz.className = 'rahmentafel__hinweis';
   satz.textContent = 'Auf eine Kante klicken oder einen Knopf daneben — '
                    + 'beides schaltet sie an und aus.';
   kasten.appendChild(satz);
+
+  const feld_ = document.createElement('div');
+  feld_.className = 'rahmenfeld';
 
   /* DIE KNOEPFE RINGS UM DIE VORSCHAU.
 
@@ -12032,7 +12045,8 @@ function rahmenVorschau(r, beiKlick) {
     knopfBauen('rechts', 'kanteRechts', 'Rechte Rahmenlinie', 'rechts'));
 
   gitter.append(linksSpalte, blatt, untenReihe);
-  kasten.appendChild(gitter);
+  feld_.appendChild(gitter);
+  kasten.appendChild(feld_);
   auffrischen();
   kasten.auffrischen = auffrischen;
   return kasten;
