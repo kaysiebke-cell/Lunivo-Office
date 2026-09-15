@@ -2988,19 +2988,41 @@ body.lesen .arbeitsflaeche{padding:40px 24px}
 }
 .rahmentafel__einheit{color:var(--schrift-2)}
 .rahmentafel__hinweis{margin:0 0 6px;font-size:.85em;color:var(--schrift-2)}
-.rahmentafel__vorschau{display:flex;flex-direction:column}
+.rahmentafel__vorschau{
+  display:flex;flex-direction:column;
+  /* Der helle Grund, auf dem das Blatt liegt — wie in WPS. */
+  background:rgba(127,127,127,.07);
+  border:1px solid var(--rand);border-radius:6px;
+  padding:14px;
+}
 
 /* Das Probeblatt mit den vier anklickbaren Kanten. */
 /* Der Kasten steht mit Luft drumherum — die Klickflaechen liegen auf
    seinen Kanten und brauchen Platz, sonst liegen sie ueber dem Text
    oder ausserhalb des Fensters. In WPS ist diese Luft genauso da. */
+/* DER KASTEN BRAUCHT RAUM, NICHT DIE GANZE BREITE.
+
+   „du vergisst wohl das Layout, denn du drueckst die Linien in den
+   Rahmen vom Kasten."
+
+   Die Vorschau lief ueber die ganze Spalte und stiess an den
+   Fensterrand. Innen war Luft, aussen keine — der Kasten klebte am
+   Rahmen des Fensters, und die Klickflaechen, die AUF den Kanten
+   liegen, lagen damit halb ausserhalb.
+
+   In WPS ist die Vorschau ein kleines Blatt mit viel Platz drumherum.
+   Genau dafuer ist der Platz da: Die Knoepfe und die Kanten brauchen
+   ihn. */
 .rahmenprobe{
   position:relative;
-  width:100%;min-height:130px;
-  margin:14px 10px;
+  /* Feste Breite: In einem Gitter mit „auto"-Spalten schrumpft
+     „width:100%" auf den Inhalt, und aus dem Blatt wurde ein schmaler
+     Streifen. Ein Blatt ist breiter als hoch. */
+  width:190px;min-height:110px;
+  margin:0;
   padding:12px 14px;
   background:var(--blatt);
-  display:flex;flex-direction:column;gap:7px;justify-content:center;
+  display:flex;flex-direction:column;gap:6px;justify-content:center;
 }
 .rahmenprobe__zeile{
   display:block;height:3px;border-radius:2px;
@@ -3023,9 +3045,9 @@ body.lesen .arbeitsflaeche{padding:40px 24px}
    unten die senkrechten, wie auf seinem WPS-Bild. */
 .rahmengitter{
   display:grid;
-  grid-template-columns:auto 1fr;
-  grid-template-rows:1fr auto;
-  gap:8px;align-items:center;
+  grid-template-columns:auto auto;
+  grid-template-rows:auto auto;
+  gap:14px;align-items:center;justify-content:start;
 }
 .rahmengitter__seite{display:flex;flex-direction:column;gap:8px;justify-content:center}
 .rahmengitter__fuss{
