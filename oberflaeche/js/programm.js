@@ -11964,9 +11964,22 @@ function rahmenVorschau(r, beiKlick) {
          In WPS zeigt die Vorschau immer einen grauen Kasten. Der ist
          der Ort zum Klicken. Eine gesetzte Kante wird darueber
          gezeichnet, in ihrer Farbe und Staerke. */
+      /* GESETZT ODER NICHT — DAS MUSS MAN SEHEN.
+
+         „wo soll ich da bitte den Rahmen sehen?"
+
+         Ich hatte die abgeschaltete Kante erst gestrichelt gemalt (sah
+         aus wie die Formatvorlage „gestrichelt"), dann fast
+         durchsichtig, dann hellgrau — und jedes Mal war entweder nichts
+         zu sehen oder nicht zu unterscheiden, was gilt.
+
+         Jetzt zeichnet die abgeschaltete Kante GAR NICHTS. Wo der Platz
+         zum Klicken ist, sagt ein fester duenner Umriss um das Blatt
+         (im Stilblatt, als outline). Eine gesetzte Kante wird darueber
+         gelegt und ist damit immer die einzige Linie am Blatt. */
       blatt.style['border' + seite] = r.kanten.includes(kante)
         ? Math.max(1, r.breite) + 'px ' + r.art + ' ' + r.farbe
-        : '1px solid #C2C7CC';
+        : '1px solid transparent';
     }
     for (const k of gitter.querySelectorAll('.rahmengitter__knopf')) {
       k.classList.toggle('rahmengitter__knopf--an', r.kanten.includes(k.dataset.kante));

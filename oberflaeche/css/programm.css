@@ -3022,6 +3022,10 @@ body.lesen .arbeitsflaeche{padding:40px 24px}
   margin:0;
   padding:12px 14px;
   background:var(--blatt);
+  /* Der feste Umriss zeigt, WO die Kanten sind — auch wenn keine
+     gesetzt ist. Als outline und nicht als border: Der border gehoert
+     den vier Kanten, die man schaltet, und darf davon nichts wissen. */
+  outline:1px solid #9AA3AB;outline-offset:0;
   display:flex;flex-direction:column;gap:6px;justify-content:center;
 }
 .rahmenprobe__zeile{
