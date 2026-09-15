@@ -2988,13 +2988,30 @@ body.lesen .arbeitsflaeche{padding:40px 24px}
 }
 .rahmentafel__einheit{color:var(--schrift-2)}
 .rahmentafel__hinweis{margin:0 0 6px;font-size:.85em;color:var(--schrift-2)}
+/* DAS BLATT BRAUCHT HELLEN GRUND, NICHT DAS DUNKLE FENSTER.
+
+   „du drueckst die Linien immer noch in den Rahmen hinein — wo soll ich
+   da am Uebergang von Weiss zu Schwarz vom Fenster die Linien sehen?"
+
+   Das war der Kern, und ich hatte ihn viermal verfehlt. Ein weisses
+   Blatt lag unmittelbar auf dem dunklen Fenster. Eine graue Linie AM
+   RAND dieses Blattes ist dort nicht zu sehen: Das Auge sieht die
+   Kante Weiss/Dunkel, nicht die Linie darauf.
+
+   In WPS liegt die Vorschau auf hellgrauem Grund. Dann steht das weisse
+   Blatt in einer hellen Umgebung, und jede Linie an seinem Rand ist
+   dunkler als beides — sichtbar.
+
+   Darum hier eine feste helle Flaeche, unabhaengig vom Gewand. Der
+   einzige Fleck im Fenster, der nicht mitdunkelt — und er muss es
+   sein. */
 .rahmentafel__vorschau{
   display:flex;flex-direction:column;
-  /* Der helle Grund, auf dem das Blatt liegt — wie in WPS. */
-  background:rgba(127,127,127,.07);
-  border:1px solid var(--rand);border-radius:6px;
-  padding:14px;
+  background:#E9EBED;
+  border:1px solid #B6BCC2;border-radius:6px;
+  padding:16px;
 }
+.rahmentafel__vorschau .rahmentafel__hinweis{color:#4C555E}
 
 /* Das Probeblatt mit den vier anklickbaren Kanten. */
 /* Der Kasten steht mit Luft drumherum — die Klickflaechen liegen auf
@@ -3021,7 +3038,8 @@ body.lesen .arbeitsflaeche{padding:40px 24px}
   width:190px;min-height:110px;
   margin:0;
   padding:12px 14px;
-  background:var(--blatt);
+  /* Immer weiss, auch im dunklen Gewand: Das Blatt zeigt Papier. */
+  background:#FFFFFF;
   /* Der feste Umriss zeigt, WO die Kanten sind — auch wenn keine
      gesetzt ist. Als outline und nicht als border: Der border gehoert
      den vier Kanten, die man schaltet, und darf davon nichts wissen. */
@@ -3030,7 +3048,9 @@ body.lesen .arbeitsflaeche{padding:40px 24px}
 }
 .rahmenprobe__zeile{
   display:block;height:3px;border-radius:2px;
-  background:var(--schrift-2);opacity:.45;
+  /* Feste Farbe: Das Blatt ist weiss, also brauchen die Zeilen darauf
+     eine Farbe, die zu Papier passt — nicht die des Gewands. */
+  background:#C9CDD2;
 }
 .rahmenprobe__zeile:last-child{width:62%}
 /* Die Kante selbst: breiter als vorher, damit man sie trifft, und mit
@@ -3057,17 +3077,19 @@ body.lesen .arbeitsflaeche{padding:40px 24px}
 .rahmengitter__fuss{
   grid-column:2;display:flex;gap:8px;justify-content:flex-start;
 }
+/* Die Knoepfe stehen auf dem hellen Grund der Vorschau — also auch sie
+   in festen Farben, sonst waeren es dunkle Kloetze auf Hellgrau. */
 .rahmengitter__knopf{
   width:30px;height:30px;padding:4px;
   display:flex;align-items:center;justify-content:center;
-  border:1px solid var(--rand);border-radius:5px;
-  background-color:var(--grund);color:var(--schrift);cursor:pointer;
+  border:1px solid #B6BCC2;border-radius:5px;
+  background-color:#FFFFFF;color:#4C555E;cursor:pointer;
 }
 .rahmengitter__knopf svg{width:100%;height:100%}
 .rahmengitter__knopf:hover{border-color:var(--blau)}
 /* Gedrueckt heisst: diese Kante steht. */
 .rahmengitter__knopf--an{
-  border-color:var(--blau);background:rgba(47,111,181,.22);
+  border-color:#2F6FB5;background:#D6E4F0;color:#1F4E79;
 }
 
 
