@@ -248,4 +248,13 @@ const SYMBOLE = {
   pipette:       'M2 22l1-1h3l9-9 M3 21v-3l9-9 M15 6l3.5-3.5a2.12 2.12 0 0 1 3 3L18 9 M9 12l6-6 3 3-6 6z',   /* lucide: pipette */
   wortextras:    'M4 6h16 M4 12h10 M4 18h13 M17 9 l3 3 -3 3',   /* eigen: Absaetze, die weiterruecken */
   schriftfarbe:  'M4 16 l6-12h1.6l6 12 M6.4 11.6h8.2 M3 19.5h18v2.5H3z',   /* eigen: A ueber einem Farbbalken, wie in WPS */
+  filter:        'M3 4h18l-7 8.5V20l-4-2v-5.5z',   /* lucide: filter — Daten auswaehlen */
+  zahnrad:       'M9.5 12a2.5 2.5 0 1 0 5 0a2.5 2.5 0 1 0 -5 0 M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z',   /* lucide: settings */
+  pinselchen:    'M9 11 l-6 6v3h9l3-3 M22 12 l-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4',   /* lucide: highlighter — Formatvorlage */
+  /* Die Gruppen im Diagramm-Fenster — jede zeigt ihre Form. */
+  linie:         'M3 3v16a2 2 0 0 0 2 2h16 M7 15l4-5 3 3 5-7',   /* lucide: chart-line */
+  kreis:         'M21 12a9 9 0 1 1-9-9v9z M21 12h-9 M12 3a9 9 0 0 1 9 9',   /* lucide: chart-pie */
+  balkenquer:    'M3 3v16a2 2 0 0 0 2 2h16 M7 7h9 M7 12h6 M7 17h11',   /* eigen: liegende Balken */
+  flaeche:       'M3 3v16a2 2 0 0 0 2 2h16 M7 16l4-6 3 3 5-6v9z',   /* lucide: chart-area */
+  punktwolke:    'M3 3v16a2 2 0 0 0 2 2h16 M8 15a1 1 0 1 0 2 0a1 1 0 1 0 -2 0 M12 9a1 1 0 1 0 2 0a1 1 0 1 0 -2 0 M16 13a1 1 0 1 0 2 0a1 1 0 1 0 -2 0 M6.5 11a1 1 0 1 0 2 0a1 1 0 1 0 -2 0',   /* lucide: chart-scatter */
 };

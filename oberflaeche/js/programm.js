@@ -2912,6 +2912,242 @@ function diagrammFenster(titel, nurDaten) {
   });
 }
 
+/* ============================================================
+   DIAGRAMMTOOLS
+
+   Nach seinem Bild der WPS-Leiste, die erscheint, sobald ein Diagramm
+   gewaehlt ist:
+
+     Diagrammelement hinzufuegen ▾ · Schnelllayout ▾ · Farbe aendern ▾
+     [ Vier Formatvorlagen zur Auswahl ]
+     Diagrammtyp aendern · [kleine Typzeichen]
+     Daten auswaehlen · Daten bearbeiten
+     Diagrammbereich ▾ · Formatieren · Formatvorlage zuruecksetzen
+
+   Vorher standen dort vier grosse Knoepfe, die vier Fenster oeffneten.
+   Ein Diagramm aendert man aber nicht in einem Fenster, sondern indem
+   man hinsieht und etwas anklickt.
+
+   DIE FARBSAETZE KOMMEN AUS SEINER PALETTE. FARBEN steht seit je in
+   dieser Datei; ich habe sie schon einmal gegen WPS-Signalfarben
+   getauscht und dafuer zu Recht Aerger bekommen.
+   ============================================================ */
+const DIAGRAMMSAETZE = [
+  ['bunt',   'Bunt',        ['#2F6FB5', '#3E9C7A', '#C08A2E', '#B5563F', '#7A5EA8', '#1F7A5A']],
+  ['blau',   'Blautöne',    ['#1F4E79', '#2F6FB5', '#4A8BCB', '#6FA6DA', '#9BC3E8', '#C6DDF3']],
+  ['warm',   'Warm',        ['#8A3324', '#B5563F', '#C08A2E', '#D08A3E', '#C9A227', '#A0522D']],
+  ['gruen',  'Grüntöne',    ['#1F7A5A', '#3E9C7A', '#6BB79A', '#93CDB7', '#BCE0D3', '#E0F0E9']],
+  ['grau',   'Graustufen',  ['#111417', '#3A4149', '#5C666F', '#8B949C', '#B6BDC3', '#DDE1E4']],
+];
+
+function diagrammSatz(kuerzel) {
+  return (DIAGRAMMSAETZE.find(([k]) => k === kuerzel) || DIAGRAMMSAETZE[0])[2];
+}
+
+/* Was am Diagramm dranstehen soll: Titel, Legende, Werte. */
+const DIAGRAMMTEILE = [
+  ['titel',    'Diagrammtitel'],
+  ['legende',  'Legende'],
+  ['werte',    'Datenbeschriftungen'],
+];
+
+function mitDiagramm(tun) {
+  const bild = diagrammJetzt();
+  if (!bild) { melde('Dafür muss ein Diagramm gewählt sein.'); return null; }
+  const q = quelleLesen(bild);
+  if (!q) { melde('Dieses Diagramm trägt seine Zahlen nicht mit.'); return null; }
+  return tun(bild, q);
+}
+
+B.diagrammElement = (knopf) => mitDiagramm((bild, q) => {
+  designTafelZeigen(knopf, 'Diagrammelement hinzufügen', (tafel) => {
+    tafel.classList.add('designtafel--breit');
+    for (const [schluessel, name] of DIAGRAMMTEILE) {
+      const an = q[schluessel] !== false;
+      const k = document.createElement('button');
+      k.type = 'button';
+      k.className = 'designtafel__zeile richtungszeile'
+        + (an ? ' designtafel__zeile--gilt' : '');
+      const w = document.createElement('span');
+      w.textContent = name;
+      k.appendChild(w);
+      k.addEventListener('mousedown', (e) => e.preventDefault());
+      k.addEventListener('click', () => {
+        designTafelWeg();
+        diagrammNeuZeichnen(bild, Object.assign({}, q, { [schluessel]: !an }));
+      });
+      tafel.appendChild(k);
+    }
+  });
+});
+
+const SCHNELLLAYOUTS = [
+  ['voll',   'Mit Titel, Legende und Werten', { titel: true,  legende: true,  werte: true }],
+  ['schlicht','Nur die Balken',               { titel: false, legende: false, werte: false }],
+  ['zahlen', 'Mit Werten, ohne Legende',      { titel: true,  legende: false, werte: true }],
+  ['legende','Mit Legende, ohne Werte',       { titel: true,  legende: true,  werte: false }],
+];
+
+B.diagrammLayout = (knopf) => mitDiagramm((bild, q) => {
+  designTafelZeigen(knopf, 'Schnelllayout', (tafel) => {
+    tafel.classList.add('designtafel--breit');
+    for (const [, name, wie] of SCHNELLLAYOUTS) {
+      const k = document.createElement('button');
+      k.type = 'button';
+      k.className = 'designtafel__zeile richtungszeile';
+      const w = document.createElement('span');
+      w.textContent = name;
+      k.appendChild(w);
+      k.addEventListener('mousedown', (e) => e.preventDefault());
+      k.addEventListener('click', () => {
+        designTafelWeg();
+        diagrammNeuZeichnen(bild, Object.assign({}, q, wie));
+      });
+      tafel.appendChild(k);
+    }
+  });
+});
+
+B.diagrammFarbe = (knopf) => mitDiagramm((bild, q) => {
+  designTafelZeigen(knopf, 'Farbe ändern', (tafel) => {
+    tafel.classList.add('designtafel--breit');
+    for (const [kuerzel, name, farben] of DIAGRAMMSAETZE) {
+      const k = document.createElement('button');
+      k.type = 'button';
+      k.className = 'designtafel__wahl'
+        + ((q.satz || 'bunt') === kuerzel ? ' designtafel__wahl--an' : '');
+      const streifen = document.createElement('span');
+      streifen.className = 'designtafel__streifen';
+      for (const c of farben) {
+        const i = document.createElement('i');
+        i.style.background = c;
+        streifen.appendChild(i);
+      }
+      const w = document.createElement('span');
+      w.className = 'designtafel__name';
+      w.textContent = name;
+      k.append(streifen, w);
+      k.addEventListener('mousedown', (e) => e.preventDefault());
+      k.addEventListener('click', () => {
+        designTafelWeg();
+        diagrammNeuZeichnen(bild, Object.assign({}, q, { satz: kuerzel }));
+      });
+      tafel.appendChild(k);
+    }
+  });
+});
+
+/* „Diagrammtyp aendern" — in seinem Bild stehen die Typen als kleine
+   Zeichen daneben, nicht in einem Fenster. */
+const DIAGRAMMARTEN = [
+  ['balken', 'Balken', 'saeule'],
+  ['linie',  'Linie',  'linie'],
+  ['kuchen', 'Kreis',  'kreis'],
+];
+
+B.diagrammArt = (art) => mitDiagramm((bild, q) =>
+  diagrammNeuZeichnen(bild, Object.assign({}, q, { art })));
+
+B.diagrammZurueck = () => mitDiagramm((bild, q) =>
+  diagrammNeuZeichnen(bild, {
+    art: q.art, titel: q.titel, daten: q.daten,
+    titelAn: true, legende: true, werte: false, satz: 'bunt',
+  }));
+
+/* ============================================================
+   DIE KNOEPFE AM DIAGRAMM
+
+   „vergiss die Bearbeitungsfunktionen nicht rechts am Diagramm."
+
+   Auf seinem WPS-Bild haengen fuenf kleine Knoepfe an der rechten Kante
+   des gewaehlten Diagramms. Sie sind dort, wo man hinsieht: Man aendert
+   ein Diagramm nicht, indem man in die Leiste hinaufgreift, sondern
+   indem man es ansieht und danebengreift.
+
+   Gebaut wie die Knoepfe am Bild — dieselben Klassen, dieselbe Stelle,
+   dasselbe Verhalten. Ein zweites System dafuer waere der Fehler, den
+   ich heute schon einmal gemacht habe.
+   ============================================================ */
+const DIAGRAMMSCHNELL = [
+  { art: 'layout', bild: 'anordnen',   name: 'Schnelllayout',
+    tun: (k) => B.diagrammLayout(k) },
+  { art: 'teile',  bild: 'saeule',     name: 'Diagrammelement hinzufügen',
+    tun: (k) => B.diagrammElement(k) },
+  { art: 'farbe',  bild: 'pinselchen', name: 'Farbe ändern',
+    tun: (k) => B.diagrammFarbe(k) },
+  { art: 'daten',  bild: 'filter',     name: 'Daten auswählen',
+    tun: () => B.diagrammDaten() },
+  { art: 'form',   bild: 'zahnrad',    name: 'Formatieren',
+    tun: () => B.diagrammFormat() },
+];
+
+let diagrammGewaehlt = null;
+let diagrammKnoepfe = null;
+
+function diagrammKnoepfeBauen() {
+  if (diagrammKnoepfe) return diagrammKnoepfe;
+  diagrammKnoepfe = {};
+  for (const { art, bild: symbolName, name, tun } of DIAGRAMMSCHNELL) {
+    const k = document.createElement('button');
+    k.type = 'button';
+    k.className = 'bildgriff bildgriff--schnell diagrammgriff--' + art;
+    k.title = name;
+    k.setAttribute('aria-label', name);
+    if (SYMBOLE[symbolName]) k.appendChild(symbol(symbolName));
+    k.addEventListener('mousedown', (e) => e.preventDefault());
+    k.addEventListener('click', () => tun(k));
+    document.body.appendChild(k);
+    diagrammKnoepfe[art] = k;
+  }
+  return diagrammKnoepfe;
+}
+
+function diagrammKnoepfeStellen() {
+  if (!diagrammGewaehlt || !diagrammGewaehlt.isConnected) {
+    if (diagrammKnoepfe) for (const k of Object.values(diagrammKnoepfe)) k.hidden = true;
+    return;
+  }
+  const knoepfe = diagrammKnoepfeBauen();
+  const r = diagrammGewaehlt.getBoundingClientRect();
+  const flaeche = (feld.closest('.blattflaeche') || feld).getBoundingClientRect();
+  const versteckt = r.bottom < flaeche.top || r.top > flaeche.bottom;
+  DIAGRAMMSCHNELL.forEach(({ art }, i) => {
+    const k = knoepfe[art];
+    k.hidden = versteckt;
+    k.style.left = Math.round(r.right + 10) + 'px';
+    k.style.top = Math.round(r.top + 6 + i * 28) + 'px';
+  });
+  diagrammGewaehlt.classList.add('diagramm--gewaehlt');
+}
+
+function diagrammWaehlen(el) {
+  if (diagrammGewaehlt && diagrammGewaehlt !== el) {
+    diagrammGewaehlt.classList.remove('diagramm--gewaehlt');
+  }
+  diagrammGewaehlt = el;
+  diagrammKnoepfeStellen();
+  registerBauen();
+}
+
+/* Ein Klick auf das Diagramm waehlt es; ein Klick daneben laesst es los.
+   Dasselbe Muster wie beim Bild — sonst blieben die Knoepfe stehen,
+   nachdem man weitergeschrieben hat. */
+document.addEventListener('pointerdown', (e) => {
+  const auf = e.target && e.target.closest
+    ? e.target.closest('svg.diagramm') : null;
+  if (auf && feld.contains(auf)) { diagrammWaehlen(auf); return; }
+  if (e.target && e.target.closest && e.target.closest('.bildgriff--schnell')) return;
+  if (diagrammGewaehlt) {
+    diagrammGewaehlt.classList.remove('diagramm--gewaehlt');
+    diagrammGewaehlt = null;
+    diagrammKnoepfeStellen();
+    registerBauen();
+  }
+}, true);
+
+window.addEventListener('scroll', diagrammKnoepfeStellen, true);
+window.addEventListener('resize', diagrammKnoepfeStellen);
+
 B.diagrammEntwurf = () => diagrammFenster('Diagrammentwurf', false);
 B.diagrammDaten   = () => diagrammFenster('Daten', true);
 
@@ -2947,8 +3183,9 @@ B.diagrammFormat = () => {
 function diagrammNeuZeichnen(alt, q) {
   const punkte = zahlenLesen(q.daten);
   if (!punkte.length) { melde('Darin standen keine Zahlen, mit denen sich zeichnen ließe.'); return; }
-  const bauer = { balken: balkenSvg, linie: linienSvg, kuchen: kuchenSvg }[q.art] || balkenSvg;
-  if (objektErsetzen(alt, merkeQuelle(bauer(punkte, (q.titel || '').trim()), q))) {
+  const wie = { farben: diagrammSatz(q.satz), werte: q.werte, legende: q.legende };
+  const titel = q.titel === false ? '' : (q.titel || '').trim();
+  if (objektErsetzen(alt, merkeQuelle(diagrammZeichnen(q.art, punkte, titel, wie), q))) {
     melde('Diagramm mit ' + punkte.length + ' Werten geändert.');
   }
 }
@@ -6886,7 +7123,161 @@ function zahlenLesen(roh) {
 const DIAGRAMMFARBEN = ['#2F6FB5', '#3E9C7A', '#C08A2E', '#B5563F', '#7A5EA8',
                         '#4A8FD8', '#5FB79A', '#D8A94E'];
 
-function balkenSvg(punkte, titel) {
+/* ============================================================
+   DIE ARTEN AUS DER AUSWAHL
+
+   Neun Formen stehen im Fenster zur Wahl, also muessen neun gezeichnet
+   werden. Eine Auswahl, in der die Haelfte dasselbe malt, ist eine
+   Auswahl, die luegt.
+
+   „Gestapelt" mit einer einzigen Reihe ist ein Sonderfall: In WPS wird
+   daraus eine Saeule, in der die Werte uebereinanderliegen. Genau so
+   steht es hier.
+   ============================================================ */
+function diagrammZeichnen(art, punkte, titel, wie) {
+  const bauer = {
+    saeule:     saeulenSvg,
+    saeulegest: (p, t, w) => gestapeltSvg(p, t, w, false),
+    balken:     (p, t, w) => balkenQuerSvg(p, t, w),
+    balkengest: (p, t, w) => gestapeltSvg(p, t, w, true),
+    linie:      linienSvg,
+    liniepunkt: (p, t, w) => linienSvg(p, t, Object.assign({}, w, { punkte: true })),
+    kuchen:     kuchenSvg,
+    ring:       (p, t, w) => kuchenSvg(p, t, Object.assign({}, w, { loch: true })),
+    flaeche:    (p, t, w) => linienSvg(p, t, Object.assign({}, w, { fuellen: true })),
+    saeuleproz: (p, t, w) => gestapeltSvg(p, t, Object.assign({}, w, { prozent: true }), false),
+    punkte:     punktwolkeSvg,
+  }[art];
+  return (bauer || saeulenSvg)(punkte, titel, wie);
+}
+
+/* X Y (Punkt): nur die Marker, keine Linie dazwischen. Man sieht, wo
+   die Werte liegen, ohne dass eine Linie eine Ordnung behauptet, die es
+   nicht gibt. */
+function punktwolkeSvg(punkte, titel, wie) {
+  wie = wie || {};
+  const farben = wie.farben || DIAGRAMMFARBEN;
+  const breite = 480, hoehe = 260;
+  const rand = { oben: titel ? 34 : 14, unten: 44, links: 46, rechts: 14 };
+  const flaeche = breite - rand.links - rand.rechts;
+  const hoch = hoehe - rand.oben - rand.unten;
+  const groesste = Math.max(...punkte.map((p) => Math.abs(p.wert)), 1);
+  const schritt = punkte.length > 1 ? flaeche / (punkte.length - 1) : 0;
+
+  let aus = '';
+  if (titel) aus += '<text x="' + (breite / 2) + '" y="20" text-anchor="middle" '
+                  + 'font-size="14" font-weight="600" fill="#111417">' + alsText(titel) + '</text>';
+  aus += '<line x1="' + rand.links + '" y1="' + (rand.oben + hoch) + '" x2="'
+       + (breite - rand.rechts) + '" y2="' + (rand.oben + hoch) + '" stroke="#9AA3AB"/>';
+  aus += '<line x1="' + rand.links + '" y1="' + rand.oben + '" x2="' + rand.links
+       + '" y2="' + (rand.oben + hoch) + '" stroke="#9AA3AB"/>';
+
+  punkte.forEach((p, i) => {
+    const x = rand.links + i * schritt;
+    const y = rand.oben + hoch - Math.abs(p.wert) / groesste * hoch;
+    aus += '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="5" fill="'
+         + farben[i % farben.length] + '"/>';
+    aus += '<text x="' + x.toFixed(1) + '" y="' + (rand.oben + hoch + 15).toFixed(1)
+         + '" text-anchor="middle" font-size="10" fill="#4C555E">' + alsText(p.name) + '</text>';
+  });
+  if (wie.legende === true) aus += legendeSvg(punkte, farben, breite, hoehe);
+  return svgHuelle(breite, hoehe + (wie.legende === true ? 22 : 0), aus);
+}
+
+/* Balken, die liegen — das ist in WPS „Balken", die stehenden heissen
+   „Saeule". Die Namen sind nicht austauschbar, und als Bild sieht man
+   den Unterschied sofort. */
+function balkenQuerSvg(punkte, titel, wie) {
+  wie = wie || {};
+  const farben = wie.farben || DIAGRAMMFARBEN;
+  const werteAn = wie.werte !== false;
+  const breite = 480, hoehe = 260;
+  const rand = { oben: titel ? 34 : 14, unten: 16, links: 96, rechts: 40 };
+  const flaeche = breite - rand.links - rand.rechts;
+  const hoch = hoehe - rand.oben - rand.unten;
+  const groesste = Math.max(...punkte.map((p) => Math.abs(p.wert)), 1);
+  const luecke = hoch / punkte.length;
+
+  let aus = '';
+  if (titel) aus += '<text x="' + (breite / 2) + '" y="20" text-anchor="middle" '
+                  + 'font-size="14" font-weight="600" fill="#111417">' + alsText(titel) + '</text>';
+  aus += '<line x1="' + rand.links + '" y1="' + rand.oben + '" x2="' + rand.links
+       + '" y2="' + (rand.oben + hoch) + '" stroke="#9AA3AB"/>';
+
+  punkte.forEach((p, i) => {
+    const b = Math.abs(p.wert) / groesste * flaeche;
+    const y = rand.oben + i * luecke + luecke * 0.18;
+    const h = luecke * 0.64;
+    aus += '<rect x="' + rand.links + '" y="' + y.toFixed(1) + '" width="' + b.toFixed(1)
+         + '" height="' + h.toFixed(1) + '" fill="' + farben[i % farben.length] + '"/>';
+    aus += '<text x="' + (rand.links - 6) + '" y="' + (y + h / 2 + 3.5).toFixed(1)
+         + '" text-anchor="end" font-size="10" fill="#4C555E">' + alsText(p.name) + '</text>';
+    if (werteAn) {
+      aus += '<text x="' + (rand.links + b + 5).toFixed(1) + '" y="' + (y + h / 2 + 3.5).toFixed(1)
+           + '" font-size="10" fill="#111417">' + alsText(String(p.wert)) + '</text>';
+    }
+  });
+  if (wie.legende === true) aus += legendeSvg(punkte, farben, breite, hoehe);
+  return svgHuelle(breite, hoehe + (wie.legende === true ? 22 : 0), aus);
+}
+
+/* Gestapelt: alle Werte in einem Stueck uebereinander, waagerecht oder
+   senkrecht. Man sieht das Ganze und die Anteile daran. */
+function gestapeltSvg(punkte, titel, wie, quer) {
+  wie = wie || {};
+  const farben = wie.farben || DIAGRAMMFARBEN;
+  const werteAn = wie.werte !== false;
+  const breite = 480, hoehe = 260;
+  const rand = { oben: titel ? 34 : 14, unten: 30, links: 46, rechts: 14 };
+  const flaeche = breite - rand.links - rand.rechts;
+  const hoch = hoehe - rand.oben - rand.unten;
+  const summe = punkte.reduce((a, p) => a + Math.abs(p.wert), 0) || 1;
+
+  let aus = '';
+  if (titel) aus += '<text x="' + (breite / 2) + '" y="20" text-anchor="middle" '
+                  + 'font-size="14" font-weight="600" fill="#111417">' + alsText(titel) + '</text>';
+
+  let gelaufen = 0;
+  punkte.forEach((p, i) => {
+    const teil = Math.abs(p.wert) / summe;
+    if (quer) {
+      const x = rand.links + gelaufen * flaeche;
+      const b = teil * flaeche;
+      aus += '<rect x="' + x.toFixed(1) + '" y="' + (rand.oben + hoch * 0.3).toFixed(1)
+           + '" width="' + b.toFixed(1) + '" height="' + (hoch * 0.4).toFixed(1)
+           + '" fill="' + farben[i % farben.length] + '"/>';
+      if (werteAn && teil > 0.08) {
+        aus += '<text x="' + (x + b / 2).toFixed(1) + '" y="' + (rand.oben + hoch * 0.53).toFixed(1)
+             + '" text-anchor="middle" font-size="10" fill="#fff">'
+             + (wie.prozent ? Math.round(teil * 100) + ' %' : alsText(String(p.wert))) + '</text>';
+      }
+    } else {
+      const h = teil * hoch;
+      const y = rand.oben + hoch - (gelaufen + teil) * hoch;
+      const x = rand.links + flaeche * 0.3;
+      const b = flaeche * 0.4;
+      aus += '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + b.toFixed(1)
+           + '" height="' + h.toFixed(1) + '" fill="' + farben[i % farben.length] + '"/>';
+      if (werteAn && teil > 0.08) {
+        aus += '<text x="' + (x + b / 2).toFixed(1) + '" y="' + (y + h / 2 + 3.5).toFixed(1)
+             + '" text-anchor="middle" font-size="10" fill="#fff">'
+             + (wie.prozent ? Math.round(teil * 100) + ' %' : alsText(String(p.wert))) + '</text>';
+      }
+    }
+    gelaufen += teil;
+  });
+  aus += legendeSvg(punkte, farben, breite, hoehe - 14);
+  return svgHuelle(breite, hoehe + 8, aus);
+}
+
+/* Die drei Bauer nehmen jetzt entgegen, was die Diagrammtools setzen:
+   welche Farben, ob Werte an den Balken stehen, ob eine Legende kommt.
+   Ohne das waeren die neuen Knoepfe Knoepfe, die nichts tun. */
+function saeulenSvg(punkte, titel, wie) {
+  wie = wie || {};
+  const farben = wie.farben || DIAGRAMMFARBEN;
+  const werteAn = wie.werte !== false;
+  const legendeAn = wie.legende === true;
   const breite = 480;
   const hoehe = 260;
   const rand = { oben: titel ? 34 : 14, unten: 44, links: 46, rechts: 14 };
@@ -6909,16 +7300,38 @@ function balkenSvg(punkte, titel) {
     const b = luecke * 0.7;
     const y = rand.oben + hoch - h;
     aus += '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + b.toFixed(1)
-         + '" height="' + h.toFixed(1) + '" fill="' + DIAGRAMMFARBEN[i % DIAGRAMMFARBEN.length] + '"/>';
-    aus += '<text x="' + (x + b / 2).toFixed(1) + '" y="' + (y - 5).toFixed(1)
-         + '" text-anchor="middle" font-size="10" fill="#111417">' + alsText(String(p.wert)) + '</text>';
+         + '" height="' + h.toFixed(1) + '" fill="' + farben[i % farben.length] + '"/>';
+    if (werteAn) {
+      aus += '<text x="' + (x + b / 2).toFixed(1) + '" y="' + (y - 5).toFixed(1)
+           + '" text-anchor="middle" font-size="10" fill="#111417">' + alsText(String(p.wert)) + '</text>';
+    }
     aus += '<text x="' + (x + b / 2).toFixed(1) + '" y="' + (rand.oben + hoch + 15).toFixed(1)
          + '" text-anchor="middle" font-size="10" fill="#4C555E">' + alsText(p.name) + '</text>';
   });
-  return svgHuelle(breite, hoehe, aus);
+  if (legendeAn) aus += legendeSvg(punkte, farben, breite, hoehe);
+  return svgHuelle(breite, hoehe + (legendeAn ? 22 : 0), aus);
 }
 
-function linienSvg(punkte, titel) {
+/* Eine Legende unter dem Bild: Farbfleck und Name, nebeneinander. */
+function legendeSvg(punkte, farben, breite, hoehe) {
+  const proStueck = Math.min(110, breite / Math.max(1, punkte.length));
+  let aus = '';
+  punkte.forEach((p, i) => {
+    const x = 10 + i * proStueck;
+    const y = hoehe + 12;
+    aus += '<rect x="' + x + '" y="' + (y - 8) + '" width="9" height="9" fill="'
+         + farben[i % farben.length] + '"/>';
+    aus += '<text x="' + (x + 13) + '" y="' + y + '" font-size="10" fill="#4C555E">'
+         + alsText(p.name) + '</text>';
+  });
+  return aus;
+}
+
+function linienSvg(punkte, titel, wie) {
+  wie = wie || {};
+  const farben = wie.farben || DIAGRAMMFARBEN;
+  const mitPunkten = wie.punkte === true;
+  const gefuellt = wie.fuellen === true;
   const breite = 480;
   const hoehe = 260;
   const rand = { oben: titel ? 34 : 14, unten: 44, links: 46, rechts: 14 };
@@ -6935,17 +7348,36 @@ function linienSvg(punkte, titel) {
 
   const stellen = punkte.map((p, i) => [rand.links + i * schritt,
                                         rand.oben + hoch - Math.abs(p.wert) / groesste * hoch]);
-  aus += '<polyline fill="none" stroke="#2F6FB5" stroke-width="2" points="'
+  const linienfarbe = farben[0];
+  /* „Flaeche" ist dieselbe Linie mit dem, was darunter liegt. */
+  if (gefuellt) {
+    aus += '<polygon fill="' + linienfarbe + '" fill-opacity=".28" points="'
+         + (rand.links + ',' + (rand.oben + hoch)) + ' '
+         + stellen.map(([x, y]) => x.toFixed(1) + ',' + y.toFixed(1)).join(' ') + ' '
+         + (stellen[stellen.length - 1][0].toFixed(1) + ',' + (rand.oben + hoch)) + '"/>';
+  }
+  aus += '<polyline fill="none" stroke="' + linienfarbe + '" stroke-width="2" points="'
        + stellen.map(([x, y]) => x.toFixed(1) + ',' + y.toFixed(1)).join(' ') + '"/>';
   stellen.forEach(([x, y], i) => {
-    aus += '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="3.5" fill="#2F6FB5"/>';
+    if (mitPunkten || !gefuellt) {
+      aus += '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="'
+           + (mitPunkten ? 4.5 : 3.5) + '" fill="' + linienfarbe + '"/>';
+    }
+    if (wie.werte !== false) {
+      aus += '<text x="' + x.toFixed(1) + '" y="' + (y - 8).toFixed(1)
+           + '" text-anchor="middle" font-size="10" fill="#111417">'
+           + alsText(String(punkte[i].wert)) + '</text>';
+    }
     aus += '<text x="' + x.toFixed(1) + '" y="' + (rand.oben + hoch + 15).toFixed(1)
          + '" text-anchor="middle" font-size="10" fill="#4C555E">' + alsText(punkte[i].name) + '</text>';
   });
   return svgHuelle(breite, hoehe, aus);
 }
 
-function kuchenSvg(punkte, titel) {
+function kuchenSvg(punkte, titel, wie) {
+  wie = wie || {};
+  const farben = wie.farben || DIAGRAMMFARBEN;
+  const mitLoch = wie.loch === true;
   const breite = 480;
   const hoehe = 280;
   const mitteX = 150;
@@ -6966,7 +7398,7 @@ function kuchenSvg(punkte, titel) {
     const x2 = mitteX + r * Math.cos(winkel);
     const y2 = mitteY + r * Math.sin(winkel);
     const gross = teil > Math.PI ? 1 : 0;
-    const farbe = DIAGRAMMFARBEN[i % DIAGRAMMFARBEN.length];
+    const farbe = farben[i % farben.length];
     /* Ein einziges Stück wäre ein Kreis — und ein Kreisbogen über volle 360°
        zeichnet nichts. Deshalb dieser Sonderfall. */
     aus += punkte.length === 1
@@ -6980,6 +7412,12 @@ function kuchenSvg(punkte, titel) {
     aus += '<text x="' + 310 + '" y="' + yl + '" font-size="11" fill="#111417">'
          + alsText(p.name) + ' — ' + Math.round(Math.abs(p.wert) / summe * 100) + ' %</text>';
   });
+  /* Der Ring ist der Kreis mit einem Loch in der Mitte. Ein Kreis in
+     Blattfarbe darauf ist der kuerzeste ehrliche Weg dorthin. */
+  if (mitLoch) {
+    aus += '<circle cx="' + mitteX + '" cy="' + mitteY + '" r="' + (r * 0.55).toFixed(1)
+         + '" fill="var(--blatt, #ffffff)"/>';
+  }
   return svgHuelle(breite, hoehe, aus);
 }
 
@@ -7010,30 +7448,181 @@ const svgHuelle = (b, h, innen) =>
   + ' width="' + b + '" height="' + h + '" role="img">'
   + '<rect width="' + b + '" height="' + h + '" fill="#FFFFFF"/>' + innen + '</svg>';
 
+/* ============================================================
+   DIAGRAMM EINFUEGEN
+
+   Nach seinem Bild des WPS-Fensters, Stueck fuer Stueck:
+
+     ┌────────────┬──────────────────────────────────┐
+     │ Spalte     │  [▮▮] [▮▮] [▮▮]                  │
+     │ Linie      │                                  │
+     │ Kreis      │  Gruppierte Säule                │
+     │ Balken     │  ┌────────────────────────────┐  │
+     │ Fläche     │  │      grosse Vorschau       │  │
+     │ X Y (Punkt)│  └────────────────────────────┘  │
+     │ …          │                                  │
+     └────────────┴──────────────────────────────────┘
+                                      OK   Abbrechen
+
+   Erst die Gruppe links, dann die Art oben, dann sieht man gross, was
+   man bekommt — und der Name steht dabei. „Gruppierte Saeule" und
+   „Gestapelte Saeule" sind als Woerter fast gleich; als Bild nicht.
+
+   Zahlen werden hier NICHT eingegeben. In WPS auch nicht — die kommen
+   danach ueber „Daten bearbeiten". Wer erst die Form waehlt und dann
+   die Zahlen, muss nicht beides gleichzeitig im Kopf haben.
+   ============================================================ */
+const DIAGRAMMKATALOG = [
+  ['spalte', 'Spalte', 'saeule', [
+    ['saeule',      'Gruppierte Säule'],
+    ['saeulegest',  'Gestapelte Säule'],
+    ['saeuleproz',  'Gestapelte Säule (100 %)'],
+  ]],
+  ['linie', 'Linie', 'linie', [
+    ['linie',       'Linie'],
+    ['liniepunkt',  'Linie mit Datenpunkten'],
+  ]],
+  ['kreis', 'Kreis', 'kreis', [
+    ['kuchen',      'Kreis'],
+    ['ring',        'Ring'],
+  ]],
+  ['balken', 'Balken', 'balkenquer', [
+    ['balken',      'Gruppierte Balken'],
+    ['balkengest',  'Gestapelte Balken'],
+  ]],
+  ['flaeche', 'Fläche', 'flaeche', [
+    ['flaeche',     'Fläche'],
+  ]],
+  ['punkt', 'X Y (Punkt)', 'punktwolke', [
+    ['punkte',      'Punkte (nur Marker)'],
+  ]],
+];
+
+const DIAGRAMMPROBE = [
+  { name: 'Rubrik 1', wert: 4.3 }, { name: 'Rubrik 2', wert: 2.5 },
+  { name: 'Rubrik 3', wert: 3.5 }, { name: 'Rubrik 4', wert: 4.5 },
+];
+
+function diagrammName(kuerzel) {
+  for (const [, , , arten] of DIAGRAMMKATALOG) {
+    const t = arten.find(([k]) => k === kuerzel);
+    if (t) return t[1];
+  }
+  return 'Diagramm';
+}
+
 B.diagramm = () => {
   auswahlMerken();
-  fenster('Diagramm einfügen', [
-    { art: 'satz', text: 'Je Zeile ein Wert: „Miete: 480". Punkt oder Komma sind beide recht.' },
-    { schluessel: 'titel', name: 'Überschrift', wert: '' },
-    { schluessel: 'art', name: 'Art', art: 'auswahl',
-      werte: [['balken', 'Balken'], ['linie', 'Linie'], ['kuchen', 'Kreis']] },
-    { schluessel: 'daten', name: 'Zahlen', art: 'flaeche', zeilen: 7,
-      wert: 'Miete: 480\nStrom: 95\nVersicherung: 60' },
-  ], (werte) => {
-    const punkte = zahlenLesen(werte.daten);
-    if (!punkte.length) { melde('Darin standen keine Zahlen, mit denen sich zeichnen ließe.'); return; }
-    const bauer = { balken: balkenSvg, linie: linienSvg, kuchen: kuchenSvg }[werte.art] || balkenSvg;
+  let art = Speicher.lies('diagrammArt', 'saeule');
+  let gruppeJetzt = (DIAGRAMMKATALOG.find(([, , , arten]) =>
+    arten.some(([k]) => k === art)) || DIAGRAMMKATALOG[0])[0];
+
+  const grund = document.createElement('div');
+  grund.className = 'dialoggrund';
+  const kasten = document.createElement('div');
+  kasten.className = 'dialog dialog--breit diagrammfenster';
+  kasten.innerHTML = '<h3 class="dialog__titel">Diagramm einfügen</h3>';
+
+  const koerper = document.createElement('div');
+  koerper.className = 'diagrammfenster__koerper';
+
+  const spalte = document.createElement('div');
+  spalte.className = 'diagrammfenster__gruppen';
+  const rechts = document.createElement('div');
+  rechts.className = 'diagrammfenster__rechts';
+
+  const reihe = document.createElement('div');
+  reihe.className = 'diagrammfenster__arten';
+  const ueberschrift = document.createElement('h4');
+  ueberschrift.className = 'diagrammfenster__name';
+  const gross = document.createElement('div');
+  gross.className = 'diagrammfenster__vorschau';
+  rechts.append(reihe, ueberschrift, gross);
+
+  function rechtsBauen() {
+    const g = DIAGRAMMKATALOG.find(([k]) => k === gruppeJetzt) || DIAGRAMMKATALOG[0];
+    if (!g[3].some(([k]) => k === art)) art = g[3][0][0];
+
+    reihe.textContent = '';
+    for (const [kuerzel, name] of g[3]) {
+      const k = document.createElement('button');
+      k.type = 'button';
+      k.className = 'diagrammart' + (art === kuerzel ? ' diagrammart--an' : '');
+      k.title = name;
+      k.innerHTML = diagrammZeichnen(kuerzel, DIAGRAMMPROBE.slice(0, 3), '', {
+        farben: diagrammSatz('bunt'), werte: false, legende: false, klein: true,
+      });
+      k.addEventListener('click', () => { art = kuerzel; rechtsBauen(); });
+      k.addEventListener('dblclick', weiter);
+      reihe.appendChild(k);
+    }
+    ueberschrift.textContent = diagrammName(art);
+    gross.innerHTML = diagrammZeichnen(art, DIAGRAMMPROBE, 'Diagrammtitel', {
+      farben: diagrammSatz('bunt'), werte: false, legende: true,
+    });
+  }
+
+  for (const [kuerzel, name, bild] of DIAGRAMMKATALOG) {
+    const k = document.createElement('button');
+    k.type = 'button';
+    k.className = 'diagrammfenster__gruppe'
+      + (kuerzel === gruppeJetzt ? ' diagrammfenster__gruppe--an' : '');
+    if (SYMBOLE[bild]) k.appendChild(symbol(bild));
+    const w = document.createElement('span');
+    w.textContent = name;
+    k.appendChild(w);
+    k.addEventListener('click', () => {
+      gruppeJetzt = kuerzel;
+      [...spalte.children].forEach((c) => c.classList.remove('diagrammfenster__gruppe--an'));
+      k.classList.add('diagrammfenster__gruppe--an');
+      rechtsBauen();
+    });
+    spalte.appendChild(k);
+  }
+
+  koerper.append(spalte, rechts);
+  kasten.appendChild(koerper);
+
+  function weiter() {
+    Speicher.schreib('diagrammArt', art);
+    grund.remove();
     auswahlZurueck();
-    /* Die Zahlen bleiben am Bild hängen. Ohne sie wäre ein Diagramm nach
-       dem Einfügen ein Bild wie jedes andere: Man könnte es löschen und
-       neu machen, aber nie ändern. Die Diagrammwerkzeuge lesen sie
-       zurück. */
-    Dokument.einfuegen('<p>' + merkeQuelle(bauer(punkte, werte.titel.trim()), {
-      art: werte.art, titel: werte.titel.trim(), daten: werte.daten,
-    }) + '</p><p><br></p>');
-    melde('Diagramm mit ' + punkte.length + ' Werten eingefügt.');
-  }, 'Einfügen');
+    /* Mit Beispielzahlen, wie in WPS: Das Diagramm steht sofort da, und
+       „Daten bearbeiten" macht die eigenen daraus. Ein leeres Diagramm
+       waere ein weisser Kasten, bei dem niemand weiss, was zu tun ist. */
+    const daten = 'Rubrik 1: 4\nRubrik 2: 3\nRubrik 3: 5\nRubrik 4: 2';
+    const punkte = zahlenLesen(daten);
+    const quelle = { art, titel: 'Diagrammtitel', daten,
+                     satz: 'bunt', werte: true, legende: true };
+    Dokument.einfuegen('<p>' + merkeQuelle(
+      diagrammZeichnen(art, punkte, quelle.titel, {
+        farben: diagrammSatz('bunt'), werte: true, legende: true,
+      }), quelle) + '</p><p><br></p>');
+    geaendertMelden();
+    melde(diagrammName(art) + ' eingefügt — die Zahlen ändern Sie mit '
+        + '„Daten bearbeiten" in den Diagrammtools.');
+  }
+
+  const fuss = document.createElement('div');
+  fuss.className = 'dialog__knoepfe';
+  const ok = document.createElement('button');
+  ok.type = 'button'; ok.className = 'knopf knopf--haupt'; ok.textContent = 'OK';
+  ok.addEventListener('click', weiter);
+  const ab = document.createElement('button');
+  ab.type = 'button'; ab.className = 'knopf'; ab.textContent = 'Abbrechen';
+  ab.addEventListener('click', () => grund.remove());
+  fuss.append(ok, ab);
+  kasten.appendChild(fuss);
+
+  grund.appendChild(kasten);
+  grund.addEventListener('mousedown', (e) => { if (e.target === grund) grund.remove(); });
+  document.addEventListener('keydown', function zu(e) {
+    if (e.key === 'Escape' && grund.isConnected) { grund.remove(); document.removeEventListener('keydown', zu); }
+  });
+  document.body.appendChild(grund);
+  rechtsBauen();
 };
+
 
 /* ============================================================
    Formeln

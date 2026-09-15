@@ -2527,6 +2527,54 @@ body.lesen .arbeitsflaeche{padding:40px 24px}
   paint-order:stroke fill;
 }
 
+/* ---- Diagramm einfuegen, nach seinem Bild ----
+   Links die Gruppen mit Zeichen, rechts oben die Arten, darunter der
+   Name gross und eine grosse Vorschau. */
+.diagrammfenster{min-width:720px}
+.diagrammfenster__koerper{display:flex;gap:14px;align-items:stretch;margin-bottom:10px}
+.diagrammfenster__gruppen{
+  display:flex;flex-direction:column;gap:2px;flex:0 0 160px;
+  border:1px solid var(--rand);border-radius:6px;
+  background-color:var(--grund);padding:4px;
+}
+.diagrammfenster__gruppe{
+  display:flex;align-items:center;gap:8px;
+  padding:6px 10px;border:1px solid transparent;border-radius:4px;
+  background:none;color:var(--schrift);font:inherit;text-align:left;cursor:pointer;
+}
+.diagrammfenster__gruppe svg{width:17px;height:17px;flex:0 0 auto}
+.diagrammfenster__gruppe:hover{background:rgba(127,127,127,.12)}
+.diagrammfenster__gruppe--an{
+  border-color:var(--blau-hell);background:rgba(47,111,181,.16);font-weight:700;
+}
+.diagrammfenster__rechts{
+  flex:1 1 auto;display:flex;flex-direction:column;gap:8px;min-width:0;
+  border:1px solid var(--rand);border-radius:6px;padding:10px;
+  background-color:var(--grund);
+}
+.diagrammfenster__arten{
+  display:flex;gap:8px;flex-wrap:wrap;
+  padding-bottom:8px;border-bottom:1px solid var(--rand);
+}
+.diagrammart{
+  width:74px;padding:4px;
+  border:1px solid var(--rand);border-radius:4px;
+  background:var(--blatt);cursor:pointer;
+}
+.diagrammart svg{width:100%;height:auto;display:block}
+.diagrammart:hover{border-color:var(--blau)}
+.diagrammart--an{border-color:var(--blau);box-shadow:0 0 0 2px rgba(47,111,181,.35)}
+.diagrammfenster__name{margin:0;font-size:1.05rem;font-weight:700}
+.diagrammfenster__vorschau{
+  background:var(--blatt);border:1px solid var(--rand);border-radius:4px;
+  padding:8px;
+}
+.diagrammfenster__vorschau svg{width:100%;height:auto;display:block}
+
+/* Das gewaehlte Diagramm im Text — man soll sehen, woran die Knoepfe
+   rechts daneben haengen. */
+.diagramm--gewaehlt{outline:2px solid var(--blau);outline-offset:3px}
+
 /* Eine leere Seite ist leer — aber sie muss zu sehen sein, sonst
    glaubt niemand, dass sie da ist. Ein feiner Rahmen und ein Wort in
    der Mitte; beim Drucken faellt beides weg. */
