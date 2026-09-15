@@ -956,48 +956,198 @@ B.uhrzeit = () => {
   Dokument.einfuegen(zweiStellen(d.getHours()) + ':' + zweiStellen(d.getMinutes()));
 };
 
-/* „Uhrzeit und Datum kann man in einer Funktion zusammenfassen."
+/* ============================================================
+   DATUM UND UHRZEIT
 
-   Ein Fenster mit den Formen, die man wirklich schreibt, und einer
-   Vorschau daneben — wer „langes Datum" waehlt, sieht vorher, was
-   dasteht. Vorher waren es zwei Knoepfe, die je eine feste Form
-   einfuegten: Wer „15. September 2026" wollte, musste es tippen. */
-const ZEITFORMEN = [
-  ['kurz',     () => { const d = new Date();
-                       return zweiStellen(d.getDate()) + '.' + zweiStellen(d.getMonth() + 1)
-                              + '.' + d.getFullYear(); }],
-  ['lang',     () => new Date().toLocaleDateString('de-DE',
-                       { day: 'numeric', month: 'long', year: 'numeric' })],
-  ['wochentag',() => new Date().toLocaleDateString('de-DE',
-                       { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })],
-  ['iso',      () => new Date().toISOString().slice(0, 10)],
-  ['uhr',      () => { const d = new Date();
-                       return zweiStellen(d.getHours()) + ':' + zweiStellen(d.getMinutes()); }],
-  ['uhrlang',  () => { const d = new Date();
-                       return zweiStellen(d.getHours()) + ':' + zweiStellen(d.getMinutes())
-                              + ':' + zweiStellen(d.getSeconds()); }],
-  ['beides',   () => { const d = new Date();
-                       return d.toLocaleDateString('de-DE',
-                                { day: 'numeric', month: 'long', year: 'numeric' })
-                              + ', ' + zweiStellen(d.getHours()) + ':'
-                              + zweiStellen(d.getMinutes()) + ' Uhr'; }],
+   Nach seinem Bild des WPS-Fensters:
+
+       Verfügbare Formate:            Sprache:
+       ┌──────────────────────┐ ▲     [Deutsch (Deutschland) ▾]
+       │ 15.09.2026           │ │
+       │ Dienstag, 15. Sep…   │ │
+       │ …                    │ ▼     [ ] Automatisch aktualisieren
+       └──────────────────────┘
+                                      Abbrechen        OK
+
+   Meine erste Fassung war ein Klappfeld mit sieben Eintraegen. Er hat
+   beide Bilder nebeneinander geschickt und gefragt, ob das nach seiner
+   Vorgabe aussieht. Nein.
+
+   DIE LISTE HAENGT AN DER SPRACHE. Das ist der Grund, warum die
+   Sprachauswahl daneben steht und nicht in den Optionen: Wer ein
+   Schreiben auf Englisch aufsetzt, will „September 15, 2026" und nicht
+   „15. September 2026" — im selben Fenster, im selben Augenblick.
+   ============================================================ */
+const ZEITSPRACHEN = [
+  ['de-DE', 'Deutsch (Deutschland)'],
+  ['de-AT', 'Deutsch (Österreich)'],
+  ['de-CH', 'Deutsch (Schweiz)'],
+  ['en-US', 'Englisch (die USA)'],
+  ['en-GB', 'Englisch (Großbritannien)'],
+  ['fr-FR', 'Französisch (Frankreich)'],
 ];
+
+/* Die Formen, die WPS anbietet — als Rechenvorschrift, damit sie in
+   jeder Sprache stimmen. */
+const ZEITFORMEN = [
+  (d, l) => d.toLocaleDateString(l),
+  (d, l) => d.toLocaleDateString(l, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }),
+  (d, l) => d.toLocaleDateString(l, { day: 'numeric', month: 'long', year: 'numeric' }),
+  (d, l) => d.toLocaleDateString(l, { day: '2-digit', month: '2-digit', year: '2-digit' }),
+  (d) => d.getFullYear() + '-' + zweiStellen(d.getMonth() + 1) + '-' + zweiStellen(d.getDate()),
+  (d, l) => d.toLocaleDateString(l, { day: '2-digit', month: 'short', year: '2-digit' }),
+  (d, l) => d.toLocaleDateString(l, { day: 'numeric', month: 'numeric', year: 'numeric' }),
+  (d, l) => d.toLocaleDateString(l, { day: 'numeric', month: 'short', year: '2-digit' }),
+  (d, l) => d.toLocaleDateString(l, { day: 'numeric', month: 'long', year: 'numeric' }).replace('.', ''),
+  (d, l) => d.toLocaleDateString(l, { month: 'long', year: '2-digit' }),
+  (d, l) => d.toLocaleDateString(l, { month: 'short', year: '2-digit' }),
+  (d, l) => d.toLocaleDateString(l) + ' ' + d.toLocaleTimeString(l, { hour: '2-digit', minute: '2-digit' }),
+  (d, l) => d.toLocaleDateString(l) + ' ' + d.toLocaleTimeString(l),
+  (d, l) => d.toLocaleTimeString(l, { hour: '2-digit', minute: '2-digit' }),
+  (d, l) => d.toLocaleTimeString(l),
+];
+
+let zeitSprache = Speicher.lies('zeitSprache', 'de-DE');
+let zeitForm = Speicher.lies('zeitForm', 0);
 
 B.datumUhrzeit = () => {
   auswahlMerken();
-  fenster('Datum und Uhrzeit', [
-    { art: 'satz', text: 'Wird als Text eingefügt und bleibt dann stehen — '
-                       + 'es rechnet sich nicht jeden Tag neu.' },
-    { schluessel: 'form', name: 'Form', art: 'auswahl',
-      werte: ZEITFORMEN.map(([k, mach]) => [k, mach()]) },
-  ], (werte) => {
-    const eintrag = ZEITFORMEN.find(([k]) => k === werte.form) || ZEITFORMEN[0];
+
+  const grund = document.createElement('div');
+  grund.className = 'dialoggrund';
+  const kasten = document.createElement('div');
+  kasten.className = 'dialog zeitfenster';
+  kasten.innerHTML = '<h3 class="dialog__titel">Datum und Uhrzeit</h3>';
+
+  const koerper = document.createElement('div');
+  koerper.className = 'zeitfenster__koerper';
+
+  /* --- links: die Formate --- */
+  const links = document.createElement('div');
+  links.className = 'zeitfenster__spalte';
+  const kopfL = document.createElement('p');
+  kopfL.className = 'zeitfenster__kopf';
+  kopfL.textContent = 'Verfügbare Formate:';
+  links.appendChild(kopfL);
+
+  const liste = document.createElement('div');
+  liste.className = 'zeitliste';
+  liste.setAttribute('role', 'listbox');
+  links.appendChild(liste);
+  koerper.appendChild(links);
+
+  /* --- rechts: Sprache und der Haken --- */
+  const rechts = document.createElement('div');
+  rechts.className = 'zeitfenster__spalte';
+  const kopfR = document.createElement('p');
+  kopfR.className = 'zeitfenster__kopf';
+  kopfR.textContent = 'Sprache:';
+  rechts.appendChild(kopfR);
+
+  const sprache = document.createElement('select');
+  sprache.className = 'zeitfenster__sprache';
+  for (const [wert, name] of ZEITSPRACHEN) {
+    const o = document.createElement('option');
+    o.value = wert; o.textContent = name;
+    if (wert === zeitSprache) o.selected = true;
+    sprache.appendChild(o);
+  }
+  sprache.addEventListener('change', () => { zeitSprache = sprache.value; listeBauen(); });
+  rechts.appendChild(sprache);
+
+  const frisch = document.createElement('label');
+  frisch.className = 'zeitfenster__haken';
+  const haken = document.createElement('input');
+  haken.type = 'checkbox';
+  frisch.appendChild(haken);
+  frisch.appendChild(document.createTextNode(' Automatisch aktualisieren'));
+  rechts.appendChild(frisch);
+
+  const satz = document.createElement('p');
+  satz.className = 'zeitfenster__satz';
+  satz.textContent = 'Ohne Haken steht das Datum fest im Text. Mit Haken '
+                   + 'rechnet es sich beim Öffnen neu — gut für eine Vorlage, '
+                   + 'schlecht für einen Brief, der abgeschickt ist.';
+  rechts.appendChild(satz);
+  koerper.appendChild(rechts);
+  kasten.appendChild(koerper);
+
+  function listeBauen() {
+    liste.textContent = '';
+    const jetzt = new Date();
+    /* Auf Deutsch fallen ein paar Formen zusammen — „15.9.2026" kommt
+       aus zwei Rechenvorschriften. Zweimal dieselbe Zeile in einer
+       Auswahlliste ist ein Fehler, den jeder sofort sieht. */
+    const schon = new Set();
+    ZEITFORMEN.forEach((mach, i) => {
+      let text;
+      try { text = mach(jetzt, zeitSprache); } catch (e) { return; }
+      if (schon.has(text)) return;
+      schon.add(text);
+      const z = document.createElement('button');
+      z.type = 'button';
+      z.className = 'zeitliste__zeile' + (i === zeitForm ? ' zeitliste__zeile--an' : '');
+      z.textContent = text;
+      z.addEventListener('click', () => {
+        zeitForm = i;
+        [...liste.children].forEach((c) => c.classList.remove('zeitliste__zeile--an'));
+        z.classList.add('zeitliste__zeile--an');
+      });
+      z.addEventListener('dblclick', () => uebernehmen());
+      liste.appendChild(z);
+    });
+  }
+
+  function uebernehmen() {
+    const mach = ZEITFORMEN[zeitForm] || ZEITFORMEN[0];
+    const text = mach(new Date(), zeitSprache);
+    Speicher.schreib('zeitSprache', zeitSprache);
+    Speicher.schreib('zeitForm', zeitForm);
+    grund.remove();
     auswahlZurueck();
-    Dokument.einfuegen(eintrag[1]());
+    if (haken.checked) {
+      /* Ein Feld, das sich beim Oeffnen neu rechnet. Es traegt seine
+         Vorschrift bei sich, sonst wuesste beim naechsten Mal niemand,
+         welche Form gemeint war. */
+      Dokument.einfuegen('<span class="zeitfeld" data-zeitform="' + zeitForm
+        + '" data-zeitsprache="' + zeitSprache + '">' + alsSicher(text) + '</span>&#8203;');
+    } else {
+      Dokument.einfuegen(alsSicher(text));
+    }
     geaendertMelden();
-    melde('Eingefügt: ' + eintrag[1]());
-  }, 'Einfügen');
+    melde('Eingefügt: ' + text + (haken.checked ? ' — rechnet sich neu.' : ''));
+  }
+
+  const fuss = document.createElement('div');
+  fuss.className = 'dialog__knoepfe';
+  const ab = document.createElement('button');
+  ab.type = 'button'; ab.className = 'knopf'; ab.textContent = 'Abbrechen';
+  ab.addEventListener('click', () => grund.remove());
+  const ok = document.createElement('button');
+  ok.type = 'button'; ok.className = 'knopf knopf--haupt'; ok.textContent = 'OK';
+  ok.addEventListener('click', uebernehmen);
+  fuss.appendChild(ab); fuss.appendChild(ok);
+  kasten.appendChild(fuss);
+
+  grund.appendChild(kasten);
+  grund.addEventListener('mousedown', (e) => { if (e.target === grund) grund.remove(); });
+  document.addEventListener('keydown', function zu(e) {
+    if (e.key === 'Escape' && grund.isConnected) { grund.remove(); document.removeEventListener('keydown', zu); }
+  });
+  document.body.appendChild(grund);
+  listeBauen();
 };
+
+/* Beim Oeffnen eines Dokuments die Felder nachrechnen, die es sollen. */
+function zeitfelderAuffrischen() {
+  for (const feldchen of feld.querySelectorAll('.zeitfeld')) {
+    const i = parseInt(feldchen.dataset.zeitform, 10) || 0;
+    const l = feldchen.dataset.zeitsprache || 'de-DE';
+    const mach = ZEITFORMEN[i] || ZEITFORMEN[0];
+    try { feldchen.textContent = mach(new Date(), l); } catch (e) { /* Sprache weg */ }
+  }
+}
+
 B.seitenumbruch = () => Dokument.einfuegen('<p style="page-break-before:always"><br></p>');
 
 B.bild = () => {
@@ -17970,6 +18120,8 @@ bedienungAnwenden();
 flaecheAnwenden();
 /* Farbschema, Schriftpaar und Effekt auf das Blatt legen. */
 designFeinAnwenden();
+/* Felder, die sich neu rechnen sollen, beim Start nachziehen. */
+zeitfelderAuffrischen();
 /* Unten rechts: Ansichten und Schieber. Auch hier erst jetzt, weil die
    Knöpfe ihre Zeichnungen aus SYMBOLE holen. */
 statuszeileBauen();

@@ -2527,6 +2527,37 @@ body.lesen .arbeitsflaeche{padding:40px 24px}
   paint-order:stroke fill;
 }
 
+/* ---- Datum und Uhrzeit nach seinem Bild ----
+   Links die Formatliste, rechts die Sprache und der Haken. */
+.zeitfenster{min-width:560px}
+.zeitfenster__koerper{display:flex;gap:18px;align-items:flex-start}
+.zeitfenster__spalte{display:flex;flex-direction:column;gap:6px;min-width:0}
+.zeitfenster__spalte:first-child{flex:1 1 58%}
+.zeitfenster__spalte:last-child{flex:1 1 42%}
+.zeitfenster__kopf{margin:0;font-size:.88rem;font-weight:700}
+.zeitliste{
+  height:260px;overflow-y:auto;
+  border:1px solid var(--rand);border-radius:6px;
+  background-color:var(--grund);padding:3px;
+}
+.zeitliste__zeile{
+  display:block;width:100%;text-align:left;
+  padding:4px 8px;border:1px solid transparent;border-radius:4px;
+  background:none;color:var(--schrift);font:inherit;cursor:pointer;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.zeitliste__zeile:hover{background:rgba(127,127,127,.12)}
+.zeitliste__zeile--an{border-color:var(--blau-hell);background:rgba(47,111,181,.18)}
+.zeitfenster__sprache{
+  padding:6px 10px;border:1px solid var(--rand);border-radius:6px;
+  background-color:var(--grund);color:var(--schrift);font:inherit;
+}
+.zeitfenster__haken{display:flex;align-items:center;gap:6px;margin-top:10px;cursor:pointer}
+.zeitfenster__satz{margin:4px 0 0;font-size:.82rem;color:var(--schrift-2);line-height:1.4}
+/* Ein Feld, das sich neu rechnet, soll man sehen — sonst wundert sich
+   jemand, warum im Brief ein anderes Datum steht als beim Schreiben. */
+.zeitfeld{background:rgba(47,111,181,.10);border-radius:3px;padding:0 2px}
+
 /* ---- Das Textmarken-Fenster nach seinem Bild ---- */
 .markenfenster{min-width:420px}
 .markenliste{
