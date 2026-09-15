@@ -259,4 +259,8 @@ const SYMBOLE = {
   punktwolke:    'M3 3v16a2 2 0 0 0 2 2h16 M8 15a1 1 0 1 0 2 0a1 1 0 1 0 -2 0 M12 9a1 1 0 1 0 2 0a1 1 0 1 0 -2 0 M16 13a1 1 0 1 0 2 0a1 1 0 1 0 -2 0 M6.5 11a1 1 0 1 0 2 0a1 1 0 1 0 -2 0',   /* lucide: chart-scatter */
   diagrammteil:  'M3 3v14a2 2 0 0 0 2 2h9 M7 14V9 M11 14V6 M18 14v8 M14 18h8',   /* eigen: Saeulen mit Plus — Diagrammelement hinzufuegen */
   durchgestrichen: 'M4 19 l6-14h1.6l6 14 M6.6 14.2h8.8 M2 11.5h20',   /* eigen: A mit Strich — „Das Symbol ist als Funktion nicht zu erkennen" */
+  kurs:          'M3 3v16a2 2 0 0 0 2 2h16 M8 7v10 M8 9h3 M13 6v12 M13 14h3 M18 8v9 M18 11h3',   /* eigen: Hoch-Tief-Schluss */
+  netz:          'M12 3 l8.5 6.2 -3.2 10H6.7L3.5 9.2z M12 8 l4.5 3.3 -1.7 5.3H9.2L7.5 11.3z',   /* eigen: Netz */
+  kombination:   'M3 3v16a2 2 0 0 0 2 2h16 M7 17v-5 M12 17v-8 M17 17v-3 M6 9l5-4 5 3 4-5',   /* eigen: Saeulen mit Linie */
+  vorlage:       'M4 4h16v16H4z M4 9h16 M9 9v11',   /* eigen: Vorlage */
 };

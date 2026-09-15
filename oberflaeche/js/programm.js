@@ -5039,7 +5039,8 @@ const REGISTER_IM_ZUSAMMENHANG = [
         ['zahlen', 'Daten bearbeiten', () => B.diagrammDaten(), 'gross']]],
       ['Formatierung', [
         ['zahnrad', 'Formatieren', () => B.diagrammFormat(), 'gross'],
-        ['Zurück', 'Formatvorlage zurücksetzen', () => B.diagrammZurueck()]]],
+        ['Zurück', 'Formatvorlage zurücksetzen', () => B.diagrammZurueck()],
+        ['vorlage', 'Als Vorlage merken', () => B.diagrammVorlageMerken()]]],
     ],
   },
   {
@@ -7520,8 +7521,162 @@ function diagrammZeichnen(art, punkte, titel, wie) {
     flaeche:    (p, t, w) => linienSvg(p, t, Object.assign({}, w, { fuellen: true })),
     saeuleproz: (p, t, w) => gestapeltSvg(p, t, Object.assign({}, w, { prozent: true }), false),
     punkte:     punktwolkeSvg,
+    netz:       netzSvg,
+    kurs:       kursSvg,
+    kombi:      kombiSvg,
   }[art];
   return (bauer || saeulenSvg)(punkte, titel, wie);
+}
+
+/* ============================================================
+   NETZ, KURS UND KOMBINATION
+
+   Vier Gruppen seiner Vorlage fehlten: Kurs, Netz, Kombination und
+   Vorlagen. Drei davon brauchen MEHRERE ZAHLEN je Zeile, und genau die
+   nimmt zahlenLesen() jetzt entgegen:
+
+       Montag: 12; 8; 10        hoch, tief, schluss
+
+   Eine Zahl bleibt eine Zahl — wer nur eine schreibt, merkt von den
+   Reihen nichts.
+   ============================================================ */
+
+/* NETZ (Radar): ein Vieleck ueber so vielen Achsen, wie es Werte gibt.
+   Gut, wenn man Eigenschaften vergleicht, die keine Reihenfolge haben —
+   fuenf Faecher, fuenf Noten. */
+function netzSvg(punkte, titel, wie) {
+  wie = wie || {};
+  const farben = wie.farben || DIAGRAMMFARBEN;
+  const breite = 480, hoehe = 300;
+  const mitteX = breite / 2, mitteY = (titel ? 36 : 14) + 120;
+  const r = 110;
+  const groesste = Math.max(...punkte.map((p) => Math.abs(p.wert)), 1);
+
+  let aus = '';
+  if (titel) aus += '<text data-teil="titel" x="' + mitteX + '" y="20" text-anchor="middle" '
+                  + 'font-size="14" font-weight="600" fill="#111417">' + alsText(titel) + '</text>';
+
+  const ecke = (i, anteil) => {
+    const w = (i / punkte.length) * Math.PI * 2 - Math.PI / 2;
+    return [mitteX + Math.cos(w) * r * anteil, mitteY + Math.sin(w) * r * anteil];
+  };
+
+  /* Das Netz dahinter — vier Ringe, damit man ablesen kann. */
+  for (const ring of [0.25, 0.5, 0.75, 1]) {
+    const punkteRing = punkte.map((p, i) => ecke(i, ring).map((z) => z.toFixed(1)).join(','));
+    aus += '<polygon points="' + punkteRing.join(' ') + '" fill="none" stroke="#D5D9DD"/>';
+  }
+  punkte.forEach((p, i) => {
+    const [x, y] = ecke(i, 1);
+    aus += '<line x1="' + mitteX + '" y1="' + mitteY + '" x2="' + x.toFixed(1)
+         + '" y2="' + y.toFixed(1) + '" stroke="#D5D9DD"/>';
+    const [tx, ty] = ecke(i, 1.16);
+    aus += '<text x="' + tx.toFixed(1) + '" y="' + ty.toFixed(1)
+         + '" text-anchor="middle" font-size="10" fill="#4C555E">' + alsText(p.name) + '</text>';
+  });
+
+  const netz = punkte.map((p, i) =>
+    ecke(i, Math.abs(p.wert) / groesste).map((z) => z.toFixed(1)).join(','));
+  aus += '<polygon data-teil="linie" points="' + netz.join(' ') + '" fill="'
+       + farben[0] + '" fill-opacity=".3" stroke="' + farben[0] + '" stroke-width="2"/>';
+  punkte.forEach((p, i) => {
+    const [x, y] = ecke(i, Math.abs(p.wert) / groesste);
+    aus += '<circle data-teil="wert-' + i + '" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1)
+         + '" r="4" fill="' + farben[0] + '"/>';
+  });
+  return svgHuelle(breite, hoehe, aus);
+}
+
+/* KURS: je Zeile hoch, tief und Schluss. Ein Strich von tief nach hoch,
+   ein Querbalken am Schluss — so steht es in WPS unter „Hoch, Niedrig,
+   Schliessen". Wer nur zwei Zahlen schreibt, bekommt hoch und tief. */
+function kursSvg(punkte, titel, wie) {
+  wie = wie || {};
+  const farben = wie.farben || DIAGRAMMFARBEN;
+  const breite = 480, hoehe = 260;
+  const rand = { oben: titel ? 34 : 14, unten: 44, links: 46, rechts: 14 };
+  const flaeche = breite - rand.links - rand.rechts;
+  const hoch = hoehe - rand.oben - rand.unten;
+  const alle = punkte.flatMap((p) => p.werte || [p.wert]);
+  const groesste = Math.max(...alle.map(Math.abs), 1);
+  const luecke = flaeche / punkte.length;
+
+  let aus = '';
+  if (titel) aus += '<text data-teil="titel" x="' + (breite / 2) + '" y="20" text-anchor="middle" '
+                  + 'font-size="14" font-weight="600" fill="#111417">' + alsText(titel) + '</text>';
+  aus += '<line x1="' + rand.links + '" y1="' + (rand.oben + hoch) + '" x2="'
+       + (breite - rand.rechts) + '" y2="' + (rand.oben + hoch) + '" stroke="#9AA3AB"/>';
+
+  const y = (w) => rand.oben + hoch - Math.abs(w) / groesste * hoch;
+  punkte.forEach((p, i) => {
+    const w = p.werte && p.werte.length ? p.werte : [p.wert];
+    const hochW = Math.max(...w), tiefW = Math.min(...w);
+    const schluss = w.length > 2 ? w[2] : null;
+    const x = rand.links + i * luecke + luecke / 2;
+    const farbe = farben[i % farben.length];
+    aus += '<line data-teil="wert-' + i + '" x1="' + x.toFixed(1) + '" y1="' + y(hochW).toFixed(1)
+         + '" x2="' + x.toFixed(1) + '" y2="' + y(tiefW).toFixed(1)
+         + '" stroke="' + farbe + '" stroke-width="2"/>';
+    if (schluss !== null) {
+      aus += '<line x1="' + (x - 7).toFixed(1) + '" y1="' + y(schluss).toFixed(1)
+           + '" x2="' + (x + 7).toFixed(1) + '" y2="' + y(schluss).toFixed(1)
+           + '" stroke="' + farbe + '" stroke-width="2"/>';
+    }
+    aus += '<text x="' + x.toFixed(1) + '" y="' + (rand.oben + hoch + 15).toFixed(1)
+         + '" text-anchor="middle" font-size="10" fill="#4C555E">' + alsText(p.name) + '</text>';
+  });
+  aus += '<text x="10" y="' + (hoehe - 10) + '" font-size="10" fill="#4C555E">'
+       + 'Je Zeile: hoch; tief; Schluss</text>';
+  return svgHuelle(breite, hoehe, aus);
+}
+
+/* KOMBINATION: die erste Reihe als Saeulen, die zweite als Linie
+   darueber. Umsatz und Anteil im selben Bild — dafuer gibt es sie. */
+function kombiSvg(punkte, titel, wie) {
+  wie = wie || {};
+  const farben = wie.farben || DIAGRAMMFARBEN;
+  const breite = 480, hoehe = 260;
+  const rand = { oben: titel ? 34 : 14, unten: 44, links: 46, rechts: 14 };
+  const flaeche = breite - rand.links - rand.rechts;
+  const hoch = hoehe - rand.oben - rand.unten;
+  const ersten = punkte.map((p) => Math.abs(p.wert));
+  const zweiten = punkte.map((p) => Math.abs((p.werte || [])[1] || 0));
+  const g1 = Math.max(...ersten, 1);
+  const g2 = Math.max(...zweiten, 1);
+  const luecke = flaeche / punkte.length;
+
+  let aus = '';
+  if (titel) aus += '<text data-teil="titel" x="' + (breite / 2) + '" y="20" text-anchor="middle" '
+                  + 'font-size="14" font-weight="600" fill="#111417">' + alsText(titel) + '</text>';
+  aus += '<line x1="' + rand.links + '" y1="' + (rand.oben + hoch) + '" x2="'
+       + (breite - rand.rechts) + '" y2="' + (rand.oben + hoch) + '" stroke="#9AA3AB"/>';
+
+  punkte.forEach((p, i) => {
+    const h = ersten[i] / g1 * hoch;
+    const x = rand.links + i * luecke + luecke * 0.2;
+    const b = luecke * 0.6;
+    aus += '<rect data-teil="wert-' + i + '" x="' + x.toFixed(1) + '" y="'
+         + (rand.oben + hoch - h).toFixed(1) + '" width="' + b.toFixed(1)
+         + '" height="' + h.toFixed(1) + '" fill="' + farben[i % farben.length] + '"/>';
+    aus += '<text x="' + (x + b / 2).toFixed(1) + '" y="' + (rand.oben + hoch + 15).toFixed(1)
+         + '" text-anchor="middle" font-size="10" fill="#4C555E">' + alsText(p.name) + '</text>';
+  });
+
+  if (zweiten.some((z) => z > 0)) {
+    const stellen = punkte.map((p, i) => [
+      rand.links + i * luecke + luecke / 2,
+      rand.oben + hoch - zweiten[i] / g2 * hoch,
+    ]);
+    aus += '<polyline data-teil="linie" fill="none" stroke="#111417" stroke-width="2" points="'
+         + stellen.map(([x, y]) => x.toFixed(1) + ',' + y.toFixed(1)).join(' ') + '"/>';
+    for (const [x, y] of stellen) {
+      aus += '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="3.5" fill="#111417"/>';
+    }
+  } else {
+    aus += '<text x="10" y="' + (hoehe - 10) + '" font-size="10" fill="#4C555E">'
+         + 'Zweite Zahl je Zeile ergibt die Linie — „Rubrik 1: 4; 2"</text>';
+  }
+  return svgHuelle(breite, hoehe, aus);
 }
 
 /* X Y (Punkt): nur die Marker, keine Linie dazwischen. Man sieht, wo
@@ -7872,11 +8027,52 @@ const DIAGRAMMKATALOG = [
   ['punkt', 'X Y (Punkt)', 'punktwolke', [
     ['punkte',      'Punkte (nur Marker)'],
   ]],
+  ['kurs', 'Kurs', 'kurs', [
+    ['kurs',        'Hoch, Niedrig, Schließen'],
+  ]],
+  ['netz', 'Netz', 'netz', [
+    ['netz',        'Netz'],
+  ]],
+  ['kombi', 'Kombination', 'kombination', [
+    ['kombi',       'Säulen und Linie'],
+  ]],
+  ['vorlagen', 'Vorlagen', 'vorlage', []],
 ];
 
+/* „Vorlagen" ist in WPS kein Diagrammtyp, sondern die Liste dessen, was
+   man sich selbst aufgehoben hat. Darum steht sie in der Gruppenspalte
+   und zeigt rechts keine Arten, sondern die gemerkten Diagramme. */
+let diagrammVorlagen = Speicher.lies('diagrammVorlagen', []);
+
+function vorlageMerken(q, name) {
+  diagrammVorlagen = diagrammVorlagen.filter((v) => v.name !== name);
+  diagrammVorlagen.push({ name, art: q.art, satz: q.satz,
+                          werte: q.werte, legende: q.legende });
+  Speicher.schreib('diagrammVorlagen', diagrammVorlagen);
+}
+
+B.diagrammVorlageMerken = () => mitDiagramm((bild, q) => {
+  fenster('Als Vorlage merken', [
+    { art: 'satz', text: 'Gemerkt werden Art, Farben und was dranstehen soll — '
+                       + 'nicht die Zahlen.' },
+    { schluessel: 'name', name: 'Name', wert: diagrammName(q.art) },
+  ], (werte) => {
+    const name = (werte.name || '').trim();
+    if (!name) return;
+    vorlageMerken(q, name);
+    melde('Als Vorlage „' + name + '" gemerkt.');
+  }, 'Merken');
+});
+
+/* Vier Rubriken mit je drei Zahlen — dieselbe Beispielreihe, die auf
+   seinem WPS-Bild in der Vorschau steht. Die zweite und dritte Zahl
+   braucht nur, wer Kurs oder Kombination ansieht; alle anderen nehmen
+   die erste. */
 const DIAGRAMMPROBE = [
-  { name: 'Rubrik 1', wert: 4.3 }, { name: 'Rubrik 2', wert: 2.5 },
-  { name: 'Rubrik 3', wert: 3.5 }, { name: 'Rubrik 4', wert: 4.5 },
+  { name: 'Rubrik 1', wert: 4.3, werte: [4.3, 2.4, 2] },
+  { name: 'Rubrik 2', wert: 2.5, werte: [2.5, 4.4, 2] },
+  { name: 'Rubrik 3', wert: 3.5, werte: [3.5, 1.8, 3] },
+  { name: 'Rubrik 4', wert: 4.5, werte: [4.5, 2.8, 5] },
 ];
 
 function diagrammName(kuerzel) {
@@ -7892,6 +8088,7 @@ B.diagramm = () => {
   let art = Speicher.lies('diagrammArt', 'saeule');
   let gruppeJetzt = (DIAGRAMMKATALOG.find(([, , , arten]) =>
     arten.some(([k]) => k === art)) || DIAGRAMMKATALOG[0])[0];
+  let vorlageJetzt = null;
 
   const grund = document.createElement('div');
   grund.className = 'dialoggrund';
@@ -7917,6 +8114,52 @@ B.diagramm = () => {
 
   function rechtsBauen() {
     const g = DIAGRAMMKATALOG.find(([k]) => k === gruppeJetzt) || DIAGRAMMKATALOG[0];
+
+    /* „Vorlagen" zeigt keine Arten, sondern das Gemerkte. */
+    if (gruppeJetzt === 'vorlagen') {
+      reihe.textContent = '';
+      ueberschrift.textContent = diagrammVorlagen.length
+        ? 'Gemerkte Vorlagen' : 'Noch keine Vorlage';
+      gross.textContent = '';
+      if (!diagrammVorlagen.length) {
+        const satz = document.createElement('p');
+        satz.className = 'zeitfenster__satz';
+        satz.textContent = 'Ein Diagramm wählen, in den Diagrammtools '
+                         + 'einstellen, wie es aussehen soll, und dort über '
+                         + '„Als Vorlage merken" aufheben. Es steht dann hier.';
+        gross.appendChild(satz);
+        return;
+      }
+      const gitter = document.createElement('div');
+      gitter.className = 'stilgitter';
+      for (const v of diagrammVorlagen) {
+        const k = document.createElement('button');
+        k.type = 'button';
+        k.className = 'stilkachel' + (art === v.art ? ' diagrammart--an' : '');
+        k.title = v.name;
+        const b = document.createElement('span');
+        b.className = 'stilkachel__bild';
+        b.innerHTML = diagrammZeichnen(v.art, DIAGRAMMPROBE, '', {
+          farben: diagrammSatz(v.satz), werte: v.werte, legende: v.legende,
+        });
+        const w = document.createElement('span');
+        w.className = 'stilkachel__name';
+        w.textContent = v.name;
+        k.append(b, w);
+        k.addEventListener('click', () => {
+          art = v.art;
+          vorlageJetzt = v;
+          [...gitter.children].forEach((c) => c.classList.remove('diagrammart--an'));
+          k.classList.add('diagrammart--an');
+        });
+        k.addEventListener('dblclick', weiter);
+        gitter.appendChild(k);
+      }
+      gross.appendChild(gitter);
+      return;
+    }
+    vorlageJetzt = null;
+
     if (!g[3].some(([k]) => k === art)) art = g[3][0][0];
 
     reihe.textContent = '';
@@ -7968,11 +8211,16 @@ B.diagramm = () => {
        waere ein weisser Kasten, bei dem niemand weiss, was zu tun ist. */
     const daten = 'Rubrik 1: 4\nRubrik 2: 3\nRubrik 3: 5\nRubrik 4: 2';
     const punkte = zahlenLesen(daten);
-    const quelle = { art, titel: 'Diagrammtitel', daten,
-                     satz: 'bunt', werte: true, legende: true };
+    const quelle = vorlageJetzt
+      ? { art: vorlageJetzt.art, titel: 'Diagrammtitel', daten,
+          satz: vorlageJetzt.satz, werte: vorlageJetzt.werte,
+          legende: vorlageJetzt.legende }
+      : { art, titel: 'Diagrammtitel', daten,
+          satz: 'bunt', werte: true, legende: true };
     Dokument.einfuegen('<p>' + merkeQuelle(
-      diagrammZeichnen(art, punkte, quelle.titel, {
-        farben: diagrammSatz('bunt'), werte: true, legende: true,
+      diagrammZeichnen(quelle.art, punkte, quelle.titel, {
+        farben: diagrammSatz(quelle.satz), werte: quelle.werte,
+        legende: quelle.legende,
       }), quelle) + '</p><p><br></p>');
     geaendertMelden();
     melde(diagrammName(art) + ' eingefügt — die Zahlen ändern Sie mit '
