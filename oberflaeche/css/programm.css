@@ -2547,6 +2547,14 @@ body.lesen .arbeitsflaeche{padding:40px 24px}
   border-top-right-radius:0;border-bottom-right-radius:0;
   padding-right:2px;min-width:22px;
 }
+/* Ein Knopf, der ein Wort traegt, bekommt sonst einen eigenen Rand und
+   viel Polster — „Aa" und „U" standen dadurch weit vom Pfeil weg, und
+   der Pfeil sah aus wie ein zweiter Knopf daneben. Im geteilten Knopf
+   gehoert beides zusammen. */
+.wz-geteilt .wz--wort{
+  border-color:transparent;padding-left:5px;padding-right:3px;min-width:20px;
+}
+.wz-geteilt:hover .wz--wort{border-color:transparent}
 .wz-geteilt__pfeil{
   min-width:0;width:11px;padding:0;margin-left:-1px;
   border-top-left-radius:0;border-bottom-left-radius:0;
@@ -2642,9 +2650,11 @@ body.lesen .arbeitsflaeche{padding:40px 24px}
   gap:2px;padding:2px 4px;
 }
 .farbtafel__reihe{
-  display:grid;grid-template-columns:repeat(10, 1fr);
+  display:grid;grid-template-columns:repeat(12, 1fr);
   gap:2px;padding:2px 4px;
 }
+/* Seine zwoelf Farben passen genau in eine Reihe. */
+.farbtafel__reihe--zwoelf{grid-template-columns:repeat(12, 1fr)}
 .farbtafel__feld{
   width:100%;aspect-ratio:1;
   border:1px solid rgba(127,127,127,.45);border-radius:2px;

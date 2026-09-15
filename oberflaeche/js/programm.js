@@ -2132,8 +2132,8 @@ B.hervorheben  = (e) => farbeWaehlen('hiliteColor', 'Hervorhebungsfarbe',
    Zu „Schriftfarbe" schrieb er: „die Funktion aus dem Bild ist nicht
    vorhanden" — dasselbe: das A mit dem Farbbalken darunter faerbt, der
    Pfeil waehlt. */
-let letzteMarkerfarbe = Speicher.lies('markerfarbe', '#FFE28A');
-let letzteSchriftfarbe = Speicher.lies('schriftfarbeZuletzt', '#C0392B');
+let letzteMarkerfarbe = Speicher.lies('markerfarbe', '#F4E7B0');   /* Gelb aus FARBEN, aufgehellt */
+let letzteSchriftfarbe = Speicher.lies('schriftfarbeZuletzt', '#B5563F');   /* Rot aus FARBEN */
 
 function farbeAnwenden(befehl, farbe) {
   const auswahl = window.getSelection();
@@ -2164,34 +2164,48 @@ function farbeKlappe(knopf, titel, befehl, merken) {
   auswahlMerken();
   designTafelZeigen(knopf, titel, (tafel) => {
     tafel.classList.add('designtafel--breit', 'farbtafel');
+
+    const nimm = (hex, name) => {
+      merken(hex);
+      designTafelWeg();
+      auswahlZurueck();
+      farbeAnwenden(befehl, hex);
+      melde(titel + ': ' + (name || hex.toUpperCase()) + '.');
+    };
+
+    /* SEINE ZWOELF FARBEN, nicht die aus WPS.
+
+       Ich hatte hier die WPS-Standardfarben eingesetzt — #FF0000,
+       #FFFF00, reines Blau. Das sind Signalfarben. FARBEN steht seit je
+       in dieser Datei und ist etwas anderes: zwoelf gedaempfte Toene mit
+       deutschen Namen, ausgesucht fuer ein Programm, in dem Lesen leicht
+       sein soll. Ein #FF0000 auf Papier sticht, und genau das will hier
+       niemand.
+
+       Er hat es so gesagt: „danke dass du meine Farbpaletten killst." */
     const reihe = document.createElement('div');
-    reihe.className = 'farbtafel__reihe';
-    for (const farbe of STANDARDFARBEN) {
-      reihe.appendChild(farbfeld(farbe, (hex) => {
-        merken(hex);
-        designTafelWeg();
-        auswahlZurueck();
-        farbeAnwenden(befehl, hex);
-        melde(titel + ': ' + hex.toUpperCase() + '.');
-      }));
+    reihe.className = 'farbtafel__reihe farbtafel__reihe--zwoelf';
+    for (const [hex, name] of FARBEN) {
+      const feld = farbfeld(hex, () => nimm(hex, name));
+      feld.title = name;
+      feld.setAttribute('aria-label', titel + ': ' + name);
+      reihe.appendChild(feld);
     }
     tafel.appendChild(reihe);
 
-    /* Fuer den Marker die hellen Toene: Ein Text unter dunkelblauem
-       Marker ist nicht mehr zu lesen. */
+    /* Fuer den Marker dieselben Farben, nur aufgehellt: Ein Text unter
+       dunkelblauem Marker ist nicht mehr zu lesen. Aufgehellt statt
+       ausgetauscht — so bleibt es seine Palette. */
     if (befehl === 'hiliteColor') {
       const hell = document.createElement('div');
-      hell.className = 'farbtafel__reihe';
-      for (const farbe of ['#FFE28A', '#FFF2A8', '#C8F0C0', '#BFE7F5',
-                           '#F6C9E0', '#E3D6F5', '#F2D9B8', '#DCE3EA',
-                           '#FFFFFF', '#E8E8E8']) {
-        hell.appendChild(farbfeld(farbe, (hex) => {
-          merken(hex);
-          designTafelWeg();
-          auswahlZurueck();
-          farbeAnwenden(befehl, hex);
-          melde(titel + ': ' + hex.toUpperCase() + '.');
-        }));
+      hell.className = 'farbtafel__reihe farbtafel__reihe--zwoelf';
+      for (const [hex, name] of FARBEN) {
+        const [h, sa, l] = hexZuHsl(hex);
+        const licht = hslZuHex(h, Math.min(0.62, sa), Math.max(l, 0.84));
+        const feld = farbfeld(licht, () => nimm(licht, name + ', hell'));
+        feld.title = name + ', hell';
+        feld.setAttribute('aria-label', titel + ': ' + name + ', hell');
+        hell.appendChild(feld);
       }
       tafel.insertBefore(hell, reihe);
     }
@@ -9689,10 +9703,13 @@ B.seitenfarbeSetzen = (farbe) => {
    bekommt hier die Toene von Apotheke — und die Seite passt zu den
    Ueberschriften, ohne dass jemand Farben vergleicht.
    ============================================================ */
-const STANDARDFARBEN = [
-  '#C00000', '#FF0000', '#FFC000', '#FFFF00', '#92D050',
-  '#00B050', '#00B0F0', '#0070C0', '#002060', '#7030A0',
-];
+/* Die Reihe unter „Standardfarben" in der Seitenfarb-Tafel.
+
+   In WPS stehen dort zehn Signalfarben — #FF0000, #FFFF00, reines
+   Blau. Auf einem Blatt, das jemand lesen soll, hat keine davon etwas
+   verloren. Hier stehen darum SEINE zwoelf Toene aus FARBEN, und
+   darueber eine Reihe derselben Toene als Papierfarbe aufgehellt. */
+const STANDARDFARBEN = FARBEN.map(([hex]) => hex);
 
 /* Sechs Helligkeiten je Themafarbe — dieselbe Farbe, heller und
    dunkler. Fuer ein Blatt taugt fast nur die helle Haelfte, darum
