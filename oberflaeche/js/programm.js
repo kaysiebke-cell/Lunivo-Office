@@ -10378,19 +10378,23 @@ B.sortieren = () => {
    ist eine Stufe zu weit: Wer nur einen Strich unter den Absatz will,
    soll ihn in einem Klick bekommen — dafuer steht die Klappe da. Das
    Fenster ist der letzte Punkt darin, nicht der erste Schritt. */
+/* Je Zeile ein eigenes Zeichen. Elf gleiche Kaestchen in einer Liste
+   sind keine Liste — er hat es gemeldet: „die Symbole sind nicht lesbar
+   in der Liste." Der graue Kasten ist ueberall gleich, die betonte
+   Kante sagt, welche gemeint ist. */
 const RAHMENLINIEN = [
-  ['unten',  'Rahmenlinie unten',  ['unten']],
-  ['oben',   'Rahmenlinie oben',   ['oben']],
-  ['links',  'Rahmenlinie links',  ['links']],
-  ['rechts', 'Rahmenlinie rechts', ['rechts']],
+  ['kanteUnten',  'Rahmenlinie unten',  ['unten']],
+  ['kanteOben',   'Rahmenlinie oben',   ['oben']],
+  ['kanteLinks',  'Rahmenlinie links',  ['links']],
+  ['kanteRechts', 'Rahmenlinie rechts', ['rechts']],
   ['-'],
-  ['keine',  'Kein Rahmen',        []],
-  ['alle',   'Alle Rahmenlinien',  ['oben', 'unten', 'links', 'rechts']],
-  ['aussen', 'Rahmenlinien außen', ['oben', 'unten', 'links', 'rechts']],
-  ['innen',  'Rahmenlinie innen',  'innen'],
+  ['kanteKeine',  'Kein Rahmen',        []],
+  ['kanteAlle',   'Alle Rahmenlinien',  ['oben', 'unten', 'links', 'rechts']],
+  ['kanteAussen', 'Rahmenlinien außen', ['oben', 'unten', 'links', 'rechts']],
+  ['kanteInnen',  'Rahmenlinie innen',  'innen'],
   ['-'],
-  ['waagerecht', 'Innere horizontale Rahmenlinie', 'waagerecht'],
-  ['senkrecht',  'Innere vertikale Rahmenlinie',   'senkrecht'],
+  ['kanteWaage',  'Innere horizontale Rahmenlinie', 'waagerecht'],
+  ['kanteSenk',   'Innere vertikale Rahmenlinie',   'senkrecht'],
 ];
 
 function absatzRahmenSetzen(kanten) {
@@ -10452,7 +10456,7 @@ B.absatzRahmen = (knopf) => {
       const k = document.createElement('button');
       k.type = 'button';
       k.className = 'designtafel__zeile richtungszeile';
-      k.appendChild(symbol(kuerzel === 'keine' ? 'radierer' : 'rahmen'));
+      k.appendChild(symbol(kuerzel));
       const w = document.createElement('span');
       w.textContent = name;
       k.appendChild(w);
@@ -10472,7 +10476,7 @@ B.absatzRahmen = (knopf) => {
     const mehr = document.createElement('button');
     mehr.type = 'button';
     mehr.className = 'designtafel__zeile richtungszeile';
-    mehr.appendChild(symbol('rahmen'));
+    mehr.appendChild(symbol('absatzrahmen'));
     const w = document.createElement('span');
     w.textContent = 'Rahmen und Schattierung…';
     mehr.appendChild(w);
@@ -10545,7 +10549,7 @@ B.absatzSchattierung = (knopf) => {
       tafel.appendChild(k);
     };
     zeile('radierer', 'Keine Füllung', () => { designTafelWeg(); nimm('', ''); });
-    zeile('toenung', 'Rahmen und Schattierung…',
+    zeile('absatztoenung', 'Rahmen und Schattierung…',
           () => { designTafelWeg(); B.seitenraenderRahmen('schatten'); });
   });
 };

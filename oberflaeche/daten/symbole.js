@@ -56,7 +56,7 @@ const SYMBOLE = {
   texteffekt:    'M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z M20 2v4 M22 4h-4 M2 20a2 2 0 1 0 4 0a2 2 0 1 0 -4 0',   /* lucide: sparkles */
   ebeneHoch:     'M8 5h13 M13 12h8 M13 19h8 M3 10a2 2 0 0 0 2 2h3 M3 5v12a2 2 0 0 0 2 2h3',   /* lucide: list-tree */
   ebeneTief:     'M10 6h11 M10 12h11 M10 18h11 M6 4h.01 M6 10h.01 M6 16h.01 M4 19l2 2 2-2',   /* von Hand */
-  toenung:       'M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z M4 13h16 M7 16h10 M7 19h6',   /* eigen: Absatz, untere Haelfte hinterlegt */
+  toenung:       'M19 11 l-8-8-8.6 8.6a2 2 0 0 0 0 2.8l5.2 5.2a2 2 0 0 0 2.8 0z M5 2l5 5 M2 20h20',   /* lucide/eigen: Farbeimer — Tabelle, Bild, Form und Diagramm teilen ihn */
   sortieren:     'M3 16 l4 4 4-4 M7 20V4 M20 8h-5 M15 10V6.5a2.5 2.5 0 0 1 5 0V10 M15 14h5l-5 6h5',   /* lucide: arrow-down-a-z */
   allesmark:     'M12.034 12.681a.498.498 0 0 1 .647-.647l9 3.5a.5.5 0 0 1-.033.943l-3.444 1.068a1 1 0 0 0-.66.66l-1.067 3.443a.5.5 0 0 1-.943.033z M5 3a2 2 0 0 0-2 2 M19 3a2 2 0 0 1 2 2 M5 21a2 2 0 0 1-2-2 M9 3h1 M9 21h2 M14 3h1 M3 9v1 M21 9v2 M3 14v1',   /* lucide: square-dashed-mouse-pointer */
   objekte:       'M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z',   /* lucide: mouse-pointer-2 */
@@ -199,7 +199,7 @@ const SYMBOLE = {
   pinsel:        'M14.622 17.897 l-10.68-2.913 M18.376 2.622a1 1 0 1 1 3.002 3.002L17.36 9.643a.5.5 0 0 0 0 .707l.944.944a2.41 2.41 0 0 1 0 3.408l-.944.944a.5.5 0 0 1-.707 0L8.354 7.348a.5.5 0 0 1 0-.707l.944-.944a2.41 2.41 0 0 1 3.408 0l.944.944a.5.5 0 0 0 .707 0z M9 8c-1.804 2.71-3.97 3.46-6.583 3.948a.507.507 0 0 0-.302.819l7.32 8.883a1 1 0 0 0 1.185.204C12.735 20.405 16 16.792 16 15',   /* lucide: paintbrush */
   tabelle:       'M12 3v18 M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2z M3 9h18 M3 15h18',   /* lucide: table */
   bild:          'M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2z M7 9a2 2 0 1 0 4 0a2 2 0 1 0 -4 0 M21 15 l-3.086-3.086a2 2 0 0 0-2.828 0L6 21',   /* lucide: image */
-  rahmen:        'M3 3h18v18H3z M3 3h18v2H3z M3 19h18v2H3z M3 3h2v18H3z M19 3h2v18h-2z M8 9h8 M8 12h8 M8 15h5',   /* eigen: Absatz mit betontem Rahmen ringsum */
+  rahmen:        'M3 4h18v16H3z',   /* lucide/eigen: allgemeiner Rahmen — Tabelle, Form, Textfeld teilen ihn */
   umbruch:       'M16 16 l-4 4-4-4 M3 12h18 M8 8 l4-4 4 4',   /* lucide: separator-horizontal */
   kette:         'M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71 M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71',   /* lucide: link */
   kopfz:         'M3 4h18v5H3z M5 13h14 M5 17h10',   /* von Hand */
@@ -263,4 +263,25 @@ const SYMBOLE = {
   netz:          'M12 3 l8.5 6.2 -3.2 10H6.7L3.5 9.2z M12 8 l4.5 3.3 -1.7 5.3H9.2L7.5 11.3z',   /* eigen: Netz */
   kombination:   'M3 3v16a2 2 0 0 0 2 2h16 M7 17v-5 M12 17v-8 M17 17v-3 M6 9l5-4 5 3 4-5',   /* eigen: Saeulen mit Linie */
   vorlage:       'M4 4h16v16H4z M4 9h16 M9 9v11',   /* eigen: Vorlage */
+  /* Absatz-Rahmen und -Schattierung bekommen EIGENE Zeichen. Die
+     allgemeinen „rahmen" und „toenung" gehoeren auch der Tabelle, dem
+     Bild, der Form und dem Diagramm — wer sie fuer einen Zweck umbaut,
+     baut sie allen anderen um. Genau das war passiert. */
+  absatzrahmen:  'M3 3h18v18H3z M3 3h18v2H3z M3 19h18v2H3z M3 3h2v18H3z M19 3h2v18h-2z M8 9h8 M8 12h8 M8 15h5',   /* eigen */
+  absatztoenung: 'M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z M4 13h16 M7 16h10 M7 19h6',   /* eigen */
+
+  /* Je Kante ein Zeichen. Elf gleiche Kaestchen in einer Liste sind
+     keine Liste — er hat es so gemeldet: „die Symbole sind nicht lesbar
+     in der Liste". Der graue Kasten ist immer da, die schwarze Kante
+     sagt, welche gemeint ist. */
+  kanteUnten:    'M4 5h16 M4 9h16 M4 13h16 M3.2 18.5h17.6',   /* eigen */
+  kanteOben:     'M3.2 5.5h17.6 M4 11h16 M4 15h16 M4 19h16',   /* eigen */
+  kanteLinks:    'M4.5 3.2v17.6 M9 5h11 M9 10h11 M9 15h11 M9 20h7',   /* eigen */
+  kanteRechts:   'M19.5 3.2v17.6 M4 5h11 M4 10h11 M4 15h11 M4 20h7',   /* eigen */
+  kanteKeine:    'M4 5h16 M4 10h16 M4 15h16 M4 20h10',   /* eigen: nur Zeilen, keine Kante */
+  kanteAlle:     'M3.2 3.2h17.6v17.6H3.2z M7 8h10 M7 12h10 M7 16h6',   /* eigen */
+  kanteAussen:   'M3.2 3.2h17.6v17.6H3.2z M7 12h10',   /* eigen */
+  kanteInnen:    'M4 4h16v16H4z M4 12h16 M12 4v16',   /* eigen */
+  kanteWaage:    'M4 4h16v16H4z M3.2 12h17.6',   /* eigen */
+  kanteSenk:     'M4 4h16v16H4z M12 3.2v17.6',   /* eigen */
 };

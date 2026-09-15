@@ -120,8 +120,8 @@ function REGISTER_BAUEN(B, w) {
                     ['rechts', 'Rechtsbündig', () => B.rechts()],
                     ['block', 'Blocksatz', () => B.block()],
                     ['abstand', 'Zeilenabstand', (k) => B.zeilenabstandKlappe(k)],
-                    ['toenung', 'Absatzschattierung', (k) => B.absatzSchattierung(k)],
-                    ['rahmen', 'Absatzrahmen', (k) => B.absatzRahmen(k)]], () => B.einzugGenau()],
+                    ['absatztoenung', 'Absatzschattierung', (k) => B.absatzSchattierung(k)],
+                    ['absatzrahmen', 'Absatzrahmen', (k) => B.absatzRahmen(k)]], () => B.einzugGenau()],
     /* ABSATZLAYOUT steht in der Vorlage VOR den Stilen, nicht dahinter.
        Hier stand es einmal umgekehrt, mit der Begründung, es gehöre
        „zwischen Formatvorlagen und Bearbeiten" — das war falsch gelesen.
