@@ -3245,6 +3245,170 @@ const DIAGRAMMSTILE = [
   ['warm',     'Warm',          { satz: 'warm',  werte: false, legende: true }],
 ];
 
+/* ============================================================
+   DOPPELKLICK AUF EIN EINZELNES STUECK
+
+   Aus seiner Beschreibung: „Ein Doppelklick auf ein beliebiges Element
+   des Diagramms (z. B. eine einzelne Saeule oder den Hintergrund)
+   oeffnet das rechte Formatierungsmenue fuer individuelle Farben,
+   Schatten und Linienstaerken."
+
+   Ich hatte den Punkt aufgezaehlt statt gebaut. Er hat gefragt, warum.
+   Es gab keinen Grund.
+
+   JEDES STUECK TRAEGT SEINEN NAMEN — wert-0, wert-1, grund, titel,
+   linie. Was jemand daran aendert, steht am Diagramm und ueberlebt das
+   Neuzeichnen: Wer eine Saeule rot macht und danach die Zahlen aendert,
+   will sie nicht wieder blau vorfinden.
+   ============================================================ */
+const TEILNAMEN = {
+  grund: 'Hintergrund',
+  titel: 'Diagrammtitel',
+  linie: 'Linie',
+};
+
+function teilName(teil, punkte) {
+  if (TEILNAMEN[teil]) return TEILNAMEN[teil];
+  const m = /^wert-(\d+)$/.exec(teil);
+  if (m) {
+    const p = punkte[Number(m[1])];
+    return p ? p.name || ('Wert ' + (Number(m[1]) + 1)) : 'Wert';
+  }
+  return 'Element';
+}
+
+/* Was jemand von Hand gesetzt hat, nach dem Neuzeichnen wieder
+   auftragen. */
+function teileAnwenden(svg, teile) {
+  if (!svg || !teile) return;
+  for (const [teil, wie] of Object.entries(teile)) {
+    const el = svg.querySelector('[data-teil="' + teil + '"]');
+    if (!el) continue;
+    if (wie.farbe) el.setAttribute('fill', wie.farbe);
+    if (wie.randfarbe) el.setAttribute('stroke', wie.randfarbe);
+    if (wie.rand !== undefined) el.setAttribute('stroke-width', wie.rand);
+    el.style.filter = wie.schatten
+      ? 'drop-shadow(2px 3px 3px rgba(0,0,0,.35))' : '';
+  }
+}
+
+let formatleiste = null;
+
+function formatleisteWeg() {
+  if (formatleiste) { formatleiste.remove(); formatleiste = null; }
+}
+
+/* Die Leiste steht rechts, wie in seiner Beschreibung — nicht als
+   Fenster ueber dem Blatt. Man sieht das Diagramm und aendert daneben. */
+function diagrammTeilFormat(svg, teil) {
+  formatleisteWeg();
+  const q = quelleLesen(svg) || {};
+  const punkte = zahlenLesen(q.daten || '');
+  const teile = Object.assign({}, q.teile || {});
+  const wie = Object.assign({ farbe: '', randfarbe: '', rand: 0, schatten: false },
+                            teile[teil] || {});
+
+  const el = svg.querySelector('[data-teil="' + teil + '"]');
+  const kasten = document.createElement('aside');
+  kasten.className = 'formatleiste';
+
+  const kopf = document.createElement('div');
+  kopf.className = 'formatleiste__kopf';
+  const wort = document.createElement('strong');
+  wort.textContent = teilName(teil, punkte);
+  const zu = document.createElement('button');
+  zu.type = 'button';
+  zu.className = 'formatleiste__zu';
+  zu.textContent = '×';
+  zu.title = 'Schließen';
+  zu.addEventListener('click', formatleisteWeg);
+  kopf.append(wort, zu);
+  kasten.appendChild(kopf);
+
+  const satz = document.createElement('p');
+  satz.className = 'formatleiste__satz';
+  satz.textContent = 'Gilt nur für dieses Stück. Über „Formatvorlage '
+                   + 'zurücksetzen" ist es wieder wie vorher.';
+  kasten.appendChild(satz);
+
+  const merken = () => {
+    teile[teil] = wie;
+    svg.dataset.quelle = JSON.stringify(Object.assign({}, q, { teile }));
+    teileAnwenden(svg, teile);
+    geaendertMelden();
+  };
+
+  const zeile = (name, bauen) => {
+    const l = document.createElement('label');
+    l.className = 'formatleiste__zeile';
+    const w = document.createElement('span');
+    w.textContent = name;
+    l.appendChild(w);
+    l.appendChild(bauen());
+    kasten.appendChild(l);
+  };
+
+  zeile('Farbe', () => {
+    const f = document.createElement('input');
+    f.type = 'color';
+    f.value = wie.farbe || (el && el.getAttribute('fill')) || '#2F6FB5';
+    f.addEventListener('input', () => { wie.farbe = f.value; merken(); });
+    return f;
+  });
+
+  zeile('Linienfarbe', () => {
+    const f = document.createElement('input');
+    f.type = 'color';
+    f.value = wie.randfarbe || '#111417';
+    f.addEventListener('input', () => { wie.randfarbe = f.value; merken(); });
+    return f;
+  });
+
+  zeile('Linienstärke', () => {
+    const n = document.createElement('input');
+    n.type = 'number'; n.min = '0'; n.max = '8'; n.step = '0.5';
+    n.value = String(wie.rand || 0);
+    n.addEventListener('input', () => {
+      wie.rand = Math.max(0, Math.min(8, parseFloat(n.value) || 0));
+      merken();
+    });
+    return n;
+  });
+
+  zeile('Schatten', () => {
+    const h = document.createElement('input');
+    h.type = 'checkbox';
+    h.checked = !!wie.schatten;
+    h.addEventListener('change', () => { wie.schatten = h.checked; merken(); });
+    return h;
+  });
+
+  const weg = document.createElement('button');
+  weg.type = 'button';
+  weg.className = 'knopf formatleiste__zurueck';
+  weg.textContent = 'Dieses Stück zurücksetzen';
+  weg.addEventListener('click', () => {
+    delete teile[teil];
+    svg.dataset.quelle = JSON.stringify(Object.assign({}, q, { teile }));
+    diagrammNeuZeichnen(svg, Object.assign({}, q, { teile }));
+    formatleisteWeg();
+  });
+  kasten.appendChild(weg);
+
+  document.body.appendChild(kasten);
+  formatleiste = kasten;
+}
+
+/* Doppelklick im Blatt: Welches Stueck war gemeint? */
+feld.addEventListener('dblclick', (e) => {
+  const svg = e.target && e.target.closest ? e.target.closest('svg.diagramm') : null;
+  if (!svg) return;
+  const stueck = e.target.closest('[data-teil]');
+  if (!stueck) return;
+  e.preventDefault();
+  diagrammTeilFormat(svg, stueck.dataset.teil);
+});
+
 B.diagrammStile = (knopf) => mitDiagramm((bild, q) => {
   designTafelZeigen(knopf, 'Formatvorlagen', (tafel) => {
     tafel.classList.add('designtafel--breit');
@@ -3279,7 +3443,7 @@ B.diagrammStile = (knopf) => mitDiagramm((bild, q) => {
 B.diagrammZurueck = () => mitDiagramm((bild, q) =>
   diagrammNeuZeichnen(bild, {
     art: q.art, titel: q.titel, daten: q.daten,
-    titelAn: true, legende: true, werte: false, satz: 'bunt',
+    titelAn: true, legende: true, werte: false, satz: 'bunt', teile: {},
   }));
 
 /* ============================================================
@@ -3357,6 +3521,11 @@ function diagrammNeuZeichnen(alt, q) {
   const wie = { farben: diagrammSatz(q.satz), werte: q.werte, legende: q.legende };
   const titel = q.titel === false ? '' : (q.titel || '').trim();
   if (objektErsetzen(alt, merkeQuelle(diagrammZeichnen(q.art, punkte, titel, wie), q))) {
+    /* Was jemand an einzelnen Stuecken geaendert hat, wieder auftragen —
+       sonst waere eine rot gemachte Saeule nach der naechsten
+       Zahlenaenderung wieder blau. */
+    const neu = feld.querySelector('svg.diagramm[data-quelle*="' + (q.art || '') + '"]');
+    teileAnwenden(neu || feld.querySelector('svg.diagramm'), q.teile);
     melde('Diagramm mit ' + punkte.length + ' Werten geändert.');
   }
 }
@@ -7369,7 +7538,7 @@ function punktwolkeSvg(punkte, titel, wie) {
   const schritt = punkte.length > 1 ? flaeche / (punkte.length - 1) : 0;
 
   let aus = '';
-  if (titel) aus += '<text x="' + (breite / 2) + '" y="20" text-anchor="middle" '
+  if (titel) aus += '<text data-teil="titel" x="' + (breite / 2) + '" y="20" text-anchor="middle" '
                   + 'font-size="14" font-weight="600" fill="#111417">' + alsText(titel) + '</text>';
   aus += '<line x1="' + rand.links + '" y1="' + (rand.oben + hoch) + '" x2="'
        + (breite - rand.rechts) + '" y2="' + (rand.oben + hoch) + '" stroke="#9AA3AB"/>';
@@ -7379,8 +7548,8 @@ function punktwolkeSvg(punkte, titel, wie) {
   punkte.forEach((p, i) => {
     const x = rand.links + i * schritt;
     const y = rand.oben + hoch - Math.abs(p.wert) / groesste * hoch;
-    aus += '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="5" fill="'
-         + farben[i % farben.length] + '"/>';
+    aus += '<circle data-teil="wert-' + i + '" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1)
+         + '" r="5" fill="' + farben[i % farben.length] + '"/>';
     aus += '<text x="' + x.toFixed(1) + '" y="' + (rand.oben + hoch + 15).toFixed(1)
          + '" text-anchor="middle" font-size="10" fill="#4C555E">' + alsText(p.name) + '</text>';
   });
@@ -7403,7 +7572,7 @@ function balkenQuerSvg(punkte, titel, wie) {
   const luecke = hoch / punkte.length;
 
   let aus = '';
-  if (titel) aus += '<text x="' + (breite / 2) + '" y="20" text-anchor="middle" '
+  if (titel) aus += '<text data-teil="titel" x="' + (breite / 2) + '" y="20" text-anchor="middle" '
                   + 'font-size="14" font-weight="600" fill="#111417">' + alsText(titel) + '</text>';
   aus += '<line x1="' + rand.links + '" y1="' + rand.oben + '" x2="' + rand.links
        + '" y2="' + (rand.oben + hoch) + '" stroke="#9AA3AB"/>';
@@ -7412,7 +7581,8 @@ function balkenQuerSvg(punkte, titel, wie) {
     const b = Math.abs(p.wert) / groesste * flaeche;
     const y = rand.oben + i * luecke + luecke * 0.18;
     const h = luecke * 0.64;
-    aus += '<rect x="' + rand.links + '" y="' + y.toFixed(1) + '" width="' + b.toFixed(1)
+    aus += '<rect data-teil="wert-' + i + '" x="' + rand.links + '" y="' + y.toFixed(1)
+         + '" width="' + b.toFixed(1)
          + '" height="' + h.toFixed(1) + '" fill="' + farben[i % farben.length] + '"/>';
     aus += '<text x="' + (rand.links - 6) + '" y="' + (y + h / 2 + 3.5).toFixed(1)
          + '" text-anchor="end" font-size="10" fill="#4C555E">' + alsText(p.name) + '</text>';
@@ -7438,7 +7608,7 @@ function gestapeltSvg(punkte, titel, wie, quer) {
   const summe = punkte.reduce((a, p) => a + Math.abs(p.wert), 0) || 1;
 
   let aus = '';
-  if (titel) aus += '<text x="' + (breite / 2) + '" y="20" text-anchor="middle" '
+  if (titel) aus += '<text data-teil="titel" x="' + (breite / 2) + '" y="20" text-anchor="middle" '
                   + 'font-size="14" font-weight="600" fill="#111417">' + alsText(titel) + '</text>';
 
   let gelaufen = 0;
@@ -7491,7 +7661,7 @@ function saeulenSvg(punkte, titel, wie) {
   const luecke = flaeche / punkte.length;
 
   let aus = '';
-  if (titel) aus += '<text x="' + (breite / 2) + '" y="20" text-anchor="middle" '
+  if (titel) aus += '<text data-teil="titel" x="' + (breite / 2) + '" y="20" text-anchor="middle" '
                   + 'font-size="14" font-weight="600" fill="#111417">' + alsText(titel) + '</text>';
 
   // Die Grundlinie: ohne sie schweben die Balken im Nichts.
@@ -7503,7 +7673,8 @@ function saeulenSvg(punkte, titel, wie) {
     const x = rand.links + i * luecke + luecke * 0.15;
     const b = luecke * 0.7;
     const y = rand.oben + hoch - h;
-    aus += '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + b.toFixed(1)
+    aus += '<rect data-teil="wert-' + i + '" x="' + x.toFixed(1) + '" y="' + y.toFixed(1)
+         + '" width="' + b.toFixed(1)
          + '" height="' + h.toFixed(1) + '" fill="' + farben[i % farben.length] + '"/>';
     if (werteAn) {
       aus += '<text x="' + (x + b / 2).toFixed(1) + '" y="' + (y - 5).toFixed(1)
@@ -7545,7 +7716,7 @@ function linienSvg(punkte, titel, wie) {
   const schritt = punkte.length > 1 ? flaeche / (punkte.length - 1) : 0;
 
   let aus = '';
-  if (titel) aus += '<text x="' + (breite / 2) + '" y="20" text-anchor="middle" '
+  if (titel) aus += '<text data-teil="titel" x="' + (breite / 2) + '" y="20" text-anchor="middle" '
                   + 'font-size="14" font-weight="600" fill="#111417">' + alsText(titel) + '</text>';
   aus += '<line x1="' + rand.links + '" y1="' + (rand.oben + hoch) + '" x2="'
        + (breite - rand.rechts) + '" y2="' + (rand.oben + hoch) + '" stroke="#9AA3AB"/>';
@@ -7560,7 +7731,7 @@ function linienSvg(punkte, titel, wie) {
          + stellen.map(([x, y]) => x.toFixed(1) + ',' + y.toFixed(1)).join(' ') + ' '
          + (stellen[stellen.length - 1][0].toFixed(1) + ',' + (rand.oben + hoch)) + '"/>';
   }
-  aus += '<polyline fill="none" stroke="' + linienfarbe + '" stroke-width="2" points="'
+  aus += '<polyline data-teil="linie" fill="none" stroke="' + linienfarbe + '" stroke-width="2" points="'
        + stellen.map(([x, y]) => x.toFixed(1) + ',' + y.toFixed(1)).join(' ') + '"/>';
   stellen.forEach(([x, y], i) => {
     if (mitPunkten || !gefuellt) {
@@ -7606,8 +7777,8 @@ function kuchenSvg(punkte, titel, wie) {
     /* Ein einziges Stück wäre ein Kreis — und ein Kreisbogen über volle 360°
        zeichnet nichts. Deshalb dieser Sonderfall. */
     aus += punkte.length === 1
-      ? '<circle cx="' + mitteX + '" cy="' + mitteY + '" r="' + r + '" fill="' + farbe + '"/>'
-      : '<path d="M' + mitteX + ',' + mitteY + ' L' + x1.toFixed(1) + ',' + y1.toFixed(1)
+      ? '<circle data-teil="wert-' + i + '" cx="' + mitteX + '" cy="' + mitteY + '" r="' + r + '" fill="' + farbe + '"/>'
+      : '<path data-teil="wert-' + i + '" d="M' + mitteX + ',' + mitteY + ' L' + x1.toFixed(1) + ',' + y1.toFixed(1)
         + ' A' + r + ',' + r + ' 0 ' + gross + ',1 ' + x2.toFixed(1) + ',' + y2.toFixed(1)
         + ' Z" fill="' + farbe + '"/>';
 
@@ -7650,7 +7821,8 @@ function quelleLesen(el) {
 const svgHuelle = (b, h, innen) =>
   '<svg class="diagramm" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + b + ' ' + h + '"'
   + ' width="' + b + '" height="' + h + '" role="img">'
-  + '<rect width="' + b + '" height="' + h + '" fill="#FFFFFF"/>' + innen + '</svg>';
+  + '<rect data-teil="grund" width="' + b + '" height="' + h + '" fill="#FFFFFF"/>'
+  + innen + '</svg>';
 
 /* ============================================================
    DIAGRAMM EINFUEGEN
@@ -9399,7 +9571,7 @@ B.schriftartMehr = (knopf) => {
   designTafelZeigen(knopf, 'Schriftart', (tafel) => {
     tafel.classList.add('designtafel--breit');
     for (const [bild, name, tun] of [
-      ['texteffekt', 'Texteffekte…', () => B.effekt()],
+      ['texteffekt', 'Texteffekte…', (k) => B.effekt(k)],
       ['eingeschlossen', 'Eingeschlossene Zeichen', () => B.eingeschlosseneZeichen()],
       ['umriss', 'Zeichenumriss', () => B.zeichenumriss()],
       ['unterart', 'Unterstreichungsart…', () => B.unterstrichArt()],
@@ -12584,41 +12756,103 @@ const setzeVorlagensatz = (kuerzel) => () => {
 /* ---- Effekte ----
    Word nennt es „Effekte": Schatten, Kontur, Relief für Überschriften.
    Mehr als drei braucht in einem Brief niemand. */
+/* ============================================================
+   TEXTEFFEKTE
+
+   Seine Meldung: „ist nach WPS-Bildvorlage auszubauen." Dahinter lag
+   ein Klappfeld mit fuenf Woertern — „Schatten, Relief, Kontur,
+   Leuchten". Wer wissen will, wie „Relief" aussieht, muss es
+   ausprobieren, zuruecknehmen, das naechste ausprobieren.
+
+   In WPS ist es eine Galerie: Jede Kachel zeigt ein A, so wie der Text
+   danach aussieht. Genau so steht es jetzt hier — und zwoelf statt
+   fuenf, weil eine Galerie mit fuenf Kacheln keine ist.
+   ============================================================ */
 const EFFEKTE = {
   keiner:  { name: 'kein Effekt', css: '' },
   schatten:{ name: 'Schatten',    css: 'text-shadow:1px 1px 2px rgba(0,0,0,.35)' },
+  weit:    { name: 'Weiter Schatten', css: 'text-shadow:3px 4px 5px rgba(0,0,0,.4)' },
   relief:  { name: 'Relief',      css: 'text-shadow:1px 1px 0 rgba(255,255,255,.8),2px 2px 2px rgba(0,0,0,.3)' },
+  vertieft:{ name: 'Vertieft',    css: 'text-shadow:-1px -1px 0 rgba(255,255,255,.7),1px 1px 2px rgba(0,0,0,.45)' },
   kontur:  { name: 'Kontur',      css: '-webkit-text-stroke:0.6px currentColor;color:transparent' },
+  konturfett:{ name: 'Starke Kontur', css: '-webkit-text-stroke:1.4px currentColor;color:transparent' },
   leuchten:{ name: 'Leuchten',    css: 'text-shadow:0 0 6px rgba(47,111,181,.65)' },
+  warm:    { name: 'Warmes Leuchten', css: 'text-shadow:0 0 7px rgba(200,122,30,.7)' },
+  spiegel: { name: 'Spiegelung',  css: '-webkit-box-reflect:below 1px linear-gradient(transparent 55%, rgba(255,255,255,.35))' },
+  verlauf: { name: 'Farbverlauf', css: 'background:linear-gradient(90deg,var(--blau),var(--warm,#C08A2E));-webkit-background-clip:text;background-clip:text;color:transparent' },
+  hohl:    { name: 'Hohl mit Schatten', css: '-webkit-text-stroke:0.8px currentColor;color:transparent;text-shadow:2px 3px 3px rgba(0,0,0,.3)' },
 };
 
-B.effekt = () => {
+/* Die Galerie: zwoelf Kacheln, jede zeigt ein A in ihrem Effekt. */
+B.effekt = (knopf) => {
+  auswahlMerken();
+  designTafelZeigen(knopf, 'Texteffekte', (tafel) => {
+    tafel.classList.add('designtafel--breit');
+    const gitter = document.createElement('div');
+    gitter.className = 'effektgalerie';
+    for (const [kuerzel, wie] of Object.entries(EFFEKTE)) {
+      const k = document.createElement('button');
+      k.type = 'button';
+      k.className = 'effektprobe';
+      k.title = wie.name;
+      const a = document.createElement('span');
+      a.className = 'effektprobe__a';
+      a.setAttribute('style', wie.css);
+      a.textContent = 'Aa';
+      const w = document.createElement('span');
+      w.className = 'effektprobe__name';
+      w.textContent = wie.name;
+      k.append(a, w);
+      k.addEventListener('mousedown', (e) => e.preventDefault());
+      k.addEventListener('click', () => {
+        designTafelWeg();
+        effektSetzen(kuerzel);
+      });
+      gitter.appendChild(k);
+    }
+    tafel.appendChild(gitter);
+
+    const mehr = document.createElement('button');
+    mehr.type = 'button';
+    mehr.className = 'layouttafel__weiter';
+    mehr.textContent = 'Eigene Farbe und Stärke…';
+    mehr.addEventListener('click', () => { designTafelWeg(); B.effektFenster(); });
+    tafel.appendChild(mehr);
+  });
+};
+
+function effektSetzen(art) {
+  auswahlZurueck();
+  const auswahl = window.getSelection();
+  if (!auswahl.rangeCount || auswahl.isCollapsed) {
+    melde('Erst den Text markieren, der den Effekt bekommen soll.');
+    return;
+  }
+  const wie = EFFEKTE[art];
+  if (!wie || art === 'keiner') {
+    Dokument.befehl('removeFormat');
+    melde('Effekt entfernt.');
+    return;
+  }
+  const huelle = document.createElement('span');
+  huelle.className = 'effekt';
+  huelle.setAttribute('style', wie.css);
+  try {
+    auswahl.getRangeAt(0).surroundContents(huelle);
+    geaendertMelden();
+    melde('Effekt „' + wie.name + '" gesetzt.');
+  } catch (e) {
+    melde('Über mehrere Absätze geht das nicht — kleiner markieren.');
+  }
+}
+
+B.effektFenster = () => {
   auswahlMerken();
   fenster('Effekt', [
     { art: 'satz', text: 'Wirkt auf den markierten Text.' },
     { schluessel: 'art', name: 'Effekt', art: 'auswahl',
       werte: Object.entries(EFFEKTE).map(([k, v]) => [k, v.name]) },
-  ], (werte) => {
-    auswahlZurueck();
-    const auswahl = window.getSelection();
-    if (!auswahl.rangeCount || auswahl.isCollapsed) { melde('Nichts markiert.'); return; }
-    const wie = EFFEKTE[werte.art];
-    if (werte.art === 'keiner') {
-      Dokument.befehl('removeFormat');
-      melde('Effekt entfernt.');
-      return;
-    }
-    const huelle = document.createElement('span');
-    huelle.className = 'effekt';
-    huelle.setAttribute('style', wie.css);
-    try {
-      auswahl.getRangeAt(0).surroundContents(huelle);
-      geaendertMelden();
-      melde('Effekt „' + wie.name + '" gesetzt.');
-    } catch (e) {
-      melde('Über mehrere Absätze geht das nicht — kleiner markieren.');
-    }
-  }, 'Anwenden');
+  ], (werte) => effektSetzen(werte.art), 'Anwenden');
 };
 
 /* ---- Umbrüche ---- */

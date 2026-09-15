@@ -2575,6 +2575,54 @@ body.lesen .arbeitsflaeche{padding:40px 24px}
 }
 .diagrammfenster__vorschau svg{width:100%;height:auto;display:block}
 
+/* Die Texteffekt-Galerie: zwoelf Kacheln, jede zeigt ein Aa in ihrem
+   Effekt. Wer wissen will, wie „Relief" aussieht, soll es sehen. */
+.effektgalerie{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.effektprobe{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:7px 4px;
+  border:1px solid var(--rand);border-radius:6px;
+  background:var(--blatt);color:var(--blatt-schrift);
+  font:inherit;cursor:pointer;
+}
+.effektprobe:hover{border-color:var(--blau)}
+.effektprobe__a{font-size:20px;font-weight:700;line-height:1.1}
+.effektprobe__name{
+  font-size:.68rem;color:var(--schrift-2);
+  max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+
+/* ---- Die Formatleiste rechts ----
+   „Ein Doppelklick auf ein beliebiges Element oeffnet das rechte
+   Formatierungsmenue." Rechts und nicht als Fenster: Man sieht das
+   Stueck und aendert daneben, statt es zu verdecken. */
+.formatleiste{
+  position:fixed;top:120px;right:12px;z-index:85;
+  width:230px;padding:12px;
+  background:var(--leiste);color:var(--schrift);
+  border:1px solid var(--rand);border-radius:8px;
+  box-shadow:var(--schatten);
+  display:flex;flex-direction:column;gap:8px;
+}
+.formatleiste__kopf{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.formatleiste__kopf strong{font-size:.95rem}
+.formatleiste__zu{
+  width:24px;height:24px;padding:0;border:0;border-radius:4px;
+  background:none;color:var(--schrift-2);font-size:17px;cursor:pointer;
+}
+.formatleiste__zu:hover{background:rgba(127,127,127,.16);color:var(--schrift)}
+.formatleiste__satz{margin:0;font-size:.78rem;color:var(--schrift-2);line-height:1.4}
+.formatleiste__zeile{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.formatleiste__zeile input[type=number]{
+  width:4.5em;padding:4px 6px;
+  border:1px solid var(--rand);border-radius:4px;
+  background-color:var(--grund);color:var(--schrift);font:inherit;
+}
+.formatleiste__zeile input[type=color]{
+  width:42px;height:26px;padding:0;border:1px solid var(--rand);border-radius:4px;
+}
+.formatleiste__zurueck{width:100%;margin-top:4px;padding:6px 10px}
+
 /* ---- Daten bearbeiten: Tabelle links, Vorschau rechts ---- */
 .datenfenster{min-width:720px}
 .datenfenster__koerper{display:flex;gap:16px;align-items:flex-start}

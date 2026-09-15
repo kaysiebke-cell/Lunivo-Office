@@ -83,7 +83,10 @@ function REGISTER_BAUEN(B, w) {
                     ['K', 'Kursiv', () => B.kursiv()],
                     ['U', 'Unterstrichen',
                       { tun: () => B.unter(), klappe: (k) => B.unterstrichKlappe(k) }],
-                    ['S', 'Durchgestrichen', () => B.durch()],
+                    /* Ein A mit Strich statt eines „S" — er hat gemeldet:
+                       „Das Symbol ist als Funktion nicht zu erkennen."
+                       Das S stand fuer „Streichen"; das muss man wissen. */
+                    ['durchgestrichen', 'Durchgestrichen', () => B.durch()],
                     ['X²', 'Hochgestellt', () => B.hoch()],
                     ['X₂', 'Tiefgestellt', () => B.tief()],
                     ['umriss', 'Zeichenumriss', () => B.zeichenumriss()],
@@ -92,7 +95,7 @@ function REGISTER_BAUEN(B, w) {
                     ['schriftfarbe', 'Schriftfarbe',
                       { tun: (k) => B.schriftfarbeJetzt(k), klappe: (k) => B.schriftfarbeKlappe(k) }],
                     /* Das Ⓐ am Ende der Zeile ist in WPS „Texteffekte". */
-                    ['eingeschlossen', 'Texteffekte', () => B.effekt()],
+                    ['eingeschlossen', 'Texteffekte', (k) => B.effekt(k)],
                    ], () => B.schriftartMehr()],
     /* ZWEI ZEILEN NACH SEINEM WPS-BILD:
          Zeile 1  Aufzählung▾  Nummerierung▾  Einzug−  Einzug+  Listenebene  Sortieren  ¶
