@@ -2991,10 +2991,14 @@ body.lesen .arbeitsflaeche{padding:40px 24px}
 .rahmentafel__vorschau{display:flex;flex-direction:column}
 
 /* Das Probeblatt mit den vier anklickbaren Kanten. */
+/* Der Kasten steht mit Luft drumherum — die Klickflaechen liegen auf
+   seinen Kanten und brauchen Platz, sonst liegen sie ueber dem Text
+   oder ausserhalb des Fensters. In WPS ist diese Luft genauso da. */
 .rahmenprobe{
   position:relative;
-  width:100%;min-height:150px;
-  padding:10px 12px;
+  width:100%;min-height:130px;
+  margin:14px 10px;
+  padding:12px 14px;
   background:var(--blatt);
   display:flex;flex-direction:column;gap:7px;justify-content:center;
 }

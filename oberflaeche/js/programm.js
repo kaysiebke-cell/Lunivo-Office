@@ -11954,9 +11954,19 @@ function rahmenVorschau(r, beiKlick) {
          sah dasselbe Bild wie bei „aus" und wusste nicht mehr, was gilt.
          Jetzt ist „aus" eine ganz blasse durchgezogene Linie; die gibt
          es als Wahl nicht. */
+      /* DIE KANTE MUSS ZU SEHEN SEIN, AUCH WENN SIE AUS IST.
+
+         Ich hatte sie erst gestrichelt gemacht (sah aus wie die
+         Formatvorlage „gestrichelt"), dann fast durchsichtig — und
+         damit unsichtbar. Man kann nicht anklicken, was man nicht
+         sieht; er hat dreimal gesagt, die Funktion sei nicht da.
+
+         In WPS zeigt die Vorschau immer einen grauen Kasten. Der ist
+         der Ort zum Klicken. Eine gesetzte Kante wird darueber
+         gezeichnet, in ihrer Farbe und Staerke. */
       blatt.style['border' + seite] = r.kanten.includes(kante)
         ? Math.max(1, r.breite) + 'px ' + r.art + ' ' + r.farbe
-        : '1px solid rgba(127,127,127,.16)';
+        : '1px solid #C2C7CC';
     }
     for (const k of gitter.querySelectorAll('.rahmengitter__knopf')) {
       k.classList.toggle('rahmengitter__knopf--an', r.kanten.includes(k.dataset.kante));
