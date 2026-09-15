@@ -853,8 +853,45 @@ B.links   = () => Dokument.befehl('justifyLeft');
 B.mitte   = () => Dokument.befehl('justifyCenter');
 B.rechts  = () => Dokument.befehl('justifyRight');
 B.block   = () => Dokument.befehl('justifyFull');
-B.punkte  = () => Dokument.befehl('insertUnorderedList');
-B.zahlen  = () => Dokument.befehl('insertOrderedList');
+/* ---- Aufzaehlung und Nummerierung ----
+
+   „ist ohne Funktion" — sie tat etwas, aber das Ergebnis war nicht zu
+   sehen. execCommand('insertUnorderedList') baut die Liste IN den
+   Absatz hinein:
+
+       <p><ul><li>Erste Zeile</li></ul></p>
+
+   Ein <ul> darf nicht in einem <p> stehen. Der Browser rueckt das beim
+   naechsten Neuzeichnen zurecht, und dabei geht der Punkt verloren oder
+   der Absatzabstand legt sich darueber. Man klickt, und es passiert
+   scheinbar nichts.
+
+   Also nach dem Befehl aufraeumen: Liste aus dem Absatz herausheben,
+   den leeren Absatz wegwerfen. */
+function listeGeradeziehen() {
+  for (const liste of [...feld.querySelectorAll('p > ul, p > ol')]) {
+    const absatz = liste.parentElement;
+    absatz.parentNode.insertBefore(liste, absatz);
+    /* Was im Absatz noch stand, gehoert vor die Liste — sonst
+       verschwindet Text, den jemand geschrieben hat. */
+    if (absatz.textContent.trim()) {
+      absatz.parentNode.insertBefore(absatz, liste);
+    } else {
+      absatz.remove();
+    }
+  }
+}
+
+B.punkte = () => {
+  Dokument.befehl('insertUnorderedList');
+  listeGeradeziehen();
+  geaendertMelden();
+};
+B.zahlen = () => {
+  Dokument.befehl('insertOrderedList');
+  listeGeradeziehen();
+  geaendertMelden();
+};
 B.einzugMehr    = () => Dokument.befehl('indent');
 B.einzugWeniger = () => Dokument.befehl('outdent');
 B.schlicht      = () => { Dokument.befehl('removeFormat'); Dokument.befehl('formatBlock', 'p'); };
@@ -3457,6 +3494,7 @@ function autoListeLaufen() {
   auswahl.addRange(bereich);
 
   Dokument.befehl(nummer ? 'insertOrderedList' : 'insertUnorderedList');
+  listeGeradeziehen();
   return true;
 }
 
@@ -6555,10 +6593,45 @@ B.formKasten = () => {
   Dokument.einfuegen('<label class="formkasten"><input type="checkbox"> Auswahl</label>');
   melde('Kontrollkästchen eingefügt.');
 };
+/* „Schaltflaeche ohne ersichtliche Funktion. Die Schaltflaeche laesst
+   sich nicht loeschen."
+
+   Beides stimmte. Ein <button> im Text nimmt den Klick selbst an — der
+   Zeiger kommt nicht daneben, und ohne Zeiger daneben gibt es nichts zu
+   loeschen. Und ein Formularknopf, den man nicht beschriften kann, ist
+   ein Platzhalter.
+
+   Jetzt: nicht anklickbar im Schreiben (er gehoert ins Formular, nicht
+   in die Bedienung), aber markierbar wie jedes andere Zeichen. Ein
+   Doppelklick fragt nach der Aufschrift. Entf loescht ihn, weil der
+   Zeiger wieder danebenkommt. */
 B.formKnopf = () => {
-  Dokument.einfuegen('<button class="formknopf" type="button">Schaltfläche</button>');
-  melde('Schaltfläche eingefügt.');
+  fenster('Schaltfläche', [
+    { art: 'satz', text: 'Eine Schaltfläche für ein Formular. Zum Ändern '
+                       + 'später doppelt darauf klicken; mit Entf ist sie weg.' },
+    { schluessel: 'wort', name: 'Aufschrift', wert: 'Absenden' },
+  ], (werte) => {
+    const wort = (werte.wort || 'Schaltfläche').trim() || 'Schaltfläche';
+    Dokument.einfuegen('<span class="formknopf" contenteditable="false" '
+      + 'data-formknopf="1">' + alsSicher(wort) + '</span>&#8203;');
+    geaendertMelden();
+    melde('Schaltfläche „' + wort + '" eingefügt. Entf löscht sie.');
+  }, 'Einfügen');
 };
+
+/* Doppelklick auf eine Schaltflaeche: Aufschrift aendern. */
+feld.addEventListener('dblclick', (e) => {
+  const knopf = e.target.closest && e.target.closest('[data-formknopf]');
+  if (!knopf) return;
+  e.preventDefault();
+  fenster('Schaltfläche', [
+    { schluessel: 'wort', name: 'Aufschrift', wert: knopf.textContent },
+  ], (werte) => {
+    knopf.textContent = (werte.wort || '').trim() || 'Schaltfläche';
+    geaendertMelden();
+    melde('Aufschrift geändert.');
+  }, 'Übernehmen');
+});
 
 /* ---- Extras ---- */
 /* „Rechtschreibung & Grammatik" wie in der Leiste des Writers: Beides auf
@@ -10918,7 +10991,12 @@ function netzAnwenden() {
   Speicher.schreib('netzlinien', netzlinien);
   menueBauen();
 }
-B.netzlinien = () => { netzlinien = !netzlinien; netzAnwenden(); };
+B.netzlinien = () => {
+  netzlinien = !netzlinien;
+  netzAnwenden();
+  melde(netzlinien ? 'Gitternetzlinien an — alle 5 mm eine Linie.'
+                   : 'Gitternetzlinien aus.');
+};
 
 /* ---- Navigationsbereich ----
    Die Überschriften als Liste zum Anspringen — bei einem langen Schreiben

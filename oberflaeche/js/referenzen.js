@@ -294,19 +294,186 @@ B.stichwortverzeichnis = () => {
 };
 
 /* ---- Textmarke und Querverweis ---- */
+/* ============================================================
+   TEXTMARKE
+
+   Nach seinem Bild des WPS-Fensters:
+
+       Textmarkenname:  [____________________]
+       [ Liste der vorhandenen Marken       ]
+       Sortieren nach: (•) Namen  ( ) Speicherort
+       [ ] Ausgeblendete Textmarken
+       Hinzufügen   Löschen   Gehe zu        Abbrechen
+
+   Vorher war es ein Feld mit einem Namen darin. Man konnte eine Marke
+   setzen und danach nie wieder sehen, welche es gibt, keine loeschen und
+   zu keiner springen. Er hat geschrieben: „ist ohne sichtbare Funktion?"
+   — mit Fragezeichen, weil man von aussen nicht erkennen konnte, ob
+   ueberhaupt etwas passiert ist.
+
+   Die drei Knoepfe sind grau, solange nichts gewaehlt ist. Das ist keine
+   Zier: „Gehe zu" ohne Ziel waere ein Klick ins Leere.
+   ============================================================ */
 B.textmarke = () => {
   auswahlMerken();
-  fenster('Textmarke', [
-    { art: 'satz', text: 'Eine Stelle im Dokument benennen, auf die man später verweisen kann.' },
-    { schluessel: 'name', name: 'Name', wert: 'Stelle' },
-  ], (werte) => {
-    const name = werte.name.trim().replace(/[^A-Za-zÄÖÜäöüß0-9 _-]/g, '');
+
+  const grund = document.createElement('div');
+  grund.className = 'dialoggrund';
+  const kasten = document.createElement('div');
+  kasten.className = 'dialog markenfenster';
+  kasten.innerHTML = '<h3 class="dialog__titel">Textmarke</h3>';
+
+  const zeileName = document.createElement('label');
+  zeileName.className = 'dialog__zeile';
+  zeileName.innerHTML = '<span>Textmarkenname:</span>';
+  const eingabe = document.createElement('input');
+  eingabe.type = 'text';
+  zeileName.appendChild(eingabe);
+  kasten.appendChild(zeileName);
+
+  const liste = document.createElement('div');
+  liste.className = 'markenliste';
+  liste.setAttribute('role', 'listbox');
+  kasten.appendChild(liste);
+
+  const sortierzeile = document.createElement('div');
+  sortierzeile.className = 'markenfenster__zeile';
+  sortierzeile.innerHTML = '<span>Sortieren nach:</span>';
+  let sortierung = 'name';
+  for (const [wert, name] of [['name', 'Namen'], ['stelle', 'Speicherort']]) {
+    const w = document.createElement('label');
+    w.className = 'markenfenster__wahl';
+    const r = document.createElement('input');
+    r.type = 'radio'; r.name = 'markensortierung'; r.value = wert;
+    if (wert === sortierung) r.checked = true;
+    r.addEventListener('change', () => { sortierung = wert; auffrischen(); });
+    w.appendChild(r);
+    w.appendChild(document.createTextNode(' ' + name));
+    sortierzeile.appendChild(w);
+  }
+  kasten.appendChild(sortierzeile);
+
+  let auchVersteckte = false;
+  const versteckt = document.createElement('label');
+  versteckt.className = 'markenfenster__wahl';
+  const haken = document.createElement('input');
+  haken.type = 'checkbox';
+  haken.addEventListener('change', () => { auchVersteckte = haken.checked; auffrischen(); });
+  versteckt.appendChild(haken);
+  versteckt.appendChild(document.createTextNode(' Ausgeblendete Textmarken'));
+  kasten.appendChild(versteckt);
+
+  let gewaehlt = null;
+
+  const marken = () => {
+    const alle = [...feld.querySelectorAll('.textmarke')].map((el, i) => ({
+      el,
+      name: decodeURIComponent(el.id.replace(/^marke-/, '')),
+      stelle: i,
+      leise: el.dataset.leise === 'ja',
+    }));
+    const sichtbar = auchVersteckte ? alle : alle.filter((m) => !m.leise);
+    return sortierung === 'name'
+      ? sichtbar.sort((a, b) => a.name.localeCompare(b.name, 'de'))
+      : sichtbar;
+  };
+
+  const knoepfe = {};
+  function auffrischen() {
+    liste.textContent = '';
+    const alle = marken();
+    if (!alle.length) {
+      const leer = document.createElement('p');
+      leer.className = 'markenliste__leer';
+      leer.textContent = 'Noch keine Textmarke im Dokument.';
+      liste.appendChild(leer);
+    }
+    for (const m of alle) {
+      const z = document.createElement('button');
+      z.type = 'button';
+      z.className = 'markenliste__zeile'
+        + (gewaehlt === m.name ? ' markenliste__zeile--an' : '');
+      z.textContent = m.name;
+      z.addEventListener('click', () => {
+        gewaehlt = m.name;
+        eingabe.value = m.name;
+        auffrischen();
+      });
+      liste.appendChild(z);
+    }
+    const name = eingabe.value.trim();
+    const gibtsSchon = alle.some((m) => m.name === name);
+    knoepfe.hinzu.disabled = !name || gibtsSchon;
+    knoepfe.weg.disabled = !gibtsSchon;
+    knoepfe.hin.disabled = !gibtsSchon;
+  }
+
+  const fuss = document.createElement('div');
+  fuss.className = 'dialog__knoepfe';
+
+  const machKnopf = (name, tun, haupt) => {
+    const k = document.createElement('button');
+    k.type = 'button';
+    k.className = haupt ? 'knopf knopf--haupt' : 'knopf';
+    k.textContent = name;
+    k.addEventListener('click', tun);
+    fuss.appendChild(k);
+    return k;
+  };
+
+  knoepfe.hinzu = machKnopf('Hinzufügen', () => {
+    const name = eingabe.value.trim().replace(/[^A-Za-zÄÖÜäöüß0-9 _-]/g, '');
     if (!name) return;
     auswahlZurueck();
     elementEinfuegen('<span class="textmarke" id="marke-'
       + encodeURIComponent(name) + '" title="Textmarke: ' + alsSicher(name) + '"></span>');
+    gewaehlt = name;
     melde('Textmarke „' + name + '" gesetzt.');
-  }, 'Setzen');
+    auffrischen();
+  }, true);
+
+  knoepfe.weg = machKnopf('Löschen', () => {
+    const m = marken().find((x) => x.name === eingabe.value.trim());
+    if (!m) return;
+    m.el.remove();
+    gewaehlt = null;
+    eingabe.value = '';
+    geaendertMelden();
+    melde('Textmarke gelöscht.');
+    auffrischen();
+  });
+
+  knoepfe.hin = machKnopf('Gehe zu', () => {
+    const m = marken().find((x) => x.name === eingabe.value.trim());
+    if (!m) return;
+    grund.remove();
+    m.el.scrollIntoView({ block: 'center' });
+    const r = document.createRange();
+    r.selectNode(m.el);
+    r.collapse(false);
+    const auswahl = window.getSelection();
+    auswahl.removeAllRanges();
+    auswahl.addRange(r);
+    feld.focus();
+    melde('Bei „' + m.name + '".');
+  });
+
+  machKnopf('Abbrechen', () => grund.remove());
+
+  eingabe.addEventListener('input', auffrischen);
+  eingabe.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !knoepfe.hinzu.disabled) { e.preventDefault(); knoepfe.hinzu.click(); }
+  });
+
+  kasten.appendChild(fuss);
+  grund.appendChild(kasten);
+  grund.addEventListener('mousedown', (e) => { if (e.target === grund) grund.remove(); });
+  document.addEventListener('keydown', function zu(e) {
+    if (e.key === 'Escape' && grund.isConnected) { grund.remove(); document.removeEventListener('keydown', zu); }
+  });
+  document.body.appendChild(grund);
+  auffrischen();
+  eingabe.focus();
 };
 
 B.querverweis = () => {
