@@ -63,7 +63,9 @@ DIE BÄNDER
 │   ├── Seiten
 │   │   ├── Deckblatt
 │   │   ├── Leere Seite
-│   │   └── Seitenumbruch
+│   │   ├── Seitenumbruch
+│   │   ├── Hochformat
+│   │   └── Querformat
 │   ├── Tabellen
 │   │   ├── Tabelle einfügen
 │   │   ├── Schnelltabelle
@@ -72,12 +74,12 @@ DIE BÄNDER
 │   ├── Illustrationen
 │   │   ├── Bild
 │   │   ├── Formen
-│   │   ├── Form mit eigener Farbe…
 │   │   ├── Diagramm
-│   │   ├── Bildschirmfoto
 │   │   ├── SmartArt
-│   │   ├── Piktogramm
-│   │   └── WordArt
+│   │   ├── WordArt
+│   │   ├── Form mit eigener Farbe…
+│   │   ├── Bildschirmfoto
+│   │   └── Piktogramm
 │   ├── Links
 │   │   ├── Hyperlink
 │   │   ├── Lesezeichen / Textmarke

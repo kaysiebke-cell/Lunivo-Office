@@ -145,20 +145,31 @@ function REGISTER_BAUEN(B, w) {
 
   ['Einfügen', [
     ['Seiten', [['deckblatt', 'Deckblatt', () => B.deckblatt(), 'gross'],
-                    ['leereseite', 'Leere Seite', () => B.leereSeite()],
+                    /* Auf seinem WPS-Bild traegt „Leere Seite" einen Pfeil — Hoch- oder
+                       Querformat. */
+                    ['leereseite', 'Leere Seite', [
+                      ['Hochformat', () => B.leereSeite(false)],
+                      ['Querformat', () => B.leereSeite(true)],
+                    ]],
                     ['umbruch', 'Seitenumbruch', () => B.seitenumbruch()]]],
     ['Tabellen', [['tabelle', 'Tabelle einfügen', (knopf) => B.tabelleRaster(knopf), 'gross'],
                     ['schnelltab', 'Schnelltabelle', () => B.schnelltabelle()],
                     ['tabellenblatt', 'Tabellenblatt', () => B.tabellenblatt()],
                     ['toenung', 'Eigenschaften', () => B.tabelleEigenschaften()]]],
+    /* FESTE ZEILEN. Sonst fuellt das Gitter spaltenweise, und dann steht
+       unter dem Wort „Diagramm" das Zeichen von Bildschirmfoto: Er hat
+       auf das Saeulenzeichen geklickt und den Bildschirmfoto-Befehl
+       bekommen. Seine Meldung: „Hier wird eine falsche Funktion
+       ausgefuehrt, die nichts mit dem Diagramm zu tun hat." */
     ['Illustrationen', [['bild', 'Bild', () => B.bild(), 'gross'],
                     ['stift', 'Formen', (knopf) => B.formenGalerie(knopf), 'gross'],
-                    ['stift', 'Form mit eigener Farbe…', () => B.zeichnen()],
                     ['saeule', 'Diagramm', () => B.diagramm()],
-                    ['bildfoto', 'Bildschirmfoto', () => B.screenshot()],
                     ['smartart', 'SmartArt', () => B.smartart()],
-                    ['piktogramm', 'Piktogramm', () => B.piktogramm()],
-                    ['wordart', 'WordArt', () => B.wordart()]]],
+                    ['wordart', 'WordArt', () => B.wordart()],
+                    ['//'],
+                    ['stift', 'Form mit eigener Farbe…', () => B.zeichnen()],
+                    ['bildfoto', 'Bildschirmfoto', () => B.screenshot()],
+                    ['piktogramm', 'Piktogramm', () => B.piktogramm()]]],
     ['Links', [['kette', 'Hyperlink', () => B.hyperlink(), 'gross'],
                     ['textmarke', 'Lesezeichen / Textmarke', () => B.textmarke()],
                     ['querverweis', 'Querverweis', () => B.querverweis()]]],

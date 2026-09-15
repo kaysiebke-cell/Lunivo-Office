@@ -2527,6 +2527,29 @@ body.lesen .arbeitsflaeche{padding:40px 24px}
   paint-order:stroke fill;
 }
 
+/* Eine leere Seite ist leer — aber sie muss zu sehen sein, sonst
+   glaubt niemand, dass sie da ist. Ein feiner Rahmen und ein Wort in
+   der Mitte; beim Drucken faellt beides weg. */
+.leereseite{
+  display:block;position:relative;
+  break-before:page;break-after:page;
+  border:1px dashed var(--rand);border-radius:2px;
+  margin:3mm 0;
+  user-select:none;
+}
+.leereseite::after{
+  content:'Leere Seite';
+  position:absolute;top:50%;left:0;right:0;
+  transform:translateY(-50%);
+  text-align:center;color:var(--schrift-2);
+  font-size:.8rem;opacity:.7;
+}
+.leereseite[data-quer="ja"]::after{content:'Leere Seite (Querformat)'}
+@media print{
+  .leereseite{border:0;margin:0}
+  .leereseite::after{content:none}
+}
+
 /* ---- Datum und Uhrzeit nach seinem Bild ----
    Links die Formatliste, rechts die Sprache und der Haken. */
 .zeitfenster{min-width:560px}

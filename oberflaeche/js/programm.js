@@ -10558,9 +10558,47 @@ B.deckblatt = () => {
 
 const alsSicher = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-B.leereSeite = () => {
-  Dokument.einfuegen('<p style="page-break-after:always"><br></p><p><br></p>');
-  melde('Leere Seite eingefügt.');
+/* ============================================================
+   LEERE SEITE
+
+   Seine Meldung: „Funktion in Lunivo fehlerhaft, da sie lediglich nur
+   Leerzeilen einfuegt, keine leeren Seiten in Hoch- und Querformat."
+
+   Beides stimmte. Eingefuegt wurde ein Absatz mit page-break-after —
+   im Druck ein Umbruch, auf dem Bildschirm nichts. Die Seitenzahl in
+   der Statuszeile rechnet mit der Hoehe des Textes; ein Umbruch hat
+   keine Hoehe, also blieb es bei „Seite 1 von 1". Wer eine leere Seite
+   einfuegte, sah eine Leerzeile.
+
+   In WPS wird daraus eine wirkliche zweite Seite, und der Knopf traegt
+   einen Pfeil fuer Hoch- und Querformat.
+
+   Jetzt ein Block, der so hoch ist wie eine Seite: Er ist auf dem
+   Bildschirm zu sehen, er zaehlt bei den Seiten mit, und im Druck
+   stehen Umbrueche davor und dahinter.
+   ============================================================ */
+function leereSeiteBauen(querformat) {
+  const masse = PAPIERE[papier] || PAPIERE.a4;
+  /* Quer heisst: die Seite liegt. Steht das Dokument hochkant, liegt
+     nur diese eine Seite — dafuer tauschen Breite und Hoehe. */
+  const liegt = querformat ? !quer : quer;
+  const hoehe = (liegt ? masse.breite : masse.hoehe)
+                - seitenrand.oben - seitenrand.unten;
+  return '<div class="leereseite" contenteditable="false" data-quer="'
+       + (querformat ? 'ja' : 'nein') + '" style="height:' + hoehe + 'mm"'
+       + ' title="Leere Seite (' + (querformat ? 'Querformat' : 'Hochformat')
+       + ') — mit Entf wieder weg"></div><p><br></p>';
+}
+
+B.leereSeite = (querformat) => {
+  Dokument.einfuegen(leereSeiteBauen(!!querformat));
+  geaendertMelden();
+  /* Erst nachzaehlen, wenn der Block wirklich steht. Direkt danach
+     gefragt, ist scrollHeight noch der alte — in der Statuszeile stand
+     „Seite 1 von 1", waehrend die leere Seite schon zu sehen war. */
+  requestAnimationFrame(() => requestAnimationFrame(zahlenAuffrischen));
+  melde('Leere Seite eingefügt — '
+        + (querformat ? 'Querformat' : 'Hochformat') + '. Mit Entf wieder weg.');
 };
 
 /* ============================================================
@@ -14841,7 +14879,8 @@ const MENUES = [
   ['Einfügen', [
     { name: 'Seiten', unter: [
       { name: 'Deckblatt', tun: B.deckblatt },
-      { name: 'Leere Seite', tun: B.leereSeite },
+      { name: 'Leere Seite (Hochformat)', tun: () => B.leereSeite(false) },
+      { name: 'Leere Seite (Querformat)', tun: () => B.leereSeite(true) },
       { name: 'Seitenumbruch', tun: B.seitenumbruch, taste: 'Strg+Enter' },
     ] },
     { name: 'Tabellen', unter: [

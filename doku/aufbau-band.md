@@ -89,7 +89,9 @@ EINFÜGEN
 ├── Seiten
 │   ├── Deckblatt
 │   ├── Leere Seite
-│   └── Seitenumbruch
+│   ├── Seitenumbruch
+│   ├── Hochformat
+│   └── Querformat
 ├── Tabellen
 │   ├── Tabelle einfügen
 │   ├── Schnelltabelle
@@ -98,12 +100,12 @@ EINFÜGEN
 ├── Illustrationen
 │   ├── Bild
 │   ├── Formen
-│   ├── Form mit eigener Farbe…
 │   ├── Diagramm
-│   ├── Bildschirmfoto
 │   ├── SmartArt
-│   ├── Piktogramm
-│   └── WordArt
+│   ├── WordArt
+│   ├── Form mit eigener Farbe…
+│   ├── Bildschirmfoto
+│   └── Piktogramm
 ├── Links
 │   ├── Hyperlink
 │   ├── Lesezeichen / Textmarke
@@ -395,6 +397,7 @@ genannt — das ist Absicht: ein Schalter, mehrere Stellen, ein Zustand.
 | Größe | Seitenlayout ▸ Seite einrichten |
 | Gründlich prüfen | Überprüfen ▸ Dokumentprüfung · Schreibhilfe ▸ Prüfen |
 | Hervorheben | Start ▸ Schriftart |
+| Hochformat | Einfügen ▸ Seiten |
 | Hochgestellt | Start ▸ Schriftart |
 | Hyperlink | Einfügen ▸ Links |
 | Immer dunkel | Ansicht ▸ Helligkeit |
@@ -438,6 +441,7 @@ genannt — das ist Absicht: ein Schalter, mehrere Stellen, ein Zustand.
 | Piktogramm | Einfügen ▸ Illustrationen |
 | Prüfen | Überprüfen ▸ Dokumentprüfung · Schreibhilfe ▸ Prüfen |
 | Quellen verwalten | Referenzen ▸ Zitate und Literatur |
+| Querformat | Einfügen ▸ Seiten |
 | Querverweis | Einfügen ▸ Links · Referenzen ▸ Beschriftungen |
 | raender | Seitenlayout ▸ Seitenränder |
 | Rechtsbündig | Start ▸ Absatz |
