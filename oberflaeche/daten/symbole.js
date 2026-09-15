@@ -257,4 +257,5 @@ const SYMBOLE = {
   balkenquer:    'M3 3v16a2 2 0 0 0 2 2h16 M7 7h9 M7 12h6 M7 17h11',   /* eigen: liegende Balken */
   flaeche:       'M3 3v16a2 2 0 0 0 2 2h16 M7 16l4-6 3 3 5-6v9z',   /* lucide: chart-area */
   punktwolke:    'M3 3v16a2 2 0 0 0 2 2h16 M8 15a1 1 0 1 0 2 0a1 1 0 1 0 -2 0 M12 9a1 1 0 1 0 2 0a1 1 0 1 0 -2 0 M16 13a1 1 0 1 0 2 0a1 1 0 1 0 -2 0 M6.5 11a1 1 0 1 0 2 0a1 1 0 1 0 -2 0',   /* lucide: chart-scatter */
+  diagrammteil:  'M3 3v14a2 2 0 0 0 2 2h9 M7 14V9 M11 14V6 M18 14v8 M14 18h8',   /* eigen: Saeulen mit Plus — Diagrammelement hinzufuegen */
 };

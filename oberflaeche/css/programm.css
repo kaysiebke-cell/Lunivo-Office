@@ -2575,6 +2575,51 @@ body.lesen .arbeitsflaeche{padding:40px 24px}
 }
 .diagrammfenster__vorschau svg{width:100%;height:auto;display:block}
 
+/* ---- Daten bearbeiten: Tabelle links, Vorschau rechts ---- */
+.datenfenster{min-width:720px}
+.datenfenster__koerper{display:flex;gap:16px;align-items:flex-start}
+.datenfenster__links{flex:1 1 46%;display:flex;flex-direction:column;gap:8px;min-width:0}
+.datenfenster__schau{
+  flex:1 1 54%;background:var(--blatt);
+  border:1px solid var(--rand);border-radius:6px;padding:8px;min-width:0;
+}
+.datenfenster__schau svg{width:100%;height:auto;display:block}
+.datentabelle{
+  border:1px solid var(--rand);border-radius:6px;
+  background-color:var(--grund);padding:6px;
+}
+.datentabelle__gitter{width:100%;border-collapse:collapse}
+.datentabelle__gitter th{
+  text-align:left;font-size:.78rem;font-weight:700;
+  color:var(--schrift-2);padding:2px 4px 6px;
+}
+.datentabelle__gitter td{padding:2px}
+.datentabelle__gitter input{
+  width:100%;padding:5px 8px;
+  border:1px solid var(--rand);border-radius:4px;
+  background-color:var(--karte, var(--leiste));color:var(--schrift);font:inherit;
+}
+.datentabelle__gitter td:nth-child(2) input{text-align:right;font-family:monospace}
+.datentabelle__weg{
+  width:26px;height:26px;padding:0;
+  border:1px solid transparent;border-radius:4px;
+  background:none;color:var(--schrift-2);font-size:15px;cursor:pointer;
+}
+.datentabelle__weg:hover:not(:disabled){background:rgba(181,86,63,.18);color:var(--schrift)}
+.datentabelle__weg:disabled{opacity:.3;cursor:default}
+.datentabelle__mehr{width:auto;align-self:flex-start;margin-top:6px;padding:5px 12px}
+
+/* Die Formatvorlagen als Kacheln. */
+.stilgitter{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+.stilkachel{
+  display:flex;flex-direction:column;gap:4px;align-items:center;
+  padding:6px;border:1px solid transparent;border-radius:6px;
+  background:none;color:var(--schrift);font:inherit;font-size:.78rem;cursor:pointer;
+}
+.stilkachel:hover{background:rgba(127,127,127,.12)}
+.stilkachel__bild{width:100%;background:var(--blatt);border-radius:4px;padding:3px}
+.stilkachel__bild svg{width:100%;height:auto;display:block}
+
 /* Das gewaehlte Diagramm im Text — man soll sehen, woran die Knoepfe
    rechts daneben haengen. */
 .diagramm--gewaehlt{outline:2px solid var(--blau);outline-offset:3px}

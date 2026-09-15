@@ -2884,6 +2884,192 @@ function formNeuZeichnen(alt, q) {
 /* Entwurf und Daten öffnen dasselbe Fenster; nur der Anlass ist ein
    anderer. „Daten" ist der häufigere Weg — eine Zahl stimmt nicht —,
    „Entwurf" der seltenere: Überschrift und Art. */
+/* ============================================================
+   DATEN BEARBEITEN — ALS TABELLE
+
+   Er hat es so beschrieben: „Es oeffnet sich ein Mini-Spreadsheet.
+   Tragen Sie dort Ihre Zeilen- und Spaltenbeschriftungen sowie Werte
+   ein. Speichern, um das Diagramm im Text zu aktualisieren."
+
+   Vorher war es ein Kasten, in den man „Miete: 480" tippte. Wer eine
+   Tabelle im Kopf hat, tippt keine Doppelpunkte — und wer sich
+   vertippt, sieht es nicht.
+
+   In einer Tabelle sieht man die Spalte. Man kann eine Zeile anhaengen,
+   eine wegnehmen, und was man eintraegt, steht da, wo es hingehoert.
+   ============================================================ */
+function datenTabelle(punkte, beiAenderung) {
+  const kasten = document.createElement('div');
+  kasten.className = 'datentabelle';
+
+  const tabelle = document.createElement('table');
+  tabelle.className = 'datentabelle__gitter';
+  tabelle.innerHTML = '<thead><tr><th>Beschriftung</th><th>Wert</th><th></th></tr></thead>';
+  const koerper = document.createElement('tbody');
+  tabelle.appendChild(koerper);
+
+  const zeilen = punkte.length
+    ? punkte.map((p) => ({ name: p.name, wert: p.wert }))
+    : [{ name: '', wert: '' }];
+
+  function melden() {
+    if (beiAenderung) beiAenderung(zeilen.filter((z) => String(z.wert).trim() !== ''));
+  }
+
+  function bauen() {
+    koerper.textContent = '';
+    zeilen.forEach((z, i) => {
+      const tr = document.createElement('tr');
+
+      const tdName = document.createElement('td');
+      const name = document.createElement('input');
+      name.type = 'text';
+      name.value = z.name;
+      name.placeholder = 'Rubrik ' + (i + 1);
+      name.addEventListener('input', () => { z.name = name.value; melden(); });
+      tdName.appendChild(name);
+      tr.appendChild(tdName);
+
+      const tdWert = document.createElement('td');
+      const wert = document.createElement('input');
+      wert.type = 'text';
+      wert.inputMode = 'decimal';
+      wert.value = z.wert;
+      wert.addEventListener('input', () => { z.wert = wert.value; melden(); });
+      /* Enter haengt eine Zeile an — wer Zahlen eintraegt, will nicht
+         zwischendurch zur Maus greifen. */
+      wert.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        if (i === zeilen.length - 1) { zeilen.push({ name: '', wert: '' }); bauen(); }
+        const naechste = koerper.children[i + 1];
+        if (naechste) naechste.querySelector('input').focus();
+      });
+      tdWert.appendChild(wert);
+      tr.appendChild(tdWert);
+
+      const tdWeg = document.createElement('td');
+      const weg = document.createElement('button');
+      weg.type = 'button';
+      weg.className = 'datentabelle__weg';
+      weg.textContent = '×';
+      weg.title = 'Zeile löschen';
+      weg.disabled = zeilen.length <= 1;
+      weg.addEventListener('click', () => {
+        zeilen.splice(i, 1);
+        if (!zeilen.length) zeilen.push({ name: '', wert: '' });
+        bauen(); melden();
+      });
+      tdWeg.appendChild(weg);
+      tr.appendChild(tdWeg);
+
+      koerper.appendChild(tr);
+    });
+  }
+
+  bauen();
+  kasten.appendChild(tabelle);
+
+  const mehr = document.createElement('button');
+  mehr.type = 'button';
+  mehr.className = 'knopf datentabelle__mehr';
+  mehr.textContent = '+ Zeile';
+  mehr.addEventListener('click', () => {
+    zeilen.push({ name: '', wert: '' });
+    bauen();
+    koerper.lastElementChild.querySelector('input').focus();
+  });
+  kasten.appendChild(mehr);
+
+  kasten.alsText = () => zeilen
+    .filter((z) => String(z.wert).trim() !== '')
+    .map((z) => (z.name || 'Ohne Namen') + ': ' + z.wert).join('\n');
+  return kasten;
+}
+
+B.diagrammDaten = () => {
+  const bild = diagrammJetzt();
+  if (!bild) { melde('Dafür muss ein Diagramm gewählt sein.'); return; }
+  const q = quelleLesen(bild);
+  if (!q) {
+    melde('Dieses Diagramm stammt aus einer älteren Fassung — '
+        + 'es trägt seine Zahlen nicht mit und lässt sich nur neu einfügen.');
+    return;
+  }
+
+  const grund = document.createElement('div');
+  grund.className = 'dialoggrund';
+  const kasten = document.createElement('div');
+  kasten.className = 'dialog dialog--breit datenfenster';
+  kasten.innerHTML = '<h3 class="dialog__titel">Daten bearbeiten</h3>';
+
+  const koerper = document.createElement('div');
+  koerper.className = 'datenfenster__koerper';
+
+  const links = document.createElement('div');
+  links.className = 'datenfenster__links';
+
+  const titelzeile = document.createElement('label');
+  titelzeile.className = 'dialog__zeile';
+  titelzeile.innerHTML = '<span>Diagrammtitel</span>';
+  const titel = document.createElement('input');
+  titel.type = 'text';
+  titel.value = q.titel || '';
+  titelzeile.appendChild(titel);
+  links.appendChild(titelzeile);
+
+  /* Die Vorschau rechts rechnet bei jedem Tastendruck mit. So sieht man
+     beim Eintragen, was daraus wird — das ist der Sinn der Tabelle. */
+  const schau = document.createElement('div');
+  schau.className = 'datenfenster__schau';
+
+  let punkteJetzt = zahlenLesen(q.daten || '');
+  const zeichnen = () => {
+    schau.innerHTML = diagrammZeichnen(q.art, punkteJetzt.length ? punkteJetzt
+      : [{ name: '—', wert: 1 }], titel.value.trim(), {
+      farben: diagrammSatz(q.satz), werte: q.werte, legende: q.legende,
+    });
+  };
+  titel.addEventListener('input', zeichnen);
+
+  const tabelle = datenTabelle(punkteJetzt, (neu) => {
+    punkteJetzt = neu.map((z) => ({
+      name: z.name,
+      wert: parseFloat(String(z.wert).replace(',', '.')) || 0,
+    }));
+    zeichnen();
+  });
+  links.appendChild(tabelle);
+  koerper.append(links, schau);
+  kasten.appendChild(koerper);
+  zeichnen();
+
+  const fuss = document.createElement('div');
+  fuss.className = 'dialog__knoepfe';
+  const ab = document.createElement('button');
+  ab.type = 'button'; ab.className = 'knopf'; ab.textContent = 'Abbrechen';
+  ab.addEventListener('click', () => grund.remove());
+  const ok = document.createElement('button');
+  ok.type = 'button'; ok.className = 'knopf knopf--haupt'; ok.textContent = 'Speichern';
+  ok.addEventListener('click', () => {
+    const text = tabelle.alsText();
+    if (!zahlenLesen(text).length) { melde('Es steht keine Zahl in der Tabelle.'); return; }
+    grund.remove();
+    diagrammNeuZeichnen(bild, Object.assign({}, q, {
+      daten: text, titel: titel.value.trim(),
+    }));
+  });
+  fuss.append(ab, ok);
+  kasten.appendChild(fuss);
+
+  grund.appendChild(kasten);
+  grund.addEventListener('mousedown', (e) => { if (e.target === grund) grund.remove(); });
+  document.addEventListener('keydown', function zu(e) {
+    if (e.key === 'Escape' && grund.isConnected) { grund.remove(); document.removeEventListener('keydown', zu); }
+  });
+  document.body.appendChild(grund);
+};
+
 function diagrammFenster(titel, nurDaten) {
   const bild = diagrammJetzt();
   if (!bild) { melde('Im Text steht kein Diagramm.'); return; }
@@ -3048,6 +3234,48 @@ const DIAGRAMMARTEN = [
 B.diagrammArt = (art) => mitDiagramm((bild, q) =>
   diagrammNeuZeichnen(bild, Object.assign({}, q, { art })));
 
+/* Die Formatvorlagen aus seinem Bild: vier Kacheln, jede zeigt
+   dasselbe Diagramm in einer anderen Aufmachung. Man waehlt ein
+   Aussehen, nicht eine Einstellung. */
+const DIAGRAMMSTILE = [
+  ['schlicht', 'Schlicht',      { satz: 'bunt',  werte: false, legende: true }],
+  ['zahlen',   'Mit Zahlen',    { satz: 'bunt',  werte: true,  legende: true }],
+  ['blau',     'Blau, ruhig',   { satz: 'blau',  werte: false, legende: true }],
+  ['grau',     'Grau, sachlich',{ satz: 'grau',  werte: true,  legende: false }],
+  ['warm',     'Warm',          { satz: 'warm',  werte: false, legende: true }],
+];
+
+B.diagrammStile = (knopf) => mitDiagramm((bild, q) => {
+  designTafelZeigen(knopf, 'Formatvorlagen', (tafel) => {
+    tafel.classList.add('designtafel--breit');
+    const gitter = document.createElement('div');
+    gitter.className = 'stilgitter';
+    const punkte = zahlenLesen(q.daten || '');
+    for (const [, name, wie] of DIAGRAMMSTILE) {
+      const k = document.createElement('button');
+      k.type = 'button';
+      k.className = 'stilkachel';
+      k.title = name;
+      const bildchen = document.createElement('span');
+      bildchen.className = 'stilkachel__bild';
+      bildchen.innerHTML = diagrammZeichnen(q.art, punkte.slice(0, 4), '', {
+        farben: diagrammSatz(wie.satz), werte: wie.werte, legende: wie.legende,
+      });
+      const w = document.createElement('span');
+      w.className = 'stilkachel__name';
+      w.textContent = name;
+      k.append(bildchen, w);
+      k.addEventListener('mousedown', (e) => e.preventDefault());
+      k.addEventListener('click', () => {
+        designTafelWeg();
+        diagrammNeuZeichnen(bild, Object.assign({}, q, wie));
+      });
+      gitter.appendChild(k);
+    }
+    tafel.appendChild(gitter);
+  });
+});
+
 B.diagrammZurueck = () => mitDiagramm((bild, q) =>
   diagrammNeuZeichnen(bild, {
     art: q.art, titel: q.titel, daten: q.daten,
@@ -3089,7 +3317,10 @@ const DIAGRAMMSCHNELL = [
    vorhandene gebaut hatte. Er hat es gesehen: „schau doch einfach bei
    den Bildern und Tabellen rein, da liegen die Funktionen schon." */
 B.diagrammEntwurf = () => diagrammFenster('Diagrammentwurf', false);
-B.diagrammDaten   = () => diagrammFenster('Daten', true);
+/* B.diagrammDaten steht weiter oben und oeffnet die Tabelle.
+   Hier stand die alte Fassung mit dem Textkasten — zwei gleichnamige
+   Zuweisungen, von denen die spaetere gewinnt: Die Tabelle waere nie
+   aufgegangen. */
 
 B.diagrammTyp = () => {
   const bild = diagrammJetzt();
@@ -4611,10 +4842,35 @@ const REGISTER_IM_ZUSAMMENHANG = [
     name: 'Diagrammtools',
     gilt: () => !!diagrammJetzt(),
     gruppen: [
-      ['Diagrammentwurf', [['saeule', 'Diagrammentwurf', () => B.diagrammEntwurf(), 'gross']]],
-      ['Daten', [['zahlen', 'Daten', () => B.diagrammDaten(), 'gross']]],
-      ['Diagrammtyp', [['saeule', 'Diagrammtyp', () => B.diagrammTyp(), 'gross']]],
-      ['Formatierung', [['ecken', 'Formatierung', () => B.diagrammFormat(), 'gross']]],
+      /* NACH SEINEM BILD DER WPS-LEISTE, von links nach rechts:
+           Diagrammelement hinzufuegen · Schnelllayout · Farbe aendern
+           [ Formatvorlagen ]
+           Diagrammtyp aendern · [ die Arten als Zeichen ]
+           Daten auswaehlen · Daten bearbeiten
+           Formatieren · Formatvorlage zuruecksetzen                */
+      ['Diagrammentwurf', [
+        ['diagrammteil', 'Diagrammelement hinzufügen', (k) => B.diagrammElement(k), 'gross'],
+        ['anordnen', 'Schnelllayout', (k) => B.diagrammLayout(k), 'gross'],
+        ['pinselchen', 'Farbe ändern', (k) => B.diagrammFarbe(k), 'gross']]],
+      ['Formatvorlagen', [
+        ['toenung', 'Formatvorlagen', (k) => B.diagrammStile(k), 'gross']]],
+      ['Diagrammtyp', [
+        ['saeule', 'Diagrammtyp ändern', () => B.diagrammTyp(), 'gross'],
+        ['saeule', 'Säule', () => B.diagrammArt('saeule')],
+        ['linie', 'Linie', () => B.diagrammArt('linie')],
+        ['kreis', 'Kreis', () => B.diagrammArt('kuchen')],
+        ['punktwolke', 'X Y (Punkt)', () => B.diagrammArt('punkte')],
+        ['//'],
+        ['balkenquer', 'Balken', () => B.diagrammArt('balken')],
+        ['flaeche', 'Fläche', () => B.diagrammArt('flaeche')],
+        ['kreis', 'Ring', () => B.diagrammArt('ring')],
+        ['saeule', 'Gestapelt', () => B.diagrammArt('saeulegest')]]],
+      ['Daten', [
+        ['filter', 'Daten auswählen', () => B.diagrammDaten(), 'gross'],
+        ['zahlen', 'Daten bearbeiten', () => B.diagrammDaten(), 'gross']]],
+      ['Formatierung', [
+        ['zahnrad', 'Formatieren', () => B.diagrammFormat(), 'gross'],
+        ['Zurück', 'Formatvorlage zurücksetzen', () => B.diagrammZurueck()]]],
     ],
   },
   {
