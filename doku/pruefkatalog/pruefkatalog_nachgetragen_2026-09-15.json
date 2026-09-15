@@ -1030,7 +1030,7 @@
   },
   "einfügen|uhrzeit": {
    "status": "pass",
-   "note": "Uhrzeit und Datum kann man in einer Funktion zusammenfassen, siehe Datum.\n\n— erledigt am 15.09.2026: Ein Knopf „Datum und Uhrzeit\". Das Fenster zeigt sieben Formen mit dem heutigen Datum als Vorschau — kurz, lang, mit Wochentag, ISO, Uhrzeit, Uhrzeit mit Sekunden, beides. Vorher fügten zwei Knöpfe je eine feste Form ein; wer „15. September 2026\" wollte, musste tippen.",
+   "note": "Uhrzeit und Datum kann man in einer Funktion zusammenfassen, siehe Datum.\n\n— erledigt am 15.09.2026: Ein großer Knopf „Datum und Uhrzeit\" mit Kalender-und-Uhr-Zeichen, wie im Bild. Dahinter das Fenster aus Ihrer Vorlage: links die Liste der verfügbaren Formate, rechts die Sprache, darunter „Automatisch aktualisieren\", unten Abbrechen und OK. Die Liste hängt an der Sprache — auf Englisch steht dort 9/15/2026 und Tuesday, September 15, 2026, genau wie in WPS.",
    "bilder": [
     {
      "id": "b1789282084632_1z5n7",

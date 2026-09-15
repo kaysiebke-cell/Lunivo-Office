@@ -102,10 +102,12 @@ ERLEDIGT = {
     'einfügen|fußzeile':
         'Siehe Kopfzeile — beide in einem Knopf.',
     'einfügen|uhrzeit':
-        'Ein Knopf „Datum und Uhrzeit". Das Fenster zeigt sieben Formen mit '
-        'dem heutigen Datum als Vorschau — kurz, lang, mit Wochentag, ISO, '
-        'Uhrzeit, Uhrzeit mit Sekunden, beides. Vorher fügten zwei Knöpfe je '
-        'eine feste Form ein; wer „15. September 2026" wollte, musste tippen.',
+        'Ein großer Knopf „Datum und Uhrzeit" mit Kalender-und-Uhr-Zeichen, '
+        'wie im Bild. Dahinter das Fenster aus Ihrer Vorlage: links die Liste '
+        'der verfügbaren Formate, rechts die Sprache, darunter „Automatisch '
+        'aktualisieren", unten Abbrechen und OK. Die Liste hängt an der '
+        'Sprache — auf Englisch steht dort 9/15/2026 und Tuesday, September '
+        '15, 2026, genau wie in WPS.',
     'einfügen|textbaustein':
         'Nach Schreibhilfe gewandert, wie vorgeschlagen — dort als ein Knopf '
         '„Textbausteine" mit Verwalten und Einfügen. In Einfügen steht er '
