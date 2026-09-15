@@ -4,7 +4,7 @@ Geschrieben von `werkzeug/reiter-abgleich.py`. Das SOLL kommt aus
 seinem Prüfkatalog (Lesekopie in `doku/wps-soll-lesekopie.txt`),
 der IST-Stand aus `oberflaeche/daten/register.js`.
 
-**274 gleich · 1 fehlen · 29 eigen · 0 ohne Bild**
+**274 gleich · 1 fehlen · 32 eigen · 0 ohne Bild**
 
 - **fehlt** — steht im SOLL, nicht im Band. Kein Ermessen.
 - **eigen** — steht im Band, nicht im SOLL. Das heißt nicht
@@ -45,7 +45,7 @@ Name im Band zurückgedreht. Das entscheidet er, nicht ich.
 | Fett | gleich | Buchstabe `F` |
 | Kursiv | gleich | Buchstabe `K` |
 | Unterstrichen | gleich | Buchstabe `U` |
-| Durchgestrichen | gleich | Buchstabe `S` |
+| Durchgestrichen | gleich | `durchgestrichen` |
 | Hochgestellt | gleich | Buchstabe `X²` |
 | Tiefgestellt | gleich | Buchstabe `X₂` |
 | Hervorheben | gleich | `marker` |
@@ -172,6 +172,8 @@ Name im Band zurückgedreht. Das entscheidet er, nicht ich.
 
 - Eigenschaften
 - Form mit eigener Farbe…
+- Hochformat
+- Querformat
 
 ## Seitenlayout
 
@@ -552,6 +554,7 @@ und fehlten darum im Bogen ganz.
 | Diagrammtools | Daten | gleich |
 | Diagrammtools | Diagrammtyp | gleich |
 | Diagrammtools | Formatierung | gleich |
+| Diagrammtools | Formatvorlagen | eigen |
 | SmartArt-Tools | SmartArt-Entwurf | gleich |
 | SmartArt-Tools | SmartArt-Format | gleich |
 | Gleichungswerkzeuge | Formeleditor-Funktionen | gleich |

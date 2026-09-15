@@ -2592,6 +2592,13 @@ body.lesen .arbeitsflaeche{padding:40px 24px}
   max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
 
+/* Kleine Probe fuer die Effektliste des Textfelds. */
+.rahmenprobe--klein{
+  display:block;width:34px;height:20px;flex:0 0 auto;
+  border:1px solid var(--rand);border-radius:3px;
+  background:var(--blatt);
+}
+
 /* ---- Die Formatleiste rechts ----
    „Ein Doppelklick auf ein beliebiges Element oeffnet das rechte
    Formatierungsmenue." Rechts und nicht als Fenster: Man sieht das

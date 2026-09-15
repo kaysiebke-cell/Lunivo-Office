@@ -868,6 +868,67 @@ B.block   = () => Dokument.befehl('justifyFull');
 
    Also nach dem Befehl aufraeumen: Liste aus dem Absatz herausheben,
    den leeren Absatz wegwerfen. */
+/* ============================================================
+   EINEN BLOCK EINFUEGEN
+
+   execCommand('insertHTML') fuegt in den laufenden Text ein, und der
+   laufende Text ist ein Absatz. Ein <div> darf dort nicht stehen — der
+   Browser macht daraus stillschweigend ein <span> und wirft den Kasten
+   weg.
+
+   Genau das war sein Befund: „Der Rahmen laesst sich nicht entfernen."
+   Er liess sich nicht entfernen, weil es ihn gar nicht gab. Im Text
+   stand ein <span> mit grauem Hintergrund.
+
+   Nachtraeglich geradeziehen hilft nicht: Der Block ist schon weg,
+   bevor man ihn suchen kann. Also gar nicht erst durch execCommand,
+   sondern neben den Absatz gesetzt.
+   ============================================================ */
+function blockEinfuegen(el, hinein) {
+  const auswahl = window.getSelection();
+  let absatz = null;
+  if (auswahl && auswahl.rangeCount) {
+    let k = auswahl.getRangeAt(0).startContainer;
+    if (k && k.nodeType === Node.TEXT_NODE) k = k.parentElement;
+    absatz = k && k.closest ? k.closest('.dokument > *') : null;
+  }
+  if (absatz && feld.contains(absatz)) absatz.parentNode.insertBefore(el, absatz.nextSibling);
+  else feld.appendChild(el);
+
+  /* Dahinter eine leere Zeile, sonst kommt man hinter dem Block nicht
+     mehr zum Schreiben. */
+  const danach = document.createElement('p');
+  danach.innerHTML = '<br>';
+  el.parentNode.insertBefore(danach, el.nextSibling);
+
+  const ziel = hinein ? (el.querySelector('p') || el) : danach;
+  const r = document.createRange();
+  r.selectNodeContents(ziel);
+  r.collapse(true);
+  auswahl.removeAllRanges();
+  auswahl.addRange(r);
+  feld.focus();
+  return el;
+}
+
+/* DASSELBE GILT FUER JEDEN BLOCK IM ABSATZ.
+
+   Ein <div> darf so wenig in einem <p> stehen wie ein <ul>. Beim
+   Textfeld fiel das erst auf, als er schrieb: „Der Rahmen laesst sich
+   nicht entfernen." Er liess sich nicht entfernen, weil es ihn gar
+   nicht gab — der Browser hatte aus dem <div class="textrahmen"> beim
+   Einfuegen ein <span> gemacht und den Kasten dabei verloren.
+
+   Also nicht nur Listen geradeziehen, sondern jeden Block. */
+function bloeckeGeradeziehen() {
+  listeGeradeziehen();
+  for (const block of [...feld.querySelectorAll('p > div, p > table')]) {
+    const absatz = block.parentElement;
+    absatz.parentNode.insertBefore(block, absatz);
+    if (!absatz.textContent.trim() && !absatz.querySelector('img, svg')) absatz.remove();
+  }
+}
+
 function listeGeradeziehen() {
   for (const liste of [...feld.querySelectorAll('p > ul, p > ol')]) {
     const absatz = liste.parentElement;
@@ -2694,8 +2755,178 @@ B.kommentar = () => {
   }, 'Setzen');
 };
 
+/* ============================================================
+   DIE BEFEHLE DER TEXTTOOLS
+
+   „Du setzt hier einen Text mit Rahmen. Der Rahmen laesst sich nicht
+   entfernen in Lunivo."
+
+   Er liess sich nicht entfernen, weil es keinen Ort gab, an dem man es
+   haette tun koennen: Das Textfeld kam mit einem Rahmen aus dem
+   Stilblatt, und kein Befehl fasste ihn an.
+
+   Jetzt gilt: Was am Textfeld steht, steht IM Textfeld — als eigene
+   Angabe, die das Stilblatt schlaegt. „Kein Rahmen" ist damit eine
+   Einstellung und keine Unmoeglichkeit.
+   ============================================================ */
+function mitRahmen(tun) {
+  const r = textrahmenJetzt();
+  if (!r) { melde('Dafür muss der Zeiger in einem Textfeld stehen.'); return null; }
+  return tun(r);
+}
+
+/* Die Farbtafel, die schon fuer Schrift und Marker da ist — mit seiner
+   Palette. Hier nur mit anderem Ziel. */
+function rahmenFarbtafel(knopf, titel, setzen, ohneName) {
+  mitRahmen((r) => {
+    designTafelZeigen(knopf, titel, (tafel) => {
+      tafel.classList.add('designtafel--breit', 'farbtafel');
+      const reihe = document.createElement('div');
+      reihe.className = 'farbtafel__reihe farbtafel__reihe--zwoelf';
+      for (const [hex, name] of FARBEN) {
+        const feldchen = farbfeld(hex, () => {
+          designTafelWeg();
+          setzen(r, hex);
+          geaendertMelden();
+          melde(titel + ': ' + name + '.');
+        });
+        feldchen.title = name;
+        reihe.appendChild(feldchen);
+      }
+      tafel.appendChild(reihe);
+
+      const strichel = document.createElement('hr');
+      strichel.className = 'designtafel__strich';
+      tafel.appendChild(strichel);
+
+      const ohne = document.createElement('button');
+      ohne.type = 'button';
+      ohne.className = 'designtafel__zeile richtungszeile';
+      ohne.appendChild(symbol('radierer'));
+      const w = document.createElement('span');
+      w.textContent = ohneName;
+      ohne.appendChild(w);
+      ohne.addEventListener('mousedown', (e) => e.preventDefault());
+      ohne.addEventListener('click', () => {
+        designTafelWeg();
+        setzen(r, '');
+        geaendertMelden();
+        melde(ohneName + '.');
+      });
+      tafel.appendChild(ohne);
+    });
+  });
+}
+
+B.rahmenFuellung = (knopf) => rahmenFarbtafel(knopf, 'Füllung',
+  (r, hex) => { r.style.background = hex || 'transparent'; }, 'Keine Füllung');
+
+B.rahmenKontur = (knopf) => rahmenFarbtafel(knopf, 'Kontur',
+  (r, hex) => {
+    /* DAS IST SEIN PUNKT: „Kein Rahmen" muss gehen. Eine leere Angabe
+       hiesse „nimm, was im Stilblatt steht" — und dort steht ein
+       Rahmen. Also ausdruecklich keiner. */
+    r.style.border = hex ? ((r.dataset.konturstaerke || 1) + 'px solid ' + hex) : 'none';
+    r.dataset.konturfarbe = hex;
+  }, 'Kein Rahmen');
+
+B.rahmenTextfarbe = (knopf) => rahmenFarbtafel(knopf, 'Textfüllung',
+  (r, hex) => { r.style.color = hex; }, 'Automatisch');
+
+B.rahmenTextkontur = (knopf) => rahmenFarbtafel(knopf, 'Textkontur',
+  (r, hex) => {
+    r.style.webkitTextStroke = hex ? '0.7px ' + hex : '';
+  }, 'Keine Kontur');
+
+const RAHMENEFFEKTE = [
+  ['keiner',   'Kein Effekt',     ''],
+  ['schatten', 'Schatten',        '0 2px 6px rgba(0,0,0,.25)'],
+  ['tief',     'Tiefer Schatten', '3px 5px 10px rgba(0,0,0,.35)'],
+  ['leuchten', 'Leuchten',        '0 0 10px rgba(47,111,181,.5)'],
+  ['weich',    'Weicher Rand',    '0 0 0 4px rgba(127,127,127,.12)'],
+];
+
+B.rahmenEffekt = (knopf) => mitRahmen((r) => {
+  designTafelZeigen(knopf, 'Effekte', (tafel) => {
+    tafel.classList.add('designtafel--breit');
+    for (const [, name, schatten] of RAHMENEFFEKTE) {
+      const k = document.createElement('button');
+      k.type = 'button';
+      k.className = 'designtafel__zeile richtungszeile';
+      const probe = document.createElement('span');
+      probe.className = 'rahmenprobe--klein';
+      probe.style.boxShadow = schatten;
+      k.appendChild(probe);
+      const w = document.createElement('span');
+      w.textContent = name;
+      k.appendChild(w);
+      k.addEventListener('mousedown', (e) => e.preventDefault());
+      k.addEventListener('click', () => {
+        designTafelWeg();
+        r.style.boxShadow = schatten;
+        geaendertMelden();
+        melde('Effekt: ' + name + '.');
+      });
+      tafel.appendChild(k);
+    }
+  });
+});
+
+B.rahmenGroesse = () => mitRahmen((r) => {
+  fenster('Größe des Textfelds', [
+    { art: 'satz', text: 'Leer lassen heißt: so breit wie der Text es braucht.' },
+    { schluessel: 'breite', name: 'Breite (mm)', art: 'number', wert: '' },
+    { schluessel: 'hoehe', name: 'Mindesthöhe (mm)', art: 'number', wert: '' },
+  ], (werte) => {
+    r.style.width = werte.breite ? werte.breite + 'mm' : '';
+    r.style.minHeight = werte.hoehe ? werte.hoehe + 'mm' : '';
+    geaendertMelden();
+    melde('Größe gesetzt.');
+  });
+});
+
+B.rahmenEinstellungen = () => mitRahmen((r) => {
+  fenster('Textfeld', [
+    { schluessel: 'staerke', name: 'Konturstärke (px)', art: 'number',
+      wert: r.dataset.konturstaerke || '1', schritt: '0.5' },
+    { schluessel: 'rund', name: 'Ecken runden (px)', art: 'number',
+      wert: String(parseFloat(r.style.borderRadius) || 4) },
+    { schluessel: 'innen', name: 'Innenabstand (mm)', art: 'number',
+      wert: String(parseFloat(r.style.padding) || 3) },
+  ], (werte) => {
+    r.dataset.konturstaerke = werte.staerke;
+    if (r.dataset.konturfarbe) {
+      r.style.border = werte.staerke + 'px solid ' + r.dataset.konturfarbe;
+    }
+    r.style.borderRadius = werte.rund + 'px';
+    r.style.padding = werte.innen + 'mm';
+    geaendertMelden();
+    melde('Textfeld eingestellt.');
+  });
+});
+
+B.rahmenWeg = () => mitRahmen((r) => {
+  /* Der Text bleibt, der Kasten geht — sonst waere „Textfeld loeschen"
+     dasselbe wie „Text loeschen", und das will selten jemand. */
+  const eltern = r.parentNode;
+  while (r.firstChild) eltern.insertBefore(r.firstChild, r);
+  r.remove();
+  geaendertMelden();
+  melde('Textfeld aufgelöst — der Text bleibt.');
+});
+
 B.textfeld = () => {
-  Dokument.einfuegen('<div class="textrahmen"><p>Text im Rahmen</p></div><p><br></p>');
+  /* Rahmenfarbe und -staerke stehen AM Kasten, nicht nur im Stilblatt.
+     Sonst liesse sich „kein Rahmen" nicht einstellen — genau das war
+     sein zweiter Befund. */
+  const kasten = document.createElement('div');
+  kasten.className = 'textrahmen';
+  kasten.dataset.konturfarbe = '#9AA3AB';
+  kasten.dataset.konturstaerke = '1';
+  kasten.style.border = '1px solid #9AA3AB';
+  kasten.innerHTML = '<p>Text im Rahmen</p>';
+  blockEinfuegen(kasten, true);
+  geaendertMelden();
   melde('Textrahmen eingefügt.');
 };
 
@@ -4997,6 +5228,36 @@ const REGISTER_IM_ZUSAMMENHANG = [
     ],
   },
   {
+    /* TEXTTOOLS — „In WPS erscheint im Reiter ein neuer Eintrag Text
+       Tools fuer erweiterte Funktionen." Und daran haengt sein anderer
+       Befund: „Der Rahmen laesst sich nicht entfernen in Lunivo." Es gab
+       keinen Ort, an dem man ihn haette entfernen koennen.
+
+       Nach seinem Bild, von links nach rechts:
+         Textfeld · Format uebertragen
+         Textfuellung · Textkontur · Texteffekte   (fuer den TEXT)
+         Fuellung · Kontur · Effekte               (fuer den RAHMEN)
+         Verknuepfung · Einstellungen                                  */
+    name: 'Texttools',
+    gilt: () => !!textrahmenJetzt(),
+    gruppen: [
+      ['Textfeld', [['textrahmen', 'Textfeld einfügen', () => B.textfeld(), 'gross'],
+                    ['pinsel', 'Format übertragen', () => B.formatUebertragen()]]],
+      ['WordArt-Stile', [
+        ['schriftfarbe', 'Textfüllung', (k) => B.rahmenTextfarbe(k), 'gross'],
+        ['umriss', 'Textkontur', (k) => B.rahmenTextkontur(k), 'gross'],
+        ['eingeschlossen', 'Texteffekte', (k) => B.effekt(k), 'gross']]],
+      ['Formenarten', [
+        ['toenung', 'Füllung', (k) => B.rahmenFuellung(k), 'gross'],
+        ['rahmen', 'Kontur', (k) => B.rahmenKontur(k), 'gross'],
+        ['texteffekt', 'Effekte', (k) => B.rahmenEffekt(k), 'gross']]],
+      ['Anordnen', [['anordnen', 'Textfluss', () => B.anordnen(), 'gross'],
+                    ['ecken', 'Größe', () => B.rahmenGroesse()]]],
+      ['Einstellungen', [['zahnrad', 'Einstellungen', () => B.rahmenEinstellungen(), 'gross'],
+                         ['radierer', 'Textfeld löschen', () => B.rahmenWeg()]]],
+    ],
+  },
+  {
     name: 'Zeichentools',
     gilt: () => !!formJetzt(),
     gruppen: [
@@ -5108,6 +5369,15 @@ function objektAnStelle(waehler, klasse) {
 }
 
 const formJetzt     = () => objektAnStelle('svg.zeichnung');
+
+/* Das Textfeld, in dem der Zeiger steht. Braucht die Texttools-Leiste. */
+function textrahmenJetzt() {
+  const auswahl = window.getSelection();
+  let k = auswahl && auswahl.anchorNode;
+  if (k && k.nodeType === Node.TEXT_NODE) k = k.parentElement;
+  const r = k && k.closest ? k.closest('.textrahmen') : null;
+  return (r && feld.contains(r)) ? r : null;
+}
 const diagrammJetzt = () => objektAnStelle('svg.diagramm', false);
 const smartartJetzt = () => objektAnStelle('svg.smartart');
 const formelJetzt   = () => objektAnStelle('math');
@@ -10016,41 +10286,26 @@ B.sortieren = () => {
 /* ---- Schattierung und Rahmenlinien ----
    In Word sitzt beides nebeneinander in der Absatz-Gruppe: eine Hinterlegung
    und ein Rahmen um den Absatz. */
-B.absatzSchattierung = () => {
-  auswahlMerken();
-  fenster('Schattierung', [
-    { art: 'satz', text: 'Hinterlegt den Absatz mit einer Farbe.' },
-    { schluessel: 'farbe', name: 'Farbe', art: 'color', wert: '#EEF2F7' },
-  ], (werte) => {
-    auswahlZurueck();
-    aufAbsaetze((el) => { el.style.backgroundColor = werte.farbe; el.style.padding = '2mm 3mm'; });
-    melde('Absatz hinterlegt.');
-  }, 'Anwenden');
-};
+/* Die alte Fassung stand hier — ein Farbfeld ohne Vorschau. Sie wurde
+   von der spaeteren Zuweisung ohnehin ueberschrieben, still: die
+   fuenfte Namensdopplung diese Woche. Jetzt steht der Befehl nur noch
+   einmal, oben bei B.absatzRahmen. */
 
-B.absatzRahmen = () => {
-  auswahlMerken();
-  fenster('Rahmenlinien', [
-    { schluessel: 'wo', name: 'Rahmen', art: 'auswahl', werte: [
-      ['alle', 'ringsum'], ['oben', 'nur oben'], ['unten', 'nur unten'],
-      ['links', 'nur links'], ['keine', 'keine'],
-    ] },
-    { schluessel: 'staerke', name: 'Stärke (pt)', art: 'number', wert: '1', schritt: '0.5' },
-    { schluessel: 'farbe', name: 'Farbe', art: 'color', wert: '#7C858E' },
-  ], (werte) => {
-    auswahlZurueck();
-    const linie = (parseFloat(werte.staerke) || 1) + 'pt solid ' + werte.farbe;
-    aufAbsaetze((el) => {
-      el.style.border = '';
-      el.style.borderTop = el.style.borderBottom = el.style.borderLeft = el.style.borderRight = '';
-      if (werte.wo === 'alle') { el.style.border = linie; el.style.padding = '2mm 3mm'; }
-      else if (werte.wo === 'oben') { el.style.borderTop = linie; el.style.paddingTop = '2mm'; }
-      else if (werte.wo === 'unten') { el.style.borderBottom = linie; el.style.paddingBottom = '2mm'; }
-      else if (werte.wo === 'links') { el.style.borderLeft = linie; el.style.paddingLeft = '3mm'; }
-    });
-    melde(werte.wo === 'keine' ? 'Rahmen entfernt.' : 'Rahmen gesetzt.');
-  }, 'Anwenden');
-};
+/* „Hier wird eine Funktion fehlerhaft ausgefuehrt mit einer falschen
+   Funktion. Icon ist als Funktion nicht zu erkennen. Stop hier geraet
+   was mit den Funktionen durcheinander."
+
+   Dahinter lag ein eigenes kleines Fenster namens „Rahmenlinien" — ein
+   Klappfeld mit fuenf Woertern, keine Vorschau, und ein zweiter Weg
+   neben dem, den es schon gab. In WPS oeffnet der Absatzrahmen dasselbe
+   Fenster wie der Seitenrand: „Rahmen und Schattierung", nur auf der
+   Karte „Rahmen" statt auf „Seitenrand".
+
+   Also fuehrt er jetzt dorthin. Ein Fenster, drei Karten, eine
+   Vorschau, in die man hineinklickt — und nicht zwei Fenster, die
+   dasselbe halb koennen. */
+B.absatzRahmen = () => B.seitenraenderRahmen('rahmen');
+B.absatzSchattierung = () => B.seitenraenderRahmen('schatten');
 
 /* ============================================================
    Aus den Tabs Entwurf und Layout von Word
@@ -11804,7 +12059,9 @@ function leereSeiteBauen(querformat) {
 }
 
 B.leereSeite = (querformat) => {
-  Dokument.einfuegen(leereSeiteBauen(!!querformat));
+  const huelle = document.createElement('div');
+  huelle.innerHTML = leereSeiteBauen(!!querformat);
+  blockEinfuegen(huelle.firstElementChild, false);
   geaendertMelden();
   /* Erst nachzaehlen, wenn der Block wirklich steht. Direkt danach
      gefragt, ist scrollHeight noch der alte — in der Statuszeile stand
