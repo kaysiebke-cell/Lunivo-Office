@@ -3084,9 +3084,85 @@ const DIAGRAMMSCHNELL = [
 let diagrammGewaehlt = null;
 let diagrammKnoepfe = null;
 
+/* DIE ACHT MARKERPUNKTE.
+
+   „es fehlen die Markerpunkte am Diagramm." Auf seinem WPS-Bild sitzen
+   acht Kreise an den Ecken und Kantenmitten des gewaehlten Diagramms.
+   Sie sagen zweierlei: dass etwas gewaehlt ist, und dass man daran
+   ziehen kann.
+
+   Gebaut mit denselben Klassen wie die Griffe am Bild — ein zweites
+   System dafuer waere der Fehler, den ich heute schon gemacht habe. */
+let diagrammZug = null;
+
+function diagrammGroesseZiehen(fall, art) {
+  if (!diagrammGewaehlt) return;
+  fall.preventDefault();
+  const el = diagrammGewaehlt;
+  const r = el.getBoundingClientRect();
+  const massstab = (zoom || 100) / 100;
+  diagrammZug = {
+    el, art,
+    x: fall.clientX, y: fall.clientY,
+    breite: r.width / massstab,
+    verhaeltnis: r.height / Math.max(1, r.width),
+  };
+  try { fall.target.setPointerCapture(fall.pointerId); } catch (e) { /* egal */ }
+  document.body.classList.add('zieht-tabelle');
+}
+
+function diagrammZiehen(fall) {
+  if (!diagrammZug) return;
+  const massstab = (zoom || 100) / 100;
+  const dx = (fall.clientX - diagrammZug.x) / massstab;
+  /* Links und oben ziehen andersherum als rechts und unten. */
+  const richtung = /w/.test(diagrammZug.art) ? -1 : 1;
+  const neu = Math.max(120, Math.min(1600, diagrammZug.breite + dx * richtung));
+  diagrammZug.el.style.width = Math.round(neu) + 'px';
+  diagrammZug.el.style.height = 'auto';
+  diagrammKnoepfeStellen();
+}
+
+function diagrammZugEnde() {
+  if (!diagrammZug) return;
+  diagrammZug = null;
+  document.body.classList.remove('zieht-tabelle');
+  geaendertMelden();
+}
+window.addEventListener('pointermove', diagrammZiehen);
+window.addEventListener('pointerup', diagrammZugEnde, true);
+window.addEventListener('pointercancel', diagrammZugEnde, true);
+
 function diagrammKnoepfeBauen() {
   if (diagrammKnoepfe) return diagrammKnoepfe;
   diagrammKnoepfe = {};
+
+  /* Erst die acht Punkte, dann die fuenf Knoepfe daneben. */
+  for (const { art, zeiger, name } of BILDGRIFFE) {
+    const k = document.createElement('span');
+    k.className = 'bildgriff diagrammgriff diagrammgriff--' + art;
+    k.title = name + ' — ziehen macht das Diagramm größer oder kleiner';
+    k.style.cursor = zeiger;
+    k.addEventListener('pointerdown', (e) => diagrammGroesseZiehen(e, art));
+    document.body.appendChild(k);
+    diagrammKnoepfe['griff-' + art] = k;
+  }
+
+  const weg = document.createElement('button');
+  weg.type = 'button';
+  weg.className = 'bildgriff bildgriff--schnell diagrammgriff--weg';
+  weg.title = 'Diagramm löschen';
+  weg.setAttribute('aria-label', 'Diagramm löschen');
+  weg.textContent = '×';
+  weg.addEventListener('mousedown', (e) => e.preventDefault());
+  weg.addEventListener('click', () => {
+    const el = diagrammGewaehlt;
+    diagrammGewaehlt = null;
+    objektLoeschen(el, 'Diagramm');
+    diagrammKnoepfeStellen();
+  });
+  document.body.appendChild(weg);
+  diagrammKnoepfe.weg = weg;
   for (const { art, bild: symbolName, name, tun } of DIAGRAMMSCHNELL) {
     const k = document.createElement('button');
     k.type = 'button';
@@ -3111,11 +3187,22 @@ function diagrammKnoepfeStellen() {
   const r = diagrammGewaehlt.getBoundingClientRect();
   const flaeche = (feld.closest('.blattflaeche') || feld).getBoundingClientRect();
   const versteckt = r.bottom < flaeche.top || r.top > flaeche.bottom;
+
+  for (const { art, x, y } of BILDGRIFFE) {
+    const k = knoepfe['griff-' + art];
+    k.hidden = versteckt;
+    k.style.left = Math.round(r.left + r.width * x) + 'px';
+    k.style.top = Math.round(r.top + r.height * y) + 'px';
+  }
+  knoepfe.weg.hidden = versteckt;
+  knoepfe.weg.style.left = Math.round(r.right + 10) + 'px';
+  knoepfe.weg.style.top = Math.round(r.top - 14) + 'px';
+
   DIAGRAMMSCHNELL.forEach(({ art }, i) => {
     const k = knoepfe[art];
     k.hidden = versteckt;
     k.style.left = Math.round(r.right + 10) + 'px';
-    k.style.top = Math.round(r.top + 6 + i * 28) + 'px';
+    k.style.top = Math.round(r.top + 18 + i * 28) + 'px';
   });
   diagrammGewaehlt.classList.add('diagramm--gewaehlt');
 }
@@ -3136,7 +3223,12 @@ document.addEventListener('pointerdown', (e) => {
   const auf = e.target && e.target.closest
     ? e.target.closest('svg.diagramm') : null;
   if (auf && feld.contains(auf)) { diagrammWaehlen(auf); return; }
-  if (e.target && e.target.closest && e.target.closest('.bildgriff--schnell')) return;
+  /* Ein Klick auf einen der acht Markerpunkte ist kein Klick daneben —
+     sonst waere das Diagramm abgewaehlt, bevor das Ziehen anfaengt, und
+     „skalieren" ginge nie. Genau daran ist es beim ersten Versuch
+     gescheitert. */
+  if (e.target && e.target.closest
+      && e.target.closest('.bildgriff--schnell, .diagrammgriff')) return;
   if (diagrammGewaehlt) {
     diagrammGewaehlt.classList.remove('diagramm--gewaehlt');
     diagrammGewaehlt = null;
@@ -7111,11 +7203,19 @@ function zahlenLesen(roh) {
     if (!zeile.trim()) continue;
     /* „Miete: 480" oder „Miete 480" oder „Miete;480" — wer Zahlen eintippt,
        soll nicht erst eine Schreibweise lernen müssen. */
-    const treffer = /^(.*?)[\s:;,\t]+(-?[\d.,]+)\s*$/.exec(zeile.trim());
+    /* MEHRERE ZAHLEN JE ZEILE sind mehrere Datenreihen:
+         Rubrik 1: 4; 2; 3
+       Eine Zahl bleibt eine Zahl — wer nur eine schreibt, merkt von den
+       Reihen nichts. Gebraucht werden sie fuer Kurs (hoch, tief,
+       schluss) und fuer Kombination (Saeulen und Linie zusammen). */
+    const treffer = /^(.*?)[\s:;\t]+(-?[\d.,;\s]+)$/.exec(zeile.trim());
     if (!treffer) continue;
-    const wert = parseFloat(treffer[2].replace(/\./g, '').replace(',', '.'));
-    if (Number.isNaN(wert)) continue;
-    punkte.push({ name: treffer[1].trim(), wert });
+    const roheWerte = treffer[2].split(/[;]|,(?=\s)|\s+/)
+      .map((t) => t.trim()).filter(Boolean)
+      .map((t) => parseFloat(t.replace(/\.(?=\d{3}\b)/g, '').replace(',', '.')))
+      .filter((z) => !Number.isNaN(z));
+    if (!roheWerte.length) continue;
+    punkte.push({ name: treffer[1].trim(), wert: roheWerte[0], werte: roheWerte });
   }
   return punkte;
 }
@@ -17118,6 +17218,24 @@ function rechtsLeisteBauen(gesperrt) {
    Alles auswählen, Texteffekte. Die rechte Maustaste ist für das, was
    man an dieser Stelle tut — nicht für alles, was das Programm kann.
    ------------------------------------------------------------ */
+/* Ein Objekt aus dem Text nehmen — und den Absatz gleich mit, wenn er
+   nur dafuer da war. Sonst bleibt eine leere Zeile stehen, die niemand
+   sieht und alle wundert. */
+function objektLoeschen(el, wie) {
+  if (!el || !el.isConnected) return;
+  const absatz = el.closest('p');
+  el.remove();
+  if (absatz && !absatz.textContent.trim() && !absatz.querySelector('img, svg, table')) {
+    absatz.remove();
+  }
+  if (typeof diagrammGewaehlt !== 'undefined' && diagrammGewaehlt === el) {
+    diagrammGewaehlt = null;
+    diagrammKnoepfeStellen();
+  }
+  geaendertMelden();
+  melde(wie + ' gelöscht.');
+}
+
 function rechtsMenueZeigen(e) {
   e.preventDefault();
   rechtsMenueSchliessen();
@@ -17397,6 +17515,8 @@ function rechtsMenueZeigen(e) {
       { name: 'Größe…', tun: () => B.formGroesse(), aus: gesperrt },
       { name: 'Anordnen…', tun: () => B.anordnen(), aus: gesperrt },
     ]);
+    eintrag({ zeichen: 'radierer', name: 'Form löschen',
+              tun: () => objektLoeschen(form, 'Form'), aus: gesperrt });
     trennlinie();
   } else if (diagramm) {
     gruppe('saeule', 'Diagramm', [
@@ -17405,12 +17525,20 @@ function rechtsMenueZeigen(e) {
       { name: 'Entwurf…', tun: () => B.diagrammEntwurf(), aus: gesperrt },
       { name: 'Format…', tun: () => B.diagrammFormat(), aus: gesperrt },
     ]);
+    /* „mit Rechtsklick laesst sich das Diagramm nicht bei Bedarf
+       entfernen." Stimmte: vier Punkte zum Aendern, keiner zum
+       Wegnehmen. Was man einfuegen kann, muss man auch loeschen
+       koennen — und zwar dort, wo man es anfasst. */
+    eintrag({ zeichen: 'radierer', name: 'Diagramm löschen',
+              tun: () => objektLoeschen(diagramm, 'Diagramm'), aus: gesperrt });
     trennlinie();
   } else if (smartart) {
     gruppe('smartart', 'SmartArt', [
       { name: 'Entwurf…', tun: () => B.smartartEntwurf(), aus: gesperrt },
       { name: 'Format…', tun: () => B.smartartFormat(), aus: gesperrt },
     ]);
+    eintrag({ zeichen: 'radierer', name: 'SmartArt löschen',
+              tun: () => objektLoeschen(smartart, 'SmartArt'), aus: gesperrt });
     trennlinie();
   } else if (formel) {
     eintrag({ zeichen: 'formel', name: 'Formel ändern…',
