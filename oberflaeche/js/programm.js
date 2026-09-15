@@ -11947,9 +11947,16 @@ function rahmenVorschau(r, beiKlick) {
   const auffrischen = () => {
     for (const [kante, seite] of [['oben', 'Top'], ['unten', 'Bottom'],
                                   ['links', 'Left'], ['rechts', 'Right']]) {
+      /* „AUS" DARF NICHT WIE EINE LINIENART AUSSEHEN.
+
+         Die abgeschaltete Kante war gestrichelt-grau — und „gestrichelt"
+         ist eine Formatvorlage, die man waehlen kann. Wer sie waehlte,
+         sah dasselbe Bild wie bei „aus" und wusste nicht mehr, was gilt.
+         Jetzt ist „aus" eine ganz blasse durchgezogene Linie; die gibt
+         es als Wahl nicht. */
       blatt.style['border' + seite] = r.kanten.includes(kante)
         ? Math.max(1, r.breite) + 'px ' + r.art + ' ' + r.farbe
-        : '1px dashed rgba(127,127,127,.35)';
+        : '1px solid rgba(127,127,127,.16)';
     }
     for (const k of gitter.querySelectorAll('.rahmengitter__knopf')) {
       k.classList.toggle('rahmengitter__knopf--an', r.kanten.includes(k.dataset.kante));
@@ -12008,7 +12015,36 @@ function rahmenVorschau(r, beiKlick) {
   return kasten;
 }
 
+/* WAS IST, NICHT WAS VOREINGESTELLT IST.
+
+   „Linien sind immer noch nicht eintragbar in der Vorschau."
+
+   Sie waren es nicht, weil beim Oeffnen alle vier Kanten AN standen —
+   ein fester Anfangswert, unabhaengig vom Absatz. Jeder Klick konnte
+   also nur wegnehmen. Wer eine Linie EINTRAGEN wollte, fand nichts zum
+   Eintragen: Es war schon alles voll.
+
+   Jetzt liest das Fenster den Absatz (oder das Blatt) und zeigt dessen
+   Kanten. Ein Absatz ohne Rahmen kommt leer herein — und dann traegt
+   jeder Klick eine Linie ein, genau wie in WPS. */
+function kantenLesen(el) {
+  if (!el) return [];
+  const da = [];
+  for (const [kante, seite] of [['oben', 'Top'], ['unten', 'Bottom'],
+                                ['links', 'Left'], ['rechts', 'Right']]) {
+    const w = parseFloat(getComputedStyle(el)['border' + seite + 'Width']) || 0;
+    const art = getComputedStyle(el)['border' + seite + 'Style'];
+    if (w > 0 && art && art !== 'none') da.push(kante);
+  }
+  return da;
+}
+
 B.seitenraenderRahmen = (karteZuerst) => {
+  /* Den Stand aus dem Dokument holen, bevor die Karten gebaut werden. */
+  const absatzJetztEl = (typeof absatzJetzt === 'function') ? absatzJetzt() : null;
+  absatzrahmen.kanten = kantenLesen(absatzJetztEl);
+  blattrahmen.kanten = kantenLesen($('blatt'));
+
   const grund = document.createElement('div');
   grund.className = 'dialoggrund';
   const kasten = document.createElement('div');
