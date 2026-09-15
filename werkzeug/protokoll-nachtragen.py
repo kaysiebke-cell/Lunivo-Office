@@ -137,7 +137,11 @@ ERLEDIGT = {
         'öffnet rechts die Formatleiste mit Farbe, Linienfarbe, Linienstärke '
         'und Schatten. Was von Hand geändert ist, überlebt das Neuzeichnen — '
         'wer eine Säule rot macht und danach die Zahlen ändert, findet sie '
-        'nicht wieder blau vor.',
+        'nicht wieder blau vor.\n\n'
+        'Und die vier Gruppen, die noch fehlten: Kurs (hoch, niedrig, '
+        'schließen), Netz, Kombination (Säulen und Linie) und Vorlagen. '
+        'Damit stehen alle zehn aus Ihrem Bild. Für Kurs und Kombination '
+        'nimmt die Eingabe jetzt mehrere Zahlen je Zeile: „Montag: 12; 8; 10".',
 
     'start-zwischenablage|verlauf-rückgängig':
         'Aus dem Reiter entfernt. Rückgängig und Wiederholen stehen im '
