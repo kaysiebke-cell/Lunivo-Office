@@ -4586,9 +4586,24 @@ function raenderKiste() {
 function felderKiste() {
   const kiste = document.createElement('div');
   kiste.className = 'register__felder';
+
+  /* ZWEI ZEILEN, NICHT DREI.
+
+     Vorher standen Formatvorlage, Schrift und Groesse untereinander.
+     Drei Zeilen neben zwei Knopfreihen: Die Gruppe wurde doppelt so
+     hoch wie noetig, die Knoepfe rutschten nach rechts weg, und
+     zwischen Waehlern und Knoepfen klaffte eine Luecke, in der nichts
+     stand.
+
+     In WPS steht die Schrift neben der Groesse, und die erste
+     Knopfreihe faengt gleich daneben an. */
   if (wzVorlage) kiste.appendChild(wzVorlage);
-  if (wzSchrift && wzSchrift.parentNode) kiste.appendChild(wzSchrift.parentNode);
-  if (wzGroesse) kiste.appendChild(wzGroesse);
+
+  const untere = document.createElement('div');
+  untere.className = 'register__felder-zeile';
+  if (wzSchrift && wzSchrift.parentNode) untere.appendChild(wzSchrift.parentNode);
+  if (wzGroesse) untere.appendChild(wzGroesse);
+  kiste.appendChild(untere);
   return kiste;
 }
 
@@ -5207,8 +5222,19 @@ function registerBauen() {
     if (inReihen) neueZeile();
 
     for (const eintrag of eintraege) {
-      /* Ein 'felder' mitten in der Liste heißt: hier stehen die Wähler. */
-      if (eintrag === 'felder') { reihe.appendChild(felderKiste()); continue; }
+      /* Ein 'felder' mitten in der Liste heißt: hier stehen die Wähler.
+
+         IN EINER GRUPPE MIT FESTEN ZEILEN gehoeren sie IN die erste
+         Zeile, nicht daneben. In WPS steht die Schrift, daneben die
+         Groesse, daneben A⁺ A⁻ ◇ Aa — alles eine Linie —, und die
+         zweite Knopfreihe laeuft darunter durch, bis an den linken
+         Rand. Setzt man die Waehler als eigenen Block davor, steht die
+         Gruppe in zwei Saeulen statt in zwei Zeilen, und genau das hat
+         er auf dem Bildschirmfoto gesehen. */
+      if (eintrag === 'felder') {
+        (inReihen ? zeileJetzt : reihe).appendChild(felderKiste());
+        continue;
+      }
       if (Array.isArray(eintrag) && eintrag[0] === '//') { neueZeile(); continue; }
       const [zeichen, titel, tun, gross, zustand] = eintrag;
 
