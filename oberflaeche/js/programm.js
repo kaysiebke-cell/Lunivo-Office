@@ -955,6 +955,49 @@ B.uhrzeit = () => {
   const d = new Date();
   Dokument.einfuegen(zweiStellen(d.getHours()) + ':' + zweiStellen(d.getMinutes()));
 };
+
+/* „Uhrzeit und Datum kann man in einer Funktion zusammenfassen."
+
+   Ein Fenster mit den Formen, die man wirklich schreibt, und einer
+   Vorschau daneben — wer „langes Datum" waehlt, sieht vorher, was
+   dasteht. Vorher waren es zwei Knoepfe, die je eine feste Form
+   einfuegten: Wer „15. September 2026" wollte, musste es tippen. */
+const ZEITFORMEN = [
+  ['kurz',     () => { const d = new Date();
+                       return zweiStellen(d.getDate()) + '.' + zweiStellen(d.getMonth() + 1)
+                              + '.' + d.getFullYear(); }],
+  ['lang',     () => new Date().toLocaleDateString('de-DE',
+                       { day: 'numeric', month: 'long', year: 'numeric' })],
+  ['wochentag',() => new Date().toLocaleDateString('de-DE',
+                       { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })],
+  ['iso',      () => new Date().toISOString().slice(0, 10)],
+  ['uhr',      () => { const d = new Date();
+                       return zweiStellen(d.getHours()) + ':' + zweiStellen(d.getMinutes()); }],
+  ['uhrlang',  () => { const d = new Date();
+                       return zweiStellen(d.getHours()) + ':' + zweiStellen(d.getMinutes())
+                              + ':' + zweiStellen(d.getSeconds()); }],
+  ['beides',   () => { const d = new Date();
+                       return d.toLocaleDateString('de-DE',
+                                { day: 'numeric', month: 'long', year: 'numeric' })
+                              + ', ' + zweiStellen(d.getHours()) + ':'
+                              + zweiStellen(d.getMinutes()) + ' Uhr'; }],
+];
+
+B.datumUhrzeit = () => {
+  auswahlMerken();
+  fenster('Datum und Uhrzeit', [
+    { art: 'satz', text: 'Wird als Text eingefügt und bleibt dann stehen — '
+                       + 'es rechnet sich nicht jeden Tag neu.' },
+    { schluessel: 'form', name: 'Form', art: 'auswahl',
+      werte: ZEITFORMEN.map(([k, mach]) => [k, mach()]) },
+  ], (werte) => {
+    const eintrag = ZEITFORMEN.find(([k]) => k === werte.form) || ZEITFORMEN[0];
+    auswahlZurueck();
+    Dokument.einfuegen(eintrag[1]());
+    geaendertMelden();
+    melde('Eingefügt: ' + eintrag[1]());
+  }, 'Einfügen');
+};
 B.seitenumbruch = () => Dokument.einfuegen('<p style="page-break-before:always"><br></p>');
 
 B.bild = () => {
@@ -2350,39 +2393,6 @@ B.absatzabstand = () => {
 /* ---- Seite: Ränder und Spalten ---- */
 let seitenrand = Speicher.lies('seitenrand', { oben: 20, unten: 20, links: 20, rechts: 20 });
 let spalten = Speicher.lies('spalten', 1);
-
-/* ============================================================
-   DIE TEXTBEGRENZUNGEN
-
-   Die vier Winkel an den Ecken des Satzspiegels. In WPS stehen sie auf
-   jedem leeren Blatt und zeigen, wo der Text anfangen wird — bevor ein
-   einziges Zeichen da ist.
-
-   Bei Lunivo gab es sie nur als Druckschalter („Textbegrenzungen
-   drucken"), am Bildschirm aber nie. Damit war die Einstellung ein
-   Versprechen auf etwas, das man nicht sehen konnte, und die Raender
-   selbst waren unsichtbar: Wer sie auf 40 mm stellte, sah die Zahl im
-   Feld und sonst nichts.
-
-   Gezeichnet werden sie auf das Blatt, nicht in den Text — sonst
-   stuenden sie im Weg, sobald jemand schreibt.
-   ============================================================ */
-let textbegrenzungen = Speicher.lies('textbegrenzungen', true);
-
-function textbegrenzungenAnwenden() {
-  const blatt = $('blatt');
-  if (!blatt) return;
-  blatt.classList.toggle('blatt--begrenzungen', textbegrenzungen);
-  Speicher.schreib('textbegrenzungen', textbegrenzungen);
-}
-
-B.textbegrenzungen = () => {
-  textbegrenzungen = !textbegrenzungen;
-  textbegrenzungenAnwenden();
-  menueBauen();
-  melde(textbegrenzungen ? 'Textbegrenzungen an — die vier Ecken des Satzspiegels.'
-                         : 'Textbegrenzungen aus.');
-};
 
 function seiteAnwenden() {
   const blatt = $('blatt');
@@ -4179,7 +4189,6 @@ const REGISTER = REGISTER_BAUEN(B, {
      nichts vom Programm wissen muss. */
   an: (was) => ({
     zeilennummern:  () => zeilennummern,
-    textbegrenzungen: () => textbegrenzungen,
     silbentrennung: () => trennung,
     steuerzeichen:  () => steuerzeichen,
     lineal:         () => !$('lineal').hidden,
@@ -14769,8 +14778,6 @@ const MENUES = [
       { name: 'Einzug', tun: B.einzugGenau },
       { name: 'Absatzabstand', tun: B.absatzabstand },
       { name: 'Zeilennummern', tun: () => B.zeilennummern(null) },
-      { name: 'Textbegrenzungen', tun: B.textbegrenzungen,
-        haken: () => textbegrenzungen },
       { name: 'Silbentrennung', tun: B.silbentrennung },
     ] },
     { name: 'Anordnen', unter: [
@@ -17963,8 +17970,6 @@ bedienungAnwenden();
 flaecheAnwenden();
 /* Farbschema, Schriftpaar und Effekt auf das Blatt legen. */
 designFeinAnwenden();
-/* Die vier Winkel am Satzspiegel. */
-textbegrenzungenAnwenden();
 /* Unten rechts: Ansichten und Schieber. Auch hier erst jetzt, weil die
    Knöpfe ihre Zeichnungen aus SYMBOLE holen. */
 statuszeileBauen();

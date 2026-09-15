@@ -2783,39 +2783,6 @@ body.lesen .arbeitsflaeche{padding:40px 24px}
 .rahmenprobe__kante--links{top:14px;bottom:14px;left:-7px;width:14px}
 .rahmenprobe__kante--rechts{top:14px;bottom:14px;right:-7px;width:14px}
 
-/* ---- Textbegrenzungen: die vier Winkel am Satzspiegel ----
-
-   Gezeichnet mit zwei Lagen ueber dem Blatt. Jede Lage traegt zwei
-   Winkel als Rahmenstuecke; zusammen sind es vier Ecken.
-
-   Sie liegen ueber dem Blatt, aber unter dem Text und nehmen keine
-   Klicks an — sonst koennte man in der oberen Ecke nicht mehr
-   hinschreiben. */
-.blatt--begrenzungen{position:relative}
-.blatt--begrenzungen::before,
-.blatt--begrenzungen::after{
-  content:'';position:absolute;
-  top:var(--rand-oben,20mm);
-  left:var(--rand-links,20mm);
-  right:var(--rand-rechts,20mm);
-  bottom:var(--rand-unten,20mm);
-  pointer-events:none;z-index:1;
-  border:0 solid var(--begrenzung, #9AA3AB);
-  /* Nur die Ecken: Der Rahmen wird an den Seiten weggeschnitten und
-     bleibt in den vier Winkeln stehen. 6 mm Schenkellaenge, wie in WPS. */
-}
-.blatt--begrenzungen::before{
-  border-width:1px;
-  clip-path:polygon(
-    0 0, 6mm 0, 6mm 1px, 1px 1px, 1px 6mm, 0 6mm,
-    0 100%, 6mm 100%, 6mm calc(100% - 1px), 1px calc(100% - 1px), 1px calc(100% - 6mm), 0 calc(100% - 6mm));
-}
-.blatt--begrenzungen::after{
-  border-width:1px;
-  clip-path:polygon(
-    100% 0, calc(100% - 6mm) 0, calc(100% - 6mm) 1px, calc(100% - 1px) 1px, calc(100% - 1px) 6mm, 100% 6mm,
-    100% 100%, calc(100% - 6mm) 100%, calc(100% - 6mm) calc(100% - 1px), calc(100% - 1px) calc(100% - 1px), calc(100% - 1px) calc(100% - 6mm), 100% calc(100% - 6mm));
-}
 
 /* Die ausfuehrliche Zeile in einer Bandklappe: Bild, fetter Name, die
    Masse darunter, rechts die Tastenfolge. */

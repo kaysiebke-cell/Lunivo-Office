@@ -61,10 +61,11 @@ function REGISTER_BAUEN(B, w) {
                     ['kopie', 'Kopieren', () => B.kopieren()],
                     ['pinsel', 'Format übertragen', () => B.formatUebertragen()],
                     ['wortextras', 'Wort-Extras', (k) => B.wortExtras(k)],
-                    ['zurueck', 'Verlauf', [
-                      ['Rückgängig', () => B.rueckgaengig()],
-                      ['Wiederholen', () => B.wiederholen()],
-                    ]]]],
+                    /* „Doppelt gemoppelt": Rueckgaengig und Wiederholen
+                       stehen im Schnellzugriff oben, wo sie in jedem Reiter
+                       erreichbar sind. Hier waren sie ein zweites Mal — und
+                       nur hier, also schlechter. */
+                    ]],
     /* GENAU NACH SEINEM BILD DER WPS-LEISTE:
          Zeile 1   [Schriftart] [Größe]  A⁺  A⁻  ◇  Aa▾
          Zeile 2   B  I  U▾  S▾  X²  X₂  A  🖍▾  A▾  Ⓐ
@@ -95,9 +96,12 @@ function REGISTER_BAUEN(B, w) {
                    ], () => B.schriftartMehr()],
     ['Absatz', [['punkte', 'Aufzählung', () => B.punkte()],
                     ['zahlen', 'Nummerierung', () => B.zahlen()],
+                    /* Ein Ort fuer alles, was den Einzug angeht — auch das
+                       genaue Mass, das vorher in „Absatzlayout" lag. */
                     ['einzug', 'Einzug & Listenebene', [
-                      ['Einzug verringern', () => B.einzugWeniger()],
                       ['Einzug vergrößern', () => B.einzugMehr()],
+                      ['Einzug verringern', () => B.einzugWeniger()],
+                      ['Genaues Maß…', () => B.einzugGenau()],
                       ['-'],
                       ['Listenebene erhöhen', () => B.ebeneHoeher()],
                       ['Listenebene verringern', () => B.ebeneTiefer()],
@@ -121,7 +125,9 @@ function REGISTER_BAUEN(B, w) {
        herausgenommen worden, weil das doppelt aussah. Es ist nicht
        doppelt, es ist so gewollt. */
     ['Absatzlayout', [['abstand', 'Zeilenabstand', () => B.absatzabstand(), 'gross'],
-                    ['einzug', 'Einzug genau', () => B.einzugGenau()],
+                    /* „Funktionen, die dieselbe Aufgabe haben, an einem Ort
+                       gebuendelt." Der Einzug steht in Start ▸ Absatz, hier
+                       nicht mehr — sonst ist es wieder an zwei Stellen. */
                     ['rahmen', 'Absatzrahmen', () => B.absatzRahmen()],
                     ['toenung', 'Absatzschattierung', () => B.absatzSchattierung()]],
                   () => B.einzugGenau()],
@@ -152,17 +158,23 @@ function REGISTER_BAUEN(B, w) {
     ['Links', [['kette', 'Hyperlink', () => B.hyperlink(), 'gross'],
                     ['textmarke', 'Lesezeichen / Textmarke', () => B.textmarke()],
                     ['querverweis', 'Querverweis', () => B.querverweis()]]],
-    ['Kopf- und Fußzeile', [['kopfz', 'Kopfzeile', () => B.kopfzeile(), 'gross', () => w.an('kopfzeile')],
-                    ['fussz', 'Fußzeile', () => B.fusszeile(), 'gross', () => w.an('fusszeile')],
-                    ['zahl', 'Seitenzahl', () => B.seitennummer()]]],
+    /* „Kopf- und Fusszeile kann man in einem Icon mit Funktion
+       zusammenfassen." Ein Knopf, eine Klappe, beide Wege darin. */
+    ['Kopf- und Fußzeile', [['kopfz', 'Kopf- und Fußzeile', [
+                      ['Kopfzeile bearbeiten', () => B.kopfzeile(), () => w.an('kopfzeile')],
+                      ['Fußzeile bearbeiten', () => B.fusszeile(), () => w.an('fusszeile')],
+                      ['-'],
+                      ['Seitenzahl einfügen', () => B.seitennummer()],
+                    ], 'gross']]],
     ['Text', [['textrahmen', 'Textfeld', () => B.textfeld(), 'gross'],
-                    ['baustein', 'Bausteine', [
-                      ['Textbaustein', () => B.textbausteine()],
-                      ['Schnellbaustein', () => B.schnellbaustein()],
-                    ], 'gross'],
+                    /* „Textbaustein ist ein Pluspunkt fuer Legastheniker,
+                       was WPS nicht so in der Form hat. Das gehoert eher in
+                       die Schreibhilfe." Steht dort jetzt — hier nicht mehr,
+                       damit es nicht an zwei Stellen liegt. */
                     ['initiale', 'Initiale', () => B.initiale()],
-                    ['datum', 'Datum', () => B.datum()],
-                    ['uhrzeit', 'Uhrzeit', () => B.uhrzeit()],
+                    /* „Uhrzeit und Datum kann man in einer Funktion
+                       zusammenfassen." */
+                    ['datum', 'Datum und Uhrzeit', () => B.datumUhrzeit()],
                     ['ausdatei', 'Text aus Datei', () => B.textAusDatei()]]],
     ['Symbole', [['omega', 'Sonderzeichen', () => B.sonderzeichen(), 'gross'],
                     ['formel', 'Formel', () => B.formel()]]],
@@ -352,6 +364,10 @@ function REGISTER_BAUEN(B, w) {
                     ['woerterbuch', 'Thesaurus', () => B.thesaurus()],
                     ['sprache', 'Sprache und Prüfung', () => w.optionenOeffnen('sprache')]],
                   () => w.optionenOeffnen('sprache')],
+    ['Bausteine', [['baustein', 'Textbausteine', [
+                      ['Bausteine verwalten…', () => B.textbausteine()],
+                      ['Schnellbaustein einfügen', () => B.schnellbaustein()],
+                    ], 'gross']]],
     ['KI', [['ki', 'KI-Korrektur', () => w.kiKorrigieren(), 'gross'],
                     ['vorschlag', 'Vorschläge', () => w.kiVorschlaege(), 'gross']]],
     ['Anzeigen', [['tafel', 'Seitenleiste Schreibhilfe', () => B.tafelZeigen(), 'gross'],
@@ -382,12 +398,13 @@ function REGISTER_BAUEN(B, w) {
                     ['fortlaufend', 'Weblayout', () => w.setzeLayout('web')()],
                     ['gliederung', 'Gliederung', () => B.gliederung()]]],
     ['Anzeigen', [['linealIcon', 'Lineal', () => B.linealZeigen(), false, () => w.an('lineal')],
-                    ['ecken', 'Textbegrenzungen', () => B.textbegrenzungen(), false, () => w.an('textbegrenzungen')],
                     ['linealHochIcon', 'Vertikales Lineal', () => B.linealHochZeigen(), false, () => w.an('linealHoch')],
                     ['netz', 'Gitternetzlinien', () => B.netzlinien(), false, () => w.an('netzlinien')],
                     ['navigation', 'Navigationsbereich', () => B.navigation(), false, () => w.an('navigation')],
-                    ['ecken', 'Textbegrenzungen', () => B.markenZeigen(), false, () => w.an('textbegrenzungen')],
-                    ['tafel', 'Seitenleiste Schreibhilfe', () => B.tafelZeigen(), false, () => w.an('tafel')]], () => B.lesehilfe()],
+                    ['ecken', 'Textbegrenzungen', () => B.markenZeigen(), false, () => w.an('textbegrenzungen')]],
+                    /* „doppelt gemoppelt, denn sie ist schon im Reiter
+                       Schreibhilfe" — dort steht sie, hier nicht mehr. */
+                    () => B.lesehilfe()],
     ['Zoom', [['lupe', 'Vergrößern', () => B.groesser(), 'gross'],
                     ['kleinerLupe', 'Verkleinern', () => B.kleiner(), 'gross'],
                     ['100 %', '100 %', () => B.normal()],

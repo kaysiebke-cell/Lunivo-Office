@@ -303,8 +303,8 @@
    ]
   },
   "start-zwischenablage|verlauf-rückgängig": {
-   "status": "fail",
-   "note": "Funktion ist im Reiter und dem Schnellzugriff doppelt gemoppelt. ",
+   "status": "pass",
+   "note": "Funktion ist im Reiter und dem Schnellzugriff doppelt gemoppelt.\n\n— erledigt am 15.09.2026: Aus dem Reiter entfernt. Rückgängig und Wiederholen stehen im Schnellzugriff ganz oben — dort sind sie in jedem Reiter erreichbar, im Band waren sie es nur unter Start.",
    "bilder": [
     {
      "id": "b1789274266493_xin92",
@@ -314,8 +314,8 @@
    ]
   },
   "start-zwischenablage|verlauf-wiederholen": {
-   "status": "fail",
-   "note": "Funktion ist im Reiter und dem Schnellzugriff doppelt gemoppelt. ",
+   "status": "pass",
+   "note": "Funktion ist im Reiter und dem Schnellzugriff doppelt gemoppelt.\n\n— erledigt am 15.09.2026: Siehe Rückgängig: aus dem Reiter entfernt, bleibt im Schnellzugriff.",
    "bilder": [
     {
      "id": "b1789274292585_uuwos",
@@ -579,8 +579,8 @@
    ]
   },
   "start-absatzlayout|einzug-genau": {
-   "status": "fail",
-   "note": "Fuktin kann im Einzug vergrößert werden. Lunivo und Einzug verkleinern Lunivo zusammengeführt werden als Link-Klick-Funktion  . Das macht es übersichtlicher, wenn Funktionen, die die selbe Aufgabe haben, an einem Ort gebündelt sind. ",
+   "status": "pass",
+   "note": "Fuktin kann im Einzug vergrößert werden. Lunivo und Einzug verkleinern Lunivo zusammengeführt werden als Link-Klick-Funktion  . Das macht es übersichtlicher, wenn Funktionen, die die selbe Aufgabe haben, an einem Ort gebündelt sind.\n\n— erledigt am 15.09.2026: Zusammengelegt, wie gewünscht: „Einzug & Listenebene\" unter Start ▸ Absatz hat jetzt Vergrößern, Verringern und „Genaues Maß…\" in einer Klappe. Aus Absatzlayout ist der zweite Einzug-Knopf verschwunden.",
    "bilder": [
     {
      "id": "b1789215499580_ghvd6",
@@ -908,8 +908,8 @@
    ]
   },
   "einfügen|kopfzeile": {
-   "status": "fail",
-   "note": "Kopf- und Fußzeile kann man in einem Icon mit Funktion zusammenfassen.",
+   "status": "pass",
+   "note": "Kopf- und Fußzeile kann man in einem Icon mit Funktion zusammenfassen.\n\n— erledigt am 15.09.2026: Ein Knopf „Kopf- und Fußzeile\" mit drei Wegen darin: Kopfzeile bearbeiten, Fußzeile bearbeiten, Seitenzahl einfügen.",
    "bilder": [
     {
      "id": "b1789220694695_gg93k",
@@ -929,8 +929,8 @@
    ]
   },
   "einfügen|fußzeile": {
-   "status": "fail",
-   "note": "Siehe Eintrag Kopfzeile.",
+   "status": "pass",
+   "note": "Siehe Eintrag Kopfzeile.\n\n— erledigt am 15.09.2026: Siehe Kopfzeile — beide in einem Knopf.",
    "bilder": []
   },
   "einfügen|seitenzahl": {
@@ -971,8 +971,8 @@
    ]
   },
   "einfügen|textbaustein": {
-   "status": "fail",
-   "note": "Textfeld und Textbaustein sind fast identisch und falsch zu verstehen,wobei Textbaustein ein Pluspunkt ist für Legastheniker, was WPS nicht so in der Form hat. Das gehört eher in die Schreibhilfe. ",
+   "status": "pass",
+   "note": "Textfeld und Textbaustein sind fast identisch und falsch zu verstehen,wobei Textbaustein ein Pluspunkt ist für Legastheniker, was WPS nicht so in der Form hat. Das gehört eher in die Schreibhilfe.\n\n— erledigt am 15.09.2026: Nach Schreibhilfe gewandert, wie vorgeschlagen — dort als ein Knopf „Textbausteine\" mit Verwalten und Einfügen. In Einfügen steht er nicht mehr, damit er nicht an zwei Stellen liegt.",
    "bilder": [
     {
      "id": "b1789221491457_lffsr",
@@ -987,8 +987,8 @@
    ]
   },
   "einfügen|schnellbaustein": {
-   "status": "fail",
-   "note": "Siehe Textbausteineintrag.",
+   "status": "pass",
+   "note": "Siehe Textbausteineintrag.\n\n— erledigt am 15.09.2026: Siehe Textbaustein — mit umgezogen, in derselben Klappe.",
    "bilder": []
   },
   "einfügen|initiale": {
@@ -1029,8 +1029,8 @@
    ]
   },
   "einfügen|uhrzeit": {
-   "status": "fail",
-   "note": "Uhrzeit und Datum kann man in einer Funktion zusammenfassen, siehe Datum.",
+   "status": "pass",
+   "note": "Uhrzeit und Datum kann man in einer Funktion zusammenfassen, siehe Datum.\n\n— erledigt am 15.09.2026: Ein Knopf „Datum und Uhrzeit\". Das Fenster zeigt sieben Formen mit dem heutigen Datum als Vorschau — kurz, lang, mit Wochentag, ISO, Uhrzeit, Uhrzeit mit Sekunden, beides. Vorher fügten zwei Knöpfe je eine feste Form ein; wer „15. September 2026\" wollte, musste tippen.",
    "bilder": [
     {
      "id": "b1789282084632_1z5n7",
@@ -1591,8 +1591,8 @@
    ]
   },
   "ansicht|seitenleiste-schreibhilfe": {
-   "status": "fail",
-   "note": "Die Funktion ist hier doppelt gemoppelt, denn sie ist schon im Reiter „Schreibhilfe“.",
+   "status": "pass",
+   "note": "Die Funktion ist hier doppelt gemoppelt, denn sie ist schon im Reiter „Schreibhilfe“.\n\n— erledigt am 15.09.2026: Aus Ansicht entfernt. Sie steht im Reiter Schreibhilfe, und dort gehört sie hin.",
    "bilder": []
   },
   "ansicht|lesehilfe": {

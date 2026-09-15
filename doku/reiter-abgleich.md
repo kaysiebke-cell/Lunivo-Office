@@ -4,7 +4,7 @@ Geschrieben von `werkzeug/reiter-abgleich.py`. Das SOLL kommt aus
 seinem Prüfkatalog (Lesekopie in `doku/wps-soll-lesekopie.txt`),
 der IST-Stand aus `oberflaeche/daten/register.js`.
 
-**279 gleich · 1 fehlen · 29 eigen · 0 ohne Bild**
+**274 gleich · 1 fehlen · 29 eigen · 0 ohne Bild**
 
 - **fehlt** — steht im SOLL, nicht im Band. Kein Ermessen.
 - **eigen** — steht im Band, nicht im SOLL. Das heißt nicht
@@ -31,9 +31,6 @@ Name im Band zurückgedreht. Das entscheidet er, nicht ich.
 | Ausschneiden | gleich | `schere` |
 | Kopieren | gleich | `kopie` |
 | Format übertragen | gleich | `pinsel` |
-| Verlauf | gleich | `zurueck` |
-| Rückgängig | gleich | — |
-| Wiederholen | gleich | — |
 
 ### Schriftart
 
@@ -83,7 +80,6 @@ Name im Band zurückgedreht. Das entscheidet er, nicht ich.
 | Punkt | Stand | Bild |
 |---|---|---|
 | Zeilenabstand | gleich | `abstand` |
-| Einzug genau | gleich | `einzug` |
 | Absatzrahmen | gleich | `rahmen` |
 | Absatzschattierung | gleich | `toenung` |
 
@@ -106,6 +102,7 @@ Name im Band zurückgedreht. Das entscheidet er, nicht ich.
 
 - Wort-Extras
 - Zeichenumriss
+- Genaues Maß…
 - Katalog
 
 ## Einfügen
@@ -150,21 +147,18 @@ Name im Band zurückgedreht. Das entscheidet er, nicht ich.
 
 | Punkt | Stand | Bild |
 |---|---|---|
-| Kopfzeile | gleich | `kopfz` |
-| Fußzeile | gleich | `fussz` |
-| Seitenzahl | gleich | `zahl` |
+| Kopf- und Fußzeile | gleich | `kopfz` |
+| Kopfzeile bearbeiten | gleich | — |
+| Fußzeile bearbeiten | gleich | — |
+| Seitenzahl einfügen | gleich | — |
 
 ### Text
 
 | Punkt | Stand | Bild |
 |---|---|---|
 | Textfeld | gleich | `textrahmen` |
-| Bausteine | gleich | `baustein` |
-| Textbaustein | gleich | — |
-| Schnellbaustein | gleich | — |
 | Initiale | gleich | `initiale` |
-| Datum | gleich | `datum` |
-| Uhrzeit | gleich | `uhrzeit` |
+| Datum und Uhrzeit | gleich | `datum` |
 | Text aus Datei | gleich | `ausdatei` |
 
 ### Symbole
@@ -404,6 +398,14 @@ Name im Band zurückgedreht. Das entscheidet er, nicht ich.
 | KI-Korrektur | gleich | Buchstabe `ki` |
 | Vorschläge | gleich | `vorschlag` |
 
+### Bausteine
+
+| Punkt | Stand | Bild |
+|---|---|---|
+| Textbausteine | gleich | `baustein` |
+| Bausteine verwalten | gleich | — |
+| Schnellbaustein einfügen | gleich | — |
+
 ### Anzeigen
 
 | Punkt | Stand | Bild |
@@ -468,7 +470,6 @@ Name im Band zurückgedreht. Das entscheidet er, nicht ich.
 | Gitternetzlinien | gleich | `netz` |
 | Navigationsbereich | gleich | `navigation` |
 | Textbegrenzungen | gleich | `ecken` |
-| Seitenleiste Schreibhilfe | gleich | `tafel` |
 
 ### Zoom
 
@@ -512,7 +513,6 @@ Name im Band zurückgedreht. Das entscheidet er, nicht ich.
 
 ### Eigen — im Band, nicht im SOLL
 
-- Textbegrenzungen
 - 100 %
 - Nebeneinander
 - Untereinander

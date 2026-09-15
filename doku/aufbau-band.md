@@ -34,10 +34,7 @@ START
 │   ├── Ausschneiden
 │   ├── Kopieren
 │   ├── Format übertragen
-│   ├── Wort-Extras
-│   ├── Verlauf
-│   ├── Rückgängig
-│   └── Wiederholen
+│   └── Wort-Extras
 ├── Schriftart
 │   ├── Schrift vergrößern
 │   ├── Schrift verkleinern
@@ -66,13 +63,13 @@ START
 │   ├── Absatzschattierung
 │   ├── Sortieren
 │   ├── Steuerzeichen
-│   ├── Einzug verringern
 │   ├── Einzug vergrößern
+│   ├── Einzug verringern
+│   ├── Genaues Maß…
 │   ├── Listenebene erhöhen
 │   └── Listenebene verringern
 ├── Absatzlayout
 │   ├── Zeilenabstand
-│   ├── Einzug genau
 │   ├── Absatzrahmen
 │   └── Absatzschattierung
 ├── Stile
@@ -112,18 +109,15 @@ EINFÜGEN
 │   ├── Lesezeichen / Textmarke
 │   └── Querverweis
 ├── Kopf- und Fußzeile
-│   ├── Kopfzeile
-│   ├── Fußzeile
-│   └── Seitenzahl
+│   ├── Kopf- und Fußzeile
+│   ├── Kopfzeile bearbeiten
+│   ├── Fußzeile bearbeiten
+│   └── Seitenzahl einfügen
 ├── Text
 │   ├── Textfeld
-│   ├── Bausteine
 │   ├── Initiale
-│   ├── Datum
-│   ├── Uhrzeit
-│   ├── Text aus Datei
-│   ├── Textbaustein
-│   └── Schnellbaustein
+│   ├── Datum und Uhrzeit
+│   └── Text aus Datei
 └── Symbole
     ├── Sonderzeichen
     └── Formel
@@ -254,6 +248,10 @@ SCHREIBHILFE
 │   ├── Übersetzen
 │   ├── Thesaurus
 │   └── Sprache und Prüfung
+├── Bausteine
+│   ├── Textbausteine
+│   ├── Bausteine verwalten…
+│   └── Schnellbaustein einfügen
 ├── KI
 │   ├── KI-Korrektur
 │   └── Vorschläge
@@ -294,12 +292,10 @@ ANSICHT
 │   └── Gliederung
 ├── Anzeigen
 │   ├── Lineal
-│   ├── Textbegrenzungen
 │   ├── Vertikales Lineal
 │   ├── Gitternetzlinien
 │   ├── Navigationsbereich
-│   ├── Textbegrenzungen
-│   └── Seitenleiste Schreibhilfe
+│   └── Textbegrenzungen
 ├── Zoom
 │   ├── Vergrößern
 │   ├── Verkleinern
@@ -353,14 +349,14 @@ genannt — das ist Absicht: ein Schalter, mehrere Stellen, ein Zustand.
 | Ausschneiden | Start ▸ Zwischenablage |
 | AutoKorrektur | Schreibhilfe ▸ Beim Schreiben |
 | Barrierefreiheit prüfen | Überprüfen ▸ Barrierefreiheit |
-| Bausteine | Einfügen ▸ Text |
+| Bausteine verwalten… | Schreibhilfe ▸ Bausteine |
 | Bearbeitung sperren | Überprüfen ▸ Schützen |
 | Benutzeroberfläche | Ansicht ▸ Oberfläche |
 | Beschriftung | Referenzen ▸ Beschriftungen |
 | Bild | Einfügen ▸ Illustrationen |
 | Bildschirmfoto | Einfügen ▸ Illustrationen |
 | Blocksatz | Start ▸ Absatz |
-| Datum | Einfügen ▸ Text |
+| Datum und Uhrzeit | Einfügen ▸ Text |
 | Deckblatt | Einfügen ▸ Seiten |
 | Designs | Seitenlayout ▸ Designs |
 | Diagramm | Einfügen ▸ Illustrationen |
@@ -375,7 +371,6 @@ genannt — das ist Absicht: ein Schalter, mehrere Stellen, ein Zustand.
 | Einfügen ohne Formatierung | Start ▸ Zwischenablage |
 | Einzug | Seitenlayout ▸ Absatz |
 | Einzug & Listenebene | Start ▸ Absatz |
-| Einzug genau | Start ▸ Absatzlayout |
 | Einzug vergrößern | Start ▸ Absatz |
 | Einzug verringern | Start ▸ Absatz |
 | Endnote | Referenzen ▸ Fußnoten |
@@ -391,7 +386,8 @@ genannt — das ist Absicht: ein Schalter, mehrere Stellen, ein Zustand.
 | Formel | Einfügen ▸ Symbole |
 | Formen | Einfügen ▸ Illustrationen |
 | Fußnote | Referenzen ▸ Fußnoten |
-| Fußzeile | Einfügen ▸ Kopf- und Fußzeile |
+| Fußzeile bearbeiten | Einfügen ▸ Kopf- und Fußzeile |
+| Genaues Maß… | Start ▸ Absatz |
 | Gitternetzlinien | Ansicht ▸ Anzeigen |
 | Gliederung | Ansicht ▸ Dokumentansichten |
 | Groß-/Kleinschreibung | Start ▸ Schriftart |
@@ -411,7 +407,8 @@ genannt — das ist Absicht: ein Schalter, mehrere Stellen, ein Zustand.
 | KI-Korrektur | Schreibhilfe ▸ KI |
 | Kommentar löschen | Überprüfen ▸ Kommentare |
 | Kontrollkästchen | Sendungen ▸ Formular |
-| Kopfzeile | Einfügen ▸ Kopf- und Fußzeile |
+| Kopf- und Fußzeile | Einfügen ▸ Kopf- und Fußzeile |
+| Kopfzeile bearbeiten | Einfügen ▸ Kopf- und Fußzeile |
 | Kopieren | Start ▸ Zwischenablage |
 | Korrektursprache | Überprüfen ▸ Sprache |
 | Kursiv | Start ▸ Schriftart |
@@ -449,9 +446,8 @@ genannt — das ist Absicht: ein Schalter, mehrere Stellen, ein Zustand.
 | Regeln | Sendungen ▸ Seriendruck |
 | Register anpassen | Ansicht ▸ Oberfläche |
 | Ränder | Seitenlayout ▸ Ränder |
-| Rückgängig | Start ▸ Zwischenablage |
 | Schaltfläche | Sendungen ▸ Formular |
-| Schnellbaustein | Einfügen ▸ Text |
+| Schnellbaustein einfügen | Schreibhilfe ▸ Bausteine |
 | Schnelltabelle | Einfügen ▸ Tabellen |
 | Schrift vergrößern | Start ▸ Schriftart |
 | Schrift verkleinern | Start ▸ Schriftart |
@@ -460,10 +456,10 @@ genannt — das ist Absicht: ein Schalter, mehrere Stellen, ein Zustand.
 | Schriftfarbe | Start ▸ Schriftart |
 | Seitenbreite | Ansicht ▸ Zoom |
 | Seitenfarbe | Seitenlayout ▸ Seitenhintergrund |
-| Seitenleiste Schreibhilfe | Schreibhilfe ▸ Anzeigen · Ansicht ▸ Anzeigen |
+| Seitenleiste Schreibhilfe | Schreibhilfe ▸ Anzeigen |
 | Seitenränder | Seitenlayout ▸ Seitenhintergrund |
 | Seitenumbruch | Einfügen ▸ Seiten |
-| Seitenzahl | Einfügen ▸ Kopf- und Fußzeile |
+| Seitenzahl einfügen | Einfügen ▸ Kopf- und Fußzeile |
 | Seriendruck-Assistent | Sendungen ▸ Seriendruck |
 | Seriendruckfeld | Sendungen ▸ Seriendruck |
 | Silbentrennung | Seitenlayout ▸ Absatz · Schreibhilfe ▸ Sprache |
@@ -482,7 +478,7 @@ genannt — das ist Absicht: ein Schalter, mehrere Stellen, ein Zustand.
 | Tabelle einfügen | Einfügen ▸ Tabellen |
 | Tabellenblatt | Einfügen ▸ Tabellen |
 | Text aus Datei | Einfügen ▸ Text |
-| Textbaustein | Einfügen ▸ Text |
+| Textbausteine | Schreibhilfe ▸ Bausteine |
 | Textbegrenzungen | Ansicht ▸ Anzeigen |
 | Texteffekte | Start ▸ Schriftart |
 | Textfeld | Einfügen ▸ Text · Sendungen ▸ Formular |
@@ -490,14 +486,12 @@ genannt — das ist Absicht: ein Schalter, mehrere Stellen, ein Zustand.
 | Textrichtung | Seitenlayout ▸ Seite einrichten |
 | Thesaurus | Überprüfen ▸ Dokumentprüfung · Schreibhilfe ▸ Sprache |
 | Tiefgestellt | Start ▸ Schriftart |
-| Uhrzeit | Einfügen ▸ Text |
 | Umbrüche | Seitenlayout ▸ Seite einrichten |
 | Umschlag | Sendungen ▸ Erstellen |
 | Untereinander | Ansicht ▸ Fenster |
 | Unterstrichen | Start ▸ Schriftart |
 | Vergrößern | Ansicht ▸ Zoom |
 | Verkleinern | Ansicht ▸ Zoom |
-| Verlauf | Start ▸ Zwischenablage |
 | Vertikales Lineal | Ansicht ▸ Anzeigen |
 | Verzeichnisse aktualisieren | Referenzen ▸ Inhaltsverzeichnis |
 | Vorige Note | Referenzen ▸ Fußnoten |
@@ -510,7 +504,6 @@ genannt — das ist Absicht: ein Schalter, mehrere Stellen, ein Zustand.
 | Weblayout | Ansicht ▸ Dokumentansichten |
 | Welche Hilfe wann | Schreibhilfe ▸ Prüfen |
 | Wie das System | Ansicht ▸ Helligkeit |
-| Wiederholen | Start ▸ Zwischenablage |
 | WordArt | Einfügen ▸ Illustrationen |
 | Wort-Extras | Start ▸ Zwischenablage |
 | Wortvorhersage | Schreibhilfe ▸ Beim Schreiben |

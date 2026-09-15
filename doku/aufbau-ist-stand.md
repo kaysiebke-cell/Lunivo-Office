@@ -13,10 +13,7 @@ DIE BÄNDER
 │   │   ├── Ausschneiden
 │   │   ├── Kopieren
 │   │   ├── Format übertragen
-│   │   ├── Wort-Extras
-│   │   ├── Verlauf
-│   │   ├── Rückgängig
-│   │   └── Wiederholen
+│   │   └── Wort-Extras
 │   ├── Schriftart
 │   │   ├── Schrift vergrößern
 │   │   ├── Schrift verkleinern
@@ -45,13 +42,13 @@ DIE BÄNDER
 │   │   ├── Absatzschattierung
 │   │   ├── Sortieren
 │   │   ├── Steuerzeichen
-│   │   ├── Einzug verringern
 │   │   ├── Einzug vergrößern
+│   │   ├── Einzug verringern
+│   │   ├── Genaues Maß…
 │   │   ├── Listenebene erhöhen
 │   │   └── Listenebene verringern
 │   ├── Absatzlayout
 │   │   ├── Zeilenabstand
-│   │   ├── Einzug genau
 │   │   ├── Absatzrahmen
 │   │   └── Absatzschattierung
 │   ├── Stile
@@ -86,18 +83,15 @@ DIE BÄNDER
 │   │   ├── Lesezeichen / Textmarke
 │   │   └── Querverweis
 │   ├── Kopf- und Fußzeile
-│   │   ├── Kopfzeile
-│   │   ├── Fußzeile
-│   │   └── Seitenzahl
+│   │   ├── Kopf- und Fußzeile
+│   │   ├── Kopfzeile bearbeiten
+│   │   ├── Fußzeile bearbeiten
+│   │   └── Seitenzahl einfügen
 │   ├── Text
 │   │   ├── Textfeld
-│   │   ├── Bausteine
 │   │   ├── Initiale
-│   │   ├── Datum
-│   │   ├── Uhrzeit
-│   │   ├── Text aus Datei
-│   │   ├── Textbaustein
-│   │   └── Schnellbaustein
+│   │   ├── Datum und Uhrzeit
+│   │   └── Text aus Datei
 │   └── Symbole
 │       ├── Sonderzeichen
 │       └── Formel
@@ -208,6 +202,10 @@ DIE BÄNDER
 │   │   ├── Übersetzen
 │   │   ├── Thesaurus
 │   │   └── Sprache und Prüfung
+│   ├── Bausteine
+│   │   ├── Textbausteine
+│   │   ├── Bausteine verwalten…
+│   │   └── Schnellbaustein einfügen
 │   ├── KI
 │   │   ├── KI-Korrektur
 │   │   └── Vorschläge
@@ -238,12 +236,10 @@ DIE BÄNDER
     │   └── Gliederung
     ├── Anzeigen
     │   ├── Lineal
-    │   ├── Textbegrenzungen
     │   ├── Vertikales Lineal
     │   ├── Gitternetzlinien
     │   ├── Navigationsbereich
-    │   ├── Textbegrenzungen
-    │   └── Seitenleiste Schreibhilfe
+    │   └── Textbegrenzungen
     ├── Zoom
     │   ├── Vergrößern
     │   ├── Verkleinern

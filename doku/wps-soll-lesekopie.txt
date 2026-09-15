@@ -15,6 +15,30 @@ Der Maßstab maß sich selbst.
 
 ═══════════════════════════════════════════════════════════════
 
+NACHGEZOGEN AM 15.09.2026 — Paket 2 „Doppeltes zusammenführen"
+
+Aus seinem Prüfbogen. Sieben Stellen standen doppelt; er hat sie selbst
+so bezeichnet: „doppelt gemoppelt", „kann man zusammenfassen",
+„Funktionen, die dieselbe Aufgabe haben, an einem Ort gebündelt".
+
+  Start ▸ Zwischenablage
+      Verlauf (Rückgängig, Wiederholen)  →  gestrichen, steht im
+                                            Schnellzugriff
+  Start ▸ Absatz
+      Einzug & Listenebene               →  dazu „Genaues Maß…"
+  Start ▸ Absatzlayout
+      Einzug genau                       →  dorthin gewandert
+  Einfügen ▸ Kopf- und Fußzeile
+      Kopfzeile, Fußzeile, Seitenzahl    →  ein Knopf mit drei Wegen
+  Einfügen ▸ Text
+      Datum, Uhrzeit                     →  Datum und Uhrzeit
+      Bausteine                          →  nach Schreibhilfe
+  Ansicht ▸ Anzeigen
+      Seitenleiste Schreibhilfe          →  gestrichen, steht im Reiter
+                                            Schreibhilfe
+
+═══════════════════════════════════════════════════════════════
+
 NACHGEZOGEN AM 12.09.2026 — auf seine Ansage „benenne um"
 
 Fünf Stellen trugen Namen, die neuere Aufnahmen widerlegt haben. Nicht
@@ -154,9 +178,8 @@ DIE BÄNDER — acht Reiter
 │   │   ├── Ausschneiden
 │   │   ├── Kopieren
 │   │   ├── Format übertragen
-│   │   └── Verlauf ← Lunivo
-│   │       ├── Rückgängig
-│   │       └── Wiederholen
+│   │   (Verlauf gestrichen: Rückgängig und Wiederholen stehen im
+│   │    Schnellzugriff, in jedem Reiter erreichbar)
 │   │
 │   ├── SCHRIFTART
 │   │   ├── Formatvorlage               (Wähler)
@@ -197,7 +220,6 @@ DIE BÄNDER — acht Reiter
 │   │
 │   ├── ABSATZLAYOUT
 │   │   ├── Zeilenabstand
-│   │   ├── Einzug genau
 │   │   ├── Absatzrahmen
 │   │   └── Absatzschattierung
 │   │
@@ -241,18 +263,16 @@ DIE BÄNDER — acht Reiter
 │   │   └── Querverweis
 │   │
 │   ├── KOPF- UND FUSSZEILE
-│   │   ├── Kopfzeile
-│   │   ├── Fußzeile
-│   │   └── Seitenzahl
+│   │   └── Kopf- und Fußzeile
+│   │       ├── Kopfzeile bearbeiten
+│   │       ├── Fußzeile bearbeiten
+│   │       └── Seitenzahl einfügen
 │   │
 │   ├── TEXT
 │   │   ├── Textfeld
-│   │   ├── Bausteine ← Lunivo
-│   │   │   ├── Textbaustein
-│   │   │   └── Schnellbaustein
 │   │   ├── Initiale ← Lunivo
-│   │   ├── Datum
-│   │   ├── Uhrzeit ← Lunivo
+│   │   ├── Datum und Uhrzeit
+│   │   (Bausteine stehen jetzt unter SCHREIBHILFE)
 │   │   └── Text aus Datei ← Lunivo
 │   │
 │   └── SYMBOLE
@@ -404,6 +424,11 @@ DIE BÄNDER — acht Reiter
 │   │   ├── KI-Korrektur
 │   │   └── Vorschläge
 │   │
+│   ├── BAUSTEINE ← Lunivo
+│   │   └── Textbausteine
+│   │       ├── Bausteine verwalten
+│   │       └── Schnellbaustein einfügen
+│   │
 │   └── ANZEIGEN
 │       ├── Seitenleiste Schreibhilfe
 │       └── Optionen                    (auch im ☰ Menü)
@@ -442,8 +467,9 @@ DIE BÄNDER — acht Reiter
     │   ├── Vertikales Lineal
     │   ├── Gitternetzlinien ← Lunivo
     │   ├── Navigationsbereich ← Lunivo
-    │   ├── Textbegrenzungen ← Lunivo
-    │   └── Seitenleiste Schreibhilfe ← Lunivo
+    │   └── Textbegrenzungen ← Lunivo
+    │   Seitenleiste Schreibhilfe steht im Reiter Schreibhilfe und hier
+    │   nicht mehr.
     │
     │   Lesehilfe und Zeilenfokus stehen NICHT mehr hier.
     │   Sie sind nach Schreibhilfe ▸ Lesen gewandert.

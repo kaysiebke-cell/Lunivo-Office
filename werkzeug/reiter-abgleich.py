@@ -66,6 +66,10 @@ def soll_lesen():
         elif reiter and gruppe and tiefe >= 2:
             # Beschreibungssätze unter einem Punkt überspringen: Der Baum
             # trägt auch Fließtext, und der ist kein Befehl.
+            # Bemerkungen im Baum sind keine Befehle: „(Verlauf
+            # gestrichen: …)" stand sonst als fehlender Punkt im Bogen.
+            if name.startswith('(') or inhalt.startswith('('):
+                continue
             if (len(name) > 42 or name.endswith(':') or name.endswith('.')
                     or '▸' in name or ' — ' in name or name.count(' ') > 3):
                 continue

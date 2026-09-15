@@ -86,6 +86,36 @@ ERLEDIGT = {
         'Die Gruppe heißt jetzt „Anordnen" und hat vier Knöpfe wie in WPS: '
         'Textfluss, Ausrichten, Gruppieren, Drehen. Ausrichten und Drehen '
         'wirken auf Bilder, Formen und Tabellen.',
+    'start-zwischenablage|verlauf-rückgängig':
+        'Aus dem Reiter entfernt. Rückgängig und Wiederholen stehen im '
+        'Schnellzugriff ganz oben — dort sind sie in jedem Reiter erreichbar, '
+        'im Band waren sie es nur unter Start.',
+    'start-zwischenablage|verlauf-wiederholen':
+        'Siehe Rückgängig: aus dem Reiter entfernt, bleibt im Schnellzugriff.',
+    'start-absatzlayout|einzug-genau':
+        'Zusammengelegt, wie gewünscht: „Einzug & Listenebene" unter Start ▸ '
+        'Absatz hat jetzt Vergrößern, Verringern und „Genaues Maß…" in einer '
+        'Klappe. Aus Absatzlayout ist der zweite Einzug-Knopf verschwunden.',
+    'einfügen|kopfzeile':
+        'Ein Knopf „Kopf- und Fußzeile" mit drei Wegen darin: Kopfzeile '
+        'bearbeiten, Fußzeile bearbeiten, Seitenzahl einfügen.',
+    'einfügen|fußzeile':
+        'Siehe Kopfzeile — beide in einem Knopf.',
+    'einfügen|uhrzeit':
+        'Ein Knopf „Datum und Uhrzeit". Das Fenster zeigt sieben Formen mit '
+        'dem heutigen Datum als Vorschau — kurz, lang, mit Wochentag, ISO, '
+        'Uhrzeit, Uhrzeit mit Sekunden, beides. Vorher fügten zwei Knöpfe je '
+        'eine feste Form ein; wer „15. September 2026" wollte, musste tippen.',
+    'einfügen|textbaustein':
+        'Nach Schreibhilfe gewandert, wie vorgeschlagen — dort als ein Knopf '
+        '„Textbausteine" mit Verwalten und Einfügen. In Einfügen steht er '
+        'nicht mehr, damit er nicht an zwei Stellen liegt.',
+    'einfügen|schnellbaustein':
+        'Siehe Textbaustein — mit umgezogen, in derselben Klappe.',
+    'ansicht|seitenleiste-schreibhilfe':
+        'Aus Ansicht entfernt. Sie steht im Reiter Schreibhilfe, und dort '
+        'gehört sie hin.',
+
     'start-absatz|aufzählung':
         'Sie tat etwas, aber man sah es nicht: Die Liste wurde IN den Absatz '
         'gebaut (<p><ul>…</ul></p>), und das ist ungültig — der Browser räumt '
