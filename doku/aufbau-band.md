@@ -34,6 +34,7 @@ START
 │   ├── Ausschneiden
 │   ├── Kopieren
 │   ├── Format übertragen
+│   ├── Wort-Extras
 │   ├── Verlauf
 │   ├── Rückgängig
 │   └── Wiederholen
@@ -41,17 +42,17 @@ START
 │   ├── Schrift vergrößern
 │   ├── Schrift verkleinern
 │   ├── Formatierung löschen
+│   ├── Groß-/Kleinschreibung
 │   ├── Fett
 │   ├── Kursiv
 │   ├── Unterstrichen
 │   ├── Durchgestrichen
 │   ├── Hochgestellt
 │   ├── Tiefgestellt
+│   ├── Zeichenumriss
 │   ├── Hervorheben
 │   ├── Schriftfarbe
-│   ├── Groß-/Kleinschreibung
-│   ├── Unterstreichungsart
-│   └── Texteffekte
+│   └── Eingeschlossene Zeichen
 ├── Absatz
 │   ├── Aufzählung
 │   ├── Nummerierung
@@ -372,6 +373,7 @@ genannt — das ist Absicht: ein Schalter, mehrere Stellen, ein Zustand.
 | Eine Seite | Ansicht ▸ Zoom |
 | Einfügen | Start ▸ Zwischenablage |
 | Einfügen ohne Formatierung | Start ▸ Zwischenablage |
+| Eingeschlossene Zeichen | Start ▸ Schriftart |
 | Einzug | Seitenlayout ▸ Absatz |
 | Einzug & Listenebene | Start ▸ Absatz |
 | Einzug genau | Start ▸ Absatzlayout |
@@ -483,7 +485,6 @@ genannt — das ist Absicht: ein Schalter, mehrere Stellen, ein Zustand.
 | Text aus Datei | Einfügen ▸ Text |
 | Textbaustein | Einfügen ▸ Text |
 | Textbegrenzungen | Ansicht ▸ Anzeigen |
-| Texteffekte | Start ▸ Schriftart |
 | Textfeld | Einfügen ▸ Text · Sendungen ▸ Formular |
 | Textfluss | Seitenlayout ▸ Anordnen |
 | Textrichtung | Seitenlayout ▸ Seite einrichten |
@@ -493,7 +494,6 @@ genannt — das ist Absicht: ein Schalter, mehrere Stellen, ein Zustand.
 | Umbrüche | Seitenlayout ▸ Seite einrichten |
 | Umschlag | Sendungen ▸ Erstellen |
 | Untereinander | Ansicht ▸ Fenster |
-| Unterstreichungsart | Start ▸ Schriftart |
 | Unterstrichen | Start ▸ Schriftart |
 | Vergrößern | Ansicht ▸ Zoom |
 | Verkleinern | Ansicht ▸ Zoom |
@@ -512,8 +512,10 @@ genannt — das ist Absicht: ein Schalter, mehrere Stellen, ein Zustand.
 | Wie das System | Ansicht ▸ Helligkeit |
 | Wiederholen | Start ▸ Zwischenablage |
 | WordArt | Einfügen ▸ Illustrationen |
+| Wort-Extras | Start ▸ Zwischenablage |
 | Wortvorhersage | Schreibhilfe ▸ Beim Schreiben |
 | Wörter zählen | Überprüfen ▸ Dokumentprüfung |
+| Zeichenumriss | Start ▸ Schriftart |
 | Zeilenabstand | Start ▸ Absatz · Start ▸ Absatzlayout |
 | Zeilenfokus | Schreibhilfe ▸ Lesen |
 | Zeilennummern | Seitenlayout ▸ Seite einrichten |

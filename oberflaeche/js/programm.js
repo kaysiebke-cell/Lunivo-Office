@@ -2119,6 +2119,111 @@ B.schriftfarbe = (e) => farbeWaehlen('foreColor', 'Schriftfarbe',
 B.hervorheben  = (e) => farbeWaehlen('hiliteColor', 'Hervorhebungsfarbe',
                                      e && e.currentTarget ? e.currentTarget : null);
 
+/* ---- Der geteilte Knopf: Zeichen wirkt, Pfeil waehlt ----
+
+   Er hat zu „Hervorheben" geschrieben: „Icon ist ohne Funktion." Das
+   stimmte fast. Der Knopf oeffnete eine Farbtafel — wer einmal Gelb
+   gewaehlt hatte und danach die naechste Stelle faerben wollte, musste
+   jedes Mal wieder durch die Tafel. In WPS faerbt ein Klick auf den
+   Marker sofort mit der zuletzt gewaehlten Farbe, und nur der Pfeil
+   daneben zeigt die Tafel. Genau das ist der Unterschied zwischen einem
+   Werkzeug und einem Menue.
+
+   Zu „Schriftfarbe" schrieb er: „die Funktion aus dem Bild ist nicht
+   vorhanden" — dasselbe: das A mit dem Farbbalken darunter faerbt, der
+   Pfeil waehlt. */
+let letzteMarkerfarbe = Speicher.lies('markerfarbe', '#FFE28A');
+let letzteSchriftfarbe = Speicher.lies('schriftfarbeZuletzt', '#C0392B');
+
+function farbeAnwenden(befehl, farbe) {
+  const auswahl = window.getSelection();
+  if (!auswahl.rangeCount || auswahl.isCollapsed) {
+    melde(befehl === 'hiliteColor'
+      ? 'Erst den Text markieren, der hervorgehoben werden soll.'
+      : 'Erst den Text markieren, der die Farbe bekommen soll.');
+    return;
+  }
+  document.execCommand('styleWithCSS', false, true);
+  document.execCommand(befehl, false, farbe);
+  geaendertMelden();
+}
+
+B.hervorhebenJetzt = () => {
+  farbeAnwenden('hiliteColor', letzteMarkerfarbe);
+  melde('Hervorgehoben.');
+};
+
+B.schriftfarbeJetzt = () => {
+  farbeAnwenden('foreColor', letzteSchriftfarbe);
+  melde('Schriftfarbe gesetzt.');
+};
+
+/* Die Tafel merkt sich, was gewaehlt wurde — sonst waere der Klick auf
+   das Zeichen daneben wieder ein Ratespiel. */
+function farbeKlappe(knopf, titel, befehl, merken) {
+  auswahlMerken();
+  designTafelZeigen(knopf, titel, (tafel) => {
+    tafel.classList.add('designtafel--breit', 'farbtafel');
+    const reihe = document.createElement('div');
+    reihe.className = 'farbtafel__reihe';
+    for (const farbe of STANDARDFARBEN) {
+      reihe.appendChild(farbfeld(farbe, (hex) => {
+        merken(hex);
+        designTafelWeg();
+        auswahlZurueck();
+        farbeAnwenden(befehl, hex);
+        melde(titel + ': ' + hex.toUpperCase() + '.');
+      }));
+    }
+    tafel.appendChild(reihe);
+
+    /* Fuer den Marker die hellen Toene: Ein Text unter dunkelblauem
+       Marker ist nicht mehr zu lesen. */
+    if (befehl === 'hiliteColor') {
+      const hell = document.createElement('div');
+      hell.className = 'farbtafel__reihe';
+      for (const farbe of ['#FFE28A', '#FFF2A8', '#C8F0C0', '#BFE7F5',
+                           '#F6C9E0', '#E3D6F5', '#F2D9B8', '#DCE3EA',
+                           '#FFFFFF', '#E8E8E8']) {
+        hell.appendChild(farbfeld(farbe, (hex) => {
+          merken(hex);
+          designTafelWeg();
+          auswahlZurueck();
+          farbeAnwenden(befehl, hex);
+          melde(titel + ': ' + hex.toUpperCase() + '.');
+        }));
+      }
+      tafel.insertBefore(hell, reihe);
+    }
+
+    const strichel = document.createElement('hr');
+    strichel.className = 'designtafel__strich';
+    tafel.appendChild(strichel);
+
+    const weg = document.createElement('button');
+    weg.type = 'button';
+    weg.className = 'designtafel__zeile richtungszeile';
+    weg.appendChild(symbol('radierer'));
+    const w = document.createElement('span');
+    w.textContent = befehl === 'hiliteColor' ? 'Hervorhebung entfernen' : 'Automatisch';
+    weg.appendChild(w);
+    weg.addEventListener('mousedown', (e) => e.preventDefault());
+    weg.addEventListener('click', () => {
+      designTafelWeg();
+      auswahlZurueck();
+      farbeAnwenden(befehl, befehl === 'hiliteColor' ? 'transparent' : '#111417');
+      melde('Zurückgesetzt.');
+    });
+    tafel.appendChild(weg);
+  });
+}
+
+B.hervorhebenKlappe = (knopf) => farbeKlappe(knopf, 'Hervorheben', 'hiliteColor',
+  (hex) => { letzteMarkerfarbe = hex; Speicher.schreib('markerfarbe', hex); });
+
+B.schriftfarbeKlappe = (knopf) => farbeKlappe(knopf, 'Schriftfarbe', 'foreColor',
+  (hex) => { letzteSchriftfarbe = hex; Speicher.schreib('schriftfarbeZuletzt', hex); });
+
 /* ---- Format übertragen (der Pinsel) ---- */
 let pinsel = null;
 
@@ -5048,13 +5153,78 @@ function registerBauen() {
       return k;
     };
 
+    /* Ein geteilter Knopf: links das Zeichen, rechts ein Pfeil.
+       In WPS hat das U einen Pfeil fuer die Strichvorlagen, der Marker
+       einen fuer die Farben, das A einen fuer die Schriftfarbe. Ein
+       Klick auf das Zeichen wirkt sofort mit dem, was zuletzt galt; der
+       Pfeil zeigt die Auswahl.
+
+       Er hat es so aufgeschrieben: „Die Strichvorlagen aus dem Bild
+       fehlen aktuell." Sie fehlten nicht — sie lagen hinter einem
+       zweiten, gleich aussehenden U-Knopf daneben. Zwei Knoepfe mit
+       demselben Buchstaben sind schlimmer als ein fehlender Pfeil. */
+    const bauenGeteilt = (zeichen, titel, tun, klappe) => {
+      const kiste = document.createElement('span');
+      kiste.className = 'wz-geteilt';
+
+      const k = bauen(zeichen, titel, tun, false);
+      k.classList.add('wz-geteilt__tat');
+      kiste.appendChild(k);
+
+      const pfeil = document.createElement('button');
+      pfeil.type = 'button';
+      pfeil.className = 'wz wz-geteilt__pfeil';
+      pfeil.title = titel + ' — Auswahl';
+      pfeil.setAttribute('aria-label', titel + ' — Auswahl');
+      pfeil.textContent = '▾';
+      pfeil.addEventListener('mousedown', (e) => e.preventDefault());
+      pfeil.addEventListener('click', () => klappe(pfeil));
+      kiste.appendChild(pfeil);
+      return { kiste, knopf: k };
+    };
+
+    /* ZEILENWEISE STATT SPALTENWEISE.
+
+       Das Gitter der kleinen Knoepfe fuellt sich sonst spaltenweise: Wer
+       F, K, U, S auflistet, bekommt F und U untereinander und K und S
+       daneben. Auf seinem Bildschirmfoto standen darum Fett und Kursiv
+       in verschiedenen Zeilen, Hoch- und Tiefgestellt auseinander. Er
+       hat es genau so aufgeschrieben: „Hoch- und tiefgestellt gehoeren
+       nebeneinander als Gruppe zur selben Funktion."
+
+       Steht ein ['//'] in der Liste, wird die Gruppe in feste Reihen
+       gebaut — dann steht dort, was er sieht, und nicht, was das Gitter
+       daraus macht. */
+    const inReihen = eintraege.some((e) => Array.isArray(e) && e[0] === '//');
+    if (inReihen) kleineKiste.classList.add('register__klein--reihen');
+    let zeileJetzt = null;
+    const neueZeile = () => {
+      zeileJetzt = document.createElement('span');
+      zeileJetzt.className = 'register__knopfreihe';
+      kleineKiste.appendChild(zeileJetzt);
+      return zeileJetzt;
+    };
+    if (inReihen) neueZeile();
+
     for (const eintrag of eintraege) {
       /* Ein 'felder' mitten in der Liste heißt: hier stehen die Wähler. */
       if (eintrag === 'felder') { reihe.appendChild(felderKiste()); continue; }
+      if (Array.isArray(eintrag) && eintrag[0] === '//') { neueZeile(); continue; }
       const [zeichen, titel, tun, gross, zustand] = eintrag;
+
+      /* Ist statt eines Befehls ein Paar angegeben, wird es ein
+         geteilter Knopf: { tun, klappe }. */
+      if (tun && typeof tun === 'object' && typeof tun.tun === 'function') {
+        const { kiste, knopf } = bauenGeteilt(zeichen, titel, tun.tun, tun.klappe);
+        if (typeof zustand === 'function') registerSchalter.push({ knopf, ist: zustand });
+        (zeileJetzt || kleineKiste).appendChild(kiste);
+        continue;
+      }
+
       const k = bauen(zeichen, titel, tun, !!gross);
       if (typeof zustand === 'function') registerSchalter.push({ knopf: k, ist: zustand });
-      (gross ? reihe : kleineKiste).appendChild(k);
+      if (gross) reihe.appendChild(k);
+      else (zeileJetzt || kleineKiste).appendChild(k);
     }
     if (kleineKiste.childNodes.length) reihe.appendChild(kleineKiste);
     gruppe.appendChild(reihe);
@@ -7852,6 +8022,256 @@ const SCHREIBWEISEN = [
                                                                (g, vor, b) => vor + b.toUpperCase())],
 ];
 
+/* ============================================================
+   VIER PUNKTE AUS DEM START-REITER
+
+   Sie standen seit dem ersten Abgleich in doku/menue-abgleich-wps.md
+   als „fehlt" — und mein eigener Bogen meldete trotzdem „0 fehlen",
+   weil sie in seinem SOLL-Baum nicht vorkommen. Zwei Listen, die
+   einander nicht kennen, ergeben keine Deckung, sondern einen blinden
+   Fleck.
+   ============================================================ */
+
+/* ---- Eingeschlossene Zeichen ----
+   Ein Buchstabe in einem Kreis, wie ⓐ. In WPS „Eingeschlossene
+   Zeichen"; gebraucht fuer Nummerierungen, die im Text stehen sollen.
+
+   Vier Formen, und — wichtiger — vier ECHTE ZEICHEN, wo es sie gibt:
+   ⓐ ① ㊀ sind Unicode und ueberleben Kopieren, Speichern und Word.
+   Nur wo Unicode nichts hat, wird gezeichnet. */
+const RINGZEICHEN = {
+  kreis: { name: 'Kreis', form: '50%',
+           tabelle: { a: 'ⓐ', b: 'ⓑ', c: 'ⓒ', d: 'ⓓ', e: 'ⓔ', f: 'ⓕ', g: 'ⓖ', h: 'ⓗ',
+                      i: 'ⓘ', j: 'ⓙ', k: 'ⓚ', l: 'ⓛ', m: 'ⓜ', n: 'ⓝ', o: 'ⓞ', p: 'ⓟ',
+                      q: 'ⓠ', r: 'ⓡ', s: 'ⓢ', t: 'ⓣ', u: 'ⓤ', v: 'ⓥ', w: 'ⓦ', x: 'ⓧ',
+                      y: 'ⓨ', z: 'ⓩ',
+                      A: 'Ⓐ', B: 'Ⓑ', C: 'Ⓒ', D: 'Ⓓ', E: 'Ⓔ', F: 'Ⓕ', G: 'Ⓖ', H: 'Ⓗ',
+                      I: 'Ⓘ', J: 'Ⓙ', K: 'Ⓚ', L: 'Ⓛ', M: 'Ⓜ', N: 'Ⓝ', O: 'Ⓞ', P: 'Ⓟ',
+                      Q: 'Ⓠ', R: 'Ⓡ', S: 'Ⓢ', T: 'Ⓣ', U: 'Ⓤ', V: 'Ⓥ', W: 'Ⓦ', X: 'Ⓧ',
+                      Y: 'Ⓨ', Z: 'Ⓩ',
+                      '0': '⓪', '1': '①', '2': '②', '3': '③', '4': '④',
+                      '5': '⑤', '6': '⑥', '7': '⑦', '8': '⑧', '9': '⑨' } },
+  quadrat:  { name: 'Quadrat',  form: '0',   tabelle: {} },
+  raute:    { name: 'Raute',    form: '0',   tabelle: {}, gedreht: true },
+  dreieck:  { name: 'Dreieck',  form: '0',   tabelle: {}, dreieck: true },
+};
+
+B.eingeschlosseneZeichen = () => {
+  const auswahl = window.getSelection();
+  const text = auswahl ? auswahl.toString() : '';
+  if (!text || text.length > 2) {
+    melde('Erst ein einzelnes Zeichen markieren — ein Buchstabe oder eine Ziffer.');
+    return;
+  }
+  fenster('Eingeschlossene Zeichen', [
+    { art: 'satz', text: 'Setzt „' + text + '" in eine Umrandung. '
+                       + 'Wo es das Zeichen fertig gibt — ⓐ, ①, Ⓩ —, wird es '
+                       + 'genommen: Es übersteht Kopieren, Speichern und Word.' },
+    { schluessel: 'form', name: 'Form', art: 'auswahl',
+      werte: Object.entries(RINGZEICHEN).map(([k, v]) => [k, v.name]), wert: 'kreis' },
+  ], (werte) => {
+    const art = RINGZEICHEN[werte.form] || RINGZEICHEN.kreis;
+    const fertig = art.tabelle[text];
+    if (fertig) {
+      Dokument.einfuegen(fertig);
+      melde('Eingeschlossen: ' + fertig);
+      return;
+    }
+    const klassen = ['eingeschlossen', 'eingeschlossen--' + werte.form];
+    Dokument.einfuegen('<span class="' + klassen.join(' ') + '">'
+      + text.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]))
+      + '</span>');
+    melde('Eingeschlossen: ' + art.name + '.');
+  });
+};
+
+/* ---- Zeichenumriss ----
+   Buchstaben, die nur aus ihrer Kontur bestehen. In WPS ein eigener
+   Knopf neben der Schriftfarbe. */
+B.zeichenumriss = () => {
+  const auswahl = window.getSelection();
+  if (!auswahl || !auswahl.rangeCount || auswahl.isCollapsed) {
+    melde('Erst den Text markieren, der einen Umriss bekommen soll.');
+    return;
+  }
+  const drin = auswahl.anchorNode && auswahl.anchorNode.parentElement
+    && auswahl.anchorNode.parentElement.closest('.umriss');
+  if (drin) {
+    /* Zweimal derselbe Knopf nimmt ihn wieder weg — sonst muesste man
+       raten, wie man ihn loswird. */
+    const eltern = drin.parentNode;
+    while (drin.firstChild) eltern.insertBefore(drin.firstChild, drin);
+    drin.remove();
+    geaendertMelden();
+    melde('Umriss entfernt.');
+    return;
+  }
+  fenster('Zeichenumriss', [
+    { art: 'satz', text: 'Die Buchstaben stehen dann nur als Linie da. '
+                       + 'Gut für eine Überschrift, schlecht für einen Absatz — '
+                       + 'Umrisse sind schwerer zu lesen als volle Buchstaben.' },
+    { schluessel: 'farbe', name: 'Farbe der Linie', art: 'color', wert: '#1F4E79' },
+    { schluessel: 'staerke', name: 'Stärke (px)', art: 'number', wert: '1', schritt: '0.5' },
+  ], (werte) => {
+    const dick = Math.max(0.5, Math.min(4, parseFloat(werte.staerke) || 1));
+    Dokument.einfuegen('<span class="umriss" style="-webkit-text-stroke:'
+      + dick + 'px ' + werte.farbe + '">'
+      + (window.getSelection().toString() || 'Umriss') + '</span>');
+    melde('Zeichenumriss gesetzt. Derselbe Knopf nimmt ihn wieder weg.');
+  });
+};
+
+/* ---- Formatpipette ----
+   Nimmt eine Farbe aus dem Dokument auf und gibt sie dem markierten
+   Text. NICHT dasselbe wie „Format uebertragen": Der Pinsel nimmt das
+   ganze Format einer Stelle, die Pipette nur die Farbe — und die auch
+   von einem Bild, wo es gar kein Format gibt. */
+B.formatpipette = async () => {
+  const auswahl = window.getSelection();
+  if (!auswahl || auswahl.isCollapsed) {
+    melde('Erst den Text markieren, der die Farbe bekommen soll.');
+    return;
+  }
+  if (typeof EyeDropper !== 'function') {
+    melde('Die Pipette gibt es in diesem Fenster nicht — die Schriftfarbe daneben tut dasselbe von Hand.');
+    return;
+  }
+  try {
+    const griff = await new EyeDropper().open();
+    Dokument.befehl('foreColor', griff.sRGBHex);
+    melde('Farbe ' + griff.sRGBHex.toUpperCase() + ' aufgenommen und gesetzt.');
+  } catch (e) {
+    melde('Abgebrochen.');
+  }
+};
+
+/* ---- Die acht Wort-Extras ----
+   In WPS ein eigener Block. Acht Handgriffe an Absaetzen, die man sonst
+   von Hand macht — und bei einem langen Text eine halbe Stunde lang.
+
+   Wer eine Datei aus dem Netz einfuegt, hat oft jede Zeile als eigenen
+   Absatz oder umgekehrt einen Block ohne Absaetze. Das von Hand zu
+   richten ist genau die Arbeit, die jemanden mit Legasthenie am
+   laengsten aufhaelt. */
+function absaetzeGewaehlt() {
+  const drin = absaetzeInAuswahl();
+  return drin.length ? drin : [...feld.querySelectorAll('p')];
+}
+
+const WORT_EXTRAS = [
+  ['leereWeg', 'Leere Absätze löschen', () => {
+    const weg = [...feld.querySelectorAll('p')].filter(
+      (p) => !p.textContent.trim() && !p.querySelector('img, svg, table'));
+    weg.forEach((p) => p.remove());
+    return weg.length + (weg.length === 1 ? ' leerer Absatz entfernt.'
+                                          : ' leere Absätze entfernt.');
+  }],
+  ['leereRein', 'Leerzeile zwischen Absätze setzen', () => {
+    const alle = [...feld.querySelectorAll('p')];
+    let n = 0;
+    for (const p of alle) {
+      if (!p.textContent.trim()) continue;
+      const naechst = p.nextElementSibling;
+      if (naechst && naechst.tagName === 'P' && naechst.textContent.trim()) {
+        const leer = document.createElement('p');
+        leer.appendChild(document.createElement('br'));
+        p.after(leer);
+        n++;
+      }
+    }
+    return n + (n === 1 ? ' Leerzeile eingefügt.' : ' Leerzeilen eingefügt.');
+  }],
+  ['umbruchZuAbsatz', 'Zeilenumbrüche in Absätze umwandeln', () => {
+    let n = 0;
+    for (const p of absaetzeGewaehlt()) {
+      const stuecke = p.innerHTML.split(/<br\s*\/?>/i);
+      if (stuecke.length < 2) continue;
+      const neu = stuecke.map((teil) => {
+        const a = document.createElement('p');
+        a.innerHTML = teil.trim() || '<br>';
+        return a;
+      });
+      p.replaceWith(...neu);
+      n += neu.length - 1;
+    }
+    return n + (n === 1 ? ' Umbruch wurde ein Absatz.'
+                        : ' Umbrüche wurden Absätze.');
+  }],
+  ['absatzZuUmbruch', 'Absätze in Zeilenumbrüche umwandeln', () => {
+    const alle = absaetzeGewaehlt().filter((p) => p.tagName === 'P');
+    if (alle.length < 2) return 'Dafür braucht es mindestens zwei Absätze.';
+    const erste = alle[0];
+    for (const p of alle.slice(1)) {
+      erste.appendChild(document.createElement('br'));
+      while (p.firstChild) erste.appendChild(p.firstChild);
+      p.remove();
+    }
+    return alle.length + ' Absätze wurden einer.';
+  }],
+  ['einzugRein', 'Erste Zeile um zwei Zeichen einrücken', () => {
+    const alle = absaetzeGewaehlt();
+    alle.forEach((p) => { p.style.textIndent = '2em'; });
+    return alle.length + ' Absätze eingerückt.';
+  }],
+  ['einzugRaus', 'Einrückung der ersten Zeile aufheben', () => {
+    const alle = absaetzeGewaehlt();
+    alle.forEach((p) => { p.style.textIndent = ''; });
+    return 'Einrückung bei ' + alle.length + ' Absätzen aufgehoben.';
+  }],
+  ['leerzeichen', 'Doppelte Leerzeichen zusammenziehen', () => {
+    let n = 0;
+    for (const p of absaetzeGewaehlt()) {
+      const gehen = document.createTreeWalker(p, NodeFilter.SHOW_TEXT);
+      let k;
+      while ((k = gehen.nextNode())) {
+        const neu = k.data.replace(/[ \t]{2,}/g, ' ');
+        if (neu !== k.data) { n += 1; k.data = neu; }
+      }
+    }
+    return n === 0 ? 'Keine doppelten Leerzeichen gefunden.'
+                   : 'An ' + n + ' Stellen zusammengezogen.';
+  }],
+  ['umdrehen', 'Reihenfolge der Absätze umdrehen', () => {
+    const alle = absaetzeGewaehlt();
+    if (alle.length < 2) return 'Dafür braucht es mindestens zwei Absätze.';
+    const nach = alle[alle.length - 1].nextSibling;
+    const eltern = alle[0].parentNode;
+    /* RUECKWAERTS durchgehen. Vorwaerts vor denselben Anker gesetzt
+       ergibt genau die alte Reihenfolge: Der erste landet hinten, der
+       zweite dahinter, und am Ende steht alles wie zuvor. Der Knopf
+       meldete „3 Absätze umgedreht" und hatte nichts getan — die
+       schlimmste Art Fehler, weil sie sich als Erfolg ausgibt. */
+    for (const p of alle.slice().reverse()) eltern.insertBefore(p, nach);
+    return alle.length + ' Absätze umgedreht.';
+  }],
+];
+
+B.wortExtras = (knopf) => designTafelZeigen(knopf, 'Wort-Extras', (tafel) => {
+  tafel.classList.add('designtafel--breit');
+  const satz = document.createElement('p');
+  satz.className = 'layouttafel__satz';
+  satz.textContent = 'Ohne Markierung gilt es für das ganze Blatt, mit '
+                   + 'Markierung nur für die markierten Absätze. '
+                   + 'Strg+Z nimmt jeden Handgriff zurück.';
+  tafel.appendChild(satz);
+
+  for (const [, name, tun] of WORT_EXTRAS) {
+    const k = document.createElement('button');
+    k.type = 'button';
+    k.className = 'designtafel__zeile';
+    k.textContent = name;
+    k.addEventListener('mousedown', (e) => e.preventDefault());
+    k.addEventListener('click', () => {
+      let meldung;
+      try { meldung = tun(); } catch (e) { meldung = 'Das ging nicht: ' + e.message; }
+      geaendertMelden();
+      designTafelWeg();
+      melde(meldung);
+    });
+    tafel.appendChild(k);
+  }
+});
+
 B.schreibweise = () => {
   const auswahl = window.getSelection();
   if (!auswahl.rangeCount || auswahl.isCollapsed) {
@@ -7875,35 +8295,148 @@ B.schreibweise = () => {
 };
 
 /* ---- Unterstreichen mit Linienstil ---- */
+let unterstrichFarbe = '#111417';
+
 const UNTERSTRICHE = [
   ['solid', 'durchgezogen'], ['double', 'doppelt'],
   ['dotted', 'gepunktet'], ['dashed', 'gestrichelt'], ['wavy', 'gewellt'],
 ];
+
+/* ============================================================
+   DIE KLAPPEN AM GETEILTEN KNOPF
+
+   In WPS traegt das U einen Pfeil, und dahinter liegen die Linien — als
+   Striche, nicht als Namen. Er hat geschrieben: „Die Strichvorlagen aus
+   dem Bild fehlen aktuell." Sie lagen hinter einem zweiten U-Knopf
+   daneben, und ein Klappfeld mit den Woertern „durchgezogen, doppelt,
+   gepunktet" ist nicht dasselbe wie fuenf gezeichnete Striche.
+
+   Wer wissen will, wie „gewellt" aussieht, will es sehen.
+   ============================================================ */
+function strichbild(art) {
+  const zeile = document.createElement('span');
+  zeile.className = 'strichprobe';
+  zeile.style.borderBottom = '2px ' + art + ' currentColor';
+  return zeile;
+}
+
+B.unterstrichKlappe = (knopf) => {
+  auswahlMerken();
+  designTafelZeigen(knopf, 'Unterstreichen', (tafel) => {
+    tafel.classList.add('designtafel--breit');
+    for (const [art, name] of UNTERSTRICHE) {
+      const k = document.createElement('button');
+      k.type = 'button';
+      k.className = 'designtafel__zeile richtungszeile';
+      k.appendChild(strichbild(art));
+      const wort = document.createElement('span');
+      wort.textContent = name;
+      k.appendChild(wort);
+      k.addEventListener('mousedown', (e) => e.preventDefault());
+      k.addEventListener('click', () => {
+        designTafelWeg();
+        unterstrichSetzen(art, unterstrichFarbe);
+      });
+      tafel.appendChild(k);
+    }
+    const strichel = document.createElement('hr');
+    strichel.className = 'designtafel__strich';
+    tafel.appendChild(strichel);
+
+    const weg = document.createElement('button');
+    weg.type = 'button';
+    weg.className = 'designtafel__zeile richtungszeile';
+    weg.appendChild(symbol('radierer'));
+    const w1 = document.createElement('span');
+    w1.textContent = 'Unterstreichung entfernen';
+    weg.appendChild(w1);
+    weg.addEventListener('mousedown', (e) => e.preventDefault());
+    weg.addEventListener('click', () => { designTafelWeg(); auswahlZurueck(); B.unter(); });
+    tafel.appendChild(weg);
+
+    const mehr = document.createElement('button');
+    mehr.type = 'button';
+    mehr.className = 'layouttafel__weiter';
+    mehr.textContent = 'Farbe und Linie wählen…';
+    mehr.addEventListener('click', () => { designTafelWeg(); B.unterstrichArt(); });
+    tafel.appendChild(mehr);
+  });
+};
+
+/* Die vier Schreibweisen aus WPS als Klappe statt als Fenster. Er hat
+   dazu geschrieben: „Icon ohne Funktion, Linksklick ist nicht vorhanden
+   mit der Maus." Ein Fenster, das erst nach einem markierten Text fragt,
+   sieht von aussen aus wie ein Knopf, der nichts tut. */
+B.schreibweiseKlappe = (knopf) => {
+  designTafelZeigen(knopf, 'Groß- und Kleinschreibung', (tafel) => {
+    tafel.classList.add('designtafel--breit');
+    for (const [kuerzel, name, wandeln] of SCHREIBWEISEN) {
+      const k = document.createElement('button');
+      k.type = 'button';
+      k.className = 'designtafel__zeile richtungszeile';
+      const probe = document.createElement('span');
+      probe.className = 'schreibprobe';
+      probe.textContent = wandeln('Ein Satz als Probe.');
+      k.appendChild(probe);
+      const wort = document.createElement('span');
+      wort.textContent = name;
+      k.appendChild(wort);
+      k.addEventListener('mousedown', (e) => e.preventDefault());
+      k.addEventListener('click', () => {
+        designTafelWeg();
+        schreibweiseSetzen(kuerzel);
+      });
+      tafel.appendChild(k);
+    }
+  });
+};
+
+/* Beides einmal als Funktion, damit Klappe und Fenster dasselbe tun und
+   nicht zwei Fassungen auseinanderlaufen. */
+function unterstrichSetzen(art, farbe) {
+  auswahlZurueck();
+  const auswahl = window.getSelection();
+  if (!auswahl.rangeCount || auswahl.isCollapsed) {
+    melde('Erst den Text markieren, der unterstrichen werden soll.');
+    return;
+  }
+  unterstrichFarbe = farbe || unterstrichFarbe;
+  /* execCommand kennt nur „unterstrichen ja/nein". Für einen Linienstil
+     braucht es ein eigenes Element um die Markierung herum. */
+  const huelle = document.createElement('span');
+  huelle.style.textDecoration = 'underline ' + art + ' ' + unterstrichFarbe;
+  try {
+    auswahl.getRangeAt(0).surroundContents(huelle);
+    geaendertMelden();
+    melde('Unterstrichen: '
+          + (UNTERSTRICHE.find((u) => u[0] === art) || [, art])[1] + '.');
+  } catch (e) {
+    /* Reicht die Markierung über mehrere Absätze, lässt sie sich nicht in
+       ein Element fassen. Dann tut es die schlichte Unterstreichung. */
+    Dokument.befehl('underline');
+    melde('Über mehrere Absätze geht nur die einfache Linie.');
+  }
+}
+
+function schreibweiseSetzen(kuerzel) {
+  const regel = SCHREIBWEISEN.find(([k]) => k === kuerzel);
+  if (!regel) return;
+  const jetzt = window.getSelection();
+  if (!jetzt.rangeCount || jetzt.isCollapsed) {
+    melde('Erst den Text markieren, dessen Schreibweise sich ändern soll.');
+    return;
+  }
+  document.execCommand('insertText', false, regel[2](jetzt.toString()));
+  geaendertMelden();
+  melde('Schreibweise: ' + regel[1] + '.');
+}
 
 B.unterstrichArt = () => {
   auswahlMerken();
   fenster('Unterstreichen', [
     { schluessel: 'art', name: 'Linie', art: 'auswahl', werte: UNTERSTRICHE },
     { schluessel: 'farbe', name: 'Farbe', art: 'color', wert: '#111417' },
-  ], (werte) => {
-    auswahlZurueck();
-    const auswahl = window.getSelection();
-    if (!auswahl.rangeCount || auswahl.isCollapsed) { melde('Nichts markiert.'); return; }
-    /* execCommand kennt nur „unterstrichen ja/nein". Für einen Linienstil
-       braucht es ein eigenes Element um die Markierung herum. */
-    const huelle = document.createElement('span');
-    huelle.style.textDecoration = 'underline ' + werte.art + ' ' + werte.farbe;
-    try {
-      auswahl.getRangeAt(0).surroundContents(huelle);
-      geaendertMelden();
-      melde('Unterstrichen: ' + (UNTERSTRICHE.find((u) => u[0] === werte.art) || [, werte.art])[1] + '.');
-    } catch (e) {
-      /* Reicht die Markierung über mehrere Absätze, lässt sie sich nicht in
-         ein Element fassen. Dann tut es die schlichte Unterstreichung. */
-      Dokument.befehl('underline');
-      melde('Über mehrere Absätze geht nur die einfache Linie.');
-    }
-  }, 'Anwenden');
+  ], (werte) => unterstrichSetzen(werte.art, werte.farbe), 'Anwenden');
 };
 
 /* ---- Liste mit mehreren Ebenen ----
@@ -13941,6 +14474,10 @@ const MENUES = [
       { name: 'Hervorheben', tun: B.hervorheben },
       { name: 'Schriftfarbe', tun: B.schriftfarbe },
       { name: 'Groß-/Kleinschreibung', tun: B.schreibweise },
+      { name: 'Eingeschlossene Zeichen', tun: B.eingeschlosseneZeichen },
+      { name: 'Zeichenumriss', tun: B.zeichenumriss },
+      { name: 'Formatpipette', tun: B.formatpipette },
+      { name: 'Wort-Extras', tun: () => B.wortExtras(null) },
       { name: 'Unterstreichungsart', tun: B.unterstrichArt },
       { name: 'Texteffekte', tun: B.effekt },
     ] },

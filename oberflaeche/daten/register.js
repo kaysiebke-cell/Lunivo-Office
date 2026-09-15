@@ -60,25 +60,38 @@ function REGISTER_BAUEN(B, w) {
                     ['schere', 'Ausschneiden', () => B.ausschneiden()],
                     ['kopie', 'Kopieren', () => B.kopieren()],
                     ['pinsel', 'Format übertragen', () => B.formatUebertragen()],
+                    ['wortextras', 'Wort-Extras', (k) => B.wortExtras(k)],
                     ['zurueck', 'Verlauf', [
                       ['Rückgängig', () => B.rueckgaengig()],
                       ['Wiederholen', () => B.wiederholen()],
                     ]]]],
+    /* GENAU NACH SEINEM BILD DER WPS-LEISTE:
+         Zeile 1   [Schriftart] [Größe]  A⁺  A⁻  ◇  Aa▾
+         Zeile 2   B  I  U▾  S▾  X²  X₂  A  🖍▾  A▾  Ⓐ
+       Vorher fuellte sich das Gitter spaltenweise, und dabei kamen Fett
+       und Kursiv in verschiedene Zeilen, Hoch- und Tiefgestellt
+       auseinander. ['//'] beginnt eine neue Zeile. */
     ['Schriftart', ['felder',
                     ['groesserA', 'Schrift vergrößern', () => B.schriftGroesser()],
                     ['kleinerA', 'Schrift verkleinern', () => B.schriftKleiner()],
                     ['radierer', 'Formatierung löschen', () => B.schlicht()],
+                    ['Aa', 'Groß-/Kleinschreibung',
+                      { tun: () => B.schreibweise(), klappe: (k) => B.schreibweiseKlappe(k) }],
+                    ['//'],
                     ['F', 'Fett', () => B.fett()],
                     ['K', 'Kursiv', () => B.kursiv()],
-                    ['U', 'Unterstrichen', () => B.unter()],
+                    ['U', 'Unterstrichen',
+                      { tun: () => B.unter(), klappe: (k) => B.unterstrichKlappe(k) }],
                     ['S', 'Durchgestrichen', () => B.durch()],
                     ['X²', 'Hochgestellt', () => B.hoch()],
                     ['X₂', 'Tiefgestellt', () => B.tief()],
-                    ['marker', 'Hervorheben', () => B.hervorheben()],
-                    ['farbe', 'Schriftfarbe', () => B.schriftfarbe()],
-                    ['Aa', 'Groß-/Kleinschreibung', () => B.schreibweise()],
-                    ['unterart', 'Unterstreichungsart', () => B.unterstrichArt()],
-                    ['texteffekt', 'Texteffekte', () => B.effekt()]], () => B.effekt()],
+                    ['umriss', 'Zeichenumriss', () => B.zeichenumriss()],
+                    ['marker', 'Hervorheben',
+                      { tun: (k) => B.hervorhebenJetzt(k), klappe: (k) => B.hervorhebenKlappe(k) }],
+                    ['schriftfarbe', 'Schriftfarbe',
+                      { tun: (k) => B.schriftfarbeJetzt(k), klappe: (k) => B.schriftfarbeKlappe(k) }],
+                    ['eingeschlossen', 'Eingeschlossene Zeichen', () => B.eingeschlosseneZeichen()],
+                   ], () => B.effekt()],
     ['Absatz', [['punkte', 'Aufzählung', () => B.punkte()],
                     ['zahlen', 'Nummerierung', () => B.zahlen()],
                     ['einzug', 'Einzug & Listenebene', [

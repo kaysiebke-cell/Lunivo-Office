@@ -50,8 +50,8 @@ const SYMBOLE = {
   brille:     'M2 15a4 4 0 1 0 8 0a4 4 0 1 0 -8 0 M14 15a4 4 0 1 0 8 0a4 4 0 1 0 -8 0 M14 15a2 2 0 0 0-2-2 2 2 0 0 0-2 2 M2.5 13 5 7c.7-1.3 1.4-2 3-2 M21.5 13 19 7c-.7-1.3-1.5-2-3-2',   /* lucide: glasses */
   zeile:      'M3 7V5a2 2 0 0 1 2-2h2 M17 3h2a2 2 0 0 1 2 2v2 M21 17v2a2 2 0 0 1-2 2h-2 M7 21H5a2 2 0 0 1-2-2v-2 M7 12h10',   /* lucide: scan-line */
   ohneformat:    'M9 2h6a1 1 0 0 1 1 1v2a1 1 0 0 1 -1 1h-6a1 1 0 0 1 -1 -1v-2a1 1 0 0 1 1 -1z M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2 M9 12v-1h6v1 M11 17h2 M12 11v6',   /* lucide: clipboard-type */
-  groesserA:     'M14 11 l4-4 4 4 M18 16V7 M2 16 l4.039-9.69a.5.5 0 0 1 .923 0L11 16 M3.304 13h6.392',   /* lucide: a-arrow-up */
-  kleinerA:      'M14 12 l4 4 4-4 M18 16V7 M2 16 l4.039-9.69a.5.5 0 0 1 .923 0L11 16 M3.304 13h6.392',   /* lucide: a-arrow-down */
+  groesserA:     'M2 19 l6-14h1.6l6 14 M4.6 14.2h8.8 M18 6v7 M14.5 9.5h7',   /* eigen: A mit Plus — er hat es so gewuenscht, Pfeile waren nicht zu lesen */
+  kleinerA:      'M2 19 l6-14h1.6l6 14 M4.6 14.2h8.8 M14.5 9.5h7',   /* eigen: A mit Minus */
   unterart:      'M6 4v6a6 6 0 0 0 12 0V4 M4 20L20 20',   /* lucide: underline */
   texteffekt:    'M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z M20 2v4 M22 4h-4 M2 20a2 2 0 1 0 4 0a2 2 0 1 0 -4 0',   /* lucide: sparkles */
   ebeneHoch:     'M8 5h13 M13 12h8 M13 19h8 M3 10a2 2 0 0 0 2 2h3 M3 5v12a2 2 0 0 0 2 2h3',   /* lucide: list-tree */
@@ -241,4 +241,9 @@ const SYMBOLE = {
   Oberfläche:    'M3 4h18v16H3z M3 9h18 M8 9v11',   /* eigen: Fenster mit Leiste und Spalte */
   Zurück:        'M3 12a9 9 0 1 0 9-9 c-2.52 0-4.93 1-6.74 2.74L3 8 M3 3v5h5',   /* lucide: rotate-ccw */
   gruppieren:    'M3 3h6v6H3z M15 15h6v6h-6z M15 3h6v6h-6z M3 15h6v6H3z M9 6h6 M9 18h6 M6 9v6 M18 9v6',   /* eigen: vier Ecken, zu einem Stück verbunden */
+  eingeschlossen:'M3 12a9 9 0 1 0 18 0a9 9 0 1 0 -18 0 M9.5 15 l2.5-7 2.5 7 M10.4 13h3.2',   /* eigen: A im Kreis */
+  umriss:        'M4 20 l7-16h2l7 16 M7.5 14h9',   /* eigen: A als Kontur */
+  pipette:       'M2 22l1-1h3l9-9 M3 21v-3l9-9 M15 6l3.5-3.5a2.12 2.12 0 0 1 3 3L18 9 M9 12l6-6 3 3-6 6z',   /* lucide: pipette */
+  wortextras:    'M4 6h16 M4 12h10 M4 18h13 M17 9 l3 3 -3 3',   /* eigen: Absaetze, die weiterruecken */
+  schriftfarbe:  'M4 16 l6-12h1.6l6 12 M6.4 11.6h8.2 M3 19.5h18v2.5H3z',   /* eigen: A ueber einem Farbbalken, wie in WPS */
 };

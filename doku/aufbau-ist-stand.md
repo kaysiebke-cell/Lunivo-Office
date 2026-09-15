@@ -13,6 +13,7 @@ DIE BÄNDER
 │   │   ├── Ausschneiden
 │   │   ├── Kopieren
 │   │   ├── Format übertragen
+│   │   ├── Wort-Extras
 │   │   ├── Verlauf
 │   │   ├── Rückgängig
 │   │   └── Wiederholen
@@ -20,17 +21,17 @@ DIE BÄNDER
 │   │   ├── Schrift vergrößern
 │   │   ├── Schrift verkleinern
 │   │   ├── Formatierung löschen
+│   │   ├── Groß-/Kleinschreibung
 │   │   ├── Fett
 │   │   ├── Kursiv
 │   │   ├── Unterstrichen
 │   │   ├── Durchgestrichen
 │   │   ├── Hochgestellt
 │   │   ├── Tiefgestellt
+│   │   ├── Zeichenumriss
 │   │   ├── Hervorheben
 │   │   ├── Schriftfarbe
-│   │   ├── Groß-/Kleinschreibung
-│   │   ├── Unterstreichungsart
-│   │   └── Texteffekte
+│   │   └── Eingeschlossene Zeichen
 │   ├── Absatz
 │   │   ├── Aufzählung
 │   │   ├── Nummerierung

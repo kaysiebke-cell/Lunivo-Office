@@ -4,7 +4,7 @@ Geschrieben von `werkzeug/reiter-abgleich.py`. Das SOLL kommt aus
 seinem Prüfkatalog (Lesekopie in `doku/wps-soll-lesekopie.txt`),
 der IST-Stand aus `oberflaeche/daten/register.js`.
 
-**280 gleich · 0 fehlen · 27 eigen · 0 ohne Bild**
+**278 gleich · 2 fehlen · 30 eigen · 0 ohne Bild**
 
 - **fehlt** — steht im SOLL, nicht im Band. Kein Ermessen.
 - **eigen** — steht im Band, nicht im SOLL. Das heißt nicht
@@ -52,10 +52,10 @@ Name im Band zurückgedreht. Das entscheidet er, nicht ich.
 | Hochgestellt | gleich | Buchstabe `X²` |
 | Tiefgestellt | gleich | Buchstabe `X₂` |
 | Hervorheben | gleich | `marker` |
-| Schriftfarbe | gleich | `farbe` |
+| Schriftfarbe | gleich | `schriftfarbe` |
 | Groß-/Kleinschreibung | gleich | Buchstabe `Aa` |
-| Unterstreichungsart | gleich | `unterart` |
-| Texteffekte | gleich | `texteffekt` |
+| Unterstreichungsart | **fehlt** (eigen vorgesehen) | — |
+| Texteffekte | **fehlt** (eigen vorgesehen) | — |
 
 ### Absatz
 
@@ -104,6 +104,9 @@ Name im Band zurückgedreht. Das entscheidet er, nicht ich.
 
 ### Eigen — im Band, nicht im SOLL
 
+- Wort-Extras
+- Zeichenumriss
+- Eingeschlossene Zeichen
 - Katalog
 
 ## Einfügen

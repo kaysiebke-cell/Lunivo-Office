@@ -2477,6 +2477,70 @@ body.lesen .arbeitsflaeche{padding:40px 24px}
 }
 .register__einheit{color:#9AA3AB}
 
+/* ---- Eingeschlossene Zeichen und Zeichenumriss ----
+   Nur fuer die Faelle, die Unicode nicht kennt. Wo es ⓐ oder ① fertig
+   gibt, steht dort das echte Zeichen und braucht keine Regel. */
+.eingeschlossen{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:1.5em;height:1.5em;
+  border:1px solid currentColor;
+  line-height:1;font-size:.85em;
+  vertical-align:-.2em;
+}
+.eingeschlossen--kreis{border-radius:50%}
+.eingeschlossen--quadrat{border-radius:2px}
+.eingeschlossen--raute{border-radius:2px;transform:rotate(45deg)}
+.eingeschlossen--raute > *{transform:rotate(-45deg)}
+.eingeschlossen--dreieck{
+  border:0;
+  /* Ein Dreieck als Rahmen gibt es nicht; also die Flaeche beschneiden
+     und die Linie darauf zeichnen. */
+  clip-path:polygon(50% 0, 100% 100%, 0 100%);
+  outline:1px solid currentColor;outline-offset:-1px;
+}
+.umriss{
+  color:transparent;
+  /* -webkit-text-stroke steht am Zeichen selbst; die Farbe kommt von
+     dort. Ohne „color:transparent" stuende der volle Buchstabe noch
+     darunter und der Umriss waere nicht zu sehen. */
+  paint-order:stroke fill;
+}
+
+/* ---- Die Schriftart-Gruppe nach seinem Bild ----
+
+   Das Gitter der kleinen Knoepfe fuellt sich sonst spaltenweise: Wer
+   F, K, U, S auflistet, bekommt F und U untereinander. Auf seinem
+   Bildschirmfoto standen Fett und Kursiv in verschiedenen Zeilen, Hoch-
+   und Tiefgestellt auseinander. Mit festen Reihen steht dort, was er
+   sieht. */
+.register__klein--reihen{
+  display:flex;flex-direction:column;gap:2px;
+}
+.register__knopfreihe{display:flex;gap:2px;align-items:center}
+
+/* Der geteilte Knopf: links das Zeichen, rechts der Pfeil. */
+.wz-geteilt{display:inline-flex;align-items:stretch}
+.wz-geteilt__tat{border-top-right-radius:0;border-bottom-right-radius:0}
+.wz-geteilt__pfeil{
+  min-width:0;width:13px;padding:0;
+  border-top-left-radius:0;border-bottom-left-radius:0;
+  font-size:9px;line-height:1;
+  color:var(--schrift-2);
+}
+.register__klein .wz-geteilt__pfeil{height:26px}
+.wz-geteilt:hover .wz-geteilt__pfeil{color:var(--schrift)}
+
+/* Die Strichvorlagen in der Unterstreichen-Klappe — gezeichnet, nicht
+   benannt. Wer wissen will, wie „gewellt" aussieht, will es sehen. */
+.strichprobe{
+  display:block;width:52px;height:10px;flex:0 0 auto;
+}
+.schreibprobe{
+  display:block;width:120px;flex:0 0 auto;
+  font-size:.82rem;color:var(--schrift-2);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+
 /* ---- Die vier Tafeln im Designs-Block, nach der Vorlage ---- */
 
 /* Eine Überschrift über einem Abschnitt der Tafel: „Standardfarben",
