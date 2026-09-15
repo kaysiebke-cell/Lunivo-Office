@@ -54,15 +54,15 @@ START
 │   ├── Aufzählung
 │   ├── Nummerierung
 │   ├── Einzug & Listenebene
+│   ├── Sortieren
+│   ├── Steuerzeichen
 │   ├── Linksbündig
 │   ├── Zentriert
 │   ├── Rechtsbündig
 │   ├── Blocksatz
 │   ├── Zeilenabstand
-│   ├── Absatzrahmen
 │   ├── Absatzschattierung
-│   ├── Sortieren
-│   ├── Steuerzeichen
+│   ├── Absatzrahmen
 │   ├── Einzug vergrößern
 │   ├── Einzug verringern
 │   ├── Genaues Maß…

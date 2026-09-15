@@ -147,7 +147,7 @@ Name im Band zurückgedreht. Das entscheidet er, nicht ich.
 
 | Punkt | Stand | Bild |
 |---|---|---|
-| Kopf- und Fußzeile | gleich | `kopfz` |
+| Kopf- und Fußzeile | gleich | `kopffuss` |
 | Kopfzeile bearbeiten | gleich | — |
 | Fußzeile bearbeiten | gleich | — |
 | Seitenzahl einfügen | gleich | — |
@@ -158,7 +158,7 @@ Name im Band zurückgedreht. Das entscheidet er, nicht ich.
 |---|---|---|
 | Textfeld | gleich | `textrahmen` |
 | Initiale | gleich | `initiale` |
-| Datum und Uhrzeit | gleich | `datum` |
+| Datum und Uhrzeit | gleich | `datumuhrzeit` |
 | Text aus Datei | gleich | `ausdatei` |
 
 ### Symbole

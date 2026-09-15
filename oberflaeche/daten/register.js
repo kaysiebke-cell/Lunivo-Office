@@ -94,10 +94,13 @@ function REGISTER_BAUEN(B, w) {
                     /* Das Ⓐ am Ende der Zeile ist in WPS „Texteffekte". */
                     ['eingeschlossen', 'Texteffekte', () => B.effekt()],
                    ], () => B.schriftartMehr()],
+    /* ZWEI ZEILEN NACH SEINEM WPS-BILD:
+         Zeile 1  Aufzählung▾  Nummerierung▾  Einzug−  Einzug+  Listenebene  Sortieren  ¶
+         Zeile 2  links  zentriert  rechts  Blocksatz  Zeilenabstand▾  Schattierung▾  Rahmen▾
+       Der Einzug bleibt als Klappe gebündelt — das hat er ausdrücklich
+       so gewollt: „Funktionen, die dieselbe Aufgabe haben, an einem Ort". */
     ['Absatz', [['punkte', 'Aufzählung', () => B.punkte()],
                     ['zahlen', 'Nummerierung', () => B.zahlen()],
-                    /* Ein Ort fuer alles, was den Einzug angeht — auch das
-                       genaue Mass, das vorher in „Absatzlayout" lag. */
                     ['einzug', 'Einzug & Listenebene', [
                       ['Einzug vergrößern', () => B.einzugMehr()],
                       ['Einzug verringern', () => B.einzugWeniger()],
@@ -106,15 +109,16 @@ function REGISTER_BAUEN(B, w) {
                       ['Listenebene erhöhen', () => B.ebeneHoeher()],
                       ['Listenebene verringern', () => B.ebeneTiefer()],
                     ]],
+                    ['sortieren', 'Sortieren', () => B.sortieren()],
+                    ['¶', 'Steuerzeichen', () => B.steuerzeichenZeigen(), false, () => w.an('steuerzeichen')],
+                    ['//'],
                     ['links', 'Linksbündig', () => B.links()],
                     ['mitte', 'Zentriert', () => B.mitte()],
                     ['rechts', 'Rechtsbündig', () => B.rechts()],
                     ['block', 'Blocksatz', () => B.block()],
                     ['abstand', 'Zeilenabstand', () => B.absatzabstand()],
-                    ['rahmen', 'Absatzrahmen', () => B.absatzRahmen()],
                     ['toenung', 'Absatzschattierung', () => B.absatzSchattierung()],
-                    ['sortieren', 'Sortieren', () => B.sortieren()],
-                    ['¶', 'Steuerzeichen', () => B.steuerzeichenZeigen(), false, () => w.an('steuerzeichen')]], () => B.einzugGenau()],
+                    ['rahmen', 'Absatzrahmen', () => B.absatzRahmen()]], () => B.einzugGenau()],
     /* ABSATZLAYOUT steht in der Vorlage VOR den Stilen, nicht dahinter.
        Hier stand es einmal umgekehrt, mit der Begründung, es gehöre
        „zwischen Formatvorlagen und Bearbeiten" — das war falsch gelesen.
@@ -160,7 +164,7 @@ function REGISTER_BAUEN(B, w) {
                     ['querverweis', 'Querverweis', () => B.querverweis()]]],
     /* „Kopf- und Fusszeile kann man in einem Icon mit Funktion
        zusammenfassen." Ein Knopf, eine Klappe, beide Wege darin. */
-    ['Kopf- und Fußzeile', [['kopfz', 'Kopf- und Fußzeile', [
+    ['Kopf- und Fußzeile', [['kopffuss', 'Kopf- und Fußzeile', [
                       ['Kopfzeile bearbeiten', () => B.kopfzeile(), () => w.an('kopfzeile')],
                       ['Fußzeile bearbeiten', () => B.fusszeile(), () => w.an('fusszeile')],
                       ['-'],
@@ -173,8 +177,11 @@ function REGISTER_BAUEN(B, w) {
                        damit es nicht an zwei Stellen liegt. */
                     ['initiale', 'Initiale', () => B.initiale()],
                     /* „Uhrzeit und Datum kann man in einer Funktion
-                       zusammenfassen." */
-                    ['datum', 'Datum und Uhrzeit', () => B.datumUhrzeit()],
+                       zusammenfassen." Auf seinem WPS-Bild ist es ein
+                       GROSSER Knopf mit Beschriftung darunter und einem
+                       Kalender mit Uhr darauf — nicht ein kleiner in der
+                       Reihe. */
+                    ['datumuhrzeit', 'Datum und Uhrzeit', () => B.datumUhrzeit(), 'gross'],
                     ['ausdatei', 'Text aus Datei', () => B.textAusDatei()]]],
     ['Symbole', [['omega', 'Sonderzeichen', () => B.sonderzeichen(), 'gross'],
                     ['formel', 'Formel', () => B.formel()]]],

@@ -74,6 +74,7 @@ const SYMBOLE = {
   initiale:      'M14 3v11 M14 9h-3a3 3 0 0 1 0-6h9 M18 3v11 M22 18H2l4-4 M6 22 l-4-4',   /* lucide: pilcrow-left */
   datum:         'M8 2v3 M16 2v3 M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2z M3 9h18',   /* lucide: calendar */
   uhrzeit:       'M2 12a10 10 0 1 0 20 0a10 10 0 1 0 -20 0 M12 6v6l4 2',   /* lucide: clock */
+  datumuhrzeit:  'M7 2v3 M14 2v3 M3.5 4h13a1.5 1.5 0 0 1 1.5 1.5V10 M3.5 8h15 M3.5 4v13a1.5 1.5 0 0 0 1.5 1.5h6 M13 17a5 5 0 1 0 10 0a5 5 0 1 0 -10 0 M18 14.5V17l1.8 1',   /* eigen: Kalender mit Uhr, nach seinem WPS-Bild */
   ausdatei:      'M4 11V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1 M14 2v5a1 1 0 0 0 1 1h5 M2 15h10 M9 18 l3-3-3-3',   /* lucide: file-input */
   formel:        'M18 7V5a1 1 0 0 0-1-1H6.5a.5.5 0 0 0-.4.8l4.5 6a2 2 0 0 1 0 2.4l-4.5 6a.5.5 0 0 0 .4.8H17a1 1 0 0 0 1-1v-2',   /* lucide: sigma */
   spalten:       'M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2z M12 3v18',   /* lucide: columns-2 */
@@ -202,6 +203,7 @@ const SYMBOLE = {
   umbruch:       'M16 16 l-4 4-4-4 M3 12h18 M8 8 l4-4 4 4',   /* lucide: separator-horizontal */
   kette:         'M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71 M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71',   /* lucide: link */
   kopfz:         'M3 4h18v5H3z M5 13h14 M5 17h10',   /* von Hand */
+  kopffuss:      'M5 2h14a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z M7 5.5h10 M7 11h10 M7 14h7 M7 19h10',   /* eigen: Blatt mit Zeile oben und unten, nach seinem WPS-Bild */
   fussz:         'M3 15h18v5H3z M5 7h14 M5 11h10',   /* von Hand */
   zahl:          'M3 4h18v11H3z M8 20h8 M12 17v3',   /* von Hand */
   notiz:         'M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z',   /* lucide: message-square */
