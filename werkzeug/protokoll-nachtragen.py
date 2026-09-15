@@ -86,6 +86,28 @@ ERLEDIGT = {
         'Die Gruppe heißt jetzt „Anordnen" und hat vier Knöpfe wie in WPS: '
         'Textfluss, Ausrichten, Gruppieren, Drehen. Ausrichten und Drehen '
         'wirken auf Bilder, Formen und Tabellen.',
+    'start-absatz|aufzählung':
+        'Sie tat etwas, aber man sah es nicht: Die Liste wurde IN den Absatz '
+        'gebaut (<p><ul>…</ul></p>), und das ist ungültig — der Browser räumt '
+        'es weg, und der Punkt verschwindet mit. Jetzt wird die Liste danach '
+        'herausgehoben. Gilt auch für die Nummerierung.',
+    'ansicht|gitternetzlinien':
+        'Das Netz stand im background-image. Die Seitenfarbe wird als Kurzform '
+        'gesetzt, und die löscht background-image mit — sobald das Blatt eine '
+        'Farbe hatte, war das Netz weg. Liegt jetzt als eigene Ebene darüber.',
+    'sendungen-lunivo-|formular-schaltfläche':
+        'Ein <button> im Text nimmt den Klick selbst; der Zeiger kam nicht '
+        'daneben, und ohne Zeiger daneben gibt es nichts zu löschen. Jetzt ein '
+        'Feld, das der Text wie ein Zeichen behandelt: Entf löscht es, ein '
+        'Doppelklick ändert die Aufschrift, und beim Einfügen wird danach '
+        'gefragt.',
+    'einfügen|lesezeichen-textmarke':
+        'Das Fenster nach Ihrem Bild: Name, Liste der vorhandenen Marken, '
+        'Sortieren nach Namen oder Speicherort, ausgeblendete zeigen, und '
+        'Hinzufügen / Löschen / Gehe zu. Die drei sind grau, solange nichts '
+        'gewählt ist. Vorher war es ein Feld mit einem Namen darin — setzen '
+        'ja, wiedersehen nein, löschen nein, hinspringen nein.',
+
     'ansicht|textbegrenzungen':
         'Die vier Winkel am Satzspiegel sind jetzt auf dem Blatt zu sehen, '
         'nicht mehr nur beim Drucken. Abschalten unter Ansicht.',

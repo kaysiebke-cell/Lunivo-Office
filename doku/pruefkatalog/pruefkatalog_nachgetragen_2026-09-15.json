@@ -457,8 +457,8 @@
    ]
   },
   "start-absatz|aufzählung": {
-   "status": "fail",
-   "note": "ist ohne Funktion und soll nach WPS-Bildvorlage ausgebaut werden",
+   "status": "pass",
+   "note": "ist ohne Funktion und soll nach WPS-Bildvorlage ausgebaut werden\n\n— erledigt am 15.09.2026: Sie tat etwas, aber man sah es nicht: Die Liste wurde IN den Absatz gebaut (<p><ul>…</ul></p>), und das ist ungültig — der Browser räumt es weg, und der Punkt verschwindet mit. Jetzt wird die Liste danach herausgehoben. Gilt auch für die Nummerierung.",
    "bilder": [
     {
      "id": "b1789275819809_9qj5o",
@@ -871,8 +871,8 @@
    "bilder": []
   },
   "einfügen|lesezeichen-textmarke": {
-   "status": "fail",
-   "note": "ist ohne sichtbare Funktion? Funktion ist nach WPS-Bildvorlage zu bauen.",
+   "status": "pass",
+   "note": "ist ohne sichtbare Funktion? Funktion ist nach WPS-Bildvorlage zu bauen.\n\n— erledigt am 15.09.2026: Das Fenster nach Ihrem Bild: Name, Liste der vorhandenen Marken, Sortieren nach Namen oder Speicherort, ausgeblendete zeigen, und Hinzufügen / Löschen / Gehe zu. Die drei sind grau, solange nichts gewählt ist. Vorher war es ein Feld mit einem Namen darin — setzen ja, wiedersehen nein, löschen nein, hinspringen nein.",
    "bilder": [
     {
      "id": "b1789219881278_3ub60",
@@ -1530,8 +1530,8 @@
    "bilder": []
   },
   "sendungen-lunivo-|formular-schaltfläche": {
-   "status": "fail",
-   "note": "Schaltfläche ohne ersichtliche Funktion. Die Schaltfläche lässt sich nicht löschen.",
+   "status": "pass",
+   "note": "Schaltfläche ohne ersichtliche Funktion. Die Schaltfläche lässt sich nicht löschen.\n\n— erledigt am 15.09.2026: Ein <button> im Text nimmt den Klick selbst; der Zeiger kam nicht daneben, und ohne Zeiger daneben gibt es nichts zu löschen. Jetzt ein Feld, das der Text wie ein Zeichen behandelt: Entf löscht es, ein Doppelklick ändert die Aufschrift, und beim Einfügen wird danach gefragt.",
    "bilder": []
   },
   "ansicht|drucklayout": {
@@ -1570,8 +1570,8 @@
    "bilder": []
   },
   "ansicht|gitternetzlinien": {
-   "status": "fail",
-   "note": "ohne funktion",
+   "status": "pass",
+   "note": "ohne funktion\n\n— erledigt am 15.09.2026: Das Netz stand im background-image. Die Seitenfarbe wird als Kurzform gesetzt, und die löscht background-image mit — sobald das Blatt eine Farbe hatte, war das Netz weg. Liegt jetzt als eigene Ebene darüber.",
    "bilder": []
   },
   "ansicht|navigationsbereich": {
