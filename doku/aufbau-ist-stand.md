@@ -48,9 +48,7 @@ DIE BÄNDER
 │   │   ├── Listenebene erhöhen
 │   │   └── Listenebene verringern
 │   ├── Absatzlayout
-│   │   ├── Zeilenabstand
-│   │   ├── Absatzrahmen
-│   │   └── Absatzschattierung
+│   │   └── Zeilenabstand
 │   ├── Stile
 │   │   └── katalog
 │   └── Bearbeiten

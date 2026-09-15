@@ -2587,6 +2587,69 @@ function aufAbsaetze(tun) {
 
 const zeilenabstand = (wert) => () => aufAbsaetze((el) => { el.style.lineHeight = wert; });
 
+/* „Icon ist als solches nicht erkennbar, Funktion ist nach WPS
+   auszubauen."
+
+   Das Zeichen war ein Paar senkrechter Balken — das heisst nichts.
+   Jetzt Zeilen mit einem Doppelpfeil daneben, wie ueberall.
+
+   Und dahinter lag nur ein Fenster fuer den Abstand ZWISCHEN Absaetzen.
+   In WPS haengt am Zeilenabstand eine Klappe mit den Massen, die man
+   wirklich nimmt — 1, 1,15, 1,5, 2 —, und darunter erst das Feine. Wer
+   „anderthalbzeilig" braucht, soll einmal klicken. */
+const ZEILENABSTAENDE = [
+  ['1',    'Einzeilig',        1],
+  ['1.15', '1,15',             1.15],
+  ['1.5',  'Anderthalbfach',   1.5],
+  ['2',    'Zweizeilig',       2],
+  ['2.5',  '2,5',              2.5],
+  ['3',    'Dreizeilig',       3],
+];
+
+B.zeilenabstandKlappe = (knopf) => {
+  designTafelZeigen(knopf, 'Zeilenabstand', (tafel) => {
+    tafel.classList.add('designtafel--breit');
+    for (const [, name, wert] of ZEILENABSTAENDE) {
+      const k = document.createElement('button');
+      k.type = 'button';
+      k.className = 'designtafel__zeile richtungszeile';
+      const probe = document.createElement('span');
+      probe.className = 'abstandprobe';
+      probe.style.setProperty('--luft', wert);
+      probe.innerHTML = '<i></i><i></i><i></i>';
+      k.appendChild(probe);
+      const w = document.createElement('span');
+      w.textContent = name;
+      k.appendChild(w);
+      k.addEventListener('mousedown', (e) => e.preventDefault());
+      k.addEventListener('click', () => {
+        designTafelWeg();
+        const ziele = absaetzeInAuswahl();
+        if (!ziele.length) { melde('Dafür muss der Zeiger in einem Absatz stehen.'); return; }
+        for (const a of ziele) a.style.lineHeight = String(wert);
+        geaendertMelden();
+        melde('Zeilenabstand: ' + name + '.');
+      });
+      tafel.appendChild(k);
+    }
+
+    const strichel = document.createElement('hr');
+    strichel.className = 'designtafel__strich';
+    tafel.appendChild(strichel);
+
+    const mehr = document.createElement('button');
+    mehr.type = 'button';
+    mehr.className = 'designtafel__zeile richtungszeile';
+    mehr.appendChild(symbol('abstand'));
+    const w = document.createElement('span');
+    w.textContent = 'Abstand vor und nach dem Absatz…';
+    mehr.appendChild(w);
+    mehr.addEventListener('mousedown', (e) => e.preventDefault());
+    mehr.addEventListener('click', () => { designTafelWeg(); B.absatzabstand(); });
+    tafel.appendChild(mehr);
+  });
+};
+
 B.absatzabstand = () => {
   fenster('Absatzabstand', [
     { art: 'satz', text: 'Der Abstand über und unter dem Absatz, in Millimetern.' },
@@ -10304,8 +10367,188 @@ B.sortieren = () => {
    Also fuehrt er jetzt dorthin. Ein Fenster, drei Karten, eine
    Vorschau, in die man hineinklickt — und nicht zwei Fenster, die
    dasselbe halb koennen. */
-B.absatzRahmen = () => B.seitenraenderRahmen('rahmen');
-B.absatzSchattierung = () => B.seitenraenderRahmen('schatten');
+/* Die Klappe aus seinem Bild — zwoelf Zeilen in vier Gruppen:
+
+     Rahmenlinie unten · oben · links · rechts
+     Kein Rahmen · Alle Rahmenlinien · aussen · innen
+     Innere waagerechte · innere senkrechte Rahmenlinie
+     Rahmen und Schattierung…
+
+   Ich hatte den Knopf zuerst geradewegs auf das Fenster gelegt. Das
+   ist eine Stufe zu weit: Wer nur einen Strich unter den Absatz will,
+   soll ihn in einem Klick bekommen — dafuer steht die Klappe da. Das
+   Fenster ist der letzte Punkt darin, nicht der erste Schritt. */
+const RAHMENLINIEN = [
+  ['unten',  'Rahmenlinie unten',  ['unten']],
+  ['oben',   'Rahmenlinie oben',   ['oben']],
+  ['links',  'Rahmenlinie links',  ['links']],
+  ['rechts', 'Rahmenlinie rechts', ['rechts']],
+  ['-'],
+  ['keine',  'Kein Rahmen',        []],
+  ['alle',   'Alle Rahmenlinien',  ['oben', 'unten', 'links', 'rechts']],
+  ['aussen', 'Rahmenlinien außen', ['oben', 'unten', 'links', 'rechts']],
+  ['innen',  'Rahmenlinie innen',  'innen'],
+  ['-'],
+  ['waagerecht', 'Innere horizontale Rahmenlinie', 'waagerecht'],
+  ['senkrecht',  'Innere vertikale Rahmenlinie',   'senkrecht'],
+];
+
+function absatzRahmenSetzen(kanten) {
+  const ziele = absaetzeInAuswahl();
+  if (!ziele.length) { melde('Dafür muss der Zeiger in einem Absatz stehen.'); return; }
+  const linie = absatzrahmen.breite + 'px ' + absatzrahmen.art + ' ' + absatzrahmen.farbe;
+  for (const a of ziele) {
+    for (const [kante, seite] of [['oben', 'Top'], ['unten', 'Bottom'],
+                                  ['links', 'Left'], ['rechts', 'Right']]) {
+      a.style['border' + seite] = kanten.includes(kante) ? linie : '';
+    }
+    a.style.padding = kanten.length ? '2mm 3mm' : '';
+  }
+  geaendertMelden();
+  melde(kanten.length
+    ? (ziele.length === 1 ? 'Rahmen gesetzt.' : 'Rahmen um ' + ziele.length + ' Absätze.')
+    : 'Rahmen entfernt.');
+}
+
+/* Die „inneren" Linien meinen die Kanten ZWISCHEN den markierten
+   Absaetzen: der erste bekommt keine oben, der letzte keine unten.
+   Bei einem einzigen Absatz gibt es nichts dazwischen — dann sagt es
+   das, statt nichts zu tun. */
+function absatzRahmenInnen(art) {
+  const ziele = absaetzeInAuswahl();
+  if (ziele.length < 2) {
+    melde('Innere Linien brauchen mehrere markierte Absätze — '
+        + 'zwischen einem einzigen liegt nichts.');
+    return;
+  }
+  const linie = absatzrahmen.breite + 'px ' + absatzrahmen.art + ' ' + absatzrahmen.farbe;
+  ziele.forEach((a, i) => {
+    if (art === 'waagerecht' || art === 'innen') {
+      a.style.borderTop = i === 0 ? '' : linie;
+      a.style.borderBottom = '';
+    }
+    if (art === 'senkrecht' || art === 'innen') {
+      /* Senkrecht zwischen Absaetzen gibt es nicht — Absaetze stehen
+         untereinander. In WPS ist der Punkt fuer Tabellen da; hier sagt
+         er das, statt so zu tun. */
+      melde('Senkrechte Linien gibt es nur in Tabellen — Absätze stehen untereinander.');
+    }
+  });
+  geaendertMelden();
+  if (art !== 'senkrecht') melde('Linien zwischen den Absätzen gesetzt.');
+}
+
+B.absatzRahmen = (knopf) => {
+  designTafelZeigen(knopf, 'Absatzrahmen', (tafel) => {
+    tafel.classList.add('designtafel--breit');
+    for (const eintrag of RAHMENLINIEN) {
+      if (eintrag[0] === '-') {
+        const strichel = document.createElement('hr');
+        strichel.className = 'designtafel__strich';
+        tafel.appendChild(strichel);
+        continue;
+      }
+      const [kuerzel, name, kanten] = eintrag;
+      const k = document.createElement('button');
+      k.type = 'button';
+      k.className = 'designtafel__zeile richtungszeile';
+      k.appendChild(symbol(kuerzel === 'keine' ? 'radierer' : 'rahmen'));
+      const w = document.createElement('span');
+      w.textContent = name;
+      k.appendChild(w);
+      k.addEventListener('mousedown', (e) => e.preventDefault());
+      k.addEventListener('click', () => {
+        designTafelWeg();
+        if (typeof kanten === 'string') absatzRahmenInnen(kanten);
+        else absatzRahmenSetzen(kanten);
+      });
+      tafel.appendChild(k);
+    }
+
+    const strichel = document.createElement('hr');
+    strichel.className = 'designtafel__strich';
+    tafel.appendChild(strichel);
+
+    const mehr = document.createElement('button');
+    mehr.type = 'button';
+    mehr.className = 'designtafel__zeile richtungszeile';
+    mehr.appendChild(symbol('rahmen'));
+    const w = document.createElement('span');
+    w.textContent = 'Rahmen und Schattierung…';
+    mehr.appendChild(w);
+    mehr.addEventListener('mousedown', (e) => e.preventDefault());
+    mehr.addEventListener('click', () => { designTafelWeg(); B.seitenraenderRahmen('rahmen'); });
+    tafel.appendChild(mehr);
+  });
+};
+
+/* „Du hast das Dialogfenster doppelt gemoppelt."
+
+   Stimmte: Absatzrahmen und Absatzschattierung zeigten beide auf
+   dasselbe Fenster, und dasselbe Fenster haengt schon am Seitenrand.
+   Drei Knoepfe, ein Fenster.
+
+   In WPS ist die Schattierung eine FARBKLAPPE — man waehlt eine Farbe
+   und fertig. Das Fenster steht darin als letzter Punkt, fuer die, die
+   mehr wollen. Genau wie beim Rahmen daneben. */
+B.absatzSchattierung = (knopf) => {
+  designTafelZeigen(knopf, 'Schattierung', (tafel) => {
+    tafel.classList.add('designtafel--breit', 'farbtafel');
+
+    const nimm = (hex, name) => {
+      const ziele = absaetzeInAuswahl();
+      if (!ziele.length) { melde('Dafür muss der Zeiger in einem Absatz stehen.'); return; }
+      for (const a of ziele) {
+        a.style.backgroundColor = hex || '';
+        a.style.padding = hex ? '2mm 3mm' : '';
+      }
+      geaendertMelden();
+      melde(hex ? 'Hinterlegt: ' + name + '.' : 'Hinterlegung entfernt.');
+    };
+
+    /* Zuerst die hellen Toene: Ein Absatz unter dunkelblauem Grund ist
+       nicht mehr zu lesen, und darum geht es in diesem Programm. */
+    const hell = document.createElement('div');
+    hell.className = 'farbtafel__reihe farbtafel__reihe--zwoelf';
+    for (const [hex, name] of FARBEN) {
+      const [h, sa, l] = hexZuHsl(hex);
+      const licht = hslZuHex(h, Math.min(0.5, sa), Math.max(l, 0.90));
+      const feldchen = farbfeld(licht, () => { designTafelWeg(); nimm(licht, name + ', hell'); });
+      feldchen.title = name + ', hell';
+      hell.appendChild(feldchen);
+    }
+    tafel.appendChild(hell);
+
+    const voll = document.createElement('div');
+    voll.className = 'farbtafel__reihe farbtafel__reihe--zwoelf';
+    for (const [hex, name] of FARBEN) {
+      const feldchen = farbfeld(hex, () => { designTafelWeg(); nimm(hex, name); });
+      feldchen.title = name;
+      voll.appendChild(feldchen);
+    }
+    tafel.appendChild(voll);
+
+    const strichel = document.createElement('hr');
+    strichel.className = 'designtafel__strich';
+    tafel.appendChild(strichel);
+
+    const zeile = (bild, name, tun) => {
+      const k = document.createElement('button');
+      k.type = 'button';
+      k.className = 'designtafel__zeile richtungszeile';
+      k.appendChild(symbol(bild));
+      const w = document.createElement('span');
+      w.textContent = name;
+      k.appendChild(w);
+      k.addEventListener('mousedown', (e) => e.preventDefault());
+      k.addEventListener('click', tun);
+      tafel.appendChild(k);
+    };
+    zeile('radierer', 'Keine Füllung', () => { designTafelWeg(); nimm('', ''); });
+    zeile('toenung', 'Rahmen und Schattierung…',
+          () => { designTafelWeg(); B.seitenraenderRahmen('schatten'); });
+  });
+};
 
 /* ============================================================
    Aus den Tabs Entwurf und Layout von Word
@@ -11738,19 +11981,33 @@ B.seitenraenderRahmen = (karteZuerst) => {
     links.className = 'rahmentafel__spalte';
     links.innerHTML = '<h4>Einstellung</h4>';
     let vorschau = null;
-    for (const [wert, name, kanten] of [
-      ['ohne',    'Ohne',    []],
-      ['kontur',  'Kontur',  ['oben', 'unten', 'links', 'rechts']],
-      ['anpassen','Anpassen', null],
+    /* Fuenf Einstellungen wie auf seinem Bild. „Alle" und „Raster"
+       meinen die Linien ZWISCHEN den Zellen — die gibt es nur in einer
+       Tabelle. In WPS stehen sie darum grau, wenn keine da ist. Grau
+       und sichtbar ist besser als weggelassen: Man sieht, dass es sie
+       gibt, und warum sie hier nicht gehen. */
+    const inTabelle = !!(typeof zelleOderZuletzt === 'function' && zelleOderZuletzt());
+    for (const [wert, name, kanten, nurTabelle] of [
+      ['ohne',    'Ohne',    [], false],
+      ['kontur',  'Kontur',  ['oben', 'unten', 'links', 'rechts'], false],
+      ['alle',    'Alle',    ['oben', 'unten', 'links', 'rechts'], true],
+      ['raster',  'Raster',  ['oben', 'unten', 'links', 'rechts'], true],
+      ['anpassen','Anpassen', null, false],
     ]) {
       const knopf = document.createElement('button');
       knopf.type = 'button';
       knopf.className = 'rahmentafel__wahl';
       knopf.textContent = name;
+      if (nurTabelle && !inTabelle) {
+        knopf.disabled = true;
+        knopf.title = 'Gilt für die Linien zwischen Zellen — dafür muss der '
+                    + 'Zeiger in einer Tabelle stehen.';
+      }
       knopf.addEventListener('click', () => {
         if (kanten) r.kanten = kanten.slice();
         if (wert === 'ohne') r.art = 'keine';
         else if (r.art === 'keine') r.art = 'solid';
+        r.innen = (wert === 'alle' || wert === 'raster');
         if (vorschau) vorschau.auffrischen();
       });
       links.appendChild(knopf);
@@ -11823,8 +12080,9 @@ B.seitenraenderRahmen = (karteZuerst) => {
     wohinZeile.innerHTML = '<span>Übernehmen für</span>';
     const wahl = document.createElement('select');
     for (const [wert, name] of (wohin === 'blatt'
-        ? [['dokument', 'Gesamtes Dokument']]
-        : [['absatz', 'Absatz'], ['auswahl', 'Markierte Absätze']])) {
+        ? [['dokument', 'Gesamtes Dokument'], ['abschnitt', 'Dieser Abschnitt']]
+        : [['absatz', 'Absatz'], ['auswahl', 'Markierte Absätze'],
+           ['zelle', 'Tabellenzelle']])) {
       const o = document.createElement('option');
       o.value = wert; o.textContent = name;
       wahl.appendChild(o);

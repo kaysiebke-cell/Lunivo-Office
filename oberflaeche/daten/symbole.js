@@ -56,7 +56,7 @@ const SYMBOLE = {
   texteffekt:    'M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z M20 2v4 M22 4h-4 M2 20a2 2 0 1 0 4 0a2 2 0 1 0 -4 0',   /* lucide: sparkles */
   ebeneHoch:     'M8 5h13 M13 12h8 M13 19h8 M3 10a2 2 0 0 0 2 2h3 M3 5v12a2 2 0 0 0 2 2h3',   /* lucide: list-tree */
   ebeneTief:     'M10 6h11 M10 12h11 M10 18h11 M6 4h.01 M6 10h.01 M6 16h.01 M4 19l2 2 2-2',   /* von Hand */
-  toenung:       'M3 4h18v16H3z M3 4h18v7H3z M6 14h12 M6 17h8',   /* eigen: Absatz, oben hinterlegt */
+  toenung:       'M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z M4 13h16 M7 16h10 M7 19h6',   /* eigen: Absatz, untere Haelfte hinterlegt */
   sortieren:     'M3 16 l4 4 4-4 M7 20V4 M20 8h-5 M15 10V6.5a2.5 2.5 0 0 1 5 0V10 M15 14h5l-5 6h5',   /* lucide: arrow-down-a-z */
   allesmark:     'M12.034 12.681a.498.498 0 0 1 .647-.647l9 3.5a.5.5 0 0 1-.033.943l-3.444 1.068a1 1 0 0 0-.66.66l-1.067 3.443a.5.5 0 0 1-.943.033z M5 3a2 2 0 0 0-2 2 M19 3a2 2 0 0 1 2 2 M5 21a2 2 0 0 1-2-2 M9 3h1 M9 21h2 M14 3h1 M3 9v1 M21 9v2 M3 14v1',   /* lucide: square-dashed-mouse-pointer */
   objekte:       'M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z',   /* lucide: mouse-pointer-2 */
@@ -199,7 +199,7 @@ const SYMBOLE = {
   pinsel:        'M14.622 17.897 l-10.68-2.913 M18.376 2.622a1 1 0 1 1 3.002 3.002L17.36 9.643a.5.5 0 0 0 0 .707l.944.944a2.41 2.41 0 0 1 0 3.408l-.944.944a.5.5 0 0 1-.707 0L8.354 7.348a.5.5 0 0 1 0-.707l.944-.944a2.41 2.41 0 0 1 3.408 0l.944.944a.5.5 0 0 0 .707 0z M9 8c-1.804 2.71-3.97 3.46-6.583 3.948a.507.507 0 0 0-.302.819l7.32 8.883a1 1 0 0 0 1.185.204C12.735 20.405 16 16.792 16 15',   /* lucide: paintbrush */
   tabelle:       'M12 3v18 M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2z M3 9h18 M3 15h18',   /* lucide: table */
   bild:          'M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2z M7 9a2 2 0 1 0 4 0a2 2 0 1 0 -4 0 M21 15 l-3.086-3.086a2 2 0 0 0-2.828 0L6 21',   /* lucide: image */
-  rahmen:        'M3 4h18v16H3z M6 8h12 M6 12h12 M6 16h8',   /* eigen: Absatz mit Rahmen ringsum */
+  rahmen:        'M3 3h18v18H3z M3 3h18v2H3z M3 19h18v2H3z M3 3h2v18H3z M19 3h2v18h-2z M8 9h8 M8 12h8 M8 15h5',   /* eigen: Absatz mit betontem Rahmen ringsum */
   umbruch:       'M16 16 l-4 4-4-4 M3 12h18 M8 8 l4-4 4 4',   /* lucide: separator-horizontal */
   kette:         'M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71 M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71',   /* lucide: link */
   kopfz:         'M3 4h18v5H3z M5 13h14 M5 17h10',   /* von Hand */
@@ -213,7 +213,7 @@ const SYMBOLE = {
   radierer:      'M21 21H8a2 2 0 0 1-1.42-.587l-3.994-3.999a2 2 0 0 1 0-2.828l10-10a2 2 0 0 1 2.829 0l5.999 6a2 2 0 0 1 0 2.828L12.834 21 M5.082 11.09 l8.828 8.828',   /* lucide: eraser */
   farbe:         'M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z M13 6.5a0.5 0.5 0 1 0 1 0a0.5 0.5 0 1 0 -1 0 M17 10.5a0.5 0.5 0 1 0 1 0a0.5 0.5 0 1 0 -1 0 M6 12.5a0.5 0.5 0 1 0 1 0a0.5 0.5 0 1 0 -1 0 M8 7.5a0.5 0.5 0 1 0 1 0a0.5 0.5 0 1 0 -1 0',   /* lucide: palette */
   marker:        'M9 11 l-6 6v3h9l3-3 M22 12 l-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4',   /* lucide: highlighter */
-  abstand:       'M6 2h2a2 2 0 0 1 2 2v16a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2v-16a2 2 0 0 1 2 -2z M16 2h2a2 2 0 0 1 2 2v16a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2v-16a2 2 0 0 1 2 -2z',   /* lucide: stretch-vertical */
+  abstand:       'M9 5h12 M9 10h12 M9 15h12 M9 20h12 M4 4v17 M2 6l2-2 2 2 M2 19l2 2 2-2',   /* eigen: Zeilen mit Doppelpfeil — Zeilenabstand */
   lupe:          'M3 11a8 8 0 1 0 16 0a8 8 0 1 0 -16 0 M21 21L16.65 16.65 M11 8L11 14 M8 11L14 11',   /* lucide: zoom-in */
   saeule:        'M3 3v16a2 2 0 0 0 2 2h16 M18 17V9 M13 17V5 M8 17v-3',   /* lucide: chart-column */
   stift:         'M15.707 21.293a1 1 0 0 1-1.414 0l-1.586-1.586a1 1 0 0 1 0-1.414l5.586-5.586a1 1 0 0 1 1.414 0l1.586 1.586a1 1 0 0 1 0 1.414z M18 13 l-1.375-6.874a1 1 0 0 0-.746-.776L3.235 2.028a1 1 0 0 0-1.207 1.207L5.35 15.879a1 1 0 0 0 .776.746L13 18 M2.3 2.3 l7.286 7.286 M9 11a2 2 0 1 0 4 0a2 2 0 1 0 -4 0',   /* lucide: pen-tool */

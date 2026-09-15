@@ -119,9 +119,9 @@ function REGISTER_BAUEN(B, w) {
                     ['mitte', 'Zentriert', () => B.mitte()],
                     ['rechts', 'Rechtsbündig', () => B.rechts()],
                     ['block', 'Blocksatz', () => B.block()],
-                    ['abstand', 'Zeilenabstand', () => B.absatzabstand()],
-                    ['toenung', 'Absatzschattierung', () => B.absatzSchattierung()],
-                    ['rahmen', 'Absatzrahmen', () => B.absatzRahmen()]], () => B.einzugGenau()],
+                    ['abstand', 'Zeilenabstand', (k) => B.zeilenabstandKlappe(k)],
+                    ['toenung', 'Absatzschattierung', (k) => B.absatzSchattierung(k)],
+                    ['rahmen', 'Absatzrahmen', (k) => B.absatzRahmen(k)]], () => B.einzugGenau()],
     /* ABSATZLAYOUT steht in der Vorlage VOR den Stilen, nicht dahinter.
        Hier stand es einmal umgekehrt, mit der Begründung, es gehöre
        „zwischen Formatvorlagen und Bearbeiten" — das war falsch gelesen.
@@ -131,12 +131,12 @@ function REGISTER_BAUEN(B, w) {
        Schreiben sucht, und noch einmal hier. Sie waren aus ABSATZ
        herausgenommen worden, weil das doppelt aussah. Es ist nicht
        doppelt, es ist so gewollt. */
-    ['Absatzlayout', [['abstand', 'Zeilenabstand', () => B.absatzabstand(), 'gross'],
-                    /* „Funktionen, die dieselbe Aufgabe haben, an einem Ort
-                       gebuendelt." Der Einzug steht in Start ▸ Absatz, hier
-                       nicht mehr — sonst ist es wieder an zwei Stellen. */
-                    ['rahmen', 'Absatzrahmen', () => B.absatzRahmen()],
-                    ['toenung', 'Absatzschattierung', () => B.absatzSchattierung()]],
+    /* Diese Gruppe hatte dreimal dasselbe wie Start ▸ Absatz: Einzug,
+       Rahmen, Schattierung. Er hat es zweimal gemeldet — „an einem Ort
+       gebuendelt" und „das Dialogfenster doppelt gemoppelt". Was bleibt,
+       ist der Zeilenabstand; alles andere steht drueber, wo man es beim
+       Schreiben sucht. */
+    ['Absatzlayout', [['abstand', 'Zeilenabstand', () => B.absatzabstand(), 'gross']],
                   () => B.einzugGenau()],
     ['Stile', 'katalog'],
     ['Bearbeiten', [['lupe', 'Suchen', () => B.suchen(), 'gross'],

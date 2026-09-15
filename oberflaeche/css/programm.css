@@ -2592,6 +2592,15 @@ body.lesen .arbeitsflaeche{padding:40px 24px}
   max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
 
+/* Drei Striche, so weit auseinander wie der Abstand, den sie meinen.
+   Man sieht den Unterschied zwischen einzeilig und anderthalb, statt
+   ihn zu lesen. */
+.abstandprobe{
+  display:flex;flex-direction:column;justify-content:center;
+  width:30px;height:26px;flex:0 0 auto;gap:calc(var(--luft,1) * 2px);
+}
+.abstandprobe i{display:block;height:2px;background:currentColor;opacity:.75}
+
 /* Kleine Probe fuer die Effektliste des Textfelds. */
 .rahmenprobe--klein{
   display:block;width:34px;height:20px;flex:0 0 auto;
@@ -2936,7 +2945,10 @@ body.lesen .arbeitsflaeche{padding:40px 24px}
   background-color:var(--grund);color:var(--schrift);font:inherit;
   text-align:left;cursor:pointer;
 }
-.rahmentafel__wahl:hover{border-color:var(--blau)}
+.rahmentafel__wahl:hover:not(:disabled){border-color:var(--blau)}
+/* Grau und sichtbar: Man sieht, dass es die Einstellung gibt, und der
+   Zeigetext sagt, warum sie hier nicht geht. */
+.rahmentafel__wahl:disabled{opacity:.42;cursor:default}
 .rahmentafel__linien{
   display:flex;flex-direction:column;gap:2px;
   max-height:180px;overflow-y:auto;

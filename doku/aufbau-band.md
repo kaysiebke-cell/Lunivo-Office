@@ -69,9 +69,7 @@ START
 │   ├── Listenebene erhöhen
 │   └── Listenebene verringern
 ├── Absatzlayout
-│   ├── Zeilenabstand
-│   ├── Absatzrahmen
-│   └── Absatzschattierung
+│   └── Zeilenabstand
 ├── Stile
 │   └── katalog
 └── Bearbeiten
@@ -336,8 +334,8 @@ genannt — das ist Absicht: ein Schalter, mehrere Stellen, ein Zustand.
 | Ab hier vorlesen | Schreibhilfe ▸ Vorlesen |
 | Abbildungsverzeichnis | Referenzen ▸ Beschriftungen |
 | Absatzabstand | Seitenlayout ▸ Absatz |
-| Absatzrahmen | Start ▸ Absatz · Start ▸ Absatzlayout |
-| Absatzschattierung | Start ▸ Absatz · Start ▸ Absatzlayout |
+| Absatzrahmen | Start ▸ Absatz |
+| Absatzschattierung | Start ▸ Absatz |
 | Adressblock | Sendungen ▸ Seriendruck |
 | Alle annehmen | Überprüfen ▸ Änderungen |
 | Alle Kommentare löschen | Überprüfen ▸ Kommentare |
