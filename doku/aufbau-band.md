@@ -52,7 +52,7 @@ START
 │   ├── Zeichenumriss
 │   ├── Hervorheben
 │   ├── Schriftfarbe
-│   └── Eingeschlossene Zeichen
+│   └── Texteffekte
 ├── Absatz
 │   ├── Aufzählung
 │   ├── Nummerierung
@@ -373,7 +373,6 @@ genannt — das ist Absicht: ein Schalter, mehrere Stellen, ein Zustand.
 | Eine Seite | Ansicht ▸ Zoom |
 | Einfügen | Start ▸ Zwischenablage |
 | Einfügen ohne Formatierung | Start ▸ Zwischenablage |
-| Eingeschlossene Zeichen | Start ▸ Schriftart |
 | Einzug | Seitenlayout ▸ Absatz |
 | Einzug & Listenebene | Start ▸ Absatz |
 | Einzug genau | Start ▸ Absatzlayout |
@@ -485,6 +484,7 @@ genannt — das ist Absicht: ein Schalter, mehrere Stellen, ein Zustand.
 | Text aus Datei | Einfügen ▸ Text |
 | Textbaustein | Einfügen ▸ Text |
 | Textbegrenzungen | Ansicht ▸ Anzeigen |
+| Texteffekte | Start ▸ Schriftart |
 | Textfeld | Einfügen ▸ Text · Sendungen ▸ Formular |
 | Textfluss | Seitenlayout ▸ Anordnen |
 | Textrichtung | Seitenlayout ▸ Seite einrichten |

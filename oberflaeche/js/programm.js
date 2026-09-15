@@ -5247,7 +5247,7 @@ function registerBauen() {
       pfeil.title = gruppenName + ' — alle Einstellungen';
       pfeil.setAttribute('aria-label', gruppenName + ' — alle Einstellungen');
       pfeil.addEventListener('mousedown', (e) => e.preventDefault());
-      pfeil.addEventListener('click', oeffner);
+      pfeil.addEventListener('click', () => oeffner(pfeil));
       fuss.appendChild(pfeil);
     }
 
@@ -8319,6 +8319,41 @@ function strichbild(art) {
   zeile.style.borderBottom = '2px ' + art + ' currentColor';
   return zeile;
 }
+
+/* Der Pfeil unten rechts an der Gruppe.
+
+   In seinem Bild hat die WPS-Zeile genau zehn Zeichen, und mehr passen
+   auch nicht hinein, ohne dass sie zur Suchaufgabe wird. „Eingeschlossene
+   Zeichen" und die „Formatpipette" stehen im SOLL trotzdem unter
+   Schriftart — sie gehoeren also hierher, nur nicht in die Reihe.
+
+   Dafuer ist der Pfeil da: In WPS oeffnet er die vollen Einstellungen
+   der Gruppe. Bei mir zeigt er, was die Reihe nicht fasst, statt es zu
+   verstecken. Ein Befehl, den man nicht findet, ist nicht gebaut. */
+B.schriftartMehr = (knopf) => {
+  designTafelZeigen(knopf, 'Schriftart', (tafel) => {
+    tafel.classList.add('designtafel--breit');
+    for (const [bild, name, tun] of [
+      ['texteffekt', 'Texteffekte…', () => B.effekt()],
+      ['eingeschlossen', 'Eingeschlossene Zeichen', () => B.eingeschlosseneZeichen()],
+      ['umriss', 'Zeichenumriss', () => B.zeichenumriss()],
+      ['unterart', 'Unterstreichungsart…', () => B.unterstrichArt()],
+      ['pinsel', 'Formatpipette', () => B.formatpipette()],
+      ['radierer', 'Formatierung löschen', () => B.schlicht()],
+    ]) {
+      const k = document.createElement('button');
+      k.type = 'button';
+      k.className = 'designtafel__zeile richtungszeile';
+      if (SYMBOLE[bild]) k.appendChild(symbol(bild));
+      const wort = document.createElement('span');
+      wort.textContent = name;
+      k.appendChild(wort);
+      k.addEventListener('mousedown', (e) => e.preventDefault());
+      k.addEventListener('click', () => { designTafelWeg(); tun(); });
+      tafel.appendChild(k);
+    }
+  });
+};
 
 B.unterstrichKlappe = (knopf) => {
   auswahlMerken();

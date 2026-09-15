@@ -90,8 +90,9 @@ function REGISTER_BAUEN(B, w) {
                       { tun: (k) => B.hervorhebenJetzt(k), klappe: (k) => B.hervorhebenKlappe(k) }],
                     ['schriftfarbe', 'Schriftfarbe',
                       { tun: (k) => B.schriftfarbeJetzt(k), klappe: (k) => B.schriftfarbeKlappe(k) }],
-                    ['eingeschlossen', 'Eingeschlossene Zeichen', () => B.eingeschlosseneZeichen()],
-                   ], () => B.effekt()],
+                    /* Das Ⓐ am Ende der Zeile ist in WPS „Texteffekte". */
+                    ['eingeschlossen', 'Texteffekte', () => B.effekt()],
+                   ], () => B.schriftartMehr()],
     ['Absatz', [['punkte', 'Aufzählung', () => B.punkte()],
                     ['zahlen', 'Nummerierung', () => B.zahlen()],
                     ['einzug', 'Einzug & Listenebene', [

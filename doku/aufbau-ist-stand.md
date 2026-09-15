@@ -31,7 +31,7 @@ DIE BÄNDER
 │   │   ├── Zeichenumriss
 │   │   ├── Hervorheben
 │   │   ├── Schriftfarbe
-│   │   └── Eingeschlossene Zeichen
+│   │   └── Texteffekte
 │   ├── Absatz
 │   │   ├── Aufzählung
 │   │   ├── Nummerierung
