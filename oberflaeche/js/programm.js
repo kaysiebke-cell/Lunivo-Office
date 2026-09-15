@@ -11919,8 +11919,22 @@ function rahmenVorschau(r, beiKlick) {
 
   const satz = document.createElement('p');
   satz.className = 'rahmentafel__hinweis';
-  satz.textContent = 'Auf eine Kante klicken, um sie an- oder abzuschalten.';
+  satz.textContent = 'Auf eine Kante klicken oder einen Knopf daneben — '
+                   + 'beides schaltet sie an und aus.';
   kasten.appendChild(satz);
+
+  /* DIE KNOEPFE RINGS UM DIE VORSCHAU.
+
+     „ich kann hier nicht die Rahmenlinien eintragen in der Vorschau,
+     wie es WPS kann."
+
+     Die Klickflaechen waren da — aber unsichtbar und sieben Pixel
+     breit. Wer nicht weiss, dass sie da sind, findet sie nicht, und wer
+     es weiss, trifft sie nicht. In WPS stehen kleine Knoepfe mit dem
+     Zeichen der Kante links und unter der Vorschau. Beides gibt es
+     jetzt: sichtbare Knoepfe UND die Kante selbst. */
+  const gitter = document.createElement('div');
+  gitter.className = 'rahmengitter';
 
   const blatt = document.createElement('div');
   blatt.className = 'rahmenprobe';
@@ -11934,27 +11948,62 @@ function rahmenVorschau(r, beiKlick) {
     for (const [kante, seite] of [['oben', 'Top'], ['unten', 'Bottom'],
                                   ['links', 'Left'], ['rechts', 'Right']]) {
       blatt.style['border' + seite] = r.kanten.includes(kante)
-        ? Math.max(1, r.breite) + 'px ' + r.art + ' ' + r.farbe : '1px dashed transparent';
+        ? Math.max(1, r.breite) + 'px ' + r.art + ' ' + r.farbe
+        : '1px dashed rgba(127,127,127,.35)';
+    }
+    for (const k of gitter.querySelectorAll('.rahmengitter__knopf')) {
+      k.classList.toggle('rahmengitter__knopf--an', r.kanten.includes(k.dataset.kante));
     }
   };
-  auffrischen();
 
+  const umschalten = (kante) => {
+    const drin = r.kanten.indexOf(kante);
+    if (drin >= 0) r.kanten.splice(drin, 1); else r.kanten.push(kante);
+    if (r.kanten.length && r.art === 'keine') r.art = 'solid';
+    auffrischen();
+    if (beiKlick) beiKlick();
+  };
+
+  /* Die Kante selbst bleibt anklickbar — nur breiter als vorher. */
   for (const [kante, name] of RAHMEN_KANTEN) {
     const k = document.createElement('button');
     k.type = 'button';
     k.className = 'rahmenprobe__kante rahmenprobe__kante--' + kante;
     k.title = name + ' an- oder abschalten';
     k.setAttribute('aria-label', k.title);
-    k.addEventListener('click', () => {
-      const drin = r.kanten.indexOf(kante);
-      if (drin >= 0) r.kanten.splice(drin, 1); else r.kanten.push(kante);
-      auffrischen();
-      if (beiKlick) beiKlick();
-    });
+    k.addEventListener('click', () => umschalten(kante));
     blatt.appendChild(k);
   }
 
-  kasten.appendChild(blatt);
+  /* Und die sichtbaren Knoepfe: links oben und unten, unten links und
+     rechts — wie auf seinem Bild. */
+  const knopfBauen = (kante, zeichen, name, stelle) => {
+    const k = document.createElement('button');
+    k.type = 'button';
+    k.className = 'rahmengitter__knopf rahmengitter__knopf--' + stelle;
+    k.dataset.kante = kante;
+    k.title = name;
+    k.setAttribute('aria-label', name);
+    k.appendChild(symbol(zeichen));
+    k.addEventListener('click', () => umschalten(kante));
+    return k;
+  };
+
+  const linksSpalte = document.createElement('div');
+  linksSpalte.className = 'rahmengitter__seite';
+  linksSpalte.append(
+    knopfBauen('oben', 'kanteOben', 'Obere Rahmenlinie', 'oben'),
+    knopfBauen('unten', 'kanteUnten', 'Untere Rahmenlinie', 'unten'));
+
+  const untenReihe = document.createElement('div');
+  untenReihe.className = 'rahmengitter__fuss';
+  untenReihe.append(
+    knopfBauen('links', 'kanteLinks', 'Linke Rahmenlinie', 'links'),
+    knopfBauen('rechts', 'kanteRechts', 'Rechte Rahmenlinie', 'rechts'));
+
+  gitter.append(linksSpalte, blatt, untenReihe);
+  kasten.appendChild(gitter);
+  auffrischen();
   kasten.auffrischen = auffrischen;
   return kasten;
 }

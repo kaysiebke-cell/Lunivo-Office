@@ -2992,14 +2992,42 @@ body.lesen .arbeitsflaeche{padding:40px 24px}
   background:var(--schrift-2);opacity:.45;
 }
 .rahmenprobe__zeile:last-child{width:62%}
+/* Die Kante selbst: breiter als vorher, damit man sie trifft, und mit
+   einem Schimmer beim Darueberfahren, damit man sie findet. Sieben
+   Pixel unsichtbar waren zu wenig — er hat sie nicht gefunden. */
 .rahmenprobe__kante{
   position:absolute;border:0;background:none;cursor:pointer;padding:0;
 }
-.rahmenprobe__kante:hover{background:rgba(47,111,181,.25)}
-.rahmenprobe__kante--oben{left:14px;right:14px;top:-7px;height:14px}
-.rahmenprobe__kante--unten{left:14px;right:14px;bottom:-7px;height:14px}
-.rahmenprobe__kante--links{top:14px;bottom:14px;left:-7px;width:14px}
-.rahmenprobe__kante--rechts{top:14px;bottom:14px;right:-7px;width:14px}
+.rahmenprobe__kante:hover{background:rgba(47,111,181,.28)}
+.rahmenprobe__kante--oben{left:16px;right:16px;top:-9px;height:18px}
+.rahmenprobe__kante--unten{left:16px;right:16px;bottom:-9px;height:18px}
+.rahmenprobe__kante--links{top:16px;bottom:16px;left:-9px;width:18px}
+.rahmenprobe__kante--rechts{top:16px;bottom:16px;right:-9px;width:18px}
+
+/* Die Knoepfe rings um die Vorschau — links die waagerechten Kanten,
+   unten die senkrechten, wie auf seinem WPS-Bild. */
+.rahmengitter{
+  display:grid;
+  grid-template-columns:auto 1fr;
+  grid-template-rows:1fr auto;
+  gap:8px;align-items:center;
+}
+.rahmengitter__seite{display:flex;flex-direction:column;gap:8px;justify-content:center}
+.rahmengitter__fuss{
+  grid-column:2;display:flex;gap:8px;justify-content:flex-start;
+}
+.rahmengitter__knopf{
+  width:30px;height:30px;padding:4px;
+  display:flex;align-items:center;justify-content:center;
+  border:1px solid var(--rand);border-radius:5px;
+  background-color:var(--grund);color:var(--schrift);cursor:pointer;
+}
+.rahmengitter__knopf svg{width:100%;height:100%}
+.rahmengitter__knopf:hover{border-color:var(--blau)}
+/* Gedrueckt heisst: diese Kante steht. */
+.rahmengitter__knopf--an{
+  border-color:var(--blau);background:rgba(47,111,181,.22);
+}
 
 
 /* Die ausfuehrliche Zeile in einer Bandklappe: Bild, fetter Name, die
