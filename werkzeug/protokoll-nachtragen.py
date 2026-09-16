@@ -349,10 +349,35 @@ def main():
         if eintrag is None:
             verfehlt.append(schluessel)
             continue
-        seins = (eintrag.get('note') or '').strip()
+
+        # SEIN FORMAT, nicht meins. Der Katalog fuehrt je Punkt eine
+        # Notizenliste mit Zeitstempel; "note" ist nur die Ableitung
+        # daraus (itemNotizText). Ich habe lange "note" ueberschrieben
+        # und "notizen" nie angefasst — beim Import waere seine Notiz
+        # mit meiner zu einem Block verschmolzen.
+        notizen = eintrag.get('notizen')
+        if not isinstance(notizen, list):
+            notizen = []
+            seins = (eintrag.get('note') or '').strip()
+            if seins:
+                notizen.append({
+                    'id': 'alt-' + schluessel,
+                    'text': seins,
+                    'timestamp': 'übernommen aus dem bisherigen Stand',
+                })
+
+        # Was ich schon einmal eingetragen habe, nicht ein zweites Mal.
+        kennung = 'claude-' + schluessel
+        notizen = [n for n in notizen if n.get('id') != kennung]
+        notizen.append({
+            'id': kennung,
+            'text': was,
+            'timestamp': HEUTE + ', erledigt',
+        })
+
+        eintrag['notizen'] = notizen
+        eintrag['note'] = '\n\n'.join(n.get('text', '') for n in notizen)
         eintrag['status'] = 'pass'
-        eintrag['note'] = (seins + '\n\n' if seins else '') \
-            + '— erledigt am %s: %s' % (HEUTE, was)
         getroffen.append(schluessel)
 
     ziel.write_text(json.dumps(bogen, ensure_ascii=False, indent=1),
