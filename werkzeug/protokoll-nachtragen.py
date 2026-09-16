@@ -314,6 +314,19 @@ ERLEDIGT = {
         'den drei Karteireitern Standard, Benutzerdefiniert und Erweitert, '
         'rechts OK und Abbrechen und darunter die Proben „Neu" und „Aktuell".',
 
+    'einfügen|querverweis':
+        'Das Zeichen war ein Pfeil an einer Linie — daran erkennt niemand '
+        'einen Querverweis. Jetzt ein Blatt, in dem ein Bogen auf eine andere '
+        'Stelle zeigt. Und das Fenster nach Ihrem Bild: „Verweistyp" und '
+        '„Verweisen auf" nebeneinander, darunter „Als Hyperlink einfügen" und '
+        '„Oben/unten einschließen", dann die Frage „Für welches nummerierte '
+        'Element:" und eine große Liste, unten Abbrechen und Einfügen — '
+        'Einfügen grau, solange nichts gewählt ist. Sechs Verweistypen '
+        '(nummeriertes Element, Überschrift, Textmarke, Fußnote, Abbildung, '
+        'Tabelle), jeder mit seinen eigenen Zielen; die Frage über der Liste '
+        'wechselt mit der Art. Vorher war es eine einzige Klappliste, in der '
+        'Textmarken und Überschriften gemischt standen.',
+
     'ansicht|textbegrenzungen':
         'Die vier Winkel am Satzspiegel sind jetzt auf dem Blatt zu sehen, '
         'nicht mehr nur beim Drucken. Abschalten unter Ansicht.',
