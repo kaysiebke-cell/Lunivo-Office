@@ -3964,6 +3964,260 @@ function diagrammNeuZeichnen(alt, q) {
 
 /* ---- SmartArt-Werkzeuge ---- */
 
+/* ============================================================
+   SMARTART: ZWEI REITER, WIE AUF SEINEN BILDERN
+
+   „Falsche Funktion. Funktion ist nach WPS-Bildvorlage zu bauen +
+   Diagrammfunktionen. Im Reiter erscheinen dann zwei neue Reiter, siehe
+   Bilder."
+
+   In WPS heissen sie „WPSArt-Design" und „WPSArt-Format". Hier
+   „SmartArt-Entwurf" und „SmartArt-Format", wie es sein SOLL vorgibt.
+
+   Vorher stand dahinter je ein grosser Knopf, der ein Fenster oeffnete —
+   zwei Reiter mit je einem Knopf. Auf seinem Bild stehen im Entwurf
+   acht Befehle, eine Farbklappe, eine Stilgalerie und die Groesse.
+   ============================================================ */
+const SMARTARTFARBEN = [
+  ['bunt',   'Bunt',       ['#2F6FB5', '#3E9C7A', '#C08A2E', '#B5563F', '#7A5EA8', '#1F7A5A']],
+  ['blau',   'Blautöne',   ['#1F4E79', '#2F6FB5', '#4A8BCB', '#6FA6DA', '#9BC3E8', '#C6DDF3']],
+  ['warm',   'Warm',       ['#8A3324', '#B5563F', '#C08A2E', '#D08A3E', '#A0522D', '#C9A227']],
+  ['gruen',  'Grüntöne',   ['#1F7A5A', '#3E9C7A', '#6BB79A', '#93CDB7', '#BCE0D3', '#7A8C2E']],
+  ['grau',   'Graustufen', ['#3A4149', '#5C666F', '#8B949C', '#A8B0B7', '#C4CACF', '#DDE1E4']],
+];
+
+function mitSmartart(tun) {
+  const bild = smartartJetzt();
+  if (!bild) { melde('Dafür muss ein SmartArt gewählt sein.'); return null; }
+  const q = quelleLesen(bild);
+  if (!q) { melde('Dieses SmartArt trägt seine Kästen nicht mit.'); return null; }
+  return tun(bild, q);
+}
+
+function smartartNeu(bild, q) {
+  const schritte = String(q.text || '').split(/\r?\n/)
+    .map((z) => z.trim()).filter(Boolean).slice(0, 8);
+  if (!schritte.length) { melde('Da stand keine Zeile.'); return; }
+  const bauer = { ablauf: smartartAblauf, kreis: smartartKreis,
+                  gliederung: smartartGliederung, liste: smartartListe }[q.art] || smartartAblauf;
+  const farben = (SMARTARTFARBEN.find(([k]) => k === q.satz) || SMARTARTFARBEN[0])[2];
+  /* DIE KLASSE MUSS MIT. svgHuelle() schreibt „diagramm" an jedes SVG;
+     erst „smartart" daneben trennt die beiden. Ohne sie war das
+     umgebaute SmartArt fuer alle Werkzeuge ein Diagramm — und fuer
+     smartartJetzt() gar nicht mehr da. */
+  const neuesSvg = merkeQuelle(bauer(schritte, farben), q)
+    .replace('class="diagramm"', 'class="diagramm smartart"');
+  if (objektErsetzen(bild, neuesSvg)) {
+    melde('SmartArt geändert.');
+  }
+}
+
+/* „Form einfuegen" — ein Kasten mehr. In WPS haengt daran eine Klappe
+   mit „davor" und „dahinter"; hier dasselbe, weil ein Ablauf sonst nur
+   hinten waechst. */
+B.smartartFormEin = (knopf) => mitSmartart((bild, q) => {
+  designTafelZeigen(knopf, 'Form einfügen', (tafel) => {
+    tafel.classList.add('designtafel--breit');
+    for (const [name, wohin] of [['Dahinter einfügen', 'hinten'],
+                                 ['Davor einfügen', 'vorn']]) {
+      const k = document.createElement('button');
+      k.type = 'button';
+      k.className = 'designtafel__zeile richtungszeile';
+      k.appendChild(symbol('smartart'));
+      const w = document.createElement('span');
+      w.textContent = name;
+      k.appendChild(w);
+      k.addEventListener('mousedown', (e) => e.preventDefault());
+      k.addEventListener('click', () => {
+        designTafelWeg();
+        const zeilen = String(q.text || '').split(/\r?\n/).filter(Boolean);
+        if (zeilen.length >= 8) { melde('Acht Kästen sind genug — mehr liest niemand.'); return; }
+        if (wohin === 'vorn') zeilen.unshift('Neuer Schritt');
+        else zeilen.push('Neuer Schritt');
+        smartartNeu(bild, Object.assign({}, q, { text: zeilen.join('\n') }));
+      });
+      tafel.appendChild(k);
+    }
+  });
+});
+
+/* Vorwaerts und Rueckwaerts: den letzten Kasten nach vorn oder hinten
+   schieben. In WPS bezieht es sich auf den gewaehlten; hier gibt es
+   keine Auswahl einzelner Kaesten, darum auf den letzten. */
+B.smartartVor = () => mitSmartart((bild, q) => {
+  const z = String(q.text || '').split(/\r?\n/).filter(Boolean);
+  if (z.length < 2) { melde('Dafür braucht es mindestens zwei Kästen.'); return; }
+  z.unshift(z.pop());
+  smartartNeu(bild, Object.assign({}, q, { text: z.join('\n') }));
+});
+B.smartartZurueck = () => mitSmartart((bild, q) => {
+  const z = String(q.text || '').split(/\r?\n/).filter(Boolean);
+  if (z.length < 2) { melde('Dafür braucht es mindestens zwei Kästen.'); return; }
+  z.push(z.shift());
+  smartartNeu(bild, Object.assign({}, q, { text: z.join('\n') }));
+});
+
+B.smartartUmdrehen = () => mitSmartart((bild, q) => {
+  const z = String(q.text || '').split(/\r?\n/).filter(Boolean).reverse();
+  smartartNeu(bild, Object.assign({}, q, { text: z.join('\n') }));
+  melde('Reihenfolge umgedreht.');
+});
+
+const SMARTARTFORMEN = [
+  ['ablauf',     'Ablauf (Pfeile)'],
+  ['kreis',      'Kreislauf'],
+  ['gliederung', 'Gliederung'],
+  ['liste',      'Liste mit Kästen'],
+];
+
+B.smartartLayout = (knopf) => mitSmartart((bild, q) => {
+  designTafelZeigen(knopf, 'Layout', (tafel) => {
+    tafel.classList.add('designtafel--breit');
+    for (const [kuerzel, name] of SMARTARTFORMEN) {
+      const k = document.createElement('button');
+      k.type = 'button';
+      k.className = 'designtafel__zeile richtungszeile'
+        + (q.art === kuerzel ? ' richtungszeile--gilt' : '');
+      k.appendChild(symbol('smartart'));
+      const w = document.createElement('span');
+      w.textContent = name;
+      k.appendChild(w);
+      k.addEventListener('mousedown', (e) => e.preventDefault());
+      k.addEventListener('click', () => {
+        designTafelWeg();
+        smartartNeu(bild, Object.assign({}, q, { art: kuerzel }));
+      });
+      tafel.appendChild(k);
+    }
+  });
+});
+
+B.smartartFarben = (knopf) => mitSmartart((bild, q) => {
+  designTafelZeigen(knopf, 'Farben ändern', (tafel) => {
+    tafel.classList.add('designtafel--breit');
+    for (const [kuerzel, name, farben] of SMARTARTFARBEN) {
+      const k = document.createElement('button');
+      k.type = 'button';
+      k.className = 'designtafel__wahl'
+        + ((q.satz || 'bunt') === kuerzel ? ' designtafel__wahl--an' : '');
+      const streifen = document.createElement('span');
+      streifen.className = 'designtafel__streifen';
+      for (const c of farben) {
+        const i = document.createElement('i');
+        i.style.background = c;
+        streifen.appendChild(i);
+      }
+      const w = document.createElement('span');
+      w.className = 'designtafel__name';
+      w.textContent = name;
+      k.append(streifen, w);
+      k.addEventListener('mousedown', (e) => e.preventDefault());
+      k.addEventListener('click', () => {
+        designTafelWeg();
+        smartartNeu(bild, Object.assign({}, q, { satz: kuerzel }));
+      });
+      tafel.appendChild(k);
+    }
+  });
+});
+
+B.smartartText = () => mitSmartart((bild, q) => {
+  fenster('Kästen bearbeiten', [
+    { art: 'satz', text: 'Je Zeile ein Kasten. Bei der Gliederung ist die '
+                       + 'erste Zeile oben. Mehr als acht liest niemand.' },
+    { schluessel: 'text', name: 'Kästen', art: 'flaeche', zeilen: 8, wert: q.text || '' },
+  ], (werte) => smartartNeu(bild, Object.assign({}, q, { text: werte.text })), 'Übernehmen');
+});
+
+/* Der zweite Reiter faerbt: Kontur und Effekt am ganzen SmartArt. */
+B.smartartKontur = (knopf) => mitSmartart((bild) => {
+  designTafelZeigen(knopf, 'Kontur', (tafel) => {
+    tafel.classList.add('designtafel--breit', 'farbtafel');
+    const reihe = document.createElement('div');
+    reihe.className = 'farbtafel__reihe farbtafel__reihe--zwoelf';
+    for (const [hex, name] of FARBEN) {
+      const feldchen = farbfeld(hex, () => {
+        designTafelWeg();
+        for (const teil of bild.querySelectorAll('rect, circle, ellipse, path')) {
+          if (teil.getAttribute('fill') === 'none') continue;
+          teil.setAttribute('stroke', hex);
+          teil.setAttribute('stroke-width', '1.5');
+        }
+        geaendertMelden();
+        melde('Kontur: ' + name + '.');
+      });
+      feldchen.title = name;
+      reihe.appendChild(feldchen);
+    }
+    tafel.appendChild(reihe);
+
+    const strichel = document.createElement('hr');
+    strichel.className = 'designtafel__strich';
+    tafel.appendChild(strichel);
+
+    const ohne = document.createElement('button');
+    ohne.type = 'button';
+    ohne.className = 'designtafel__zeile richtungszeile';
+    ohne.appendChild(symbol('radierer'));
+    const w = document.createElement('span');
+    w.textContent = 'Keine Kontur';
+    ohne.appendChild(w);
+    ohne.addEventListener('mousedown', (e) => e.preventDefault());
+    ohne.addEventListener('click', () => {
+      designTafelWeg();
+      for (const teil of bild.querySelectorAll('[stroke]')) {
+        if (teil.getAttribute('fill') === 'none') continue;
+        teil.removeAttribute('stroke');
+        teil.removeAttribute('stroke-width');
+      }
+      geaendertMelden();
+      melde('Kontur entfernt.');
+    });
+    tafel.appendChild(ohne);
+  });
+});
+
+B.smartartEffekt = (knopf) => mitSmartart((bild) => {
+  designTafelZeigen(knopf, 'Effekte', (tafel) => {
+    tafel.classList.add('designtafel--breit');
+    for (const [, name, filter] of DESIGNEFFEKTE) {
+      const k = document.createElement('button');
+      k.type = 'button';
+      k.className = 'designtafel__zeile richtungszeile';
+      const probe = document.createElement('span');
+      probe.className = 'rahmenprobe--klein';
+      probe.style.filter = filter || 'none';
+      k.appendChild(probe);
+      const w = document.createElement('span');
+      w.textContent = name;
+      k.appendChild(w);
+      k.addEventListener('mousedown', (e) => e.preventDefault());
+      k.addEventListener('click', () => {
+        designTafelWeg();
+        bild.style.filter = filter || '';
+        geaendertMelden();
+        melde('Effekt: ' + name + '.');
+      });
+      tafel.appendChild(k);
+    }
+  });
+});
+
+B.smartartGroesse = () => mitSmartart((bild) => {
+  const r = bild.getBoundingClientRect();
+  fenster('Größe', [
+    { art: 'satz', text: 'In Millimetern. Die Höhe folgt der Breite.' },
+    { schluessel: 'breite', name: 'Breite (mm)', art: 'number',
+      wert: String(Math.round(inMillimeter(r.width / ((zoom || 100) / 100)))) },
+  ], (werte) => {
+    const mm = Math.max(30, Math.min(400, parseFloat(werte.breite) || 120));
+    bild.style.width = mm + 'mm';
+    bild.style.height = 'auto';
+    geaendertMelden();
+    melde('Breite: ' + mm + ' mm.');
+  });
+});
+
 function smartartFenster(titel, nurForm) {
   const bild = smartartJetzt();
   if (!bild) { melde('Im Text steht kein SmartArt.'); return; }
@@ -5506,11 +5760,40 @@ const REGISTER_IM_ZUSAMMENHANG = [
     ],
   },
   {
-    name: 'SmartArt-Tools',
+    /* Auf seinem Bild sind es ZWEI Reiter: „WPSArt-Design" und
+       „WPSArt-Format". Sein SOLL nennt sie SmartArt-Entwurf und
+       SmartArt-Format. Der Entwurf baut, das Format faerbt. */
+    name: 'SmartArt-Entwurf',
     gilt: () => !!smartartJetzt(),
     gruppen: [
-      ['SmartArt-Entwurf', [['smartart', 'SmartArt-Entwurf', () => B.smartartEntwurf(), 'gross']]],
-      ['SmartArt-Format', [['anpassen', 'SmartArt-Format', () => B.smartartFormat(), 'gross']]],
+      /* NACH SEINEM BILD. In WPS heisst der Reiter „WPSArt-Design", und
+         darin stehen von links nach rechts: Form einfuegen, Level
+         erhoehen/reduzieren, Vorwaerts/Rueckwaerts, Layout von rechts
+         nach links, Layout — dann Farben aendern, dann die Stile, dann
+         Textfluss/Ausrichten, dann Hoehe und Breite. */
+      ['Formen', [['smartart', 'Form einfügen', (k) => B.smartartFormEin(k), 'gross'],
+                  ['ebeneHoch', 'Vorwärts', () => B.smartartVor()],
+                  ['ebeneTief', 'Rückwärts', () => B.smartartZurueck()],
+                  ['objektdrehen', 'Reihenfolge umdrehen', () => B.smartartUmdrehen()],
+                  ['Aa', 'Kästen bearbeiten', () => B.smartartText()]]],
+      ['Layout', [['smartart', 'Layout', (k) => B.smartartLayout(k), 'gross']]],
+      ['Farben', [['toenung', 'Farben ändern', (k) => B.smartartFarben(k), 'gross']]],
+      ['Anordnen', [['anordnen', 'Textfluss', () => B.anordnen(), 'gross'],
+                    ['ausrichten', 'Ausrichten', (k) => B.objektAusrichten(k)],
+                    ['ecken', 'Größe', () => B.smartartGroesse()]]],
+    ],
+  },
+  {
+    name: 'SmartArt-Format',
+    gilt: () => !!smartartJetzt(),
+    gruppen: [
+      ['Formenarten', [['toenung', 'Füllung', (k) => B.smartartFarben(k), 'gross'],
+                       ['rahmen', 'Kontur', (k) => B.smartartKontur(k), 'gross'],
+                       ['texteffekt', 'Effekte', (k) => B.smartartEffekt(k), 'gross']]],
+      ['Größe', [['ecken', 'Größe', () => B.smartartGroesse(), 'gross']]],
+      ['Anordnen', [['anordnen', 'Textfluss', () => B.anordnen(), 'gross'],
+                    ['ausrichten', 'Ausrichten', (k) => B.objektAusrichten(k)],
+                    ['objektdrehen', 'Drehen', (k) => B.objektDrehen(k)]]],
     ],
   },
   {
@@ -13465,7 +13748,8 @@ B.piktogramm = () => {
    Vier Formen, die in einem Schreiben wirklich vorkommen: ein Ablauf, ein
    Kreislauf, eine Gliederung und eine Aufzählung mit Kästen. Auch das ist
    SVG und damit Teil des Textes — kein fremdes Bauteil. */
-function smartartAblauf(schritte) {
+function smartartAblauf(schritte, farben) {
+  farben = farben || DIAGRAMMFARBEN;
   const breite = 520;
   const hoehe = 90;
   const kasten = Math.min(120, (breite - (schritte.length - 1) * 26) / schritte.length);
@@ -13473,7 +13757,7 @@ function smartartAblauf(schritte) {
   schritte.forEach((text, i) => {
     const x = i * (kasten + 26);
     aus += '<rect x="' + x + '" y="20" width="' + kasten + '" height="50" rx="7" fill="'
-         + DIAGRAMMFARBEN[i % DIAGRAMMFARBEN.length] + '"/>'
+         + farben[i % farben.length] + '"/>'
          + '<text x="' + (x + kasten / 2) + '" y="50" text-anchor="middle" font-size="12" '
          + 'fill="#FFFFFF">' + alsText(kuerzeWort(text, 14)) + '</text>';
     if (i < schritte.length - 1) {
@@ -13485,7 +13769,8 @@ function smartartAblauf(schritte) {
   return svgHuelle(breite, hoehe, aus);
 }
 
-function smartartKreis(schritte) {
+function smartartKreis(schritte, farben) {
+  farben = farben || DIAGRAMMFARBEN;
   const groesse = 320;
   const mitte = groesse / 2;
   const r = 105;
@@ -13495,14 +13780,15 @@ function smartartKreis(schritte) {
     const x = mitte + r * Math.cos(winkel);
     const y = mitte + r * Math.sin(winkel);
     aus += '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="38" fill="'
-         + DIAGRAMMFARBEN[i % DIAGRAMMFARBEN.length] + '"/>'
+         + farben[i % farben.length] + '"/>'
          + '<text x="' + x.toFixed(1) + '" y="' + (y + 4).toFixed(1) + '" text-anchor="middle" '
          + 'font-size="11" fill="#FFFFFF">' + alsText(kuerzeWort(text, 10)) + '</text>';
   });
   return svgHuelle(groesse, groesse, aus);
 }
 
-function smartartGliederung(schritte) {
+function smartartGliederung(schritte, farben) {
+  farben = farben || DIAGRAMMFARBEN;
   const breite = 460;
   const hoehe = 60 + (schritte.length - 1) * 62;
   let aus = '<rect x="150" y="10" width="160" height="42" rx="7" fill="' + DIAGRAMMFARBEN[0] + '"/>'
@@ -13520,14 +13806,15 @@ function smartartGliederung(schritte) {
   return svgHuelle(breite, hoehe, aus);
 }
 
-function smartartListe(schritte) {
+function smartartListe(schritte, farben) {
+  farben = farben || DIAGRAMMFARBEN;
   const breite = 460;
   const hoehe = schritte.length * 52 + 10;
   let aus = '';
   schritte.forEach((text, i) => {
     const y = i * 52 + 5;
     aus += '<rect x="0" y="' + y + '" width="' + breite + '" height="42" rx="7" fill="'
-         + DIAGRAMMFARBEN[i % DIAGRAMMFARBEN.length] + '"/>'
+         + farben[i % farben.length] + '"/>'
          + '<text x="16" y="' + (y + 27) + '" font-size="13" fill="#FFFFFF">'
          + alsText(kuerzeWort(text, 48)) + '</text>';
   });

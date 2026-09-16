@@ -4,7 +4,7 @@ Geschrieben von `werkzeug/reiter-abgleich.py`. Das SOLL kommt aus
 seinem Prüfkatalog (Lesekopie in `doku/wps-soll-lesekopie.txt`),
 der IST-Stand aus `oberflaeche/daten/register.js`.
 
-**274 gleich · 1 fehlen · 32 eigen · 0 ohne Bild**
+**272 gleich · 2 fehlen · 32 eigen · 0 ohne Bild**
 
 - **fehlt** — steht im SOLL, nicht im Band. Kein Ermessen.
 - **eigen** — steht im Band, nicht im SOLL. Das heißt nicht
@@ -70,8 +70,8 @@ Name im Band zurückgedreht. Das entscheidet er, nicht ich.
 | Rechtsbündig | gleich | `rechts` |
 | Blocksatz | gleich | `block` |
 | Zeilenabstand | gleich | `abstand` |
-| Absatzrahmen | gleich | `rahmen` |
-| Absatzschattierung | gleich | `toenung` |
+| Absatzrahmen | gleich | `absatzrahmen` |
+| Absatzschattierung | gleich | `absatztoenung` |
 | Sortieren | gleich | `sortieren` |
 | Steuerzeichen | gleich | Buchstabe `¶` |
 
@@ -80,8 +80,8 @@ Name im Band zurückgedreht. Das entscheidet er, nicht ich.
 | Punkt | Stand | Bild |
 |---|---|---|
 | Zeilenabstand | gleich | `abstand` |
-| Absatzrahmen | gleich | `rahmen` |
-| Absatzschattierung | gleich | `toenung` |
+| Absatzrahmen | gleich | `absatzrahmen` |
+| Absatzschattierung | gleich | `absatztoenung` |
 
 ### Stile
 
@@ -555,8 +555,7 @@ und fehlten darum im Bogen ganz.
 | Diagrammtools | Diagrammtyp | gleich |
 | Diagrammtools | Formatierung | gleich |
 | Diagrammtools | Formatvorlagen | eigen |
-| SmartArt-Tools | SmartArt-Entwurf | gleich |
-| SmartArt-Tools | SmartArt-Format | gleich |
+| SmartArt-Tools | — | **fehlt ganz** |
 | Gleichungswerkzeuge | Formeleditor-Funktionen | gleich |
 | Kopf- und Fußzeilenwerkzeuge | Kopfzeile | gleich |
 | Kopf- und Fußzeilenwerkzeuge | Fußzeile | gleich |
