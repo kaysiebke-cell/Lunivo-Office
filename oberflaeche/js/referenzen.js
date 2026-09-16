@@ -476,26 +476,286 @@ B.textmarke = () => {
   eingabe.focus();
 };
 
-B.querverweis = () => {
-  const marken = [...feld.querySelectorAll('.textmarke')]
-    .map((el) => [el.id, decodeURIComponent(el.id.replace(/^marke-/, ''))]);
-  const ueberschriften = ueberschriftenSammeln().map((u) => [u.kennung, u.text]);
-  const alle = marken.concat(ueberschriften);
+/* ---- Querverweis ----
 
-  if (!alle.length) { melde('Es gibt noch keine Textmarken und keine Überschriften.'); return; }
+   NACH SEINEM BILD (doku/pruefkatalog/bilder/einf-gen-querverweis/1.jpg).
+   Was darauf steht, Punkt fuer Punkt:
 
-  auswahlMerken();
-  fenster('Querverweis', [
-    { schluessel: 'ziel', name: 'Verweis auf', art: 'auswahl', werte: alle },
-  ], (werte) => {
-    const eintrag = alle.find(([kennung]) => kennung === werte.ziel);
-    if (!eintrag) return;
-    auswahlZurueck();
-    Dokument.einfuegen('<a class="querverweis" href="#' + eintrag[0] + '">'
-      + alsSicher(eintrag[1]) + '</a>');
-    melde('Querverweis eingefügt.');
-  }, 'Einfügen');
+     Querverweis
+     Verweistyp: [Nummeriertes Element v]   Verweisen auf: [Seitenzahl v]
+     [x] Als Hyperlink einfuegen   [ ] Oben/unten einschliessen (O)
+     Fuer welches nummerierte Element:
+     [ ................. grosse Liste ................. ]
+                                     [Abbrechen] [Einfuegen]
+
+   Vorher war es ein Feld mit einer Klappliste: „Verweis auf" und darin
+   Textmarken und Ueberschriften gemischt. Man konnte weder waehlen,
+   WORAUF verwiesen wird (Seitenzahl oder Text), noch sehen, was es
+   ueberhaupt gibt. */
+
+/* Die Arten, auf die man verweisen kann, und was von ihnen einsetzbar
+   ist. Die Beschriftung ueber der Liste wechselt mit der Art — in WPS
+   steht dort „Fuer welches nummerierte Element", „Fuer welche
+   Ueberschrift", „Fuer welche Textmarke". */
+const VERWEISARTEN = [
+  { kuerzel: 'nummer',  name: 'Nummeriertes Element', frage: 'Für welches nummerierte Element:' },
+  { kuerzel: 'ueber',   name: 'Überschrift',          frage: 'Für welche Überschrift:' },
+  { kuerzel: 'marke',   name: 'Textmarke',            frage: 'Für welche Textmarke:' },
+  { kuerzel: 'fussnote', name: 'Fußnote',             frage: 'Für welche Fußnote:' },
+  { kuerzel: 'bild',    name: 'Abbildung',            frage: 'Für welche Abbildung:' },
+  { kuerzel: 'tabelle', name: 'Tabelle',              frage: 'Für welche Tabelle:' },
+];
+
+/* „Verweisen auf" haengt von der Art ab: Bei einer Ueberschrift kann man
+   den Text nehmen, bei einer Fussnote ihre Nummer. */
+const VERWEISZIELE = {
+  nummer:  [['seite', 'Seitenzahl'], ['nummer', 'Absatznummer'], ['text', 'Absatztext']],
+  ueber:   [['text', 'Überschriftentext'], ['seite', 'Seitenzahl'], ['nummer', 'Absatznummer']],
+  marke:   [['text', 'Textmarkentext'], ['seite', 'Seitenzahl']],
+  fussnote: [['nummer', 'Fußnotennummer'], ['seite', 'Seitenzahl']],
+  bild:    [['text', 'Gesamte Beschriftung'], ['nummer', 'Nur Nummer'], ['seite', 'Seitenzahl']],
+  tabelle: [['text', 'Gesamte Beschriftung'], ['nummer', 'Nur Nummer'], ['seite', 'Seitenzahl']],
 };
+
+/* Was es im Dokument gibt. Jede Art holt ihre eigenen Ziele; steht nichts
+   da, bleibt die Liste leer und „Einfuegen" grau — das ist ehrlicher, als
+   die Arten zu verstecken, die gerade nichts finden. */
+function verweiszieleSammeln(art) {
+  const raus = [];
+  if (art === 'ueber' || art === 'nummer') {
+    for (const u of ueberschriftenSammeln()) {
+      if (art === 'nummer' && !/^\s*[\d.]+\s/.test(u.text)) continue;
+      raus.push({ kennung: u.kennung, text: u.text });
+    }
+  }
+  if (art === 'nummer') {
+    let zahl = 0;
+    for (const li of feld.querySelectorAll('ol > li')) {
+      zahl += 1;
+      const text = li.textContent.trim();
+      if (!text) continue;
+      if (!li.id) li.id = 'liste-' + zahl + '-' + Math.random().toString(36).slice(2, 7);
+      raus.push({ kennung: li.id, text: zahl + '. ' + text.slice(0, 70), nummer: String(zahl) });
+    }
+  }
+  if (art === 'marke') {
+    for (const el of feld.querySelectorAll('.textmarke')) {
+      raus.push({ kennung: el.id, text: decodeURIComponent(el.id.replace(/^marke-/, '')) });
+    }
+  }
+  if (art === 'fussnote') {
+    let zahl = 0;
+    for (const el of feld.querySelectorAll('.fussnoten li, sup.fussnote')) {
+      zahl += 1;
+      if (!el.id) el.id = 'fussnote-' + zahl;
+      raus.push({ kennung: el.id, text: zahl + '. ' + el.textContent.trim().slice(0, 70), nummer: String(zahl) });
+    }
+  }
+  if (art === 'bild' || art === 'tabelle') {
+    const was = art === 'bild' ? 'Abbildung' : 'Tabelle';
+    let zahl = 0;
+    for (const el of feld.querySelectorAll('.beschriftung')) {
+      const text = el.textContent.trim();
+      if (!text.startsWith(was)) continue;
+      zahl += 1;
+      if (!el.id) el.id = art + '-' + zahl + '-' + Math.random().toString(36).slice(2, 7);
+      raus.push({ kennung: el.id, text, nummer: String(zahl) });
+    }
+  }
+  return raus;
+}
+
+B.querverweis = () => {
+  auswahlMerken();
+
+  const grund = document.createElement('div');
+  grund.className = 'dialoggrund';
+  const kasten = document.createElement('div');
+  /* EIGENER NAME FUER DAS FENSTER. Hier stand 'querverweis' — dieselbe
+     Klasse, die der eingefuegte Verweis im Text traegt. Eine Suche nach
+     '.querverweis' fand danach beides, das Fenster und jeden Verweis im
+     Blatt. */
+  kasten.className = 'dialog dialog--breit verweisfenster';
+  kasten.innerHTML = '<h3 class="dialog__titel">Querverweis</h3>';
+
+  /* Zeile 1: Verweistyp und Verweisen auf, nebeneinander wie im Bild. */
+  const zeile1 = document.createElement('div');
+  zeile1.className = 'verweisfenster__zeile';
+
+  const artFeld = document.createElement('label');
+  artFeld.className = 'absatzfenster__feld';
+  artFeld.innerHTML = '<span>Verweistyp:</span>';
+  const artWahl = document.createElement('select');
+  artWahl.className = 'feld';
+  for (const a of VERWEISARTEN) {
+    const o = document.createElement('option');
+    o.value = a.kuerzel; o.textContent = a.name;
+    artWahl.appendChild(o);
+  }
+  artFeld.appendChild(artWahl);
+
+  const zielFeld = document.createElement('label');
+  zielFeld.className = 'absatzfenster__feld';
+  zielFeld.innerHTML = '<span>Verweisen auf:</span>';
+  const zielWahl = document.createElement('select');
+  zielWahl.className = 'feld';
+  zielFeld.appendChild(zielWahl);
+
+  zeile1.appendChild(artFeld);
+  zeile1.appendChild(zielFeld);
+  kasten.appendChild(zeile1);
+
+  /* Zeile 2: die beiden Haken. */
+  const zeile2 = document.createElement('div');
+  zeile2.className = 'verweisfenster__zeile';
+  const hakenBauen = (text, an) => {
+    const w = document.createElement('label');
+    w.className = 'absatzfenster__haken';
+    const e = document.createElement('input');
+    e.type = 'checkbox'; e.checked = !!an;
+    w.appendChild(e);
+    const t = document.createElement('span');
+    t.textContent = text;
+    w.appendChild(t);
+    w.eingabe = e;
+    return w;
+  };
+  const alsLink = hakenBauen('Als Hyperlink einfügen', true);
+  const obenUnten = hakenBauen('Oben/unten einschließen', false);
+  zeile2.appendChild(alsLink);
+  zeile2.appendChild(obenUnten);
+  kasten.appendChild(zeile2);
+
+  /* Die Frage und die Liste. */
+  const frage = document.createElement('div');
+  frage.className = 'verweisfenster__frage';
+  kasten.appendChild(frage);
+
+  const liste = document.createElement('div');
+  liste.className = 'verweisfenster__liste';
+  liste.setAttribute('role', 'listbox');
+  kasten.appendChild(liste);
+
+  const fuss = document.createElement('div');
+  fuss.className = 'dialog__knoepfe';
+  const ab = document.createElement('button');
+  ab.type = 'button'; ab.className = 'knopf'; ab.textContent = 'Abbrechen';
+  const ok = document.createElement('button');
+  ok.type = 'button'; ok.className = 'knopf knopf--haupt'; ok.textContent = 'Einfügen';
+  ok.disabled = true;
+  fuss.appendChild(ab); fuss.appendChild(ok);
+  kasten.appendChild(fuss);
+
+  let gewaehlt = null;
+
+  function listeFuellen() {
+    const art = artWahl.value;
+    const eintrag = VERWEISARTEN.find((a) => a.kuerzel === art);
+    frage.textContent = eintrag ? eintrag.frage : '';
+
+    zielWahl.innerHTML = '';
+    for (const [wert, name] of (VERWEISZIELE[art] || [])) {
+      const o = document.createElement('option');
+      o.value = wert; o.textContent = name;
+      zielWahl.appendChild(o);
+    }
+
+    liste.innerHTML = '';
+    gewaehlt = null;
+    ok.disabled = true;
+    const ziele = verweiszieleSammeln(art);
+    if (!ziele.length) {
+      const leer = document.createElement('p');
+      leer.className = 'verweisfenster__leer';
+      leer.textContent = 'Im Dokument steht nichts von dieser Art.';
+      liste.appendChild(leer);
+      return;
+    }
+    for (const z of ziele) {
+      const k = document.createElement('button');
+      k.type = 'button';
+      k.className = 'verweisfenster__eintrag';
+      k.textContent = z.text;
+      k.addEventListener('click', () => {
+        gewaehlt = z;
+        ok.disabled = false;
+        [...liste.children].forEach((c) => c.classList.remove('verweisfenster__eintrag--an'));
+        k.classList.add('verweisfenster__eintrag--an');
+      });
+      k.addEventListener('dblclick', () => { gewaehlt = z; ok.click(); });
+      liste.appendChild(k);
+    }
+  }
+
+  artWahl.addEventListener('change', listeFuellen);
+  listeFuellen();
+
+  ab.addEventListener('click', () => grund.remove());
+  ok.addEventListener('click', () => {
+    if (!gewaehlt) return;
+    grund.remove();
+    auswahlZurueck();
+
+    /* Was eingesetzt wird, haengt an „Verweisen auf". Die Seitenzahl kann
+       hier niemand ausrechnen — das Blatt entscheidet beim Umbrechen. Ein
+       Feld mit der Kennung steht da, und beim Drucken traegt sie sich
+       ein; bis dahin zeigt sie die Seite, auf der das Ziel gerade steht. */
+    let text = gewaehlt.text;
+    if (zielWahl.value === 'nummer') text = gewaehlt.nummer || '1';
+    if (zielWahl.value === 'seite') {
+      const ziel = document.getElementById(gewaehlt.kennung);
+      text = 'Seite ' + seiteVonElement(ziel);
+    }
+    if (obenUnten.eingabe.checked) {
+      const ziel = document.getElementById(gewaehlt.kennung);
+      text += ' ' + (obenOderUnten(ziel) ? 'oben' : 'unten');
+    }
+
+    const inhalt = alsSicher(text);
+    /* Ueber elementEinfuegen, nicht ueber Dokument.einfuegen: Das setzt
+       execCommand('insertHTML') ein, und das machte aus dem <span> mit
+       Kennung einen nackten Stil-<span> — der Verweis wusste danach nicht
+       mehr, wohin er zeigt. Beim <a> fiel es nicht auf, weil ein Link
+       stehen bleibt. */
+    if (alsLink.eingabe.checked) {
+      elementEinfuegen('<a class="querverweis" href="#' + gewaehlt.kennung
+        + '" data-verweis="' + zielWahl.value + '">' + inhalt + '</a>');
+    } else {
+      elementEinfuegen('<span class="querverweis" data-ziel="' + gewaehlt.kennung
+        + '" data-verweis="' + zielWahl.value + '">' + inhalt + '</span>');
+    }
+    melde('Querverweis eingefügt.');
+    geaendertMelden();
+  });
+
+  grund.appendChild(kasten);
+  grund.addEventListener('mousedown', (e) => { if (e.target === grund) grund.remove(); });
+  document.addEventListener('keydown', function zu(e) {
+    if (e.key === 'Escape' && grund.isConnected) { grund.remove(); document.removeEventListener('keydown', zu); }
+  });
+  document.body.appendChild(grund);
+};
+
+/* Auf welcher Seite steht das Ziel? Gerechnet wie in der Statuszeile: die
+   Hoehe des Textes darueber, geteilt durch die Hoehe einer Seite. */
+function seiteVonElement(el) {
+  if (!el) return 1;
+  const hoehe = feld.clientHeight || 1;
+  const seiten = Math.max(1, Math.round(feld.scrollHeight / Math.max(1, hoehe)));
+  const anteil = el.offsetTop / Math.max(1, feld.scrollHeight);
+  return Math.max(1, Math.min(seiten, Math.floor(anteil * seiten) + 1));
+}
+
+/* Steht das Ziel vor oder hinter der Stelle, an der der Zeiger steht? */
+function obenOderUnten(el) {
+  if (!el) return true;
+  const auswahl = window.getSelection();
+  if (!auswahl || !auswahl.rangeCount) return true;
+  const hier = auswahl.getRangeAt(0).startContainer;
+  const knoten = hier && hier.nodeType === Node.TEXT_NODE ? hier.parentElement : hier;
+  if (!knoten) return true;
+  return !!(el.compareDocumentPosition(knoten) & Node.DOCUMENT_POSITION_FOLLOWING);
+}
 
 /* ============================================================
    Nachgereicht: Referenzen

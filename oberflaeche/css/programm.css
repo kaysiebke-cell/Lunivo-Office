@@ -5424,3 +5424,40 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
   border:1px solid var(--rand);border-radius:6px;
   padding:4px 8px;font:inherit;font-size:.88rem;flex:1 1 auto;min-width:0;
 }
+
+/* ============================================================
+   DAS QUERVERWEIS-FENSTER
+
+   Nach seinem Bild: zwei Klappfelder nebeneinander, darunter die beiden
+   Haken, dann die Frage und eine grosse Liste, unten Abbrechen und
+   Einfuegen.
+   ============================================================ */
+.dialog.verweisfenster{max-width:600px;width:min(600px,94vw)}
+.verweisfenster__zeile{display:flex;gap:18px;flex-wrap:wrap;margin-top:10px}
+.verweisfenster__zeile .absatzfenster__feld{flex:1 1 240px;max-width:none}
+.verweisfenster__zeile .absatzfenster__feld > span:first-child{
+  flex:0 0 auto;color:var(--schrift-2);font-size:.9rem;white-space:nowrap;
+}
+.verweisfenster__frage{margin:14px 0 6px;color:var(--schrift-2);font-size:.9rem}
+.verweisfenster__liste{
+  height:220px;overflow:auto;
+  border:1px solid var(--rand);border-radius:5px;
+  background:var(--grund);
+  display:flex;flex-direction:column;
+}
+.verweisfenster__eintrag{
+  text-align:left;padding:6px 10px;border:0;background:none;
+  color:var(--schrift);font:inherit;cursor:pointer;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.verweisfenster__eintrag:hover{background:rgba(127,127,127,.14)}
+.verweisfenster__eintrag--an{background:var(--blau);color:#fff}
+.verweisfenster__leer{
+  margin:auto;padding:12px;color:var(--schrift-2);font-size:.9rem;
+}
+.verweisfenster input:not([type="checkbox"]),.verweisfenster select{
+  background-color:var(--grund);color:var(--schrift);
+  border:1px solid var(--rand);border-radius:6px;
+  padding:5px 9px;font:inherit;flex:1 1 auto;min-width:0;
+}
+.verweisfenster select{padding-right:26px}
