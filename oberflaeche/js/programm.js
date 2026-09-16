@@ -2513,6 +2513,360 @@ const FARBEN = [
   ['#2F6FB5', 'Blau'],      ['#7A5EA8', 'Violett'],    ['#A0522D', 'Braun'],    ['#1F7A5A', 'Dunkelgrün'],
 ];
 
+/* ============================================================
+   DAS FARBEN-FENSTER
+
+   Seine Vorlage sind drei Bilder aus WPS: ein Fenster „Farben" mit den
+   Karteireitern Standard, Benutzerdefiniert und Erweitert, rechts
+   untereinander OK und Abbrechen und darunter zwei Felder „Neu" und
+   „Aktuell".
+
+   - Standard: ein Raster aus Farbtoenen in sechs Helligkeiten, darunter
+     eine Reihe Graustufen.
+   - Benutzerdefiniert: eine Flaeche fuer Ton und Saettigung, daneben ein
+     Helligkeitsband, darunter Rot, Gruen, Blau.
+   - Erweitert: derselbe Aufbau, aber als Farbkreis.
+
+   Vorher gab es dafuer ein kleines Taefelchen mit zwoelf Punkten und
+   einem Systemfarbwaehler. „Weitere Fuellfarben…" fuehrt jetzt hierher.
+
+   beiFarbe bekommt den Hex-Wert. Wer nur eine Farbe braucht, ruft
+   farbFenster(start, beiFarbe) — der Rest ist dieses Fenster.
+   ============================================================ */
+
+/* Die Toene der Standard-Karte: zwoelf Farbwinkel in sechs Helligkeiten.
+   Die Winkel stammen aus SEINER Palette — nicht aus WPS. Ich habe diese
+   Palette einmal eigenmaechtig getauscht; das kommt nicht wieder. */
+function farbrasterBauen() {
+  const reihen = [];
+  const stufen = [0.88, 0.76, 0.62, 0.48, 0.34, 0.22];
+  for (const helligkeit of stufen) {
+    const reihe = [];
+    for (const [hex] of FARBEN) {
+      const [h, sa] = hexZuHsl(hex);
+      reihe.push(hslZuHex(h, Math.max(0.12, sa), helligkeit));
+    }
+    reihen.push(reihe);
+  }
+  return reihen;
+}
+
+function farbFenster(start, beiFarbe) {
+  let gewaehlt = start || '#2F6FB5';
+  const vorher = gewaehlt;
+
+  const grund = document.createElement('div');
+  grund.className = 'dialoggrund';
+  const kasten = document.createElement('div');
+  kasten.className = 'dialog farbfenster';
+  kasten.innerHTML = '<h3 class="dialog__titel">Farben</h3>';
+
+  /* Links die Karten, rechts die Knoepfe und die beiden Proben — so
+     steht es auf seinen drei Bildern. */
+  const koerper = document.createElement('div');
+  koerper.className = 'farbfenster__koerper';
+  const links = document.createElement('div');
+  links.className = 'farbfenster__links';
+  const rechts = document.createElement('div');
+  rechts.className = 'farbfenster__rechts';
+
+  const reiter = document.createElement('div');
+  reiter.className = 'rahmentafel__reiter';
+  const buehne = document.createElement('div');
+  buehne.className = 'farbfenster__buehne';
+  links.appendChild(reiter);
+  links.appendChild(buehne);
+
+  /* ---- rechts: OK, Abbrechen, Neu, Aktuell ---- */
+  const ok = document.createElement('button');
+  ok.type = 'button'; ok.className = 'knopf knopf--haupt'; ok.textContent = 'OK';
+  const ab = document.createElement('button');
+  ab.type = 'button'; ab.className = 'knopf'; ab.textContent = 'Abbrechen';
+  rechts.appendChild(ok);
+  rechts.appendChild(ab);
+
+  const proben = document.createElement('div');
+  proben.className = 'farbfenster__proben';
+  const neuName = document.createElement('span');
+  neuName.className = 'farbfenster__probenname';
+  neuName.textContent = 'Neu';
+  const neu = document.createElement('div');
+  neu.className = 'farbfenster__probe';
+  const altName = document.createElement('span');
+  altName.className = 'farbfenster__probenname';
+  altName.textContent = 'Aktuell';
+  const alt = document.createElement('div');
+  alt.className = 'farbfenster__probe';
+  alt.style.background = vorher;
+  proben.appendChild(neuName); proben.appendChild(neu);
+  proben.appendChild(altName); proben.appendChild(alt);
+  rechts.appendChild(proben);
+
+  let beiWahl = null;
+  function setze(hex, vonKarte) {
+    gewaehlt = hex;
+    neu.style.background = hex;
+    if (beiWahl && !vonKarte) beiWahl(hex);
+  }
+  setze(gewaehlt, true);
+
+  /* ---- Karte 1: Standard ---- */
+  function karteStandard() {
+    const k = document.createElement('div');
+    k.className = 'farbfenster__karte';
+    const gitter = document.createElement('div');
+    gitter.className = 'farbfenster__raster';
+    for (const reihe of farbrasterBauen()) {
+      for (const ton of reihe) {
+        const f = document.createElement('button');
+        f.type = 'button';
+        f.className = 'farbfenster__feld';
+        f.style.background = ton;
+        f.title = ton;
+        f.addEventListener('mousedown', (e) => e.preventDefault());
+        f.addEventListener('click', () => setze(ton, true));
+        gitter.appendChild(f);
+      }
+    }
+    k.appendChild(gitter);
+
+    /* Die Graustufenreihe unten — auf seinem Bild steht sie abgesetzt. */
+    const grau = document.createElement('div');
+    grau.className = 'farbfenster__grau';
+    for (let i = 0; i <= 11; i++) {
+      const wert = Math.round(255 - (255 / 11) * i);
+      const ton = '#' + [wert, wert, wert].map((z) => z.toString(16).padStart(2, '0')).join('');
+      const f = document.createElement('button');
+      f.type = 'button';
+      f.className = 'farbfenster__feld';
+      f.style.background = ton;
+      f.title = ton;
+      f.addEventListener('mousedown', (e) => e.preventDefault());
+      f.addEventListener('click', () => setze(ton, true));
+      grau.appendChild(f);
+    }
+    k.appendChild(grau);
+    return k;
+  }
+
+  /* ---- Gemeinsames fuer Karte 2 und 3: die RGB-Felder ---- */
+  function rgbFelder(beiAenderung) {
+    const kiste = document.createElement('div');
+    kiste.className = 'farbfenster__rgb';
+
+    const modell = document.createElement('label');
+    modell.className = 'absatzfenster__feld';
+    const mt = document.createElement('span');
+    mt.textContent = 'Farbmodell';
+    const mw = document.createElement('select');
+    mw.className = 'feld';
+    for (const n of ['RGB', 'HSL']) {
+      const o = document.createElement('option');
+      o.value = n; o.textContent = n;
+      mw.appendChild(o);
+    }
+    modell.appendChild(mt); modell.appendChild(mw);
+    kiste.appendChild(modell);
+
+    const eingaben = {};
+    const machen = (name, schluessel, hoechst) => {
+      const w = document.createElement('label');
+      w.className = 'absatzfenster__feld';
+      const t = document.createElement('span');
+      t.textContent = name;
+      const e = document.createElement('input');
+      e.type = 'number'; e.className = 'feld';
+      e.min = '0'; e.max = String(hoechst);
+      w.appendChild(t); w.appendChild(e);
+      kiste.appendChild(w);
+      eingaben[schluessel] = e;
+      e.addEventListener('input', () => beiAenderung(lies()));
+    };
+
+    const lies = () => {
+      if (mw.value === 'RGB') {
+        const z = ['rot', 'gruen', 'blau'].map((s) => Math.max(0, Math.min(255, parseInt(eingaben[s].value, 10) || 0)));
+        return '#' + z.map((x) => x.toString(16).padStart(2, '0')).join('');
+      }
+      return hslZuHex((parseInt(eingaben.rot.value, 10) || 0) / 360,
+                      (parseInt(eingaben.gruen.value, 10) || 0) / 100,
+                      (parseInt(eingaben.blau.value, 10) || 0) / 100);
+    };
+
+    machen('Rot', 'rot', 255);
+    machen('Grün', 'gruen', 255);
+    machen('Blau', 'blau', 255);
+
+    const schreib = (hex) => {
+      if (mw.value === 'RGB') {
+        eingaben.rot.value = parseInt(hex.slice(1, 3), 16);
+        eingaben.gruen.value = parseInt(hex.slice(3, 5), 16);
+        eingaben.blau.value = parseInt(hex.slice(5, 7), 16);
+      } else {
+        const [h, sa, l] = hexZuHsl(hex);
+        eingaben.rot.value = Math.round(h * 360);
+        eingaben.gruen.value = Math.round(sa * 100);
+        eingaben.blau.value = Math.round(l * 100);
+      }
+    };
+
+    mw.addEventListener('change', () => {
+      const namen = mw.value === 'RGB' ? ['Rot', 'Grün', 'Blau'] : ['Farbton', 'Sättigung', 'Helligkeit'];
+      [...kiste.querySelectorAll('.absatzfenster__feld')].slice(1).forEach((w, i) => {
+        w.firstChild.textContent = namen[i];
+      });
+      schreib(gewaehlt);
+    });
+
+    kiste.schreib = schreib;
+    return kiste;
+  }
+
+  /* ---- Karte 2: Benutzerdefiniert ---- */
+  function karteEigen() {
+    const k = document.createElement('div');
+    k.className = 'farbfenster__karte';
+
+    const oben = document.createElement('div');
+    oben.className = 'farbfenster__mischer';
+    const flaeche = document.createElement('div');
+    flaeche.className = 'farbfenster__flaeche';
+    const punkt = document.createElement('i');
+    punkt.className = 'farbfenster__punkt';
+    flaeche.appendChild(punkt);
+    const band = document.createElement('div');
+    band.className = 'farbfenster__band';
+    const griff = document.createElement('i');
+    griff.className = 'farbfenster__griff';
+    band.appendChild(griff);
+    oben.appendChild(flaeche); oben.appendChild(band);
+    k.appendChild(oben);
+
+    let [h, sa, l] = hexZuHsl(gewaehlt);
+    const zeichne = () => {
+      flaeche.style.background =
+        'linear-gradient(to top, #000, transparent), '
+        + 'linear-gradient(to right, #fff, hsl(' + (h * 360) + ',100%,50%))';
+      punkt.style.left = (sa * 100) + '%';
+      punkt.style.top = ((1 - l) * 100) + '%';
+      griff.style.top = (h * 100) + '%';
+      band.style.background = 'linear-gradient(to bottom,'
+        + [0, 1, 2, 3, 4, 5, 6].map((i) => 'hsl(' + (i * 60) + ',100%,50%)').join(',') + ')';
+    };
+    zeichne();
+
+    const felder = rgbFelder((hex) => { setze(hex, true); [h, sa, l] = hexZuHsl(hex); zeichne(); });
+    felder.schreib(gewaehlt);
+    k.appendChild(felder);
+
+    const ausFlaeche = (e) => {
+      const r = flaeche.getBoundingClientRect();
+      sa = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+      l = Math.max(0, Math.min(1, 1 - (e.clientY - r.top) / r.height));
+      const hex = hslZuHex(h, sa, l);
+      setze(hex, true); felder.schreib(hex); zeichne();
+    };
+    const ausBand = (e) => {
+      const r = band.getBoundingClientRect();
+      h = Math.max(0, Math.min(0.999, (e.clientY - r.top) / r.height));
+      const hex = hslZuHex(h, sa, l);
+      setze(hex, true); felder.schreib(hex); zeichne();
+    };
+    for (const [el, tun] of [[flaeche, ausFlaeche], [band, ausBand]]) {
+      el.addEventListener('mousedown', (e) => {
+        e.preventDefault(); tun(e);
+        const zieh = (z) => tun(z);
+        const los = () => {
+          window.removeEventListener('mousemove', zieh);
+          window.removeEventListener('mouseup', los);
+        };
+        window.addEventListener('mousemove', zieh);
+        window.addEventListener('mouseup', los);
+      });
+    }
+    return k;
+  }
+
+  /* ---- Karte 3: Erweitert ---- */
+  function karteKreis() {
+    const k = document.createElement('div');
+    k.className = 'farbfenster__karte';
+
+    const kreisKiste = document.createElement('div');
+    kreisKiste.className = 'farbfenster__kreiskiste';
+    const kreis = document.createElement('div');
+    kreis.className = 'farbfenster__kreis';
+    const marke = document.createElement('i');
+    marke.className = 'farbfenster__kreismarke';
+    kreis.appendChild(marke);
+    kreisKiste.appendChild(kreis);
+    k.appendChild(kreisKiste);
+
+    let [h, sa, l] = hexZuHsl(gewaehlt);
+    const zeichne = () => {
+      const winkel = h * 360;
+      marke.style.left = (50 + 42 * Math.cos((winkel - 90) * Math.PI / 180)) + '%';
+      marke.style.top = (50 + 42 * Math.sin((winkel - 90) * Math.PI / 180)) + '%';
+    };
+    zeichne();
+
+    const felder = rgbFelder((hex) => { setze(hex, true); [h, sa, l] = hexZuHsl(hex); zeichne(); });
+    felder.schreib(gewaehlt);
+    k.appendChild(felder);
+
+    kreis.addEventListener('mousedown', (e) => {
+      const r = kreis.getBoundingClientRect();
+      const x = e.clientX - r.left - r.width / 2;
+      const y = e.clientY - r.top - r.height / 2;
+      h = ((Math.atan2(y, x) * 180 / Math.PI + 90 + 360) % 360) / 360;
+      const hex = hslZuHex(h, sa || 0.7, l || 0.5);
+      setze(hex, true); felder.schreib(hex); zeichne();
+    });
+    return k;
+  }
+
+  const KARTEN = [
+    ['standard', 'Standard', karteStandard],
+    ['eigen', 'Benutzerdefiniert', karteEigen],
+    ['kreis', 'Erweitert', karteKreis],
+  ];
+  const zeige = (kuerzel) => {
+    const eintrag = KARTEN.find(([k]) => k === kuerzel) || KARTEN[0];
+    buehne.textContent = '';
+    buehne.appendChild(eintrag[2]());
+    [...reiter.children].forEach((c) => {
+      c.classList.toggle('rahmentafel__reiter--an', c.dataset.karte === eintrag[0]);
+    });
+  };
+  for (const [kuerzel, name] of KARTEN) {
+    const k = document.createElement('button');
+    k.type = 'button';
+    k.className = 'rahmentafel__reiter-knopf';
+    k.dataset.karte = kuerzel;
+    k.textContent = name;
+    k.addEventListener('click', () => zeige(kuerzel));
+    reiter.appendChild(k);
+  }
+
+  koerper.appendChild(links);
+  koerper.appendChild(rechts);
+  kasten.appendChild(koerper);
+
+  ab.addEventListener('click', () => grund.remove());
+  ok.addEventListener('click', () => {
+    grund.remove();
+    if (beiFarbe) beiFarbe(gewaehlt);
+  });
+
+  grund.appendChild(kasten);
+  grund.addEventListener('mousedown', (e) => { if (e.target === grund) grund.remove(); });
+  document.addEventListener('keydown', function zu(e) {
+    if (e.key === 'Escape' && grund.isConnected) { grund.remove(); document.removeEventListener('keydown', zu); }
+  });
+  document.body.appendChild(grund);
+  zeige('standard');
+}
+
 function farbeWaehlen(befehl, titel, knopf) {
   auswahlMerken();
 
@@ -2563,19 +2917,21 @@ function farbeWaehlen(befehl, titel, knopf) {
     tafel.appendChild(weg);
   }
 
-  const eigene = document.createElement('label');
-  eigene.className = 'farbtafel__eigene';
-  eigene.textContent = 'Eigene Farbe ';
-  const feldChen = document.createElement('input');
-  feldChen.type = 'color';
-  feldChen.value = '#2F6FB5';
-  feldChen.addEventListener('input', () => {
+  /* Der Systemfarbwaehler ist weg: Sein Bild zeigt an dieser Stelle ein
+     eigenes Fenster mit drei Karteireitern. */
+  const eigene = document.createElement('button');
+  eigene.type = 'button';
+  eigene.className = 'knopf knopf--klein farbtafel__weg';
+  eigene.textContent = 'Weitere Farben…';
+  eigene.addEventListener('mousedown', (e) => e.preventDefault());
+  eigene.addEventListener('click', () => {
     tafel.remove();
-    auswahlZurueck();
-    Dokument.befehl(befehl, feldChen.value);
-    melde(titel + ' gesetzt.');
+    farbFenster('#2F6FB5', (hex) => {
+      auswahlZurueck();
+      Dokument.befehl(befehl, hex);
+      melde(titel + ' gesetzt.');
+    });
   });
-  eigene.appendChild(feldChen);
   tafel.appendChild(eigene);
 
   /* Unter den Knopf, der sie geöffnet hat — sonst stünde sie am Bildrand
@@ -11445,6 +11801,16 @@ B.absatzRahmen = (knopf) => {
    In WPS ist die Schattierung eine FARBKLAPPE — man waehlt eine Farbe
    und fertig. Das Fenster steht darin als letzter Punkt, fuer die, die
    mehr wollen. Genau wie beim Rahmen daneben. */
+/* Welche Farbe hat der Absatz gerade? Damit das Farbenfenster bei
+   „Aktuell" nicht irgendetwas zeigt. */
+function gewaehlteSchattierung() {
+  const el = absaetzeInAuswahl()[0];
+  if (!el || !el.style.backgroundColor) return '#FFFFFF';
+  const m = el.style.backgroundColor.match(/\d+/g);
+  if (!m) return '#FFFFFF';
+  return '#' + m.slice(0, 3).map((z) => (+z).toString(16).padStart(2, '0')).join('');
+}
+
 B.absatzSchattierung = (knopf) => {
   designTafelZeigen(knopf, 'Schattierung', (tafel) => {
     tafel.classList.add('designtafel--breit', 'farbtafel');
@@ -11460,19 +11826,65 @@ B.absatzSchattierung = (knopf) => {
       melde(hex ? 'Hinterlegt: ' + name + '.' : 'Hinterlegung entfernt.');
     };
 
-    /* Zuerst die hellen Toene: Ein Absatz unter dunkelblauem Grund ist
-       nicht mehr zu lesen, und darum geht es in diesem Programm. */
-    const hell = document.createElement('div');
-    hell.className = 'farbtafel__reihe farbtafel__reihe--zwoelf';
-    for (const [hex, name] of FARBEN) {
-      const [h, sa, l] = hexZuHsl(hex);
-      const licht = hslZuHex(h, Math.min(0.5, sa), Math.max(l, 0.90));
-      const feldchen = farbfeld(licht, () => { designTafelWeg(); nimm(licht, name + ', hell'); });
-      feldchen.title = name + ', hell';
-      hell.appendChild(feldchen);
-    }
-    tafel.appendChild(hell);
+    const zeile = (bild, name, tun) => {
+      const k = document.createElement('button');
+      k.type = 'button';
+      k.className = 'designtafel__zeile richtungszeile';
+      k.appendChild(symbol(bild));
+      const w = document.createElement('span');
+      w.textContent = name;
+      k.appendChild(w);
+      k.addEventListener('mousedown', (e) => e.preventDefault());
+      k.addEventListener('click', tun);
+      tafel.appendChild(k);
+    };
 
+    const ueberschrift = (text) => {
+      const h = document.createElement('div');
+      h.className = 'farbtafel__gruppe';
+      h.textContent = text;
+      tafel.appendChild(h);
+    };
+
+    /* AUFBAU NACH SEINEM WPS-BILD
+       „Keine Farbe" ganz oben, dann „Thema-Farben" als Raster mit
+       Abstufungen, dann „Standard-Farben", unten „Weitere Fuellfarben".
+       Vorher standen zwei Farbreihen ohne Ueberschrift da und „Keine
+       Fuellung" unten.
+
+       DIE FARBEN SIND SEINE. Das Raster berechnet die Abstufungen aus
+       FARBEN — den zwoelf Toenen, die er ausgesucht hat. Ich habe diese
+       Palette einmal gegen WPS-Signalfarben getauscht; das kommt nicht
+       wieder. */
+    zeile('radierer', 'Keine Füllung', () => { designTafelWeg(); nimm('', ''); });
+
+    ueberschrift('Themenfarben');
+    const gitter = document.createElement('div');
+    gitter.className = 'farbtafel__gitter';
+    /* Eine Spalte je Farbe, von hell nach dunkel — wie in WPS. Oben der
+       Grundton, darunter fuenf Stufen. */
+    for (const [hex, name] of FARBEN) {
+      const spalte = document.createElement('div');
+      spalte.className = 'farbtafel__spalte';
+      const [h, sa, l] = hexZuHsl(hex);
+      const stufen = [
+        [hex, name],
+        [hslZuHex(h, Math.min(0.55, sa), Math.min(0.94, l + 0.34)), name + ', sehr hell'],
+        [hslZuHex(h, Math.min(0.62, sa), Math.min(0.88, l + 0.22)), name + ', hell'],
+        [hslZuHex(h, sa, Math.max(0.18, l - 0.10)), name + ', dunkel'],
+        [hslZuHex(h, sa, Math.max(0.12, l - 0.20)), name + ', dunkler'],
+        [hslZuHex(h, sa, Math.max(0.08, l - 0.30)), name + ', am dunkelsten'],
+      ];
+      for (const [ton, wie] of stufen) {
+        const feldchen = farbfeld(ton, () => { designTafelWeg(); nimm(ton, wie); });
+        feldchen.title = wie;
+        spalte.appendChild(feldchen);
+      }
+      gitter.appendChild(spalte);
+    }
+    tafel.appendChild(gitter);
+
+    ueberschrift('Standardfarben');
     const voll = document.createElement('div');
     voll.className = 'farbtafel__reihe farbtafel__reihe--zwoelf';
     for (const [hex, name] of FARBEN) {
@@ -11486,19 +11898,10 @@ B.absatzSchattierung = (knopf) => {
     strichel.className = 'designtafel__strich';
     tafel.appendChild(strichel);
 
-    const zeile = (bild, name, tun) => {
-      const k = document.createElement('button');
-      k.type = 'button';
-      k.className = 'designtafel__zeile richtungszeile';
-      k.appendChild(symbol(bild));
-      const w = document.createElement('span');
-      w.textContent = name;
-      k.appendChild(w);
-      k.addEventListener('mousedown', (e) => e.preventDefault());
-      k.addEventListener('click', tun);
-      tafel.appendChild(k);
-    };
-    zeile('radierer', 'Keine Füllung', () => { designTafelWeg(); nimm('', ''); });
+    zeile('farbe', 'Weitere Füllfarben…', () => {
+      designTafelWeg();
+      farbFenster(gewaehlteSchattierung(), (hex) => nimm(hex, hex));
+    });
     zeile('absatztoenung', 'Rahmen und Schattierung…',
           () => { designTafelWeg(); B.seitenraenderRahmen('schatten'); });
   });

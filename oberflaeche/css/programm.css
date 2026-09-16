@@ -2941,6 +2941,25 @@ body.lesen .arbeitsflaeche{padding:40px 24px}
 }
 /* Seine zwoelf Farben passen genau in eine Reihe. */
 .farbtafel__reihe--zwoelf{grid-template-columns:repeat(12, 1fr)}
+/* Das Raster der Themenfarben: eine Spalte je Farbe, darin der Grundton
+   und fuenf Abstufungen — wie in WPS. Die Spalten stehen dicht
+   beieinander, die Reihen darin ohne Luft, damit eine Farbfamilie als
+   ein Streifen zu sehen ist. */
+.farbtafel__gitter{
+  display:grid;grid-template-columns:repeat(12, 1fr);
+  gap:4px;margin:2px 0 6px;
+}
+.farbtafel__spalte{display:grid;grid-template-rows:repeat(6, 1fr);gap:1px}
+.farbtafel__spalte .farbtafel__feld{border-radius:0}
+.farbtafel__spalte .farbtafel__feld:first-child{
+  border-radius:2px 2px 0 0;margin-bottom:3px;
+}
+.farbtafel__spalte .farbtafel__feld:last-child{border-radius:0 0 2px 2px}
+/* Die Ueberschriften ueber den beiden Bloecken. */
+.farbtafel__gruppe{
+  color:var(--schrift-2);font-size:.78rem;
+  padding:6px 2px 2px;
+}
 .farbtafel__feld{
   width:100%;aspect-ratio:1;
   border:1px solid rgba(127,127,127,.45);border-radius:2px;
@@ -5280,3 +5299,95 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
   hyphens:auto;
 }
 .absatzprobe__satz--vor,.absatzprobe__satz--nach{opacity:.42}
+
+/* ============================================================
+   DAS FARBEN-FENSTER
+
+   Nach seinen drei WPS-Bildern: links die Karten, rechts OK, Abbrechen
+   und darunter die Proben "Neu" und "Aktuell".
+   ============================================================ */
+.dialog.farbfenster{max-width:560px;width:min(560px,94vw)}
+.farbfenster__koerper{display:flex;gap:14px;align-items:flex-start}
+.farbfenster__links{flex:1 1 auto;min-width:0}
+.farbfenster__rechts{
+  flex:0 0 118px;display:flex;flex-direction:column;gap:8px;
+}
+.farbfenster__buehne{padding-top:10px}
+.farbfenster__karte{display:flex;flex-direction:column;gap:10px}
+
+/* Das Raster: zwoelf Toene in sechs Helligkeiten. */
+.farbfenster__raster{
+  display:grid;grid-template-columns:repeat(12,1fr);gap:2px;
+}
+.farbfenster__grau{
+  display:grid;grid-template-columns:repeat(12,1fr);gap:2px;
+  padding-top:6px;border-top:1px solid var(--rand);
+}
+.farbfenster__feld{
+  width:100%;aspect-ratio:1;padding:0;cursor:pointer;
+  border:1px solid rgba(127,127,127,.35);border-radius:2px;
+}
+.farbfenster__feld:hover{outline:2px solid var(--blau);outline-offset:1px}
+
+/* Die beiden Proben rechts. */
+.farbfenster__proben{display:flex;flex-direction:column;gap:2px;margin-top:6px}
+.farbfenster__probenname{color:var(--schrift-2);font-size:.78rem;text-align:center}
+.farbfenster__probe{
+  height:44px;border:1px solid var(--rand);border-radius:3px;
+  background:#fff;
+}
+
+/* Karte "Benutzerdefiniert": Flaeche und Helligkeitsband. */
+.farbfenster__mischer{display:flex;gap:10px;height:150px}
+.farbfenster__flaeche{
+  flex:1 1 auto;position:relative;border:1px solid var(--rand);
+  border-radius:3px;cursor:crosshair;
+}
+.farbfenster__band{
+  flex:0 0 22px;position:relative;border:1px solid var(--rand);
+  border-radius:3px;cursor:ns-resize;
+}
+.farbfenster__punkt{
+  position:absolute;width:11px;height:11px;margin:-6px 0 0 -6px;
+  border:2px solid #fff;border-radius:50%;
+  box-shadow:0 0 0 1px rgba(0,0,0,.5);pointer-events:none;
+}
+.farbfenster__griff{
+  position:absolute;left:-3px;right:-3px;height:4px;margin-top:-2px;
+  border:1px solid #fff;border-radius:2px;
+  box-shadow:0 0 0 1px rgba(0,0,0,.5);pointer-events:none;
+}
+
+/* Karte "Erweitert": der Farbkreis. */
+.farbfenster__kreiskiste{display:flex;justify-content:center}
+.farbfenster__kreis{
+  position:relative;width:150px;height:150px;border-radius:50%;
+  cursor:crosshair;
+  background:conic-gradient(from 0deg,
+    hsl(0,100%,50%),hsl(60,100%,50%),hsl(120,100%,50%),
+    hsl(180,100%,50%),hsl(240,100%,50%),hsl(300,100%,50%),hsl(360,100%,50%));
+  -webkit-mask:radial-gradient(circle, transparent 54%, #000 56%);
+          mask:radial-gradient(circle, transparent 54%, #000 56%);
+}
+.farbfenster__kreismarke{
+  position:absolute;width:12px;height:12px;margin:-6px 0 0 -6px;
+  border:2px solid #fff;border-radius:50%;
+  box-shadow:0 0 0 1px rgba(0,0,0,.6);pointer-events:none;
+}
+
+/* Rot, Gruen, Blau — dieselben Zeilen wie im Absatz-Fenster. */
+.farbfenster__rgb{display:flex;flex-direction:column;gap:6px}
+/* Die Feldklasse kommt aus dem Absatz-Fenster, wo Felder NEBENeinander
+   stehen und wachsen duerfen. Hier stehen sie untereinander — mit
+   flex:1 wuchsen sie in die Hoehe und schoben Gruen und Blau aus dem
+   Fenster. */
+.farbfenster__rgb .absatzfenster__feld{max-width:none;flex:0 0 auto}
+.farbfenster__rgb .absatzfenster__feld > span:first-child{
+  flex:0 0 5.5em;color:var(--schrift-2);font-size:.86rem;
+}
+.farbfenster input:not([type="checkbox"]):not([type="radio"]),
+.farbfenster select{
+  background-color:var(--grund);color:var(--schrift);
+  border:1px solid var(--rand);border-radius:6px;
+  padding:4px 8px;font:inherit;font-size:.88rem;flex:1 1 auto;min-width:0;
+}
