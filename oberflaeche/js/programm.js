@@ -19188,6 +19188,13 @@ function rechtsMenueZeigen(e) {
 
   const stelle = wortAnPunkt(e.clientX, e.clientY);
 
+  /* Zeigt der Zeiger auf ein angestrichenes Wort, hatte das Menue den
+     Punkt zweimal: einmal aus dem Wort unter dem Zeiger, einmal aus der
+     Marke darunter — zwei gleiche Ueberschriften, zwei gleiche
+     Vorschlaege, fuenf Aktionen statt drei. Hier wird gemerkt, ob das
+     Wort schon oben stand; der Block darunter haelt dann still. */
+  let wortGezeigt = null;
+
   /* Was der Prüfer selbst zu diesem Wort sagt.
    *
    * Hier stand vorher nur die Klangliste („vorschlaegeFuer"), und die ist
@@ -19290,13 +19297,16 @@ function rechtsMenueZeigen(e) {
         if (funde.length) pruefen();
       } });
     }
+    wortGezeigt = String(stelle.wort || '').toLowerCase();
     trennlinie();
   }
 
   /* ---- 2. Die angestrichene Stelle ---- */
   const fund = fundAnStelle(e.target);
+  const doppelt = !!(fund && wortGezeigt
+                     && String(fund.alt || '').toLowerCase() === wortGezeigt);
 
-  if (fund) {
+  if (fund && !doppelt) {
     kopfzeileSetzen(fund.grund || 'Gefundene Stelle');
 
     if (fund.art !== 'hinweis' && fund.neu) {
