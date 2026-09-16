@@ -86,6 +86,62 @@ ERLEDIGT = {
         'Die Gruppe heißt jetzt „Anordnen" und hat vier Knöpfe wie in WPS: '
         'Textfluss, Ausrichten, Gruppieren, Drehen. Ausrichten und Drehen '
         'wirken auf Bilder, Formen und Tabellen.',
+    'start-zwischenablage|einfügen':
+        'War blindes Einfügen: ein Klick, und was kam, kam. Jetzt der Pfeil '
+        'aus Ihrem Bild mit fünf Punkten — Formatierter Text, Passend '
+        'formatiert einfügen, Unformatierter Text (Strg+Alt+T), Inhalte '
+        'einfügen… (Strg+Alt+V), Standard zum Einfügen festlegen. „Passend '
+        'formatiert" nimmt den Text und behält das Aussehen des Dokuments; '
+        'für Text aus dem Netz ist das fast immer das Richtige und war '
+        'bisher gar nicht möglich. Die beiden Kürzel wirken.',
+    'start-zwischenablage|einfügen-ohne-formatierung':
+        'Siehe Einfügen — steht jetzt als eigener Punkt in der Klappe, mit '
+        'dem Kürzel Strg+Alt+T.',
+
+    'einfügen|smartart':
+        'Es war ein Reiter mit zwei Knöpfen, die zwei Fenster öffneten. Jetzt '
+        'die zwei Reiter aus Ihren Bildern: SmartArt-Entwurf (Form einfügen, '
+        'Vorwärts, Rückwärts, Reihenfolge umdrehen, Kästen bearbeiten, '
+        'Layout, Farben ändern, Textfluss, Ausrichten, Größe) und '
+        'SmartArt-Format (Füllung, Kontur, Effekte, Größe, Anordnen). Die '
+        'Zeichner nehmen jetzt Farben entgegen — vorher stand die Farbreihe '
+        'fest darin, und „Farben ändern" hätte nichts ändern können. Am '
+        'SmartArt selbst hängen dieselben Griffe wie am Bild.',
+
+    'start-absatzlayout|absatzrahmen':
+        'Dahinter lag ein eigenes Fenster „Rahmenlinien" neben dem, das es '
+        'schon gab — daher „hier gerät was durcheinander". Jetzt die Klappe '
+        'aus Ihrem Bild mit den zwölf Zeilen, jede mit eigenem Zeichen für '
+        'ihre Kante, und als letzter Punkt „Rahmen und Schattierung…". Im '
+        'Fenster sind „Alle" und „Raster" ergänzt (grau, solange der Zeiger '
+        'in keiner Tabelle steht), die Vorschau zeigt jetzt den Stand des '
+        'Absatzes statt eines festen Werts — vorher waren alle vier Kanten '
+        'an, man konnte nur wegnehmen —, das Blatt liegt auf hellem Grund, '
+        'damit die Linien am Rand zu sehen sind, und der Hinweis steht über '
+        'dem Feld statt darin.',
+    'start-absatzlayout|absatzschattierung':
+        'Heißt jetzt wie in WPS und ist eine Farbklappe, kein Fenster: Ihre '
+        'zwölf Töne, die hellen zuerst, dazu „Keine Füllung" und als letzter '
+        'Punkt „Rahmen und Schattierung…".',
+
+    'einfügen|textfeld':
+        'Der Rahmen ließ sich nicht entfernen, weil es ihn gar nicht gab: '
+        'insertHTML fügt in den Absatz ein, und ein <div> darf dort nicht '
+        'stehen — der Browser machte daraus ein <span> mit grauem '
+        'Hintergrund. Jetzt wird der Kasten neben den Absatz gesetzt. Dazu '
+        'die Texttools aus Ihrem Bild: Textfüllung, Textkontur, Texteffekte '
+        'für den Text; Füllung, Kontur, Effekte für den Rahmen; Textfluss, '
+        'Größe, Einstellungen, Textfeld löschen. Unter Kontur steht „Kein '
+        'Rahmen".',
+
+    'start-absatz|zeilenabstand':
+        'Das Zeichen war ein Paar senkrechter Balken — das heißt nichts. '
+        'Jetzt Zeilen mit Doppelpfeil. Und dahinter die Klappe aus WPS: '
+        '1 / 1,15 / 1,5 / 2 / 2,5 / 3, jede mit drei Strichen so weit '
+        'auseinander, wie sie es meint. Der Abstand vor und nach dem Absatz '
+        'steht als letzter Punkt darin — das war vorher das Einzige, was der '
+        'Knopf konnte.',
+
     'start-schriftart|durchgestrichen':
         'Es war der Buchstabe S — für „Streichen", was man wissen muss. Jetzt '
         'ein A mit einem Strich hindurch, wie in WPS.',
