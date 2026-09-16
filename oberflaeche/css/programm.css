@@ -1910,7 +1910,12 @@ button.wz-wahl--schrift{
 }
 .dialog__zeile{display:flex;align-items:center;gap:12px;margin-bottom:10px}
 .dialog__zeile span{flex:0 0 110px;font-size:13px}
-.dialog__zeile input,.dialog__zeile select{
+.dialog__zeile input,.dialog__zeile select,
+/* Das Absatz-Fenster baut seine Zeilen selbst und braucht dieselben
+   Felder — ohne das stehen dort weisse Kaesten in einem dunklen
+   Fenster. */
+.absatzfenster input:not([type="checkbox"]):not([type="radio"]),
+.absatzfenster select{
   flex:1 1 auto;min-width:0;
   /* „background-color" und nicht die Kurzform „background": Die Kurzform
      setzt auch background-image zurück — und damit wäre der Pfeil des
@@ -1923,8 +1928,9 @@ button.wz-wahl--schrift{
 /* Und der Platz für den Pfeil, den das „padding" darüber sonst wieder
    einkassiert: Bei „die Zeile hervorheben" liefe der Text sonst unter das
    Zeichen. */
-.dialog__zeile select{padding-right:30px}
-.dialog__zeile input:focus,.dialog__zeile select:focus{
+.dialog__zeile select,.absatzfenster select{padding-right:30px}
+.dialog__zeile input:focus,.dialog__zeile select:focus,
+.absatzfenster input:focus,.absatzfenster select:focus{
   outline:none;border-color:var(--blau-hell);
 }
 .dialog__knoepfe{
@@ -5188,3 +5194,82 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
   font-family:inherit;
 }
 .schriftprobe-knopf--fehlt{opacity:.5;cursor:default}
+
+/* ============================================================
+   DAS ABSATZ-FENSTER
+
+   Nach seinem WPS-Bild: zwei Karteireiter, drei Bloecke mit Rahmen und
+   Ueberschrift, je zwei Felder nebeneinander, unten die Vorschau.
+
+   KOMPAKT. Kay: "du hast das Fenster unbedienbar in die Laenge gezogen."
+   Sein WPS-Fenster ist knapp 660 Bildpunkte hoch und zeigt dabei alles
+   auf einmal — Karteireiter, drei Bloecke, Vorschau und Knoepfe. Jede
+   Zeile, die hier Luft bekommt, schiebt die Knoepfe unter den Rand.
+   ============================================================ */
+.dialog.absatzfenster{
+  max-width:640px;width:min(640px,94vw);max-height:92vh;
+  display:flex;flex-direction:column;
+}
+.absatzfenster .dialog__titel{margin-bottom:6px}
+.absatzfenster__buehne{min-height:auto;overflow:auto;padding:0 14px}
+.absatzfenster__karte{display:flex;flex-direction:column;gap:7px}
+/* Ein fieldset rechnet seine Breite aus dem Inhalt und blieb 135 Punkte
+   schmaler als die Karte — darum standen in den Auswahlfeldern nur
+   "Textkoe" und "(Kein". */
+.absatzfenster__block{
+  border:1px solid var(--rand);border-radius:5px;
+  padding:2px 10px 8px;margin:0;
+  width:100%;min-width:0;box-sizing:border-box;
+}
+.absatzfenster__block > legend{
+  padding:0 5px;color:var(--schrift-2);font-size:.78rem;
+}
+.absatzfenster__zeile{
+  display:flex;gap:14px;flex-wrap:wrap;margin-top:6px;
+}
+/* Zwei Felder je Zeile, wie auf seinem Bild. Ohne die Obergrenze zieht
+   das erste Feld sich breit und das zweite faellt darunter. */
+.absatzfenster__feld{
+  display:flex;align-items:center;gap:7px;
+  flex:1 1 200px;min-width:0;max-width:calc(50% - 7px);
+}
+.absatzfenster__feld > span:first-child{
+  flex:0 0 auto;color:var(--schrift-2);font-size:.86rem;white-space:nowrap;
+}
+.absatzfenster__feld .feld{flex:1 1 auto;min-width:0}
+.absatzfenster__zahl{display:flex;align-items:center;gap:4px;flex:1 1 auto;min-width:0}
+.absatzfenster__zahl .feld{width:4.6em;flex:0 0 auto}
+.absatzfenster__einheit{color:var(--schrift-2);font-size:.78rem}
+.absatzfenster__zahl--aus{opacity:.45}
+.absatzfenster__haken{
+  display:flex;align-items:center;gap:7px;padding:2px 0;
+  flex:1 1 46%;min-width:0;font-size:.88rem;
+}
+.absatzfenster__block > .absatzfenster__haken{flex-basis:auto}
+.absatzfenster__wahlpaar{display:flex;gap:16px;flex-wrap:wrap;flex:1 1 auto}
+/* Die beiden Richtungsknoepfe brauchen die ganze Zeile — sonst steht
+   der zweite unter dem ersten. */
+.absatzfenster__feld:has(.absatzfenster__wahlpaar){max-width:none;flex-basis:100%}
+.absatzfenster__schau{padding:0 14px}
+.absatzfenster__schau > h4{margin:6px 0 4px;color:var(--schrift-2);font-size:.78rem;font-weight:600}
+.absatzfenster__fuss{display:flex;gap:10px;margin-top:10px}
+.absatzfenster__fuss .knopf:first-child{margin-right:auto}
+/* Die Eingaben im Absatz-Fenster sind schmaler als in den uebrigen
+   Dialogen — sonst passt das Fenster nicht auf einen Bildschirm. */
+.absatzfenster input:not([type="checkbox"]):not([type="radio"]),
+.absatzfenster select{padding:4px 8px;font-size:.88rem}
+.absatzfenster select{padding-right:26px}
+
+/* Die Vorschau: ein Blatt im Kleinen. Der Absatz in der Mitte traegt
+   dieselben Stile, die OK setzt; die Nachbarn stehen grau daneben, damit
+   die Abstaende davor und danach zu sehen sind. */
+.absatzprobe{
+  background:var(--blatt,#fff);color:var(--blatt-schrift,#111417);
+  border:1px solid var(--rand);border-radius:4px;
+  padding:8px 10px;height:96px;overflow:hidden;
+}
+.absatzprobe__satz{
+  margin:0;font-size:6.5px;line-height:1.35;
+  hyphens:auto;
+}
+.absatzprobe__satz--vor,.absatzprobe__satz--nach{opacity:.42}

@@ -2873,19 +2873,449 @@ B.zeilenabstandKlappe = (knopf) => {
   });
 };
 
-B.absatzabstand = () => {
-  fenster('Absatzabstand', [
-    { art: 'satz', text: 'Der Abstand über und unter dem Absatz, in Millimetern.' },
-    { schluessel: 'oben', name: 'darüber', art: 'number', wert: '0', schritt: '0.5' },
-    { schluessel: 'unten', name: 'darunter', art: 'number', wert: '2.5', schritt: '0.5' },
-  ], (werte) => {
-    aufAbsaetze((el) => {
-      el.style.marginTop = (parseFloat(werte.oben) || 0) + 'mm';
-      el.style.marginBottom = (parseFloat(werte.unten) || 0) + 'mm';
+/* ============================================================
+   DAS ABSATZ-FENSTER
+
+   Seine Vorlage ist der WPS-Dialog „Absatz": zwei Karteireiter,
+   Allgemein / Einzug / Abstand, darunter eine Vorschau, unten links
+   „Tabstopps…".
+
+   Es gab dafuer ZWEI Fenster — „Einzug" mit drei Feldern und
+   „Absatzabstand" mit zweien. Er hat das zweimal gemeldet: „an einem
+   Ort gebuendelt", „das Dialogfenster doppelt gemoppelt". Beide Namen
+   fuehren jetzt hierher.
+
+   Masse: Einzug in Millimetern, Abstand in Millimetern. Sein Bild zeigt
+   „char" und „line", weil in WPS das Dokumentraster laeuft; Millimeter
+   sind hier ehrlicher, weil das Blatt in Millimetern gerechnet wird.
+   ============================================================ */
+
+const ABSATZ_AUSRICHTUNGEN = [
+  ['left', 'Links'], ['center', 'Zentriert'],
+  ['right', 'Rechts'], ['justify', 'Blocksatz'],
+];
+
+const ABSATZ_EBENEN = [
+  ['', 'Textkörper'], ['1', 'Ebene 1'], ['2', 'Ebene 2'], ['3', 'Ebene 3'],
+  ['4', 'Ebene 4'], ['5', 'Ebene 5'], ['6', 'Ebene 6'],
+];
+
+const ABSATZ_SONDER = [
+  ['keine', '(Keine)'], ['erste', 'Erste Zeile'], ['haengend', 'Hängend'],
+];
+
+const ABSATZ_ZEILEN = [
+  ['1', 'Einfach'], ['1.5', '1,5 Zeilen'], ['2', 'Doppelt'],
+  ['mehrfach', 'Mehrfach'],
+];
+
+/* Was steht gerade am Absatz? Ohne diese Abfrage oeffnete das Fenster
+   immer mit Nullen, und wer nur den Abstand aendern wollte, setzte den
+   Einzug ungewollt zurueck. */
+function absatzStandLesen() {
+  const el = absaetzeInAuswahl()[0];
+  const mm = (wert) => {
+    const zahl = parseFloat(wert);
+    if (!Number.isFinite(zahl)) return 0;
+    if (String(wert).endsWith('mm')) return zahl;
+    /* Der Rechner gibt Pixel zurueck; CM ist die Zahl der Bildpunkte je
+       Zentimeter, die das Programm ohnehin fuer das Lineal fuehrt. */
+    return Math.round((zahl / CM) * 10 * 10) / 10;
+  };
+  if (!el) {
+    return { ausrichtung: 'left', ebene: '', richtung: 'ltr', links: 0, rechts: 0,
+             sonder: 'keine', sonderVon: 0, oben: 0, unten: 0,
+             zeilen: '1', zeilenVon: 1, umbruchVor: false, zusammen: false,
+             ohneTrennung: false, kontrolle: true, mitNaechstem: false,
+             mittenImWort: false, textausrichtung: 'auto' };
+  }
+  const s = el.style;
+  const einzug = mm(s.textIndent);
+  return {
+    ausrichtung: s.textAlign || 'left',
+    ebene: el.dataset.ebene || '',
+    richtung: el.dir === 'rtl' ? 'rtl' : 'ltr',
+    links: mm(s.marginLeft),
+    rechts: mm(s.marginRight),
+    sonder: einzug > 0 ? 'erste' : (einzug < 0 ? 'haengend' : 'keine'),
+    sonderVon: Math.abs(einzug),
+    oben: mm(s.marginTop),
+    unten: mm(s.marginBottom),
+    zeilen: ['1', '1.5', '2'].includes(String(parseFloat(s.lineHeight)))
+            ? String(parseFloat(s.lineHeight))
+            : (s.lineHeight ? 'mehrfach' : '1'),
+    zeilenVon: parseFloat(s.lineHeight) || 1,
+    umbruchVor: s.breakBefore === 'page' || s.pageBreakBefore === 'always',
+    zusammen: s.breakInside === 'avoid',
+    ohneTrennung: el.dataset.trennung === 'aus',
+    kontrolle: el.dataset.kontrolle !== 'aus',
+    mitNaechstem: el.dataset.mitnaechstem === 'ja',
+    mittenImWort: el.dataset.mittenimwort === 'ja',
+    textausrichtung: el.dataset.textausrichtung || 'auto',
+  };
+}
+
+B.absatz = (karteZuerst) => {
+  const stand = absatzStandLesen();
+
+  const grund = document.createElement('div');
+  grund.className = 'dialoggrund';
+  const kasten = document.createElement('div');
+  kasten.className = 'dialog dialog--breit absatzfenster';
+  kasten.innerHTML = '<h3 class="dialog__titel">Absatz</h3>';
+
+  const reiter = document.createElement('div');
+  reiter.className = 'rahmentafel__reiter';
+  const buehne = document.createElement('div');
+  buehne.className = 'rahmentafel__buehne absatzfenster__buehne';
+
+  /* ---- kleine Bausteine, damit die Karten kurz bleiben ---- */
+  function block(titel) {
+    const b = document.createElement('fieldset');
+    b.className = 'absatzfenster__block';
+    b.innerHTML = '<legend>' + titel + '</legend>';
+    return b;
+  }
+  function zeile() {
+    const z = document.createElement('div');
+    z.className = 'absatzfenster__zeile';
+    return z;
+  }
+  function beschriftet(name, el) {
+    const w = document.createElement('label');
+    w.className = 'absatzfenster__feld';
+    const t = document.createElement('span');
+    t.textContent = name;
+    w.appendChild(t);
+    w.appendChild(el);
+    return w;
+  }
+  function waehler(liste, wert) {
+    const s = document.createElement('select');
+    s.className = 'feld feld--waehler';
+    for (const [k, name] of liste) {
+      const o = document.createElement('option');
+      o.value = k; o.textContent = name;
+      if (k === String(wert)) o.selected = true;
+      s.appendChild(o);
+    }
+    return s;
+  }
+  function zahlfeld(wert, schritt, einheit) {
+    const h = document.createElement('span');
+    h.className = 'absatzfenster__zahl';
+    const e = document.createElement('input');
+    e.type = 'number'; e.className = 'feld';
+    e.value = String(wert); e.step = String(schritt || 1);
+    h.appendChild(e);
+    if (einheit) {
+      const m = document.createElement('span');
+      m.className = 'absatzfenster__einheit';
+      m.textContent = einheit;
+      h.appendChild(m);
+    }
+    h.eingabe = e;
+    return h;
+  }
+  function haken(name, an) {
+    const w = document.createElement('label');
+    w.className = 'absatzfenster__haken';
+    const e = document.createElement('input');
+    e.type = 'checkbox'; e.checked = !!an;
+    w.appendChild(e);
+    const t = document.createElement('span');
+    t.textContent = name;
+    w.appendChild(t);
+    w.eingabe = e;
+    return w;
+  }
+
+  /* ---- Die Vorschau ----
+     Wie in WPS: der Absatz zwischen zwei grauen Nachbarn, mit echtem
+     Text. Hier standen erst nur Striche — Kay: "zudem hast du die
+     Vorschau nur als Attrappe gebaut mit Strichen." Sie ist jetzt keine
+     Zeichnung, sondern derselbe Absatz: Die Vorschau bekommt genau die
+     Stile, die OK setzen wuerde. Was man sieht, ist, was passiert. */
+  const BEISPIELSATZ = 'Dieser Absatz zeigt, wie der Text mit den '
+    + 'eingestellten Maßen aussieht. Einzug, Ausrichtung und Abstand '
+    + 'wirken hier genauso wie später im Blatt. ';
+
+  const schau = document.createElement('div');
+  schau.className = 'absatzprobe';
+  let schauSatz = null;
+  function schauBauen() {
+    schau.textContent = '';
+    for (const wo of ['vor', 'satz', 'nach']) {
+      const p = document.createElement('p');
+      p.className = 'absatzprobe__satz absatzprobe__satz--' + wo;
+      if (wo === 'satz') {
+        p.textContent = BEISPIELSATZ + BEISPIELSATZ;
+        schauSatz = p;
+      } else {
+        p.textContent = (wo === 'vor' ? 'Vorhergehender' : 'Folgender')
+                      + ' Absatz. ' + (wo === 'vor' ? 'Vorhergehender' : 'Folgender')
+                      + ' Absatz.';
+      }
+      schau.appendChild(p);
+    }
+  }
+  schauBauen();
+
+  let felder = null;
+  /* Dieselbe Rechnung wie beim Uebernehmen — einmal geschrieben, zweimal
+     benutzt. Sonst zeigte die Vorschau etwas anderes, als OK tut. */
+  function stileAusFeldern(ziel, massstab) {
+    if (!felder) return;
+    const m = massstab || 1;
+    const mm = (wert) => (wert * m) + 'mm';
+    ziel.style.textAlign = felder.ausrichtung.value;
+    ziel.style.marginLeft = mm(parseFloat(felder.links.eingabe.value) || 0);
+    ziel.style.marginRight = mm(parseFloat(felder.rechts.eingabe.value) || 0);
+    const von = parseFloat(felder.sonderVon.eingabe.value) || 0;
+    ziel.style.textIndent = felder.sonder.value === 'erste' ? mm(von)
+                          : felder.sonder.value === 'haengend' ? mm(-von) : '';
+    ziel.style.marginTop = mm(parseFloat(felder.oben.eingabe.value) || 0);
+    ziel.style.marginBottom = mm(parseFloat(felder.unten.eingabe.value) || 0);
+    ziel.style.lineHeight = felder.zeilen.value === 'mehrfach'
+      ? String(parseFloat(felder.zeilenVon.eingabe.value) || 1)
+      : felder.zeilen.value;
+    const rtl = felder.richtung.querySelector('input[value="rtl"]');
+    ziel.dir = (rtl && rtl.checked) ? 'rtl' : '';
+  }
+  function schauAuffrischen() {
+    if (schauSatz) stileAusFeldern(schauSatz, 1);
+  }
+
+  /* ---- Karte 1: Einzüge und Abstände ---- */
+  function karteMasse() {
+    const k = document.createElement('div');
+    k.className = 'rahmentafel__karte absatzfenster__karte';
+
+    const allg = block('Allgemein');
+    const z1 = zeile();
+    const ausrichtung = waehler(ABSATZ_AUSRICHTUNGEN, stand.ausrichtung);
+    const ebene = waehler(ABSATZ_EBENEN, stand.ebene);
+    z1.appendChild(beschriftet('Ausrichtung', ausrichtung));
+    z1.appendChild(beschriftet('Gliederungsebene', ebene));
+    allg.appendChild(z1);
+
+    const z2 = zeile();
+    const richtung = document.createElement('div');
+    richtung.className = 'absatzfenster__wahlpaar';
+    for (const [wert, name] of [['rtl', 'Rechts nach links'], ['ltr', 'Links nach rechts']]) {
+      const w = document.createElement('label');
+      w.className = 'absatzfenster__haken';
+      const e = document.createElement('input');
+      e.type = 'radio'; e.name = 'absatz-richtung'; e.value = wert;
+      e.checked = stand.richtung === wert;
+      w.appendChild(e);
+      const t = document.createElement('span');
+      t.textContent = name;
+      w.appendChild(t);
+      richtung.appendChild(w);
+    }
+    z2.appendChild(beschriftet('Richtung', richtung));
+    allg.appendChild(z2);
+    k.appendChild(allg);
+
+    const ein = block('Einzug');
+    const z3 = zeile();
+    const links = zahlfeld(stand.links, 1, 'mm');
+    const rechts = zahlfeld(stand.rechts, 1, 'mm');
+    z3.appendChild(beschriftet('Vor Text', links));
+    z3.appendChild(beschriftet('Nach Text', rechts));
+    ein.appendChild(z3);
+
+    const z4 = zeile();
+    const sonder = waehler(ABSATZ_SONDER, stand.sonder);
+    const sonderVon = zahlfeld(stand.sonderVon, 1, 'mm');
+    z4.appendChild(beschriftet('Sondereinzug', sonder));
+    z4.appendChild(beschriftet('Von', sonderVon));
+    ein.appendChild(z4);
+    k.appendChild(ein);
+
+    const ab = block('Abstand');
+    const z5 = zeile();
+    const oben = zahlfeld(stand.oben, 0.5, 'mm');
+    const unten = zahlfeld(stand.unten, 0.5, 'mm');
+    z5.appendChild(beschriftet('Vor', oben));
+    z5.appendChild(beschriftet('Nach', unten));
+    ab.appendChild(z5);
+
+    const z6 = zeile();
+    const zeilen = waehler(ABSATZ_ZEILEN, stand.zeilen);
+    const zeilenVon = zahlfeld(stand.zeilenVon, 0.05, '');
+    z6.appendChild(beschriftet('Zeilenabstand', zeilen));
+    z6.appendChild(beschriftet('Von', zeilenVon));
+    ab.appendChild(z6);
+    k.appendChild(ab);
+
+    felder = { ausrichtung, ebene, links, rechts, sonder, sonderVon,
+               oben, unten, zeilen, zeilenVon, richtung };
+
+    /* „Von" gilt nur bei Mehrfach — sonst steht dort eine Zahl, die
+       nichts bewirkt, und man sucht den Fehler bei sich. */
+    const vonPruefen = () => {
+      const an = zeilen.value === 'mehrfach';
+      zeilenVon.eingabe.disabled = !an;
+      zeilenVon.classList.toggle('absatzfenster__zahl--aus', !an);
+      const anS = sonder.value !== 'keine';
+      sonderVon.eingabe.disabled = !anS;
+      sonderVon.classList.toggle('absatzfenster__zahl--aus', !anS);
+    };
+    vonPruefen();
+
+    for (const el of k.querySelectorAll('input, select')) {
+      el.addEventListener('input', () => { vonPruefen(); schauAuffrischen(); });
+      el.addEventListener('change', () => { vonPruefen(); schauAuffrischen(); });
+    }
+    requestAnimationFrame(schauAuffrischen);
+    return k;
+  }
+
+  /* ---- Karte 2: Zeilen- und Seitenumbruch ----
+     Nach seinem zweiten Bild: Paginierung mit vier Haken, darunter der
+     Zeilenumbruch und die Textausrichtung.
+
+     WAS HIER FEHLT UND WARUM: In WPS stehen unter „Zeilenumbruch" und
+     „Zeichenabstand" fuenf Punkte zu asiatischen Zeichen — Regeln fuer
+     Anfangs- und Endzeichen, haengende Interpunktion, Abstand zwischen
+     asiatischem und westlichem Text. „sorry ich bin ein deutscher und
+     kein schinese." Sie sind weg. */
+  let umbruchFelder = null;
+  function karteUmbruch() {
+    const k = document.createElement('div');
+    k.className = 'rahmentafel__karte absatzfenster__karte';
+
+    const pag = block('Paginierung');
+    const z1 = zeile();
+    const kontrolle = haken('Absatzkontrolle', stand.kontrolle);
+    const mitNaechstem = haken('Nicht vom nächsten Absatz trennen', stand.mitNaechstem);
+    z1.appendChild(kontrolle); z1.appendChild(mitNaechstem);
+    pag.appendChild(z1);
+    const z2 = zeile();
+    const zusammen = haken('Diesen Absatz zusammenhalten', stand.zusammen);
+    const umbruchVor = haken('Seitenumbruch oberhalb', stand.umbruchVor);
+    z2.appendChild(zusammen); z2.appendChild(umbruchVor);
+    pag.appendChild(z2);
+    k.appendChild(pag);
+
+    const um = block('Zeilenumbruch');
+    const mittenImWort = haken('Textumbruch in der Mitte eines Wortes zulassen', stand.mittenImWort);
+    const ohneTrennung = haken('Keine Silbentrennung in diesem Absatz', stand.ohneTrennung);
+    um.appendChild(mittenImWort); um.appendChild(ohneTrennung);
+    k.appendChild(um);
+
+    const aus = block('Textausrichtung');
+    const z3 = zeile();
+    const textausrichtung = waehler([
+      ['auto', 'Automatisch'], ['oben', 'Oben'],
+      ['mitte', 'Zentriert'], ['unten', 'Unten'],
+    ], stand.textausrichtung);
+    z3.appendChild(beschriftet('Textausrichtung', textausrichtung));
+    aus.appendChild(z3);
+    k.appendChild(aus);
+
+    umbruchFelder = { kontrolle, mitNaechstem, zusammen, umbruchVor,
+                      mittenImWort, ohneTrennung, textausrichtung };
+    return k;
+  }
+
+  const KARTEN = [
+    ['masse',   'Einzüge und Abstände',     karteMasse],
+    ['umbruch', 'Zeilen- und Seitenumbruch', karteUmbruch],
+  ];
+
+  const zeige = (kuerzel) => {
+    const eintrag = KARTEN.find(([k]) => k === kuerzel) || KARTEN[0];
+    buehne.textContent = '';
+    buehne.appendChild(eintrag[2]());
+    [...reiter.children].forEach((c) => {
+      c.classList.toggle('rahmentafel__reiter--an', c.dataset.karte === eintrag[0]);
     });
-    melde('Absatzabstand gesetzt.');
+  };
+  for (const [kuerzel, name] of KARTEN) {
+    const k = document.createElement('button');
+    k.type = 'button';
+    k.className = 'rahmentafel__reiter-knopf';
+    k.dataset.karte = kuerzel;
+    k.textContent = name;
+    k.addEventListener('click', () => zeige(kuerzel));
+    reiter.appendChild(k);
+  }
+
+  kasten.appendChild(reiter);
+  kasten.appendChild(buehne);
+
+  const schaurahmen = document.createElement('div');
+  schaurahmen.className = 'absatzfenster__schau';
+  schaurahmen.innerHTML = '<h4>Vorschau</h4>';
+  schaurahmen.appendChild(schau);
+  kasten.appendChild(schaurahmen);
+
+  const fuss = document.createElement('div');
+  fuss.className = 'dialog__knoepfe absatzfenster__fuss';
+  const tabs = document.createElement('button');
+  tabs.type = 'button'; tabs.className = 'knopf'; tabs.textContent = 'Tabstopps…';
+  tabs.addEventListener('click', () => { grund.remove(); if (B.tabstopps) B.tabstopps(); });
+  const ab = document.createElement('button');
+  ab.type = 'button'; ab.className = 'knopf'; ab.textContent = 'Abbrechen';
+  ab.addEventListener('click', () => grund.remove());
+  const ok = document.createElement('button');
+  ok.type = 'button'; ok.className = 'knopf knopf--haupt'; ok.textContent = 'OK';
+  ok.addEventListener('click', () => {
+    const ziele = absaetzeInAuswahl();
+    if (!ziele.length) { melde('Dafür muss der Zeiger in einem Absatz stehen.'); grund.remove(); return; }
+    for (const el of ziele) {
+      if (felder) {
+        stileAusFeldern(el, 1);
+        const ebene = felder.ebene.value;
+        if (ebene) el.dataset.ebene = ebene; else delete el.dataset.ebene;
+      }
+      if (umbruchFelder) {
+        const u = umbruchFelder;
+        el.style.breakBefore = u.umbruchVor.eingabe.checked ? 'page' : '';
+        el.style.pageBreakBefore = u.umbruchVor.eingabe.checked ? 'always' : '';
+        el.style.breakInside = u.zusammen.eingabe.checked ? 'avoid' : '';
+        el.style.breakAfter = u.mitNaechstem.eingabe.checked ? 'avoid' : '';
+        /* Absatzkontrolle: keine einzelne Zeile allein auf einer Seite.
+           Der Browser kann das von sich aus — abschalten heisst 2 auf 1. */
+        el.style.widows = u.kontrolle.eingabe.checked ? '2' : '1';
+        el.style.orphans = u.kontrolle.eingabe.checked ? '2' : '1';
+        el.style.overflowWrap = u.mittenImWort.eingabe.checked ? 'anywhere' : '';
+        el.style.hyphens = u.ohneTrennung.eingabe.checked ? 'none' : '';
+        el.style.verticalAlign = '';
+        for (const [feld, wert] of [
+          ['kontrolle', u.kontrolle.eingabe.checked ? '' : 'aus'],
+          ['mitnaechstem', u.mitNaechstem.eingabe.checked ? 'ja' : ''],
+          ['mittenimwort', u.mittenImWort.eingabe.checked ? 'ja' : ''],
+          ['trennung', u.ohneTrennung.eingabe.checked ? 'aus' : ''],
+          ['textausrichtung', u.textausrichtung.value === 'auto' ? '' : u.textausrichtung.value],
+        ]) {
+          if (wert) el.dataset[feld] = wert; else delete el.dataset[feld];
+        }
+      }
+    }
+    geaendertMelden();
+    melde('Absatz gesetzt.');
+    grund.remove();
   });
+  fuss.appendChild(tabs); fuss.appendChild(ab); fuss.appendChild(ok);
+  kasten.appendChild(fuss);
+
+  grund.appendChild(kasten);
+  grund.addEventListener('mousedown', (e) => { if (e.target === grund) grund.remove(); });
+  document.addEventListener('keydown', function zu(e) {
+    if (e.key === 'Escape' && grund.isConnected) { grund.remove(); document.removeEventListener('keydown', zu); }
+  });
+  document.body.appendChild(grund);
+  zeige(karteZuerst || 'masse');
 };
+
+/* Beide alten Namen zeigen hierher. Zwei Fenster fuer einen Absatz
+   waren genau das, was er „doppelt gemoppelt" genannt hat. */
+B.einzugGenau = () => B.absatz('masse');
+B.absatzabstand = () => B.absatz('masse');
 
 /* ---- Seite: Ränder und Spalten ---- */
 let seitenrand = Speicher.lies('seitenrand', { oben: 20, unten: 20, links: 20, rechts: 20 });
@@ -11157,24 +11587,6 @@ const setzeRandVorgabe = (art) => () => {
 /* ---- Einzug links und rechts, auf den Millimeter ----
    Die beiden Knöpfe in der Leiste rücken in Sprüngen ein. Wer einen genauen
    Wert braucht — etwa für ein eingerücktes Zitat —, gibt ihn hier ein. */
-B.einzugGenau = () => {
-  auswahlMerken();
-  fenster('Einzug', [
-    { art: 'satz', text: 'In Millimetern, vom Seitenrand aus gerechnet.' },
-    { schluessel: 'links', name: 'links', art: 'number', wert: '0', schritt: '1' },
-    { schluessel: 'rechts', name: 'rechts', art: 'number', wert: '0', schritt: '1' },
-    { schluessel: 'erste', name: 'erste Zeile', art: 'number', wert: '0', schritt: '1' },
-  ], (werte) => {
-    auswahlZurueck();
-    aufAbsaetze((el) => {
-      el.style.marginLeft = (parseFloat(werte.links) || 0) + 'mm';
-      el.style.marginRight = (parseFloat(werte.rechts) || 0) + 'mm';
-      el.style.textIndent = (parseFloat(werte.erste) || 0) + 'mm';
-    });
-    melde('Einzug gesetzt.');
-  });
-};
-
 /* ---- Zeilennummern ----
    Für Verträge und Schriftsätze: Jede Zeile bekommt links eine Zahl, auf
    die man sich beziehen kann. Gezählt werden Absätze — echte Zeilenumbrüche
@@ -17433,8 +17845,8 @@ const MENUES = [
       ] },
     ] },
     { name: 'Absatz', unter: [
-      { name: 'Einzug', tun: B.einzugGenau },
-      { name: 'Absatzabstand', tun: B.absatzabstand },
+      /* Ein Punkt, ein Fenster: Einzug UND Abstand stehen darin. */
+      { name: 'Absatz…', tun: () => B.absatz('masse') },
       { name: 'Zeilennummern', tun: () => B.zeilennummern(null) },
       { name: 'Silbentrennung', tun: B.silbentrennung },
     ] },
@@ -19537,8 +19949,7 @@ function rechtsMenueZeigen(e) {
               tun: B.schreibweise, aus: gesperrt });
   }
   gruppe('abstand', 'Absatz', [
-    { name: 'Absatzabstand…', tun: B.absatzabstand, aus: gesperrt },
-    { name: 'Einzug genau…', tun: B.einzugGenau, aus: gesperrt },
+    { name: 'Absatz…', tun: () => B.absatz('masse'), aus: gesperrt },
     { name: 'Einzug vergrößern', tun: B.einzugMehr, aus: gesperrt },
     { name: 'Einzug verringern', tun: B.einzugWeniger, aus: gesperrt },
     strich,
