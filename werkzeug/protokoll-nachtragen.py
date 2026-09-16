@@ -303,6 +303,17 @@ ERLEDIGT = {
         'Zeichen. Die Vorschau ist keine Zeichnung: Sie trägt dieselben Stile, '
         'die OK setzt, aus derselben Funktion.',
 
+    'start-absatzlayout|absatzschattierung':
+        'Die Klappe hatte zwei Farbreihen ohne Überschrift und „Keine Füllung" '
+        'unten. Nach Ihrem WPS-Bild jetzt: „Keine Füllung" ganz oben, dann '
+        '„Themenfarben" als Raster mit je sechs Abstufungen, dann '
+        '„Standardfarben", unten „Weitere Füllfarben…" und „Rahmen und '
+        'Schattierung…". Die Farben sind Ihre zwölf Töne; das Raster rechnet '
+        'die Abstufungen daraus. Hinter „Weitere Füllfarben…" lag der '
+        'Farbwähler des Browsers — dort steht jetzt Ihr Fenster „Farben" mit '
+        'den drei Karteireitern Standard, Benutzerdefiniert und Erweitert, '
+        'rechts OK und Abbrechen und darunter die Proben „Neu" und „Aktuell".',
+
     'ansicht|textbegrenzungen':
         'Die vier Winkel am Satzspiegel sind jetzt auf dem Blatt zu sehen, '
         'nicht mehr nur beim Drucken. Abschalten unter Ansicht.',
