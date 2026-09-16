@@ -2632,11 +2632,15 @@ function farbFenster(start, beiFarbe) {
     }
     k.appendChild(gitter);
 
-    /* Die Graustufenreihe unten — auf seinem Bild steht sie abgesetzt. */
+    /* Unten links eine kurze Graustufenreihe, rechts daneben ein grosses
+       Feld mit der Farbe, die gerade gewaehlt ist — genau so steht es auf
+       seinem Bild. Vorher lief die Reihe ueber die ganze Breite. */
+    const unten = document.createElement('div');
+    unten.className = 'farbfenster__unten';
     const grau = document.createElement('div');
     grau.className = 'farbfenster__grau';
-    for (let i = 0; i <= 11; i++) {
-      const wert = Math.round(255 - (255 / 11) * i);
+    for (let i = 0; i <= 7; i++) {
+      const wert = Math.round(255 - (255 / 7) * i);
       const ton = '#' + [wert, wert, wert].map((z) => z.toString(16).padStart(2, '0')).join('');
       const f = document.createElement('button');
       f.type = 'button';
@@ -2647,7 +2651,12 @@ function farbFenster(start, beiFarbe) {
       f.addEventListener('click', () => setze(ton, true));
       grau.appendChild(f);
     }
-    k.appendChild(grau);
+    unten.appendChild(grau);
+    const gross = document.createElement('div');
+    gross.className = 'farbfenster__gross';
+    gross.style.background = gewaehlt;
+    unten.appendChild(gross);
+    k.appendChild(unten);
     return k;
   }
 
@@ -11950,8 +11959,10 @@ B.absatzSchattierung = (knopf) => {
         Speicher.schreib('letzteFarben', [hex, ...alt].slice(0, 12));
       });
     });
-    zeile('absatztoenung', 'Rahmen und Schattierung…',
-          () => { designTafelWeg(); B.seitenraenderRahmen('schatten'); });
+    /* KEIN „Rahmen und Schattierung" hier. Kay: „erstens vermischst du
+       alles wie Rahmen und Farben in einem Reiter." Seine Klappe endet mit
+       „Weitere Fuellfarben" — der Rahmen hat einen eigenen Knopf daneben
+       und einen eigenen Dialog. */
   });
 };
 
