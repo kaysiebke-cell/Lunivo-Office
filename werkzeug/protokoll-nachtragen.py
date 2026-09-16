@@ -253,6 +253,19 @@ ERLEDIGT = {
         'gewählt ist. Vorher war es ein Feld mit einem Namen darin — setzen '
         'ja, wiedersehen nein, löschen nein, hinspringen nein.',
 
+    'schreibhilfe-sidebar-integration-|kontextmenü-für-fehler-aktionen':
+        'Unter der rechten Taste stehen jetzt alle drei Punkte aus Ihrem '
+        'Text: „Einmal ignorieren" lässt genau diese Stelle stehen, „Alle '
+        'ignorieren" nimmt die Wellenlinie für dieses Wort im ganzen '
+        'Dokument weg, „Zum Wörterbuch hinzufügen" nur bei einem Wort, das '
+        'wirklich keiner kennt. Vorher gab es nur den letzten Punkt, und er '
+        'hieß anders. Am Knopf Rechtschreibprüfung hängt der Pfeil aus Ihrem '
+        'Bild: Während der Eingabe prüfen, Bedienfeld öffnen [F7], Sprache '
+        'für Rechtschreibprüfung festlegen…, Eigener Wortschatz… — und '
+        '„Ignorierte Stellen wieder prüfen", mit der Anzahl dahinter, damit '
+        'ein versehentliches Ignorieren zurückzunehmen ist. Beim Wechsel des '
+        'Dokuments fangen die Ausnahmen wieder bei null an.',
+
     'ansicht|textbegrenzungen':
         'Die vier Winkel am Satzspiegel sind jetzt auf dem Blatt zu sehen, '
         'nicht mehr nur beim Drucken. Abschalten unter Ansicht.',
