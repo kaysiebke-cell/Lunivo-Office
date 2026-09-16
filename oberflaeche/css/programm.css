@@ -2798,6 +2798,10 @@ body.lesen .arbeitsflaeche{padding:40px 24px}
    dazwischen — sonst sieht der Pfeil aus wie ein eigener Knopf, der
    danebensteht. */
 .wz-geteilt{display:inline-flex;align-items:stretch;gap:0}
+/* Der grosse geteilte Knopf: das Zeichen mit Beschriftung, rechts am
+   Rand der Pfeil ueber die volle Hoehe. */
+.wz-geteilt--gross .wz-geteilt__pfeil{height:auto;align-self:stretch;width:14px}
+.wz-geteilt--gross .register__gross{border-top-right-radius:0;border-bottom-right-radius:0}
 .wz-geteilt__tat{
   border-top-right-radius:0;border-bottom-right-radius:0;
   padding-right:2px;min-width:22px;

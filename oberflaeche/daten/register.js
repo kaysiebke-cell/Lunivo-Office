@@ -55,7 +55,10 @@ function REGISTER_BAUEN(B, w) {
      einmal, für die Menüleiste und für das ☰ gleichermaßen.
      ------------------------------------------------------------ */
   ['Start', [
-    ['Zwischenablage', [['kleben', 'Einfügen', () => B.einfuegen(), 'gross'],
+    /* Auf seinem WPS-Bild traegt „Einfuegen" einen Pfeil: ein Klick auf
+       das Zeichen fuegt ein, der Pfeil fragt, WIE. */
+    ['Zwischenablage', [['kleben', 'Einfügen',
+                      { tun: () => B.einfuegen(), klappe: (k) => B.einfuegenKlappe(k) }, 'gross'],
                     ['ohneformat', 'Einfügen ohne Formatierung', () => B.einfuegenOhne()],
                     ['schere', 'Ausschneiden', () => B.ausschneiden()],
                     ['kopie', 'Kopieren', () => B.kopieren()],

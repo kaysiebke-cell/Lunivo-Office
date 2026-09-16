@@ -757,11 +757,139 @@ B.ausschneiden = () => Dokument.befehl('cut');
 B.kopieren     = () => Dokument.befehl('copy');
 B.einfuegen    = () => { feld.focus(); document.execCommand('paste'); };
 
-/* „Einfügen ohne Formatierung" war bisher dasselbe wie „Einfügen" — zwei
-   Menüpunkte, ein Verhalten. Jetzt merkt sich der Einfügen-Griff, dass
-   diesmal nur der nackte Text gewollt war. */
+/* ============================================================
+   EINFUEGEN — DIE KLAPPE AUS SEINEM BILD
+
+   „Im Moment besteht die Funktion nur im blinden Einfuegen in Lunivo.
+   Funktion ist nach Bildvorlage auszubauen."
+
+   Blind war das richtige Wort: Ein Klick, und was kam, kam. In WPS
+   traegt der Knopf einen Pfeil, und darunter steht, WIE eingefuegt
+   werden soll:
+
+       Formatierter Text
+       Passend formatiert einfuegen
+       Unformatierter Text            Strg+Alt+T
+       ─────
+       Inhalte einfuegen…             Strg+Alt+V
+       Standard zum Einfuegen festlegen…
+
+   Der Unterschied ist nicht klein. Text aus einer Webseite bringt
+   Farben, Schriftgroessen und ganze Geruste mit. „Passend formatiert"
+   heisst: den Text nehmen, das Aussehen des Dokuments behalten — das
+   ist fast immer das Gewollte, und bisher gab es dafuer keinen Weg.
+   ============================================================ */
 let nurText = false;
+let einfuegeArt = Speicher.lies('einfuegeArt', 'passend');
+
 B.einfuegenOhne = () => { nurText = true; feld.focus(); document.execCommand('paste'); };
+
+/* „Passend formatiert": Der Text kommt, die Formatierung des Ziels
+   bleibt. Technisch derselbe Weg wie beim nackten Text — nur dass
+   Absaetze und Zeilenumbrueche erhalten bleiben. */
+let passendEinfuegen = false;
+B.einfuegenPassend = () => { passendEinfuegen = true; feld.focus(); document.execCommand('paste'); };
+B.einfuegenFormatiert = () => { nurText = false; passendEinfuegen = false; feld.focus(); document.execCommand('paste'); };
+
+const EINFUEGEARTEN = [
+  ['formatiert', 'Formatierter Text', 'kleben',
+   () => B.einfuegenFormatiert(), ''],
+  ['passend',    'Passend formatiert einfügen', 'ohneformat',
+   () => B.einfuegenPassend(), ''],
+  ['nurtext',    'Unformatierter Text', 'Aa',
+   () => B.einfuegenOhne(), 'Strg+Alt+T'],
+];
+
+B.einfuegenKlappe = (knopf) => {
+  designTafelZeigen(knopf, 'Einfügen', (tafel) => {
+    tafel.classList.add('designtafel--breit');
+    for (const [kuerzel, name, bild, tun, taste] of EINFUEGEARTEN) {
+      const k = document.createElement('button');
+      k.type = 'button';
+      k.className = 'designtafel__zeile richtungszeile'
+        + (einfuegeArt === kuerzel ? ' richtungszeile--gilt' : '');
+      if (SYMBOLE[bild]) k.appendChild(symbol(bild));
+      const w = document.createElement('span');
+      w.textContent = name;
+      k.appendChild(w);
+      if (taste) {
+        const t = document.createElement('em');
+        t.className = 'klappzeile__taste';
+        t.textContent = taste;
+        k.appendChild(t);
+      }
+      k.addEventListener('mousedown', (e) => e.preventDefault());
+      k.addEventListener('click', () => { designTafelWeg(); tun(); });
+      tafel.appendChild(k);
+    }
+
+    const strichel = document.createElement('hr');
+    strichel.className = 'designtafel__strich';
+    tafel.appendChild(strichel);
+
+    const zeile = (bild, name, taste, tun) => {
+      const k = document.createElement('button');
+      k.type = 'button';
+      k.className = 'designtafel__zeile richtungszeile';
+      if (SYMBOLE[bild]) k.appendChild(symbol(bild));
+      const w = document.createElement('span');
+      w.textContent = name;
+      k.appendChild(w);
+      if (taste) {
+        const t = document.createElement('em');
+        t.className = 'klappzeile__taste';
+        t.textContent = taste;
+        k.appendChild(t);
+      }
+      k.addEventListener('mousedown', (e) => e.preventDefault());
+      k.addEventListener('click', () => { designTafelWeg(); tun(); });
+      tafel.appendChild(k);
+    };
+    zeile('ohneformat', 'Inhalte einfügen…', 'Strg+Alt+V', () => B.inhalteEinfuegen());
+    zeile('zahnrad', 'Standard zum Einfügen festlegen…', '', () => B.einfuegeStandard());
+  });
+};
+
+/* „Inhalte einfuegen…": Was liegt in der Ablage, und wie soll es
+   hinein? In WPS ein Fenster mit einer Liste der Formen. */
+B.inhalteEinfuegen = async () => {
+  let hat = { html: false, text: false };
+  try {
+    const stuecke = await navigator.clipboard.read();
+    for (const st of stuecke) {
+      if (st.types.includes('text/html')) hat.html = true;
+      if (st.types.includes('text/plain')) hat.text = true;
+    }
+  } catch (e) {
+    /* Ohne Erlaubnis sagt der Browser nichts ueber die Ablage. Dann
+       stehen beide Formen da, und der Versuch entscheidet. */
+    hat = { html: true, text: true };
+  }
+  fenster('Inhalte einfügen', [
+    { art: 'satz', text: 'Wie soll das Eingefügte aussehen?' },
+    { schluessel: 'art', name: 'Als', art: 'auswahl', wert: einfuegeArt,
+      werte: EINFUEGEARTEN.map(([k, name]) => [k, name]) },
+  ], (werte) => {
+    const eintrag = EINFUEGEARTEN.find(([k]) => k === werte.art) || EINFUEGEARTEN[1];
+    eintrag[3]();
+  }, 'Einfügen');
+};
+
+B.einfuegeStandard = () => {
+  fenster('Standard zum Einfügen', [
+    { art: 'satz', text: 'Was Strg+V tut, wenn nichts anderes gewählt wurde. '
+                       + '„Passend formatiert" nimmt den Text und behält das '
+                       + 'Aussehen dieses Dokuments — für Text aus dem Netz '
+                       + 'ist das fast immer das Richtige.' },
+    { schluessel: 'art', name: 'Standard', art: 'auswahl', wert: einfuegeArt,
+      werte: EINFUEGEARTEN.map(([k, name]) => [k, name]) },
+  ], (werte) => {
+    einfuegeArt = werte.art;
+    Speicher.schreib('einfuegeArt', einfuegeArt);
+    melde('Standard zum Einfügen: '
+      + (EINFUEGEARTEN.find(([k]) => k === einfuegeArt) || EINFUEGEARTEN[1])[1] + '.');
+  });
+};
 
 /* ------------------------------------------------------------
    Was beim Einfügen ankommt
@@ -830,8 +958,18 @@ for (const teil of [feld, $('kopfzeile'), $('fusszeile')]) {
     if (!daten) return;                       // dann macht es WebKit selbst
     e.preventDefault();
 
-    const roh = nurText ? '' : daten.getData('text/html');
+    /* Drei Wege, wie er sie im Bild hat:
+         formatiert   alles mitnehmen, nur geputzt
+         passend      Absaetze behalten, Aussehen des Dokuments
+         nurtext      der nackte Text
+       Ohne ausdrueckliche Wahl gilt, was unter „Standard zum Einfuegen
+       festlegen" steht. */
+    const art = nurText ? 'nurtext' : (passendEinfuegen ? 'passend' : null);
+    const wie = art || einfuegeArt;
     nurText = false;
+    passendEinfuegen = false;
+
+    const roh = wie === 'formatiert' ? daten.getData('text/html') : '';
     const html = roh
       ? eingefuegtesSaeubern(roh)
       : textAlsAbsaetze(daten.getData('text/plain') || '');
@@ -6325,11 +6463,11 @@ function registerBauen() {
        fehlen aktuell." Sie fehlten nicht — sie lagen hinter einem
        zweiten, gleich aussehenden U-Knopf daneben. Zwei Knoepfe mit
        demselben Buchstaben sind schlimmer als ein fehlender Pfeil. */
-    const bauenGeteilt = (zeichen, titel, tun, klappe) => {
+    const bauenGeteilt = (zeichen, titel, tun, klappe, gross) => {
       const kiste = document.createElement('span');
-      kiste.className = 'wz-geteilt';
+      kiste.className = 'wz-geteilt' + (gross ? ' wz-geteilt--gross' : '');
 
-      const k = bauen(zeichen, titel, tun, false);
+      const k = bauen(zeichen, titel, tun, !!gross);
       k.classList.add('wz-geteilt__tat');
       kiste.appendChild(k);
 
@@ -6388,9 +6526,13 @@ function registerBauen() {
       /* Ist statt eines Befehls ein Paar angegeben, wird es ein
          geteilter Knopf: { tun, klappe }. */
       if (tun && typeof tun === 'object' && typeof tun.tun === 'function') {
-        const { kiste, knopf } = bauenGeteilt(zeichen, titel, tun.tun, tun.klappe);
+        const { kiste, knopf } = bauenGeteilt(zeichen, titel, tun.tun, tun.klappe, !!gross);
         if (typeof zustand === 'function') registerSchalter.push({ knopf, ist: zustand });
-        (zeileJetzt || kleineKiste).appendChild(kiste);
+        /* Ein grosser geteilter Knopf gehoert in die Reihe, nicht in das
+           Gitter der kleinen — sonst steht „Einfuegen" plotzlich
+           zwischen den Zeichen. */
+        if (gross) reihe.appendChild(kiste);
+        else (zeileJetzt || kleineKiste).appendChild(kiste);
         continue;
       }
 
@@ -19218,6 +19360,14 @@ const KUERZEL = {
 };
 
 document.addEventListener('keydown', (e) => {
+  /* Die zwei Kuerzel aus seinem Bild der Einfuegen-Klappe. Sie stehen
+     dort neben den Punkten, also muessen sie auch wirken — ein Kuerzel,
+     das nur dasteht, ist eine Behauptung. */
+  if ((e.ctrlKey || e.metaKey) && e.altKey && !e.shiftKey) {
+    const t = e.key.toLowerCase();
+    if (t === 't') { e.preventDefault(); B.einfuegenOhne(); return; }
+    if (t === 'v') { e.preventDefault(); B.inhalteEinfuegen(); return; }
+  }
   /* Strg+Tab und Strg+Umschalt+Tab wechseln den Reiter — wie überall.
      Das muss vor dem Tab weiter unten stehen, das die Lücken der
      Bausteine anspringt: Sonst käme man aus einem Gerüst nie heraus. */
