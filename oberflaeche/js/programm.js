@@ -2539,7 +2539,9 @@ const FARBEN = [
    Palette einmal eigenmaechtig getauscht; das kommt nicht wieder. */
 function farbrasterBauen() {
   const reihen = [];
-  const stufen = [0.88, 0.76, 0.62, 0.48, 0.34, 0.22];
+  /* Zehn Helligkeiten statt sechs: Sein WPS-Bild zeigt ein deutlich
+     feineres Raster, in dem man einen Ton wirklich treffen kann. */
+  const stufen = [0.92, 0.85, 0.78, 0.70, 0.62, 0.54, 0.46, 0.38, 0.30, 0.20];
   for (const helligkeit of stufen) {
     const reihe = [];
     for (const [hex] of FARBEN) {
@@ -2743,15 +2745,20 @@ function farbFenster(start, beiFarbe) {
     k.appendChild(oben);
 
     let [h, sa, l] = hexZuHsl(gewaehlt);
+    /* NACH SEINEM BILD: In der Flaeche liegen ALLE Farbtoene nebeneinander
+       (waagerecht) und die Saettigung senkrecht; rechts steht ein schmales
+       Band von Weiss nach Schwarz. Vorher war es umgekehrt — ein einzelner
+       Ton in der Flaeche, der Regenbogen im Band. */
     const zeichne = () => {
       flaeche.style.background =
-        'linear-gradient(to top, #000, transparent), '
-        + 'linear-gradient(to right, #fff, hsl(' + (h * 360) + ',100%,50%))';
-      punkt.style.left = (sa * 100) + '%';
-      punkt.style.top = ((1 - l) * 100) + '%';
-      griff.style.top = (h * 100) + '%';
-      band.style.background = 'linear-gradient(to bottom,'
+        'linear-gradient(to bottom, transparent, hsl(0,0%,50%)), '
+        + 'linear-gradient(to right,'
         + [0, 1, 2, 3, 4, 5, 6].map((i) => 'hsl(' + (i * 60) + ',100%,50%)').join(',') + ')';
+      punkt.style.left = (h * 100) + '%';
+      punkt.style.top = ((1 - sa) * 100) + '%';
+      griff.style.top = ((1 - l) * 100) + '%';
+      band.style.background = 'linear-gradient(to bottom, #fff, '
+        + hslZuHex(h, sa, 0.5) + ', #000)';
     };
     zeichne();
 
@@ -2761,14 +2768,14 @@ function farbFenster(start, beiFarbe) {
 
     const ausFlaeche = (e) => {
       const r = flaeche.getBoundingClientRect();
-      sa = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
-      l = Math.max(0, Math.min(1, 1 - (e.clientY - r.top) / r.height));
+      h = Math.max(0, Math.min(0.999, (e.clientX - r.left) / r.width));
+      sa = Math.max(0, Math.min(1, 1 - (e.clientY - r.top) / r.height));
       const hex = hslZuHex(h, sa, l);
       setze(hex, true); felder.schreib(hex); zeichne();
     };
     const ausBand = (e) => {
       const r = band.getBoundingClientRect();
-      h = Math.max(0, Math.min(0.999, (e.clientY - r.top) / r.height));
+      l = Math.max(0, Math.min(1, 1 - (e.clientY - r.top) / r.height));
       const hex = hslZuHex(h, sa, l);
       setze(hex, true); felder.schreib(hex); zeichne();
     };
@@ -2798,15 +2805,29 @@ function farbFenster(start, beiFarbe) {
     kreis.className = 'farbfenster__kreis';
     const marke = document.createElement('i');
     marke.className = 'farbfenster__kreismarke';
-    kreis.appendChild(marke);
+    /* Im Kreis steht ein Dreieck — so auf seinem Bild. Es traegt Saettigung
+       und Helligkeit zum Ton des Rings: Spitze oben der volle Ton, unten
+       links schwarz, unten rechts weiss. */
+    const dreieck = document.createElement('div');
+    dreieck.className = 'farbfenster__dreieck';
+    const dmarke = document.createElement('i');
+    dmarke.className = 'farbfenster__kreismarke farbfenster__kreismarke--klein';
+    dreieck.appendChild(dmarke);
     kreisKiste.appendChild(kreis);
+    kreisKiste.appendChild(dreieck);
+    kreisKiste.appendChild(marke);
     k.appendChild(kreisKiste);
 
     let [h, sa, l] = hexZuHsl(gewaehlt);
     const zeichne = () => {
       const winkel = h * 360;
-      marke.style.left = (50 + 42 * Math.cos((winkel - 90) * Math.PI / 180)) + '%';
-      marke.style.top = (50 + 42 * Math.sin((winkel - 90) * Math.PI / 180)) + '%';
+      marke.style.left = (50 + 43 * Math.cos((winkel - 90) * Math.PI / 180)) + '%';
+      marke.style.top = (50 + 43 * Math.sin((winkel - 90) * Math.PI / 180)) + '%';
+      dreieck.style.background =
+        'linear-gradient(to right, #000, transparent, #fff), '
+        + 'linear-gradient(to bottom, ' + hslZuHex(h, 1, 0.5) + ', transparent)';
+      dmarke.style.left = (sa * 100) + '%';
+      dmarke.style.top = ((1 - l) * 100) + '%';
     };
     zeichne();
 
@@ -2820,6 +2841,13 @@ function farbFenster(start, beiFarbe) {
       const y = e.clientY - r.top - r.height / 2;
       h = ((Math.atan2(y, x) * 180 / Math.PI + 90 + 360) % 360) / 360;
       const hex = hslZuHex(h, sa || 0.7, l || 0.5);
+      setze(hex, true); felder.schreib(hex); zeichne();
+    });
+    dreieck.addEventListener('mousedown', (e) => {
+      const r = dreieck.getBoundingClientRect();
+      sa = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+      l = Math.max(0, Math.min(1, 1 - (e.clientY - r.top) / r.height));
+      const hex = hslZuHex(h, sa, l);
       setze(hex, true); felder.schreib(hex); zeichne();
     });
     return k;
