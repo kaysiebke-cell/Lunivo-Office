@@ -39,6 +39,7 @@ DIE BÄNDER
 │   │   ├── Zentriert
 │   │   ├── Rechtsbündig
 │   │   ├── Blocksatz
+│   │   ├── Verteilt
 │   │   ├── Zeilenabstand
 │   │   ├── Absatzschattierung
 │   │   ├── Absatzrahmen

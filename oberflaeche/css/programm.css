@@ -5461,3 +5461,52 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
   padding:5px 9px;font:inherit;flex:1 1 auto;min-width:0;
 }
 .verweisfenster select{padding-right:26px}
+
+/* ============================================================
+   TEXTEFFEKTE — die Galerien aus seinen vier WPS-Bildern
+   ============================================================ */
+.effekttafel{max-width:min(94vw,420px)}
+.effekttafel__kopf{
+  background:rgba(127,127,127,.14);
+  margin:6px -8px 4px;padding:5px 12px;
+  color:var(--schrift-2);font-size:.82rem;
+}
+.effekttafel__kopf:first-child{margin-top:0}
+.effektgitter{
+  display:grid;grid-template-columns:repeat(var(--spalten,3), 1fr);
+  gap:4px;padding:2px 4px 6px;
+}
+.effektprobe{
+  display:grid;place-items:center;
+  aspect-ratio:1;min-height:34px;padding:0;
+  background:var(--blatt,#fff);
+  border:1px solid var(--rand);border-radius:4px;cursor:pointer;
+}
+.effektprobe:hover{outline:2px solid var(--blau);outline-offset:1px}
+.effektprobe__a{
+  font:700 19px/1 "Times New Roman", Georgia, serif;
+  color:var(--blatt-schrift,#111417);
+}
+/* Der Pfeil rechts an einer Zeile, die ein Untermenue oeffnet. */
+.effektpfeil{margin-left:auto;color:var(--schrift-2)}
+.designtafel__zeile:disabled{opacity:.45;cursor:default}
+.designtafel__zeile:disabled:hover{background:none}
+
+/* Die Kataloge hinter Aufzählung und Nummerierung. */
+.listentafel{max-width:min(94vw,360px)}
+.listengitter{
+  display:grid;grid-template-columns:repeat(var(--spalten,4), 1fr);
+  gap:4px;padding:4px;
+}
+.listenprobe{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:8px 4px;background:var(--blatt,#fff);
+  border:1px solid var(--rand);border-radius:4px;cursor:pointer;
+  color:var(--blatt-schrift,#111417);
+}
+.listenprobe:hover{outline:2px solid var(--blau);outline-offset:1px}
+.listenprobe__zeichen{font:600 15px/1 "Noto Sans", system-ui, sans-serif}
+.listenprobe__name{
+  font-size:.66rem;color:var(--schrift-2);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;
+}

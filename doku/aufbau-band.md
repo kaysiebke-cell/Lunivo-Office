@@ -60,6 +60,7 @@ START
 │   ├── Zentriert
 │   ├── Rechtsbündig
 │   ├── Blocksatz
+│   ├── Verteilt
 │   ├── Zeilenabstand
 │   ├── Absatzschattierung
 │   ├── Absatzrahmen
@@ -492,6 +493,7 @@ genannt — das ist Absicht: ein Schalter, mehrere Stellen, ein Zustand.
 | Unterstrichen | Start ▸ Schriftart |
 | Vergrößern | Ansicht ▸ Zoom |
 | Verkleinern | Ansicht ▸ Zoom |
+| Verteilt | Start ▸ Absatz |
 | Vertikales Lineal | Ansicht ▸ Anzeigen |
 | Verzeichnisse aktualisieren | Referenzen ▸ Inhaltsverzeichnis |
 | Vorige Note | Referenzen ▸ Fußnoten |

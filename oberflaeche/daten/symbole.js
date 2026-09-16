@@ -183,7 +183,10 @@ const SYMBOLE = {
   links:         'M21 5H3 M15 12H3 M17 19H3',   /* lucide: text-align-start */
   mitte:         'M21 5H3 M17 12H7 M19 19H5',   /* lucide: text-align-center */
   rechts:        'M21 5H3 M21 12H9 M21 19H7',   /* lucide: text-align-end */
-  block:         'M3 5h18 M3 12h18 M3 19h18',   /* lucide: text-align-justify */
+  block:         'M3 5h18 M3 12h18 M3 19h18 M3 19h11',   /* lucide: text-align-justify - die letzte Zeile bleibt kurz */
+  /* Verteilt: alle vier Zeilen ueber die volle Breite, auch die letzte.
+     Genau darin unterscheidet es sich vom Blocksatz. */
+  verteilt:      'M3 5h18 M3 10h18 M3 15h18 M3 20h18',   /* eigen */
   punkte:        'M3 5h.01 M3 12h.01 M3 19h.01 M8 5h13 M8 12h13 M8 19h13',   /* lucide: list */
   zahlen:        'M11 5h10 M11 12h10 M11 19h10 M4 4h1v5 M4 9h2 M6.5 20H3.4c0-1 2.6-1.925 2.6-3.5a1.5 1.5 0 0 0-2.6-1.02',   /* lucide: list-ordered */
   mehr:          'M21 5H11 M21 12H11 M21 19H11 M3 8 l4 4-4 4',   /* lucide: list-indent-increase */

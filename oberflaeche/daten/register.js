@@ -105,8 +105,10 @@ function REGISTER_BAUEN(B, w) {
          Zeile 2  links  zentriert  rechts  Blocksatz  Zeilenabstand▾  Schattierung▾  Rahmen▾
        Der Einzug bleibt als Klappe gebündelt — das hat er ausdrücklich
        so gewollt: „Funktionen, die dieselbe Aufgabe haben, an einem Ort". */
-    ['Absatz', [['punkte', 'Aufzählung', () => B.punkte()],
-                    ['zahlen', 'Nummerierung', () => B.zahlen()],
+    ['Absatz', [['punkte', 'Aufzählung',
+                      { tun: () => B.punkte(), klappe: (k) => B.aufzaehlungKlappe(k) }],
+                    ['zahlen', 'Nummerierung',
+                      { tun: () => B.zahlen(), klappe: (k) => B.nummerierungKlappe(k) }],
                     ['einzug', 'Einzug & Listenebene', [
                       ['Einzug vergrößern', () => B.einzugMehr()],
                       ['Einzug verringern', () => B.einzugWeniger()],
@@ -122,6 +124,9 @@ function REGISTER_BAUEN(B, w) {
                     ['mitte', 'Zentriert', () => B.mitte()],
                     ['rechts', 'Rechtsbündig', () => B.rechts()],
                     ['block', 'Blocksatz', () => B.block()],
+                    /* Die fuenfte Ausrichtung aus seinem WPS-Bild: Blocksatz
+                       laesst die letzte Zeile kurz, „Verteilt" nicht. */
+                    ['verteilt', 'Verteilt', () => B.verteilt()],
                     ['abstand', 'Zeilenabstand', { klappe: (k) => B.zeilenabstandKlappe(k) }],
                     ['absatztoenung', 'Absatzschattierung', { klappe: (k) => B.absatzSchattierung(k) }],
                     ['absatzrahmen', 'Absatzrahmen', { klappe: (k) => B.absatzRahmen(k) }]], () => B.einzugGenau()],

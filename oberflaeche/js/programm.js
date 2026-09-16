@@ -990,7 +990,9 @@ B.durch   = () => Dokument.befehl('strikeThrough');
 B.links   = () => Dokument.befehl('justifyLeft');
 B.mitte   = () => Dokument.befehl('justifyCenter');
 B.rechts  = () => Dokument.befehl('justifyRight');
-B.block   = () => Dokument.befehl('justifyFull');
+/* B.block steht weiter unten: Es muss auch text-align-last zuruecknehmen,
+   damit "Verteilt" wieder weggeht. Zwei Namen, der letzte gewinnt still -
+   der Fehler ist hier schon fuenfmal passiert. */
 /* ---- Aufzaehlung und Nummerierung ----
 
    „ist ohne Funktion" — sie tat etwas, aber das Ergebnis war nicht zu
@@ -1091,6 +1093,143 @@ B.zahlen = () => {
   listeGeradeziehen();
   geaendertMelden();
 };
+
+/* ============================================================
+   DIE KATALOGE HINTER AUFZAEHLUNG UND NUMMERIERUNG
+
+   Auf seinem WPS-Bild tragen beide Knoepfe einen Pfeil: Der Klick setzt
+   die Liste, der Pfeil fragt, WELCHE. Hier gab es nur den Klick, und
+   damit genau ein Aufzaehlungszeichen und genau eine Nummernart.
+   ============================================================ */
+const AUFZAEHLUNGSZEICHEN = [
+  ['disc',    '\u2022', 'Punkt'],
+  ['circle',  '\u25E6', 'Ring'],
+  ['square',  '\u25AA', 'Quadrat'],
+  ['"\u2013  "', '\u2013', 'Strich'],
+  ['"\u25B8  "', '\u25B8', 'Pfeil'],
+  ['"\u2713  "', '\u2713', 'Haken'],
+  ['"\u00BB  "', '\u00BB', 'Winkel'],
+  ['"\u25C6  "', '\u25C6', 'Raute'],
+];
+
+const NUMMERNARTEN = [
+  ['decimal',              '1. 2. 3.',    'Zahlen mit Punkt'],
+  ['decimal-leading-zero', '01. 02.',     'Zahlen mit Null'],
+  ['lower-alpha',          'a) b) c)',    'Kleine Buchstaben'],
+  ['upper-alpha',          'A. B. C.',    'Grosse Buchstaben'],
+  ['lower-roman',          'i. ii. iii.', 'Kleine roemische'],
+  ['upper-roman',          'I. II. III.', 'Grosse roemische'],
+];
+
+/* Die Liste, in der der Zeiger steht.
+
+   NICHT ueber absatzJetzt(): Das steigt bis zum direkten Kind des
+   Blattes hinauf, und bei einer Liste ist das die Liste selbst, nicht
+   der Punkt darin. closest('li') lief damit ins Leere, und wer ein
+   Zeichen waehlte, sah nichts geschehen. */
+function listeJetzt(art) {
+  const auswahl = window.getSelection();
+  if (!auswahl || !auswahl.rangeCount) return null;
+  let knoten = auswahl.getRangeAt(0).startContainer;
+  if (knoten && knoten.nodeType === Node.TEXT_NODE) knoten = knoten.parentElement;
+  if (!knoten || !feld.contains(knoten) || !knoten.closest) return null;
+  return knoten.closest(art);
+}
+
+function listenKatalog(knopf, art) {
+  /* Die Markierung merken, BEVOR die Tafel den Fokus nimmt. Ohne das
+     steht der Zeiger beim Klick auf eine Kachel nirgends mehr, und
+     listeJetzt() findet keine Liste - man waehlt ein Zeichen und nichts
+     geschieht. Dieselbe Falle wie bei den Farbtafeln. */
+  auswahlMerken();
+  const istPunkte = art === 'punkte';
+  const eintraege = istPunkte ? AUFZAEHLUNGSZEICHEN : NUMMERNARTEN;
+  designTafelZeigen(knopf, istPunkte ? 'Aufz\u00e4hlung' : 'Nummerierung', (tafel) => {
+    tafel.classList.add('designtafel--breit', 'listentafel');
+    const gitter = document.createElement('div');
+    gitter.className = 'listengitter';
+    gitter.style.setProperty('--spalten', istPunkte ? '4' : '3');
+    for (const [wert, probe, name] of eintraege) {
+      const k = document.createElement('button');
+      k.type = 'button';
+      k.className = 'listenprobe';
+      k.title = name;
+      const p = document.createElement('span');
+      p.className = 'listenprobe__zeichen';
+      p.textContent = probe;
+      const w = document.createElement('span');
+      w.className = 'listenprobe__name';
+      w.textContent = name;
+      k.append(p, w);
+      k.addEventListener('mousedown', (e) => e.preventDefault());
+      k.addEventListener('click', () => {
+        designTafelWeg();
+        listenArtSetzen(art, wert, name);
+      });
+      gitter.appendChild(k);
+    }
+    tafel.appendChild(gitter);
+
+    const strichel = document.createElement('hr');
+    strichel.className = 'designtafel__strich';
+    tafel.appendChild(strichel);
+
+    const weg = document.createElement('button');
+    weg.type = 'button';
+    weg.className = 'designtafel__zeile richtungszeile';
+    weg.appendChild(symbol('radierer'));
+    const t = document.createElement('span');
+    t.textContent = 'Keine Liste';
+    weg.appendChild(t);
+    weg.addEventListener('mousedown', (e) => e.preventDefault());
+    weg.addEventListener('click', () => {
+      designTafelWeg();
+      Dokument.befehl(istPunkte ? 'insertUnorderedList' : 'insertOrderedList');
+      geaendertMelden();
+      melde('Liste aufgehoben.');
+    });
+    tafel.appendChild(weg);
+  });
+}
+
+function listenArtSetzen(art, wert, name) {
+  auswahlZurueck();
+  const istPunkte = art === 'punkte';
+  let liste = listeJetzt(istPunkte ? 'ul' : 'ol');
+  if (!liste) {
+    /* Steht noch keine Liste da, erst eine machen - sonst waehlt man ein
+       Zeichen und nichts geschieht. */
+    Dokument.befehl(istPunkte ? 'insertUnorderedList' : 'insertOrderedList');
+    listeGeradeziehen();
+    liste = listeJetzt(istPunkte ? 'ul' : 'ol');
+  }
+  if (!liste) { melde('Daf\u00fcr muss der Zeiger in einem Absatz stehen.'); return; }
+  liste.style.setProperty('list-style-type', wert);
+  geaendertMelden();
+  melde(name + ' gesetzt.');
+}
+
+B.aufzaehlungKlappe  = (knopf) => listenKatalog(knopf, 'punkte');
+B.nummerierungKlappe = (knopf) => listenKatalog(knopf, 'zahlen');
+
+/* Die fuenfte Ausrichtung aus seinem Bild. Blocksatz laesst die LETZTE
+   Zeile kurz; "Verteilt" zieht auch sie auf die volle Breite. */
+B.verteilt = () => {
+  aufAbsaetze((el) => {
+    el.style.textAlign = 'justify';
+    el.style.textAlignLast = 'justify';
+  });
+  melde('Verteilt \u2014 auch die letzte Zeile geht \u00fcber die ganze Breite.');
+};
+/* Blocksatz nimmt "verteilt" zurueck - sonst bliebe die letzte Zeile
+   auseinandergezogen, obwohl der Knopf etwas anderes sagt. */
+B.block = () => {
+  aufAbsaetze((el) => {
+    el.style.textAlign = 'justify';
+    el.style.textAlignLast = '';
+  });
+};
+
 B.einzugMehr    = () => Dokument.befehl('indent');
 B.einzugWeniger = () => Dokument.befehl('outdent');
 B.schlicht      = () => { Dokument.befehl('removeFormat'); Dokument.befehl('formatBlock', 'p'); };
@@ -15091,91 +15230,340 @@ const setzeVorlagensatz = (kuerzel) => () => {
    danach aussieht. Genau so steht es jetzt hier — und zwoelf statt
    fuenf, weil eine Galerie mit fuenf Kacheln keine ist.
    ============================================================ */
-const EFFEKTE = {
-  keiner:  { name: 'kein Effekt', css: '' },
-  schatten:{ name: 'Schatten',    css: 'text-shadow:1px 1px 2px rgba(0,0,0,.35)' },
-  weit:    { name: 'Weiter Schatten', css: 'text-shadow:3px 4px 5px rgba(0,0,0,.4)' },
-  relief:  { name: 'Relief',      css: 'text-shadow:1px 1px 0 rgba(255,255,255,.8),2px 2px 2px rgba(0,0,0,.3)' },
-  vertieft:{ name: 'Vertieft',    css: 'text-shadow:-1px -1px 0 rgba(255,255,255,.7),1px 1px 2px rgba(0,0,0,.45)' },
-  kontur:  { name: 'Kontur',      css: '-webkit-text-stroke:0.6px currentColor;color:transparent' },
-  konturfett:{ name: 'Starke Kontur', css: '-webkit-text-stroke:1.4px currentColor;color:transparent' },
-  leuchten:{ name: 'Leuchten',    css: 'text-shadow:0 0 6px rgba(47,111,181,.65)' },
-  warm:    { name: 'Warmes Leuchten', css: 'text-shadow:0 0 7px rgba(200,122,30,.7)' },
-  spiegel: { name: 'Spiegelung',  css: '-webkit-box-reflect:below 1px linear-gradient(transparent 55%, rgba(255,255,255,.35))' },
-  verlauf: { name: 'Farbverlauf', css: 'background:linear-gradient(90deg,var(--blau),var(--warm,#C08A2E));-webkit-background-clip:text;background-clip:text;color:transparent' },
-  hohl:    { name: 'Hohl mit Schatten', css: '-webkit-text-stroke:0.8px currentColor;color:transparent;text-shadow:2px 3px 3px rgba(0,0,0,.3)' },
-};
+/* ============================================================
+   TEXTEFFEKTE — Ⓐ in Start ▸ Schriftart
 
-/* Die Galerie: zwoelf Kacheln, jede zeigt ein A in ihrem Effekt. */
-B.effekt = (knopf) => {
-  auswahlMerken();
-  designTafelZeigen(knopf, 'Texteffekte', (tafel) => {
-    tafel.classList.add('designtafel--breit');
-    const gitter = document.createElement('div');
-    gitter.className = 'effektgalerie';
-    for (const [kuerzel, wie] of Object.entries(EFFEKTE)) {
-      const k = document.createElement('button');
-      k.type = 'button';
-      k.className = 'effektprobe';
-      k.title = wie.name;
-      const a = document.createElement('span');
-      a.className = 'effektprobe__a';
-      a.setAttribute('style', wie.css);
-      a.textContent = 'Aa';
-      const w = document.createElement('span');
-      w.className = 'effektprobe__name';
-      w.textContent = wie.name;
-      k.append(a, w);
-      k.addEventListener('mousedown', (e) => e.preventDefault());
-      k.addEventListener('click', () => {
-        designTafelWeg();
-        effektSetzen(kuerzel);
+   NACH SEINEN VIER BILDERN. Was darauf steht:
+
+     WordArt          ▸  Formatvorlage: 15 Buchstaben
+     Schatten         ▸  Kein Schatten · Aussen 9 · Innen 9 · Perspektive 5
+     Spiegelung(R)    ▸  Keine Spiegelung · 9 Varianten
+     Leuchteffekt(G)  ▸  Kein Leuchteffekt · 24 Varianten
+     3D-Drehung       ▸  grau
+     Transformieren   ▸  grau
+     Weitere Texteffekte(O)…
+
+   Hier stand eine einzige Galerie mit zwoelf gemischten Kacheln:
+   Schatten, Kontur, Leuchten, Spiegelung durcheinander, und immer nur
+   eines davon auf einmal. In WPS sind es vier Arten, die sich
+   uebereinanderlegen — ein Wort kann Schatten UND Leuchten tragen.
+
+   Die Farben kommen aus FARBEN, seiner Palette.
+
+   3D-Drehung und Transformieren stehen grau da, wie bei ihm: Sie
+   brauchten eine Verformung der Buchstaben, die im Blatt nicht geht.
+   Weglassen waere gelogen — so sieht man, dass es sie gibt und warum
+   sie hier nicht greifen.
+   ============================================================ */
+
+/* Die fuenfzehn WordArt-Vorlagen: gefuellt, mit Kontur, mit Schatten. */
+function wordartVorlagen() {
+  const f = (i) => (FARBEN[i] || FARBEN[0])[0];
+  const namen = (i) => (FARBEN[i] || FARBEN[0])[1];
+  const raus = [];
+  /* Reihe 1: schlicht gefuellt. */
+  for (const i of [0, 5, 4, 8, 7, 2]) {
+    raus.push({ name: 'Gefüllt, ' + namen(i), css: 'color:' + f(i) });
+  }
+  /* Reihe 2: Kontur, fett gefuellt. */
+  for (const i of [9, 7, 5]) {
+    raus.push({ name: 'Kontur, ' + namen(i),
+                css: '-webkit-text-stroke:1px ' + f(i) + ';color:transparent' });
+  }
+  for (const i of [8, 0, 8]) {
+    raus.push({ name: 'Fett, ' + namen(i), css: 'color:' + f(i) + ';font-weight:700' });
+  }
+  /* Reihe 3: gefuellt mit Schatten. */
+  for (const i of [9, 4, 2]) {
+    raus.push({ name: namen(i) + ' mit Schatten',
+                css: 'color:' + f(i) + ';text-shadow:2px 3px 3px rgba(0,0,0,.35)' });
+  }
+  return raus;
+}
+
+/* Neun Richtungen fuer den aeusseren Schatten — wie die neun Felder auf
+   seinem Bild: oben links bis unten rechts. */
+function schattenAussen() {
+  const raus = [];
+  const wo = [[-1, -1, 'oben links'], [0, -1, 'oben'], [1, -1, 'oben rechts'],
+              [-1, 0, 'links'], [0, 0, 'mittig'], [1, 0, 'rechts'],
+              [-1, 1, 'unten links'], [0, 1, 'unten'], [1, 1, 'unten rechts']];
+  for (const [x, y, name] of wo) {
+    raus.push({ name: 'Außen, ' + name,
+                css: 'text-shadow:' + (x * 3) + 'px ' + (y * 3) + 'px 4px rgba(0,0,0,.45)' });
+  }
+  return raus;
+}
+
+/* Neun innere Schatten. Ein echter Innenschatten geht am Text nur ueber
+   zwei versetzte Schatten in der Farbe des Blattes. */
+function schattenInnen() {
+  const raus = [];
+  const wo = [[-1, -1, 'oben links'], [0, -1, 'oben'], [1, -1, 'oben rechts'],
+              [-1, 0, 'links'], [0, 0, 'mittig'], [1, 0, 'rechts'],
+              [-1, 1, 'unten links'], [0, 1, 'unten'], [1, 1, 'unten rechts']];
+  for (const [x, y, name] of wo) {
+    raus.push({ name: 'Innen, ' + name,
+                css: 'text-shadow:' + (x * 1) + 'px ' + (y * 1) + 'px 1px rgba(255,255,255,.75), '
+                   + (-x) + 'px ' + (-y) + 'px 2px rgba(0,0,0,.45)' });
+  }
+  return raus;
+}
+
+/* Fuenf Perspektiven: der Schatten faellt weg vom Text, wie auf seinem
+   Bild in der letzten Gruppe. */
+function schattenPerspektive() {
+  return [
+    { name: 'Perspektive unten', css: 'text-shadow:0 6px 5px rgba(0,0,0,.35)' },
+    { name: 'Perspektive unten links', css: 'text-shadow:-5px 6px 5px rgba(0,0,0,.35)' },
+    { name: 'Perspektive unten rechts', css: 'text-shadow:5px 6px 5px rgba(0,0,0,.35)' },
+    { name: 'Perspektive oben links', css: 'text-shadow:-5px -6px 5px rgba(0,0,0,.3)' },
+    { name: 'Perspektive oben rechts', css: 'text-shadow:5px -6px 5px rgba(0,0,0,.3)' },
+  ];
+}
+
+/* Neun Spiegelungen: drei Abstaende in drei Staerken. */
+function spiegelungen() {
+  const raus = [];
+  for (const [abstand, wieWeit] of [[1, 'dicht'], [5, 'mittig'], [9, 'weit']]) {
+    for (const [tief, wieStark] of [[.45, 'schwach'], [.65, 'halb'], [.85, 'stark']]) {
+      raus.push({
+        name: 'Spiegelung ' + wieWeit + ', ' + wieStark,
+        css: '-webkit-box-reflect:below ' + abstand + 'px '
+           + 'linear-gradient(transparent ' + Math.round((1 - tief) * 100) + '%, rgba(255,255,255,.5))',
       });
-      gitter.appendChild(k);
     }
-    tafel.appendChild(gitter);
+  }
+  return raus;
+}
 
-    const mehr = document.createElement('button');
-    mehr.type = 'button';
-    mehr.className = 'layouttafel__weiter';
-    mehr.textContent = 'Eigene Farbe und Stärke…';
-    mehr.addEventListener('click', () => { designTafelWeg(); B.effektFenster(); });
-    tafel.appendChild(mehr);
-  });
+/* Vierundzwanzig Leuchtvarianten: sechs Farben aus SEINER Palette in
+   vier Staerken — so viele Felder zeigt sein Bild. */
+function leuchtvarianten() {
+  const raus = [];
+  for (const i of [8, 9, 4, 7, 5, 6]) {
+    const [hex, name] = FARBEN[i] || FARBEN[0];
+    const [h, s] = hexZuHsl(hex);
+    for (const weite of [4, 7, 11, 16]) {
+      raus.push({
+        name: 'Leuchten ' + name + ', ' + weite + ' Punkt',
+        css: 'text-shadow:0 0 ' + weite + 'px ' + hslZuHex(h, Math.max(.5, s), .55),
+      });
+    }
+  }
+  return raus;
+}
+
+/* Welche Arten es gibt und was sie am Text setzen. Jede Art hat GENAU
+   EINE Eigenschaft — so koennen Schatten und Leuchten nebeneinander
+   stehen, ohne sich gegenseitig zu loeschen. */
+const EFFEKTARTEN = {
+  wordart:    { name: 'WordArt', ueberschrift: 'Formatvorlage', spalten: 6 },
+  schatten:   { name: 'Schatten', spalten: 3 },
+  spiegelung: { name: 'Spiegelung', spalten: 3 },
+  leuchten:   { name: 'Leuchteffekt', spalten: 6 },
 };
 
-function effektSetzen(art) {
+/* Die Huelle um die Auswahl — eine je Stelle, nicht eine je Effekt.
+   Sonst schachtelten sich vier <span> ineinander, und der letzte
+   ueberschriebe die Schrift der ersten. */
+function effektHuelle() {
+  const auswahl = window.getSelection();
+  if (!auswahl || !auswahl.rangeCount) return null;
+  const bereich = auswahl.getRangeAt(0);
+  let knoten = bereich.commonAncestorContainer;
+  if (knoten.nodeType === Node.TEXT_NODE) knoten = knoten.parentElement;
+  const vorhanden = knoten && knoten.closest ? knoten.closest('span.effekt') : null;
+  if (vorhanden && vorhanden.textContent === bereich.toString()) return vorhanden;
+  if (bereich.collapsed) return null;
+
+  const huelle = document.createElement('span');
+  huelle.className = 'effekt';
+  try {
+    bereich.surroundContents(huelle);
+  } catch (e) {
+    return null;
+  }
+  return huelle;
+}
+
+function effektAnwenden(art, css, name) {
   auswahlZurueck();
   const auswahl = window.getSelection();
   if (!auswahl.rangeCount || auswahl.isCollapsed) {
     melde('Erst den Text markieren, der den Effekt bekommen soll.');
     return;
   }
-  const wie = EFFEKTE[art];
-  if (!wie || art === 'keiner') {
-    Dokument.befehl('removeFormat');
-    melde('Effekt entfernt.');
-    return;
+  const huelle = effektHuelle();
+  if (!huelle) { melde('Über mehrere Absätze geht das nicht — kleiner markieren.'); return; }
+
+  if (css) huelle.dataset[art] = css; else delete huelle.dataset[art];
+
+  /* Alle gesetzten Arten zusammensetzen. Zwei Schatten (aussen und
+     Leuchten) gehoeren in EINE text-shadow-Angabe, durch Komma getrennt —
+     zwei Angaben hintereinander loeschen einander. */
+  const stuecke = [];
+  const schatten = [];
+  for (const a of Object.keys(EFFEKTARTEN)) {
+    const teil = huelle.dataset[a];
+    if (!teil) continue;
+    for (const satz of teil.split(';')) {
+      const [eigenschaft, ...rest] = satz.split(':');
+      if (!rest.length) continue;
+      if (eigenschaft.trim() === 'text-shadow') schatten.push(rest.join(':').trim());
+      else stuecke.push(satz);
+    }
   }
-  const huelle = document.createElement('span');
-  huelle.className = 'effekt';
-  huelle.setAttribute('style', wie.css);
-  try {
-    auswahl.getRangeAt(0).surroundContents(huelle);
-    geaendertMelden();
-    melde('Effekt „' + wie.name + '" gesetzt.');
-  } catch (e) {
-    melde('Über mehrere Absätze geht das nicht — kleiner markieren.');
+  if (schatten.length) stuecke.push('text-shadow:' + schatten.join(', '));
+  huelle.setAttribute('style', stuecke.join(';'));
+
+  /* Bleibt nichts uebrig, faellt die Huelle weg — sonst sammeln sich
+     leere <span> im Text. */
+  if (!stuecke.length && !Object.keys(huelle.dataset).length) {
+    const eltern = huelle.parentNode;
+    while (huelle.firstChild) eltern.insertBefore(huelle.firstChild, huelle);
+    eltern.removeChild(huelle);
   }
+
+  geaendertMelden();
+  melde(name ? name + ' gesetzt.' : 'Effekt entfernt.');
 }
 
+/* Eine Galerie mit Buchstaben-A, wie auf seinen Bildern. */
+function effektGalerie(liste, spalten, art, tafel) {
+  const gitter = document.createElement('div');
+  gitter.className = 'effektgitter';
+  gitter.style.setProperty('--spalten', String(spalten));
+  for (const e of liste) {
+    const k = document.createElement('button');
+    k.type = 'button';
+    k.className = 'effektprobe';
+    k.title = e.name;
+    const a = document.createElement('span');
+    a.className = 'effektprobe__a';
+    a.setAttribute('style', e.css);
+    a.textContent = 'A';
+    k.appendChild(a);
+    k.addEventListener('mousedown', (ev) => ev.preventDefault());
+    k.addEventListener('click', () => {
+      designTafelWeg();
+      effektAnwenden(art, e.css, e.name);
+    });
+    gitter.appendChild(k);
+  }
+  tafel.appendChild(gitter);
+}
+
+function effektUeberschrift(text, tafel) {
+  const h = document.createElement('div');
+  h.className = 'effekttafel__kopf';
+  h.textContent = text;
+  tafel.appendChild(h);
+}
+
+/* Die Untermenues — eines je Art, mit den Gruppen aus seinen Bildern. */
+function effektUntermenue(art, knopf) {
+  const titel = EFFEKTARTEN[art].name;
+  designTafelZeigen(knopf, titel, (tafel) => {
+    tafel.classList.add('designtafel--breit', 'effekttafel');
+
+    if (art === 'wordart') {
+      effektUeberschrift('Formatvorlage', tafel);
+      effektGalerie(wordartVorlagen(), 6, 'wordart', tafel);
+      return;
+    }
+
+    const aus = {
+      schatten:   ['Kein Schatten', 'Außen'],
+      spiegelung: ['Keine Spiegelung', 'Spiegelungsvarianten'],
+      leuchten:   ['Kein Leuchteffekt', 'Leuchtvarianten'],
+    }[art];
+
+    effektUeberschrift(aus[0], tafel);
+    effektGalerie([{ name: aus[0], css: '' }], 1, art, tafel);
+
+    if (art === 'schatten') {
+      effektUeberschrift('Außen', tafel);
+      effektGalerie(schattenAussen(), 3, 'schatten', tafel);
+      effektUeberschrift('Innen', tafel);
+      effektGalerie(schattenInnen(), 3, 'schatten', tafel);
+      effektUeberschrift('Perspektive', tafel);
+      effektGalerie(schattenPerspektive(), 3, 'schatten', tafel);
+    } else if (art === 'spiegelung') {
+      effektUeberschrift(aus[1], tafel);
+      effektGalerie(spiegelungen(), 3, 'spiegelung', tafel);
+    } else {
+      effektUeberschrift(aus[1], tafel);
+      effektGalerie(leuchtvarianten(), 6, 'leuchten', tafel);
+    }
+  });
+}
+
+B.effekt = (knopf) => {
+  auswahlMerken();
+  designTafelZeigen(knopf, 'Texteffekte', (tafel) => {
+    const zeile = (bild, name, tun, aus) => {
+      const k = document.createElement('button');
+      k.type = 'button';
+      k.className = 'designtafel__zeile richtungszeile';
+      if (aus) {
+        k.disabled = true;
+        k.title = 'Dafür müssten die Buchstaben selbst verformt werden — '
+                + 'das geht im Blatt nicht.';
+      }
+      k.appendChild(symbol(bild));
+      const w = document.createElement('span');
+      w.textContent = name;
+      k.appendChild(w);
+      if (tun) {
+        const pfeil = document.createElement('span');
+        pfeil.className = 'effektpfeil';
+        pfeil.textContent = '›';
+        k.appendChild(pfeil);
+      }
+      k.addEventListener('mousedown', (e) => e.preventDefault());
+      if (tun) k.addEventListener('click', () => { designTafelWeg(); tun(knopf); });
+      tafel.appendChild(k);
+    };
+
+    zeile('eingeschlossen', 'WordArt', () => effektUntermenue('wordart', knopf));
+    zeile('eingeschlossen', 'Schatten', () => effektUntermenue('schatten', knopf));
+    zeile('eingeschlossen', 'Spiegelung', () => effektUntermenue('spiegelung', knopf));
+    zeile('eingeschlossen', 'Leuchteffekt', () => effektUntermenue('leuchten', knopf));
+    zeile('eingeschlossen', '3D-Drehung', null, true);
+    zeile('eingeschlossen', 'Transformieren', null, true);
+
+    const strichel = document.createElement('hr');
+    strichel.className = 'designtafel__strich';
+    tafel.appendChild(strichel);
+
+    zeile('zahnrad', 'Weitere Texteffekte…', () => B.effektFenster());
+  });
+};
+
+/* „Weitere Texteffekte…" — die vier Arten in einem Fenster, fuer den
+   Fall, dass man mehrere auf einmal setzen will, ohne viermal durch die
+   Untermenues zu gehen. Dieselben Listen wie dort; „ohne" ganz oben. */
 B.effektFenster = () => {
   auswahlMerken();
-  fenster('Effekt', [
-    { art: 'satz', text: 'Wirkt auf den markierten Text.' },
-    { schluessel: 'art', name: 'Effekt', art: 'auswahl',
-      werte: Object.entries(EFFEKTE).map(([k, v]) => [k, v.name]) },
-  ], (werte) => effektSetzen(werte.art), 'Anwenden');
+  const ohne = [['', 'ohne']];
+  const liste = (eintraege) => ohne.concat(eintraege.map((e) => [e.css, e.name]));
+  fenster('Texteffekte', [
+    { art: 'satz', text: 'Wirkt auf den markierten Text. Was hier auf „ohne" '
+                       + 'steht, bleibt unverändert.' },
+    { schluessel: 'wordart', name: 'WordArt', art: 'auswahl',
+      werte: liste(wordartVorlagen()) },
+    { schluessel: 'schatten', name: 'Schatten', art: 'auswahl',
+      werte: liste(schattenAussen().concat(schattenInnen(), schattenPerspektive())) },
+    { schluessel: 'spiegelung', name: 'Spiegelung', art: 'auswahl',
+      werte: liste(spiegelungen()) },
+    { schluessel: 'leuchten', name: 'Leuchteffekt', art: 'auswahl',
+      werte: liste(leuchtvarianten()) },
+  ], (werte) => {
+    for (const art of ['wordart', 'schatten', 'spiegelung', 'leuchten']) {
+      if (werte[art]) effektAnwenden(art, werte[art], EFFEKTARTEN[art].name);
+    }
+  }, 'Anwenden');
 };
 
 /* ---- Umbrüche ---- */
