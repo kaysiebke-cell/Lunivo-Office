@@ -125,25 +125,19 @@ function REGISTER_BAUEN(B, w) {
                     ['abstand', 'Zeilenabstand', (k) => B.zeilenabstandKlappe(k)],
                     ['absatztoenung', 'Absatzschattierung', (k) => B.absatzSchattierung(k)],
                     ['absatzrahmen', 'Absatzrahmen', (k) => B.absatzRahmen(k)]], () => B.einzugGenau()],
-    /* ABSATZLAYOUT steht in der Vorlage VOR den Stilen, nicht dahinter.
-       Hier stand es einmal umgekehrt, mit der Begründung, es gehöre
-       „zwischen Formatvorlagen und Bearbeiten" — das war falsch gelesen.
+    /* KEINE GRUPPE ABSATZLAYOUT
 
-       Und Zeilenabstand, Absatzrahmen und Absatzschattierung stehen in
-       der Vorlage in BEIDEN Gruppen: oben in ABSATZ, wo man sie beim
-       Schreiben sucht, und noch einmal hier. Sie waren aus ABSATZ
-       herausgenommen worden, weil das doppelt aussah. Es ist nicht
-       doppelt, es ist so gewollt. */
-    /* Diese Gruppe hatte dreimal dasselbe wie Start ▸ Absatz: Einzug,
-       Rahmen, Schattierung. Er hat es zweimal gemeldet — „an einem Ort
-       gebuendelt" und „das Dialogfenster doppelt gemoppelt". Was bleibt,
-       ist der Zeilenabstand; alles andere steht drueber, wo man es beim
-       Schreiben sucht. */
-    /* Der Knopf hiess Zeilenabstand und oeffnete den ABSATZabstand — zwei
-       verschiedene Dinge. Jetzt dieselbe Klappe wie oben in ABSATZ:
-       1,0 bis 3,0 mit Probezeilen, darunter der Weg zum Absatzabstand. */
-    ['Absatzlayout', [['abstand', 'Zeilenabstand', (k) => B.zeilenabstandKlappe(k), 'gross']],
-                  () => B.einzugGenau()],
+       Hier stand eine eigene Gruppe mit dem Zeilenabstand — noch einmal,
+       gross, neben der Gruppe ABSATZ, in der er schon steht. Kay:
+       „zumal du die Funktion doppelt angelegt hast." Sein WPS-Bild zeigt
+       im Reiter Start: Zwischenablage, Schriftart, Absatz, Stile,
+       Bearbeiten. Eine Gruppe ABSATZLAYOUT gibt es dort nicht.
+
+       In dieser Gruppe hatte vorher schon dreimal dasselbe gestanden —
+       Einzug, Rahmen, Schattierung —, und er hatte es zweimal gemeldet:
+       „an einem Ort gebuendelt", „das Dialogfenster doppelt gemoppelt".
+       Uebrig blieb der Zeilenabstand, also das dritte Mal dasselbe. Jetzt
+       steht er an einer Stelle: oben in ABSATZ. */
     ['Stile', 'katalog'],
     ['Bearbeiten', [['lupe', 'Suchen', () => B.suchen(), 'gross'],
                     ['uebersetzen', 'Ersetzen', () => B.ersetzen()],

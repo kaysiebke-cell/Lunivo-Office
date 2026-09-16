@@ -2784,38 +2784,69 @@ const zeilenabstand = (wert) => () => aufAbsaetze((el) => { el.style.lineHeight 
    In WPS haengt am Zeilenabstand eine Klappe mit den Massen, die man
    wirklich nimmt — 1, 1,15, 1,5, 2 —, und darunter erst das Feine. Wer
    „anderthalbzeilig" braucht, soll einmal klicken. */
+/* Nach seinem WPS-Bild: Zahlen, kein „Anderthalbfach", kein 1,15. Ein
+   Haken beim geltenden Wert, rechts die Kuerzel. Hier standen Woerter
+   und daneben gezeichnete Probezeilen — beides steht so in keiner
+   Vorlage. */
 const ZEILENABSTAENDE = [
-  ['1',    'Einzeilig',        1],
-  ['1.15', '1,15',             1.15],
-  ['1.5',  'Anderthalbfach',   1.5],
-  ['2',    'Zweizeilig',       2],
-  ['2.5',  '2,5',              2.5],
-  ['3',    'Dreizeilig',       3],
+  ['1',   '1,0', 1,   'Strg+1'],
+  ['1.5', '1,5', 1.5, ''],
+  ['2',   '2,0', 2,   'Strg+2'],
+  ['2.5', '2,5', 2.5, ''],
+  ['3',   '3,0', 3,   ''],
 ];
+
+/* Welcher Abstand gilt gerade? Fuer den Haken. Ohne eigene Angabe steht
+   der Absatz auf dem Wert des Blattes; der zaehlt als 1,0. */
+function zeilenabstandJetzt() {
+  const ziele = absaetzeInAuswahl();
+  if (!ziele.length) return null;
+  const eigen = ziele[0].style.lineHeight;
+  if (!eigen) return 1;
+  const zahl = parseFloat(eigen);
+  return Number.isFinite(zahl) ? zahl : null;
+}
+
+function zeilenabstandSetzen(wert, name) {
+  const ziele = absaetzeInAuswahl();
+  if (!ziele.length) { melde('Dafür muss der Zeiger in einem Absatz stehen.'); return; }
+  for (const a of ziele) a.style.lineHeight = String(wert);
+  geaendertMelden();
+  melde('Zeilenabstand: ' + (name || wert) + '.');
+}
 
 B.zeilenabstandKlappe = (knopf) => {
   designTafelZeigen(knopf, 'Zeilenabstand', (tafel) => {
     tafel.classList.add('designtafel--breit');
-    for (const [, name, wert] of ZEILENABSTAENDE) {
+    const jetzt = zeilenabstandJetzt();
+    for (const [, name, wert, kuerzel] of ZEILENABSTAENDE) {
       const k = document.createElement('button');
       k.type = 'button';
-      k.className = 'designtafel__zeile richtungszeile';
-      const probe = document.createElement('span');
-      probe.className = 'abstandprobe';
-      probe.style.setProperty('--luft', wert);
-      probe.innerHTML = '<i></i><i></i><i></i>';
-      k.appendChild(probe);
+      k.className = 'designtafel__zeile abstandzeile';
+
+      /* Der Haken steht links und haelt seinen Platz auch dann frei,
+         wenn er leer ist — sonst ruecken die Zahlen gegeneinander. */
+      const haken = document.createElement('span');
+      haken.className = 'designtafel__haken';
+      haken.textContent = (jetzt !== null && Math.abs(jetzt - wert) < 0.001) ? '✓' : '';
+      k.appendChild(haken);
+
       const w = document.createElement('span');
+      w.className = 'designtafel__wort';
       w.textContent = name;
       k.appendChild(w);
+
+      if (kuerzel) {
+        const t = document.createElement('span');
+        t.className = 'designtafel__taste';
+        t.textContent = kuerzel;
+        k.appendChild(t);
+      }
+
       k.addEventListener('mousedown', (e) => e.preventDefault());
       k.addEventListener('click', () => {
         designTafelWeg();
-        const ziele = absaetzeInAuswahl();
-        if (!ziele.length) { melde('Dafür muss der Zeiger in einem Absatz stehen.'); return; }
-        for (const a of ziele) a.style.lineHeight = String(wert);
-        geaendertMelden();
-        melde('Zeilenabstand: ' + name + '.');
+        zeilenabstandSetzen(wert, name);
       });
       tafel.appendChild(k);
     }
@@ -2824,12 +2855,17 @@ B.zeilenabstandKlappe = (knopf) => {
     strichel.className = 'designtafel__strich';
     tafel.appendChild(strichel);
 
+    /* In WPS heisst der letzte Punkt „Mehr…" und fuehrt zu den Abstaenden
+       ueber und unter dem Absatz. */
     const mehr = document.createElement('button');
     mehr.type = 'button';
-    mehr.className = 'designtafel__zeile richtungszeile';
-    mehr.appendChild(symbol('abstand'));
+    mehr.className = 'designtafel__zeile abstandzeile';
+    const leer = document.createElement('span');
+    leer.className = 'designtafel__haken';
+    mehr.appendChild(leer);
     const w = document.createElement('span');
-    w.textContent = 'Abstand vor und nach dem Absatz…';
+    w.className = 'designtafel__wort';
+    w.textContent = 'Mehr…';
     mehr.appendChild(w);
     mehr.addEventListener('mousedown', (e) => e.preventDefault());
     mehr.addEventListener('click', () => { designTafelWeg(); B.absatzabstand(); });
@@ -19906,6 +19942,16 @@ document.addEventListener('keydown', (e) => {
   if ((e.ctrlKey || e.metaKey) && vorhersageKasten && /^[1-6]$/.test(e.key)) {
     const knopf = vorhersageKasten.querySelectorAll('.vorhersage__wort')[+e.key - 1];
     if (knopf) { e.preventDefault(); knopf.click(); return; }
+  }
+  /* Strg+1 und Strg+2 setzen den Zeilenabstand — so steht es auf seinem
+     WPS-Bild. Sie stehen HINTER der Wortvorhersage: Ist deren Kasten
+     offen, nimmt sie den Vorschlag, wie bisher. Sonst waere ein eigener
+     Befehl fuer einen fremden verschwunden. */
+  if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && !vorhersageKasten
+      && (e.key === '1' || e.key === '2')) {
+    e.preventDefault();
+    zeilenabstandSetzen(e.key === '1' ? 1 : 2, e.key === '1' ? '1,0' : '2,0');
+    return;
   }
   if (e.key === 'Escape' && vorhersageKasten) { vorhersageWeg(); return; }
   if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 's') {

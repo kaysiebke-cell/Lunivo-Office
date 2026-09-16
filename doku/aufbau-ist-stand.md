@@ -47,8 +47,6 @@ DIE BÄNDER
 │   │   ├── Genaues Maß…
 │   │   ├── Listenebene erhöhen
 │   │   └── Listenebene verringern
-│   ├── Absatzlayout
-│   │   └── Zeilenabstand
 │   ├── Stile
 │   │   └── katalog
 │   └── Bearbeiten

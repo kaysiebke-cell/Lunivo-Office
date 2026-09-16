@@ -217,7 +217,7 @@ Name im Band zurückgedreht. Das entscheidet er, nicht ich.
 |---|---|---|
 | Seitenfarbe | gleich | `farbe` |
 | Wasserzeichen | gleich | `wasserzeichen` |
-| Seitenränder | gleich | `rahmen` |
+| Seitenränder | gleich | `seitenrahmen` |
 
 ### Anordnen
 

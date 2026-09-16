@@ -3182,6 +3182,24 @@ body.lesen .arbeitsflaeche{padding:40px 24px}
    Text aus dem Blatt heraus. */
 .dokument[data-richtung]{min-height:240mm}
 
+/* Zeilenabstand-Klappe nach seinem WPS-Bild: Haken links, Zahl daneben,
+   Kuerzel rechts. Eine EIGENE Zeilenklasse — die Klappe lief vorher auf
+   '.richtungszeile' mit, und deren Regel '.richtungszeile span{flex:1}'
+   machte aus dem Haken einen 84 Pixel breiten Block. Die Zahlen standen
+   dadurch treppenfoermig versetzt. */
+.abstandzeile{
+  display:flex;align-items:center;gap:10px;
+  text-align:left;white-space:nowrap;flex-wrap:nowrap;
+}
+.abstandzeile .designtafel__haken{
+  flex:0 0 1.1em;min-width:0;text-align:center;color:var(--blau);
+}
+.abstandzeile .designtafel__wort{flex:1 1 auto;min-width:0;text-align:left}
+.abstandzeile .designtafel__taste{
+  flex:0 0 auto;margin-left:1.5em;
+  color:var(--schrift-2);font-size:.85em;opacity:.8;
+}
+
 /* Die Zeile, die gerade gilt, traegt einen Haken. */
 .designtafel__zeile--gilt::before{content:'✓ ';color:var(--blau)}
 .designtafel__zeile--gilt{font-weight:700}

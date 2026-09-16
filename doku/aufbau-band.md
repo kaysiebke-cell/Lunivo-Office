@@ -68,8 +68,6 @@ START
 │   ├── Genaues Maß…
 │   ├── Listenebene erhöhen
 │   └── Listenebene verringern
-├── Absatzlayout
-│   └── Zeilenabstand
 ├── Stile
 │   └── katalog
 └── Bearbeiten
@@ -511,7 +509,7 @@ genannt — das ist Absicht: ein Schalter, mehrere Stellen, ein Zustand.
 | Wortvorhersage | Schreibhilfe ▸ Beim Schreiben |
 | Wörter zählen | Überprüfen ▸ Dokumentprüfung |
 | Zeichenumriss | Start ▸ Schriftart |
-| Zeilenabstand | Start ▸ Absatz · Start ▸ Absatzlayout |
+| Zeilenabstand | Start ▸ Absatz |
 | Zeilenfokus | Schreibhilfe ▸ Lesen |
 | Zeilennummern | Seitenlayout ▸ Seite einrichten |
 | Zentriert | Start ▸ Absatz |
