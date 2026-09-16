@@ -2534,19 +2534,31 @@ const FARBEN = [
    farbFenster(start, beiFarbe) — der Rest ist dieses Fenster.
    ============================================================ */
 
-/* Die Toene der Standard-Karte: zwoelf Farbwinkel in sechs Helligkeiten.
-   Die Winkel stammen aus SEINER Palette — nicht aus WPS. Ich habe diese
-   Palette einmal eigenmaechtig getauscht; das kommt nicht wieder. */
+/* Das Raster der Standard-Karte.
+
+   WAS ES NICHT IST: seine Palette. Hier stand erst sein FARBEN-Satz mit
+   sechs, dann zehn Abstufungen — und blieb damit grob. Sein WPS-Bild
+   zeigt an dieser Stelle etwas anderes: ein ALLGEMEINES Farbraster,
+   fuenfzehn Farbwinkel breit und zwoelf Helligkeiten hoch, von Pastell
+   oben bis Dunkel unten. Seine zwoelf Toene stehen in der Klappe, wo sie
+   hingehoeren; hier sucht man eine beliebige Farbe.
+
+   Kay: "es waere nett, wenn du die Bilder auch anschaust, wenn ich dir
+   schon deine Fehler zeige." Genau das war der Fehler. */
 function farbrasterBauen() {
   const reihen = [];
-  /* Zehn Helligkeiten statt sechs: Sein WPS-Bild zeigt ein deutlich
-     feineres Raster, in dem man einen Ton wirklich treffen kann. */
-  const stufen = [0.92, 0.85, 0.78, 0.70, 0.62, 0.54, 0.46, 0.38, 0.30, 0.20];
-  for (const helligkeit of stufen) {
+  const SPALTEN = 15;
+  const stufen = [
+    [0.30, 0.92], [0.40, 0.86], [0.50, 0.80], [0.60, 0.74],
+    [0.70, 0.66], [0.80, 0.58], [0.85, 0.50], [0.85, 0.43],
+    [0.80, 0.36], [0.72, 0.29], [0.64, 0.23], [0.55, 0.17],
+  ];
+  for (const [sa, l] of stufen) {
     const reihe = [];
-    for (const [hex] of FARBEN) {
-      const [h, sa] = hexZuHsl(hex);
-      reihe.push(hslZuHex(h, Math.max(0.12, sa), helligkeit));
+    for (let i = 0; i < SPALTEN; i++) {
+      /* Sein Raster faengt links bei Gelb an, nicht bei Rot — darum der
+         Versatz um ein Sechstel des Farbkreises. */
+      reihe.push(hslZuHex(((i / SPALTEN) + 1 / 6) % 1, sa, l));
     }
     reihen.push(reihe);
   }

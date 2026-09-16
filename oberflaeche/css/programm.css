@@ -5316,8 +5316,10 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 .farbfenster__karte{display:flex;flex-direction:column;gap:10px}
 
 /* Das Raster: zwoelf Toene in sechs Helligkeiten. */
+/* Fuenfzehn Spalten, zwoelf Reihen — wie auf seinem Bild. Die Felder
+   sind klein und dicht; ein grobes Raster trifft keine Farbe. */
 .farbfenster__raster{
-  display:grid;grid-template-columns:repeat(12,1fr);gap:2px;
+  display:grid;grid-template-columns:repeat(15,1fr);gap:2px;
 }
 /* Unten links die Graustufen, rechts das grosse Feld — nach seinem Bild. */
 .farbfenster__unten{
