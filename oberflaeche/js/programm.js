@@ -11922,13 +11922,33 @@ B.absatzSchattierung = (knopf) => {
     }
     tafel.appendChild(voll);
 
+    /* „Zuletzt verwendete Farben" — steht auf seinem WPS-Bild zwischen den
+       Standardfarben und „Weitere Fuellfarben". Ohne das muss man eine
+       selbst gemischte Farbe beim naechsten Absatz neu mischen. */
+    const letzte = Speicher.lies('letzteFarben', []);
+    if (letzte.length) {
+      ueberschrift('Zuletzt verwendete Farben');
+      const reihe = document.createElement('div');
+      reihe.className = 'farbtafel__reihe farbtafel__reihe--zwoelf';
+      for (const ton of letzte) {
+        const feldchen = farbfeld(ton, () => { designTafelWeg(); nimm(ton, ton); });
+        feldchen.title = ton;
+        reihe.appendChild(feldchen);
+      }
+      tafel.appendChild(reihe);
+    }
+
     const strichel = document.createElement('hr');
     strichel.className = 'designtafel__strich';
     tafel.appendChild(strichel);
 
     zeile('farbe', 'Weitere Füllfarben…', () => {
       designTafelWeg();
-      farbFenster(gewaehlteSchattierung(), (hex) => nimm(hex, hex));
+      farbFenster(gewaehlteSchattierung(), (hex) => {
+        nimm(hex, hex);
+        const alt = Speicher.lies('letzteFarben', []).filter((f) => f !== hex);
+        Speicher.schreib('letzteFarben', [hex, ...alt].slice(0, 12));
+      });
     });
     zeile('absatztoenung', 'Rahmen und Schattierung…',
           () => { designTafelWeg(); B.seitenraenderRahmen('schatten'); });

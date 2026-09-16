@@ -219,7 +219,7 @@ const SYMBOLE = {
   radierer:      'M21 21H8a2 2 0 0 1-1.42-.587l-3.994-3.999a2 2 0 0 1 0-2.828l10-10a2 2 0 0 1 2.829 0l5.999 6a2 2 0 0 1 0 2.828L12.834 21 M5.082 11.09 l8.828 8.828',   /* lucide: eraser */
   farbe:         'M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z M13 6.5a0.5 0.5 0 1 0 1 0a0.5 0.5 0 1 0 -1 0 M17 10.5a0.5 0.5 0 1 0 1 0a0.5 0.5 0 1 0 -1 0 M6 12.5a0.5 0.5 0 1 0 1 0a0.5 0.5 0 1 0 -1 0 M8 7.5a0.5 0.5 0 1 0 1 0a0.5 0.5 0 1 0 -1 0',   /* lucide: palette */
   marker:        'M9 11 l-6 6v3h9l3-3 M22 12 l-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4',   /* lucide: highlighter */
-  abstand:       'M9 5h12 M9 10h12 M9 15h12 M9 20h12 M4 4v17 M2 6l2-2 2 2 M2 19l2 2 2-2',   /* eigen: Zeilen mit Doppelpfeil — Zeilenabstand */
+  abstand:       'M4 4v16 M2 7l2-3 2 3 M2 17l2 3 2-3 M9 6h13 M9 12h13 M9 18h13',   /* eigen: Doppelpfeil neben drei Zeilen — Zeilenabstand, wie in WPS */
   lupe:          'M3 11a8 8 0 1 0 16 0a8 8 0 1 0 -16 0 M21 21L16.65 16.65 M11 8L11 14 M8 11L14 11',   /* lucide: zoom-in */
   saeule:        'M3 3v16a2 2 0 0 0 2 2h16 M18 17V9 M13 17V5 M8 17v-3',   /* lucide: chart-column */
   stift:         'M15.707 21.293a1 1 0 0 1-1.414 0l-1.586-1.586a1 1 0 0 1 0-1.414l5.586-5.586a1 1 0 0 1 1.414 0l1.586 1.586a1 1 0 0 1 0 1.414z M18 13 l-1.375-6.874a1 1 0 0 0-.746-.776L3.235 2.028a1 1 0 0 0-1.207 1.207L5.35 15.879a1 1 0 0 0 .776.746L13 18 M2.3 2.3 l7.286 7.286 M9 11a2 2 0 1 0 4 0a2 2 0 1 0 -4 0',   /* lucide: pen-tool */
@@ -273,8 +273,8 @@ const SYMBOLE = {
      allgemeinen „rahmen" und „toenung" gehoeren auch der Tabelle, dem
      Bild, der Form und dem Diagramm — wer sie fuer einen Zweck umbaut,
      baut sie allen anderen um. Genau das war passiert. */
-  absatzrahmen:  'M3 3h18v18H3z M3 3h18v2H3z M3 19h18v2H3z M3 3h2v18H3z M19 3h2v18h-2z M8 9h8 M8 12h8 M8 15h5',   /* eigen */
-  absatztoenung: 'M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z M4 13h16 M7 16h10 M7 19h6',   /* eigen */
+  absatzrahmen:  'M3 3h18v18H3z M12 3v18 M3 12h18',   /* eigen: Kasten mit Kreuz darin — Absatzrahmen, nach seinem WPS-Ausschnitt */
+  absatztoenung: 'M5 11 L11 5 l7 7 -6 6a1.4 1.4 0 0 1-2 0z M8.5 8.5 L6 6 M19 14c1.6 2 1.6 4-.5 4s-2.1-2-.5-4 M3 21h18',   /* eigen: Farbeimer mit Tropfen ueber einem Streifen — Schattierung, nach seinem WPS-Ausschnitt */
 
   /* Je Kante ein Zeichen. Elf gleiche Kaestchen in einer Liste sind
      keine Liste — er hat es so gemeldet: „die Symbole sind nicht lesbar
