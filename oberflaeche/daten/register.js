@@ -122,9 +122,9 @@ function REGISTER_BAUEN(B, w) {
                     ['mitte', 'Zentriert', () => B.mitte()],
                     ['rechts', 'Rechtsbündig', () => B.rechts()],
                     ['block', 'Blocksatz', () => B.block()],
-                    ['abstand', 'Zeilenabstand', (k) => B.zeilenabstandKlappe(k)],
-                    ['absatztoenung', 'Absatzschattierung', (k) => B.absatzSchattierung(k)],
-                    ['absatzrahmen', 'Absatzrahmen', (k) => B.absatzRahmen(k)]], () => B.einzugGenau()],
+                    ['abstand', 'Zeilenabstand', { klappe: (k) => B.zeilenabstandKlappe(k) }],
+                    ['absatztoenung', 'Absatzschattierung', { klappe: (k) => B.absatzSchattierung(k) }],
+                    ['absatzrahmen', 'Absatzrahmen', { klappe: (k) => B.absatzRahmen(k) }]], () => B.einzugGenau()],
     /* KEINE GRUPPE ABSATZLAYOUT
 
        Hier stand eine eigene Gruppe mit dem Zeilenabstand — noch einmal,

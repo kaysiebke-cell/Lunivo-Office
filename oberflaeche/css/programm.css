@@ -5309,10 +5309,20 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 .dialog.farbfenster{max-width:560px;width:min(560px,94vw)}
 .farbfenster__koerper{display:flex;gap:14px;align-items:flex-start}
 .farbfenster__links{flex:1 1 auto;min-width:0}
+/* Rechts: OK und Abbrechen oben, die beiden Proben ganz unten — der
+   Abstand dazwischen gehoert zum Aufbau seines Bildes. */
 .farbfenster__rechts{
   flex:0 0 118px;display:flex;flex-direction:column;gap:8px;
+  align-self:stretch;
 }
-.farbfenster__buehne{padding-top:10px}
+/* Und die Karte steht in einem Rahmen, mit "Farben:" darueber. */
+.farbfenster__buehne{
+  padding:10px 10px 12px;
+  border:1px solid var(--rand);border-radius:5px;
+}
+.farbfenster__buehnenname{
+  color:var(--schrift-2);font-size:.82rem;margin:8px 0 4px;
+}
 .farbfenster__karte{display:flex;flex-direction:column;gap:10px}
 
 /* Das Raster: zwoelf Toene in sechs Helligkeiten. */
@@ -5340,7 +5350,7 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 .farbfenster__feld:hover{outline:2px solid var(--blau);outline-offset:1px}
 
 /* Die beiden Proben rechts. */
-.farbfenster__proben{display:flex;flex-direction:column;gap:2px;margin-top:6px}
+.farbfenster__proben{display:flex;flex-direction:column;gap:2px;margin-top:auto}
 .farbfenster__probenname{color:var(--schrift-2);font-size:.78rem;text-align:center}
 .farbfenster__probe{
   height:44px;border:1px solid var(--rand);border-radius:3px;

@@ -273,8 +273,8 @@ const SYMBOLE = {
      allgemeinen „rahmen" und „toenung" gehoeren auch der Tabelle, dem
      Bild, der Form und dem Diagramm — wer sie fuer einen Zweck umbaut,
      baut sie allen anderen um. Genau das war passiert. */
-  absatzrahmen:  'M3 3h18v18H3z M12 3v18 M3 12h18',   /* eigen: Kasten mit Kreuz darin — Absatzrahmen, nach seinem WPS-Ausschnitt */
-  absatztoenung: 'M5 11 L11 5 l7 7 -6 6a1.4 1.4 0 0 1-2 0z M8.5 8.5 L6 6 M19 14c1.6 2 1.6 4-.5 4s-2.1-2-.5-4 M3 21h18',   /* eigen: Farbeimer mit Tropfen ueber einem Streifen — Schattierung, nach seinem WPS-Ausschnitt */
+  absatzrahmen:  'M3 4h18v16H3z M12 4v16 M3 12h18',   /* eigen: Kasten mit Kreuz darin — Absatzrahmen, nach seinem WPS-Ausschnitt */
+  absatztoenung: 'M6.5 7h11 l-1.5 9h-8z M8.8 7a3.2 3.2 0 0 1 6.4 0 M3 20h18',   /* eigen: gekippter Eimer ueber einem Streifen. Der Tropfen und der Henkel sind weg: bei 16 Bildpunkten war nichts davon zu erkennen. */
 
   /* Je Kante ein Zeichen. Elf gleiche Kaestchen in einer Liste sind
      keine Liste — er hat es so gemeldet: „die Symbole sind nicht lesbar

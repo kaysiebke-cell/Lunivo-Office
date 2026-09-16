@@ -2588,7 +2588,13 @@ function farbFenster(start, beiFarbe) {
   reiter.className = 'rahmentafel__reiter';
   const buehne = document.createElement('div');
   buehne.className = 'farbfenster__buehne';
+  /* Auf seinem Bild steht ueber dem Raster „Farben:" und das Ganze sitzt
+     in einem Rahmen. */
+  const buehnenName = document.createElement('div');
+  buehnenName.className = 'farbfenster__buehnenname';
+  buehnenName.textContent = 'Farben:';
   links.appendChild(reiter);
+  links.appendChild(buehnenName);
   links.appendChild(buehne);
 
   /* ---- rechts: OK, Abbrechen, Neu, Aktuell ---- */
@@ -2599,6 +2605,8 @@ function farbFenster(start, beiFarbe) {
   rechts.appendChild(ok);
   rechts.appendChild(ab);
 
+  /* Die beiden Proben stehen auf seinem Bild ganz UNTEN rechts, mit Platz
+     zwischen ihnen und den Knoepfen — nicht dicht darunter. */
   const proben = document.createElement('div');
   proben.className = 'farbfenster__proben';
   const neuName = document.createElement('span');
@@ -7653,6 +7661,18 @@ function registerBauen() {
         pfeil.textContent = '▾';
         k.appendChild(pfeil);
         k.addEventListener('click', () => registerKlappe(k, tun));
+      } else if (tun && typeof tun === 'object' && typeof tun.klappe === 'function'
+                 && typeof tun.tun !== 'function') {
+        /* Ein Knopf, der NUR eine Klappe oeffnet, traegt denselben Pfeil
+           wie eine Liste. Auf seinem WPS-Bild haben Zeilenabstand,
+           Schattierung und Rahmen alle drei einen — bei mir sah man dem
+           Knopf nicht an, dass da noch etwas kommt. */
+        k.classList.add('wz--klappe');
+        const pfeil = document.createElement('span');
+        pfeil.className = 'wz__pfeil';
+        pfeil.textContent = '▾';
+        k.appendChild(pfeil);
+        k.addEventListener('click', () => { tun.klappe(k); registerSchalterAuffrischen(); });
       } else {
         /* Nach dem Klick nachsehen, was jetzt an ist. Ein Schalter, der
            seinen Zustand erst beim nächsten Neubau des Bandes zeigt,
@@ -11905,9 +11925,9 @@ B.absatzSchattierung = (knopf) => {
        FARBEN — den zwoelf Toenen, die er ausgesucht hat. Ich habe diese
        Palette einmal gegen WPS-Signalfarben getauscht; das kommt nicht
        wieder. */
-    zeile('radierer', 'Keine Füllung', () => { designTafelWeg(); nimm('', ''); });
+    zeile('radierer', 'Keine Farbe', () => { designTafelWeg(); nimm('', ''); });
 
-    ueberschrift('Themenfarben');
+    ueberschrift('Thema-Farben');
     const gitter = document.createElement('div');
     gitter.className = 'farbtafel__gitter';
     /* Eine Spalte je Farbe, von hell nach dunkel — wie in WPS. Oben der
@@ -11916,13 +11936,17 @@ B.absatzSchattierung = (knopf) => {
       const spalte = document.createElement('div');
       spalte.className = 'farbtafel__spalte';
       const [h, sa, l] = hexZuHsl(hex);
+      /* Die Abstufungen behalten ihre Farbe. Hier stand die Saettigung
+         gedeckelt (0,55 und 0,62) — dadurch sahen auf seinem Bild fuenf
+         von sechs Reihen grau aus, und aus zwoelf Toenen wurden zwoelf
+         Graustufen. Heller heisst heller, nicht blasser. */
       const stufen = [
         [hex, name],
-        [hslZuHex(h, Math.min(0.55, sa), Math.min(0.94, l + 0.34)), name + ', sehr hell'],
-        [hslZuHex(h, Math.min(0.62, sa), Math.min(0.88, l + 0.22)), name + ', hell'],
-        [hslZuHex(h, sa, Math.max(0.18, l - 0.10)), name + ', dunkel'],
-        [hslZuHex(h, sa, Math.max(0.12, l - 0.20)), name + ', dunkler'],
-        [hslZuHex(h, sa, Math.max(0.08, l - 0.30)), name + ', am dunkelsten'],
+        [hslZuHex(h, sa, Math.min(0.93, l + 0.34)), name + ', sehr hell'],
+        [hslZuHex(h, sa, Math.min(0.86, l + 0.20)), name + ', hell'],
+        [hslZuHex(h, sa, Math.max(0.20, l - 0.10)), name + ', dunkel'],
+        [hslZuHex(h, sa, Math.max(0.14, l - 0.20)), name + ', dunkler'],
+        [hslZuHex(h, sa, Math.max(0.09, l - 0.30)), name + ', am dunkelsten'],
       ];
       for (const [ton, wie] of stufen) {
         const feldchen = farbfeld(ton, () => { designTafelWeg(); nimm(ton, wie); });
@@ -11933,7 +11957,7 @@ B.absatzSchattierung = (knopf) => {
     }
     tafel.appendChild(gitter);
 
-    ueberschrift('Standardfarben');
+    ueberschrift('Standard-Farben');
     const voll = document.createElement('div');
     voll.className = 'farbtafel__reihe farbtafel__reihe--zwoelf';
     for (const [hex, name] of FARBEN) {
