@@ -66,12 +66,12 @@ const SYMBOLE = {
   bildfoto:      'M4 3h16a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2h-16a2 2 0 0 1 -2 -2v-10a2 2 0 0 1 2 -2z M8 21L16 21 M12 17L12 21',   /* lucide: monitor */
   smartart:      'M5 3h4a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2h-4a2 2 0 0 1 -2 -2v-4a2 2 0 0 1 2 -2z M7 11v4a2 2 0 0 0 2 2h4 M15 13h4a2 2 0 0 1 2 2v4a2 2 0 0 1 -2 2h-4a2 2 0 0 1 -2 -2v-4a2 2 0 0 1 2 -2z',   /* lucide: workflow */
   piktogramm:    'M7 8a5 5 0 1 0 10 0a5 5 0 1 0 -10 0 M20 21a8 8 0 0 0-16 0',   /* lucide: user-round */
-  wordart:       'M12 4v16 M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2 M9 20h6',   /* lucide: type */
+  wordart:       'M6 17 L11 6 L16 17 M7.8 13h6.4 M4 20c4-2.5 12-2.5 16 0',   /* eigen: grosses A ueber einem Schwung — Schmuckschrift */
   textmarke:     'M17 3a2 2 0 0 1 2 2v15a1 1 0 0 1-1.496.868l-4.512-2.578a2 2 0 0 0-1.984 0l-4.512 2.578A1 1 0 0 1 5 20V5a2 2 0 0 1 2-2z',   /* lucide: bookmark */
-  querverweis:   'M3 5v14 M21 12H7 M15 18 l6-6-6-6',   /* lucide: arrow-right-from-line */
+  querverweis:   'M5 3h9l5 5v13H5z M14 3v5h5 M8 11h7 M8 19c0-3 4-3.5 7-3.5 M12 13 l3 2.5-3 2.5',   /* eigen: Blatt, in dem ein Bogen auf eine andere Stelle zeigt */
   nadel:         'M12 17v5 M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z',   /* lucide: pin */
   baustein:      'M10 22V7a1 1 0 0 0-1-1H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5a1 1 0 0 0-1-1H2 M15 2h6a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-6a1 1 0 0 1 -1 -1v-6a1 1 0 0 1 1 -1z',   /* lucide: blocks */
-  initiale:      'M14 3v11 M14 9h-3a3 3 0 0 1 0-6h9 M18 3v11 M22 18H2l4-4 M6 22 l-4-4',   /* lucide: pilcrow-left */
+  initiale:      'M3 14 L6.5 5 L10 14 M4.2 11.2h4.6 M13 6h8 M13 10h8 M13 14h8 M3 18h18',   /* eigen: grosses A am Absatzanfang, daneben die Zeilen */
   datum:         'M8 2v3 M16 2v3 M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2z M3 9h18',   /* lucide: calendar */
   uhrzeit:       'M2 12a10 10 0 1 0 20 0a10 10 0 1 0 -20 0 M12 6v6l4 2',   /* lucide: clock */
   datumuhrzeit:  'M7 2v3 M14 2v3 M3.5 4h13a1.5 1.5 0 0 1 1.5 1.5V10 M3.5 8h15 M3.5 4v13a1.5 1.5 0 0 0 1.5 1.5h6 M13 17a5 5 0 1 0 10 0a5 5 0 1 0 -10 0 M18 14.5V17l1.8 1',   /* eigen: Kalender mit Uhr, nach seinem WPS-Bild */
@@ -200,7 +200,13 @@ const SYMBOLE = {
   tabelle:       'M12 3v18 M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2z M3 9h18 M3 15h18',   /* lucide: table */
   bild:          'M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2z M7 9a2 2 0 1 0 4 0a2 2 0 1 0 -4 0 M21 15 l-3.086-3.086a2 2 0 0 0-2.828 0L6 21',   /* lucide: image */
   rahmen:        'M3 4h18v16H3z',   /* lucide/eigen: allgemeiner Rahmen — Tabelle, Form, Textfeld teilen ihn */
-  umbruch:       'M16 16 l-4 4-4-4 M3 12h18 M8 8 l4-4 4 4',   /* lucide: separator-horizontal */
+  /* Eigenes Zeichen, damit das geteilte 'rahmen' der Tabellen bleibt,
+     wie es ist: Blatt mit Eselsohr und einem Rahmen darin. */
+  seitenrahmen:  'M6 3h8l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z M14 3v5h5 M8 12h8v7H8z',   /* eigen: Blatt mit umlaufendem Rahmen */
+  /* Blatt mit Raute — sein Bild zeigt genau das; vorher stand hier ein
+     Bildschirm, an dem niemand eine Seitenzahl erkennt. */
+  seitenzahl:    'M6 3h8l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z M14 3v5h5 M10 11v8 M14 11v8 M8 14h8 M8 17h8',   /* eigen: Blatt mit # */
+  umbruch:       'M6 9V4h12v5 M6 15v5h12v-5 M3 12h3 M9 12h3 M15 12h3 M21 12h0',   /* eigen: Blatt, Trennung, Blatt — wie in WPS */
   kette:         'M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71 M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71',   /* lucide: link */
   kopfz:         'M3 4h18v5H3z M5 13h14 M5 17h10',   /* von Hand */
   kopffuss:      'M5 2h14a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z M7 5.5h10 M7 11h10 M7 14h7 M7 19h10',   /* eigen: Blatt mit Zeile oben und unten, nach seinem WPS-Bild */

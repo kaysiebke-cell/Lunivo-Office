@@ -139,7 +139,10 @@ function REGISTER_BAUEN(B, w) {
        gebuendelt" und „das Dialogfenster doppelt gemoppelt". Was bleibt,
        ist der Zeilenabstand; alles andere steht drueber, wo man es beim
        Schreiben sucht. */
-    ['Absatzlayout', [['abstand', 'Zeilenabstand', () => B.absatzabstand(), 'gross']],
+    /* Der Knopf hiess Zeilenabstand und oeffnete den ABSATZabstand — zwei
+       verschiedene Dinge. Jetzt dieselbe Klappe wie oben in ABSATZ:
+       1,0 bis 3,0 mit Probezeilen, darunter der Weg zum Absatzabstand. */
+    ['Absatzlayout', [['abstand', 'Zeilenabstand', (k) => B.zeilenabstandKlappe(k), 'gross']],
                   () => B.einzugGenau()],
     ['Stile', 'katalog'],
     ['Bearbeiten', [['lupe', 'Suchen', () => B.suchen(), 'gross'],
@@ -185,7 +188,7 @@ function REGISTER_BAUEN(B, w) {
                       ['Kopfzeile bearbeiten', () => B.kopfzeile(), () => w.an('kopfzeile')],
                       ['Fußzeile bearbeiten', () => B.fusszeile(), () => w.an('fusszeile')],
                       ['-'],
-                      ['Seitenzahl einfügen', () => B.seitennummer()],
+                      ['Seitenzahl einfügen', () => B.seitennummer()],  /* Zeichen: seitenzahl */
                     ], 'gross']]],
     ['Text', [['textrahmen', 'Textfeld', () => B.textfeld(), 'gross'],
                     /* „Textbaustein ist ein Pluspunkt fuer Legastheniker,
@@ -296,7 +299,9 @@ function REGISTER_BAUEN(B, w) {
                     ['trennung', 'Silbentrennung', () => B.silbentrennung(), false, () => w.an('silbentrennung')]], () => B.einzugGenau()],
     ['Seitenhintergrund', [['farbe', 'Seitenfarbe', (k) => B.seitenfarbe(k), 'gross'],
                     ['wasserzeichen', 'Wasserzeichen', () => B.wasserzeichen()],
-                    ['rahmen', 'Seitenränder', () => B.seitenraenderRahmen('seite')]]],
+                    /* Eigenes Zeichen: das leere Quadrat war nicht zu lesen,
+                       und 'rahmen' gehoert den Tabellen. */
+                    ['seitenrahmen', 'Seitenränder', () => B.seitenraenderRahmen('seite')]]],
     /* Ganz rechts, wie in WPS: Textfluss, Ausrichten, Gruppieren, Drehen. */
     ['Anordnen', [['anordnen', 'Textfluss', () => B.anordnen(), 'gross'],
                   ['ausrichten', 'Ausrichten', (k) => B.objektAusrichten(k)],

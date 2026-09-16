@@ -1347,7 +1347,56 @@ function zeitfelderAuffrischen() {
   }
 }
 
-B.seitenumbruch = () => Dokument.einfuegen('<p style="page-break-before:always"><br></p>');
+/* ============================================================
+   SEITENUMBRUCH — SICHTBAR, NICHT NUR IM DRUCK
+
+   Seine Meldung: „Funktion als solche nicht zu erkennen. Die Funktion
+   selbst fehlt."
+
+   Beides stimmte. Eingefuegt wurde ein Absatz mit page-break-before: im
+   Druck ein Umbruch, auf dem Bildschirm nichts. Man klickte und sah eine
+   Leerzeile; die Statuszeile blieb bei „Seite 1 von 1".
+
+   Jetzt ein Block, der den Rest der laufenden Seite auffuellt. Der Text
+   dahinter faengt wirklich oben auf der naechsten an, die Seitenzahl
+   zaehlt mit, und auf der Linie steht, was sie ist. Gedruckt wird nur
+   der Umbruch, nicht die Linie.
+   ============================================================ */
+B.seitenumbruch = () => {
+  const strich = document.createElement('div');
+  strich.className = 'seitenumbruch';
+  strich.contentEditable = 'false';
+  strich.title = 'Seitenumbruch — mit Entf wieder weg';
+  blockEinfuegen(strich, false);
+  geaendertMelden();
+  requestAnimationFrame(() => requestAnimationFrame(zahlenAuffrischen));
+  melde('Seitenumbruch eingefügt. Mit Entf wieder weg.');
+};
+
+/* Wie hoch muss der Block sein, damit die naechste Zeile oben auf der
+   folgenden Seite steht? So hoch wie der Rest der laufenden Seite. Das
+   haengt an Papier, Ausrichtung und Raendern und muss deshalb nach jeder
+   Aenderung neu gemessen werden — hier, an einer Stelle. */
+function umbruecheAuffrischen() {
+  const bloecke = feld.querySelectorAll('.seitenumbruch');
+  if (!bloecke.length) return;
+  const masse = PAPIERE[papier] || PAPIERE.a4;
+  const hoeheMm = (quer ? masse.breite : masse.hoehe) - seitenrand.oben - seitenrand.unten;
+  const proSeite = Math.max(1, hoeheMm * CM / 10);
+  /* Erst alle auf null: Sonst misst der zweite Umbruch die Hoehe, die
+     der erste gerade noch hatte, und der Text rutscht bei jedem
+     Tastendruck eine Seite weiter. */
+  for (const b of bloecke) b.style.height = '0px';
+  const obenFeld = feld.getBoundingClientRect().top;
+  for (const b of bloecke) {
+    const oben = b.getBoundingClientRect().top - obenFeld;
+    let rest = proSeite - (oben % proSeite);
+    /* Steht der Umbruch zufaellig genau am Seitenanfang, waere der Rest
+       fast die ganze Seite — dann ist nichts zu fuellen. */
+    if (rest > proSeite - 2) rest = 0;
+    b.style.height = Math.max(0, rest) + 'px';
+  }
+}
 
 B.bild = () => {
   const waehler = document.createElement('input');
@@ -19750,6 +19799,8 @@ function titelSetzen() {
 }
 
 function zahlenAuffrischen() {
+  /* Zuerst die Umbrueche: Ihre Hoehe geht in die Seitenzahl ein. */
+  umbruecheAuffrischen();
   const { zeichen: z, woerter } = Dokument.zaehle();
   $('status-zahl').textContent = woerter + (woerter === 1 ? ' Wort, ' : ' Wörter, ')
                                + z + (z === 1 ? ' Zeichen' : ' Zeichen');

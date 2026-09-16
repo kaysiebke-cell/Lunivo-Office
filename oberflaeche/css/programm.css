@@ -2691,6 +2691,27 @@ body.lesen .arbeitsflaeche{padding:40px 24px}
 /* Eine leere Seite ist leer — aber sie muss zu sehen sein, sonst
    glaubt niemand, dass sie da ist. Ein feiner Rahmen und ein Wort in
    der Mitte; beim Drucken faellt beides weg. */
+/* Der Seitenumbruch fuellt den Rest der Seite. Die Linie zeigt, wo er
+   sitzt — gedruckt wird sie nicht, nur der Umbruch. */
+.seitenumbruch{
+  display:block;position:relative;
+  border-top:1px dashed var(--rand);
+  margin:0;user-select:none;
+  break-after:page;page-break-after:always;
+}
+.seitenumbruch::after{
+  content:'Seitenumbruch';
+  position:absolute;top:-.68em;left:50%;
+  transform:translateX(-50%);
+  background:var(--blatt,#fff);padding:0 .6em;
+  color:var(--schrift-2);font-size:.72rem;
+  letter-spacing:.04em;opacity:.75;
+}
+@media print{
+  .seitenumbruch{border-top:0;height:0 !important;}
+  .seitenumbruch::after{display:none;}
+}
+
 .leereseite{
   display:block;position:relative;
   break-before:page;break-after:page;
