@@ -5241,10 +5241,17 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 .absatzfenster__zahl .feld{width:4.6em;flex:0 0 auto}
 .absatzfenster__einheit{color:var(--schrift-2);font-size:.78rem}
 .absatzfenster__zahl--aus{opacity:.45}
+/* Die Haken stehen einzeilig wie in WPS. Ohne nowrap brach "Nicht vom
+   naechsten Absatz trennen" in zwei Zeilen und die Kaesten standen
+   versetzt. */
 .absatzfenster__haken{
   display:flex;align-items:center;gap:7px;padding:2px 0;
-  flex:1 1 46%;min-width:0;font-size:.88rem;
+  flex:0 1 auto;min-width:0;font-size:.88rem;white-space:nowrap;
 }
+.absatzfenster__zeile > .absatzfenster__haken{flex:1 1 46%}
+/* Ein Auswahlfeld darf nie so schmal werden, dass nichts mehr darin
+   steht — bei "Textausrichtung" war es 30 Punkte breit und leer. */
+.absatzfenster__feld select{min-width:7.5em}
 .absatzfenster__block > .absatzfenster__haken{flex-basis:auto}
 .absatzfenster__wahlpaar{display:flex;gap:16px;flex-wrap:wrap;flex:1 1 auto}
 /* Die beiden Richtungsknoepfe brauchen die ganze Zeile — sonst steht

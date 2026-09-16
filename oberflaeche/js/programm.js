@@ -3264,8 +3264,18 @@ B.absatz = (karteZuerst) => {
   const ok = document.createElement('button');
   ok.type = 'button'; ok.className = 'knopf knopf--haupt'; ok.textContent = 'OK';
   ok.addEventListener('click', () => {
-    const ziele = absaetzeInAuswahl();
-    if (!ziele.length) { melde('Dafür muss der Zeiger in einem Absatz stehen.'); grund.remove(); return; }
+    /* Stand der Zeiger nirgends, galt der Klick auf OK bisher als Fehler:
+       Das Fenster ging zu und nichts geschah. In WPS wirkt er dann auf den
+       Absatz, in dem zuletzt gearbeitet wurde. Notfalls auf den ersten —
+       ein Fenster, das man ausfuellt und das nichts tut, ist schlimmer als
+       eine Einstellung an der falschen Stelle, die man zuruecknehmen kann. */
+    let ziele = absaetzeInAuswahl();
+    if (!ziele.length) {
+      const einer = (typeof absatzJetzt === 'function' && absatzJetzt())
+                 || feld.querySelector('p, h1, h2, h3, h4, li');
+      ziele = einer ? [einer] : [];
+    }
+    if (!ziele.length) { melde('Dafür braucht es einen Absatz im Blatt.'); grund.remove(); return; }
     for (const el of ziele) {
       if (felder) {
         stileAusFeldern(el, 1);
