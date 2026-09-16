@@ -1,0 +1,3229 @@
+<title>Prüfkatalog WPS Writer + Lunivo Office</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap">
+    <style>
+        :root {
+            color-scheme: light;
+            --bg: #DCDEE1;
+            --surface: #FFFFFF;
+            --surface-2: #F1F2F4;
+            --primary: #2F6FB5;
+            --primary-flaeche: #E3EBF5;
+            --text: #14181C;
+            --text-2: #4C555E;
+            --text-3: #79828B;
+            --border: #C6CACE;
+            --pass: #1F7A5A;
+            --pass-flaeche: #DCEDE6;
+            --nt: #9A6A15;
+            --nt-flaeche: #F4E9D2;
+            --fail: #A8372B;
+            --fail-flaeche: #F5DEDA;
+            --schatten: 0 1px 2px rgba(20,24,28,.10), 0 8px 24px rgba(20,24,28,.08);
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                color-scheme: dark;
+                --bg: #1F2225;
+                --surface: #2A2E32;
+                --surface-2: #24282C;
+                --primary: #4A8FD8;
+                --primary-flaeche: #25384D;
+                --text: #E6E9EC;
+                --text-2: #A7AFB7;
+                --text-3: #7C858E;
+                --border: #3A3F45;
+                --pass: #3E9C7A;
+                --pass-flaeche: #1E3730;
+                --nt: #C08A2E;
+                --nt-flaeche: #3A2F19;
+                --fail: #D9705F;
+                --fail-flaeche: #3D2422;
+                --schatten: 0 1px 2px rgba(0,0,0,.4), 0 10px 28px rgba(0,0,0,.30);
+            }
+        }
+        * { box-sizing: border-box; }
+        body {
+            font-family: "Atkinson Hyperlegible", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            -webkit-font-smoothing: antialiased;
+        }
+        h1, h2 { font-family: "Source Serif 4", Georgia, serif; font-weight: 700; }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        header {
+            background: var(--surface);
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            margin-bottom: 14px;
+            box-shadow: var(--schatten);
+        }
+        header h1 { font-size: 18px; letter-spacing: -.01em; margin: 0; display: inline; }
+        header > p { display: none; }
+        .controls {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .search-box {
+            flex-grow: 1;
+            min-width: 250px;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 9px 14px;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            background: var(--surface-2);
+            color: var(--text);
+            font: inherit;
+            font-size: 0.95em;
+            box-sizing: border-box;
+        }
+        .search-box input::placeholder { color: var(--text-3); }
+        button {
+            background: var(--primary);
+            color: white;
+            border: 1px solid var(--primary);
+            padding: 9px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font: inherit;
+            font-weight: 700;
+        }
+        button:hover { filter: brightness(1.08); }
+        .controls button { padding: 6px 11px; font-size: 0.82em; }
+        .controls .search-box input { padding: 6px 12px; }
+
+        /* Fortschrittsanzeige Header Styles */
+        .progress-container {
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid var(--border);
+        }
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            font-size: 0.85em;
+            margin-bottom: 4px;
+        }
+        .progress-bar-bg {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            height: 12px;
+            width: 100%;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            background: var(--primary);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .stats {
+            display: flex;
+            gap: 10px;
+            margin-top: 6px;
+            font-size: 0.82em;
+            flex-wrap: wrap;
+        }
+        .kopf-details {
+            margin-top: 6px;
+            font-size: 0.85em;
+        }
+        .kopf-details summary {
+            cursor: pointer;
+            color: var(--text-2);
+            font-weight: 700;
+        }
+        .kopf-details[open] summary { margin-bottom: 6px; }
+        .kopf-details .ki-zeile, .kopf-details .brief-zeile { margin-top: 8px; }
+        .badge {
+            padding: 4px 8px;
+            border-radius: 999px;
+            color: white;
+            font-weight: bold;
+        }
+        .bg-pass { background: var(--pass); }
+        .bg-fail { background: var(--fail); }
+        .bg-nt { background: var(--nt); }
+        .bg-open { background: var(--text-3); }
+
+        /* Navigation Tabs */
+        .tab-nav {
+            display: flex;
+            gap: 4px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+        .tab-button {
+            background: none;
+            color: var(--text-2);
+            border: none;
+            padding: 10px 18px;
+            font: inherit;
+            font-size: 1em;
+            font-weight: bold;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            border-radius: 8px 8px 0 0;
+            margin-bottom: -1px;
+            opacity: 1;
+        }
+        .tab-button:hover { color: var(--text); }
+        .tab-button.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+            opacity: 1;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Tree Structure CSS */
+        .tree-container {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 22px 26px;
+            font-family: ui-monospace, "Cascadia Mono", Menlo, monospace;
+            white-space: pre;
+            line-height: 1.55;
+            overflow-x: auto;
+            box-shadow: var(--schatten);
+            color: var(--text);
+        }
+
+        .category {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 15px;
+            overflow: hidden;
+            box-shadow: var(--schatten);
+        }
+        .category-header {
+            background: var(--surface-2);
+            padding: 13px 20px;
+            font-weight: bold;
+            font-size: 1.1em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+        }
+        .item-list { padding: 10px 20px; }
+        .item {
+            display: grid;
+            grid-template-columns: 2fr 130px 3fr;
+            gap: 15px;
+            align-items: start;
+            padding: 12px 0 12px 12px;
+            border-bottom: 1px solid var(--border);
+            /* Der Balken links zeigt den KI-STAND — also das, was man sonst
+               nirgends sieht. Der eigene Prüfstand steht im Klappfeld und in
+               den Zählern; der bleibt, wo er war. */
+            border-left: 5px solid var(--border);
+            border-radius: 3px;
+            margin-bottom: 2px;
+        }
+        .item.ki-fertig { border-left-color: var(--pass); }
+        .item.ki-teil   { border-left-color: var(--nt); }
+        .item.ki-nein   { border-left-color: var(--fail); }
+        .item.ki-nichts { border-left-color: var(--border); }
+
+        /* Punkt vor der KI-Marke, damit auch „nicht bearbeitet" eine Farbe hat. */
+        .ki-marke::before {
+            content: '\25CF';
+            margin-right: 5px;
+            color: var(--text-3);
+        }
+        .ki-marke.ist-fertig::before { color: var(--pass); }
+        .ki-marke.ist-teil::before { color: var(--nt); }
+        .ki-marke.ist-nein::before { color: var(--fail); }
+
+        /* Zähler in der Kategoriezeile. */
+        .category-header { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; cursor: pointer; user-select: none; }
+        .kategorie-pfeil { display: inline-block; transition: transform 0.15s; color: var(--text-3); }
+        .category.eingeklappt .kategorie-pfeil { transform: rotate(-90deg); }
+        .category.eingeklappt .item-list { display: none; }
+        .kopf-zahlen { margin-left: auto; display: flex; gap: 6px; font-size: 0.72em; font-weight: 700; }
+        .kopf-zahlen span {
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: var(--surface-2);
+            color: var(--text-3);
+        }
+        .kopf-zahlen .z-pass { background: var(--pass-flaeche); color: var(--pass); }
+        .kopf-zahlen .z-fail { background: var(--fail-flaeche); color: var(--fail); }
+        .kopf-zahlen .z-nt { background: var(--nt-flaeche); color: var(--nt); }
+        .kopf-zahlen .z-null { display: none; }
+        .kopf-zahlen .z-ki { background: transparent; border: 1px solid var(--border); }
+        .kopf-zahlen .z-ki.hat-ki { background: var(--pass-flaeche); color: var(--pass); border-color: var(--pass); }
+        .kopf-zahlen .z-trenner { background: transparent; padding: 2px 0; color: var(--border); }
+        .item:last-child { border-bottom: none; }
+        .lunivo-tag {
+            font-size: 0.75em;
+            font-weight: 700;
+            background: var(--primary-flaeche);
+            color: var(--primary);
+            padding: 2px 8px;
+            border-radius: 999px;
+            margin-left: 6px;
+            display: inline-block;
+        }
+        select {
+            padding: 7px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: var(--surface-2);
+            color: var(--text);
+            font: inherit;
+            width: 100%;
+        }
+        textarea {
+            padding: 8px 11px;
+            border: 1px solid var(--border);
+            border-radius: 7px;
+            background: var(--surface-2);
+            color: var(--text);
+            width: 100%;
+            min-height: 48px;
+            resize: vertical;
+            font-family: inherit;
+            font-size: 0.9em;
+            box-sizing: border-box;
+        }
+        textarea::placeholder { color: var(--text-3); }
+        .custom-notes-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--schatten);
+        }
+        .custom-notes-section h2 {
+            margin-top: 0;
+            font-size: 1.2em;
+            color: var(--text);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+        }
+        .custom-notes-form {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            margin-bottom: 15px;
+        }
+        .custom-notes-form textarea {
+            flex-grow: 1;
+            min-height: 60px;
+        }
+        .notes-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .notiz-eingabe { display: flex; gap: 8px; }
+        .notiz-eingabe textarea { flex-grow: 1; min-height: 44px; }
+        .notiz-liste { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+        .notiz-liste:empty { margin-top: 0; }
+        .note-card {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .note-card .note-text {
+            font-size: 0.9em;
+            white-space: pre-wrap;
+            word-break: break-word;
+            flex-grow: 1;
+        }
+        .note-card .note-time {
+            font-size: 0.75em;
+            color: var(--text-3);
+            margin-top: 4px;
+        }
+        .btn-delete {
+            background: var(--fail);
+            border-color: var(--fail);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.8em;
+        }
+        .btn-delete:hover { filter: brightness(1.1); }
+        .hidden { display: none !important; }
+        /* ---- Bilder in den Punkten und in den Kommentaren ---- */
+        .bild-zeile {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 6px;
+        }
+        .bild-knopf {
+            font: inherit;
+            font-size: 0.8em;
+            padding: 4px 10px;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            background: var(--surface-2);
+            color: var(--text-2);
+            cursor: pointer;
+        }
+        .bild-knopf:hover { background: var(--primary-flaeche); color: var(--primary); }
+        .bild-hinweis { font-size: 0.75em; color: var(--text-3); }
+        .bilder {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .bilder:empty { display: none; }
+        .bild-kachel {
+            position: relative;
+            width: 96px;
+            height: 72px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            overflow: hidden;
+            background: var(--surface-2);
+        }
+        .bild-kachel img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            cursor: zoom-in;
+        }
+        .bild-weg {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 20px;
+            height: 20px;
+            line-height: 18px;
+            text-align: center;
+            border: none;
+            border-radius: 50%;
+            background: rgba(20,24,28,.72);
+            color: #fff;
+            font-size: 13px;
+            cursor: pointer;
+            padding: 0;
+        }
+        .ablage-aktiv { outline: 2px dashed var(--primary); outline-offset: 3px; border-radius: 8px; }
+        .bild-gross {
+            position: fixed;
+            inset: 0;
+            background: rgba(20,24,28,.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            z-index: 999;
+            cursor: zoom-out;
+        }
+        .bild-gross img {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 8px;
+            box-shadow: var(--schatten);
+        }
+        .bindend {
+            background: var(--fail-flaeche);
+            border: 2px solid var(--fail);
+            border-radius: 12px;
+            padding: 18px 20px;
+            margin-bottom: 20px;
+        }
+        .bindend h2 {
+            margin: 0 0 8px;
+            font-size: 1.1em;
+            color: var(--fail);
+        }
+        .bindend p { margin: 0 0 8px; font-size: 0.95em; line-height: 1.5; }
+        .bindend p:last-child { margin-bottom: 0; }
+        .soll-ist-details {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 10px 16px;
+            margin-bottom: 20px;
+            font-size: 0.88em;
+        }
+        .soll-ist-details summary { cursor: pointer; color: var(--primary); font-weight: 700; }
+        .soll-ist-details[open] summary { margin-bottom: 8px; }
+        .spiegel-legende {
+            display: flex; flex-wrap: wrap; gap: 14px;
+            margin: 10px 0; font-size: 0.85em; color: var(--text-2);
+        }
+        .spiegel-zeile {
+            display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px;
+            padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 0.88em;
+        }
+        .spiegel-zeile:last-child { border-bottom: none; }
+        .spiegel-art { font-weight: 700; min-width: 220px; flex-shrink: 0; }
+        .spiegel-stellen { color: var(--text-2); }
+        .spiegel-hinweis {
+            margin-top: 4px; font-size: 0.82em; line-height: 1.4;
+            color: var(--text-2); font-weight: 400;
+        }
+        .spiegel-hinweis.spiegel--namensgleich { color: var(--nt); }
+        .spiegel-link { color: var(--primary); text-decoration: underline; cursor: pointer; }
+        .spiegel-zusammengelegt { color: var(--text-3); font-style: italic; }
+        .item.item--verweis {
+            grid-template-columns: 1fr;
+            padding: 8px 0 8px 12px;
+            border-left-color: var(--primary);
+            opacity: 0.85;
+        }
+        .punkt--angesteuert {
+            outline: 3px solid var(--primary);
+            outline-offset: 2px;
+            transition: outline-color 0.3s;
+        }
+        .note-card--schon-da {
+            outline: 3px solid var(--nt);
+            outline-offset: 2px;
+        }
+        .note-card--neu, .feld--gespeichert {
+            outline: 3px solid var(--pass);
+            outline-offset: 2px;
+        }
+        .feld-status {
+            font-size: 0.78em;
+            font-weight: 700;
+            color: var(--pass);
+            min-height: 1.2em;
+            margin-top: 2px;
+        }
+        .ki-block {
+            margin-top: 10px;
+            border-left: 3px solid var(--border);
+            padding-left: 10px;
+        }
+        .ki-block.ist-fertig { border-left-color: var(--pass); }
+        .ki-block.ist-teil { border-left-color: var(--nt); }
+        .ki-block.ist-nein { border-left-color: var(--fail); }
+        .ki-kopf {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            font-size: 0.78em;
+        }
+        .ki-name {
+            font-weight: 700;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            color: var(--text-3);
+        }
+        .ki-marke {
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: var(--surface-2);
+            color: var(--text-2);
+        }
+        .ki-marke.ist-fertig { background: var(--pass-flaeche); color: var(--pass); }
+        .ki-marke.ist-teil { background: var(--nt-flaeche); color: var(--nt); }
+        .ki-marke.ist-nein { background: var(--fail-flaeche); color: var(--fail); }
+        .ki-datum { color: var(--text-3); }
+        .ki-text {
+            font-size: 0.85em;
+            color: var(--text-2);
+            line-height: 1.45;
+            margin-top: 4px;
+            white-space: pre-wrap;
+        }
+        .ki-leer { font-size: 0.8em; color: var(--text-3); margin-top: 2px; }
+        .ki-nachweis { margin-top: 6px; }
+        .ki-nachweis .vorrat-eintrag img { border-color: var(--pass); }
+        .brief-zeile {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.82em;
+            color: var(--text-2);
+            margin-top: 10px;
+            padding: 7px 11px;
+            border-radius: 8px;
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+        }
+        .brief-zeile .brief-punkt {
+            width: 9px; height: 9px;
+            border-radius: 50%;
+            background: var(--text-3);
+            flex: 0 0 auto;
+        }
+        .brief-zeile.ist-bereit { background: var(--pass-flaeche); border-color: var(--pass); color: var(--pass); }
+        .brief-zeile.ist-bereit .brief-punkt { background: var(--pass); }
+        .brief-zeile.ist-fehler { background: var(--fail-flaeche); border-color: var(--fail); color: var(--fail); }
+        .brief-zeile.ist-fehler .brief-punkt { background: var(--fail); }
+        .brief-zeile.ist-ohne .brief-punkt { background: var(--nt); }
+        .ki-legende {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+            font-size: 0.78em;
+            color: var(--text-2);
+            margin-top: 6px;
+        }
+        .ki-legende span { display: flex; align-items: center; gap: 5px; }
+        .ki-legende .lg { width: 14px; height: 5px; border-radius: 2px; display: inline-block; }
+        .lg-nichts { background: var(--border); }
+        .lg-fertig { background: var(--pass); }
+        .lg-teil { background: var(--nt); }
+        .lg-nein { background: var(--fail); }
+        .lg-hinweis { color: var(--text-3); }
+        .ki-zeile {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85em;
+            color: var(--text-2);
+            margin-top: 8px;
+        }
+        .vorrat-block { margin-top: 8px; }
+        .vorrat-titel {
+            font-size: 0.72em;
+            font-weight: 700;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            color: var(--text-3);
+            margin-bottom: 4px;
+        }
+        .vorrat-eintrag {
+            display: grid;
+            grid-template-columns: 120px 1fr;
+            gap: 10px;
+            align-items: start;
+            margin-bottom: 8px;
+        }
+        .vorrat-eintrag:last-child { margin-bottom: 0; }
+        .ist-block .vorrat-eintrag img { border-color: var(--nt); }
+        .ist-block .vorrat-titel { color: var(--nt); }
+        .vorrat-eintrag img {
+            width: 100%;
+            border: 1px solid var(--primary);
+            border-radius: 6px;
+            cursor: zoom-in;
+            display: block;
+        }
+        .vorrat-eintrag .was {
+            font-size: 0.82em;
+            color: var(--text-2);
+            line-height: 1.4;
+        }
+        @media (max-width: 700px) {
+            .vorrat-eintrag { grid-template-columns: 1fr; }
+        }
+        .ohne-punkt {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--schatten);
+        }
+        .ohne-punkt h2 {
+            margin-top: 0;
+            font-size: 1.2em;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+        }
+        .ohne-punkt .vorspann { font-size: 0.9em; color: var(--text-2); margin: 0 0 14px; }
+        .fehlt {
+            display: grid;
+            grid-template-columns: 150px 1fr;
+            gap: 14px;
+            align-items: start;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .fehlt:last-child { border-bottom: none; }
+        .fehlt-bilder { display: flex; flex-direction: column; gap: 6px; }
+        .fehlt img {
+            width: 100%;
+            border: 1px solid var(--primary);
+            border-radius: 6px;
+            cursor: zoom-in;
+            display: block;
+        }
+        .fehlt .name { font-weight: 700; margin-bottom: 4px; }
+        .fehlt .was { font-size: 0.9em; color: var(--text-2); }
+        @media (max-width: 700px) { .fehlt { grid-template-columns: 1fr; } }
+        @media print {
+            .bild-kachel { width: 150px; height: auto; }
+            .bild-kachel img { height: auto; object-fit: contain; }
+            .bild-weg, .bild-zeile { display: none; }
+            .vorrat-eintrag { grid-template-columns: 200px 1fr; page-break-inside: avoid; }
+        }
+    </style>
+
+
+<div class="container">
+    <header>
+        <h1>Prüfkatalog: WPS Writer + Lunivo Office</h1>
+        <p>Dokumentations- und QS-Protokoll zur Softwareprüfung.</p>
+        
+        <div class="controls">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="🔍 Funktionen oder Kategorien suchen..." oninput="filterItems()">
+                <label style="display:flex;align-items:center;gap:6px;font-size:0.85em;margin-top:6px;color:var(--text-2);">
+                    <input type="checkbox" id="nurKi" onchange="nurKiFilter()"> nur Punkte, an denen die KI etwas geändert hat
+                </label>
+            </div>
+            <button onclick="exportData()">Protokoll Exportieren (JSON)</button>
+            <button onclick="document.getElementById('importFile').click()">Protokoll Importieren</button>
+            <input type="file" id="importFile" style="display:none" onchange="importData(event)">
+            <button onclick="window.print()">Drucken / PDF</button>
+            <button id="kategorienToggleBtn" onclick="alleKategorienUmschaltenToggle()">Alle Kategorien aufklappen</button>
+        </div>
+
+        <!-- Neue Fortschrittsanzeige -->
+        <div class="progress-container">
+            <div class="progress-info">
+                <span>Fortschritt: <span id="progress-text">0 / 0 bearbeitet (0%)</span></span>
+            </div>
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill" id="progress-bar"></div>
+            </div>
+        </div>
+
+        <div class="stats" id="stats">
+            <div>Offen: <span class="badge bg-open" id="stat-open">0</span></div>
+            <div>Erfolgreich: <span class="badge bg-pass" id="stat-pass">0</span></div>
+            <div>Fehlgeschlagen: <span class="badge bg-fail" id="stat-fail">0</span></div>
+            <div>Nicht zutreffend: <span class="badge bg-nt" id="stat-nt">0</span></div>
+        </div>
+
+        <details class="kopf-details">
+            <summary>KI-Stand & Übertragung an Claude (aufklappen)</summary>
+            <div class="brief-zeile ist-warten" id="brief-zeile"></div>
+            <div class="ki-zeile" id="ki-zeile"></div>
+            <div class="ki-legende">
+                <span><i class="lg lg-nichts"></i> nicht bearbeitet</span>
+                <span><i class="lg lg-fertig"></i> KI: umgesetzt</span>
+                <span><i class="lg lg-teil"></i> KI: teilweise</span>
+                <span><i class="lg lg-nein"></i> KI: nicht umgesetzt</span>
+                <span class="lg-hinweis">Der Balken links am Punkt zeigt den KI-Stand — Ihr eigener Prüfstand steht im Klappfeld.</span>
+            </div>
+        </details>
+    </header>
+
+    <!-- Tab-Navigation -->
+    <div class="tab-nav">
+        <button class="tab-button active" onclick="switchTab('catalog-tab')">Prüfkatalog (Interaktiv)</button>
+        <button class="tab-button" onclick="switchTab('diagram-tab')">Strukturdiagramm</button>
+    </div>
+
+    <!-- TAB 1: Interaktiver Prüfkatalog -->
+    <div id="catalog-tab" class="tab-content active">
+        <div class="custom-notes-section">
+            <h2>Freier Kommentarbereich (Sonstige Anmerkungen & nicht gelistete Angaben)</h2>
+            <div class="custom-notes-form">
+                <textarea id="freeNoteInput" placeholder="Neuen Kommentar oder Beobachtung hier eintragen... (Enter übernimmt, Umschalt+Enter für Zeilenumbruch)" onpaste="bildAusZwischenablage(event, '#neu')" onkeydown="freeNoteTaste(event)"></textarea>
+                <button type="button" onclick="addFreeNote()">Hinzufügen</button>
+            </div>
+            <div class="bild-zeile">
+                <button type="button" class="bild-knopf" onclick="bildWaehlen('#neu')">Bild hinzufügen</button>
+                <span class="bild-hinweis">oder mit Strg+V in das Feld einfügen</span>
+            </div>
+            <div class="bilder" id="bilder_#neu"></div>
+            <div class="notes-list" id="notesList"></div>
+        </div>
+
+        <!-- Die Ansage vom 12.09.2026. Sie steht oben, weil sie fuer
+             jedes einzelne Bild in diesem Bogen gilt. -->
+        <div class="bindend">
+            <h2>Die Bilder sind bindend — 1 zu 1</h2>
+            <p><strong>Jede Aufnahme in diesem Bogen ist Vorgabe, nicht Anregung.</strong>
+            Was hier im WPS Writer zu sehen ist, gehört genauso in Lunivo Office:
+            dieselben Einträge, dieselbe Reihenfolge, dieselben Namen, derselbe
+            Wortlaut der QuickInfos, dieselbe Anordnung im Band.</p>
+            <p>Keine Abweichung, keine eigene Auslegung, kein „sinngemäß“. Wo etwas
+            fehlt oder anders heißt, ist es ein Fehler — kein Ermessen.</p>
+            <p>Das gilt auch für die Aufnahmen im Kasten „ohne Punkt in der Liste“:
+            Der Punkt fehlt in der Liste, die Sache selbst ist trotzdem nachzubauen.</p>
+        </div>
+
+        <details class="soll-ist-details">
+            <summary>Zusammengelegte und verwandte Punkte (aufklappen) — SOLL/IST/ABGLEICH</summary>
+            <div class="spiegel-legende">
+                <span class="spiegel--gleich">🔗 zusammengelegt</span>
+                <span class="spiegel--prinzip">🔁 gleiche Vorgabe, andere Engine</span>
+                <span class="spiegel--namensgleich">⚠️ gleicher Name, andere Funktion</span>
+            </div>
+            <div id="spiegel-uebersicht"></div>
+        </details>
+
+        <div class="ohne-punkt" id="ohne-punkt"></div>
+
+        <div id="catalog"></div>
+    </div>
+
+    <!-- TAB 2: Strukturdiagramm -->
+    <div id="diagram-tab" class="tab-content">
+        <div class="tree-container">WPS WRITER + LUNIVO OFFICE
+
+DIESE DATEI IST VON HAND GESCHRIEBEN. Sie ist die Vorgabe — das SOLL.
+Kein Werkzeug darf sie überschreiben.
+
+Am 09.09.2026 hat werkzeug/aufbau-schreiben.py genau das getan: Es las
+den Aufbau aus dem Programm und schrieb ihn hierher. Damit stand hier
+plötzlich, was das Programm gerade TUT, statt dessen, was es tun SOLL —
+und jede Abweichung war rückwirkend zur Vorgabe erklärt. Der Maßstab
+maß sich selbst. Zurückgeholt wurde die Datei aus Commit 75438b6.
+
+Das Werkzeug schreibt heute nur noch nach doku/:
+
+    doku/aufbau-band.md          die Reiter, mit Suchtabelle
+    doku/aufbau-optionen.md      das Optionen-Fenster
+    doku/aufbau-ist-stand.md     beides am Stück — das IST
+
+Vergleichen heißt: diese Datei gegen doku/aufbau-ist-stand.md halten.
+Nie überschreiben.
+
+Stand dieses Abgleichs: 10.09.2026.
+„← Lunivo" heißt: gibt es im WPS Writer nicht, ist eigen.
+
+
+═══════════════════════════════════════════════════════════════
+DIE REITERZEILE
+═══════════════════════════════════════════════════════════════
+
+Von links nach rechts, alles in einer Zeile:
+
+    ☰ Menü ▾ │ Schnellzugriff │ Start  Einfügen  Seitenlayout  …
+
+In der Symbolleisten-Oberfläche steht dasselbe ☰ am Anfang der oberen
+Leiste, gefolgt von einem Trenner und den Symbolen.
+
+WPS Writer hat KEINEN Datei-Reiter. Was in kein Band gehört, liegt
+hinter dem ☰ ganz links. Hier stand eine Zeit lang ein Reiter „DATEI"
+mit sieben Gruppen — das war der Fehler, an dem der ganze Aufbau hing.
+Dass DATEI in dieser Datei immer schon OHNE Gruppen stand, während
+START und EINFÜGEN welche tragen, war genau die Ansage.
+
+SCHNELLZUGRIFF — die Handvoll Befehle in der Reiterzeile
+│
+├── Öffnen
+├── Speichern
+├── Als PDF exportieren
+├── Drucken
+├── Druckvorschau
+├── Rückgängig
+└── Wiederholen
+
+
+═══════════════════════════════════════════════════════════════
+☰ MENÜ — an zwei Stellen, und immer dieselbe Tafel
+═══════════════════════════════════════════════════════════════
+
+    Register        links vor den Reitern
+    Symbolleisten   links am Anfang der oberen Leiste
+    Menüleiste      dort heißt es „Datei" und steht als erstes Menü
+
+Alle drei Oberflächen tragen denselben Aufbau. Vorher hing das ☰ nur am
+Register; wer mit Symbolleisten arbeitete, kam an die Datei-Befehle nur
+über die Menüleiste — und die lässt sich abschalten. Da drifteten die
+Oberflächen auseinander.
+
+Die Tafel hat ZWEI SPALTEN, wie im Writer. Links die Befehle, rechts
+der Inhalt. Ein Punkt mit Pfeil legt KEIN eigenes Fenster darüber — er
+füllt die rechte Spalte. Fährt man auf einen Punkt ohne Pfeil oder aus
+der Tafel heraus, stehen dort wieder die Dateien.
+
+LINKE SPALTE — elf Punkte, zwei Striche
+│
+├── Neu ▸
+│   ├── Leeres Dokument                 (Strg+N)
+│   ├── Neu aus Vorlage ← Lunivo
+│   └── Vorlagenordner ← Lunivo
+├── Öffnen                              (Strg+O)
+├── Speichern                           (Strg+S)
+├── Speichern unter ▸
+│   ├── Speichern unter …               (Strg+Umschalt+S)
+│   ├── Umbenennen ← Lunivo
+│   └── Dokumenteigenschaften ← Lunivo
+├── Als PDF exportieren ← Lunivo
+├── Als Bild exportieren ← Lunivo
+├── Drucken ▸
+│   ├── Drucken …                       (Strg+P)
+│   ├── Druckvorschau ← Lunivo
+│   └── Druckereinstellungen ← Lunivo
+│  ──────────────────────────────────
+├── Dokumentverschlüsselung ▸
+│   └── Kennwort setzen oder entfernen …
+│  ──────────────────────────────────
+├── Hilfe ▸
+│   ├── Handbuch ← Lunivo
+│   ├── Tastenkürzel ← Lunivo
+│   ├── Erweiterungen ← Lunivo
+│   └── Über Lunivo Office ← Lunivo
+├── Optionen                            (F9)
+└── Beenden ← Lunivo
+
+RECHTE SPALTE
+│
+└── Liste zuletzt verwendeter Dateien
+    ├── ↻  holt die Liste neu
+    └── je Zeile: Name, Ordner und ein ×
+        Das × nimmt den Namen aus der Liste. Die Datei bleibt liegen.
+
+„Schließen" steht nicht mehr im Menü — ein Dokument schließt man über
+das × an seinem Reiter. „Zuletzt geöffnet" ist kein Punkt mehr,
+sondern die rechte Spalte.
+
+
+═══════════════════════════════════════════════════════════════
+DIE BÄNDER — acht Reiter
+═══════════════════════════════════════════════════════════════
+
+├── START
+│   │
+│   ├── ZWISCHENABLAGE
+│   │   ├── Einfügen
+│   │   ├── Einfügen ohne Formatierung ← Lunivo
+│   │   ├── Ausschneiden
+│   │   ├── Kopieren
+│   │   ├── Format übertragen
+│   │   └── Verlauf ← Lunivo
+│   │       ├── Rückgängig
+│   │       └── Wiederholen
+│   │
+│   ├── SCHRIFTART
+│   │   ├── Formatvorlage               (Wähler)
+│   │   ├── Schriftart                  (Wähler)
+│   │   ├── Schriftgröße                (Wähler)
+│   │   ├── Schrift vergrößern
+│   │   ├── Schrift verkleinern
+│   │   ├── Formatierung löschen
+│   │   ├── Fett
+│   │   ├── Kursiv
+│   │   ├── Unterstrichen
+│   │   ├── Durchgestrichen
+│   │   ├── Hochgestellt
+│   │   ├── Tiefgestellt
+│   │   ├── Hervorheben
+│   │   ├── Schriftfarbe
+│   │   ├── Groß-/Kleinschreibung ← Lunivo
+│   │   ├── Unterstreichungsart ← Lunivo
+│   │   └── Texteffekte ← Lunivo
+│   │
+│   ├── ABSATZ
+│   │   ├── Aufzählung
+│   │   ├── Nummerierung
+│   │   ├── Einzug &amp; Listenebene ← Lunivo
+│   │   │   ├── Einzug verringern
+│   │   │   ├── Einzug vergrößern
+│   │   │   ├── Listenebene erhöhen
+│   │   │   └── Listenebene verringern
+│   │   ├── Linksbündig
+│   │   ├── Zentriert
+│   │   ├── Rechtsbündig
+│   │   ├── Blocksatz
+│   │   ├── Zeilenabstand
+│   │   ├── Absatzrahmen ← Lunivo
+│   │   ├── Absatzschattierung ← Lunivo
+│   │   ├── Sortieren ← Lunivo
+│   │   └── Steuerzeichen ← Lunivo
+│   │
+│   ├── ABSATZLAYOUT
+│   │   ├── Zeilenabstand
+│   │   ├── Einzug genau
+│   │   ├── Absatzrahmen
+│   │   └── Absatzschattierung
+│   │
+│   ├── STILE
+│   │   └── Katalog — zeigt die Vorlagen, statt sie zu benennen:
+│   │       Standard, Überschrift 1–3, Titel, Untertitel, Zitat,
+│   │       Kein Abstand. „Formatvorlagen verwalten" liegt in der
+│   │       Klappe des Katalogs.
+│   │
+│   └── BEARBEITEN
+│       ├── Suchen
+│       ├── Ersetzen
+│       ├── Suchen und Ersetzen
+│       ├── Alles auswählen
+│       └── Objekte auswählen ← Lunivo
+│
+├── EINFÜGEN
+│   │
+│   ├── SEITEN
+│   │   ├── Deckblatt ← Lunivo
+│   │   ├── Leere Seite ← Lunivo
+│   │   └── Seitenumbruch
+│   │
+│   ├── TABELLEN
+│   │   ├── Tabelle einfügen
+│   │   ├── Schnelltabelle ← Lunivo
+│   │   └── Tabellenblatt ← Lunivo
+│   │
+│   ├── ILLUSTRATIONEN
+│   │   ├── Bild
+│   │   ├── Zeichnen ← Lunivo
+│   │   ├── Diagramm
+│   │   ├── Bildschirmfoto ← Lunivo
+│   │   ├── SmartArt
+│   │   ├── Piktogramm ← Lunivo
+│   │   └── WordArt ← Lunivo
+│   │
+│   ├── LINKS
+│   │   ├── Hyperlink
+│   │   ├── Lesezeichen / Textmarke
+│   │   └── Querverweis
+│   │
+│   ├── KOPF- UND FUSSZEILE
+│   │   ├── Kopfzeile
+│   │   ├── Fußzeile
+│   │   └── Seitenzahl
+│   │
+│   ├── TEXT
+│   │   ├── Textfeld
+│   │   ├── Bausteine ← Lunivo
+│   │   │   ├── Textbaustein
+│   │   │   └── Schnellbaustein
+│   │   ├── Initiale ← Lunivo
+│   │   ├── Datum
+│   │   ├── Uhrzeit ← Lunivo
+│   │   └── Text aus Datei ← Lunivo
+│   │
+│   └── SYMBOLE
+│       ├── Sonderzeichen
+│       └── Formel
+│
+├── SEITENLAYOUT
+│   │
+│   ├── SEITE EINRICHTEN
+│   │   ├── Seitenränder
+│   │   │   ├── Normal (2,5 cm)
+│   │   │   ├── Schmal (1,3 cm)
+│   │   │   ├── Mittel
+│   │   │   ├── Breit
+│   │   │   └── Eigene Ränder …
+│   │   ├── Ausrichtung
+│   │   │   ├── Hochformat
+│   │   │   └── Querformat
+│   │   ├── Papierformat
+│   │   │   ├── A4 (21 × 29,7 cm)
+│   │   │   ├── A5 (14,8 × 21 cm)
+│   │   │   ├── A3 (29,7 × 42 cm)
+│   │   │   ├── Letter (21,6 × 27,9 cm)
+│   │   │   └── Legal (21,6 × 35,6 cm)
+│   │   ├── Spalten
+│   │   └── Umbruch ← Lunivo
+│   │       ├── Seitenumbruch
+│   │       ├── Spaltenumbruch
+│   │       └── Abschnittsumbruch
+│   │
+│   ├── ABSATZ
+│   │   ├── Einzug ← Lunivo
+│   │   ├── Absatzabstand ← Lunivo
+│   │   ├── Zeilennummern ← Lunivo
+│   │   └── Silbentrennung ← Lunivo
+│   │
+│   ├── TEXTUMBRUCH
+│   │   └── Textumbruch
+│   │
+│   ├── SEITENHINTERGRUND
+│   │   ├── Seitenfarbe
+│   │   ├── Wasserzeichen ← Lunivo
+│   │   └── Seitenrahmen
+│   │
+│   └── ANORDNEN
+│       └── Bild/Objekt anordnen ← Lunivo
+│
+├── REFERENZEN
+│   │
+│   ├── INHALTSVERZEICHNIS
+│   │   ├── Inhaltsverzeichnis
+│   │   └── Verzeichnisse aktualisieren ← Lunivo
+│   │
+│   ├── FUSSNOTEN
+│   │   ├── Fußnote
+│   │   ├── Endnote ← Lunivo
+│   │   ├── Nächste Note ← Lunivo
+│   │   ├── Vorige Note ← Lunivo
+│   │   └── Notenbereich ← Lunivo
+│   │
+│   ├── ZITATE UND LITERATUR
+│   │   ├── Zitat einfügen
+│   │   ├── Neue Quelle
+│   │   ├── Quellen verwalten
+│   │   ├── Zitierweise
+│   │   └── Literaturverzeichnis
+│   │
+│   ├── BESCHRIFTUNGEN
+│   │   ├── Beschriftung
+│   │   ├── Abbildungsverzeichnis
+│   │   └── Querverweis
+│   │
+│   └── INDEX
+│       ├── Indexeintrag ← Lunivo
+│       └── Stichwortverzeichnis ← Lunivo
+│
+├── ÜBERPRÜFEN
+│   │
+│   ├── DOKUMENTPRÜFUNG
+│   │   ├── Prüfen ← Lunivo (gemeinsame Prüf-Engine)
+│   │   ├── Gründlich prüfen ← Lunivo
+│   │   ├── Rechtschreibung
+│   │   ├── Thesaurus ← Lunivo
+│   │   └── Wörter zählen ← Lunivo
+│   │
+│   ├── SPRACHE
+│   │   └── Korrektursprache ← Lunivo
+│   │
+│   ├── BARRIEREFREIHEIT
+│   │   └── Barrierefreiheit prüfen ← Lunivo
+│   │
+│   ├── KOMMENTARE
+│   │   ├── Neuer Kommentar
+│   │   ├── Nächster Kommentar ← Lunivo
+│   │   ├── Voriger Kommentar ← Lunivo
+│   │   ├── Kommentar löschen
+│   │   └── Alle Kommentare löschen ← Lunivo
+│   │
+│   ├── ÄNDERUNGEN
+│   │   ├── Änderungen verfolgen
+│   │   ├── Markup anzeigen ← Lunivo
+│   │   ├── Überarbeitungsbereich ← Lunivo
+│   │   ├── Änderung annehmen
+│   │   ├── Änderung ablehnen
+│   │   ├── Nächste Änderung ← Lunivo
+│   │   ├── Vorige Änderung ← Lunivo
+│   │   ├── Alle annehmen ← Lunivo
+│   │   └── Alle verwerfen ← Lunivo
+│   │
+│   └── SCHÜTZEN
+│       └── Bearbeitung sperren ← Lunivo
+│
+├── SCHREIBHILFE ← Lunivo
+│   │
+│   │   Der zentrale Reiter. Hier steht beieinander, was das Lesen und
+│   │   Schreiben leichter macht — vorher lag es über fünf Reiter
+│   │   verstreut. Sieben Gruppen, nicht fünf.
+│   │
+│   ├── LESEN
+│   │   ├── Lesehilfe                   (war unter Ansicht)
+│   │   ├── Zeilenfokus                 (war unter Ansicht)
+│   │   ├── Lesemodus
+│   │   └── Schrift zum Lesen           (war in den Optionen)
+│   │
+│   ├── PRÜFEN
+│   │   ├── Dokumentprüfung
+│   │   ├── Prüfen
+│   │   ├── Gründlich prüfen
+│   │   └── Welche Hilfe wann
+│   │
+│   ├── BEIM SCHREIBEN
+│   │   ├── Rechtschreibprüfung
+│   │   ├── Wortvorhersage
+│   │   └── AutoKorrektur
+│   │
+│   ├── VORLESEN
+│   │   ├── Vorlesen
+│   │   ├── Ab hier vorlesen
+│   │   ├── Anhalten
+│   │   └── Stimme und Tempo
+│   │
+│   ├── SPRACHE
+│   │   ├── Silbentrennung              (war im Seitenlayout)
+│   │   ├── Übersetzen
+│   │   ├── Thesaurus                   (war unter Überprüfen)
+│   │   └── Sprache und Prüfung
+│   │
+│   ├── KI
+│   │   ├── KI-Korrektur
+│   │   └── Vorschläge
+│   │
+│   └── ANZEIGEN
+│       ├── Seitenleiste Schreibhilfe
+│       └── Optionen                    (auch im ☰ Menü)
+│
+├── SENDUNGEN ← Lunivo
+│   │
+│   ├── ERSTELLEN
+│   │   ├── Umschlag
+│   │   └── Etiketten
+│   │
+│   ├── SERIENDRUCK
+│   │   ├── Seriendruck-Assistent
+│   │   ├── Seriendruckfeld
+│   │   ├── Adressblock
+│   │   └── Regeln
+│   │
+│   ├── VORSCHAU
+│   │   └── Ergebnisse anzeigen
+│   │
+│   └── FORMULAR
+│       ├── Textfeld
+│       ├── Kontrollkästchen
+│       └── Schaltfläche
+│
+└── ANSICHT
+    │
+    ├── DOKUMENTANSICHTEN
+    │   ├── Drucklayout
+    │   ├── Lesemodus
+    │   ├── Zwei Seiten
+    │   ├── Weblayout
+    │   └── Gliederung ← Lunivo
+    │
+    ├── ANZEIGEN
+    │   ├── Lineal
+    │   ├── Vertikales Lineal
+    │   ├── Gitternetzlinien ← Lunivo
+    │   ├── Navigationsbereich ← Lunivo
+    │   ├── Textbegrenzungen ← Lunivo
+    │   └── Seitenleiste Schreibhilfe ← Lunivo
+    │
+    │   Lesehilfe und Zeilenfokus stehen NICHT mehr hier.
+    │   Sie sind nach Schreibhilfe ▸ Lesen gewandert.
+    │
+    ├── ZOOM
+    │   ├── Vergrößern
+    │   ├── Verkleinern
+    │   ├── Seitenbreite
+    │   ├── Eine Seite
+    │   └── Zoom
+    │
+    ├── FENSTER
+    │   ├── Neues Fenster ← Lunivo
+    │   ├── Anordnen ← Lunivo
+    │   ├── Nebeneinander ← Lunivo
+    │   ├── Untereinander ← Lunivo
+    │   ├── Kacheln ← Lunivo
+    │   └── Fensterliste ← Lunivo
+    │
+    ├── HELLIGKEIT ← Lunivo
+    │   ├── Wie das System
+    │   ├── Immer hell
+    │   └── Immer dunkel
+    │
+    └── OBERFLÄCHE ← Lunivo
+        ├── Register anpassen
+        ├── Symbol austauschen
+        ├── Benutzeroberfläche
+        ├── Menüleiste
+        ├── Symbolleisten
+        └── Vorlagen zurücksetzen
+
+
+═══════════════════════════════════════════════════════════════
+KONTEXTABHÄNGIGE REGISTER — sechs, je nachdem, wo der Zeiger steht
+═══════════════════════════════════════════════════════════════
+
+├── TABELLENWERKZEUGE          (Zeiger in einer Tabelle)
+│   ├── Tabelle
+│   ├── Zeilen und Spalten
+│   ├── Zellengröße
+│   ├── Ausrichtung
+│   └── Tabellenformatierung
+│
+├── ZEICHENTOOLS               (Zeiger auf einer Form)
+│   ├── Formen
+│   ├── Füllung
+│   ├── Kontur
+│   ├── Anordnen
+│   └── Größe
+│
+├── DIAGRAMMTOOLS
+│   ├── Diagrammentwurf
+│   ├── Daten
+│   ├── Diagrammtyp
+│   └── Formatierung
+│
+├── SMARTART-TOOLS
+│   ├── SmartArt-Entwurf
+│   └── SmartArt-Format
+│
+├── GLEICHUNGSWERKZEUGE
+│   └── Formeleditor-Funktionen
+│
+└── KOPF- UND FUSSZEILENWERKZEUGE
+    ├── Kopfzeile
+    ├── Fußzeile
+    ├── Seitenzahl
+    └── Navigation
+
+
+═══════════════════════════════════════════════════════════════
+OPTIONEN — das Fenster hinter „☰ Menü ▸ Optionen"
+═══════════════════════════════════════════════════════════════
+
+Erreichbar an vier Stellen, und an allen vieren dieselbe Seite:
+
+  Band            ☰ Menü ▸ Optionen
+  Menüleiste      Datei ▸ Optionen
+  Symbolleiste    ☰ Menü ▸ Optionen — und der letzte Knopf der Leiste
+  Tastatur        F9
+
+Überall an derselben Stelle in der Reihenfolge: nach der Hilfe, vor dem
+Beenden. So steht es im WPS-Menü auf dem Foto — ganz unten, mit
+Zahnrad, gleich über dem Ausgang.
+
+DREI ZWEIGE, NEUNZEHN SEITEN. Das Fenster hatte lange eine flache
+Liste; die Zweige sagen jetzt, wonach man sucht. „Leichter lesen" steht
+zuoberst, weil das der Grund für dieses Programm ist. Alle dreizehn
+Seiten des WPS Writer sind gebaut, dazu sechs eigene.
+
+├── LEICHTER LESEN ← Lunivo
+│   │
+│   ├── LESEHILFE
+│   │   ├── Leichter lesen
+│   │   │   ├── Papierton
+│   │   │   ├── Buchstabenabstand
+│   │   │   ├── Wortabstand
+│   │   │   └── Zeilenluft
+│   │   ├── Beim Schreiben
+│   │   │   ├── Zeilenfokus
+│   │   │   ├── Absatz beim Schreiben
+│   │   │   └── Übriger Text
+│   │   ├── Schrift und Sprache
+│   │   │   ├── Schrift zum leichteren Lesen
+│   │   │   ├── Silbentrennung
+│   │   │   └── Rechtschreibung während der Eingabe prüfen
+│   │   └── Vorlesen
+│   │       └── Den Text hören
+│   │
+│   ├── SCHRIFTARTEN
+│   │   ├── Schrift für neuen Text
+│   │   │   ├── Schrift
+│   │   │   └── Größe
+│   │   └── Zum leichteren Lesen
+│   │       ├── Drei Schriften sind dafür gemacht
+│   │       └── Sind sie da?
+│   │
+│   ├── SPRACHE
+│   │   ├── Sprache
+│   │   │   ├── Sprache für die Prüfung
+│   │   │   └── Übersetzen nach
+│   │   ├── Was geprüft wird
+│   │   │   ├── Rechtschreibung während der Eingabe
+│   │   │   ├── Grammatik mitprüfen
+│   │   │   ├── Silbentrennung
+│   │   │   └── Alle Prüfoptionen
+│   │   └── Wörter, die Lunivo kennt
+│   │       ├── Dein eigener Wortschatz
+│   │       └── Gründlich prüfen
+│   │
+│   └── RECHTSCHREIBPRÜFUNG
+│       ├── Rechtschreibprüfung
+│       │   ├── Sprache für die Prüfung
+│       │   ├── Rechtschreibung während der Eingabe prüfen
+│       │   ├── Immer Korrekturvorschläge unterbreiten
+│       │   ├── Grammatik mitprüfen
+│       │   ├── Wörter in GROSSBUCHSTABEN ignorieren
+│       │   ├── Wörter mit Zahlen ignorieren
+│       │   ├── Internet- und Netzwerkpfade ignorieren
+│       │   └── Weggewinkte Funde wieder anzeigen
+│       └── Benutzerwörterbuch
+│           └── Was das Programm gelernt hat
+│
+├── WIE IM WPS WRITER
+│   │
+│   ├── ANSICHT
+│   │   ├── Anzeigen
+│   │   │   ├── Lineal
+│   │   │   ├── Vertikales Lineal
+│   │   │   ├── Navigationsbereich
+│   │   │   ├── Textbegrenzungen
+│   │   │   ├── Gitternetzlinien
+│   │   │   ├── Statusleiste
+│   │   │   ├── Seitenleiste beim Start
+│   │   │   ├── QuickInfo
+│   │   │   ├── Live-Vorschau
+│   │   │   ├── Minisymbolleiste bei Auswahl
+│   │   │   ├── Minisymbolleiste bei Rechtsklick
+│   │   │   └── Tipp für Kopf- bzw. Fußzeile
+│   │   ├── Druckoptionen
+│   │   │   ├── Hervorhebungen drucken
+│   │   │   ├── Textbegrenzungen drucken
+│   │   │   ├── Zuschnittsmarken anzeigen
+│   │   │   ├── Feldfunktionen drucken
+│   │   │   ├── Textmarken drucken
+│   │   │   └── Feldschattierung
+│   │   ├── Formatierungszeichen
+│   │   │   ├── Alle anzeigen
+│   │   │   ├── Absatzmarken
+│   │   │   ├── Leerzeichen
+│   │   │   ├── Tabstoppzeichen
+│   │   │   ├── Objektanker
+│   │   │   └── Ausgeblendeter Text
+│   │   ├── Menübandoptionen
+│   │   │   ├── Doppelklick blendet das Band aus
+│   │   │   └── Strg+Klick folgt einem Verweis
+│   │   └── Darstellung
+│   │       ├── Schrift und Helligkeit
+│   │       ├── Größe der Symbole
+│   │       ├── Schrift der Bedienung
+│   │       └── Benutzeroberfläche
+│   │
+│   ├── BEARBEITEN
+│   │   ├── Bearbeitungsoptionen
+│   │   │   ├── Wortweise markieren
+│   │   │   ├── Text mit der Maus verschieben
+│   │   │   ├── Tippen ersetzt die Auswahl
+│   │   │   └── Maximale Rückgängig-Schritte
+│   │   ├── AutoFormat
+│   │   │   ├── Automatisch nummerierte Listen
+│   │   │   ├── Aufzählungen erkennen
+│   │   │   └── Zahl automatisch im Kreis
+│   │   ├── AutoKorrektur
+│   │   │   ├── AutoKorrektur
+│   │   │   ├── Typografische Anführungszeichen
+│   │   │   ├── Gedankenstriche
+│   │   │   ├── Auslassungspunkte
+│   │   │   ├── Jeden Satz mit einem Großbuchstaben beginnen
+│   │   │   ├── Wochentage immer großschreiben
+│   │   │   ├── Englische Ordnungszahlen hochstellen
+│   │   │   ├── Feststelltaste korrigieren
+│   │   │   ├── Internet- und Netzwerkpfade durch Hyperlinks ersetzen
+│   │   │   ├── Leerzeichen am Absatzanfang mit Erstzeileneinzug
+│   │   │   ├── Leerzeichenformat am Ende rechtsbündiger Zeilen anpassen
+│   │   │   ├── Bei zentriertem Ausrichten Erstzeileneinzug löschen
+│   │   │   ├── Tabulator und Rücktaste setzen den Einzug
+│   │   │   └── Wortvorhersage
+│   │   └── Ausschneiden und Einfügen
+│   │       ├── Schaltfläche nach dem Einfügen
+│   │       ├── Mittlere Maustaste fügt ein
+│   │       ├── Standardeinfügeformat
+│   │       └── Ohne Formatierung einfügen
+│   │
+│   ├── ALLGEMEIN UND SPEICHERN
+│   │   ├── Speichern
+│   │   │   └── Dateien als Standard speichern
+│   │   ├── Allgemeine Optionen
+│   │   │   ├── Maßeinheit
+│   │   │   ├── Bilder in der Datei nicht komprimieren
+│   │   │   └── Standard-Ausgabeziel
+│   │   ├── Webseite
+│   │   │   └── Webseitencodierung
+│   │   └── Kompatibilitätsoptionen
+│   │       ├── Seitenumbruch und Absatzmarke aufteilen
+│   │       ├── Hängenden Einzug nicht als Tabstopp verwenden
+│   │       ├── Nachstehende Leerstellen unterstreichen
+│   │       ├── Layout von Fußnoten wie Word 6/95/97
+│   │       └── Zeilenhöhe in Tabellen auf Rasterhöhe anpassen
+│   │
+│   ├── SICHERUNGSEINSTELLUNGEN
+│   │   ├── Sicherung
+│   │   │   ├── Wann gesichert wird
+│   │   │   ├── Abstand (Minuten)
+│   │   │   └── Wo die Einstellungen liegen
+│   │   ├── Zwischenstände aufheben
+│   │   │   ├── Wie lange (Tage)
+│   │   │   └── Zwischenstände löschen
+│   │   └── Was im Speicher steht
+│   │       └── Sichern und zurückholen
+│   │
+│   ├── SPEICHERORT FÜR DATEIEN
+│   │   └── Speicherort für Dateien
+│   │       ├── Ordner zum Speichern
+│   │       └── Eigene Vorlagen
+│   │
+│   ├── ÄNDERUNGEN VERFOLGEN
+│   │   ├── Änderungen verfolgen
+│   │   │   ├── Änderungen verfolgen
+│   │   │   └── Markup anzeigen
+│   │   ├── Markup
+│   │   │   ├── Einfügungen
+│   │   │   ├── Löschvorgänge
+│   │   │   ├── Geänderte Zeilen
+│   │   │   └── Farbe
+│   │   ├── Sprechblasen
+│   │   │   ├── Sprechblasen verwenden
+│   │   │   ├── Empfohlene Breite verwenden
+│   │   │   ├── Bevorzugte Breite (mm)
+│   │   │   ├── Seitenrand
+│   │   │   └── Verbindungslinien zum Text anzeigen
+│   │   └── Drucken (mit Sprechblasen)
+│   │       └── Papierausrichtung
+│   │
+│   ├── IN PDF EXPORTIEREN
+│   │   └── Exportoptionen
+│   │       ├── Hyperlinks
+│   │       ├── Überschriften als Lesezeichen
+│   │       ├── Kommentare mitnehmen
+│   │       ├── Dokumenteigenschaften mitnehmen
+│   │       ├── Verknüpfung von Fuß- und Endnoten
+│   │       ├── Textmarken übernehmen
+│   │       ├── Andere Formatvorlagen in Lesezeichen umwandeln
+│   │       ├── Eigene Formatvorlagen in Lesezeichen umwandeln
+│   │       └── PDF nach dem Export öffnen
+│   │
+│   ├── BENUTZERINFORMATIONEN
+│   │   └── Benutzerdaten
+│   │       ├── Wer schreibt
+│   │       ├── Initialen
+│   │       └── Diese Benutzerinformationen verwenden
+│   │
+│   ├── DRUCKEN
+│   │   ├── Druckoptionen
+│   │   │   ├── Womit das Druckfenster aufgeht
+│   │   │   ├── Hohe Qualität
+│   │   │   ├── Umgekehrte Reihenfolge
+│   │   │   ├── Zeichnungsobjekte drucken
+│   │   │   ├── Hintergrundfarben und -bilder drucken
+│   │   │   ├── Leere Seiten mitdrucken
+│   │   │   ├── Felder vor dem Drucken aktualisieren
+│   │   │   ├── Feldfunktionen drucken
+│   │   │   ├── Ausgeblendeter Text
+│   │   │   └── Autor der Kommentare und Überarbeitungen
+│   │   ├── Nur für das aktuelle Dokument
+│   │   │   └── Nur Formulardaten drucken
+│   │   └── Duplexdruck
+│   │       ├── Blattvorderseite
+│   │       └── Blattrückseite
+│   │
+│   ├── SICHERHEIT
+│   │   ├── Kennwortschutz
+│   │   │   ├── Dokumentkennwort
+│   │   │   └── Bearbeitung sperren
+│   │   └── Datenschutz
+│   │       ├── Ausgeblendete Markups beim Öffnen anzeigen
+│   │       └── Beim Speichern persönliche Daten entfernen
+│   │
+│   ├── MENÜBAND ANPASSEN
+│   │   ├── Befehle auswählen
+│   │   └── Menüband anpassen
+│   │
+│   └── SYMBOLLEISTE FÜR DEN SCHNELLZUGRIFF
+│       ├── Befehle auswählen
+│       └── Derzeit angezeigte Optionen
+│
+└── NUR BEI LUNIVO ← Lunivo
+    │
+    ├── SCHREIBHILFE UND KI
+    │   └── Prüfung und KI
+    │       ├── API-Schlüssel
+    │       ├── KI-Modell
+    │       ├── Für wen der Text ist
+    │       └── Verbrauch
+    │
+    ├── GEDÄCHTNIS
+    │   └── Gedächtnis
+    │       └── Gelernte Schreibweisen
+    │
+    └── ERWEITERT
+        └── Erweitert
+            └── Was zusätzlich geholt wurde</div>
+    </div>
+</div>
+
+<script>
+const rawData = [
+    { cat: "DATEI", items: ["Neu", "Öffnen", "Zuletzt geöffnet*", "Neu aus Vorlage*", "Vorlagenordner*", "Speichern", "Speichern unter", "Drucken", "Druckvorschau*", "Als PDF exportieren*", "Druckereinstellungen*", "Dokumenteigenschaften*", "Umbenennen*", "Optionen (F9)*", "Schließen", "Beenden*", "Hilfe > Handbuch*", "Hilfe > Tastenkürzel*", "Hilfe > Erweiterungen*", "Hilfe > Über Lunivo Office*"] },
+    /* Neu am 10.09.2026: Aus dem Reiter DATEI ist das Menue hinter dem
+       Menuezeichen geworden — so, wie WPS Writer es haelt. Die Punkte
+       oben bleiben unveraendert stehen; ihre Namen sind die Schluessel,
+       unter denen die Haken liegen. Was NEU ist, steht hier. */
+    { cat: "MENÜ UND SCHNELLZUGRIFF", items: ["Kein Datei-Reiter mehr*", "☰ Menü links vor den Reitern*", "☰ Menü auch am Anfang der Symbolleiste*", "Tafel mit zwei Spalten*", "Untermenü füllt die rechte Spalte, kein eigenes Fenster*", "Liste zuletzt verwendeter Dateien rechts*", "× nimmt einen Eintrag aus der Liste*", "↻ holt die Liste neu*", "Als Bild exportieren (PNG)*", "Dokumentverschlüsselung*", "Schnellzugriff in der Reiterzeile*"] },
+    { cat: "START > Zwischenablage", items: ["Einfügen", "Einfügen ohne Formatierung*", "Ausschneiden", "Kopieren", "Format übertragen", "Verlauf > Rückgängig*", "Verlauf > Wiederholen*"] },
+    { cat: "START > Schriftart", items: ["Schriftart", "Schriftgröße", "Schrift vergrößern", "Schrift verkleinern", "Formatierung löschen", "Fett", "Kursiv", "Unterstrichen", "Durchgestrichen", "Hochgestellt", "Tiefgestellt", "Hervorheben", "Schriftfarbe", "Groß-/Kleinschreibung*", "Unterstreichungsart*", "Texteffekte*"] },
+    { cat: "START > Absatz", items: ["Aufzählung", "Nummerierung", "Einzug verringern*", "Einzug vergrößern*", "Listenebene erhöhen*", "Listenebene verringern*", "Linksbündig", "Zentriert", "Rechtsbündig", "Blocksatz", "Zeilenabstand", "Sortieren*", "Steuerzeichen*"] },
+    { cat: "START > Absatzlayout", items: ["Zeilenabstand", "Einzug genau*", "Absatzrahmen*", "Absatzschattierung*"] },
+    { cat: "START > Einstellungen", items: ["Optionen*"] },
+    { cat: "START > Stile & Bearbeiten", items: ["Formatvorlage auswählen", "Formatvorlagen verwalten", "Suchen", "Ersetzen", "Suchen und Ersetzen", "Alles auswählen", "Objekte auswählen*"] },
+    { cat: "EINFÜGEN", items: ["Deckblatt*", "Leere Seite*", "Seitenumbruch", "Tabelle einfügen", "Schnelltabelle*", "Tabellenblatt*", "Bild", "Zeichnen*", "Diagramm", "Bildschirmfoto*", "SmartArt", "Piktogramm*", "WordArt*", "Hyperlink", "Lesezeichen / Textmarke", "Querverweis", "Kopfzeile", "Fußzeile", "Seitenzahl", "Textfeld", "Textbaustein*", "Schnellbaustein*", "Initiale*", "Datum", "Uhrzeit*", "Text aus Datei*", "Sonderzeichen", "Formel"] },
+    { cat: "SEITENLAYOUT", items: ["Seitenränder", "Ausrichtung", "Papierformat", "Spalten", "Umbruch > Seitenumbruch*", "Umbruch > Spaltenumbruch*", "Umbruch > Abschnittsumbruch*", "Einzug*", "Absatzabstand*", "Zeilennummern*", "Silbentrennung*", "Textumbruch", "Seitenfarbe", "Wasserzeichen*", "Seitenrahmen", "Bild/Objekt anordnen*"] },
+    { cat: "REFERENZEN", items: ["Inhaltsverzeichnis", "Verzeichnisse aktualisieren*", "Fußnote", "Endnote*", "Nächste Note*", "Vorige Note*", "Notenbereich*", "Zitat einfügen", "Neue Quelle", "Quellen verwalten", "Zitierweise", "Literaturverzeichnis", "Beschriftung", "Abbildungsverzeichnis", "Querverweis", "Indexeintrag*", "Stichwortverzeichnis*"] },
+    { cat: "ÜBERPRÜFEN", items: ["Prüfen*", "Gründlich prüfen*", "Rechtschreibung", "Thesaurus*", "Wörter zählen*", "Korrektursprache*", "Barrierefreiheit prüfen*", "Neuer Kommentar", "Nächster Kommentar*", "Voriger Kommentar*", "Kommentar löschen", "Alle Kommentare löschen*", "Änderungen verfolgen", "Markup anzeigen*", "Überarbeitungsbereich*", "Änderung annehmen", "Änderung ablehnen", "Nächste Änderung*", "Vorige Änderung*", "Alle annehmen*", "Alle verwerfen*", "Bearbeitung sperren*"] },
+    { cat: "SCHREIBHILFE (Lunivo)", items: ["Dokumentprüfung > Prüfen*", "Dokumentprüfung > Gründlich prüfen*", "Dokumentprüfung > Welche Hilfe wann*", "Beim Schreiben > Rechtschreibprüfung*", "Beim Schreiben > Wortvorhersage*", "Beim Schreiben > AutoKorrektur*", "Vorlesen > Vorlesen*", "Vorlesen > Ab hier vorlesen*", "Vorlesen > Anhalten*", "Vorlesen > Stimme und Tempo*", "KI > KI-Korrektur*", "KI > Vorschläge*", "Anzeigen > Seitenleiste Schreibhilfe*", "Anzeigen > Optionen*"] },
+    { cat: "SENDUNGEN (Lunivo)", items: ["Umschlag*", "Etiketten*", "Seriendruck-Assistent*", "Seriendruckfeld*", "Adressblock*", "Regeln*", "Ergebnisse anzeigen*", "Formular > Textfeld*", "Formular > Kontrollkästchen*", "Formular > Schaltfläche*"] },
+    { cat: "ANSICHT", items: ["Drucklayout", "Lesemodus", "Zwei Seiten", "Weblayout", "Gliederung*", "Lineal", "Vertikales Lineal*", "Gitternetzlinien*", "Navigationsbereich*", "Textbegrenzungen*", "Seitenleiste Schreibhilfe*", "Lesehilfe*", "Zeilenfokus*", "Vergrößern", "Verkleinern", "100 %", "Seitenbreite", "Eine Seite", "Zoom", "Neues Fenster*", "Anordnen*", "Nebeneinander*", "Untereinander*", "Kacheln*", "Fensterliste*", "Helligkeit > Wie das System*", "Helligkeit > Immer hell*", "Helligkeit > Immer dunkel*", "Oberfläche > Register anpassen*", "Oberfläche > Symbol austauschen*", "Oberfläche > Benutzeroberfläche*", "Oberfläche > Menüleiste*", "Oberfläche > Symbolleisten*", "Oberfläche > Vorlagen zurücksetzen*"] },
+    { cat: "KONTEXTTABELLEN", items: ["Tabellenwerkzeuge", "Zeichentools", "Diagrammtools", "SmartArt-Tools", "Gleichungswerkzeuge", "Kopf- und Fußzeilenwerkzeuge"] },
+    { cat: "LANGUAGE BRIDGE (Architektur)", items: ["Zentrale Sprachkontext-Verwaltung*", "Dokumentversion-Tracking*", "Prüfungs-ID-System*", "Einheitlicher Fehlerstatus*", "Fehler-Lebenszyklus (active/accepted/ignored/corrected)*", "Keine parallelen Wörterbücher*", "Benutzerwörter zentral speichern*", "Ignorierte Wörter zentral speichern*", "Akzeptierte Korrektionen speichern*"] },
+    { cat: "LANGUAGE BRIDGE (Spelling Engine)", items: ["Native Browser-Spellcheck deaktiviert*", "Lunivo-Regeln verwenden statt Browser*", "Benutzerwörter in Rechtschreibung beachten*", "Ignorierte Wörter in Rechtschreibung beachten*", "Fehler als unified language-issue*"] },
+    { cat: "LANGUAGE BRIDGE (Grammar Engine)", items: ["Dieselbe Sprachkontext wie Spelling*", "Grammatikregeln aus regeln.js nutzen*", "Benutzerwörter in Grammatik beachten*", "Fehler als unified language-issue*"] },
+    { cat: "LANGUAGE BRIDGE (AI Engine)", items: ["Asynchrone KI-Requests mit Validierung*", "Dokumentversion überprüfen*", "CheckId überprüfen*", "Keine veralteten Ergebnisse akzeptieren*", "KI-Konfidenz-Score speichern*"] },
+    { cat: "LANGUAGE BRIDGE (Fehler-Zusammenführung)", items: ["Mehrere Quellen für gleiche Position zusammenführen*", "Konflikt-Auflösung nach Quelle/Konfidenz/Typ*", "Hochwertige Vorschläge nicht überschreiben*", "Fehler-Signatur für Identify verwenden*"] },
+    { cat: "LANGUAGE BRIDGE (Invalidierung & Debouncing)", items: ["Bereichs-Invalidierung bei Änderungen*", "Sicherheitsbereich um geänderte Stelle*", "Debouncing für schnelle Eingaben*", "Vollständige Prüfung möglich (Gründlich prüfen)*"] },
+    { cat: "SCHREIBHILFE (Sidebar-Integration)", items: ["Fehler aus Language Bridge anzeigen*", "Rote Wellenlinien aus Bridge-Status*", "Kontextmenü für Fehler-Aktionen*", "Fehler annehmen/ignorieren/korrigieren*", "Schalter 'Rote Wellenlinien' zeigt/versteckt nur*"] },
+    { cat: "SCHREIBHILFE (Menü-Integration)", items: ["Schreibhilfe-Register im Band*", "Prüfen-Knopf löst check() aus*", "Gründlich prüfen-Knopf für volle Prüfung*", "Welche Hilfe wann anzeigen*", "Beim Schreiben-Optionen*", "Vorlesen-Integration*", "KI-Korrektur-Optionen*", "Anzeigen-Optionen*"] },
+    { cat: "DOKUMENTMODELL (Structure)", items: ["Document-Klasse mit Sections*", "Section mit Inhalt, Header, Footer*", "DocumentContent mit Blocks*", "Block-Vererbung (Paragraph, Table, Image, Shape)*", "PageSetup mit Margins, PageSize, Columns*"] },
+    { cat: "DOKUMENTMODELL (Callbacks)", items: ["Änderungs-Callbacks für Paragraph*", "Änderungs-Callbacks für Table*", "Änderungs-Callbacks für DocumentContent*", "Callbacks triggern Language Bridge Update*"] },
+    { cat: "OPTIONEN > Ansicht > Anzeigen", items: ["Lineal*", "Vertikales Lineal*", "Navigationsbereich*", "Textbegrenzungen*", "Gitternetzlinien*", "Statusleiste*", "Seitenleiste beim Start*", "QuickInfo*", "Live-Vorschau*", "Minisymbolleiste bei Auswahl*", "Minisymbolleiste bei Rechtsklick*", "Tipp für Kopf- bzw. Fußzeile*"] },
+    { cat: "OPTIONEN > Ansicht > Druckoptionen", items: ["Hervorhebungen drucken*", "Textbegrenzungen drucken*", "Zuschnittsmarken anzeigen*", "Feldfunktionen drucken*", "Textmarken drucken*", "Feldschattierung*"] },
+    { cat: "OPTIONEN > Ansicht > Formatierungszeichen", items: ["Alle anzeigen*", "Absatzmarken*", "Leerzeichen*", "Tabstoppzeichen*", "Objektanker*", "Ausgeblendeter Text*"] },
+    { cat: "OPTIONEN > Ansicht > Menübandoptionen", items: ["Doppelklick blendet das Band aus*", "Strg+Klick folgt einem Verweis*"] },
+    { cat: "OPTIONEN > Ansicht > Darstellung", items: ["Schrift und Helligkeit*", "Größe der Symbole*", "Schrift der Bedienung*", "Benutzeroberfläche*"] },
+    { cat: "OPTIONEN > Bearbeiten > Bearbeitungsoptionen", items: ["Wortweise markieren*", "Text mit der Maus verschieben*", "Tippen ersetzt die Auswahl*", "Maximale Rückgängig-Schritte*"] },
+    { cat: "OPTIONEN > Bearbeiten > AutoFormat", items: ["Automatisch nummerierte Listen*", "Aufzählungen erkennen*", "Zahl automatisch im Kreis*"] },
+    { cat: "OPTIONEN > Bearbeiten > AutoKorrektur", items: ["AutoKorrektur*", "Typografische Anführungszeichen*", "Gedankenstriche*", "Auslassungspunkte*", "Jeden Satz mit einem Großbuchstaben beginnen*", "Wochentage immer großschreiben*", "Englische Ordnungszahlen hochstellen*", "Feststelltaste korrigieren*", "Internet- und Netzwerkpfade durch Hyperlinks ersetzen*", "Leerzeichen am Absatzanfang mit Erstzeileneinzug*", "Leerzeichenformat am Ende rechtsbündiger Zeilen anpassen*", "Bei zentriertem Ausrichten Erstzeileneinzug löschen*", "Tabulator und Rücktaste setzen den Einzug*", "Wortvorhersage*"] },
+    { cat: "OPTIONEN > Bearbeiten > Ausschneiden und Einfügen", items: ["Schaltfläche nach dem Einfügen*", "Mittlere Maustaste fügt ein*", "Standardeinfügeformat*", "Ohne Formatierung einfügen*"] },
+    { cat: "OPTIONEN > Allgemein und Speichern > Speichern", items: ["Dateien als Standard speichern*"] },
+    { cat: "OPTIONEN > Allgemein und Speichern > Schrift für neuen Text", items: ["Schrift*", "Größe*"] },
+    { cat: "OPTIONEN > Allgemein und Speichern > Allgemeine Optionen", items: ["Maßeinheit*", "Bilder in der Datei nicht komprimieren*", "Standard-Ausgabeziel*"] },
+    { cat: "OPTIONEN > Allgemein und Speichern > Webseite", items: ["Webseitencodierung*"] },
+    { cat: "OPTIONEN > Allgemein und Speichern > Kompatibilitätsoptionen", items: ["Seitenumbruch und Absatzmarke aufteilen*", "Hängenden Einzug nicht als Tabstopp verwenden*", "Nachstehende Leerstellen unterstreichen*", "Layout von Fußnoten wie Word 6/95/97*", "Zeilenhöhe in Tabellen auf Rasterhöhe anpassen*"] },
+    { cat: "OPTIONEN > Sicherungseinstellungen > Sicherung", items: ["Wann gesichert wird*", "Abstand (Minuten)*", "Wo die Einstellungen liegen*"] },
+    { cat: "OPTIONEN > Sicherungseinstellungen > Zwischenstände aufheben", items: ["Wie lange (Tage)*", "Zwischenstände löschen*"] },
+    { cat: "OPTIONEN > Sicherungseinstellungen > Was im Speicher steht", items: ["Sichern und zurückholen*"] },
+    { cat: "OPTIONEN > Speicherort für Dateien > Speicherort für Dateien", items: ["Ordner zum Speichern*", "Eigene Vorlagen*"] },
+    { cat: "OPTIONEN > Änderungen verfolgen > Änderungen verfolgen", items: ["Änderungen verfolgen*", "Markup anzeigen*"] },
+    { cat: "OPTIONEN > Änderungen verfolgen > Markup", items: ["Einfügungen*", "Löschvorgänge*", "Geänderte Zeilen*", "Farbe*"] },
+    { cat: "OPTIONEN > Änderungen verfolgen > Sprechblasen", items: ["Sprechblasen verwenden*", "Empfohlene Breite verwenden*", "Bevorzugte Breite (mm)*", "Seitenrand*", "Verbindungslinien zum Text anzeigen*"] },
+    { cat: "OPTIONEN > Änderungen verfolgen > Drucken (mit Sprechblasen)", items: ["Papierausrichtung*"] },
+    { cat: "OPTIONEN > In PDF exportieren > Exportoptionen", items: ["Hyperlinks*", "Überschriften als Lesezeichen*", "Kommentare mitnehmen*", "Dokumenteigenschaften mitnehmen*", "Verknüpfung von Fuß- und Endnoten*", "Textmarken übernehmen*", "Andere Formatvorlagen in Lesezeichen umwandeln*", "Eigene Formatvorlagen in Lesezeichen umwandeln*", "PDF nach dem Export öffnen*"] },
+    { cat: "OPTIONEN > Benutzerinformationen > Benutzerdaten", items: ["Wer schreibt*", "Initialen*", "Diese Benutzerinformationen verwenden*"] },
+    { cat: "OPTIONEN > Drucken > Druckoptionen", items: ["Womit das Druckfenster aufgeht*", "Hohe Qualität*", "Umgekehrte Reihenfolge*", "Zeichnungsobjekte drucken*", "Hintergrundfarben und -bilder drucken*", "Leere Seiten mitdrucken*", "Felder vor dem Drucken aktualisieren*", "Feldfunktionen drucken*", "Ausgeblendeter Text*", "Autor der Kommentare und Überarbeitungen*"] },
+    { cat: "OPTIONEN > Drucken > Nur für das aktuelle Dokument", items: ["Nur Formulardaten drucken*"] },
+    { cat: "OPTIONEN > Drucken > Duplexdruck", items: ["Blattvorderseite*", "Blattrückseite*"] },
+    { cat: "OPTIONEN > Rechtschreibprüfung > Rechtschreibprüfung", items: ["Sprache für die Prüfung*", "Rechtschreibung während der Eingabe prüfen*", "Immer Korrekturvorschläge unterbreiten*", "Grammatik mitprüfen*", "Wörter in GROSSBUCHSTABEN ignorieren*", "Wörter mit Zahlen ignorieren*", "Internet- und Netzwerkpfade ignorieren*", "Weggewinkte Funde wieder anzeigen*"] },
+    { cat: "OPTIONEN > Rechtschreibprüfung > Benutzerwörterbuch", items: ["Was das Programm gelernt hat*"] },
+    { cat: "OPTIONEN > Sicherheit > Kennwortschutz", items: ["Dokumentkennwort*", "Bearbeitung sperren*"] },
+    { cat: "OPTIONEN > Sicherheit > Datenschutz", items: ["Ausgeblendete Markups beim Öffnen anzeigen*", "Beim Speichern persönliche Daten entfernen*"] },
+    { cat: "OPTIONEN > Schreibhilfe und KI > Prüfung und KI", items: ["API-Schlüssel*", "KI-Modell*", "Für wen der Text ist*", "Verbrauch*", "Übersetzen*"] },
+    { cat: "OPTIONEN > Gedächtnis > Gedächtnis", items: ["Gelernte Schreibweisen*"] },
+    { cat: "OPTIONEN > Menüband anpassen", items: ["Befehle auswählen*", "Menüband anpassen*"] },
+    { cat: "OPTIONEN > Symbolleiste für den Schnellzugriff", items: ["Befehle auswählen*", "Derzeit angezeigte Optionen*"] },
+    { cat: "OPTIONEN > Erweitert > Erweitert", items: ["Was zusätzlich geholt wurde*"] }
+];
+
+/* Die alte Reihenfolge, wie sie war, als die Punkte noch „item_1",
+   „item_2" … hießen. Sie steht hier, damit ein Stand von damals nicht
+   verlorengeht: Beim ersten Laden nach dem Umbau wird jede alte Nummer
+   über diese Liste auf Kategorie und Namen zurückgeführt und unter der
+   neuen Kennung abgelegt.
+
+   Sie bleibt auch danach stehen — irgendwo liegt immer noch ein Browser
+   mit einem alten Stand. */
+const ALTE_REIHENFOLGE = [["DATEI", "Neu"], ["DATEI", "Öffnen"], ["DATEI", "Zuletzt geöffnet"], ["DATEI", "Neu aus Vorlage"], ["DATEI", "Vorlagenordner"], ["DATEI", "Speichern"], ["DATEI", "Speichern unter"], ["DATEI", "Drucken"], ["DATEI", "Druckvorschau"], ["DATEI", "Als PDF exportieren"], ["DATEI", "Druckereinstellungen"], ["DATEI", "Dokumenteigenschaften"], ["DATEI", "Umbenennen"], ["DATEI", "Schließen"], ["DATEI", "Beenden"], ["DATEI", "Hilfe > Handbuch"], ["DATEI", "Hilfe > Tastenkürzel"], ["DATEI", "Hilfe > Erweiterungen"], ["DATEI", "Hilfe > Über Lunivo Office"], ["START > Zwischenablage", "Einfügen"], ["START > Zwischenablage", "Einfügen ohne Formatierung"], ["START > Zwischenablage", "Ausschneiden"], ["START > Zwischenablage", "Kopieren"], ["START > Zwischenablage", "Format übertragen"], ["START > Zwischenablage", "Verlauf > Rückgängig"], ["START > Zwischenablage", "Verlauf > Wiederholen"], ["START > Schriftart", "Schriftart"], ["START > Schriftart", "Schriftgröße"], ["START > Schriftart", "Schrift vergrößern"], ["START > Schriftart", "Schrift verkleinern"], ["START > Schriftart", "Formatierung löschen"], ["START > Schriftart", "Fett"], ["START > Schriftart", "Kursiv"], ["START > Schriftart", "Unterstrichen"], ["START > Schriftart", "Durchgestrichen"], ["START > Schriftart", "Hochgestellt"], ["START > Schriftart", "Tiefgestellt"], ["START > Schriftart", "Hervorheben"], ["START > Schriftart", "Schriftfarbe"], ["START > Schriftart", "Groß-/Kleinschreibung"], ["START > Schriftart", "Unterstreichungsart"], ["START > Schriftart", "Texteffekte"], ["START > Absatz", "Aufzählung"], ["START > Absatz", "Nummerierung"], ["START > Absatz", "Einzug verringern"], ["START > Absatz", "Einzug vergrößern"], ["START > Absatz", "Listenebene erhöhen"], ["START > Absatz", "Listenebene verringern"], ["START > Absatz", "Linksbündig"], ["START > Absatz", "Zentriert"], ["START > Absatz", "Rechtsbündig"], ["START > Absatz", "Blocksatz"], ["START > Absatz", "Zeilenabstand"], ["START > Absatz", "Absatzrahmen"], ["START > Absatz", "Absatzschattierung"], ["START > Absatz", "Sortieren"], ["START > Absatz", "Steuerzeichen"], ["START > Stile & Bearbeiten", "Formatvorlage auswählen"], ["START > Stile & Bearbeiten", "Formatvorlagen verwalten"], ["START > Stile & Bearbeiten", "Suchen"], ["START > Stile & Bearbeiten", "Ersetzen"], ["START > Stile & Bearbeiten", "Suchen und Ersetzen"], ["START > Stile & Bearbeiten", "Alles auswählen"], ["START > Stile & Bearbeiten", "Objekte auswählen"], ["EINFÜGEN", "Deckblatt"], ["EINFÜGEN", "Leere Seite"], ["EINFÜGEN", "Seitenumbruch"], ["EINFÜGEN", "Tabelle einfügen"], ["EINFÜGEN", "Schnelltabelle"], ["EINFÜGEN", "Tabellenblatt"], ["EINFÜGEN", "Bild"], ["EINFÜGEN", "Zeichnen"], ["EINFÜGEN", "Diagramm"], ["EINFÜGEN", "Bildschirmfoto"], ["EINFÜGEN", "SmartArt"], ["EINFÜGEN", "Piktogramm"], ["EINFÜGEN", "WordArt"], ["EINFÜGEN", "Hyperlink"], ["EINFÜGEN", "Lesezeichen / Textmarke"], ["EINFÜGEN", "Querverweis"], ["EINFÜGEN", "Kopfzeile"], ["EINFÜGEN", "Fußzeile"], ["EINFÜGEN", "Seitenzahl"], ["EINFÜGEN", "Textfeld"], ["EINFÜGEN", "Textbaustein"], ["EINFÜGEN", "Schnellbaustein"], ["EINFÜGEN", "Initiale"], ["EINFÜGEN", "Datum"], ["EINFÜGEN", "Uhrzeit"], ["EINFÜGEN", "Text aus Datei"], ["EINFÜGEN", "Sonderzeichen"], ["EINFÜGEN", "Formel"], ["SEITENLAYOUT", "Seitenränder"], ["SEITENLAYOUT", "Ausrichtung"], ["SEITENLAYOUT", "Papierformat"], ["SEITENLAYOUT", "Spalten"], ["SEITENLAYOUT", "Umbruch > Seitenumbruch"], ["SEITENLAYOUT", "Umbruch > Spaltenumbruch"], ["SEITENLAYOUT", "Umbruch > Abschnittsumbruch"], ["SEITENLAYOUT", "Einzug"], ["SEITENLAYOUT", "Absatzabstand"], ["SEITENLAYOUT", "Zeilennummern"], ["SEITENLAYOUT", "Silbentrennung"], ["SEITENLAYOUT", "Textumbruch"], ["SEITENLAYOUT", "Seitenfarbe"], ["SEITENLAYOUT", "Wasserzeichen"], ["SEITENLAYOUT", "Seitenrahmen"], ["SEITENLAYOUT", "Bild/Objekt anordnen"], ["REFERENZEN", "Inhaltsverzeichnis"], ["REFERENZEN", "Verzeichnisse aktualisieren"], ["REFERENZEN", "Fußnote"], ["REFERENZEN", "Endnote"], ["REFERENZEN", "Nächste Note"], ["REFERENZEN", "Vorige Note"], ["REFERENZEN", "Notenbereich"], ["REFERENZEN", "Zitat einfügen"], ["REFERENZEN", "Neue Quelle"], ["REFERENZEN", "Quellen verwalten"], ["REFERENZEN", "Zitierweise"], ["REFERENZEN", "Literaturverzeichnis"], ["REFERENZEN", "Beschriftung"], ["REFERENZEN", "Abbildungsverzeichnis"], ["REFERENZEN", "Querverweis"], ["REFERENZEN", "Indexeintrag"], ["REFERENZEN", "Stichwortverzeichnis"], ["ÜBERPRÜFEN", "Prüfen"], ["ÜBERPRÜFEN", "Gründlich prüfen"], ["ÜBERPRÜFEN", "Rechtschreibung"], ["ÜBERPRÜFEN", "Thesaurus"], ["ÜBERPRÜFEN", "Wörter zählen"], ["ÜBERPRÜFEN", "Korrektursprache"], ["ÜBERPRÜFEN", "Barrierefreiheit prüfen"], ["ÜBERPRÜFEN", "Neuer Kommentar"], ["ÜBERPRÜFEN", "Nächster Kommentar"], ["ÜBERPRÜFEN", "Voriger Kommentar"], ["ÜBERPRÜFEN", "Kommentar löschen"], ["ÜBERPRÜFEN", "Alle Kommentare löschen"], ["ÜBERPRÜFEN", "Änderungen verfolgen"], ["ÜBERPRÜFEN", "Markup anzeigen"], ["ÜBERPRÜFEN", "Überarbeitungsbereich"], ["ÜBERPRÜFEN", "Änderung annehmen"], ["ÜBERPRÜFEN", "Änderung ablehnen"], ["ÜBERPRÜFEN", "Nächste Änderung"], ["ÜBERPRÜFEN", "Vorige Änderung"], ["ÜBERPRÜFEN", "Alle annehmen"], ["ÜBERPRÜFEN", "Alle verwerfen"], ["ÜBERPRÜFEN", "Bearbeitung sperren"], ["SCHREIBHILFE (Lunivo)", "Dokumentprüfung > Prüfen"], ["SCHREIBHILFE (Lunivo)", "Dokumentprüfung > Gründlich prüfen"], ["SCHREIBHILFE (Lunivo)", "Dokumentprüfung > Welche Hilfe wann"], ["SCHREIBHILFE (Lunivo)", "Beim Schreiben > Rechtschreibprüfung"], ["SCHREIBHILFE (Lunivo)", "Beim Schreiben > Wortvorhersage"], ["SCHREIBHILFE (Lunivo)", "Beim Schreiben > AutoKorrektur"], ["SCHREIBHILFE (Lunivo)", "Vorlesen > Vorlesen"], ["SCHREIBHILFE (Lunivo)", "Vorlesen > Ab hier vorlesen"], ["SCHREIBHILFE (Lunivo)", "Vorlesen > Anhalten"], ["SCHREIBHILFE (Lunivo)", "Vorlesen > Stimme und Tempo"], ["SCHREIBHILFE (Lunivo)", "KI > KI-Korrektur"], ["SCHREIBHILFE (Lunivo)", "KI > Vorschläge"], ["SCHREIBHILFE (Lunivo)", "Anzeigen > Seitenleiste Schreibhilfe"], ["SCHREIBHILFE (Lunivo)", "Anzeigen > Optionen"], ["SENDUNGEN (Lunivo)", "Umschlag"], ["SENDUNGEN (Lunivo)", "Etiketten"], ["SENDUNGEN (Lunivo)", "Seriendruck-Assistent"], ["SENDUNGEN (Lunivo)", "Seriendruckfeld"], ["SENDUNGEN (Lunivo)", "Adressblock"], ["SENDUNGEN (Lunivo)", "Regeln"], ["SENDUNGEN (Lunivo)", "Ergebnisse anzeigen"], ["SENDUNGEN (Lunivo)", "Formular > Textfeld"], ["SENDUNGEN (Lunivo)", "Formular > Kontrollkästchen"], ["SENDUNGEN (Lunivo)", "Formular > Schaltfläche"], ["ANSICHT", "Drucklayout"], ["ANSICHT", "Lesemodus"], ["ANSICHT", "Zwei Seiten"], ["ANSICHT", "Weblayout"], ["ANSICHT", "Gliederung"], ["ANSICHT", "Lineal"], ["ANSICHT", "Gitternetzlinien"], ["ANSICHT", "Navigationsbereich"], ["ANSICHT", "Textbegrenzungen"], ["ANSICHT", "Seitenleiste Schreibhilfe"], ["ANSICHT", "Lesehilfe"], ["ANSICHT", "Zeilenfokus"], ["ANSICHT", "Vergrößern"], ["ANSICHT", "Verkleinern"], ["ANSICHT", "100 %"], ["ANSICHT", "Seitenbreite"], ["ANSICHT", "Eine Seite"], ["ANSICHT", "Zoom"], ["ANSICHT", "Neues Fenster"], ["ANSICHT", "Anordnen"], ["ANSICHT", "Nebeneinander"], ["ANSICHT", "Untereinander"], ["ANSICHT", "Kacheln"], ["ANSICHT", "Fensterliste"], ["ANSICHT", "Helligkeit > Wie das System"], ["ANSICHT", "Helligkeit > Immer hell"], ["ANSICHT", "Helligkeit > Immer dunkel"], ["ANSICHT", "Oberfläche > Register anpassen"], ["ANSICHT", "Oberfläche > Symbol austauschen"], ["ANSICHT", "Oberfläche > Benutzeroberfläche"], ["ANSICHT", "Oberfläche > Menüleiste"], ["ANSICHT", "Oberfläche > Symbolleisten"], ["ANSICHT", "Oberfläche > Vorlagen zurücksetzen"], ["KONTEXTTABELLEN", "Tabellenwerkzeuge"], ["KONTEXTTABELLEN", "Zeichentools"], ["KONTEXTTABELLEN", "Diagrammtools"], ["KONTEXTTABELLEN", "SmartArt-Tools"], ["KONTEXTTABELLEN", "Gleichungswerkzeuge"], ["KONTEXTTABELLEN", "Kopf- und Fußzeilenwerkzeuge"], ["LANGUAGE BRIDGE (Architektur)", "Zentrale Sprachkontext-Verwaltung"], ["LANGUAGE BRIDGE (Architektur)", "Dokumentversion-Tracking"], ["LANGUAGE BRIDGE (Architektur)", "Prüfungs-ID-System"], ["LANGUAGE BRIDGE (Architektur)", "Einheitlicher Fehlerstatus"], ["LANGUAGE BRIDGE (Architektur)", "Fehler-Lebenszyklus (active/accepted/ignored/corrected)"], ["LANGUAGE BRIDGE (Architektur)", "Keine parallelen Wörterbücher"], ["LANGUAGE BRIDGE (Architektur)", "Benutzerwörter zentral speichern"], ["LANGUAGE BRIDGE (Architektur)", "Ignorierte Wörter zentral speichern"], ["LANGUAGE BRIDGE (Architektur)", "Akzeptierte Korrektionen speichern"], ["LANGUAGE BRIDGE (Spelling Engine)", "Native Browser-Spellcheck deaktiviert"], ["LANGUAGE BRIDGE (Spelling Engine)", "Lunivo-Regeln verwenden statt Browser"], ["LANGUAGE BRIDGE (Spelling Engine)", "Benutzerwörter in Rechtschreibung beachten"], ["LANGUAGE BRIDGE (Spelling Engine)", "Ignorierte Wörter in Rechtschreibung beachten"], ["LANGUAGE BRIDGE (Spelling Engine)", "Fehler als unified language-issue"], ["LANGUAGE BRIDGE (Grammar Engine)", "Dieselbe Sprachkontext wie Spelling"], ["LANGUAGE BRIDGE (Grammar Engine)", "Grammatikregeln aus regeln.js nutzen"], ["LANGUAGE BRIDGE (Grammar Engine)", "Benutzerwörter in Grammatik beachten"], ["LANGUAGE BRIDGE (Grammar Engine)", "Fehler als unified language-issue"], ["LANGUAGE BRIDGE (AI Engine)", "Asynchrone KI-Requests mit Validierung"], ["LANGUAGE BRIDGE (AI Engine)", "Dokumentversion überprüfen"], ["LANGUAGE BRIDGE (AI Engine)", "CheckId überprüfen"], ["LANGUAGE BRIDGE (AI Engine)", "Keine veralteten Ergebnisse akzeptieren"], ["LANGUAGE BRIDGE (AI Engine)", "KI-Konfidenz-Score speichern"], ["LANGUAGE BRIDGE (Fehler-Zusammenführung)", "Mehrere Quellen für gleiche Position zusammenführen"], ["LANGUAGE BRIDGE (Fehler-Zusammenführung)", "Konflikt-Auflösung nach Quelle/Konfidenz/Typ"], ["LANGUAGE BRIDGE (Fehler-Zusammenführung)", "Hochwertige Vorschläge nicht überschreiben"], ["LANGUAGE BRIDGE (Fehler-Zusammenführung)", "Fehler-Signatur für Identify verwenden"], ["LANGUAGE BRIDGE (Invalidierung & Debouncing)", "Bereichs-Invalidierung bei Änderungen"], ["LANGUAGE BRIDGE (Invalidierung & Debouncing)", "Sicherheitsbereich um geänderte Stelle"], ["LANGUAGE BRIDGE (Invalidierung & Debouncing)", "Debouncing für schnelle Eingaben"], ["LANGUAGE BRIDGE (Invalidierung & Debouncing)", "Vollständige Prüfung möglich (Gründlich prüfen)"], ["SCHREIBHILFE (Sidebar-Integration)", "Fehler aus Language Bridge anzeigen"], ["SCHREIBHILFE (Sidebar-Integration)", "Rote Wellenlinien aus Bridge-Status"], ["SCHREIBHILFE (Sidebar-Integration)", "Kontextmenü für Fehler-Aktionen"], ["SCHREIBHILFE (Sidebar-Integration)", "Fehler annehmen/ignorieren/korrigieren"], ["SCHREIBHILFE (Sidebar-Integration)", "Schalter 'Rote Wellenlinien' zeigt/versteckt nur"], ["SCHREIBHILFE (Menü-Integration)", "Schreibhilfe-Register im Band"], ["SCHREIBHILFE (Menü-Integration)", "Prüfen-Knopf löst check() aus"], ["SCHREIBHILFE (Menü-Integration)", "Gründlich prüfen-Knopf für volle Prüfung"], ["SCHREIBHILFE (Menü-Integration)", "Welche Hilfe wann anzeigen"], ["SCHREIBHILFE (Menü-Integration)", "Beim Schreiben-Optionen"], ["SCHREIBHILFE (Menü-Integration)", "Vorlesen-Integration"], ["SCHREIBHILFE (Menü-Integration)", "KI-Korrektur-Optionen"], ["SCHREIBHILFE (Menü-Integration)", "Anzeigen-Optionen"], ["DOKUMENTMODELL (Structure)", "Document-Klasse mit Sections"], ["DOKUMENTMODELL (Structure)", "Section mit Inhalt, Header, Footer"], ["DOKUMENTMODELL (Structure)", "DocumentContent mit Blocks"], ["DOKUMENTMODELL (Structure)", "Block-Vererbung (Paragraph, Table, Image, Shape)"], ["DOKUMENTMODELL (Structure)", "PageSetup mit Margins, PageSize, Columns"], ["DOKUMENTMODELL (Callbacks)", "Änderungs-Callbacks für Paragraph"], ["DOKUMENTMODELL (Callbacks)", "Änderungs-Callbacks für Table"], ["DOKUMENTMODELL (Callbacks)", "Änderungs-Callbacks für DocumentContent"], ["DOKUMENTMODELL (Callbacks)", "Callbacks triggern Language Bridge Update"]];
+
+/* Kategorie und Name zu einer Kennung, die sich nicht verschiebt. */
+function kennungFuer(kategorie, name) {
+    return (kategorie + '|' + name)
+        .toLowerCase()
+        .replace(/[^a-z0-9äöüß|]+/g, '-')
+        .replace(/^-|-$/g, '');
+}
+
+/* ============================================================
+   SPIEGELUNGEN UND DOPPLUNGEN
+
+   Manche Punkte tauchen unter demselben Namen zweimal im Baum auf —
+   nicht weil der Katalog sie verdoppelt, sondern weil WPS/Lunivo dieselbe
+   Sache zweimal in der Oberflaeche anbietet: als Haken im Band UND als
+   Haken in den Optionen, als Knopf in einer Gruppe UND noch einmal in der
+   Nachbargruppe. Wer das einmal prueft, hat es geprueft — der zweite
+   Eintrag ist kein zweiter Test, sondern derselbe Schalter an einer
+   zweiten Stelle.
+
+   Register und Symbolleisten gehoeren in diese Rechnung dazu, obwohl sie
+   hier keinen eigenen Eintrag haben: register.js liefert beiden Ansichten
+   dieselbe Befehlsliste (programm.js, Abschnitt „Symbolleisten oder
+   Register" — flaeche === 'register' baut das Band, sonst dieselben
+   Befehle als Leisten). Wer im einen Modus geprueft hat, hat den anderen
+   mitgeprueft; dafuer braucht es keine zweite Zeile im Katalog, nur diesen
+   Hinweis hier.
+
+   Drei Arten stehen unten:
+     gleich       dieselbe Funktion, zwei Zugriffswege — einmal pruefen reicht
+     prinzip      dieselbe Vorgabe, aber einmal je Engine wirklich zu pruefen
+     namensgleich gleicher Name, andere Funktion — NICHT zusammenlegen
+
+   Diese Liste ist von Hand aus einem Abgleich aller 415 Punkte entstanden
+   (gleicher Name in zwei Kategorien war das Suchraster); sie wird beim
+   Aufbau der Seite in eine Tabelle je itemId uebersetzt, ohne dass an den
+   testData-Kennungen selbst etwas geaendert wird — die bisherigen
+   Antworten bleiben unberuehrt liegen, wo sie sind.
+   ============================================================ */
+const SPIEGEL_GRUPPEN = [
+  { art: 'gleich', hinweis: 'Derselbe Knopf, zwei Gruppen im selben Reiter.',
+    stellen: [['START > Absatz', 'Zeilenabstand'], ['START > Absatzlayout', 'Zeilenabstand']] },
+  { art: 'gleich', hinweis: 'Derselbe Querverweis-Dialog, zwei Reiter.',
+    stellen: [['EINFÜGEN', 'Querverweis'], ['REFERENZEN', 'Querverweis']] },
+  { art: 'gleich', hinweis: 'Band-Schalter und Options-Haken stellen denselben Schalter.',
+    stellen: [['ÜBERPRÜFEN', 'Änderungen verfolgen'], ['OPTIONEN > Änderungen verfolgen > Änderungen verfolgen', 'Änderungen verfolgen']] },
+  { art: 'gleich', hinweis: 'Band-Auswahl und Options-Haken stellen dieselbe Anzeige.',
+    stellen: [['ÜBERPRÜFEN', 'Markup anzeigen'], ['OPTIONEN > Änderungen verfolgen > Änderungen verfolgen', 'Markup anzeigen']] },
+  { art: 'gleich', hinweis: 'Band-Knopf und Options-Kennwortschutz sperren dieselbe Bearbeitung.',
+    stellen: [['ÜBERPRÜFEN', 'Bearbeitung sperren'], ['OPTIONEN > Sicherheit > Kennwortschutz', 'Bearbeitung sperren']] },
+  { art: 'gleich', hinweis: 'Band-Haken und Options-Haken zeigen/verstecken dasselbe Lineal.',
+    stellen: [['ANSICHT', 'Lineal'], ['OPTIONEN > Ansicht > Anzeigen', 'Lineal']] },
+  { art: 'gleich', hinweis: 'Band-Haken und Options-Haken, dieselbe Einstellung.',
+    stellen: [['ANSICHT', 'Vertikales Lineal'], ['OPTIONEN > Ansicht > Anzeigen', 'Vertikales Lineal']] },
+  { art: 'gleich', hinweis: 'Band-Haken und Options-Haken, dieselbe Einstellung.',
+    stellen: [['ANSICHT', 'Gitternetzlinien'], ['OPTIONEN > Ansicht > Anzeigen', 'Gitternetzlinien']] },
+  { art: 'gleich', hinweis: 'Band-Haken und Options-Haken, dieselbe Einstellung.',
+    stellen: [['ANSICHT', 'Navigationsbereich'], ['OPTIONEN > Ansicht > Anzeigen', 'Navigationsbereich']] },
+  { art: 'gleich', hinweis: 'Band-Haken und Options-Haken, dieselbe Einstellung.',
+    stellen: [['ANSICHT', 'Textbegrenzungen'], ['OPTIONEN > Ansicht > Anzeigen', 'Textbegrenzungen']] },
+  { art: 'gleich', hinweis: 'Dieselbe Druckoption, auf zwei Options-Seiten eingetragen.',
+    stellen: [['OPTIONEN > Ansicht > Druckoptionen', 'Feldfunktionen drucken'], ['OPTIONEN > Drucken > Druckoptionen', 'Feldfunktionen drucken']] },
+  { art: 'gleich', hinweis: 'Unterschiedlicher Name, dieselbe Einstellung: die Sprache, mit der geprüft wird (Band-Knopf „Korrektursprache" öffnet dasselbe Feld wie hier).',
+    stellen: [['ÜBERPRÜFEN', 'Korrektursprache'], ['OPTIONEN > Rechtschreibprüfung > Rechtschreibprüfung', 'Sprache für die Prüfung']] },
+  { art: 'gleich', hinweis: 'Unterschiedlicher Name, derselbe gelernte Wortschatz (die zentrale Wortverwaltung — sollte nur eine sein): einmal als „Benutzerwörterbuch" (WPS-Seite), einmal als „Gedächtnis" (Lunivo-Seite).',
+    stellen: [['OPTIONEN > Rechtschreibprüfung > Benutzerwörterbuch', 'Was das Programm gelernt hat'], ['OPTIONEN > Gedächtnis > Gedächtnis', 'Gelernte Schreibweisen']] },
+  { art: 'gleich', hinweis: 'Derselbe Schalter, in zwei Reitern eingeblendet — Schreibhilfe und Ansicht.',
+    stellen: [['SCHREIBHILFE (Lunivo)', 'Anzeigen > Seitenleiste Schreibhilfe'], ['ANSICHT', 'Seitenleiste Schreibhilfe']] },
+  { art: 'gleich', hinweis: 'Derselbe Knopf (gemeinsame Prüf-Engine), in zwei Reitern.',
+    stellen: [['ÜBERPRÜFEN', 'Prüfen'], ['SCHREIBHILFE (Lunivo)', 'Dokumentprüfung > Prüfen']] },
+  { art: 'gleich', hinweis: 'Derselbe Knopf (gemeinsame Prüf-Engine), in zwei Reitern.',
+    stellen: [['ÜBERPRÜFEN', 'Gründlich prüfen'], ['SCHREIBHILFE (Lunivo)', 'Dokumentprüfung > Gründlich prüfen']] },
+  { art: 'prinzip', hinweis: 'Dieselbe Vorgabe (einheitliche Fehlerform), einmal je Prüf-Engine — beide müssen sie unabhängig voneinander erfüllen.',
+    stellen: [['LANGUAGE BRIDGE (Spelling Engine)', 'Fehler als unified language-issue'], ['LANGUAGE BRIDGE (Grammar Engine)', 'Fehler als unified language-issue']] },
+  { art: 'namensgleich', hinweis: 'Gleicher Name, andere Funktion: hier geht es um Text auf dem Bildschirm, dort um Text beim Drucken. Nicht zusammenlegen.',
+    stellen: [['OPTIONEN > Ansicht > Formatierungszeichen', 'Ausgeblendeter Text'], ['OPTIONEN > Drucken > Druckoptionen', 'Ausgeblendeter Text']] },
+  { art: 'namensgleich', hinweis: 'Gleicher Reglertyp, verschiedenes Ziel: hier fürs Menüband, dort für die Schnellzugriffsleiste. Nicht zusammenlegen.',
+    stellen: [['OPTIONEN > Menüband anpassen', 'Befehle auswählen'], ['OPTIONEN > Symbolleiste für den Schnellzugriff', 'Befehle auswählen']] },
+];
+
+const MERGE_ZIEL = {};
+const MERGE_QUELLEN = {};
+const SPIEGEL_INFO = {};
+SPIEGEL_GRUPPEN.forEach(function (gruppe) {
+    const stellen = gruppe.stellen.map(function (paar) {
+        return { id: kennungFuer(paar[0], paar[1]), cat: paar[0], name: paar[1] };
+    });
+    if (gruppe.art === 'gleich') {
+        const haupt = stellen[0];
+        MERGE_QUELLEN[haupt.id] = stellen.slice(1);
+        stellen.slice(1).forEach(function (sek) { MERGE_ZIEL[sek.id] = haupt; });
+        return;
+    }
+    stellen.forEach(function (stelle) {
+        SPIEGEL_INFO[stelle.id] = {
+            art: gruppe.art,
+            hinweis: gruppe.hinweis,
+            partner: stellen.filter(function (s) { return s.id !== stelle.id; })
+        };
+    });
+});
+
+/* Die Zeile unter dem Punktnamen für 'prinzip'/'namensgleich' — 'gleich'
+   läuft nicht mehr hierüber, das wird zusammengelegt (siehe unten). */
+function spiegelZeile(itemId) {
+    const info = SPIEGEL_INFO[itemId];
+    if (!info) return '';
+    const symbol = info.art === 'namensgleich' ? '⚠️' : '🔁';
+    const links = info.partner.map(function (p) {
+        return '<a href="#" class="spiegel-link" onclick="zuPunkt(\'' + p.id + '\'); return false;">'
+            + escapeHtml(p.cat) + ' ▸ ' + escapeHtml(p.name) + '</a>';
+    }).join(', ');
+    return '<div class="spiegel-hinweis spiegel--' + info.art + '">' + symbol + ' '
+        + escapeHtml(info.hinweis) + ' — auch bei: ' + links + '</div>';
+}
+
+/* Die Zeile unter dem Punktnamen für die Hauptstelle einer 'gleich'-Gruppe. */
+function mergeHinweisHaupt(itemId) {
+    const quellen = MERGE_QUELLEN[itemId];
+    if (!quellen || !quellen.length) return '';
+    const links = quellen.map(function (q) {
+        return '<a href="#" class="spiegel-link" onclick="zuPunkt(\'' + q.id + '\'); return false;">'
+            + escapeHtml(q.cat) + ' ▸ ' + escapeHtml(q.name) + '</a>';
+    }).join(', ');
+    return '<div class="spiegel-hinweis spiegel--gleich">🔗 Deckt dieselbe Funktion auch hier ab: ' + links
+        + ' — dort steht nur noch ein Verweis, keine zweite Zeile.</div>';
+}
+
+/* Die knappe Verweiszeile an der zusammengelegten Stelle, statt Auswahlfeld
+   und Anmerkung noch einmal zu bauen. */
+function mergeVerweisZeile(cleanName, ziel) {
+    return '<div class="item item--verweis" data-name="' + cleanName.toLowerCase() + '" data-cat="' + ziel.cat.toLowerCase() + '" data-ki="nein">'
+        + '<div><strong>' + escapeHtml(cleanName) + '</strong>'
+        + '<div class="spiegel-hinweis spiegel--gleich">🔗 Dieselbe Funktion — geprüft bei '
+        + '<a href="#" class="spiegel-link" onclick="zuPunkt(\'' + ziel.id + '\'); return false;">' + escapeHtml(ziel.cat) + ' ▸ ' + escapeHtml(ziel.name) + '</a>. '
+        + 'Vorhandene Antworten von hier wurden dorthin übernommen.</div></div></div>';
+}
+
+/* Zu einem gespiegelten Punkt springen und ihn kurz hervorheben. */
+function zuPunkt(id) {
+    const ziel = document.getElementById('punkt_' + id);
+    if (!ziel) return;
+    const kategorie = ziel.closest('.category');
+    if (kategorie) kategorie.classList.remove('eingeklappt');
+    /* Kein "smooth" — die Liste hat 415 Punkte, die Strecke kann lang
+       sein, und ein Hinweisrahmen, der schon weg ist, bevor der Sprung
+       zu Ende ist, hilft niemandem. */
+    ziel.scrollIntoView({ block: 'center' });
+    ziel.classList.add('punkt--angesteuert');
+    setTimeout(function () { ziel.classList.remove('punkt--angesteuert'); }, 2200);
+}
+
+/* Die Übersicht ganz oben — aus derselben Liste gebaut, damit sie nie von
+   den Hinweisen an den einzelnen Punkten abweicht. Bei 'gleich' gibt es
+   nur noch einen Sprung-Link (zur Hauptstelle); die zusammengelegte
+   Stelle hat keine eigene Zeile mehr, zu der man springen könnte. */
+function spiegelUebersichtZeigen() {
+    const kasten = document.getElementById('spiegel-uebersicht');
+    if (!kasten) return;
+    const beschriftung = { gleich: 'Zusammengelegt — eine Funktion, eine Zeile',
+        prinzip: 'Dieselbe Vorgabe, zwei Engines', namensgleich: 'Gleicher Name, andere Funktion — nicht zusammengelegt' };
+    let html = '';
+    SPIEGEL_GRUPPEN.forEach(function (gruppe) {
+        const stellen = gruppe.stellen.map(function (paar) {
+            return { id: kennungFuer(paar[0], paar[1]), cat: paar[0], name: paar[1] };
+        });
+        const zeilen = stellen.map(function (s, i) {
+            const beschriftet = escapeHtml(s.cat) + ' ▸ ' + escapeHtml(s.name);
+            if (gruppe.art !== 'gleich' || i === 0) {
+                return '<a href="#" class="spiegel-link" onclick="zuPunkt(\'' + s.id + '\'); return false;">' + beschriftet + '</a>';
+            }
+            return '<span class="spiegel-zusammengelegt">' + beschriftet + ' (kein eigener Eintrag mehr)</span>';
+        }).join(' ↔ ');
+        html += '<div class="spiegel-zeile spiegel--' + gruppe.art + '">'
+            + '<span class="spiegel-art">' + beschriftung[gruppe.art] + '</span>'
+            + '<span class="spiegel-stellen">' + zeilen + '</span></div>';
+    });
+    kasten.innerHTML = html;
+}
+
+/* Antworten, die noch unter einer zusammengelegten Stelle liegen (alter
+   Stand, Import einer älteren Exportdatei), in die Hauptstelle holen —
+   nichts geht verloren, nur die zweite Zeile fällt weg. Läuft gefahrlos
+   mehrfach: eine Anmerkung, die schon übernommen wurde, hängt sich nicht
+   noch einmal an; ein Bild mit derselben id wird nicht doppelt kopiert. */
+const STATUS_RANG = { open: 0, pass: 1, nt: 1, fail: 2 };
+function istAntwortLeer(eintrag) {
+    return !eintrag || ((eintrag.status === 'open' || !eintrag.status)
+        && !(eintrag.note || '').trim() && bilderVon(eintrag).length === 0);
+}
+function gespiegelteAntwortenZusammenfuehren(daten) {
+    Object.keys(MERGE_ZIEL).forEach(function (sekId) {
+        const sek = daten[sekId];
+        if (istAntwortLeer(sek)) return;
+        const hauptId = MERGE_ZIEL[sekId].id;
+        const haupt = daten[hauptId] || { status: 'open', note: '', bilder: [] };
+
+        if ((STATUS_RANG[sek.status] || 0) > (STATUS_RANG[haupt.status] || 0)) {
+            haupt.status = sek.status;
+        }
+        const sekNote = (sek.note || '').trim();
+        if (sekNote && !(haupt.note || '').includes(sekNote)) {
+            haupt.note = haupt.note ? (haupt.note + '\n\n— von der zusammengelegten Stelle:\n' + sekNote) : sekNote;
+        }
+        const hauptBilder = bilderVon(haupt);
+        const bekannt = new Set(hauptBilder.map(function (b) { return b.id; }));
+        bilderVon(sek).forEach(function (bild) {
+            if (!bekannt.has(bild.id)) { hauptBilder.push(bild); bekannt.add(bild.id); }
+        });
+        haupt.bilder = hauptBilder;
+        daten[hauptId] = haupt;
+    });
+    return daten;
+}
+
+/* Einen Stand mit alten Nummern auf die neuen Kennungen bringen.
+
+   VORHER WIRD GESICHERT. Die Übersetzung schreibt den Stand um, und ein
+   Fehler darin wäre nicht zu bemerken: Die Häkchen stünden einfach bei
+   den falschen Punkten oder gar nicht mehr da. Deshalb liegt der alte
+   Stand unverändert daneben — unter einem eigenen Schlüssel, einmalig,
+   und er wird nie wieder angefasst.
+
+   Zurückholen ließe er sich in der Konsole des Browsers mit:
+     localStorage.setItem('wps_pruefkatalog_stand_v1',
+       localStorage.getItem('wps_pruefkatalog_stand_v1_vor_umstellung')) */
+function altenStandSichern(items) {
+    const SICHERUNG = SPEICHER_SCHLUESSEL + '_vor_umstellung';
+    try {
+        if (localStorage.getItem(SICHERUNG) !== null) return;   /* schon gesichert */
+        const hatAlte = Object.keys(items || {}).some((k) => /^item_\d+$/.test(k));
+        if (!hatAlte) return;
+        localStorage.setItem(SICHERUNG, JSON.stringify({ items: items, gesichert: new Date().toISOString() }));
+        console.info('Prüfkatalog: alter Stand gesichert unter „' + SICHERUNG + '".');
+    } catch (e) { /* ohne Speicher geht es auch */ }
+}
+
+function altenStandUebersetzen(items) {
+    if (!items) return {};
+    altenStandSichern(items);
+    const neu = {};
+    let uebernommen = 0;
+    for (const schluessel of Object.keys(items)) {
+        const treffer = /^item_(\d+)$/.exec(schluessel);
+        if (!treffer) { neu[schluessel] = items[schluessel]; continue; }
+        const eintrag = ALTE_REIHENFOLGE[Number(treffer[1]) - 1];
+        if (!eintrag) continue;
+        neu[kennungFuer(eintrag[0], eintrag[1])] = items[schluessel];
+        uebernommen++;
+    }
+    if (uebernommen) {
+        console.info('Prüfkatalog: ' + uebernommen
+            + ' Antworten aus der alten Nummerierung übernommen.');
+    }
+    return neu;
+}
+
+let testData = {};
+let freeNotesList = [];
+
+const SPEICHER_SCHLUESSEL = 'wps_pruefkatalog_stand_v1';
+
+/* Aufraeumen: Der Merker der einmaligen Rechtschreib-Uebernahme vom
+   13.09.2026 wird nicht mehr gebraucht — die Korrekturen stehen im Stand. */
+try { localStorage.removeItem(SPEICHER_SCHLUESSEL + '_vorschlag_freigabe_13092026'); } catch (e) {}
+
+function laden() {
+    try {
+        const roh = localStorage.getItem(SPEICHER_SCHLUESSEL);
+        return roh ? JSON.parse(roh) : null;
+    } catch (e) { return null; }
+}
+function speichern() {
+    briefMerken();
+    try {
+        localStorage.setItem(SPEICHER_SCHLUESSEL, JSON.stringify({ items: testData, notesList: freeNotesList }));
+    } catch (e) {
+        /* Der Speicher des Browsers ist voll — meist wegen der Bilder.
+           Einmal sagen, nicht bei jedem Tastendruck. Der Stand im Fenster
+           bleibt vollstaendig; mit „Protokoll Exportieren" laesst er sich
+           retten. */
+        if (!speicherGewarnt) {
+            speicherGewarnt = true;
+            alert('Der Speicher des Browsers ist voll (meist durch Bilder).\n\n' +
+                  'Bitte einmal „Protokoll Exportieren" anklicken — dann ist alles gesichert.\n' +
+                  'Danach koennen Sie einzelne Bilder entfernen, damit wieder gespeichert wird.');
+        }
+    }
+}
+
+/* ============================================================
+   BRIEFKASTEN — damit die Eintraege auch ankommen
+
+   Bis hierher lagen Status und Anmerkungen nur im localStorage
+   dieses Browsers. Claude kommt da nicht heran: Er sieht die
+   Festplatte, nicht den Browserspeicher. Ein Eingabefeld, das
+   niemand liest, ist ein halbes Werkzeug — genau das war der
+   Einwand.
+
+   Jetzt legt die Seite denselben Stand zusaetzlich in einem
+   Speicher ab, den Claude von aussen lesen kann. localStorage
+   bleibt die schnelle Fassung im Fenster; der Briefkasten ist
+   die Durchschrift.
+
+   Bilder bleiben absichtlich draussen — die sind gross und
+   gehoeren nicht in eine Textdurchschrift.
+   ============================================================ */
+
+const BRIEFKASTEN_PFAD = 'pruefstand/aktuell';
+let briefkasten = null;          /* die db-Fassung, sobald sie da ist */
+let briefWartet = null;          /* laufender Timer */
+let briefStand = 'warten';       /* warten | bereit | ohne | fehler */
+let briefZeit = null;
+
+function briefZeileZeigen() {
+    const k = document.getElementById('brief-zeile');
+    if (!k) return;
+    const texte = {
+        warten: 'Verbindung wird aufgebaut …',
+        ohne:   'Nicht verbunden — die Eintraege bleiben in diesem Browser. ' +
+                'Zum Weitergeben „Protokoll Exportieren (JSON)" benutzen.',
+        fehler: 'Uebertragung fehlgeschlagen — der Stand steht weiter sicher in diesem Browser.',
+        bereit: 'Eintraege sind fuer Claude hinterlegt' + (briefZeit ? ' — zuletzt ' + briefZeit : '')
+    };
+    k.className = 'brief-zeile ist-' + briefStand;
+    k.innerHTML = '<span class="brief-punkt"></span><span>' + escapeHtml(texte[briefStand]) + '</span>';
+}
+
+/* Nur was wirklich ausgefuellt ist — und ohne Bilder. */
+function briefInhalt() {
+    const stand = {};
+    Object.keys(testData).forEach(function (id) {
+        const e = testData[id];
+        const notiz = (e.note || '').trim();
+        if (e.status === 'open' && !notiz) return;
+        stand[id] = { status: e.status, note: notiz };
+    });
+    const frei = (freeNotesList || []).map(function (n) {
+        return { text: (n.text || '').trim(), zeit: n.timestamp || '' };
+    }).filter(function (n) { return n.text; });
+    return {
+        stand: stand,
+        frei: frei,
+        anzahl: Object.keys(stand).length,
+        gesamt: Object.keys(testData).length,
+        zeit: new Date().toISOString()
+    };
+}
+
+async function briefkastenStarten() {
+    briefZeileZeigen();
+    let db = null;
+    try {
+        if (typeof claude !== 'undefined' && claude && typeof claude.use === 'function') {
+            db = await claude.use('db');
+        }
+    } catch (e) { db = null; }
+    if (!db) { briefStand = 'ohne'; briefZeileZeigen(); return; }
+    briefkasten = db.doc(BRIEFKASTEN_PFAD);
+
+    /* Ist dieser Browser leer, der Briefkasten aber voll (anderes Geraet),
+       dann den hinterlegten Stand uebernehmen — sonst nie. Die Fassung im
+       eigenen Fenster ist immer die massgebliche. */
+    try {
+        if (!laden()) {
+            const d = await briefkasten.get();
+            if (d.exists) {
+                const alt = d.data() || {};
+                const stand = alt.stand || {};
+                let uebernommen = 0;
+                Object.keys(stand).forEach(function (id) {
+                    if (!testData[id]) return;
+                    testData[id].status = stand[id].status || 'open';
+                    testData[id].note = stand[id].note || '';
+                    testData[id].notizen = [];
+                    notizenSicherstellen(id);
+                    const feld = document.getElementById('status_' + id);
+                    if (feld) feld.value = testData[id].status;
+                    renderItemNotizen(id);
+                    uebernommen++;
+                });
+                if (uebernommen) { kopfZahlenZeigen(); updateStats(); speichern(); }
+            }
+        }
+    } catch (e) { /* nicht schlimm — der lokale Stand bleibt */ }
+
+    briefAblegen();
+}
+
+/* Nicht bei jedem Tastendruck schreiben, sondern kurz nach der letzten Aenderung. */
+function briefMerken() {
+    if (!briefkasten) return;
+    if (briefWartet) clearTimeout(briefWartet);
+    briefWartet = setTimeout(briefAblegen, 1500);
+}
+
+async function briefAblegen() {
+    if (!briefkasten) return;
+    briefWartet = null;
+    try {
+        await briefkasten.set(briefInhalt());
+        briefStand = 'bereit';
+        briefZeit = new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) + ' Uhr';
+    } catch (e) {
+        briefStand = 'fehler';
+    }
+    briefZeileZeigen();
+}
+
+function alteBerichteAlsEintraege() {
+  // Die 6 Meldungen aus dem vorherigen Prüfbogen — jetzt direkt beim
+  // passenden Menüpunkt eingetragen (Status + Anmerkung/Testergebnis),
+  // statt nur lose im freien Kommentarbereich zu stehen. Die item_-Nummern
+  // sind an dieser rawData-Reihenfolge festgemacht (item_6 = "Speichern"
+  // in DATEI, item_27 = "Schriftart" in START>Schriftart, item_177 =
+  // "Lineal" in ANSICHT, item_195 = "Fensterliste" in ANSICHT, item_200 =
+  // "Oberfläche > Symbol austauschen" in ANSICHT, item_201 = "Oberfläche >
+  // Benutzeroberfläche" in ANSICHT).
+  return {
+    item_177: { status: "pass", note: "beim minimieren des Fensters bleibt das Lineal starr und rutsch nach Recht in  die Schreib Hilfe hinein,leider kann ich davon hier im link kein bild zeigen\n\n— aus dem alten Prüfbogen, 03.09.2026, kaysiebke" },
+    item_6: { status: "pass", note: "im regiester speichern hast du die einzelnen speicher Formate alle lose rein gepackt ich würde es unter speichern oder speichern unter bündeln  wen der Datei Manager auf geht  und es unten in den drobtown menü packen\n\n— aus dem alten Prüfbogen, 03.09.2026, kaysiebke" },
+    item_200: { status: "pass", note: "es fehlt die Möglichkeit Symbole die es ein der Sammlung nicht gibt hinzu zu fügen oder bauen zu können um Lücken zu schlissen\n\n— aus dem alten Prüfbogen, 04.09.2026, kaysiebke" },
+    item_27: { status: "fail", note: "Ich kann keine Fonds-Schrift auswählen, sondern nur ein Suchfeld sehen.\n\nLeider kann ich zu diesem tehem hir nicht in der richtigen robig angaben machen da dies schlicht fehlt daher mus ich es so machen.\n\n— aus dem alten Prüfbogen, 04.09.2026, kaysiebke" },
+    item_201: { status: "pass", note: "1.was mich stört ist das der Register(wie Wort) so lehr aussehen tut wen ich Microsoft wort oder liebre office als referenz nehme \n\n2. giebt es keine möglichkeit  die Register icons frei an zu ordnen z.b. in der ansicht OBERFLÄCHE,FENSTER,ZEIGEN;ZOOM\n\n3. Hir würde ich mir wünschen das du dier beshehende Schreibprogramme als vorlage nimmst  bzw als referens\n\n\n\nDas ganze wirkt so unfertig .vielleicht stelle ich mir ja auch nur selbst zu hohe ansprüche wen man andere schreipbrogramme gewöhnt bzw, die Anwender hir geben betehnde programme den tohn an und setzen die meslatte zimlich hoch\n\n— aus dem alten Prüfbogen, 03.09.2026, kaysiebke" },
+    item_195: { status: "fail", note: "unter fenster weckseln hast du meine Handy Schreibhielfe ferlink. ich denke damit war das Fenster weckseln nicht gemeint ?\n\n— aus dem alten Prüfbogen, 04.09.2026, Kay Siebke" },
+  };
+}
+
+function switchTab(tabId) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
+    
+    document.getElementById(tabId).classList.add('active');
+    
+    if (tabId === 'catalog-tab') {
+        document.querySelectorAll('.tab-button')[0].classList.add('active');
+    } else {
+        document.querySelectorAll('.tab-button')[1].classList.add('active');
+    }
+}
+
+function init() {
+    const container = document.getElementById('catalog');
+    let idCounter = 0;
+
+    // Vorherigen Stand laden — ist noch keiner da (erster Aufruf auf diesem
+    // Gerät), werden die 6 Meldungen aus dem vorherigen Prüfbogen direkt bei
+    // ihrem jeweiligen Menüpunkt vorbelegt (Status + Anmerkung/Testergebnis),
+    // damit sie nicht verschwinden.
+    const gespeichert = laden();
+    const gespeicherteItems = gespiegelteAntwortenZusammenfuehren(altenStandUebersetzen(
+        gespeichert ? (gespeichert.items || {}) : alteBerichteAlsEintraege()));
+
+    rawData.forEach(group => {
+        const catDiv = document.createElement('div');
+
+        let itemsHtml = '';
+        let schonBearbeitet = false;
+        group.items.forEach(item => {
+            idCounter++;
+            /* Die Kennung kommt aus Kategorie und Name, nicht mehr aus einer
+               laufenden Nummer.
+
+               Vorher hieß der erste Punkt „item_1", der zweite „item_2" und so
+               fort — und damit rutschte der ganze Stand um eins, sobald
+               irgendwo in der Mitte ein Punkt dazukam. Wer hundert Häkchen
+               gesetzt hatte, fand sie hinterher bei den falschen Punkten.
+
+               Aus Kategorie und Name gebildet bleibt sie, wo sie hingehört,
+               auch wenn davor zehn Punkte eingefügt werden. */
+            const isLunivo = item.includes('*');
+            const cleanName = item.replace('*', '');
+            const itemId = kennungFuer(group.cat, cleanName);
+
+            /* Zusammengelegte Stelle: keine eigene Zeile, kein eigener
+               testData-Eintrag — nur ein Verweis auf die Hauptstelle. Deren
+               Antworten wurden oben schon in gespeicherteItems[haupt]
+               zusammengeführt. */
+            if (MERGE_ZIEL[itemId]) {
+                itemsHtml += mergeVerweisZeile(cleanName, MERGE_ZIEL[itemId]);
+                return;
+            }
+
+            const alterEintrag = gespeicherteItems[itemId];
+            testData[itemId] = alterEintrag
+                ? { status: alterEintrag.status || 'open', note: alterEintrag.note || '', bilder: bilderVon(alterEintrag), notizen: Array.isArray(alterEintrag.notizen) ? alterEintrag.notizen : [] }
+                : { status: 'open', note: '', bilder: [], notizen: [] };
+            notizenSicherstellen(itemId);
+            if (testData[itemId].status !== 'open') schonBearbeitet = true;
+
+            itemsHtml += `
+                <div class="item ${kiKlasse(itemId)}" id="punkt_${itemId}" data-name="${cleanName.toLowerCase()}" data-cat="${group.cat.toLowerCase()}" data-ki="${KI_STAND[itemId] ? 'ja' : 'nein'}">
+                    <div>
+                        <strong>${cleanName}</strong>
+                        ${isLunivo ? '<span class="lunivo-tag">Lunivo</span>' : ''}
+                        ${spiegelZeile(itemId)}
+                        ${mergeHinweisHaupt(itemId)}
+                    </div>
+                    <div>
+                        <select id="status_${itemId}" onchange="updateItem('${itemId}')">
+                            <option value="open">Offen</option>
+                            <option value="pass">OK</option>
+                            <option value="fail">Fehler</option>
+                            <option value="nt">Nicht zutreffend</option>
+                        </select>
+                    </div>
+                    <div class="ablage" ondragover="ablageAn(event, this)" ondragleave="ablageAus(this)" ondrop="ablageFallen(event, this, '${itemId}')">
+                        <div class="notiz-eingabe">
+                            <textarea id="note_${itemId}" placeholder="Neue Anmerkung eintragen... Enter übernimmt (Umschalt+Enter: Zeilenumbruch)" onkeydown="itemNotizTaste(event, '${itemId}')" onpaste="bildAusZwischenablage(event, '${itemId}')" onblur="addItemNotiz('${itemId}')"></textarea>
+                            <button type="button" onclick="addItemNotiz('${itemId}')">Hinzufügen</button>
+                        </div>
+                        <div class="notiz-liste" id="notizliste_${itemId}"></div>
+                        <div class="feld-status" id="feldstatus_${itemId}"></div>
+                        <div class="bild-zeile">
+                            <button type="button" class="bild-knopf" onclick="bildWaehlen('${itemId}')">Bild hinzufügen</button>
+                            <span class="bild-hinweis">oder mit Strg+V einfügen / hierher ziehen</span>
+                        </div>
+                        <div class="bilder" id="bilder_${itemId}"></div>
+                        ${vorratBlock(itemId)}
+                        ${istBlock(itemId)}
+                        ${kiBlock(itemId)}
+                    </div>
+                </div>
+            `;
+        });
+
+        catDiv.className = 'category' + (schonBearbeitet ? '' : ' eingeklappt');
+        catDiv.innerHTML = `
+            <div class="category-header" onclick="kategorieUmschalten(this)">
+                <span class="kategorie-pfeil">▾</span><span class="kategorie-name">${group.cat}</span>
+            </div>
+            <div class="item-list">${itemsHtml}</div>
+        `;
+        container.appendChild(catDiv);
+    });
+
+    freeNotesList = gespeichert ? (gespeichert.notesList || []) : [];
+
+    /* Der Nachtrag aus der Werkstatt — vor dem Eintragen in die Felder,
+       damit Status und Notizen gleich mitgezeichnet werden. */
+    nachtragEinspielen();
+
+    // Gespeicherten (oder vorbelegten) Stand in die frisch gebauten Felder eintragen
+    Object.keys(testData).forEach(id => {
+        const statusEl = document.getElementById(`status_${id}`);
+        if (statusEl) statusEl.value = testData[id].status;
+        renderItemNotizen(id);
+        bilderZeigen(id);
+        feldStatusZeigen(id);
+    });
+
+    ohnePunktZeigen();
+    briefkastenStarten();
+    kiZeileZeigen();
+    kopfZahlenZeigen();
+    updateStats();
+    renderNotes();
+    spiegelUebersichtZeigen();
+    speichern();
+}
+
+/* Enter uebernimmt den Eintrag fest in die Liste, so wie an den anderen
+   Eingabefeldern des Programms (Enter bestaetigt) — Umschalt+Enter bleibt
+   frei fuer einen Zeilenumbruch, weil ein Kommentar mehrzeilig sein darf.
+   Vorher gab es nur den Knopf; ein Eintrag, der nur im Feld stand und nie
+   angeklickt wurde, war nirgends dauerhaft gelandet. */
+function freeNoteTaste(event) {
+    if (event.key !== 'Enter' || event.shiftKey) return;
+    event.preventDefault();
+    addFreeNote();
+}
+
+/* Nicht nur auf das Attribut im HTML verlassen — falls diese Seite je in
+   ein schon offenes Fenster nur nachgeladen (nicht ganz neu geparst)
+   wird, bekommt ein vorhandenes Feld ein neues onkeydown-Attribut nicht
+   sicher hinzugefügt. addEventListener bindet direkt an das Element und
+   greift in jedem Fall, weil dieser Code hier bei jeder Ausführung des
+   Scripts läuft. */
+(function freieKommentareEnterSicherstellen() {
+    const feld = document.getElementById('freeNoteInput');
+    if (feld && !feld.dataset.enterGebunden) {
+        feld.dataset.enterGebunden = '1';
+        feld.addEventListener('keydown', freeNoteTaste);
+    }
+})();
+
+/* Sichtbare Bestätigung, dass ein Feld gerade gespeichert wurde — kein
+   „hat es geklappt?" mehr, sondern ein kurzer grüner Rahmen. */
+function feldGespeichertZeigen(el) {
+    if (!el) return;
+    el.classList.add('feld--gespeichert');
+    setTimeout(function () { el.classList.remove('feld--gespeichert'); }, 900);
+}
+
+function addFreeNote() {
+    const input = document.getElementById('freeNoteInput');
+    const text = input.value.trim();
+    if (!text && neueBilder.length === 0) return;
+
+    /* Derselbe Text, gerade erst abgelegt (z. B. Enter zweimal ausgeloest) —
+       keinen zweiten Eintrag daraus machen, sondern den vorhandenen zeigen. */
+    const vorhandene = text && freeNotesList.find(function (n) {
+        return (n.text || '').trim() === text;
+    });
+    if (vorhandene) {
+        input.value = '';
+        renderNotes();
+        const karte = document.getElementById('notiz_' + vorhandene.id);
+        if (karte) {
+            karte.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            karte.classList.add('note-card--schon-da');
+            setTimeout(function () { karte.classList.remove('note-card--schon-da'); }, 1600);
+        }
+        return;
+    }
+
+    const noteObj = {
+        id: Date.now(),
+        text: text,
+        bilder: neueBilder,
+        timestamp: new Date().toLocaleString('de-DE')
+    };
+
+    freeNotesList.unshift(noteObj);
+    input.value = '';
+    neueBilder = [];
+    bilderZeigen('#neu');
+    renderNotes();
+    speichern();
+
+    /* Sichtbar machen, dass der Eintrag jetzt fest in der Liste steht —
+       nicht nur verschwundener Text im Feld. */
+    const neueKarte = document.getElementById('notiz_' + noteObj.id);
+    if (neueKarte) {
+        neueKarte.classList.add('note-card--neu');
+        setTimeout(function () { neueKarte.classList.remove('note-card--neu'); }, 1600);
+    }
+}
+
+function deleteFreeNote(id) {
+    freeNotesList = freeNotesList.filter(n => n.id !== id);
+    renderNotes();
+    speichern();
+}
+
+/* ============================================================
+   ANMERKUNGEN JE PUNKT — als feste Liste, genau wie der freie
+   Kommentarbereich oben: eintippen, Enter (oder der Knopf), der Text
+   verlaesst das Feld und steht als eigener, fester Eintrag in einer
+   Liste darunter. Kein Text, der nur "irgendwo im Feld" haengen bleibt.
+
+   testData[id].note bleibt als einfacher zusammengefasster Text daneben
+   bestehen (fuer den Briefkasten-Export und fuer alte Antworten aus
+   frueheren Sitzungen) — die Liste in .notizen ist die neue, sichtbare
+   Fassung davon.
+   ============================================================ */
+function notizenSicherstellen(id) {
+    const e = testData[id];
+    if (!e) return;
+    if (!Array.isArray(e.notizen)) e.notizen = [];
+    if (e.notizen.length === 0 && (e.note || '').trim()) {
+        e.notizen.push({ id: 'alt-' + id, text: e.note.trim(), timestamp: 'übernommen aus dem bisherigen Stand' });
+    }
+}
+
+function itemNotizText(id) {
+    return (testData[id].notizen || []).map(function (n) { return n.text; }).join('\n\n');
+}
+
+function itemNotizTaste(event, id) {
+    if (event.key !== 'Enter' || event.shiftKey) return;
+    event.preventDefault();
+    addItemNotiz(id);
+}
+
+function addItemNotiz(id) {
+    const feld = document.getElementById('note_' + id);
+    if (!feld) return;
+    const text = feld.value.trim();
+    if (!text) return;
+    if (!Array.isArray(testData[id].notizen)) testData[id].notizen = [];
+    testData[id].notizen.push({ id: Date.now(), text: text, timestamp: new Date().toLocaleString('de-DE') });
+    testData[id].note = itemNotizText(id);
+    feld.value = '';
+    renderItemNotizen(id);
+    feldStatusZeigen(id);
+    updateStats();
+    speichern();
+}
+
+function deleteItemNotiz(id, notizId) {
+    testData[id].notizen = (testData[id].notizen || []).filter(function (n) { return n.id !== notizId; });
+    testData[id].note = itemNotizText(id);
+    renderItemNotizen(id);
+    feldStatusZeigen(id);
+    updateStats();
+    speichern();
+}
+
+function renderItemNotizen(id) {
+    const kasten = document.getElementById('notizliste_' + id);
+    if (!kasten) return;
+    const liste = testData[id].notizen || [];
+    kasten.innerHTML = liste.map(function (n) {
+        return '<div class="note-card">'
+            + '<div><div class="note-text">' + escapeHtml(n.text) + '</div>'
+            + '<div class="note-time">' + escapeHtml(n.timestamp) + '</div></div>'
+            + '<button class="btn-delete" type="button" onclick="deleteItemNotiz(\'' + id + '\',' + JSON.stringify(n.id) + ')">Löschen</button>'
+            + '</div>';
+    }).join('');
+}
+
+function renderNotes() {
+    const container = document.getElementById('notesList');
+    if (freeNotesList.length === 0) {
+        container.innerHTML = '<p style="font-size:0.85em; color:#94a3b8; margin:0;">Noch keine freien Kommentare hinzugefügt.</p>';
+        return;
+    }
+
+    let html = '';
+    freeNotesList.forEach(note => {
+        html += `
+            <div class="note-card" id="notiz_${note.id}">
+                <div>
+                    <div class="note-text">${escapeHtml(note.text)}</div>
+                    <div class="bilder">${bilderHtml(bilderVon(note), 'notiz', note.id)}</div>
+                    <div class="note-time">${note.timestamp}</div>
+                </div>
+                <button class="btn-delete" type="button" onclick="deleteFreeNote(${note.id})">Löschen</button>
+            </div>
+        `;
+    });
+    container.innerHTML = html;
+}
+
+/* ============================================================
+   BILDER
+
+   Ein Bild gehoert zu genau einem Punkt der Liste (oder zu einem
+   freien Kommentar) und liegt als Datenzeile im selben Stand wie
+   die Anmerkungen — es geht also mit „Protokoll Exportieren" mit
+   und kommt mit „Importieren" zurueck.
+
+   Drei Wege hinein: der Knopf, Strg+V ins Anmerkungsfeld, oder das
+   Bild in das Feld ziehen.
+
+   Jedes Bild wird vorher verkleinert (lange Kante hoechstens 1400
+   Punkte, JPEG). Ein Bildschirmfoto von 3 MB wird so zu etwa 200 KB.
+   Das ist noetig: Der Speicher des Browsers fasst nur ein paar
+   Megabyte, und da liegt der ganze Pruefstand drin.
+   ============================================================ */
+
+/* ============================================================
+   BILDER AUS DEN ORDNERN  (Stand 11.09.2026)
+
+   Aufnahmen aus WPS Writer — die Vorlage, nicht das eigene
+   Programm. Sie liegen als Dateien neben dieser Seite und
+   gehoeren fest zum Bogen: Sie stehen bei jedem, der ihn
+   oeffnet, und belegen keinen Platz im Browserspeicher.
+
+   Der Schluessel ist dieselbe Kennung wie beim Punkt selbst
+   (Kategorie|Name). Dasselbe Bild kann bei mehreren Punkten
+   stehen — das Umbruch-Menue zeigt alle drei Umbrucharten auf
+   einmal, das Datumsfenster Datum und Uhrzeit.
+
+   Eigene Bilder kommen weiterhin darunter dazu; die hier sind
+   nicht zu loeschen, damit die Vorlage nicht aus Versehen
+   verschwindet.
+   ============================================================ */
+
+const VORRAT = {
+    "einfügen|bild": [{"datei": "bilder/m01.jpg", "titel": "WPS Writer: der Kontextreiter „Bildtools“ an einem eingefügten Bild — Zuschneiden nach Form, Bilder komprimieren, Transparente Farbe, Bildeffekte, Textumbruch, dazu die Leiste „Formatierung“ rechts"}],
+    "einfügen|datum": [{"datei": "bilder/e05.jpg", "titel": "WPS Writer: Fenster „Datum und Uhrzeit“ mit Formatliste und Sprache"}],
+    "einfügen|diagramm": [{"datei": "bilder/m12.jpg", "titel": "WPS Writer: das Fenster „Diagramm einfügen“ — Spalte, Linie, Kreis, Balken, Fläche, XY, Kurs, Netz, Kombination, Vorlagen, mit großer Vorschau"}],
+    "einfügen|leere-seite": [{"datei": "bilder/m08.jpg", "titel": "WPS Writer: Leere Seite — Vertikal oder Horizontal, also im Hoch- oder Querformat"}],
+    "einfügen|seitenumbruch": [{"datei": "bilder/m10.jpg", "titel": "WPS Writer: die Umbrüche im Reiter Einfügen — Seitenumbruch (Strg+Enter), Spaltenumbruch, Textflussumbruch (Umschalt+Enter), vier Abschnittsumbrüche"}, {"datei": "bilder/m11.jpg", "titel": "WPS Writer, QuickInfo: „Nächste Seite an der Cursorposition beginnen und der Inhalt nach dem Cursor wird auf die neue Seite versetzt.“"}],
+    "einfügen|seitenzahl": [{"datei": "bilder/e08.jpg", "titel": "WPS Writer: Seitenzahl — fünf Vorlagen für die Kopfzeile, fünf für die Fußzeile, dazu „Seitenzahl einfügen…“ und Seitenzahl löschen"}, {"datei": "bilder/m15.jpg", "titel": "WPS Writer: der Kontextreiter „Kopf- und Fußzeile“ mit dem Fenster „Seitenzahl einfügen“ — Format, Position, Übernehmen für"}, {"datei": "bilder/m16.jpg", "titel": "WPS Writer, QuickInfo: Einstellungen für Seitenzahlen auf den aktuellen Abschnitt oder das gesamte Dokument anwenden"}],
+    "einfügen|smartart": [{"datei": "bilder/e07.jpg", "titel": "WPS Writer: „WPSArt-Grafik auswählen“ mit Vorschau und Erklärung"}],
+    "einfügen|sonderzeichen": [{"datei": "bilder/m22.jpg", "titel": "WPS Writer: die Symbol-Tafel — zuletzt verwendete und benutzerdefinierte Zeichen, dazu „More Symbols…“"}],
+    "einfügen|textfeld": [{"datei": "bilder/e03.jpg", "titel": "WPS Writer: Textfeld — Horizontal, Vertikal, Multi-line Text"}, {"datei": "bilder/m21.jpg", "titel": "WPS Writer: dasselbe Menü in neuerer Fassung — Horizontal, Vertikal, „Mehrzeiliger Text“ auf Deutsch"}],
+    "einfügen|uhrzeit": [{"datei": "bilder/e05.jpg", "titel": "WPS Writer: Fenster „Datum und Uhrzeit“ mit Formatliste und Sprache"}],
+    "einfügen|wordart": [{"datei": "bilder/e04.jpg", "titel": "WPS Writer: WordArt-Formatvorlagen"}],
+    "einfügen|zeichnen": [{"datei": "bilder/e01.jpg", "titel": "WPS Writer: Formen — Linie, Rechteck, Standardformen, Blockpfeile, Formelformen, Flussdiagramm, Sterne und Banner, Callouts, „Neuer Zeichenbereich“"}],
+    "kontexttabellen|diagrammtools": [{"datei": "bilder/m13.jpg", "titel": "WPS Writer: der Kontextreiter „Diagrammtools“ am eingefügten Diagramm — Diagrammelement hinzufügen, Schnelllayout, Farbe ändern, Formatvorlagen, Daten auswählen/bearbeiten"}],
+    "kontexttabellen|kopf-und-fußzeilenwerkzeuge": [{"datei": "bilder/m15.jpg", "titel": "WPS Writer: der Kontextreiter „Kopf- und Fußzeile“ mit dem Fenster „Seitenzahl einfügen“ — Format, Position, Übernehmen für"}],
+    "seitenlayout|ausrichtung": [{"datei": "bilder/l05.jpg", "titel": "WPS Writer: Hochformat / Querformat"}, {"datei": "bilder/p10.jpg", "titel": "WPS Writer, QuickInfo: „Zwischen Hochformat- und Querformatmodus der Seiten umschalten.“"}],
+    "seitenlayout|papierformat": [{"datei": "bilder/l06.jpg", "titel": "WPS Writer: Papierformate mit Maßen — A4, A3, die chinesischen Formate, Umschläge, „Weitere Papierformate…“"}, {"datei": "bilder/p11.jpg", "titel": "WPS Writer, QuickInfo: „Papierformat für den aktuellen Abschnitt oder das gesamte Dokument auswählen.“"}],
+    "seitenlayout|seitenfarbe": [{"datei": "bilder/l11.jpg", "titel": "WPS Writer: Seitenfarbe, mit Hintergrundbild und Wasserzeichen im selben Menü"}, {"datei": "bilder/p19.jpg", "titel": "WPS Writer, QuickInfo: „Farbe für den Hintergrund der Seite auswählen.“"}],
+    "seitenlayout|seitenrahmen": [{"datei": "bilder/l12.jpg", "titel": "WPS Writer: „Rahmen und Schattierung“, Reiter Seitenrand — Übernehmen für: Gesamtes Dokument"}],
+    "seitenlayout|seitenränder": [{"datei": "bilder/l04.jpg", "titel": "WPS Writer: Seitenränder — Normal, Schmal, Moderat, Breit, dazu „Benutzerdefinierte Seitenränder…“"}],
+    "seitenlayout|spalten": [{"datei": "bilder/l07.jpg", "titel": "WPS Writer: Spalten — Eins, Zwei, Drei, „Mehr Spalten…“"}, {"datei": "bilder/s01.jpg", "titel": "WPS Writer, QuickInfo: „Text in eine oder mehrere Spalten aufteilen.“"}],
+    "seitenlayout|umbruch-abschnittsumbruch": [{"datei": "bilder/l09.jpg", "titel": "WPS Writer: alle Umbrüche in einem Menü — Seite, Spalte, Textfluss, vier Abschnittsumbrüche"}],
+    "seitenlayout|umbruch-seitenumbruch": [{"datei": "bilder/l09.jpg", "titel": "WPS Writer: alle Umbrüche in einem Menü — Seite, Spalte, Textfluss, vier Abschnittsumbrüche"}],
+    "seitenlayout|umbruch-spaltenumbruch": [{"datei": "bilder/l09.jpg", "titel": "WPS Writer: alle Umbrüche in einem Menü — Seite, Spalte, Textfluss, vier Abschnittsumbrüche"}],
+    "seitenlayout|wasserzeichen": [{"datei": "bilder/e02.jpg", "titel": "WPS Writer: Wasserzeichen — eigenes hinzufügen, dazu die deutschen Vorlagen VERTRAULICH, NICHT KOPIEREN, ORIGINAL, BEISPIEL, STRENG GEHEIM, EILT"}, {"datei": "bilder/m20.jpg", "titel": "WPS Writer: weiter unten im selben Menü die englischen Vorlagen — CONFIDENTIAL, DO NOT COPY, ORIGINAL, SAMPLE, TOP SECRET, URGENT"}, {"datei": "bilder/m18.jpg", "titel": "WPS Writer, QuickInfo: „Inaktiven Text und Bild nach dem Inhalt auf der Seite einfügen“ — für Verschlüsselt, Vertraulich, Nicht kopieren oder ein Copyright-Logo"}],
+    "seitenlayout|zeilennummern": [{"datei": "bilder/l10.jpg", "titel": "WPS Writer: Zeilennummern — Keine, Fortlaufend, jede Seite neu, jeder Abschnitt neu, unterdrücken, verstecken, Einstellungen"}],
+    "start-absatzlayout|absatzrahmen": [{"datei": "bilder/p15.jpg", "titel": "WPS Writer: „Rahmen und Schattierung“, Reiter Rahmen — Ohne, Kontur, Alle, Raster, Anpassen; Übernehmen für: Absatz"}],
+    "start-absatzlayout|absatzschattierung": [{"datei": "bilder/s07.jpg", "titel": "WPS Writer: Schattierung, Farbfeld"}, {"datei": "bilder/p17.jpg", "titel": "WPS Writer: derselbe Dialog, Reiter Schattierung — Ausfüllen, Muster, Vorschau, Übernehmen für: Absatz"}],
+    "start-absatzlayout|zeilenabstand": [{"datei": "bilder/s06.jpg", "titel": "WPS Writer: Zeilenabstand 1,0 bis 3,0 und „Mehr…“"}],
+    "start-absatz|aufzählung": [{"datei": "bilder/n17.jpg", "titel": "WPS Writer: die Auswahl der Aufzählungszeichen — acht Vorlagen, „Kein“ und „Weitere Aufzählungszeichen…“"}, {"datei": "bilder/n18.jpg", "titel": "WPS Writer, QuickInfo: „Liste mit Aufzählungszeichen erstellen.“"}],
+    "start-absatz|nummerierung": [{"datei": "bilder/n19.jpg", "titel": "WPS Writer, QuickInfo: „Liste mit Nummerierungen erstellen.“"}, {"datei": "bilder/n20.jpg", "titel": "WPS Writer: die Nummerierungsformate — 1.2.3., 1)2)3), I.II.III., A.B.C., a)b)c), a.b.c., i.ii.iii."}],
+    "start-absatz|sortieren": [{"datei": "bilder/s05.jpg", "titel": "WPS Writer: das Fenster „Text sortieren“ — Absätze, Typ Text, auf- oder absteigend, bis zu drei Stufen"}, {"datei": "bilder/m04.jpg", "titel": "WPS Writer, QuickInfo: „Die aktuelle Auswahl in alphabetischer oder numerischer Reihenfolge anordnen.“"}],
+    "start-absatz|steuerzeichen": [{"datei": "bilder/m06.jpg", "titel": "WPS Writer, QuickInfo: „Formatierungscodes und Absatzlayout-Schaltflächen im Dokument ein- oder ausblenden.“"}, {"datei": "bilder/m07.jpg", "titel": "WPS Writer: das Menü — Formatierungszeichen anzeigen/ausblenden und Absatzlayout anzeigen/ausblenden, zwei getrennte Schalter"}],
+    "start-absatz|zeilenabstand": [{"datei": "bilder/s06.jpg", "titel": "WPS Writer: Zeilenabstand 1,0 bis 3,0 und „Mehr…“"}],
+    "start-schriftart|durchgestrichen": [{"datei": "bilder/n03.jpg", "titel": "WPS Writer: das Menü am Pfeil — Durchgestrichen und Betonungszeichen"}, {"datei": "bilder/n04.jpg", "titel": "WPS Writer, QuickInfo: „Linie durch die Mitte des markierten Textes ziehen.“"}],
+    "start-schriftart|formatierung-löschen": [{"datei": "bilder/n13.jpg", "titel": "WPS Writer, QuickInfo: „Alle Formatierungen aus der Markierung löschen und nur reinen Text belassen.“"}],
+    "start-schriftart|groß-kleinschreibung": [{"datei": "bilder/s04.jpg", "titel": "WPS Writer: das Aa-Menü — Groß-/Kleinschreibung umwandeln, Eingeschlossene Zeichen, Zeichenumriss, Phonetische Leitzeichen"}, {"datei": "bilder/n15.jpg", "titel": "WPS Writer, QuickInfo: Großbuchstaben, Kleinbuchstaben oder erster Buchstabe groß"}],
+    "start-schriftart|hervorheben": [{"datei": "bilder/s02.jpg", "titel": "WPS Writer: Hervorheben, Farbfeld"}, {"datei": "bilder/n09.jpg", "titel": "WPS Writer, QuickInfo: „Text so hervorheben, als wäre er mit einem Markerstift markiert worden.“"}],
+    "start-schriftart|hochgestellt": [{"datei": "bilder/n05.jpg", "titel": "WPS Writer, QuickInfo: „Kleine Buchstaben über der Textgrundlinie erstellen.“ (Strg+Umschalt+=)"}],
+    "start-schriftart|schrift-vergrößern": [{"datei": "bilder/n11.jpg", "titel": "WPS Writer, QuickInfo: „Schriftgrad vergrößern.“ (Strg+])"}],
+    "start-schriftart|schrift-verkleinern": [{"datei": "bilder/n12.jpg", "titel": "WPS Writer, QuickInfo: „Schriftgrad verkleinern.“ (Strg+[)"}],
+    "start-schriftart|schriftfarbe": [{"datei": "bilder/s03.jpg", "titel": "WPS Writer: Schriftfarbe — Thema, Standard, Verlauf, Pipette"}, {"datei": "bilder/n10.jpg", "titel": "WPS Writer, QuickInfo: „Textfarbe ändern.“ — der Pfeil öffnet die Farbauswahl"}],
+    "start-schriftart|texteffekte": [{"datei": "bilder/n07.jpg", "titel": "WPS Writer, QuickInfo: Grafikeffekt hinzufügen — Schatten, Leuchteffekt, Spiegelung"}, {"datei": "bilder/n08.jpg", "titel": "WPS Writer: das Menü — WordArt, Schatten, Spiegelung, Leuchteffekt, 3D-Drehung und Transformieren (beide grau), „Weitere Texteffekte…“"}],
+    "start-schriftart|tiefgestellt": [{"datei": "bilder/n06.jpg", "titel": "WPS Writer, QuickInfo: „Kleine Buchstaben unterhalb der Textgrundlinie erstellen.“ (Strg+=)"}],
+    "start-schriftart|unterstreichungsart": [{"datei": "bilder/n02.jpg", "titel": "WPS Writer: die Linienarten — einfach, doppelt, gepunktet, gestrichelt, Strich-Punkt, Wellenlinie, dazu „Mehr Unterstreichungen…“ und Unterstreichungsfarbe"}],
+    "start-zwischenablage|ausschneiden": [{"datei": "bilder/u01.jpg", "titel": "WPS Writer, QuickInfo: „Die Auswahl ausschneiden und in die Systemzwischenablage verschieben.“ (Strg+X)"}],
+    "start-zwischenablage|format-übertragen": [{"datei": "bilder/n01.jpg", "titel": "WPS Writer, QuickInfo: „Formatierung an einer Stelle kopieren und an einer anderen anwenden. Doppelklicken für mehrere Stellen.“"}],
+    "überprüfen|alle-annehmen": [{"datei": "bilder/u11.jpg", "titel": "WPS Writer: das Menü Annehmen — Änderung annehmen, Formatänderungen, angezeigte Änderungen, „Alle Änderungen in Dokument annehmen“ (die oberen drei grau, weil keine Änderung markiert ist)"}],
+    "überprüfen|alle-kommentare-löschen": [{"datei": "bilder/u05.jpg", "titel": "WPS Writer: das Menü unter Löschen — „Kommentar löschen“ und „Alle Kommentare im Dokument löschen“"}],
+    "überprüfen|bearbeitung-sperren": [{"datei": "bilder/u14.jpg", "titel": "WPS Writer, QuickInfo zu „Bearbeitung einschränken“: Formatierungsänderungen verhindern, Protokollierung erzwingen oder nur die Kommentarfunktion erlauben"}],
+    "überprüfen|kommentar-löschen": [{"datei": "bilder/u05.jpg", "titel": "WPS Writer: das Menü unter Löschen — „Kommentar löschen“ und „Alle Kommentare im Dokument löschen“"}],
+    "überprüfen|korrektursprache": [{"datei": "bilder/u02.jpg", "titel": "WPS Writer: das Menü unter Rechtschreibprüfung — „Rechtschreibprüfung… (F7)“ und „Sprache festlegen…“"}],
+    "überprüfen|markup-anzeigen": [{"datei": "bilder/u08.jpg", "titel": "WPS Writer: das Auswahlfeld — Endgültige Version enthält Markups, Endgültig, Originalversion enthält Markups, Original"}, {"datei": "bilder/u09.jpg", "titel": "WPS Writer: das Menü Markup anzeigen — Kommentare, Einfügungen und Löschungen, Formatierung (alle drei mit Haken), Bearbeiter, Ballons verwenden"}],
+    "überprüfen|neuer-kommentar": [{"datei": "bilder/m14.jpg", "titel": "WPS Writer: ein neuer Kommentar mit Namen und Zeitstempel, Sprechblase am rechten Rand, Verbindungslinie zum Text und Eingabefeld"}],
+    "überprüfen|prüfen": [{"datei": "bilder/u06.jpg", "titel": "WPS Writer: die ganze Reiterzeile ÜBERPRÜFEN — Rechtschreibprüfung, Wörter zählen, Kommentar einfügen, Löschen, Vorherige/Weiter, Änderungen nachverfolgen, Markup anzeigen, Überprüfen, Annehmen, Ablehnen, Vergleichen, InkDrawEnter, Bearbeitung einschränken"}],
+    "überprüfen|rechtschreibung": [{"datei": "bilder/u02.jpg", "titel": "WPS Writer: das Menü unter Rechtschreibprüfung — „Rechtschreibprüfung… (F7)“ und „Sprache festlegen…“"}],
+    "überprüfen|wörter-zählen": [{"datei": "bilder/u03.jpg", "titel": "WPS Writer: das Fenster „Wörter zählen“ — Seiten, Wörter, Zeichen mit und ohne Leerzeichen, Absätze, nicht-asiatische Wörter, asiatische Zeichen, dazu der Haken für Textfelder, Fuß- und Endnoten"}],
+    "überprüfen|änderung-annehmen": [{"datei": "bilder/u11.jpg", "titel": "WPS Writer: das Menü Annehmen — Änderung annehmen, Formatänderungen, angezeigte Änderungen, „Alle Änderungen in Dokument annehmen“ (die oberen drei grau, weil keine Änderung markiert ist)"}],
+    "überprüfen|änderungen-verfolgen": [{"datei": "bilder/u07.jpg", "titel": "WPS Writer: „Änderungen nachverfolgen (Strg+Umschalt+E)“, Optionen zum Nachverfolgen und „Benutzernamen ändern…“"}],
+    "überprüfen|überarbeitungsbereich": [{"datei": "bilder/u10.jpg", "titel": "WPS Writer: das Menü Überprüfen — Bearbeiter, Überprüfungszeit, Überarbeitungsfenster"}]
+};
+
+/* Aufnahmen, zu denen es in der Liste keinen Punkt gibt. */
+const OHNE_PUNKT = [
+    { dateien: ["bilder/s09.jpg"], punkt: "START > Wort-Extras", text: "Absätze neu anordnen, Smart-Anordnen, Zeilenumbruch ins Return konvertieren, Absatzeinzug um 2 Zeichen, leere Absätze einfügen — eine ganze Gruppe, die in der Liste nicht vorkommt." },
+    { dateien: ["bilder/m02.jpg", "bilder/m03.jpg"], punkt: "START > Zeichenskalierung / Zeichen kombinieren", text: "„Zeichenskalierung des ausgewählten Dokuments einrichten“, dazu das Menü mit Zeichen kombinieren, Zwei Zeilen in einer und Fit Text (grau). Steht neben den Absatzschaltern und fehlt in der Liste." },
+    { dateien: ["bilder/n16.jpg"], punkt: "START > Zeichenschattierung", text: "„Markierten Text mit grauer Farbe schattieren.“ Die Liste kennt nur die Absatzschattierung; dieses Zeichen-Werkzeug steht daneben in der Schriftart-Gruppe." },
+    { dateien: ["bilder/p01.jpg", "bilder/p02.jpg"], punkt: "SEITENLAYOUT > Designs", text: "„Ändern Sie den Gesamtentwurf des gesamten Dokuments, einschließlich Farben, Schriftarten und Effekte.“ — dazu die Galerie mit den Aa-Kacheln. Eine eigene Gruppe ganz links im Band, die in der Liste fehlt." },
+    { dateien: ["bilder/l01.jpg", "bilder/p04.jpg"], punkt: "SEITENLAYOUT > Farben", text: "Die Designfarben (Larissa, Nähe, Winkel, Ananke, Apotheke, Ganymed …) und die QuickInfo „Ändern Sie die Farben des aktuellen Designs.“" },
+    { dateien: ["bilder/l02.jpg", "bilder/p06.jpg"], punkt: "SEITENLAYOUT > Schriftarten", text: "Die Design-Schriftpaare (Ganymed/Verdana, Austin/Century Gothic, Kalligrafie/Cambria+Calibri …) und die QuickInfo „Ändern Sie die Schriftarten des aktuellen Designs.“" },
+    { dateien: ["bilder/l03.jpg", "bilder/p08.jpg"], punkt: "SEITENLAYOUT > Effekte", text: "Die Design-Effekte als Bildkacheln (Apotheke, Ganymed, Austin, Smoking …) und die QuickInfo „Ändern Sie die Effekte des aktuellen Designs.“" },
+    { dateien: ["bilder/l08.jpg"], punkt: "SEITENLAYOUT > Textrichtung", text: "Horizontal, vertikal in beide Richtungen, 90°, 270°, asiatische Zeichen, „Textrichtung ändern…“. Steht in der Liste nicht, ist im Programm aber gebaut." },
+    { dateien: ["bilder/u12.jpg"], punkt: "ÜBERPRÜFEN > Vergleichen", text: "„Vergleichen…“ und „Quelldokumente anzeigen“ — zwei Fassungen eines Dokuments gegeneinander halten. Steht in der Liste nicht." },
+    { dateien: ["bilder/u13.jpg"], punkt: "ÜBERPRÜFEN > InkDrawEnter (Freihand)", text: "Ein eigener Kontextreiter mit Stiften, Textmarkern, Radierer, Farbfeldern und „Exit“ — Anmerkungen mit der Hand ins Dokument. Fehlt in der Liste." }
+];
+
+/* ============================================================
+   IST — Aufnahmen aus LUNIVO OFFICE
+
+   Nicht zu verwechseln mit der Vorlage: Hier steht, wie es im
+   eigenen Programm heute aussieht. Der Vergleich Vorlage/IST
+   ist der ganze Zweck dieses Bogens, und bisher lag nur die
+   eine Haelfte vor.
+   ============================================================ */
+
+const IST = {
+    "überprüfen|prüfen": [{"datei": "bilder/u15.jpg", "titel": "Lunivo Office, Stand 12.09.2026: der eigene Reiter ÜBERPRÜFEN — Dokumentprüfung (Prüfen, Gründlich prüfen), Sprache, Barrierefreiheit, Kommentare, Änderungen, Schützen"}]
+};
+
+function istBlock(kennung) {
+    const bilder = IST[kennung];
+    if (!bilder) return '';
+    const eintraege = bilder.map(function (b) {
+        return '<div class="vorrat-eintrag">' +
+               '<img src="' + b.datei + '" alt="' + escapeHtml(b.titel) + '" ' +
+               'loading="lazy" onclick="bildGross(this.src)">' +
+               '<div class="was">' + escapeHtml(b.titel) + '</div></div>';
+    }).join('');
+    return '<div class="vorrat-block ist-block">' +
+           '<div class="vorrat-titel">Lunivo Office — so ist es heute</div>' +
+           eintraege + '</div>';
+}
+
+function vorratBlock(kennung) {
+    const bilder = VORRAT[kennung];
+    if (!bilder) return '';
+    /* Bild und Beschreibung nebeneinander — eine Kachel allein sagt nicht,
+       was darauf zu sehen ist, und aufklappen muss man dafuer auch nicht. */
+    const eintraege = bilder.map(function (b) {
+        return '<div class="vorrat-eintrag">' +
+               '<img src="' + b.datei + '" alt="' + escapeHtml(b.titel) + '" ' +
+               'loading="lazy" onclick="bildGross(this.src)">' +
+               '<div class="was">' + escapeHtml(b.titel) + '</div></div>';
+    }).join('');
+    return '<div class="vorrat-block vorrat">' +
+           '<div class="vorrat-titel">Vorlage WPS Writer — 1 zu 1 nachzubauen</div>' +
+           eintraege + '</div>';
+}
+
+function ohnePunktZeigen() {
+    const kasten = document.getElementById('ohne-punkt');
+    if (!kasten || OHNE_PUNKT.length === 0) return;
+    kasten.innerHTML =
+        '<h2>Aufnahmen ohne Punkt in der Liste</h2>' +
+        '<p class="vorspann">Diese Befehle stehen im WPS Writer, aber in keiner Kategorie dieses Bogens. ' +
+        'Sie liegen hier, damit sie nicht verlorengehen — entweder kommt der Punkt noch in die Liste, ' +
+        'oder es ist bewusst so entschieden.</p>' +
+        OHNE_PUNKT.map(function (e) {
+            const bilder = e.dateien.map(function (d) {
+                return '<img src="' + d + '" alt="' + escapeHtml(e.punkt) + '" loading="lazy" onclick="bildGross(this.src)">';
+            }).join('');
+            return '<div class="fehlt">' +
+                   '<div class="fehlt-bilder">' + bilder + '</div>' +
+                   '<div><div class="name">' + escapeHtml(e.punkt) + '</div>' +
+                   '<div class="was">' + escapeHtml(e.text) + '</div></div></div>';
+        }).join('');
+}
+
+/* ============================================================
+   KI-STAND  —  was Claude im Programm gemacht hat
+
+   Die Spalte rechts sagt bisher nur, was WPS Writer zeigt und
+   was der Prüfer anmerkt. Was die KI daran tatsächlich geändert
+   hat, stand nirgends — man musste es glauben.
+
+   Hier steht es, Punkt für Punkt:
+       stand    'fertig' | 'teil' | 'nein' | (fehlt: nicht bearbeitet)
+       datum    wann
+       text     was genau geändert wurde
+       bilder   Nachweis AUS LUNIVO OFFICE (nicht aus WPS)
+
+   Ohne Bild kein „fertig". Ein Eintrag ohne Nachweis ist eine
+   Behauptung, und genau die soll dieser Kasten abschaffen.
+
+   Stand 12.09.2026: leer. In dieser Sitzung wurde am Programm
+   selbst nichts geändert — nur an diesem Bogen. Alle Punkte
+   stehen deshalb auf „nicht bearbeitet".
+   ============================================================ */
+
+const KI_STAND = {
+};
+
+const KI_MARKEN = {
+    fertig: ['ist-fertig', 'umgesetzt'],
+    teil:   ['ist-teil',   'teilweise'],
+    nein:   ['ist-nein',   'nicht umgesetzt']
+};
+
+function kiBlock(kennung) {
+    const e = KI_STAND[kennung];
+    if (!e) {
+        return '<div class="ki-block">' +
+               '<div class="ki-kopf"><span class="ki-name">KI-Stand (Claude)</span>' +
+               '<span class="ki-marke">nicht bearbeitet</span></div>' +
+               '<div class="ki-leer">Am Programm wurde für diesen Punkt nichts geändert.</div></div>';
+    }
+    const m = KI_MARKEN[e.stand] || ['', e.stand];
+    const bilder = (e.bilder || []).map(function (b) {
+        return '<div class="vorrat-eintrag">' +
+               '<img src="' + b.datei + '" alt="Nachweis" loading="lazy" onclick="bildGross(this.src)">' +
+               '<div class="was">' + escapeHtml(b.titel || 'Nachweis aus Lunivo Office') + '</div></div>';
+    }).join('');
+    return '<div class="ki-block ' + m[0] + '">' +
+           '<div class="ki-kopf"><span class="ki-name">KI-Stand (Claude)</span>' +
+           '<span class="ki-marke ' + m[0] + '">' + m[1] + '</span>' +
+           (e.datum ? '<span class="ki-datum">' + escapeHtml(e.datum) + '</span>' : '') + '</div>' +
+           (e.text ? '<div class="ki-text">' + escapeHtml(e.text) + '</div>' : '') +
+           (bilder ? '<div class="ki-nachweis">' + bilder + '</div>' :
+                     '<div class="ki-leer">Kein Bildnachweis — solange der fehlt, gilt der Punkt als ungeprüft.</div>') +
+           '</div>';
+}
+
+/* Wie viele Punkte hat die KI angefasst, und bei wie vielen liegt ein Bild dabei? */
+function kiZaehlen() {
+    const z = { bearbeitet: 0, fertig: 0, mitBild: 0 };
+    Object.keys(KI_STAND).forEach(function (k) {
+        const e = KI_STAND[k];
+        z.bearbeitet++;
+        if (e.stand === 'fertig') z.fertig++;
+        if ((e.bilder || []).length) z.mitBild++;
+    });
+    return z;
+}
+
+function kiZeileZeigen() {
+    const kasten = document.getElementById('ki-zeile');
+    if (!kasten) return;
+    const z = kiZaehlen();
+    const gesamt = Object.keys(testData).length;
+    kasten.innerHTML = z.bearbeitet === 0
+        ? '<strong>KI-Stand:</strong> 0 von ' + gesamt + ' Punkten bearbeitet — noch kein Bildnachweis aus Lunivo Office.'
+        : '<strong>KI-Stand:</strong> ' + z.bearbeitet + ' von ' + gesamt + ' Punkten bearbeitet, ' +
+          z.fertig + ' als umgesetzt gemeldet, ' + z.mitBild + ' davon mit Bildnachweis.';
+}
+
+/* Nur die Punkte zeigen, an denen die KI etwas gemacht hat. */
+function nurKiFilter() {
+    document.getElementById('searchInput').value = '';
+    const nur = document.getElementById('nurKi').checked;
+    document.querySelectorAll('.category').forEach(function (cat) {
+        let sichtbar = false;
+        cat.querySelectorAll('.item').forEach(function (item) {
+            const hat = item.getAttribute('data-ki') === 'ja';
+            const zeigen = !nur || hat;
+            item.classList.toggle('hidden', !zeigen);
+            if (zeigen) sichtbar = true;
+        });
+        cat.classList.toggle('hidden', !sichtbar);
+        cat.classList.toggle('eingeklappt', !nur);
+    });
+}
+
+const BILD_KANTE = 1400;     /* laengste Kante nach dem Verkleinern */
+const BILD_GUETE = 0.82;     /* JPEG-Guete */
+
+let neueBilder = [];         /* Bilder, die am neuen Kommentar haengen */
+let bildZiel = null;         /* wohin das naechste gewaehlte Bild gehoert */
+let speicherGewarnt = false;
+
+function bilderVon(eintrag) {
+    return (eintrag && Array.isArray(eintrag.bilder)) ? eintrag.bilder : [];
+}
+
+/* Wo die Bilder eines Ziels liegen: '#neu' ist der Kommentarentwurf,
+   alles andere ist ein Punkt der Liste. */
+function bilderListe(ziel) {
+    if (ziel === '#neu') return neueBilder;
+    if (!testData[ziel]) return null;
+    if (!Array.isArray(testData[ziel].bilder)) testData[ziel].bilder = [];
+    return testData[ziel].bilder;
+}
+
+function bildWaehlen(ziel) {
+    bildZiel = ziel;
+    let feld = document.getElementById('bildDatei');
+    if (!feld) {
+        feld = document.createElement('input');
+        feld.type = 'file';
+        feld.id = 'bildDatei';
+        feld.accept = 'image/*';
+        feld.multiple = true;
+        feld.style.display = 'none';
+        feld.addEventListener('change', function () {
+            bilderAufnehmen(bildZiel, this.files);
+            this.value = '';
+        });
+        document.body.appendChild(feld);
+    }
+    feld.click();
+}
+
+function bildAusZwischenablage(ereignis, ziel) {
+    const stuecke = (ereignis.clipboardData && ereignis.clipboardData.items) || [];
+    const dateien = [];
+    for (let i = 0; i < stuecke.length; i++) {
+        if (stuecke[i].kind === 'file' && stuecke[i].type.indexOf('image/') === 0) {
+            const datei = stuecke[i].getAsFile();
+            if (datei) dateien.push(datei);
+        }
+    }
+    if (dateien.length === 0) return;      /* normaler Text: nichts tun */
+    ereignis.preventDefault();
+    bilderAufnehmen(ziel, dateien);
+}
+
+function ablageAn(ereignis, kasten) {
+    ereignis.preventDefault();
+    kasten.classList.add('ablage-aktiv');
+}
+function ablageAus(kasten) {
+    kasten.classList.remove('ablage-aktiv');
+}
+function ablageFallen(ereignis, kasten, ziel) {
+    ereignis.preventDefault();
+    kasten.classList.remove('ablage-aktiv');
+    const dateien = [];
+    const liste = (ereignis.dataTransfer && ereignis.dataTransfer.files) || [];
+    for (let i = 0; i < liste.length; i++) {
+        if (liste[i].type.indexOf('image/') === 0) dateien.push(liste[i]);
+    }
+    if (dateien.length) bilderAufnehmen(ziel, dateien);
+}
+
+function bilderAufnehmen(ziel, dateien) {
+    const liste = bilderListe(ziel);
+    if (!liste || !dateien || dateien.length === 0) return;
+
+    const arbeiten = [];
+    for (let i = 0; i < dateien.length; i++) arbeiten.push(verkleinern(dateien[i]));
+
+    Promise.all(arbeiten).then(function (bilder) {
+        bilder.forEach(function (bild) { if (bild) liste.push(bild); });
+        bilderZeigen(ziel);
+        if (ziel !== '#neu') speichern();
+    });
+}
+
+/* Datei -> verkleinertes Bild als Datenzeile */
+function verkleinern(datei) {
+    return new Promise(function (fertig) {
+        const leser = new FileReader();
+        leser.onload = function (e) {
+            const bild = new Image();
+            bild.onload = function () {
+                const faktor = Math.min(1, BILD_KANTE / Math.max(bild.width, bild.height));
+                const breite = Math.max(1, Math.round(bild.width * faktor));
+                const hoehe = Math.max(1, Math.round(bild.height * faktor));
+                const tafel = document.createElement('canvas');
+                tafel.width = breite;
+                tafel.height = hoehe;
+                const stift = tafel.getContext('2d');
+                stift.fillStyle = '#ffffff';     /* durchsichtige Stellen werden weiss */
+                stift.fillRect(0, 0, breite, hoehe);
+                stift.drawImage(bild, 0, 0, breite, hoehe);
+                let daten;
+                try {
+                    daten = tafel.toDataURL('image/jpeg', BILD_GUETE);
+                } catch (fehler) {
+                    daten = e.target.result;     /* geht das Verkleinern nicht, dann eben roh */
+                }
+                fertig({ id: 'b' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+                         name: datei.name || 'Bild',
+                         daten: daten });
+            };
+            bild.onerror = function () { fertig(null); };
+            bild.src = e.target.result;
+        };
+        leser.onerror = function () { fertig(null); };
+        leser.readAsDataURL(datei);
+    });
+}
+
+function bilderHtml(bilder, ziel, notizId) {
+    if (!bilder || bilder.length === 0) return '';
+    return bilder.map(function (bild) {
+        const weg = (ziel === 'notiz')
+            ? ''
+            : '<button type="button" class="bild-weg" title="Bild entfernen" onclick="bildLoeschen(\'' + ziel + '\', \'' + bild.id + '\')">×</button>';
+        return '<div class="bild-kachel">' +
+               '<img src="' + bild.daten + '" alt="' + escapeHtml(bild.name || 'Bild') + '" ' +
+               'title="' + escapeHtml(bild.name || 'Bild') + '" onclick="bildGross(this.src)">' +
+               weg + '</div>';
+    }).join('');
+}
+
+function bilderZeigen(ziel) {
+    const kasten = document.getElementById('bilder_' + ziel);
+    if (!kasten) return;
+    const liste = bilderListe(ziel) || [];
+    kasten.innerHTML = bilderHtml(liste, ziel);
+}
+
+function bildLoeschen(ziel, bildId) {
+    const liste = bilderListe(ziel);
+    if (!liste) return;
+    const stelle = liste.findIndex(function (b) { return b.id === bildId; });
+    if (stelle < 0) return;
+    liste.splice(stelle, 1);
+    bilderZeigen(ziel);
+    if (ziel !== '#neu') speichern();
+}
+
+/* Bild gross ansehen — Klick oder Esc schliesst wieder. */
+function bildGross(quelle) {
+    const schicht = document.createElement('div');
+    schicht.className = 'bild-gross';
+    schicht.innerHTML = '<img src="' + quelle + '" alt="">';
+    function zu() {
+        schicht.remove();
+        document.removeEventListener('keydown', taste);
+    }
+    function taste(e) { if (e.key === 'Escape') zu(); }
+    schicht.addEventListener('click', zu);
+    document.addEventListener('keydown', taste);
+    document.body.appendChild(schicht);
+}
+
+function escapeHtml(str) {
+    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
+
+/* Feste, bleibende Anzeige statt eines kurzen Blitzes — der soll nicht
+   erst gesucht werden muessen. Steht, solange etwas drinsteht; weg, wenn
+   das Feld leer ist. Nichts zu klicken, nichts zu druecken — sie zeigt
+   nur, was speichern() ohnehin schon bei jedem Tastendruck getan hat. */
+function feldStatusZeigen(id) {
+    const marke = document.getElementById(`feldstatus_${id}`);
+    if (!marke) return;
+    const hatInhalt = (testData[id].note || '').trim() || testData[id].status !== 'open' || bilderVon(testData[id]).length > 0;
+    marke.textContent = hatInhalt ? '✓ gespeichert' : '';
+}
+
+/* Nur noch fuer die Status-Auswahl (Offen/OK/Fehler/Nicht zutreffend) —
+   die Anmerkung laeuft jetzt ueber addItemNotiz(), nicht mehr ueber ein
+   Feld, das bei jedem Tastendruck ueberschrieben wird. */
+function updateItem(id) {
+    testData[id].status = document.getElementById(`status_${id}`).value;
+    kopfZahlenZeigen();
+    updateStats();
+    speichern();
+    feldStatusZeigen(id);
+}
+
+/* Welche Farbe der Balken links trägt — nach dem KI-Stand. */
+function kiKlasse(kennung) {
+    const e = KI_STAND[kennung];
+    if (!e) return 'ki-nichts';
+    if (e.stand === 'fertig') return 'ki-fertig';
+    if (e.stand === 'teil') return 'ki-teil';
+    if (e.stand === 'nein') return 'ki-nein';
+    return 'ki-nichts';
+}
+
+/* Je Kategorie zeigen, wie viele Punkte wie stehen. */
+function kopfZahlenZeigen() {
+    document.querySelectorAll('.category').forEach(function (cat) {
+        const z = { pass: 0, fail: 0, nt: 0, open: 0, ki: 0 };
+        cat.querySelectorAll('.item').forEach(function (item) {
+            const feld = item.querySelector('select');
+            if (feld) z[feld.value]++;
+            if (item.getAttribute('data-ki') === 'ja') z.ki++;
+        });
+        let kasten = cat.querySelector('.kopf-zahlen');
+        if (!kasten) {
+            kasten = document.createElement('div');
+            kasten.className = 'kopf-zahlen';
+            cat.querySelector('.category-header').appendChild(kasten);
+        }
+        kasten.innerHTML =
+            '<span class="z-ki' + (z.ki ? ' hat-ki' : '') + '">KI: ' + z.ki + '</span>' +
+            '<span class="z-trenner">|</span>' +
+            '<span class="z-pass' + (z.pass ? '' : ' z-null') + '">' + z.pass + ' OK</span>' +
+            '<span class="z-fail' + (z.fail ? '' : ' z-null') + '">' + z.fail + ' Fehler</span>' +
+            '<span class="z-nt' + (z.nt ? '' : ' z-null') + '">' + z.nt + ' nicht zutreffend</span>' +
+            '<span>' + z.open + ' offen</span>';
+    });
+}
+
+function updateStats() {
+    const stats = { open: 0, pass: 0, fail: 0, nt: 0 };
+    const allItems = Object.values(testData);
+    const total = allItems.length;
+
+    allItems.forEach(item => stats[item.status]++);
+    
+    document.getElementById('stat-open').innerText = stats.open;
+    document.getElementById('stat-pass').innerText = stats.pass;
+    document.getElementById('stat-fail').innerText = stats.fail;
+    document.getElementById('stat-nt').innerText = stats.nt;
+
+    // Fortschrittsberechnung (Alles, was nicht 'open' ist, gilt als abgearbeitet)
+    const completed = total - stats.open;
+    const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+    document.getElementById('progress-text').innerText = `${completed} von ${total} geprüft (${percentage}%)`;
+    document.getElementById('progress-bar').style.width = `${percentage}%`;
+}
+
+/* Kategorien starten eingeklappt (bearbeitete Kategorien offen) — sonst
+   ist die Liste von 415 Punkten am Stück nicht zu überblicken. Ein Klick
+   auf den Kopf klappt einzeln um; die zwei Knöpfe oben klappen alles. */
+function kategorieUmschalten(kopf) {
+    const cat = kopf.closest('.category');
+    if (cat) cat.classList.toggle('eingeklappt');
+}
+
+function alleKategorienUmschalten(aufklappen) {
+    document.querySelectorAll('.category').forEach(function (cat) {
+        cat.classList.toggle('eingeklappt', !aufklappen);
+    });
+}
+
+/* Ein Knopf statt zwei — spart eine Zeile im Kopf. */
+function alleKategorienUmschaltenToggle() {
+    const btn = document.getElementById('kategorienToggleBtn');
+    const alleOffen = [...document.querySelectorAll('.category')].every(function (c) { return !c.classList.contains('eingeklappt'); });
+    alleKategorienUmschalten(!alleOffen);
+    if (btn) btn.textContent = alleOffen ? 'Alle Kategorien aufklappen' : 'Alle Kategorien zuklappen';
+}
+
+function filterItems() {
+    const query = document.getElementById('searchInput').value.toLowerCase().trim();
+    const categories = document.querySelectorAll('.category');
+
+    categories.forEach(cat => {
+        let hasVisibleItem = false;
+        const items = cat.querySelectorAll('.item');
+
+        items.forEach(item => {
+            const name = item.getAttribute('data-name');
+            const categoryName = item.getAttribute('data-cat');
+
+            if (name.includes(query) || categoryName.includes(query)) {
+                item.classList.remove('hidden');
+                hasVisibleItem = true;
+            } else {
+                item.classList.add('hidden');
+            }
+        });
+
+        if (hasVisibleItem) {
+            cat.classList.remove('hidden');
+        } else {
+            cat.classList.add('hidden');
+        }
+        /* Bei einer Suche die Treffer aufklappen; leeres Suchfeld geht
+           zurück in die Übersicht. */
+        cat.classList.toggle('eingeklappt', !query);
+    });
+}
+
+async function exportData() {
+    const exportPayload = {
+        items: testData,
+        notesList: freeNotesList
+    };
+    const json = JSON.stringify(exportPayload, null, 2);
+    const filename = `pruefkatalog_wps_lunivo_${new Date().toISOString().slice(0,10)}.json`;
+
+    // In dieser Umgebung läuft ein normaler <a download>-Link ins Leere —
+    // deshalb hier zuerst der offizielle Weg über die downloads-Fähigkeit,
+    // und nur wenn die nicht verfügbar ist (z.B. Datei lokal geöffnet),
+    // der alte Link als Rückfalloption.
+    try {
+        const downloads = (window.claude && window.claude.use) ? await window.claude.use('downloads') : null;
+        if (downloads) {
+            await downloads.save({ filename, data: json });
+            return;
+        }
+    } catch (e) { /* fällt unten auf den Link zurück */ }
+
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(json);
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.setAttribute("href", dataStr);
+    downloadAnchor.setAttribute("download", filename);
+    document.body.appendChild(downloadAnchor);
+    downloadAnchor.click();
+    downloadAnchor.remove();
+}
+
+function importData(event) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const importedPayload = JSON.parse(e.target.result);
+        
+        if (importedPayload.items) {
+            testData = importedPayload.items;
+            freeNotesList = importedPayload.notesList || [];
+        } else {
+            testData = importedPayload;
+            freeNotesList = [];
+        }
+        /* Eine ältere Exportdatei kennt die zusammengelegten Stellen noch
+           als eigene Zeilen — deren Antworten hier in die Hauptstelle holen,
+           damit beim Import nichts an einer Stelle landet, die es nicht
+           mehr als eigenes Feld gibt. */
+        testData = gespiegelteAntwortenZusammenfuehren(testData);
+
+        Object.keys(testData).forEach(id => {
+            const statusEl = document.getElementById(`status_${id}`);
+            if (statusEl) statusEl.value = testData[id].status;
+            testData[id].bilder = bilderVon(testData[id]);
+            notizenSicherstellen(id);
+            renderItemNotizen(id);
+            bilderZeigen(id);
+            feldStatusZeigen(id);
+        });
+
+        kopfZahlenZeigen();
+        renderNotes();
+        updateStats();
+        speichern();
+    };
+    reader.readAsText(event.target.files[0]);
+}
+
+
+/* ============================================================
+   NACHTRAG AUS DER WERKSTATT
+
+   Kay: "es waer jetzt echt nett, wenn du deine Dokumentation im Link
+   machst, denn ich sehe eine endlos lange Liste, die nicht abgearbeitet
+   ist. Ich fuehre die Dokumentation nicht zur Deko."
+
+   Sein Stand liegt im Speicher des Browsers, nicht in dieser Datei — ein
+   Export in seinen Download-Ordner erreicht ihn also nicht, solange er
+   ihn nicht selbst importiert. Deshalb steht der Nachtrag hier drin und
+   spielt sich beim Oeffnen EINMAL selbst ein.
+
+   WAS ER ANFASST: nur die unten aufgefuehrten Punkte, nur ihren Status
+   und eine zusaetzliche Notiz mit Kennung. Seine eigenen Notizen bleiben
+   unangetastet; der Stand VOR dem Nachtrag wird vorher gesichert.
+   ============================================================ */
+const NACHTRAG_KENNUNG = 'nachtrag_2026_09_16';
+const NACHTRAG = {
+ "start-zwischenablage|einfügen": {
+  "text": "War blindes Einfügen: ein Klick, und was kam, kam. Jetzt der Pfeil aus Ihrem Bild mit fünf Punkten — Formatierter Text, Passend formatiert einfügen, Unformatierter Text (Strg+Alt+T), Inhalte einfügen… (Strg+Alt+V), Standard zum Einfügen festlegen. „Passend formatiert\" nimmt den Text und behält das Aussehen des Dokuments; für Text aus dem Netz ist das fast immer das Richtige und war bisher gar nicht möglich. Die beiden Kürzel wirken.",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "start-zwischenablage|einfügen-ohne-formatierung": {
+  "text": "Siehe Einfügen — steht jetzt als eigener Punkt in der Klappe, mit dem Kürzel Strg+Alt+T.",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "start-zwischenablage|verlauf-rückgängig": {
+  "text": "Aus dem Reiter entfernt. Rückgängig und Wiederholen stehen im Schnellzugriff ganz oben — dort sind sie in jedem Reiter erreichbar, im Band waren sie es nur unter Start.",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "start-zwischenablage|verlauf-wiederholen": {
+  "text": "Siehe Rückgängig: aus dem Reiter entfernt, bleibt im Schnellzugriff.",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "start-schriftart|schrift-vergrößern": {
+  "text": "A⁺ und A⁻ statt der Pfeile, wie gewünscht. Beide stehen in Zeile 1 neben „Formatierung löschen\", wie im WPS-Bild.",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "start-schriftart|schrift-verkleinern": {
+  "text": "Siehe Schrift vergrößern: A⁻ gezeichnet, Platz nach Vorlage.",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "start-schriftart|fett": {
+  "text": "Die Gruppe steht jetzt in zwei festen Zeilen nach dem WPS-Bild: Zeile 1 A⁺ A⁻ ◇ Aa▾, Zeile 2 F K U▾ S X² X₂ A Marker▾ Farbe▾ Ⓐ. Vorher füllte sich das Gitter spaltenweise, darum standen Fett und Kursiv in verschiedenen Zeilen.",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "start-schriftart|kursiv": {
+  "text": "Siehe Fett — steht jetzt direkt daneben.",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "start-schriftart|unterstrichen": {
+  "text": "Siehe Fett. Dazu der Pfeil am U für die Strichvorlagen, wie in WPS.",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "start-schriftart|durchgestrichen": {
+  "text": "Es war der Buchstabe S — für „Streichen\", was man wissen muss. Jetzt ein A mit einem Strich hindurch, wie in WPS.",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "start-schriftart|hochgestellt": {
+  "text": "X² und X₂ stehen jetzt nebeneinander in derselben Zeile, wie aufgeschrieben. Vorher trennte sie das spaltenweise Gitter.",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "start-schriftart|tiefgestellt": {
+  "text": "Siehe Hochgestellt.",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "start-schriftart|hervorheben": {
+  "text": "Der Marker ist jetzt ein geteilter Knopf: ein Klick auf das Zeichen färbt sofort mit der zuletzt gewählten Farbe, der Pfeil daneben zeigt die Farben — zwanzig, die hellen zuerst. Vorher öffnete jeder Klick nur eine Tafel; darum sah der Knopf aus, als täte er nichts.",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "start-schriftart|schriftfarbe": {
+  "text": "Eigenes Zeichen: ein A über einem Farbbalken, wie im Bild. Klick färbt mit der letzten Farbe, Pfeil zeigt die Auswahl.",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "start-schriftart|groß-kleinschreibung": {
+  "text": "Linksklick geht jetzt: der Pfeil zeigt die vier Schreibweisen, jede mit einem Probesatz in genau dieser Schreibweise. Das Fenster liegt weiter auf dem Zeichen selbst.",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "start-schriftart|unterstreichungsart": {
+  "text": "Die Strichvorlagen fehlten nicht — sie lagen hinter einem zweiten, gleich aussehenden U-Knopf daneben. Jetzt hängen sie am Pfeil des U, und sie stehen als gezeichnete Striche da, nicht als Wörter.",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "start-schriftart|texteffekte": {
+  "text": "War ein Klappfeld mit fünf Wörtern: Schatten, Relief, Kontur, Leuchten. Wer wissen wollte, wie „Relief\" aussieht, musste es ausprobieren, zurücknehmen, das nächste ausprobieren.\n\nJetzt eine Galerie wie in WPS: zwölf Kacheln, jede zeigt ein Aa in genau ihrem Effekt. Dazugekommen sind weiter Schatten, vertieft, starke Kontur, warmes Leuchten, Spiegelung, Farbverlauf und hohl mit Schatten — eine Galerie mit fünf Kacheln ist keine. Unten führt „Eigene Farbe und Stärke…\" weiter ins Fenster.",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "start-absatz|aufzählung": {
+  "text": "Sie tat etwas, aber man sah es nicht: Die Liste wurde IN den Absatz gebaut (<p><ul>…</ul></p>), und das ist ungültig — der Browser räumt es weg, und der Punkt verschwindet mit. Jetzt wird die Liste danach herausgehoben. Gilt auch für die Nummerierung.",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "start-absatz|zeilenabstand": {
+  "text": "Das Zeichen war ein Paar senkrechter Balken — das heißt nichts. Jetzt ein senkrechter Doppelpfeil neben drei Zeilen, wie auf Ihrem WPS-Ausschnitt, und der Knopf trägt einen Pfeil, weil eine Klappe darunter aufgeht. Die Klappe nach Ihrem Bild: 1,0 / 1,5 / 2,0 / 2,5 / 3,0 mit Haken beim geltenden Wert, Strg+1 und Strg+2 rechts daneben, unten „Mehr…\". Die Kürzel greifen nur, wenn die Wortvorhersage nicht offen ist — sonst hätte ein eigener Befehl einen fremden verdrängt. Dazu: In der Gruppe ABSATZLAYOUT stand der Zeilenabstand ein zweites Mal, groß, und öffnete den ABSATZabstand — zwei verschiedene Dinge. Die Gruppe ist weg; Ihr WPS-Bild kennt im Reiter Start fünf Gruppen, und ABSATZLAYOUT ist keine davon.",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "start-absatzlayout|einzug-genau": {
+  "text": "Es gab zwei halbe Fenster — „Einzug\" mit drei Feldern und „Absatzabstand\" mit zweien. Sie sind jetzt EIN Fenster „Absatz\" nach Ihrem WPS-Bild: zwei Karteireiter, die Blöcke Allgemein, Einzug und Abstand, darunter eine Vorschau, unten links Tabstopps. Der zweite Reiter nach Ihrem zweiten Bild: Paginierung mit vier Haken, Zeilenumbruch, Textausrichtung — ohne die fünf Punkte zu asiatischen Zeichen. Die Vorschau ist keine Zeichnung: Sie trägt dieselben Stile, die OK setzt, aus derselben Funktion.",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "start-absatzlayout|absatzrahmen": {
+  "text": "Dahinter lag ein eigenes Fenster „Rahmenlinien\" neben dem, das es schon gab — daher „hier gerät was durcheinander\". Jetzt die Klappe aus Ihrem Bild mit den zwölf Zeilen, jede mit eigenem Zeichen für ihre Kante, und als letzter Punkt „Rahmen und Schattierung…\". Im Fenster sind „Alle\" und „Raster\" ergänzt (grau, solange der Zeiger in keiner Tabelle steht), die Vorschau zeigt jetzt den Stand des Absatzes statt eines festen Werts — vorher waren alle vier Kanten an, man konnte nur wegnehmen —, das Blatt liegt auf hellem Grund, damit die Linien am Rand zu sehen sind, und der Hinweis steht über dem Feld statt darin.",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "start-absatzlayout|absatzschattierung": {
+  "text": "Die Klappe hatte zwei Farbreihen ohne Überschrift und „Keine Füllung\" unten. Nach Ihrem WPS-Bild jetzt: „Keine Füllung\" ganz oben, dann „Themenfarben\" als Raster mit je sechs Abstufungen, dann „Standardfarben\", unten „Weitere Füllfarben…\" und „Rahmen und Schattierung…\". Die Farben sind Ihre zwölf Töne; das Raster rechnet die Abstufungen daraus. Hinter „Weitere Füllfarben…\" lag der Farbwähler des Browsers — dort steht jetzt Ihr Fenster „Farben\" mit den drei Karteireitern Standard, Benutzerdefiniert und Erweitert, rechts OK und Abbrechen und darunter die Proben „Neu\" und „Aktuell\".",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "einfügen|leere-seite": {
+  "text": "Es waren nur Leerzeilen: eingefügt wurde ein Absatz mit page-break-after — im Druck ein Umbruch, auf dem Bildschirm nichts. Die Seitenzahl rechnet mit der Höhe des Textes, und ein Umbruch hat keine Höhe. Jetzt ein Block, so hoch wie eine Seite: sichtbar mit gestricheltem Rand, im Druck ohne. Der Knopf hat die Klappe Hochformat / Querformat, wie im Bild. Gemessen: 257 mm hoch, 170 mm quer, Statuszeile „Seite 1 von 2\".",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "einfügen|seitenumbruch": {
+  "text": "Eingefügt wurde nur eine Druckanweisung: auf dem Bildschirm eine Leerzeile, in der Statuszeile weiter „Seite 1 von 1\". Jetzt füllt ein Block den Rest der laufenden Seite, auf der gestrichelten Linie steht „Seitenumbruch\", die nächste Zeile fängt wirklich oben auf Seite zwei an, und die Seitenzahl zählt mit. Gedruckt wird nur der Umbruch, nicht die Linie. Das Zeichen dazu: Blatt, Trennung, Blatt.",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "einfügen|diagramm": {
+  "text": "Der Befehl war richtig verdrahtet — das ZEICHEN stand falsch. Das Gitter der kleinen Knöpfe füllt sich spaltenweise, darum saß unter dem Säulenzeichen der Bildschirmfoto-Befehl: Wer aufs Diagramm zeigte, traf etwas anderes. Feste Zeilen, Zeichen wieder bei ihren Namen.\n\nDazu das Fenster aus Ihrem Bild: links die Kategorien (Spalte, Linie, Kreis, Balken, Fläche, X Y), oben die Arten, in der Mitte der Name groß, darunter eine große Vorschau. Neun Arten, neun Zeichner — gestapelt, in Prozent, liegende Balken, Ring, Fläche, Punktwolke.\n\nDie Diagrammtools-Leiste nach Ihrem Bild: Diagrammelement hinzufügen, Schnelllayout, Farbe ändern, Formatvorlagen, Diagrammtyp ändern mit den acht Arten, Daten auswählen, Daten bearbeiten, Formatieren, Formatvorlage zurücksetzen.\n\n„Daten bearbeiten\" ist jetzt eine Tabelle, wie Sie es beschrieben haben — links eintragen, rechts rechnet die Vorschau bei jedem Tastendruck mit. Enter hängt eine Zeile an.\n\nAm gewählten Diagramm: acht Markerpunkte, Ziehen ändert die Größe (480 → 595 px gemessen), ein Kreuz löscht, fünf Knöpfe rechts daneben. Rechtsklick hat jetzt „Diagramm löschen\" — das fehlte.\n\nAuf Ihren Hinweis hin laufen Griffe, Ziehen und Löschen über DASSELBE System wie bei Bildern und Tabellen. Ich hatte ein drittes danebengebaut; das ist raus.\n\nUnd der Doppelklick aus Ihrer Beschreibung: Jedes Stück trägt seinen Namen, ein Doppelklick auf eine einzelne Säule oder den Hintergrund öffnet rechts die Formatleiste mit Farbe, Linienfarbe, Linienstärke und Schatten. Was von Hand geändert ist, überlebt das Neuzeichnen — wer eine Säule rot macht und danach die Zahlen ändert, findet sie nicht wieder blau vor.\n\nUnd die vier Gruppen, die noch fehlten: Kurs (hoch, niedrig, schließen), Netz, Kombination (Säulen und Linie) und Vorlagen. Damit stehen alle zehn aus Ihrem Bild. Für Kurs und Kombination nimmt die Eingabe jetzt mehrere Zahlen je Zeile: „Montag: 12; 8; 10\".",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "einfügen|smartart": {
+  "text": "Es war ein Reiter mit zwei Knöpfen, die zwei Fenster öffneten. Jetzt die zwei Reiter aus Ihren Bildern: SmartArt-Entwurf (Form einfügen, Vorwärts, Rückwärts, Reihenfolge umdrehen, Kästen bearbeiten, Layout, Farben ändern, Textfluss, Ausrichten, Größe) und SmartArt-Format (Füllung, Kontur, Effekte, Größe, Anordnen). Die Zeichner nehmen jetzt Farben entgegen — vorher stand die Farbreihe fest darin, und „Farben ändern\" hätte nichts ändern können. Am SmartArt selbst hängen dieselben Griffe wie am Bild.",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "einfügen|lesezeichen-textmarke": {
+  "text": "Das Fenster nach Ihrem Bild: Name, Liste der vorhandenen Marken, Sortieren nach Namen oder Speicherort, ausgeblendete zeigen, und Hinzufügen / Löschen / Gehe zu. Die drei sind grau, solange nichts gewählt ist. Vorher war es ein Feld mit einem Namen darin — setzen ja, wiedersehen nein, löschen nein, hinspringen nein.",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "einfügen|querverweis": {
+  "text": "Das Zeichen war ein Pfeil an einer Linie — daran erkennt niemand einen Querverweis. Jetzt ein Blatt, in dem ein Bogen auf eine andere Stelle zeigt. Und das Fenster nach Ihrem Bild: „Verweistyp\" und „Verweisen auf\" nebeneinander, darunter „Als Hyperlink einfügen\" und „Oben/unten einschließen\", dann die Frage „Für welches nummerierte Element:\" und eine große Liste, unten Abbrechen und Einfügen — Einfügen grau, solange nichts gewählt ist. Sechs Verweistypen (nummeriertes Element, Überschrift, Textmarke, Fußnote, Abbildung, Tabelle), jeder mit seinen eigenen Zielen; die Frage über der Liste wechselt mit der Art. Vorher war es eine einzige Klappliste, in der Textmarken und Überschriften gemischt standen.",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "einfügen|kopfzeile": {
+  "text": "Ein Knopf „Kopf- und Fußzeile\" mit drei Wegen darin: Kopfzeile bearbeiten, Fußzeile bearbeiten, Seitenzahl einfügen.",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "einfügen|fußzeile": {
+  "text": "Siehe Kopfzeile — beide in einem Knopf.",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "einfügen|seitenzahl": {
+  "text": "Statt des Bildschirms jetzt ein Blatt mit einer Raute darin, wie auf Ihrem Bild.",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "einfügen|textfeld": {
+  "text": "Der Rahmen ließ sich nicht entfernen, weil es ihn gar nicht gab: insertHTML fügt in den Absatz ein, und ein <div> darf dort nicht stehen — der Browser machte daraus ein <span> mit grauem Hintergrund. Jetzt wird der Kasten neben den Absatz gesetzt. Dazu die Texttools aus Ihrem Bild: Textfüllung, Textkontur, Texteffekte für den Text; Füllung, Kontur, Effekte für den Rahmen; Textfluss, Größe, Einstellungen, Textfeld löschen. Unter Kontur steht „Kein Rahmen\".",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "einfügen|textbaustein": {
+  "text": "Nach Schreibhilfe gewandert, wie vorgeschlagen — dort als ein Knopf „Textbausteine\" mit Verwalten und Einfügen. In Einfügen steht er nicht mehr, damit er nicht an zwei Stellen liegt.",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "einfügen|schnellbaustein": {
+  "text": "Siehe Textbaustein — mit umgezogen, in derselben Klappe.",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "einfügen|uhrzeit": {
+  "text": "Ein großer Knopf „Datum und Uhrzeit\" mit Kalender-und-Uhr-Zeichen, wie im Bild. Dahinter das Fenster aus Ihrer Vorlage: links die Liste der verfügbaren Formate, rechts die Sprache, darunter „Automatisch aktualisieren\", unten Abbrechen und OK. Die Liste hängt an der Sprache — auf Englisch steht dort 9/15/2026 und Tuesday, September 15, 2026, genau wie in WPS.",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "seitenlayout|seitenränder": {
+  "text": "Jede Vorgabe hat ein kleines Blatt mit eingezeichnetem Satzspiegel — man sieht, was „Breit\" heißt. Dazu die vier Maße im Klartext und die vier Ränder als Zahlenfelder direkt im Band.",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "seitenlayout|papierformat": {
+  "text": "Auf Deutsch: A4, A3, A5, B5, Letter, Legal, Umschlag DIN lang, C5, C6 — mit den Maßen darunter. Die chinesischen Formate (8开, 信封) sind weg. Das Zeichen heißt wieder „Größe\", wie in WPS, aber die Klappe sagt jetzt, worum es geht.",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "seitenlayout|umbruch-seitenumbruch": {
+  "text": "Das Zeichen war eine Linie mit zwei Pfeilen und sah aus wie ein Geteiltzeichen. Jetzt nach Ihrem Bild: Blatt oben, Blatt unten, gestrichelte Trennung dazwischen.",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "seitenlayout|seitenfarbe": {
+  "text": "War ein Fenster mit einem Farbfeld. Jetzt die Tafel aus dem Bild: Keine Farbe, Themafarben, Standardfarben, Farbverlauf, Weitere Füllfarben, Pipette, Hintergrundbild, Wasserzeichen.",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "seitenlayout|seitenrahmen": {
+  "text": "Das leere Quadrat ist weg. Nach Ihrem Bild ein Blatt mit Eselsohr und einem Rahmen darin — als eigenes Zeichen, weil „rahmen\" den Tabellen und den Bildtools gehört und dort nichts anderes heißen darf.",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "seitenlayout|bild-objekt-anordnen": {
+  "text": "Die Gruppe heißt jetzt „Anordnen\" und hat vier Knöpfe wie in WPS: Textfluss, Ausrichten, Gruppieren, Drehen. Ausrichten und Drehen wirken auf Bilder, Formen und Tabellen.",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "schreibhilfe-lunivo-|anzeigen-seitenleiste-schreibhilfe": {
+  "text": "Aus Ansicht entfernt. Sie steht im Reiter Schreibhilfe, und dort gehört sie hin.",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "sendungen-lunivo-|formular-schaltfläche": {
+  "text": "Ein <button> im Text nimmt den Klick selbst; der Zeiger kam nicht daneben, und ohne Zeiger daneben gibt es nichts zu löschen. Jetzt ein Feld, das der Text wie ein Zeichen behandelt: Entf löscht es, ein Doppelklick ändert die Aufschrift, und beim Einfügen wird danach gefragt.",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "ansicht|gitternetzlinien": {
+  "text": "Das Netz stand im background-image. Die Seitenfarbe wird als Kurzform gesetzt, und die löscht background-image mit — sobald das Blatt eine Farbe hatte, war das Netz weg. Liegt jetzt als eigene Ebene darüber.",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "ansicht|textbegrenzungen": {
+  "text": "Die vier Winkel am Satzspiegel sind jetzt auf dem Blatt zu sehen, nicht mehr nur beim Drucken. Abschalten unter Ansicht.",
+  "timestamp": "16.09.2026, erledigt"
+ },
+ "schreibhilfe-sidebar-integration-|kontextmenü-für-fehler-aktionen": {
+  "text": "Unter der rechten Taste stehen jetzt alle drei Punkte aus Ihrem Text: „Einmal ignorieren\" lässt genau diese Stelle stehen, „Alle ignorieren\" nimmt die Wellenlinie für dieses Wort im ganzen Dokument weg, „Zum Wörterbuch hinzufügen\" nur bei einem Wort, das wirklich keiner kennt. Vorher gab es nur den letzten Punkt, und er hieß anders. Am Knopf Rechtschreibprüfung hängt der Pfeil aus Ihrem Bild: Während der Eingabe prüfen, Bedienfeld öffnen [F7], Sprache für Rechtschreibprüfung festlegen…, Eigener Wortschatz… — und „Ignorierte Stellen wieder prüfen\", mit der Anzahl dahinter, damit ein versehentliches Ignorieren zurückzunehmen ist. Beim Wechsel des Dokuments fangen die Ausnahmen wieder bei null an. Dazu: Zeigte der Zeiger auf ein angestrichenes Wort, stand im Menue alles doppelt — zwei Ueberschriften, zwei gleiche Vorschlaege, fuenf Aktionen statt drei. Jetzt ein Kopf, ein Vorschlag, drei Aktionen.",
+  "timestamp": "16.09.2026, erledigt"
+ }
+};
+
+function nachtragEinspielen() {
+    let schon = null;
+    try { schon = localStorage.getItem('wps_pruefkatalog_' + NACHTRAG_KENNUNG); } catch (e) { return 0; }
+    if (schon) return 0;
+
+    /* Erst sichern, dann anfassen. Wer den Nachtrag rueckgaengig machen
+       will, holt sich in der Konsole des Browsers zurueck:
+         localStorage.setItem('wps_pruefkatalog_stand_v1',
+           localStorage.getItem('wps_pruefkatalog_vor_2026_09_16')) */
+    try {
+        localStorage.setItem('wps_pruefkatalog_vor_2026_09_16',
+            JSON.stringify({ items: testData, notesList: freeNotesList }));
+    } catch (e) { /* ohne Speicher geht es auch */ }
+
+    let gesetzt = 0;
+    Object.keys(NACHTRAG).forEach(function (id) {
+        const eintrag = testData[id];
+        if (!eintrag) return;
+        notizenSicherstellen(id);
+        const kennung = 'claude-' + id;
+        eintrag.notizen = (eintrag.notizen || []).filter(function (n) { return n.id !== kennung; });
+        eintrag.notizen.push({
+            id: kennung,
+            text: NACHTRAG[id].text,
+            timestamp: NACHTRAG[id].timestamp
+        });
+        eintrag.note = itemNotizText(id);
+        eintrag.status = 'pass';
+        gesetzt += 1;
+    });
+
+    try { localStorage.setItem('wps_pruefkatalog_' + NACHTRAG_KENNUNG, String(gesetzt)); } catch (e) {}
+    return gesetzt;
+}
+
+window.onload = init;
+</script>
+

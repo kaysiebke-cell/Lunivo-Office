@@ -134,13 +134,21 @@ ERLEDIGT = {
         'Größe, Einstellungen, Textfeld löschen. Unter Kontur steht „Kein '
         'Rahmen".',
 
+    # Ihr Katalog führt den Zeilenabstand nur an EINER Stelle; die Zeile
+    # in ABSATZLAYOUT haben Sie dort zusammengelegt. Deshalb steht beides
+    # hier zusammen.
     'start-absatz|zeilenabstand':
-        'Das Zeichen war ein Paar senkrechter Balken — das heißt nichts. '
-        'Jetzt Zeilen mit Doppelpfeil. Und dahinter die Klappe aus WPS: '
-        '1 / 1,15 / 1,5 / 2 / 2,5 / 3, jede mit drei Strichen so weit '
-        'auseinander, wie sie es meint. Der Abstand vor und nach dem Absatz '
-        'steht als letzter Punkt darin — das war vorher das Einzige, was der '
-        'Knopf konnte.',
+        'Das Zeichen war ein Paar senkrechter Balken — das heißt nichts. Jetzt '
+        'ein senkrechter Doppelpfeil neben drei Zeilen, wie auf Ihrem '
+        'WPS-Ausschnitt, und der Knopf trägt einen Pfeil, weil eine Klappe '
+        'darunter aufgeht. Die Klappe nach Ihrem Bild: 1,0 / 1,5 / 2,0 / 2,5 / '
+        '3,0 mit Haken beim geltenden Wert, Strg+1 und Strg+2 rechts daneben, '
+        'unten „Mehr…". Die Kürzel greifen nur, wenn die Wortvorhersage nicht '
+        'offen ist — sonst hätte ein eigener Befehl einen fremden verdrängt. '
+        'Dazu: In der Gruppe ABSATZLAYOUT stand der Zeilenabstand ein zweites '
+        'Mal, groß, und öffnete den ABSATZabstand — zwei verschiedene Dinge. '
+        'Die Gruppe ist weg; Ihr WPS-Bild kennt im Reiter Start fünf Gruppen, '
+        'und ABSATZLAYOUT ist keine davon.',
 
     'start-schriftart|durchgestrichen':
         'Es war der Buchstabe S — für „Streichen", was man wissen muss. Jetzt '
@@ -227,7 +235,7 @@ ERLEDIGT = {
         'nicht mehr, damit er nicht an zwei Stellen liegt.',
     'einfügen|schnellbaustein':
         'Siehe Textbaustein — mit umgezogen, in derselben Klappe.',
-    'ansicht|seitenleiste-schreibhilfe':
+    'schreibhilfe-lunivo-|anzeigen-seitenleiste-schreibhilfe':
         'Aus Ansicht entfernt. Sie steht im Reiter Schreibhilfe, und dort '
         'gehört sie hin.',
 
@@ -265,11 +273,6 @@ ERLEDIGT = {
         '„Ignorierte Stellen wieder prüfen", mit der Anzahl dahinter, damit '
         'ein versehentliches Ignorieren zurückzunehmen ist. Beim Wechsel des '
         'Dokuments fangen die Ausnahmen wieder bei null an. Dazu: Zeigte der Zeiger auf ein angestrichenes Wort, stand im Menue alles doppelt — zwei Ueberschriften, zwei gleiche Vorschlaege, fuenf Aktionen statt drei. Jetzt ein Kopf, ein Vorschlag, drei Aktionen.',
-
-    'start-absatzlayout|zeilenabstand':
-        'Der Knopf hieß Zeilenabstand und öffnete den ABSATZabstand — zwei '
-        'verschiedene Dinge. Jetzt dieselbe Klappe wie oben in ABSATZ: 1,0 bis '
-        '3,0 mit Probezeilen, darunter der Weg zum Absatzabstand.',
 
     'einfügen|seitenumbruch':
         'Eingefügt wurde nur eine Druckanweisung: auf dem Bildschirm eine '
