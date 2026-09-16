@@ -293,6 +293,16 @@ ERLEDIGT = {
         'Statt des Bildschirms jetzt ein Blatt mit einer Raute darin, wie auf '
         'Ihrem Bild.',
 
+    'start-absatzlayout|einzug-genau':
+        'Es gab zwei halbe Fenster — „Einzug" mit drei Feldern und '
+        '„Absatzabstand" mit zweien. Sie sind jetzt EIN Fenster „Absatz" nach '
+        'Ihrem WPS-Bild: zwei Karteireiter, die Blöcke Allgemein, Einzug und '
+        'Abstand, darunter eine Vorschau, unten links Tabstopps. Der zweite '
+        'Reiter nach Ihrem zweiten Bild: Paginierung mit vier Haken, '
+        'Zeilenumbruch, Textausrichtung — ohne die fünf Punkte zu asiatischen '
+        'Zeichen. Die Vorschau ist keine Zeichnung: Sie trägt dieselben Stile, '
+        'die OK setzt, aus derselben Funktion.',
+
     'ansicht|textbegrenzungen':
         'Die vier Winkel am Satzspiegel sind jetzt auf dem Blatt zu sehen, '
         'nicht mehr nur beim Drucken. Abschalten unter Ansicht.',
