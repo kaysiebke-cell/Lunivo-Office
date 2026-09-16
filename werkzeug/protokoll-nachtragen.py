@@ -264,7 +264,7 @@ ERLEDIGT = {
         'für Rechtschreibprüfung festlegen…, Eigener Wortschatz… — und '
         '„Ignorierte Stellen wieder prüfen", mit der Anzahl dahinter, damit '
         'ein versehentliches Ignorieren zurückzunehmen ist. Beim Wechsel des '
-        'Dokuments fangen die Ausnahmen wieder bei null an.',
+        'Dokuments fangen die Ausnahmen wieder bei null an. Dazu: Zeigte der Zeiger auf ein angestrichenes Wort, stand im Menue alles doppelt — zwei Ueberschriften, zwei gleiche Vorschlaege, fuenf Aktionen statt drei. Jetzt ein Kopf, ein Vorschlag, drei Aktionen.',
 
     'ansicht|textbegrenzungen':
         'Die vier Winkel am Satzspiegel sind jetzt auf dem Blatt zu sehen, '
