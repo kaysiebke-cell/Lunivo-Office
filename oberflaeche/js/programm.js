@@ -18442,6 +18442,12 @@ function kuerze(satz) {
 function zeichneFunde(zaehlen) {
   const liste = $('funde');
   liste.innerHTML = '';
+  /* Was ignoriert wurde, faellt hier heraus — an EINER Stelle, damit die
+     Liste, die Anstriche und die Zaehlung dasselbe zeigen. Drei Stellen
+     waeren drei Gelegenheiten, dass sie auseinanderlaufen. */
+  if (einmalRuhig.size || ganzRuhig.size) {
+    funde = funde.filter((f) => !istIgnoriert(f));
+  }
   if (zaehlen) KI.Gedaechtnis.merkeGezeigt(funde);
 
   if (!funde.length) {
@@ -18702,6 +18708,124 @@ function wortAnPunkt(x, y) {
 
 /* Setzt ein Wort an seiner Stelle durch ein anderes.
    Über execCommand, damit Strg+Z es zurückholt. */
+/* ============================================================
+   IGNORIEREN — EINMAL ODER GANZ
+
+   „Einmal ignorieren" gilt fuer DIESE Stelle. „Alle ignorieren" fuer
+   dieses Wort im ganzen Dokument, aber nur hier — beim naechsten
+   Dokument faengt es wieder an. Das ist der Unterschied zum
+   Woerterbuch: Dort steht, was immer richtig ist.
+
+   Wer einen Tippfehler in einem Zitat stehen lassen muss, will ihn
+   nicht ins Woerterbuch aufnehmen. Bisher gab es nur diesen einen Weg.
+   ============================================================ */
+/* Die Klappe an der Rechtschreibpruefung — aus seiner Beschreibung:
+
+   „Wenn die Vorschlaege nicht zur Sprache des Textes passen: In die
+   Registerkarte Ueberpruefen wechseln, auf den Pfeil neben
+   Rechtschreibpruefung klicken und Sprache fuer Rechtschreibpruefung
+   festlegen auswaehlen."
+
+   Dazu die zwei anderen Wege aus seinem Text: der Schalter „Waehrend
+   der Eingabe pruefen" und das Bedienfeld mit F7. */
+B.pruefungKlappe = (knopf) => {
+  designTafelZeigen(knopf, 'Rechtschreibprüfung', (tafel) => {
+    tafel.classList.add('designtafel--breit');
+    const zeile = (bild, name, taste, tun, gilt) => {
+      const k = document.createElement('button');
+      k.type = 'button';
+      k.className = 'designtafel__zeile richtungszeile'
+        + (gilt ? ' richtungszeile--gilt' : '');
+      if (SYMBOLE[bild]) k.appendChild(symbol(bild));
+      const w = document.createElement('span');
+      w.textContent = name;
+      k.appendChild(w);
+      if (taste) {
+        const t = document.createElement('em');
+        t.className = 'klappzeile__taste';
+        t.textContent = taste;
+        k.appendChild(t);
+      }
+      k.addEventListener('mousedown', (e) => e.preventDefault());
+      k.addEventListener('click', () => { designTafelWeg(); tun(); });
+      tafel.appendChild(k);
+    };
+
+    zeile('wellen', 'Während der Eingabe prüfen', '',
+          () => B.rechtschreibung(), schalterAn('rechtschreibung'));
+    zeile('Duden', 'Bedienfeld öffnen', 'F7', () => B.rechtschreibpruefung());
+
+    const strichel = document.createElement('hr');
+    strichel.className = 'designtafel__strich';
+    tafel.appendChild(strichel);
+
+    zeile('sprache', 'Sprache für Rechtschreibprüfung festlegen…', '',
+          () => Einstellungen.oeffnen('sprache'));
+    zeile('woerterbuch', 'Eigener Wortschatz…', '',
+          () => Einstellungen.oeffnen('rechtschreibpruefung'));
+
+    /* Was in diesem Dokument ignoriert wurde, laesst sich hier
+       zuruecknehmen — sonst waere „alle ignorieren" ein Weg ohne
+       Rueckweg. */
+    if (einmalRuhig.size || ganzRuhig.size) {
+      const zweiter = document.createElement('hr');
+      zweiter.className = 'designtafel__strich';
+      tafel.appendChild(zweiter);
+      zeile('radierer',
+            'Ignorierte Stellen wieder prüfen (' + (einmalRuhig.size + ganzRuhig.size) + ')',
+            '', () => {
+              einmalRuhig = new Set();
+              ganzRuhig = new Set();
+              pruefen();
+              melde('Alle Ausnahmen aufgehoben.');
+            });
+    }
+  });
+};
+
+let einmalRuhig = new Set();
+let ganzRuhig = new Set();
+
+function ruheSchluessel(stelle) {
+  /* Der Fund zaehlt im GANZEN Text, das Wort unter dem Zeiger nur in
+     seinem Textknoten. Ohne diese Umrechnung traefe „Einmal ignorieren"
+     nie die gemeinte Stelle — oder zufaellig eine andere. Die Karte aus
+     Dokument.lies() sagt, wo jeder Knoten im Text beginnt. */
+  let von = stelle.von;
+  try {
+    const { karte } = Dokument.lies();
+    for (const e of karte) {
+      if (e.knoten === stelle.knoten) { von = e.von + stelle.von; break; }
+    }
+  } catch (fehler) { /* Dann bleibt der Versatz im Knoten — besser als nichts. */ }
+  return (stelle.wort || '') + '@' + (von != null ? von : '?');
+}
+
+function einmalIgnorieren(stelle) {
+  einmalRuhig.add(ruheSchluessel(stelle));
+  if (funde.length) pruefen();
+}
+
+function alleIgnorieren(wort) {
+  ganzRuhig.add(String(wort).toLowerCase());
+  if (funde.length) pruefen();
+}
+
+/* Gilt diese Stelle als ignoriert? */
+function istIgnoriert(fund) {
+  if (!fund) return false;
+  const wort = String(fund.alt || '').toLowerCase();
+  if (wort && ganzRuhig.has(wort)) return true;
+  return einmalRuhig.has((fund.alt || '') + '@' + (fund.von != null ? fund.von : '?'));
+}
+
+/* Ein neues Dokument faengt ohne Ausnahmen an — sonst truege man die
+   Nachsicht aus einem Text in den naechsten. */
+document.addEventListener('dokument:gewechselt', () => {
+  einmalRuhig = new Set();
+  ganzRuhig = new Set();
+});
+
 function wortErsetzen(stelle, ersatz) {
   const bereich = document.createRange();
   bereich.setStart(stelle.knoten, stelle.von);
@@ -19130,15 +19254,39 @@ function rechtsMenueZeigen(e) {
       } });
     }
 
+    /* ============================================================
+       DER UNTERE TEIL DES MENUES
+
+       Aus seiner Beschreibung: „Aktions- und Einstellungsbereich
+       (unterer Bereich): Ignorieren / Einmal ignorieren — ueberspringt
+       die aktuelle Markierung. Alle ignorieren — entfernt die rote
+       Unterstreichung fuer dieses Wort im gesamten Dokument. Zum
+       Woerterbuch hinzufuegen — nimmt das Wort in das
+       Benutzerwoerterbuch auf."
+
+       Es gab nur den letzten Punkt, und er hiess anders. Die beiden
+       anderen fehlten — und sie sind die haeufigeren: Ein Eigenname
+       gehoert ins Woerterbuch, ein Tippfehler in einem Zitat nicht.
+       ============================================================ */
+    eintrag({ zeichen: 'haken', name: 'Einmal ignorieren', tun: () => {
+      einmalIgnorieren(stelle);
+      melde('Diese Stelle bleibt stehen.');
+    } });
+
+    eintrag({ zeichen: 'haken', name: 'Alle ignorieren', tun: () => {
+      alleIgnorieren(stelle.wort);
+      melde('„' + stelle.wort + '" wird in diesem Dokument nicht mehr angestrichen.');
+    } });
+
     /* Nur bei einem Wort, das WIRKLICH keiner kennt. Bei „wiederspiegelt"
        wäre der Punkt falsch: Das Wort ist bekannt, nur an dieser Stelle
        das verkehrte. */
     if (unbekannt) {
-      eintrag({ zeichen: 'haken', name: 'Wort ins Gedächtnis aufnehmen', tun: () => {
+      eintrag({ zeichen: 'duden', name: 'Zum Wörterbuch hinzufügen', tun: () => {
         const g = KI.Gedaechtnis.lies();
         g.inRuhe[stelle.wort.toLowerCase()] = true;
         KI.Gedaechtnis.schreib(g);
-        melde('„' + stelle.wort + '" gilt künftig als richtig.');
+        melde('„' + stelle.wort + '" steht jetzt im Wörterbuch.');
         if (funde.length) pruefen();
       } });
     }

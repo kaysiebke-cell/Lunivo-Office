@@ -373,7 +373,12 @@ function REGISTER_BAUEN(B, w) {
     /* Ein SCHALTER, kein Prüflauf. Er zeigte seinen Stand an, tat aber
        etwas anderes: Er rief den Lauf, und der schaltete sich selbst ein.
        Damit stand die Lampe immer auf „an" und ging nie wieder aus. */
-    ['Beim Schreiben', [['wellen', 'Rechtschreibprüfung', () => B.rechtschreibung(), false, () => w.an('rechtschreibung')],
+    ['Beim Schreiben', [/* Auf seinem Bild traegt die Rechtschreibpruefung einen Pfeil, und
+                       darunter steht „Sprache fuer Rechtschreibpruefung
+                       festlegen". */
+                    ['wellen', 'Rechtschreibprüfung',
+                      { tun: () => B.rechtschreibung(), klappe: (k) => B.pruefungKlappe(k) },
+                      false, () => w.an('rechtschreibung')],
                     ['Vorhersage', 'Wortvorhersage', () => B.vorhersage()],
                     ['autokorr', 'AutoKorrektur', () => B.autokorrektur()]]],
     ['Vorlesen', [['vorlesen', 'Vorlesen', [
