@@ -266,6 +266,33 @@ ERLEDIGT = {
         'ein versehentliches Ignorieren zurückzunehmen ist. Beim Wechsel des '
         'Dokuments fangen die Ausnahmen wieder bei null an. Dazu: Zeigte der Zeiger auf ein angestrichenes Wort, stand im Menue alles doppelt — zwei Ueberschriften, zwei gleiche Vorschlaege, fuenf Aktionen statt drei. Jetzt ein Kopf, ein Vorschlag, drei Aktionen.',
 
+    'start-absatzlayout|zeilenabstand':
+        'Der Knopf hieß Zeilenabstand und öffnete den ABSATZabstand — zwei '
+        'verschiedene Dinge. Jetzt dieselbe Klappe wie oben in ABSATZ: 1,0 bis '
+        '3,0 mit Probezeilen, darunter der Weg zum Absatzabstand.',
+
+    'einfügen|seitenumbruch':
+        'Eingefügt wurde nur eine Druckanweisung: auf dem Bildschirm eine '
+        'Leerzeile, in der Statuszeile weiter „Seite 1 von 1". Jetzt füllt ein '
+        'Block den Rest der laufenden Seite, auf der gestrichelten Linie steht '
+        '„Seitenumbruch", die nächste Zeile fängt wirklich oben auf Seite zwei '
+        'an, und die Seitenzahl zählt mit. Gedruckt wird nur der Umbruch, nicht '
+        'die Linie. Das Zeichen dazu: Blatt, Trennung, Blatt.',
+
+    'seitenlayout|umbruch-seitenumbruch':
+        'Das Zeichen war eine Linie mit zwei Pfeilen und sah aus wie ein '
+        'Geteiltzeichen. Jetzt nach Ihrem Bild: Blatt oben, Blatt unten, '
+        'gestrichelte Trennung dazwischen.',
+
+    'seitenlayout|seitenrahmen':
+        'Das leere Quadrat ist weg. Nach Ihrem Bild ein Blatt mit Eselsohr und '
+        'einem Rahmen darin — als eigenes Zeichen, weil „rahmen" den Tabellen '
+        'und den Bildtools gehört und dort nichts anderes heißen darf.',
+
+    'einfügen|seitenzahl':
+        'Statt des Bildschirms jetzt ein Blatt mit einer Raute darin, wie auf '
+        'Ihrem Bild.',
+
     'ansicht|textbegrenzungen':
         'Die vier Winkel am Satzspiegel sind jetzt auf dem Blatt zu sehen, '
         'nicht mehr nur beim Drucken. Abschalten unter Ansicht.',
