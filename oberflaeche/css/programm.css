@@ -6188,3 +6188,12 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
   border:1px solid var(--marke);border-radius:2px;
 }
 .duplexbild--rueck{border-style:dashed}
+
+/* Der Autor der Kommentare steht unter beiden Spalten, Beschriftung und
+   Klappfeld nebeneinander — nicht untereinander in der rechten Spalte. */
+.druckoptionen__breit{
+  display:flex;flex-direction:row;align-items:center;gap:10px;
+  margin-top:8px;
+}
+.druckoptionen__breit > span:first-child{flex:0 0 auto;min-width:0}
+.druckoptionen__breit > select{flex:0 1 240px}
