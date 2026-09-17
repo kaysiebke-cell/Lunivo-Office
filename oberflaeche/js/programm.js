@@ -8301,6 +8301,21 @@ let registerOffen = Speicher.lies('register', 'Start');
    sind hundert Pixel viel. */
 let registerEingeklappt = Speicher.lies('registerZu', false);
 
+/* EINMALIGE REPARATUR.
+
+   "klapp meine verdammte Leiste wieder auf und stelle den alten Zustand
+   der Reiterleiste wieder her."
+
+   Sein Band stand eingeklappt da - die Reiterleiste oben, darunter
+   nichts. Wie es dazu kam, ist gleich; es sah aus, als sei das Programm
+   kaputt. Beim naechsten Start klappt es auf, und zwar genau einmal:
+   Wer es danach selbst einklappt, bei dem bleibt es eingeklappt. */
+if (registerEingeklappt && !Speicher.lies('bandRepariert', false)) {
+  registerEingeklappt = false;
+  Speicher.schreib('registerZu', false);
+  Speicher.schreib('bandRepariert', true);
+}
+
 /* Die drei Wähler — Formatvorlage, Schrift, Größe. Sie stehen bei Word in
    der Gruppe „Schriftart", zusammen mit F, K und U; hier ebenso. Deshalb
    sind sie ein Baustein und keine eigene Gruppe mehr. */
