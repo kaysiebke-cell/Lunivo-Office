@@ -6021,6 +6021,19 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 .seitentafel__gitter--eins{grid-template-columns:1fr}
 .seitentafel__feld{display:flex;align-items:center;gap:7px;margin-bottom:4px}
 .seitentafel__feld > span:first-child{flex:0 0 auto;min-width:8.6em}
+/* Im zweispaltigen Gitter ist nur die halbe Fensterbreite da - dort
+   duerfen Beschriftung und Feld nicht ihre volle Breite beanspruchen,
+   sonst laeuft "Höhe: 297 mm" rechts hinaus. */
+.seitentafel__gitter:not(.seitentafel__gitter--eins) .seitentafel__feld > span:first-child{
+  min-width:0;
+}
+.seitentafel__gitter:not(.seitentafel__gitter--eins) .seitentafel__feld > input,
+.seitentafel__gitter:not(.seitentafel__gitter--eins) .seitentafel__feld > select{
+  flex:1 1 auto;width:auto;min-width:0;
+}
+/* Und die Einheit dahinter darf nicht wegfallen - sie sagt, worin die
+   Zahl gemeint ist. */
+.seitentafel__mass{flex:0 0 auto;white-space:nowrap}
 /* EINGABEFELDER.
 
    Ich hatte class="feld" an Auswahl- und Zahlenfelder gehaengt - aber
@@ -6065,7 +6078,36 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 
 .seitentafel__zweispalten{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
 .seitentafel__zweispalten .seitentafel__spalte{display:flex;flex-direction:column;min-width:0}
-.seitentafel__liste{width:100%;box-sizing:border-box;padding:4px}
+/* Die Papierzufuhr ist eine LISTE (select size=4), kein Klappfeld.
+
+   Die gemeinsame Regel setzt appearance:none, einen dunklen Grund und
+   das Pfeilbild - fuer ein Klappfeld richtig, fuer eine offene Liste
+   falsch: Sie stand schwarz da, und die vier Eintraege waren nicht zu
+   lesen. Hier also heller Grund, kein Pfeil, und die gewaehlte Zeile
+   blau. */
+.seitentafel__liste{
+  width:100%;box-sizing:border-box;
+  padding:2px;cursor:default;
+  /* !important, weil die gemeinsame select-Regel das Pfeilbild setzt und
+     in der Datei weiter oben steht - ohne das bleibt der Pfeil neben
+     einer Liste stehen, in der es nichts aufzuklappen gibt. */
+  background-image:none !important;
+  background-color:var(--karte);
+  color:var(--schrift);
+}
+/* Hoch genug fuer alle vier Zeilen. Vorher rollte die Liste, und das
+   schmale Kaestchen rechts - das ich fuer einen Pfeil hielt - war ihre
+   Rollleiste; die erste Zeile stand halb abgeschnitten oben. */
+.seitentafel__liste{height:auto;min-height:5.8em}
+.seitentafel__liste option{
+  padding:3px 6px;
+  background-color:var(--karte);
+  color:var(--schrift);
+}
+.seitentafel__liste option:checked{
+  background:var(--blau) linear-gradient(var(--blau),var(--blau));
+  color:#fff;
+}
 .seitentafel__nebenknopf{width:auto;margin-top:2px;align-self:flex-start}
 .seitentafel__knopfreihe{display:flex;gap:8px;margin-top:4px}
 .seitentafel__knopfreihe .knopf{width:auto;padding:6px 14px}
