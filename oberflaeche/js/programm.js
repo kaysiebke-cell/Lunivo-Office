@@ -4690,7 +4690,7 @@ let kopfFussModus = false;
 
 function kopfFussReiterZeigen() {
   kopfFussModus = true;
-  registerOffen = 'Kopf- und Fußzeilenwerkzeuge';
+  registerOffen = 'Kopf- und Fußzeile';
   /* Und das Band aufklappen. War es eingeklappt - ein Doppelklick auf
      einen Reiter tut das -, blieb die Reiterleiste stehen und darunter
      NICHTS: "was machst du eigentlich ausser dass du meine ganze
@@ -9451,7 +9451,7 @@ const REGISTER_IM_ZUSAMMENHANG = [
     /* Wer in der Kopfzeile steht, will Seitenzahl, Datum — und vor allem
        wieder heraus. Der Weg zurück ist mit der Maus der fummeligste:
        Man trifft die schmale Zeile leichter, als man sie wieder verlässt. */
-    name: 'Kopf- und Fußzeilenwerkzeuge',
+    name: 'Kopf- und Fußzeile',
     gilt: () => kopfFussModus || !!kopfFussJetzt(),
     gruppen: [
       /* NACH SEINEM WPS-BILD. Dort stehen der Reihe nach: Header,
@@ -10369,7 +10369,7 @@ function registerBauen() {
     knopf.setAttribute('role', 'tab');
     knopf.className = (name === registerOffen ? 'register--offen ' : '')
                     + (imZusammenhang ? 'register__zusatz' : '');
-    if (imZusammenhang) knopf.title = 'Nur da, solange der Zeiger in einer Tabelle steht';
+    if (imZusammenhang) knopf.title = 'Nur da, solange er gebraucht wird';
     knopf.addEventListener('click', () => {
       /* Ein Klick auf den offenen Reiter klappt wieder auf, wenn eingeklappt
          war. So kommt man an das Band, ohne die Einstellung zu ändern. */
