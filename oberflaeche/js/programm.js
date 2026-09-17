@@ -8630,10 +8630,14 @@ function kopfhoehenKiste() {
     weniger.textContent = '−';
     weniger.title = name + ' verringern';
 
+    /* Auf seinem Bild steht die Einheit IM Feld ("0,50Inch"), und das
+       Feld hat keine Spinner-Pfeile - links und rechts sitzen Minus und
+       Plus, sonst nichts. Ich hatte ein Zahlenfeld mit Pfeilen UND ein
+       zweites "mm" daneben. */
     const eingabe = document.createElement('input');
-    eingabe.type = 'number';
-    eingabe.min = '0'; eingabe.max = '80'; eingabe.step = '1';
-    eingabe.value = String(Speicher.lies(merker, 12));
+    eingabe.type = 'text';
+    eingabe.inputMode = 'decimal';
+    eingabe.value = Speicher.lies(merker, 12) + ' mm';
     eingabe.title = name + ' in Millimetern';
 
     const mehr = document.createElement('button');
@@ -8646,13 +8650,14 @@ function kopfhoehenKiste() {
       const zahl = parseFloat(String(eingabe.value).replace(',', '.'));
       const wert = Number.isNaN(zahl) ? Speicher.lies(merker, 12)
                                       : Math.max(0, Math.min(80, zahl));
-      eingabe.value = String(wert);
+      eingabe.value = wert + ' mm';
       blatt.style.setProperty(was, wert + 'mm');
       Speicher.schreib(merker, wert);
       melde(name + ': ' + wert + ' mm.');
     };
     const stufe = (richtung) => {
-      eingabe.value = String(Math.max(0, (parseFloat(eingabe.value) || 0) + richtung));
+      const jetzt = parseFloat(String(eingabe.value).replace(',', '.')) || 0;
+      eingabe.value = String(Math.max(0, jetzt + richtung));
       uebernehmen();
     };
     weniger.addEventListener('click', () => stufe(-1));
@@ -8663,10 +8668,6 @@ function kopfhoehenKiste() {
     });
 
     zeile.append(weniger, eingabe, mehr);
-    const mm = document.createElement('span');
-    mm.className = 'register__mass';
-    mm.textContent = 'mm';
-    zeile.appendChild(mm);
     kiste.appendChild(zeile);
   }
   return kiste;

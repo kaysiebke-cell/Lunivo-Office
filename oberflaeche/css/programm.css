@@ -1724,37 +1724,55 @@ button.wz-wahl--schrift{
   min-height:1.6em;
   box-sizing:border-box;
   padding:2mm var(--rand-rechts,2cm) 2mm var(--rand-links,2cm);
-  background:rgba(127,127,127,.055);
+  /* KEINE Toenung: Auf seinem Bild ist der Bereich so weiss wie das
+     uebrige Blatt. Ein grauer Balken ueber die volle Blattbreite stand
+     in keiner Vorlage - er kam von mir. */
+  background:none;
   color:var(--blatt-schrift);
   font:10pt/1.4 OpenDyslexic,Georgia,"Liberation Serif",serif;
   outline:none;
 }
+/* DIE HOEHE MUSS ETWAS TUN.
+
+   Gemessen: 12 mm eingestellt, 18,1 mm im Blatt - die Felder oben in der
+   Leiste steuerten gar nichts. Die Zeile hing nur am Seitenrand und wuchs
+   von dort nach oben, wie ihr Inhalt es wollte.
+
+   Auf seinem Bild ist es anders herum: Die Kopfzeilenhoehe (dort 0,50
+   Inch) sagt, wie weit der Textbereich vom Blattrand entfernt beginnt;
+   die durchgehende Trennlinie sitzt auf dem Seitenrand. Genau das steht
+   jetzt hier. */
 .kopfzeile{
-  bottom:calc(100% - var(--rand-oben,2cm));
+  top:var(--kopfhoehe,12.7mm);
+  bottom:auto;
+  min-height:calc(var(--rand-oben,2cm) - var(--kopfhoehe,12.7mm));
   border-bottom:1px dashed var(--marke);
-  padding-top:4mm;
+  padding-top:0;padding-bottom:0;
 }
 .fusszeile{
-  top:calc(100% - var(--rand-unten,2cm));
+  bottom:var(--fusshoehe,12.7mm);
+  top:auto;
+  min-height:calc(var(--rand-unten,2cm) - var(--fusshoehe,12.7mm));
   border-top:1px dashed var(--marke);
-  padding-bottom:4mm;
+  padding-top:0;padding-bottom:0;
 }
 
-/* Das Schild. Es steht immer da, nicht nur solange das Feld leer ist:
-   Wer hineinschreibt, soll auch dann sehen, wo er schreibt. */
-.kopfzeile::before,.fusszeile::before{
-  position:absolute;left:var(--rand-links,2cm);
-  font:italic 8pt/1 Georgia,"Liberation Serif",serif;
-  letter-spacing:.4px;
-  color:var(--marke);
+/* Der Textbereich ist ein eigenes gestricheltes Rechteck INNERHALB der
+   Seitenraender - so steht es auf seinem Bild. Die durchgehende Linie
+   ueber die volle Blattbreite trennt zusaetzlich ab; sie ist nicht
+   dasselbe. Bei mir gab es nur die Linie, das Rechteck fehlte. */
+.kopfzeile::after,.fusszeile::after{
+  content:'';position:absolute;
+  left:var(--rand-links,2cm);right:var(--rand-rechts,2cm);
+  border:1px dashed var(--marke);
   pointer-events:none;
 }
-.kopfzeile::before{content:'Kopfzeile';top:.5mm}
-.fusszeile::before{content:'Fußzeile';bottom:.5mm}
+.kopfzeile::after,.fusszeile::after{top:0;bottom:0}
 
-/* Beim Hineinschreiben deutlicher: Dann ist es wichtig zu wissen, wo man ist. */
-.kopfzeile:focus,.fusszeile:focus{background:rgba(127,127,127,.10)}
-.kopfzeile:focus::before,.fusszeile:focus::before{color:var(--blau)}
+/* KEIN kursives Schild mehr im Feld. Die Marke steht im Kasten an der
+   Leiste - auf seinem Bild genau einmal. Ich hatte sie doppelt: einmal
+   kursiv im Balken, einmal im Kasten darunter. */
+.kopfzeile:focus::after,.fusszeile:focus::after{border-color:var(--blau)}
 
 /* Auf dem Papier ist beides weg — Band, Strich und Schild. */
 /* Auf dem Papier läuft beides wieder im Fluss: Dort setzt der Drucker die
@@ -1770,7 +1788,7 @@ button.wz-wahl--schrift{
   }
   .kopfzeile{padding-top:0;padding-bottom:2mm}
   .fusszeile{padding-top:2mm;padding-bottom:0}
-  .kopfzeile::before,.fusszeile::before{content:none}
+  .kopfzeile::after,.fusszeile::after{content:none}
 }
 .kopfzeile[hidden],.fusszeile[hidden]{display:none}
 .seitenzahl{color:var(--schrift-3)}
@@ -5851,3 +5869,10 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 /* Der Knopf bleibt sichtbar und zeigt, dass seine Klappe offen ist. */
 .kopffussleiste__knopf--auf{background:var(--blau);color:#fff;border-color:var(--blau)}
 .kopffussleiste__knopf--auf .kopffussleiste__pfeil{transform:rotate(180deg)}
+
+/* Keine Spinner-Pfeile: Auf seinem Bild hat das Feld nur Minus und Plus
+   daneben, die Einheit steht im Feld selbst. */
+.register__rand--breit input[type=text]{
+  width:5.2em;text-align:center;
+  -moz-appearance:textfield;appearance:textfield;
+}
