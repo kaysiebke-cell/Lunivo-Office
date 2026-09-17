@@ -4871,13 +4871,80 @@ function kopfFussLeisteBauen(wo) {
   return leiste;
 }
 
+/* DER DRITTE KOPF.
+
+   An seiner Kopfzeile haengen drei Dinge, nicht zwei: das Zeichen fuer
+   das Absatz-Layout (links oben, mit eigener Klappe), die Marke
+   "Kopfzeile" und der Knopf "Seitenzahl einfuegen". Ich hatte nur die
+   beiden letzten gebaut.
+
+   Die Klappe hat bei ihm genau zwei Zeilen: "Absatzformat
+   zuruecksetzen" und "Symbol vom Absatz-Layout ausblenden". */
+function absatzLayoutZeichenBauen(wo) {
+  const knopf = document.createElement('button');
+  knopf.type = 'button';
+  knopf.className = 'absatzlayout';
+  knopf.dataset.wo = wo;
+  knopf.title = 'Absatz-Layout';
+  knopf.appendChild(symbol('absatzlayout'));
+  const pfeil = document.createElement('span');
+  pfeil.className = 'absatzlayout__pfeil';
+  pfeil.textContent = '▾';
+  knopf.appendChild(pfeil);
+
+  knopf.addEventListener('mousedown', (e) => e.preventDefault());
+  knopf.addEventListener('click', (e) => {
+    e.stopPropagation();
+    designTafelZeigen(knopf, '', (tafel) => {
+      tafel.classList.add('designtafel--breit');
+      const zeile = (name, tun) => {
+        const k = document.createElement('button');
+        k.type = 'button';
+        k.className = 'designtafel__zeile';
+        const w = document.createElement('span');
+        w.textContent = name;
+        k.appendChild(w);
+        k.addEventListener('mousedown', (ev) => ev.preventDefault());
+        k.addEventListener('click', () => { designTafelWeg(); tun(); });
+        tafel.appendChild(k);
+      };
+      zeile('Absatzformat zurücksetzen', () => {
+        const zeileFeld = $(wo === 'kopf' ? 'kopfzeile' : 'fusszeile');
+        if (!zeileFeld) return;
+        zeileFeld.style.textAlign = '';
+        zeileFeld.style.lineHeight = '';
+        zeileFeld.style.marginLeft = '';
+        zeileFeld.style.marginRight = '';
+        zeileFeld.querySelectorAll('[style]').forEach((el) => {
+          el.style.textAlign = '';
+          el.style.lineHeight = '';
+          el.style.textIndent = '';
+        });
+        geaendertMelden();
+        melde('Absatzformat der ' + (wo === 'kopf' ? 'Kopfzeile' : 'Fußzeile')
+              + ' zurückgesetzt.');
+      });
+      zeile('Symbol vom Absatz-Layout ausblenden', () => {
+        Speicher.schreib('absatzlayoutZeichen', false);
+        document.querySelectorAll('.absatzlayout').forEach((z) => z.remove());
+        melde('Das Zeichen ist ausgeblendet. Unter „Einstellungen" im '
+              + 'Band holst du es zurück.');
+      });
+    });
+  });
+  return knopf;
+}
+
 function kopfFussLeistenZeigen() {
-  document.querySelectorAll('.kopffussleiste').forEach((l) => l.remove());
+  document.querySelectorAll('.kopffussleiste,.absatzlayout').forEach((l) => l.remove());
   if (!kopfFussModus) return;
   const blatt = $('blatt');
   if (!blatt) return;
   if (kopfAn) blatt.appendChild(kopfFussLeisteBauen('kopf'));
   if (fussAn) blatt.appendChild(kopfFussLeisteBauen('fuss'));
+  if (kopfAn && Speicher.lies('absatzlayoutZeichen', true)) {
+    blatt.appendChild(absatzLayoutZeichenBauen('kopf'));
+  }
   kopfFussLeistenStellen();
 }
 
@@ -4895,6 +4962,16 @@ function kopfFussLeistenStellen() {
       ? zMasse.bottom - bMasse.top + 2
       : zMasse.top - bMasse.top - leiste.offsetHeight - 2;
     leiste.style.top = Math.max(0, oben) + 'px';
+  }
+
+  /* Das Zeichen sitzt an der OBERKANTE des Kopfzeilenbereichs, am linken
+     Blattrand - so steht es auf seinem Bild, links neben dem Rechteck. */
+  const zeichen = document.querySelector('.absatzlayout');
+  if (zeichen) {
+    const kz = $('kopfzeile');
+    if (!kz || kz.hidden) { zeichen.remove(); return; }
+    const zMasse = kz.getBoundingClientRect();
+    zeichen.style.top = Math.max(0, zMasse.top - bMasse.top - zeichen.offsetHeight - 2) + 'px';
   }
 }
 
@@ -5044,9 +5121,43 @@ B.kopfZeilenhoehe = (istKopf) => {
   }, 'Übernehmen');
 };
 
+/* "Einstellungen" aus seinem Bild - eine Klappe, kein Fenster. Darin
+   steht, was sonst ueber drei Reiter verteilt liegt und beim Einrichten
+   einer Kopfzeile gebraucht wird. */
+B.kopfFussEinstellungen = (knopf) => {
+  designTafelZeigen(knopf, 'Einstellungen', (tafel) => {
+    tafel.classList.add('designtafel--breit');
+    const zeile = (bild, name, tun) => {
+      const k = document.createElement('button');
+      k.type = 'button';
+      k.className = 'designtafel__zeile richtungszeile';
+      k.appendChild(symbol(bild));
+      const w = document.createElement('span');
+      w.textContent = name;
+      k.appendChild(w);
+      k.addEventListener('mousedown', (e) => e.preventDefault());
+      k.addEventListener('click', () => { designTafelWeg(); tun(); });
+      tafel.appendChild(k);
+    };
+    zeile('zahnrad', 'Optionen für Kopf- und Fußzeile…', () => B.kopfFussOptionen());
+    zeile('raender', 'Seitenränder…', () => B.seitenraender());
+
+    /* Das Absatz-Layout-Zeichen wieder einschalten. Ohne diese Stelle
+       waere es nach dem Ausblenden fuer immer weg - meine Meldung dort
+       versprach etwas anderes, als das Programm tat. */
+    const an = Speicher.lies('absatzlayoutZeichen', true);
+    zeile('absatzlayout', (an ? 'Absatz-Layout-Zeichen ausblenden'
+                              : 'Absatz-Layout-Zeichen anzeigen'), () => {
+      Speicher.schreib('absatzlayoutZeichen', !an);
+      kopfFussLeistenZeigen();
+      melde(an ? 'Das Zeichen ist ausgeblendet.' : 'Das Zeichen ist wieder da.');
+    });
+  });
+};
+
 B.kopfFussSchliessen = () => {
   kopfFussModus = false;
-  document.querySelectorAll('.kopffussleiste').forEach((l) => l.remove());
+  document.querySelectorAll('.kopffussleiste,.absatzlayout').forEach((l) => l.remove());
   feld.focus();
   const ende = document.createRange();
   ende.selectNodeContents(feld);
@@ -8307,6 +8418,11 @@ const REGISTER_IM_ZUSAMMENHANG = [
         ['tabstopp', 'Ausrichtungstabstopp einfügen', () => B.ausrichtungstabstopp(), 'wort'],
       ]],
       ['Größe', 'kopfhoehen'],
+      /* Zwischen den Hoehen und dem Schliessen steht auf seinem Bild
+         "Einstellungen" mit einer eigenen Klappe. Die Gruppe fehlte. */
+      ['Einstellungen', [
+        ['einstellungen', 'Einstellungen', (k) => B.kopfFussEinstellungen(k), 'gross'],
+      ]],
       ['Schließen', [
         ['schliessen', 'Schließen', () => B.kopfFussSchliessen(), 'gross'],
       ]],

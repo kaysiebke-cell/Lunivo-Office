@@ -5885,3 +5885,16 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
   width:5.2em;text-align:center;
   -moz-appearance:textfield;appearance:textfield;
 }
+
+/* Der dritte Kopf: das Zeichen fuer das Absatz-Layout. Es haengt links
+   oben an der Kopfzeile - auf dem Papier, also in Blattfarben. */
+.absatzlayout{
+  position:absolute;left:2px;z-index:5;
+  display:inline-flex;align-items:center;gap:2px;
+  padding:2px 4px;cursor:pointer;
+  background:rgba(0,0,0,.07);color:var(--blatt-schrift);
+  border:1px solid var(--marke);border-radius:3px;
+}
+.absatzlayout svg{width:15px;height:15px}
+.absatzlayout__pfeil{opacity:.7;font-size:9px}
+@media print{ .absatzlayout{display:none} }
