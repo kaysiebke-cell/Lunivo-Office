@@ -6078,52 +6078,6 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 
 .seitentafel__zweispalten{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
 .seitentafel__zweispalten .seitentafel__spalte{display:flex;flex-direction:column;min-width:0}
-/* Die Papierzufuhr ist eine LISTE (select size=4), kein Klappfeld.
-
-   Die gemeinsame Regel setzt appearance:none, einen dunklen Grund und
-   das Pfeilbild - fuer ein Klappfeld richtig, fuer eine offene Liste
-   falsch: Sie stand schwarz da, und die vier Eintraege waren nicht zu
-   lesen. Hier also heller Grund, kein Pfeil, und die gewaehlte Zeile
-   blau. */
-.seitentafel__liste{
-  width:100%;box-sizing:border-box;
-  padding:2px;cursor:default;
-  /* !important, weil die gemeinsame select-Regel das Pfeilbild setzt und
-     in der Datei weiter oben steht - ohne das bleibt der Pfeil neben
-     einer Liste stehen, in der es nichts aufzuklappen gibt. */
-  background-image:none !important;
-  /* WEISS, wie auf seinem Bild. var(--karte) ist im dunklen Fenster
-     dunkel - das war der schwarze Kasten, den er zweimal angestrichen
-     hat. Eine Liste, in der man liest und waehlt, ist bei ihm Papier:
-     weisser Grund, dunkle Schrift. */
-  background-color:var(--blatt);
-  color:var(--blatt-schrift);
-}
-/* Hoch genug fuer alle vier Zeilen. Vorher rollte die Liste, und das
-   schmale Kaestchen rechts - das ich fuer einen Pfeil hielt - war ihre
-   Rollleiste; die erste Zeile stand halb abgeschnitten oben. */
-.seitentafel__liste{height:auto;min-height:5.8em}
-.seitentafel__liste option{
-  padding:3px 6px;
-  background-color:var(--blatt);
-  color:var(--blatt-schrift);
-}
-/* Die gewaehlte Zeile.
-
-   WebKit zeichnet den Auswahlbalken selbst und laesst sich davon weder
-   mit background noch mit background-color abbringen: Es blieb ein
-   grauer Balken mit dunkler Schrift darauf - Kay: "wer soll das bitte
-   lesen koennen".
-
-   Was wirkt, ist ein einwaerts gelegter Schatten, der die ganze Zeile
-   fuellt, und -webkit-text-fill-color fuer die Schrift; die normale
-   color-Angabe wird vom Systembalken ebenfalls uebergangen. */
-.seitentafel__liste option:checked{
-  box-shadow:inset 0 0 0 100px var(--blau);
-  color:#fff;
-  -webkit-text-fill-color:#fff;
-}
-.seitentafel__liste option{-webkit-text-fill-color:var(--blatt-schrift)}
 .seitentafel__nebenknopf{width:auto;margin-top:2px;align-self:flex-start}
 .seitentafel__knopfreihe{display:flex;gap:8px;margin-top:4px}
 .seitentafel__knopfreihe .knopf{width:auto;padding:6px 14px}
@@ -6175,3 +6129,24 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
    nicht mitten in der Karte. */
 .seitentafel__fusslinks{display:flex;flex-direction:column;gap:8px;min-width:0}
 .druckoptionen .rahmentafel__buehne{height:auto;max-height:60vh;overflow-y:auto}
+
+/* Die Papierzufuhr: ein einfacher Kasten mit vier Zeilen.
+
+   Mit <select size="4"> ging es dreimal schief - WebKit zeichnet Rahmen,
+   Rollleiste und Auswahlbalken selbst. Das hier ist ein Kasten, vier
+   Zeilen, eine davon blau. */
+.seitenliste{
+  display:flex;flex-direction:column;
+  background:var(--blatt);
+  border:1px solid var(--rand);border-radius:4px;
+  overflow:hidden;
+}
+.seitenliste__zeile{
+  display:block;width:100%;text-align:left;
+  padding:3px 8px;cursor:pointer;
+  background:none;color:var(--blatt-schrift);
+  border:0;font:inherit;font-size:13px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.seitenliste__zeile:hover{background:rgba(47,111,181,.14)}
+.seitenliste__zeile--an{background:var(--blau);color:#fff}

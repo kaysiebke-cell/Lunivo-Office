@@ -239,8 +239,29 @@ const B = {};
    niemand mehr gefragt werden. */
 B.neu = () => {
   dokumentNeu();
+  vorgabeSeiteAnwenden();
   melde('Neues Blatt — ' + Dokumente.anzahl() + ' Dokumente offen.');
 };
+
+/* Was "Als Standard festlegen" in der Seiteneinrichtung gemerkt hat, gilt
+   fuer jedes neue Blatt. Ohne diese Stelle waere der Knopf dort einer,
+   der etwas speichert und nie wieder hervorholt - also einer ohne
+   Funktion. */
+function vorgabeSeiteAnwenden() {
+  const v = Speicher.lies('vorgabeSeite', null);
+  if (!v) return;
+  if (v.rand) Object.assign(seitenrand, v.rand);
+  if (typeof v.spalten === 'number') spalten = v.spalten;
+  if (typeof v.papier === 'string') papier = v.papier;
+  if (typeof v.quer === 'boolean') quer = v.quer;
+  for (const [name, wert] of [['kopfhoehe', v.kopfhoehe], ['fusshoehe', v.fusshoehe],
+                              ['bundsteg', v.bundsteg], ['bundstegWo', v.bundstegWo],
+                              ['mehrereSeiten', v.mehrere]]) {
+    if (wert !== undefined) Speicher.schreib(name, wert);
+  }
+  if (typeof papierAnwenden === 'function') papierAnwenden();
+  if (typeof seiteAnwenden === 'function') seiteAnwenden();
+}
 
 /* Welches Format beim Speichern genommen wird, wenn eine Datei dieser Art
    geöffnet wurde. Was sich nicht zurückschreiben lässt, kommt dem Nächsten
@@ -5727,16 +5748,32 @@ B.seiteEinrichten = (karteZuerst) => {
       t.className = 'seitentafel__kleinname';
       t.textContent = titel;
       sp.appendChild(t);
-      const liste = document.createElement('select');
-      liste.className = 'seitentafel__liste';
-      liste.size = 4;
+      /* EIN EINFACHER KASTEN.
+
+         Drei Anläufe mit <select size="4"> sind gescheitert: WebKit
+         zeichnet Rahmen, Rollleiste und Auswahlbalken selbst und laesst
+         sich davon kaum abbringen - mal schwarz, mal ein Balken mit
+         dunkler Schrift darauf, zuletzt eine Zeile, die aus dem weissen
+         Kasten herausragte. Kay: "kannst du keine einfachen Kaesten
+         machen".
+
+         Doch: ein Kasten, vier Zeilen, eine davon blau. Keine
+         Systemzeichnung, keine Ueberraschungen. */
+      const liste = document.createElement('div');
+      liste.className = 'seitenliste';
       for (const [sm, sn] of schaechte) {
-        const o = document.createElement('option');
-        o.value = sm; o.textContent = sn;
-        if (sm === stand[marke]) o.selected = true;
-        liste.appendChild(o);
+        const z = document.createElement('button');
+        z.type = 'button';
+        z.className = 'seitenliste__zeile'
+                    + (sm === stand[marke] ? ' seitenliste__zeile--an' : '');
+        z.textContent = sn;
+        z.addEventListener('click', () => {
+          stand[marke] = sm;
+          [...liste.children].forEach((c) => c.classList.remove('seitenliste__zeile--an'));
+          z.classList.add('seitenliste__zeile--an');
+        });
+        liste.appendChild(z);
       }
-      liste.addEventListener('change', () => { stand[marke] = liste.value; });
       sp.appendChild(liste);
       zufuhr.appendChild(sp);
     }
@@ -6041,15 +6078,24 @@ B.seiteEinrichten = (karteZuerst) => {
   const standard = document.createElement('button');
   standard.type = 'button'; standard.className = 'knopf';
   standard.textContent = 'Standard…';
+  /* "Standard..." heisst bei WPS: die Werte, die JETZT im Fenster stehen,
+     als Vorgabe fuer neue Dokumente merken - mit Rueckfrage. Meiner setzte
+     nur die Felder zurueck, und weil seine Raender ohnehin auf 20 stehen,
+     schien er nichts zu tun. */
   standard.addEventListener('click', () => {
-    stand.rand = { oben: 20, unten: 20, links: 20, rechts: 20 };
-    stand.bundsteg = 0; stand.bundstegWo = 'links';
-    stand.quer = false; stand.papier = 'a4'; stand.spalten = 1;
-    stand.kopfhoehe = 12; stand.fusshoehe = 12; stand.mehrere = 'normal';
-    stand.spaltenVorgabe = 'eine'; stand.zwischenlinie = false;
-    stand.raster = 'ohne'; stand.textfluss = 'horizontal';
-    karteZeigen(offen);
-    melde('Auf die Standardwerte zurückgesetzt — mit OK übernehmen.');
+    fenster('Als Standard festlegen', [
+      { art: 'satz', text: 'Die Werte in diesem Fenster gelten dann für neue '
+                         + 'Dokumente. Das laufende Dokument ändert sich erst '
+                         + 'mit OK.' },
+    ], () => {
+      Speicher.schreib('vorgabeSeite', {
+        rand: stand.rand, quer: stand.quer, papier: stand.papier,
+        spalten: stand.spalten, kopfhoehe: stand.kopfhoehe,
+        fusshoehe: stand.fusshoehe, bundsteg: stand.bundsteg,
+        bundstegWo: stand.bundstegWo, mehrere: stand.mehrere,
+      });
+      melde('Als Vorgabe für neue Dokumente gemerkt.');
+    }, 'Festlegen');
   });
   knoepfe.appendChild(standard);
 
