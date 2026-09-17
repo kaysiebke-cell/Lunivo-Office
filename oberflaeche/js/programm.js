@@ -4288,6 +4288,9 @@ function seiteAnwenden() {
   linealAuffrischen();
 }
 
+/* SEIN Fenster. Ich hatte es einmal auf die Seiteneinrichtung umgebogen
+   und damit etwas Fertiges verdraengt - das war falsch. Es bleibt, wie es
+   ist, und wird von "Benutzerdefinierte Seitenraender..." gerufen. */
 B.seitenraender = () => {
   fenster('Seitenränder', [
     { art: 'satz', text: 'In Millimetern. Ein Brief hat üblicherweise 20 mm ringsum.' },
@@ -4999,20 +5002,9 @@ function kopfFussLeistenStellen() {
     const zeile = $(leiste.dataset.wo === 'kopf' ? 'kopfzeile' : 'fusszeile');
     if (!zeile || zeile.hidden) { leiste.remove(); continue; }
     const zMasse = zeile.getBoundingClientRect();
-    /* DIE LEISTE DARF DEN TEXT NICHT VERDECKEN.
-
-       Sie sass 2 px unter der Trennlinie - und die Trennlinie liegt auf
-       dem Seitenrand, wo der Text anfaengt. Bei einem leeren Dokument
-       fiel das nicht auf; bei seinem sieben Seiten langen lag sie auf der
-       ersten Zeile.
-
-       Jetzt haengt sie IM Kopfzeilenbereich, mit der Unterkante an der
-       Linie. Ist der Bereich zu flach, rueckt sie so weit nach oben, wie
-       das Blatt es hergibt - aber nie in den Text. */
-    const hoehe = leiste.offsetHeight;
     const oben = leiste.dataset.wo === 'kopf'
-      ? zMasse.bottom - bMasse.top - hoehe - 1
-      : zMasse.top - bMasse.top + 1;
+      ? zMasse.bottom - bMasse.top + 2
+      : zMasse.top - bMasse.top - leiste.offsetHeight - 2;
     leiste.style.top = Math.max(0, oben) + 'px';
   }
 
@@ -5309,17 +5301,618 @@ B.kopfZeilenhoehe = (istKopf) => {
   }, 'Übernehmen');
 };
 
-/* "Einstellungen" im Reiter Kopf- und Fusszeile.
+/* ============================================================
+   SEITENEINRICHTUNG  (Bereich 6 seiner Liste)
 
-   Hier stand eine Zeit lang ein selbstgebautes Fenster "Seiteneinrichtung"
-   mit fuenf Karten - und es hat seine fertigen Fenster verdraengt, weil
-   ich B.seitenraender und B.papierformatFenster darauf umgebogen hatte.
-   Seine Ansage: "unter benutzerdefinierte Raender war alles schon da, du
-   haettest es nur von dort holen muessen."
+   Sein Bild zeigt, was hinter "Einstellungen" steckt: ein Fenster
+   "Seiteneinrichtung" mit fuenf Karten - Seitenraender, Papier, Layout,
+   Dokumentraster, Spalten - und unten "Uebernehmen fuer".
 
-   Genau das steht jetzt hier: derselbe Aufruf, den auch
-   "Benutzerdefinierte Seitenraender..." im Reiter Seitenlayout macht. */
-B.kopfFussEinstellungen = () => B.seitenraender();
+   Ich hatte an dieser Stelle eine eigene kleine Klappe gebaut. Seine
+   Ansage: "das laeuft unter Einstellungen und hast du schon an anderer
+   Stelle gebaut." Stimmt - Seitenraender, Papierformat, Ausrichtung und
+   Spalten gibt es laengst. Dieses Fenster ruft sie, es baut sie nicht
+   noch einmal.
+   ============================================================ */
+B.seiteEinrichten = (karteZuerst) => {
+  const grund = document.createElement('div');
+  grund.className = 'dialoggrund';
+  const kasten = document.createElement('div');
+  kasten.className = 'dialog dialog--breit seitentafel';
+  kasten.innerHTML = '<h3 class="dialog__titel">Seiteneinrichtung</h3>';
+
+  const reiter = document.createElement('div');
+  reiter.className = 'rahmentafel__reiter';
+  const buehne = document.createElement('div');
+  buehne.className = 'rahmentafel__buehne';
+
+  /* Was das Fenster sammelt, bevor OK es anwendet. Nichts davon greift
+     schon ins Dokument - erst OK tut das. */
+  const stand = {
+    rand: Object.assign({}, seitenrand),
+    quer: quer,
+    papier: papier,
+    spalten: spalten,
+    kopfhoehe: Speicher.lies('kopfhoehe', 12),
+    fusshoehe: Speicher.lies('fusshoehe', 12),
+    erste: Speicher.lies('kopfErsteAnders', false),
+    gerade: Speicher.lies('kopfGeradeAnders', false),
+    bundstegWo: Speicher.lies('bundstegWo', 'links'),
+    bundsteg: Speicher.lies('bundsteg', 0),
+    mehrere: Speicher.lies('mehrereSeiten', 'normal'),
+    /* Karte Papier */
+    zufuhrErste: Speicher.lies('zufuhrErste', 'drucker'),
+    zufuhrRest: Speicher.lies('zufuhrRest', 'drucker'),
+    /* Karte Layout */
+    abschnittBeginn: Speicher.lies('abschnittBeginn', 'neueseite'),
+    masseinheit: Speicher.lies('masseinheit', 'mm'),
+    zeicheneinheiten: Speicher.lies('zeicheneinheiten', false),
+    /* Karte Dokumentraster */
+    textfluss: Speicher.lies('textfluss', 'horizontal'),
+    raster: Speicher.lies('dokumentraster', 'ohne'),
+    zeichenProZeile: Speicher.lies('zeichenProZeile', 48),
+    zeilen: Speicher.lies('rasterZeilen', 40),
+    /* Karte Spalten */
+    spaltenVorgabe: Speicher.lies('spaltenVorgabe', 'eine'),
+    zwischenlinie: Speicher.lies('spaltenlinie', false),
+    gleicheBreite: Speicher.lies('spaltenGleich', true),
+    neueSpalte: false,
+  };
+
+  /* ---- Bausteine, die auf mehreren Karten vorkommen ---- */
+
+  const feldZeile = (name, wert, beiAenderung, einheit, aus) => {
+    const z = document.createElement('label');
+    z.className = 'seitentafel__feld';
+    const w = document.createElement('span');
+    w.textContent = name + ':';
+    const e = document.createElement('input');
+    e.type = 'number'; e.value = String(wert); e.step = '1'; e.className = 'feld';
+    if (aus) e.disabled = true;
+    e.addEventListener('change', () => { beiAenderung(parseFloat(e.value)); schauStellen(); });
+    z.append(w, e);
+    if (einheit) {
+      const m = document.createElement('span');
+      m.className = 'seitentafel__mass';
+      m.textContent = einheit;
+      z.appendChild(m);
+    }
+    z.feld = e;
+    return z;
+  };
+
+  const klappZeile = (name, werte, jetzt, beiAenderung) => {
+    const z = document.createElement('label');
+    z.className = 'seitentafel__feld';
+    const w = document.createElement('span');
+    w.textContent = name + ':';
+    const aus = document.createElement('select');
+    aus.className = 'feld';
+    for (const [marke, text] of werte) {
+      const o = document.createElement('option');
+      o.value = marke; o.textContent = text;
+      if (marke === jetzt) o.selected = true;
+      aus.appendChild(o);
+    }
+    aus.addEventListener('change', () => { beiAenderung(aus.value); schauStellen(); });
+    z.append(w, aus);
+    z.wahl = aus;
+    return z;
+  };
+
+  const haken = (name, an, beiAenderung, aus) => {
+    const w = document.createElement('label');
+    w.className = 'absatzfenster__haken';
+    const e = document.createElement('input');
+    e.type = 'checkbox'; e.checked = !!an;
+    if (aus) e.disabled = true;
+    e.addEventListener('change', () => { beiAenderung(e.checked); schauStellen(); });
+    const t = document.createElement('span');
+    t.textContent = name;
+    w.append(e, t);
+    return w;
+  };
+
+  const knopfReihe = (gruppe, werte, jetzt, beiAenderung) => {
+    const reihe = document.createElement('div');
+    reihe.className = 'seitentafel__radios';
+    for (const [marke, text] of werte) {
+      const w = document.createElement('label');
+      w.className = 'absatzfenster__haken';
+      const e = document.createElement('input');
+      e.type = 'radio'; e.name = gruppe; e.value = marke; e.checked = (marke === jetzt);
+      e.addEventListener('change', () => { if (e.checked) { beiAenderung(marke); schauStellen(); } });
+      const t = document.createElement('span');
+      t.textContent = text;
+      w.append(e, t);
+      reihe.appendChild(w);
+    }
+    return reihe;
+  };
+
+  const ueberschrift = (text) => {
+    const p2 = document.createElement('p');
+    p2.className = 'seitentafel__name';
+    p2.textContent = text;
+    return p2;
+  };
+
+  /* ---- Karte 1: Seitenränder ---- */
+  const karteRaender = () => {
+    const k = document.createElement('div');
+    k.className = 'rahmentafel__karte';
+    k.appendChild(ueberschrift('Seitenränder'));
+
+    const g = document.createElement('div');
+    g.className = 'seitentafel__gitter';
+    for (const kante of ['oben', 'unten', 'links', 'rechts']) {
+      g.appendChild(feldZeile(kante[0].toUpperCase() + kante.slice(1), stand.rand[kante],
+        (v) => { if (!Number.isNaN(v)) stand.rand[kante] = Math.max(0, Math.min(80, v)); },
+        stand.masseinheit));
+    }
+    g.appendChild(klappZeile('Bundstegposition', [['links', 'Links'], ['oben', 'Oben']],
+      stand.bundstegWo, (v) => { stand.bundstegWo = v; }));
+    g.appendChild(feldZeile('Bundstegbreite', stand.bundsteg,
+      (v) => { if (!Number.isNaN(v)) stand.bundsteg = Math.max(0, Math.min(80, v)); },
+      stand.masseinheit));
+    k.appendChild(g);
+
+    k.appendChild(ueberschrift('Ausrichtung'));
+    const wahl = document.createElement('div');
+    wahl.className = 'seitentafel__wahlreihe';
+    for (const [istQuer, name] of [[false, 'Hochformat'], [true, 'Querformat']]) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'zahlkachel' + (stand.quer === istQuer ? ' zahlkachel--an' : '');
+      const bild = document.createElement('span');
+      bild.className = 'seitentafel__blatt' + (istQuer ? ' seitentafel__blatt--quer' : '');
+      bild.textContent = 'A';
+      const t = document.createElement('span');
+      t.className = 'zahlkachel__name';
+      t.textContent = name;
+      b.append(bild, t);
+      b.addEventListener('click', () => {
+        stand.quer = istQuer;
+        [...wahl.children].forEach((c) => c.classList.remove('zahlkachel--an'));
+        b.classList.add('zahlkachel--an');
+        schauStellen();
+      });
+      wahl.appendChild(b);
+    }
+    k.appendChild(wahl);
+
+    k.appendChild(ueberschrift('Seiten'));
+    k.appendChild(klappZeile('Mehrere Seiten',
+      [['normal', 'Normal'], ['gespiegelt', 'Gegenüberliegende Seiten'],
+       ['zweiproblatt', '2 Seiten pro Blatt']],
+      stand.mehrere, (v) => { stand.mehrere = v; }));
+    return k;
+  };
+
+  /* ---- Karte 2: Papier ---- */
+  const kartePapier = () => {
+    const k = document.createElement('div');
+    k.className = 'rahmentafel__karte';
+    k.appendChild(ueberschrift('Papierformat'));
+
+    const formate = Object.entries(PAPIERE).map(([m, p2]) => [m, p2.name]);
+    const fz = klappZeile('Format', formate, stand.papier, (v) => {
+      stand.papier = v;
+      const p2 = PAPIERE[v];
+      if (!p2) return;
+      bF.feld.value = String(p2.breite);
+      hF.feld.value = String(p2.hoehe);
+    });
+    k.appendChild(fz);
+
+    const jetzt = () => (PAPIERE[stand.papier] || PAPIERE.a4);
+    const masse = document.createElement('div');
+    masse.className = 'seitentafel__gitter';
+    const bF = feldZeile('Breite', jetzt().breite, (v) => {
+      if (Number.isNaN(v)) return;
+      PAPIERE.eigen = { name: 'Eigenes Format',
+                        breite: Math.max(20, Math.min(1200, v)), hoehe: jetzt().hoehe };
+      stand.papier = 'eigen';
+    }, stand.masseinheit);
+    const hF = feldZeile('Höhe', jetzt().hoehe, (v) => {
+      if (Number.isNaN(v)) return;
+      PAPIERE.eigen = { name: 'Eigenes Format',
+                        breite: jetzt().breite, hoehe: Math.max(20, Math.min(1200, v)) };
+      stand.papier = 'eigen';
+    }, stand.masseinheit);
+    masse.append(bF, hF);
+    k.appendChild(masse);
+
+    /* "Papierzufuhr" aus seinem Bild: zwei Listen nebeneinander. */
+    k.appendChild(ueberschrift('Papierzufuhr'));
+    const zufuhr = document.createElement('div');
+    zufuhr.className = 'seitentafel__zweispalten';
+    const schaechte = [['drucker', 'Druckereinstellung verwenden'],
+                       ['oben', 'Oberer Schacht'],
+                       ['unten', 'Unterer Schacht'],
+                       ['hand', 'Manuelle Zufuhr']];
+    for (const [marke, titel, wo] of [['zufuhrErste', 'Erste Seite:', 'erste'],
+                                      ['zufuhrRest', 'Restliche Seiten:', 'rest']]) {
+      const sp = document.createElement('div');
+      sp.className = 'seitentafel__spalte';
+      const t = document.createElement('p');
+      t.className = 'seitentafel__kleinname';
+      t.textContent = titel;
+      sp.appendChild(t);
+      const liste = document.createElement('select');
+      liste.className = 'feld seitentafel__liste';
+      liste.size = 4;
+      for (const [sm, sn] of schaechte) {
+        const o = document.createElement('option');
+        o.value = sm; o.textContent = sn;
+        if (sm === stand[marke]) o.selected = true;
+        liste.appendChild(o);
+      }
+      liste.addEventListener('change', () => { stand[marke] = liste.value; });
+      sp.appendChild(liste);
+      zufuhr.appendChild(sp);
+    }
+    k.appendChild(zufuhr);
+
+    const druck = document.createElement('button');
+    druck.type = 'button';
+    druck.className = 'knopf seitentafel__nebenknopf';
+    druck.textContent = 'Druckoptionen…';
+    druck.addEventListener('click', () => {
+      grund.remove();
+      if (typeof B.drucken === 'function') B.drucken();
+      else melde('Die Druckoptionen stehen im Menü unter „Drucken".');
+    });
+    k.appendChild(druck);
+    return k;
+  };
+
+  /* ---- Karte 3: Layout ---- */
+  const karteLayout = () => {
+    const k = document.createElement('div');
+    k.className = 'rahmentafel__karte';
+
+    k.appendChild(ueberschrift('Abschnitt'));
+    k.appendChild(klappZeile('Abschnittsbeginn',
+      [['fortlaufend', 'Fortlaufend'], ['neueseite', 'Neue Seite'],
+       ['geradeseite', 'Gerade Seite'], ['ungeradeseite', 'Ungerade Seite']],
+      stand.abschnittBeginn, (v) => { stand.abschnittBeginn = v; }));
+
+    k.appendChild(ueberschrift('Kopf- und Fußzeilen'));
+    k.appendChild(haken('Gerade/ungerade anders', stand.gerade, (v) => { stand.gerade = v; }));
+    k.appendChild(haken('Erste Seite anders', stand.erste, (v) => { stand.erste = v; }));
+
+    const g = document.createElement('div');
+    g.className = 'seitentafel__gitter seitentafel__gitter--eins';
+    g.appendChild(feldZeile('Von Rand: Kopfzeile', stand.kopfhoehe,
+      (v) => { if (!Number.isNaN(v)) stand.kopfhoehe = Math.max(0, Math.min(80, v)); },
+      stand.masseinheit));
+    g.appendChild(feldZeile('Fußzeile', stand.fusshoehe,
+      (v) => { if (!Number.isNaN(v)) stand.fusshoehe = Math.max(0, Math.min(80, v)); },
+      stand.masseinheit));
+    k.appendChild(g);
+
+    k.appendChild(ueberschrift('Allgemeine Optionen'));
+    k.appendChild(klappZeile('Maßeinheit',
+      [['mm', 'Millimeter'], ['cm', 'Zentimeter'], ['inch', 'Zoll'], ['pt', 'Punkt']],
+      stand.masseinheit, (v) => { stand.masseinheit = v; karteZeigen(offen); }));
+    k.appendChild(haken('Zeicheneinheiten verwenden', stand.zeicheneinheiten,
+      (v) => { stand.zeicheneinheiten = v; }));
+    return k;
+  };
+
+  /* ---- Karte 4: Dokumentraster ---- */
+  const karteRaster = () => {
+    const k = document.createElement('div');
+    k.className = 'rahmentafel__karte';
+
+    k.appendChild(ueberschrift('Textfluss'));
+    k.appendChild(knopfReihe('se-textfluss',
+      [['horizontal', 'Horizontal'], ['vertikal', 'Vertikal']],
+      stand.textfluss, (v) => { stand.textfluss = v; }));
+
+    k.appendChild(ueberschrift('Raster'));
+    /* Vier Moeglichkeiten, wie auf seinem Bild - nicht drei in einer
+       Klappe. Die beiden Zahlenfelder sind nur dann zu bedienen, wenn das
+       Raster sie ueberhaupt braucht; bei ihm stehen sie grau. */
+    const rasterReihe = knopfReihe('se-raster',
+      [['ohne', 'Kein Raster'], ['zeilenzeichen', 'Zeilen- und Zeichenraster'],
+       ['zeilen', 'Nur Zeilenraster'], ['ausrichten', 'Text am Zeichenraster ausrichten']],
+      stand.raster, (v) => { stand.raster = v; karteZeigen(offen); });
+    rasterReihe.classList.add('seitentafel__radios--zwei');
+    k.appendChild(rasterReihe);
+
+    const zeichenAus = (stand.raster === 'ohne' || stand.raster === 'zeilen');
+    const zeilenAus = (stand.raster === 'ohne');
+
+    k.appendChild(ueberschrift('Zeichen'));
+    const g1 = document.createElement('div');
+    g1.className = 'seitentafel__gitter seitentafel__gitter--eins';
+    g1.appendChild(feldZeile('Pro Zeile', stand.zeichenProZeile,
+      (v) => { if (!Number.isNaN(v)) stand.zeichenProZeile = Math.max(1, Math.min(54, v)); },
+      '(1–54)', zeichenAus));
+    k.appendChild(g1);
+
+    k.appendChild(ueberschrift('Linien'));
+    const g2 = document.createElement('div');
+    g2.className = 'seitentafel__gitter seitentafel__gitter--eins';
+    g2.appendChild(feldZeile('Pro Seite', stand.zeilen,
+      (v) => { if (!Number.isNaN(v)) stand.zeilen = Math.max(1, Math.min(51, v)); },
+      '(1–51)', zeilenAus));
+    k.appendChild(g2);
+
+    const reihe = document.createElement('div');
+    reihe.className = 'seitentafel__knopfreihe';
+    for (const [name, tun] of [
+      ['Zeichnungsraster…', () => {
+        if (typeof B.netzlinien === 'function') { grund.remove(); B.netzlinien(); }
+        else melde('Das Zeichnungsraster steht im Reiter Ansicht.');
+      }],
+      ['Schriftart…', () => {
+        grund.remove();
+        if (typeof B.schriftFenster === 'function') B.schriftFenster();
+        else melde('Die Schriftart stellst du im Reiter Start ein.');
+      }],
+    ]) {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'knopf'; b.textContent = name;
+      b.addEventListener('click', tun);
+      reihe.appendChild(b);
+    }
+    k.appendChild(reihe);
+    return k;
+  };
+
+  /* ---- Karte 5: Spalten ---- */
+  const karteSpalten = () => {
+    const k = document.createElement('div');
+    k.className = 'rahmentafel__karte';
+
+    k.appendChild(ueberschrift('Voreinstellungen'));
+    /* Fuenf Kacheln wie bei ihm: Eine, Zwei, Drei, Links, Rechts. */
+    const gitter = document.createElement('div');
+    gitter.className = 'seitentafel__spaltenwahl';
+    const VORGABEN = [
+      ['eine',   'Eine',   1, [1]],
+      ['zwei',   'Zwei',   2, [1, 1]],
+      ['drei',   'Drei',   3, [1, 1, 1]],
+      ['links',  'Links',  2, [1, 2]],
+      ['rechts', 'Rechts', 2, [2, 1]],
+    ];
+    for (const [marke, name, zahl, muster] of VORGABEN) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'zahlkachel' + (stand.spaltenVorgabe === marke ? ' zahlkachel--an' : '');
+      const bild = document.createElement('span');
+      bild.className = 'spaltenbild';
+      for (const teil of muster) {
+        const sp = document.createElement('i');
+        sp.style.flex = String(teil);
+        bild.appendChild(sp);
+      }
+      const t = document.createElement('span');
+      t.className = 'zahlkachel__name';
+      t.textContent = name;
+      b.append(bild, t);
+      b.addEventListener('click', () => {
+        stand.spaltenVorgabe = marke;
+        stand.spalten = zahl;
+        stand.gleicheBreite = (marke === 'eine' || marke === 'zwei' || marke === 'drei');
+        karteZeigen(offen);
+      });
+      gitter.appendChild(b);
+    }
+    k.appendChild(gitter);
+
+    const anz = feldZeile('Spaltenanzahl', stand.spalten, (v) => {
+      if (Number.isNaN(v)) return;
+      stand.spalten = Math.max(1, Math.min(3, v));
+      karteZeigen(offen);
+    }, '');
+    k.appendChild(anz);
+    k.appendChild(haken('Zwischenlinie', stand.zwischenlinie,
+      (v) => { stand.zwischenlinie = v; }, stand.spalten < 2));
+
+    k.appendChild(ueberschrift('Breite und Abstand'));
+    const tafel = document.createElement('div');
+    tafel.className = 'seitentafel__spaltenmasse';
+    const kopf = document.createElement('div');
+    kopf.className = 'seitentafel__spaltenkopf';
+    kopf.innerHTML = '<span>Spalte</span><span>Breite</span><span>Abstand</span>';
+    tafel.appendChild(kopf);
+    /* Die Breiten rechnet das Fenster aus - gleich verteilt, wie bei
+       "Gleiche Spaltenbreite". Wer es anders will, schaltet den Haken ab. */
+    const satzbreite = (stand.quer ? 297 : 210) - stand.rand.links - stand.rand.rechts;
+    const abstand = 8;
+    for (let i = 0; i < stand.spalten; i++) {
+      const z = document.createElement('div');
+      z.className = 'seitentafel__spaltenzeile';
+      const nr = document.createElement('span');
+      nr.className = 'seitentafel__spaltennr';
+      nr.textContent = (i + 1) + ':';
+      const br = document.createElement('input');
+      br.type = 'number'; br.className = 'feld';
+      br.value = Math.round((satzbreite - abstand * (stand.spalten - 1)) / stand.spalten);
+      br.disabled = stand.gleicheBreite && i > 0;
+      const ab = document.createElement('input');
+      ab.type = 'number'; ab.className = 'feld';
+      ab.value = String(abstand);
+      ab.disabled = (i === stand.spalten - 1);
+      z.append(nr, br, ab);
+      tafel.appendChild(z);
+    }
+    k.appendChild(tafel);
+    k.appendChild(haken('Gleiche Spaltenbreite', stand.gleicheBreite,
+      (v) => { stand.gleicheBreite = v; karteZeigen(offen); }, stand.spalten < 2));
+    k.appendChild(haken('Neue Spalte beginnen', stand.neueSpalte,
+      (v) => { stand.neueSpalte = v; }, stand.spalten < 2));
+    return k;
+  };
+
+  const KARTEN = [
+    ['raender', 'Seitenränder',   karteRaender],
+    ['papier',  'Papier',         kartePapier],
+    ['layout',  'Layout',         karteLayout],
+    ['raster',  'Dokumentraster', karteRaster],
+    ['spalten', 'Spalten',        karteSpalten],
+  ];
+
+  /* ---- Der Fuss: Vorschau und "Übernehmen für" ----
+
+     Auf allen fünf Bildern steht er unten, auf jeder Karte gleich. Ich
+     hatte die Vorschau nur auf der ersten. */
+  const fuss = document.createElement('div');
+  fuss.className = 'seitentafel__fuss';
+  fuss.appendChild(ueberschrift('Vorschau'));
+
+  const fussInhalt = document.createElement('div');
+  fussInhalt.className = 'seitentafel__fussinhalt';
+
+  const unten = document.createElement('label');
+  unten.className = 'seitentafel__feld seitentafel__unten';
+  unten.innerHTML = '<span>Übernehmen für:</span>';
+  const wofuer = document.createElement('select');
+  wofuer.className = 'feld';
+  for (const [w, name] of [['ganz', 'Gesamtes Dokument'],
+                           ['abschnitt', 'Aktuellen Abschnitt'],
+                           ['abhier', 'Ab hier']]) {
+    const o = document.createElement('option');
+    o.value = w; o.textContent = name;
+    wofuer.appendChild(o);
+  }
+  unten.appendChild(wofuer);
+  fussInhalt.appendChild(unten);
+
+  const schau = document.createElement('div');
+  schau.className = 'seitenschau';
+  const schauBlatt = document.createElement('div');
+  schauBlatt.className = 'seitenschau__blatt';
+  const schauSatz = document.createElement('div');
+  schauSatz.className = 'seitenschau__satz';
+  schauBlatt.appendChild(schauSatz);
+  schau.appendChild(schauBlatt);
+  fussInhalt.appendChild(schau);
+  fuss.appendChild(fussInhalt);
+
+  /* Sie rechnet mit den Werten in den Feldern - auch mit der Spaltenzahl.
+     Eine Vorschau aus gemalten Strichen hatte er mir zu Recht angekreidet. */
+  function schauStellen() {
+    const b = stand.quer ? 297 : 210, h = stand.quer ? 210 : 297;
+    schauBlatt.style.aspectRatio = b + ' / ' + h;
+    const links = stand.rand.links + (stand.bundstegWo === 'links' ? stand.bundsteg : 0);
+    const oben = stand.rand.oben + (stand.bundstegWo === 'oben' ? stand.bundsteg : 0);
+    schauSatz.style.left = (links / b * 100) + '%';
+    schauSatz.style.right = (stand.rand.rechts / b * 100) + '%';
+    schauSatz.style.top = (oben / h * 100) + '%';
+    schauSatz.style.bottom = (stand.rand.unten / h * 100) + '%';
+
+    schauSatz.innerHTML = '';
+    const zahl = Math.max(1, Math.min(3, stand.spalten));
+    for (let sp = 0; sp < zahl; sp++) {
+      const spalte = document.createElement('div');
+      spalte.className = 'seitenschau__spalte';
+      for (let i = 0; i < 11; i++) spalte.appendChild(document.createElement('i'));
+      schauSatz.appendChild(spalte);
+    }
+  }
+
+  let offen = karteZuerst || 'raender';
+  function karteZeigen(marke) {
+    offen = marke;
+    buehne.innerHTML = '';
+    const eintrag = KARTEN.find((x) => x[0] === marke);
+    if (eintrag) buehne.appendChild(eintrag[2]());
+    [...reiter.children].forEach((b) => {
+      b.classList.toggle('rahmentafel__reiter--an', b.dataset.marke === marke);
+    });
+    schauStellen();
+  }
+
+  for (const [marke, name] of KARTEN) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'rahmentafel__reiterknopf';
+    b.dataset.marke = marke;
+    b.textContent = name;
+    b.addEventListener('click', () => karteZeigen(marke));
+    reiter.appendChild(b);
+  }
+  kasten.append(reiter, buehne, fuss);
+  karteZeigen(offen);
+
+  const knoepfe = document.createElement('div');
+  knoepfe.className = 'dialog__knoepfe dialog__knoepfe--geteilt';
+
+  const standard = document.createElement('button');
+  standard.type = 'button'; standard.className = 'knopf';
+  standard.textContent = 'Standard…';
+  standard.addEventListener('click', () => {
+    stand.rand = { oben: 20, unten: 20, links: 20, rechts: 20 };
+    stand.bundsteg = 0; stand.bundstegWo = 'links';
+    stand.quer = false; stand.papier = 'a4'; stand.spalten = 1;
+    stand.kopfhoehe = 12; stand.fusshoehe = 12; stand.mehrere = 'normal';
+    stand.spaltenVorgabe = 'eine'; stand.zwischenlinie = false;
+    stand.raster = 'ohne'; stand.textfluss = 'horizontal';
+    karteZeigen(offen);
+    melde('Auf die Standardwerte zurückgesetzt — mit OK übernehmen.');
+  });
+  knoepfe.appendChild(standard);
+
+  const ab = document.createElement('button');
+  ab.type = 'button'; ab.className = 'knopf'; ab.textContent = 'Abbrechen';
+  ab.addEventListener('click', () => grund.remove());
+  const ok = document.createElement('button');
+  ok.type = 'button'; ok.className = 'knopf knopf--haupt'; ok.textContent = 'OK';
+  ok.addEventListener('click', () => {
+    grund.remove();
+    Object.assign(seitenrand, stand.rand);
+    spalten = stand.spalten;
+    if (stand.papier !== papier) { papier = stand.papier; Speicher.schreib('papier', papier); }
+    if (PAPIERE.eigen) Speicher.schreib('papierEigen', PAPIERE.eigen);
+    if (stand.quer !== quer) { quer = stand.quer; Speicher.schreib('quer', quer); }
+    for (const [name, wert] of [
+      ['kopfhoehe', stand.kopfhoehe], ['fusshoehe', stand.fusshoehe],
+      ['kopfErsteAnders', stand.erste], ['kopfGeradeAnders', stand.gerade],
+      ['bundstegWo', stand.bundstegWo], ['bundsteg', stand.bundsteg],
+      ['mehrereSeiten', stand.mehrere],
+      ['zufuhrErste', stand.zufuhrErste], ['zufuhrRest', stand.zufuhrRest],
+      ['abschnittBeginn', stand.abschnittBeginn], ['masseinheit', stand.masseinheit],
+      ['zeicheneinheiten', stand.zeicheneinheiten], ['textfluss', stand.textfluss],
+      ['dokumentraster', stand.raster], ['zeichenProZeile', stand.zeichenProZeile],
+      ['rasterZeilen', stand.zeilen], ['spaltenVorgabe', stand.spaltenVorgabe],
+      ['spaltenlinie', stand.zwischenlinie], ['spaltenGleich', stand.gleicheBreite],
+    ]) Speicher.schreib(name, wert);
+
+    if (stand.bundsteg > 0) {
+      if (stand.bundstegWo === 'links') seitenrand.links += stand.bundsteg;
+      else seitenrand.oben += stand.bundsteg;
+    }
+    papierAnwenden();
+    seiteAnwenden();
+    kopfFussRegelnAnwenden();
+    if (wofuer.value !== 'ganz' && typeof abschnittMerken === 'function') {
+      abschnittMerken(abschnittJetztNr);
+    }
+    seitenzahlenAuffrischen();
+    kopfFussLeistenStellen();
+    geaendertMelden();
+    melde('Seiteneinrichtung übernommen.');
+  });
+  knoepfe.append(ab, ok);
+  kasten.appendChild(knoepfe);
+
+  grund.appendChild(kasten);
+  grund.addEventListener('mousedown', (e) => { if (e.target === grund) grund.remove(); });
+  document.addEventListener('keydown', function zu(e) {
+    if (e.key === 'Escape' && grund.isConnected) {
+      grund.remove(); document.removeEventListener('keydown', zu);
+    }
+  });
+  document.body.appendChild(grund);
+};
+
+/* Der Knopf im Band zeigt darauf - kein eigener Nachbau. */
+B.kopfFussEinstellungen = () => B.seiteEinrichten('raender');
 
 B.kopfFussSchliessen = () => {
   kopfFussModus = false;
@@ -15088,6 +15681,7 @@ B.textrichtungFenster = () => {
 /* „Weitere Papierformate…" — Breite und Hoehe von Hand, wie in WPS
    hinter demselben Punkt. Etiketten, Klappkarten, alte Formate: Wer sie
    braucht, braucht sie genau und nicht ungefaehr. */
+/* Ebenso seins - nicht umgebogen. */
 B.papierformatFenster = () => {
   const jetzt = PAPIERE[papier] || PAPIERE.a4;
   fenster('Papierformat', [

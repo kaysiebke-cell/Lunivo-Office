@@ -5921,3 +5921,87 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 .zeile--tabs{display:flex;align-items:baseline;flex-wrap:nowrap}
 .zeile--tabs > .tabstopp{flex:1 1 0;min-width:.5em}
 
+
+
+/* „Standard…" steht links, Abbrechen und OK rechts. */
+.dialog__knoepfe--geteilt{justify-content:space-between}
+.dialog__knoepfe--geteilt .knopf:first-child{margin-right:auto}
+
+/* ---------- Seiteneinrichtung: seine fuenf Karten ---------- */
+/* .rahmentafel__karte ist eine ZEILE - richtig fuer "Rahmen und
+   Schattierung", falsch hier: Die Felder liefen nebeneinander aus dem
+   Fenster. */
+.seitentafel .rahmentafel__karte{flex-direction:column;gap:0}
+.seitentafel .rahmentafel__buehne{min-height:280px}
+
+.seitentafel__gitter{
+  display:grid;grid-template-columns:repeat(2,1fr);gap:2px 14px;margin-bottom:6px;
+}
+.seitentafel__gitter--eins{grid-template-columns:1fr}
+.seitentafel__feld{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.seitentafel__feld > span:first-child{flex:0 0 auto;min-width:9.5em}
+.seitentafel__feld .feld{flex:0 1 auto;width:9em;box-sizing:border-box}
+.seitentafel__feld .feld:disabled{opacity:.5}
+.seitentafel__mass{color:var(--schrift-2);font-size:.85rem}
+.seitentafel__name{margin:8px 0 4px;font-size:.9rem;font-weight:600}
+.seitentafel__kleinname{margin:0 0 4px;font-size:.85rem;color:var(--schrift-2)}
+
+/* Ausrichtung: zwei Blattkacheln. */
+.seitentafel__wahlreihe{display:flex;gap:10px;margin-bottom:2px}
+.seitentafel__wahlreihe .zahlkachel{min-width:92px}
+.seitentafel__blatt{
+  display:flex;align-items:center;justify-content:center;
+  width:34px;height:44px;background:#fff;color:#333;
+  border:1px solid var(--marke);font:600 15px Georgia,serif;
+}
+.seitentafel__blatt--quer{width:44px;height:34px}
+
+/* Radios - beim Raster zweispaltig, wie auf seinem Bild. */
+.seitentafel__radios{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:4px}
+.seitentafel__radios--zwei{display:grid;grid-template-columns:repeat(2,1fr);gap:2px 14px}
+
+/* Papierzufuhr: zwei Listen nebeneinander. */
+.seitentafel__zweispalten{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.seitentafel__zweispalten .seitentafel__spalte{display:flex;flex-direction:column;min-width:0}
+.seitentafel__liste{width:100%;box-sizing:border-box}
+.seitentafel__nebenknopf{width:auto;margin-top:10px;align-self:flex-start}
+.seitentafel__knopfreihe{display:flex;gap:8px;margin-top:10px}
+.seitentafel__knopfreihe .knopf{width:auto;padding:6px 14px}
+
+/* Spalten: fuenf Voreinstellungen und die Breitentabelle. */
+.seitentafel__spaltenwahl{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:8px}
+.spaltenbild{
+  display:flex;gap:2px;width:38px;height:30px;padding:2px;
+  background:#fff;border:1px solid var(--marke);
+}
+.spaltenbild i{display:block;background:repeating-linear-gradient(
+  to bottom,#8b949c 0 1px,transparent 1px 3px)}
+.seitentafel__spaltenmasse{display:flex;flex-direction:column;gap:3px;margin-bottom:6px}
+.seitentafel__spaltenkopf,.seitentafel__spaltenzeile{
+  display:grid;grid-template-columns:3.2em 1fr 1fr;gap:8px;align-items:center;
+}
+.seitentafel__spaltenkopf{font-size:.82rem;color:var(--schrift-2)}
+.seitentafel__spaltenzeile .feld{width:100%;box-sizing:border-box}
+.seitentafel__spaltenzeile .feld:disabled{opacity:.45}
+
+/* Der Fuss steht auf JEDER Karte - so wie auf allen fuenf Bildern. */
+.seitentafel__fuss{margin-top:10px;padding-top:8px;border-top:1px solid var(--rand)}
+.seitentafel__fussinhalt{display:flex;align-items:flex-end;gap:16px;justify-content:space-between}
+.seitentafel__unten{margin:0}
+.seitentafel__unten .feld{width:13em}
+
+.seitenschau{display:flex;justify-content:flex-end}
+.seitenschau__blatt{
+  position:relative;width:76px;aspect-ratio:210/297;
+  background:#fff;border:1px solid var(--marke);
+}
+.seitenschau__satz{position:absolute;display:flex;gap:2px}
+.seitenschau__spalte{
+  flex:1 1 0;display:flex;flex-direction:column;justify-content:space-between;
+}
+.seitenschau__spalte i{display:block;height:1px;background:#9aa3ab}
+.seitenschau__spalte i:last-child{width:62%}
+
+/* „Standard…" steht links, Abbrechen und OK rechts. */
+.dialog__knoepfe--geteilt{justify-content:space-between}
+.dialog__knoepfe--geteilt .knopf:first-child{margin-right:auto}
