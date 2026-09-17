@@ -4718,6 +4718,40 @@ B.kopfFussWechseln = () => {
 
 /* "Optionen fuer Kopf- und Fusszeile" - in WPS die drei Haken:
    Erste Seite anders, Gerade und ungerade Seiten anders, Text anzeigen. */
+/* ============================================================
+   ERSTE SEITE ANDERS, GERADE UND UNGERADE  (Bereiche 8 und 9)
+
+   Die beiden Schalter gab es - sie schrieben ihren Zustand in den
+   Speicher und taten sonst nichts. Ein Haken, der nichts bewirkt, ist
+   schlimmer als keiner: Man glaubt, es sei eingestellt.
+
+   Was sie jetzt tun: Das Blatt bekommt Kennzeichen, an denen die
+   Seitenzahlen und die Zeilen selbst ablesen, ob sie auf dieser Seite
+   ueberhaupt erscheinen und wo sie stehen. Bei ungeraden Seiten sitzt
+   "aussen" rechts, bei geraden links - so haelt es jedes Buch.
+   ============================================================ */
+function kopfFussRegelnAnwenden() {
+  const blatt = $('blatt');
+  if (!blatt) return;
+  const erste = Speicher.lies('kopfErsteAnders', false);
+  const gerade = Speicher.lies('kopfGeradeAnders', false);
+  blatt.classList.toggle('blatt--erste-anders', erste);
+  blatt.classList.toggle('blatt--gerade-anders', gerade);
+
+  /* Die Seitenzahl auf der ersten Seite verschwindet, wenn "Erste Seite
+     anders" gilt und er sie dort nicht will. */
+  const ohneErste = erste && Speicher.lies('kopfErsteOhneZahl', true);
+  for (const f of document.querySelectorAll('.seitenzahl')) {
+    const seite = seiteVonFeld(f);
+    f.classList.toggle('seitenzahl--aus', ohneErste && seite === 1);
+  }
+
+  /* "Innen" und "aussen" sind erst bei gerade/ungerade verschieden. */
+  for (const z of document.querySelectorAll('#kopfzeile, #fusszeile')) {
+    z.classList.toggle('zeile--gespiegelt', gerade);
+  }
+}
+
 B.kopfFussOptionen = () => {
   fenster('Optionen für Kopf- und Fußzeile', [
     { art: 'satz', text: 'Gilt für das ganze Dokument.' },
@@ -4725,12 +4759,19 @@ B.kopfFussOptionen = () => {
       wert: Speicher.lies('kopfErsteAnders', false) },
     { schluessel: 'gerade', name: 'Gerade und ungerade Seiten anders', art: 'schalter',
       wert: Speicher.lies('kopfGeradeAnders', false) },
+    { schluessel: 'ersteOhneZahl', name: 'Erste Seite ohne Seitenzahl', art: 'schalter',
+      wert: Speicher.lies('kopfErsteOhneZahl', true) },
     { schluessel: 'text', name: 'Text des Dokuments anzeigen', art: 'schalter',
       wert: Speicher.lies('kopfTextZeigen', true) },
   ], (werte) => {
-    Speicher.schreib('kopfErsteAnders', werte.erste === true || werte.erste === 'true');
-    Speicher.schreib('kopfGeradeAnders', werte.gerade === true || werte.gerade === 'true');
-    Speicher.schreib('kopfTextZeigen', werte.text === true || werte.text === 'true');
+    const ja = (w) => w === true || w === 'true';
+    Speicher.schreib('kopfErsteAnders', ja(werte.erste));
+    Speicher.schreib('kopfGeradeAnders', ja(werte.gerade));
+    Speicher.schreib('kopfErsteOhneZahl', ja(werte.ersteOhneZahl));
+    Speicher.schreib('kopfTextZeigen', ja(werte.text));
+    /* Und jetzt auch anwenden. Bisher blieb es beim Speichern. */
+    kopfFussRegelnAnwenden();
+    geaendertMelden();
     melde('Einstellungen übernommen.');
   }, 'Übernehmen');
 };
@@ -5024,6 +5065,80 @@ B.kopfFussVorlagen = (knopf) => {
 
 /* Nur die Kopfzeile oder nur die Fusszeile - in WPS "Header" und
    "Footer" mit je einer eigenen Galerie. */
+/* BEREICH 1 SEINER LISTE, vollstaendig.
+
+   Bei WPS hat der Knopf "Header" eine Klappe mit drei Befehlen -
+   bearbeiten, einfuegen, entfernen - und darunter die Galerie. Ich hatte
+   nur die Galerie; "entfernen" fehlte ganz. */
+B.kopfzeileKlappe = (knopf, wo) => {
+  const istKopf = wo === 'kopf';
+  const name = istKopf ? 'Kopfzeile' : 'Fußzeile';
+  designTafelZeigen(knopf, name, (tafel) => {
+    tafel.classList.add('designtafel--breit');
+    const zeile = (bild, text, tun) => {
+      const k = document.createElement('button');
+      k.type = 'button';
+      k.className = 'designtafel__zeile richtungszeile';
+      k.appendChild(symbol(bild));
+      const w = document.createElement('span');
+      w.textContent = text;
+      k.appendChild(w);
+      k.addEventListener('mousedown', (e) => e.preventDefault());
+      k.addEventListener('click', () => { designTafelWeg(); tun(); });
+      tafel.appendChild(k);
+    };
+
+    zeile(istKopf ? 'kopfz' : 'fussz', name + ' bearbeiten', () => {
+      if (istKopf) { if (!kopfAn) { kopfAn = true; kopfFussAnwenden(); } B.zurKopfzeile(); }
+      else { if (!fussAn) { fussAn = true; kopfFussAnwenden(); } B.zurFusszeile(); }
+      kopfFussModus = true;
+      kopfFussReiterZeigen();
+      kopfFussLeistenZeigen();
+    });
+    zeile('feld', name + ' einfügen', () => {
+      if (istKopf) kopfAn = true; else fussAn = true;
+      kopfFussAnwenden();
+      kopfFussModus = true;
+      if (istKopf) B.zurKopfzeile(); else B.zurFusszeile();
+      kopfFussReiterZeigen();
+      kopfFussLeistenZeigen();
+      melde(name + ' eingefügt.');
+    });
+    zeile('radierer', name + ' entfernen',
+          () => (istKopf ? B.kopfzeileEntfernen() : B.fusszeileEntfernen()));
+
+    const strich = document.createElement('div');
+    strich.className = 'designtafel__strich';
+    tafel.appendChild(strich);
+
+    const kopfzeileTitel = document.createElement('p');
+    kopfzeileTitel.className = 'designtafel__kopfzeile';
+    kopfzeileTitel.textContent = 'Vorlagen';
+    tafel.appendChild(kopfzeileTitel);
+
+    const muster = istKopf
+      ? [['Leer', ''], ['Titel', '{titel}'], ['Titel und Datum', '{titel}\t{datum}'],
+         ['Datum', '{datum}']]
+      : [['Leer', ''], ['Seitenzahl', '{seite}'], ['Seite von', 'Seite {seite}'],
+         ['Titel und Seite', '{titel}\t{seite}']];
+    for (const [vname, inhalt] of muster) {
+      zeile(istKopf ? 'kopfz' : 'fussz', vname, () => {
+        if (istKopf) { if (!kopfAn) { kopfAn = true; kopfFussAnwenden(); } }
+        else if (!fussAn) { fussAn = true; kopfFussAnwenden(); }
+        const kasten = $(istKopf ? 'kopfzeile' : 'fusszeile');
+        kasten.innerHTML = vorlageFuellen(inhalt) || '<br>';
+        if (inhalt.indexOf('\t') >= 0) kasten.classList.add('zeile--tabs');
+        seitenzahlenAuffrischen();
+        kopfFussModus = true;
+        kasten.focus();
+        kopfFussLeistenZeigen();
+        geaendertMelden();
+        melde(name + ': ' + vname + '.');
+      });
+    }
+  });
+};
+
 B.kopfzeilenVorlagen = (knopf, wo) => {
   const istKopf = wo === 'kopf';
   const muster = istKopf
@@ -5093,12 +5208,74 @@ B.kopfVerknuepfen = () => {
 
 /* "Ausrichtungstabstopp einfuegen": In einer Kopfzeile will man links,
    mittig und rechts etwas stehen haben - dafuer setzt WPS Tabstopps. */
-B.ausrichtungstabstopp = () => {
+/* AUSRICHTUNGSTABULATOR  (Bereich 5 seiner Liste)
+
+   In WPS sind es drei: links, Mitte, rechts. Damit stellt man in einer
+   Kopfzeile drei Dinge nebeneinander - Titel links, Datum mittig,
+   Seitenzahl rechts - ohne Tabelle. Ich hatte nur einen einzigen,
+   richtungslosen Tabstopp. */
+B.ausrichtungstabstopp = (knopf) => {
   const jetzt = kopfFussJetzt();
   if (!jetzt) { melde('Dafür muss der Zeiger in der Kopf- oder Fußzeile stehen.'); return; }
-  document.execCommand('insertHTML', false, '<span class="tabstopp"></span>');
+
+  const setzen = (wohin, name) => {
+    jetzt.focus();
+    document.execCommand('insertHTML', false,
+      '<span class="tabstopp tabstopp--' + wohin + '" contenteditable="false"></span>');
+    /* Der Tabstopp hatte flex:1 1 auto, aber die Zeile war kein
+       Flex-Kasten - er tat also nichts. Die Klasse macht sie zu einem.
+       Nicht ueber :has(): das kennt WebKit hier nicht zuverlaessig. */
+    jetzt.classList.add('zeile--tabs');
+    geaendertMelden();
+    melde('Ausrichtungstabstopp ' + name + ' — der Text dahinter rückt dorthin.');
+  };
+
+  /* Ohne Knopf (aus dem Kontextmenue) der haeufigste Fall: rechts. */
+  if (!knopf || !knopf.getBoundingClientRect) { setzen('rechts', 'rechts'); return; }
+
+  designTafelZeigen(knopf, 'Ausrichtungstabstopp', (tafel) => {
+    tafel.classList.add('designtafel--breit');
+    for (const [wohin, name, bild] of [['links', 'Links', 'links'],
+                                       ['mitte', 'Mitte', 'mitte'],
+                                       ['rechts', 'Rechts', 'rechts']]) {
+      const k = document.createElement('button');
+      k.type = 'button';
+      k.className = 'designtafel__zeile richtungszeile';
+      k.appendChild(symbol(bild));
+      const w = document.createElement('span');
+      w.textContent = name;
+      k.appendChild(w);
+      k.addEventListener('mousedown', (e) => e.preventDefault());
+      k.addEventListener('click', () => { designTafelWeg(); setzen(wohin, name.toLowerCase()); });
+      tafel.appendChild(k);
+    }
+  });
+};
+
+/* KOPFZEILE / FUSSZEILE ENTFERNEN  (Bereich 1 seiner Liste)
+
+   "Bearbeiten" und "einfuegen" gab es, "entfernen" nicht - man konnte
+   eine Kopfzeile anlegen, aber nicht wieder loswerden. */
+B.kopfzeileEntfernen = () => {
+  const z = $('kopfzeile');
+  if (!kopfAn) { melde('Es gibt keine Kopfzeile.'); return; }
+  if (z) z.innerHTML = '<br>';
+  kopfAn = false;
+  kopfFussAnwenden();
+  kopfFussLeistenZeigen();
   geaendertMelden();
-  melde('Ausrichtungstabstopp gesetzt — der Text dahinter rückt an die nächste Marke.');
+  melde('Kopfzeile entfernt.');
+};
+
+B.fusszeileEntfernen = () => {
+  const z = $('fusszeile');
+  if (!fussAn) { melde('Es gibt keine Fußzeile.'); return; }
+  if (z) z.innerHTML = '<br>';
+  fussAn = false;
+  kopfFussAnwenden();
+  kopfFussLeistenZeigen();
+  geaendertMelden();
+  melde('Fußzeile entfernt.');
 };
 
 /* Die Hoehe EINER Zeile - aus dem Kontextmenue heraus, wo man immer in
@@ -5121,39 +5298,296 @@ B.kopfZeilenhoehe = (istKopf) => {
   }, 'Übernehmen');
 };
 
-/* "Einstellungen" aus seinem Bild - eine Klappe, kein Fenster. Darin
-   steht, was sonst ueber drei Reiter verteilt liegt und beim Einrichten
-   einer Kopfzeile gebraucht wird. */
-B.kopfFussEinstellungen = (knopf) => {
-  designTafelZeigen(knopf, 'Einstellungen', (tafel) => {
-    tafel.classList.add('designtafel--breit');
-    const zeile = (bild, name, tun) => {
-      const k = document.createElement('button');
-      k.type = 'button';
-      k.className = 'designtafel__zeile richtungszeile';
-      k.appendChild(symbol(bild));
-      const w = document.createElement('span');
-      w.textContent = name;
-      k.appendChild(w);
-      k.addEventListener('mousedown', (e) => e.preventDefault());
-      k.addEventListener('click', () => { designTafelWeg(); tun(); });
-      tafel.appendChild(k);
-    };
-    zeile('zahnrad', 'Optionen für Kopf- und Fußzeile…', () => B.kopfFussOptionen());
-    zeile('raender', 'Seitenränder…', () => B.seitenraender());
+/* ============================================================
+   SEITENEINRICHTUNG  (Bereich 6 seiner Liste)
 
-    /* Das Absatz-Layout-Zeichen wieder einschalten. Ohne diese Stelle
-       waere es nach dem Ausblenden fuer immer weg - meine Meldung dort
-       versprach etwas anderes, als das Programm tat. */
-    const an = Speicher.lies('absatzlayoutZeichen', true);
-    zeile('absatzlayout', (an ? 'Absatz-Layout-Zeichen ausblenden'
-                              : 'Absatz-Layout-Zeichen anzeigen'), () => {
-      Speicher.schreib('absatzlayoutZeichen', !an);
-      kopfFussLeistenZeigen();
-      melde(an ? 'Das Zeichen ist ausgeblendet.' : 'Das Zeichen ist wieder da.');
+   Sein Bild zeigt, was hinter "Einstellungen" steckt: ein Fenster
+   "Seiteneinrichtung" mit fuenf Karten - Seitenraender, Papier, Layout,
+   Dokumentraster, Spalten - und unten "Uebernehmen fuer".
+
+   Ich hatte an dieser Stelle eine eigene kleine Klappe gebaut. Seine
+   Ansage: "das laeuft unter Einstellungen und hast du schon an anderer
+   Stelle gebaut." Stimmt - Seitenraender, Papierformat, Ausrichtung und
+   Spalten gibt es laengst. Dieses Fenster ruft sie, es baut sie nicht
+   noch einmal.
+   ============================================================ */
+B.seiteEinrichten = (karteZuerst) => {
+  const grund = document.createElement('div');
+  grund.className = 'dialoggrund';
+  const kasten = document.createElement('div');
+  kasten.className = 'dialog dialog--breit seitentafel';
+  kasten.innerHTML = '<h3 class="dialog__titel">Seiteneinrichtung</h3>';
+
+  const reiter = document.createElement('div');
+  reiter.className = 'rahmentafel__reiter';
+  const buehne = document.createElement('div');
+  buehne.className = 'rahmentafel__buehne';
+
+  /* Was das Fenster sammelt, bevor OK es anwendet. */
+  const stand = {
+    rand: Object.assign({}, seitenrand),
+    quer: quer,
+    papier: papier,
+    spalten: spalten,
+    kopfhoehe: Speicher.lies('kopfhoehe', 12),
+    fusshoehe: Speicher.lies('fusshoehe', 12),
+    erste: Speicher.lies('kopfErsteAnders', false),
+    gerade: Speicher.lies('kopfGeradeAnders', false),
+    raster: Speicher.lies('dokumentraster', 'ohne'),
+    zeilen: Speicher.lies('rasterZeilen', 40),
+  };
+
+  const feldZeile = (name, wert, beiAenderung, einheit) => {
+    const z = document.createElement('label');
+    z.className = 'seitentafel__feld';
+    const w = document.createElement('span');
+    w.textContent = name + ':';
+    const e = document.createElement('input');
+    e.type = 'number'; e.value = String(wert); e.step = '1'; e.className = 'feld';
+    e.addEventListener('change', () => beiAenderung(parseFloat(e.value)));
+    z.append(w, e);
+    if (einheit) {
+      const m = document.createElement('span');
+      m.className = 'seitentafel__mass';
+      m.textContent = einheit;
+      z.appendChild(m);
+    }
+    return z;
+  };
+
+  const karteRaender = () => {
+    const k = document.createElement('div');
+    k.className = 'rahmentafel__karte';
+    const g = document.createElement('div');
+    g.className = 'seitentafel__gitter';
+    for (const kante of ['oben', 'unten', 'links', 'rechts']) {
+      g.appendChild(feldZeile(kante[0].toUpperCase() + kante.slice(1), stand.rand[kante],
+        (v) => { if (!Number.isNaN(v)) stand.rand[kante] = Math.max(0, Math.min(80, v)); }, 'mm'));
+    }
+    k.appendChild(g);
+
+    const ueber = document.createElement('p');
+    ueber.className = 'seitentafel__name';
+    ueber.textContent = 'Ausrichtung';
+    k.appendChild(ueber);
+
+    const wahl = document.createElement('div');
+    wahl.className = 'seitentafel__wahlreihe';
+    for (const [istQuer, name] of [[false, 'Hochformat'], [true, 'Querformat']]) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'zahlkachel' + (stand.quer === istQuer ? ' zahlkachel--an' : '');
+      const bild = document.createElement('span');
+      bild.className = 'seitentafel__blatt'
+                     + (istQuer ? ' seitentafel__blatt--quer' : '');
+      bild.textContent = 'A';
+      b.appendChild(bild);
+      const t = document.createElement('span');
+      t.className = 'zahlkachel__name';
+      t.textContent = name;
+      b.appendChild(t);
+      b.addEventListener('click', () => {
+        stand.quer = istQuer;
+        [...wahl.children].forEach((c) => c.classList.remove('zahlkachel--an'));
+        b.classList.add('zahlkachel--an');
+      });
+      wahl.appendChild(b);
+    }
+    k.appendChild(wahl);
+    return k;
+  };
+
+  const kartePapier = () => {
+    const k = document.createElement('div');
+    k.className = 'rahmentafel__karte';
+    const z = document.createElement('label');
+    z.className = 'seitentafel__feld';
+    z.innerHTML = '<span>Format:</span>';
+    const aus = document.createElement('select');
+    aus.className = 'feld';
+    for (const [marke, p2] of Object.entries(PAPIERE)) {
+      const o = document.createElement('option');
+      o.value = marke;
+      o.textContent = p2.name + ' (' + p2.breite + ' × ' + p2.hoehe + ' mm)';
+      if (marke === stand.papier) o.selected = true;
+      aus.appendChild(o);
+    }
+    aus.addEventListener('change', () => { stand.papier = aus.value; });
+    z.appendChild(aus);
+    k.appendChild(z);
+
+    const hin = document.createElement('p');
+    hin.className = 'dialog__satz';
+    hin.textContent = 'Ein eigenes Maß stellst du unter Seitenlayout → Papierformat ein.';
+    k.appendChild(hin);
+    return k;
+  };
+
+  const karteLayout = () => {
+    const k = document.createElement('div');
+    k.className = 'rahmentafel__karte';
+
+    const t1 = document.createElement('p');
+    t1.className = 'seitentafel__name';
+    t1.textContent = 'Kopf- und Fußzeile';
+    k.appendChild(t1);
+    const g = document.createElement('div');
+    g.className = 'seitentafel__gitter seitentafel__gitter--eins';
+    g.appendChild(feldZeile('Kopfzeilenabstand', stand.kopfhoehe,
+      (v) => { if (!Number.isNaN(v)) stand.kopfhoehe = Math.max(0, Math.min(80, v)); }, 'mm'));
+    g.appendChild(feldZeile('Fußzeilenabstand', stand.fusshoehe,
+      (v) => { if (!Number.isNaN(v)) stand.fusshoehe = Math.max(0, Math.min(80, v)); }, 'mm'));
+    k.appendChild(g);
+
+    for (const [schluessel, name] of [['erste', 'Erste Seite anders'],
+                                      ['gerade', 'Gerade und ungerade Seiten anders']]) {
+      const w = document.createElement('label');
+      w.className = 'absatzfenster__haken';
+      const e = document.createElement('input');
+      e.type = 'checkbox'; e.checked = !!stand[schluessel];
+      e.addEventListener('change', () => { stand[schluessel] = e.checked; });
+      const t = document.createElement('span');
+      t.textContent = name;
+      w.append(e, t);
+      k.appendChild(w);
+    }
+    return k;
+  };
+
+  const karteRaster = () => {
+    const k = document.createElement('div');
+    k.className = 'rahmentafel__karte';
+    const z = document.createElement('label');
+    z.className = 'seitentafel__feld';
+    z.innerHTML = '<span>Raster:</span>';
+    const aus = document.createElement('select');
+    aus.className = 'feld';
+    for (const [marke, name] of [['ohne', 'Kein Raster'],
+                                 ['zeilen', 'Nur Zeilen festlegen'],
+                                 ['gitter', 'Zeilen und Zeichen']]) {
+      const o = document.createElement('option');
+      o.value = marke; o.textContent = name;
+      if (marke === stand.raster) o.selected = true;
+      aus.appendChild(o);
+    }
+    aus.addEventListener('change', () => { stand.raster = aus.value; });
+    z.appendChild(aus);
+    k.appendChild(z);
+    k.appendChild(feldZeile('Zeilen je Seite', stand.zeilen,
+      (v) => { if (!Number.isNaN(v)) stand.zeilen = Math.max(1, Math.min(80, v)); }, ''));
+    return k;
+  };
+
+  const karteSpalten = () => {
+    const k = document.createElement('div');
+    k.className = 'rahmentafel__karte';
+    const z = document.createElement('label');
+    z.className = 'seitentafel__feld';
+    z.innerHTML = '<span>Spalten:</span>';
+    const e = document.createElement('input');
+    e.type = 'number'; e.min = '1'; e.max = '3'; e.value = String(stand.spalten);
+    e.className = 'feld';
+    e.addEventListener('change', () => {
+      const v = parseInt(e.value, 10);
+      if (!Number.isNaN(v)) stand.spalten = Math.max(1, Math.min(3, v));
     });
+    z.appendChild(e);
+    k.appendChild(z);
+    return k;
+  };
+
+  const KARTEN = [
+    ['raender', 'Seitenränder',   karteRaender],
+    ['papier',  'Papier',         kartePapier],
+    ['layout',  'Layout',         karteLayout],
+    ['raster',  'Dokumentraster', karteRaster],
+    ['spalten', 'Spalten',        karteSpalten],
+  ];
+
+  let offen = karteZuerst || 'raender';
+  function karteZeigen(marke) {
+    offen = marke;
+    buehne.innerHTML = '';
+    const eintrag = KARTEN.find((x) => x[0] === marke);
+    if (eintrag) buehne.appendChild(eintrag[2]());
+    [...reiter.children].forEach((b) => {
+      b.classList.toggle('rahmentafel__reiter--an', b.dataset.marke === marke);
+    });
+  }
+
+  for (const [marke, name] of KARTEN) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'rahmentafel__reiterknopf';
+    b.dataset.marke = marke;
+    b.textContent = name;
+    b.addEventListener('click', () => karteZeigen(marke));
+    reiter.appendChild(b);
+  }
+  kasten.append(reiter, buehne);
+  karteZeigen(offen);
+
+  /* "Uebernehmen fuer" steht bei ihm unten im Fenster. */
+  const unten = document.createElement('label');
+  unten.className = 'seitentafel__feld seitentafel__unten';
+  unten.innerHTML = '<span>Übernehmen für:</span>';
+  const wofuer = document.createElement('select');
+  wofuer.className = 'feld';
+  for (const [w, name] of [['ganz', 'Gesamtes Dokument'],
+                           ['abschnitt', 'Aktuellen Abschnitt']]) {
+    const o = document.createElement('option');
+    o.value = w; o.textContent = name;
+    wofuer.appendChild(o);
+  }
+  unten.appendChild(wofuer);
+  kasten.appendChild(unten);
+
+  const knoepfe = document.createElement('div');
+  knoepfe.className = 'dialog__knoepfe';
+  const ab = document.createElement('button');
+  ab.type = 'button'; ab.className = 'knopf'; ab.textContent = 'Abbrechen';
+  ab.addEventListener('click', () => grund.remove());
+  const ok = document.createElement('button');
+  ok.type = 'button'; ok.className = 'knopf knopf--haupt'; ok.textContent = 'OK';
+  ok.addEventListener('click', () => {
+    grund.remove();
+    /* Die vorhandenen Wege benutzen, nicht danebengreifen. */
+    Object.assign(seitenrand, stand.rand);
+    spalten = stand.spalten;
+    if (stand.papier !== papier) { papier = stand.papier; Speicher.schreib('papier', papier); }
+    if (stand.quer !== quer) { quer = stand.quer; Speicher.schreib('quer', quer); }
+    Speicher.schreib('kopfhoehe', stand.kopfhoehe);
+    Speicher.schreib('fusshoehe', stand.fusshoehe);
+    Speicher.schreib('kopfErsteAnders', stand.erste);
+    Speicher.schreib('kopfGeradeAnders', stand.gerade);
+    Speicher.schreib('dokumentraster', stand.raster);
+    Speicher.schreib('rasterZeilen', stand.zeilen);
+    papierAnwenden();
+    seiteAnwenden();
+    kopfFussRegelnAnwenden();
+    if (wofuer.value === 'abschnitt' && typeof abschnittMerken === 'function') {
+      abschnittMerken(abschnittJetztNr);
+    }
+    seitenzahlenAuffrischen();
+    kopfFussLeistenStellen();
+    geaendertMelden();
+    melde('Seiteneinrichtung übernommen.');
   });
+  knoepfe.append(ab, ok);
+  kasten.appendChild(knoepfe);
+
+  grund.appendChild(kasten);
+  grund.addEventListener('mousedown', (e) => { if (e.target === grund) grund.remove(); });
+  document.addEventListener('keydown', function zu(e) {
+    if (e.key === 'Escape' && grund.isConnected) {
+      grund.remove(); document.removeEventListener('keydown', zu);
+    }
+  });
+  document.body.appendChild(grund);
 };
+
+/* Der Knopf im Band zeigt darauf - kein eigener Nachbau. */
+B.kopfFussEinstellungen = () => B.seiteEinrichten('layout');
 
 B.kopfFussSchliessen = () => {
   kopfFussModus = false;
@@ -6612,6 +7046,16 @@ function seitenzahlenAuffrischen() {
     f.textContent = seitenzahlText(nummer, gesamt);
     f.dataset.format = seitenzahlFormat;
   }
+  /* "Seite X von Y" aus dem AutoText braucht auch das Y. */
+  for (const f of document.querySelectorAll('.seitengesamt')) {
+    f.textContent = String(gesamt);
+  }
+  /* Und die Regeln fuer erste/gerade Seite gelten fuer jede neue Zahl. */
+  const erste = Speicher.lies('kopfErsteAnders', false);
+  const ohneErste = erste && Speicher.lies('kopfErsteOhneZahl', true);
+  for (const f of felder) {
+    f.classList.toggle('seitenzahl--aus', ohneErste && seiteVonFeld(f) === 1);
+  }
 }
 
 function seitenzahlSetzen(stelle, seite) {
@@ -6788,7 +7232,7 @@ const SEITENZAHLTRENNER = [
   ['—',  '— (Geviertstrich)'],
 ];
 
-let seitenzahlBeginn = 1;
+let seitenzahlBeginn = Speicher.lies('seitenzahlBeginn', 1);
 let seitenzahlKapitel = false;
 let seitenzahlTrenner = '-';
 
@@ -8379,11 +8823,12 @@ const REGISTER_IM_ZUSAMMENHANG = [
          IN der Leiste und die Einstellungen. */
       ['Kopf- und Fußzeile', [
         ['kopffuss', 'Kopf- und Fußzeile', (k) => B.kopfFussVorlagen(k), 'gross'],
-        ['kopfz', 'Kopfzeile', (k) => B.kopfzeilenVorlagen(k, 'kopf'), 'gross'],
-        ['fussz', 'Fußzeile', (k) => B.kopfzeilenVorlagen(k, 'fuss'), 'gross'],
+        ['kopfz', 'Kopfzeile', (k) => B.kopfzeileKlappe(k, 'kopf'), 'gross'],
+        ['fussz', 'Fußzeile', (k) => B.kopfzeileKlappe(k, 'fuss'), 'gross'],
         ['seitenzahl', 'Seitenzahl', (k) => B.seitenzahlKlappe(k), 'gross'],
       ]],
       ['Einfügen', [
+        ['autotext', 'AutoText', { klappe: (k) => B.autotext(k) }, 'gross'],
         ['datumuhrzeit', 'Datum und Uhrzeit', () => B.datumUhrzeit(), 'gross'],
         ['bild', 'Bild', () => B.bild(), 'gross'],
         ['feld', 'Felder', (k) => B.kopfFussFelder(k), 'gross'],
@@ -8415,7 +8860,7 @@ const REGISTER_IM_ZUSAMMENHANG = [
       ['Optionen', [
         ['zahnrad', 'Optionen für Kopf- und Fußzeile', () => B.kopfFussOptionen(), 'wort'],
         ['//'],
-        ['tabstopp', 'Ausrichtungstabstopp einfügen', () => B.ausrichtungstabstopp(), 'wort'],
+        ['tabstopp', 'Ausrichtungstabstopp einfügen', { klappe: (k) => B.ausrichtungstabstopp(k) }, 'wort'],
       ]],
       ['Größe', 'kopfhoehen'],
       /* Zwischen den Hoehen und dem Schliessen steht auf seinem Bild

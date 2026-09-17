@@ -5906,3 +5906,44 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 .register__raender--einspaltig .register__rand svg{
   width:15px;height:15px;flex:0 0 auto;opacity:.85;
 }
+
+/* "Erste Seite anders": Die Seitenzahl der ersten Seite ist dann weg -
+   der Platz bleibt, damit die Zeile nicht springt. */
+.seitenzahl--aus{visibility:hidden}
+
+/* "Gerade und ungerade Seiten anders": Bei gespiegelten Seiten sitzt
+   "aussen" auf ungeraden Seiten rechts, auf geraden links. */
+.zeile--gespiegelt{--gespiegelt:1}
+
+/* Ausrichtungstabstopps: Erst wenn die Zeile ein Flex-Kasten ist, schiebt
+   ein Tabstopp den Text dahinter wirklich weiter. Titel [tab] Datum [tab]
+   Seitenzahl steht damit links, mittig und rechts. */
+.zeile--tabs{display:flex;align-items:baseline;flex-wrap:nowrap}
+.zeile--tabs > .tabstopp{flex:1 1 0;min-width:.5em}
+
+/* Seiteneinrichtung: fuenf Karten wie in seinem Bild. Die Reiterleiste
+   und die Buehne teilt sie sich mit „Rahmen und Schattierung". */
+/* .rahmentafel__karte ist eine ZEILE (display:flex) - richtig fuer
+   "Rahmen und Schattierung" mit seinen drei Spalten, falsch hier: Die
+   Felder liefen nebeneinander aus dem Fenster. */
+.seitentafel .rahmentafel__karte{flex-direction:column;gap:0}
+.seitentafel__gitter{
+  display:grid;grid-template-columns:repeat(2,1fr);gap:8px 16px;margin-bottom:12px;
+}
+/* Kopf- und Fusszeilenabstand stehen untereinander, nicht zu zweit. */
+.seitentafel__gitter--eins{grid-template-columns:1fr}
+.seitentafel__feld{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.seitentafel__feld > span:first-child{flex:0 0 auto;min-width:8.5em}
+.seitentafel__feld .feld{flex:0 1 auto;width:9em;box-sizing:border-box}
+.seitentafel__mass{color:var(--schrift-2);font-size:.85rem}
+.seitentafel__name{margin:10px 0 6px;font-size:.9rem;font-weight:600}
+.seitentafel__wahlreihe{display:flex;gap:10px;margin-bottom:6px}
+.seitentafel__wahlreihe .zahlkachel{min-width:92px}
+.seitentafel__blatt{
+  display:flex;align-items:center;justify-content:center;
+  width:34px;height:44px;background:#fff;color:#333;
+  border:1px solid var(--marke);font:600 15px Georgia,serif;
+}
+.seitentafel__blatt--quer{width:44px;height:34px}
+.seitentafel__unten{margin-top:14px;padding-top:12px;border-top:1px solid var(--rand)}
+.seitentafel__unten .feld{width:14em}
