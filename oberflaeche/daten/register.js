@@ -197,8 +197,11 @@ function REGISTER_BAUEN(B, w) {
                       ['Kopfzeile bearbeiten', () => B.kopfzeile(), () => w.an('kopfzeile')],
                       ['Fußzeile bearbeiten', () => B.fusszeile(), () => w.an('fusszeile')],
                     ], 'gross'],
-                    ['seitenzahl', 'Seitenzahl',
-                      { tun: () => B.seitennummer(), klappe: (k) => B.seitenzahlKlappe(k) }]]],
+                    /* GROSS mit Beschriftung. Als kleines Zeichen daneben war
+                       es nicht zu erkennen: „soll ich eine Lupe benutzen, um
+                       das Symbol zu erkennen". In WPS steht es ebenso gross
+                       neben Kopf- und Fusszeile. */
+                    ['seitenzahl', 'Seitenzahl', () => B.seitenzahlFenster(), 'gross']]],
     ['Text', [['textrahmen', 'Textfeld', () => B.textfeld(), 'gross'],
                     /* „Textbaustein ist ein Pluspunkt fuer Legastheniker,
                        was WPS nicht so in der Form hat. Das gehoert eher in

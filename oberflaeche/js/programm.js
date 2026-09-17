@@ -6095,7 +6095,9 @@ function seitenzahlenAuffrischen() {
   const gesamt = seitenAnzahl();
   for (const f of felder) {
     const eigene = seiteVonFeld(f);
-    const nummer = eigene === null ? 1 : eigene;
+    /* "Beginnen mit" verschiebt die Zaehlung - so steht es in seinem
+       Fenster unter "Seitennummerierung". */
+    const nummer = (eigene === null ? 1 : eigene) + (seitenzahlBeginn - 1);
     f.textContent = seitenzahlText(nummer, gesamt);
     f.dataset.format = seitenzahlFormat;
   }
@@ -6123,67 +6125,187 @@ function seitenzahlSetzen(stelle, seite) {
   melde('Seitenzahl eingefügt.');
 }
 
-B.seitenzahlKlappe = (knopf) => {
-  designTafelZeigen(knopf, 'Seitenzahl', (tafel) => {
-    tafel.classList.add('designtafel--breit');
+/* Sein Bild zeigt an dieser Stelle ein FENSTER, keine Klappe:
 
-    for (const [stelle, name] of SEITENZAHLSTELLEN) {
-      const kopf = document.createElement('div');
-      kopf.className = 'effekttafel__kopf';
-      kopf.textContent = name;
-      tafel.appendChild(kopf);
+       Seitenzahl einfügen
+       Format:      [1, 2, 3 …            v]
+       Position(s): [Unten zentriert      v]
+       [ ] Kapitelnummer einbeziehen
+           Kapitel beginnt mit Formatvorlage (C): [Überschrift 1 v]   (grau)
+           Trennzeichen verwenden:                [- (Bindestrich) v] (grau)
+           Beispiele:                             1-1, 1-A           (grau)
+       Seitennummerierung:
+         (o) Fortsetzen vom vorherigen Abschnitt
+         ( ) Beginnen mit: [___]
+       Übernehmen für:
+         (o) Gesamtes Dokument  ( ) Von aktueller Seite  ( ) Aktueller Abschnitt
+                                              [Abbrechen] [OK]
 
-      const reihe = document.createElement('div');
-      reihe.className = 'seitenzahlreihe';
-      for (const [seite, wie] of SEITENZAHLSEITEN) {
-        const k = document.createElement('button');
-        k.type = 'button';
-        k.className = 'seitenzahlprobe';
-        k.title = name + ', ' + wie;
-        /* Ein Blatt im Kleinen, die Zahl an ihrer Stelle - so zeigt es
-           WPS auch. */
-        const blatt = document.createElement('span');
-        blatt.className = 'seitenzahlprobe__blatt';
-        blatt.dataset.stelle = stelle;
-        blatt.dataset.seite = seite;
-        blatt.textContent = '1';
-        const w = document.createElement('span');
-        w.className = 'seitenzahlprobe__name';
-        w.textContent = wie;
-        k.append(blatt, w);
-        k.addEventListener('mousedown', (e) => e.preventDefault());
-        k.addEventListener('click', () => {
-          designTafelWeg();
-          seitenzahlSetzen(stelle, seite);
-        });
-        reihe.appendChild(k);
-      }
-      tafel.appendChild(reihe);
+   Die grauen Zeilen bleiben grau, bis der Haken gesetzt ist - so steht
+   es bei ihm. */
+
+const SEITENZAHLPOSITIONEN = [
+  ['anfang-links',   'Oben links'],
+  ['anfang-mitte',   'Oben zentriert'],
+  ['anfang-rechts',  'Oben rechts'],
+  ['ende-links',     'Unten links'],
+  ['ende-mitte',     'Unten zentriert'],
+  ['ende-rechts',    'Unten rechts'],
+  ['position-links', 'Aktuelle Position'],
+];
+
+const SEITENZAHLTRENNER = [
+  ['-',  '- (Bindestrich)'],
+  ['.',  '. (Punkt)'],
+  [':',  ': (Doppelpunkt)'],
+  ['—',  '— (Geviertstrich)'],
+];
+
+let seitenzahlBeginn = 1;
+let seitenzahlKapitel = false;
+let seitenzahlTrenner = '-';
+
+B.seitenzahlFenster = () => {
+  auswahlMerken();
+
+  const grund = document.createElement('div');
+  grund.className = 'dialoggrund';
+  const kasten = document.createElement('div');
+  kasten.className = 'dialog zahlfenster';
+  kasten.innerHTML = '<h3 class="dialog__titel">Seitenzahl einfügen</h3>';
+
+  const feldZeile = (name, el) => {
+    const w = document.createElement('label');
+    w.className = 'absatzfenster__feld zahlfenster__feld';
+    const t = document.createElement('span');
+    t.textContent = name;
+    w.append(t, el);
+    return w;
+  };
+  const waehler = (liste, wert) => {
+    const s = document.createElement('select');
+    s.className = 'feld';
+    for (const [k, n] of liste) {
+      const o = document.createElement('option');
+      o.value = k; o.textContent = n;
+      if (k === wert) o.selected = true;
+      s.appendChild(o);
     }
+    return s;
+  };
 
-    const strichel = document.createElement('hr');
-    strichel.className = 'designtafel__strich';
-    tafel.appendChild(strichel);
+  const format = waehler(SEITENZAHLFORMATE, seitenzahlFormat);
+  const position = waehler(SEITENZAHLPOSITIONEN, 'ende-mitte');
+  kasten.appendChild(feldZeile('Format:', format));
+  kasten.appendChild(feldZeile('Position:', position));
 
-    const zeile = (bild, text, tun) => {
-      const k = document.createElement('button');
-      k.type = 'button';
-      k.className = 'designtafel__zeile richtungszeile';
-      k.appendChild(symbol(bild));
-      const w = document.createElement('span');
-      w.textContent = text;
-      k.appendChild(w);
-      k.addEventListener('mousedown', (e) => e.preventDefault());
-      k.addEventListener('click', () => { designTafelWeg(); tun(); });
-      tafel.appendChild(k);
-    };
-    zeile('zahnrad', 'Seitenzahlen formatieren…', () => B.seitenzahlFormat());
-    zeile('radierer', 'Seitenzahlen entfernen', () => {
-      document.querySelectorAll('.seitenzahl').forEach((a) => a.remove());
-      geaendertMelden();
-      melde('Seitenzahlen entfernt.');
-    });
+  /* Kapitelnummer - der Haken schaltet die drei Zeilen darunter frei. */
+  const hakenZeile = document.createElement('label');
+  hakenZeile.className = 'absatzfenster__haken zahlfenster__haken';
+  const kapitel = document.createElement('input');
+  kapitel.type = 'checkbox';
+  kapitel.checked = seitenzahlKapitel;
+  const kt = document.createElement('span');
+  kt.textContent = 'Kapitelnummer einbeziehen';
+  hakenZeile.append(kapitel, kt);
+  kasten.appendChild(hakenZeile);
+
+  const unterblock = document.createElement('div');
+  unterblock.className = 'zahlfenster__unter';
+  const stil = waehler([['h1', 'Überschrift 1'], ['h2', 'Überschrift 2'],
+                        ['h3', 'Überschrift 3']], 'h1');
+  const trenner = waehler(SEITENZAHLTRENNER, seitenzahlTrenner);
+  unterblock.appendChild(feldZeile('Kapitel beginnt mit Formatvorlage:', stil));
+  unterblock.appendChild(feldZeile('Trennzeichen verwenden:', trenner));
+  const beispiel = document.createElement('div');
+  beispiel.className = 'zahlfenster__beispiel';
+  kasten.appendChild(unterblock);
+  unterblock.appendChild(feldZeile('Beispiele:', beispiel));
+
+  const beispielZeigen = () => {
+    beispiel.textContent = '1' + trenner.value + '1, 1' + trenner.value + 'A';
+  };
+  const kapitelPruefen = () => {
+    const an = kapitel.checked;
+    unterblock.classList.toggle('zahlfenster__unter--aus', !an);
+    stil.disabled = !an;
+    trenner.disabled = !an;
+  };
+  trenner.addEventListener('change', beispielZeigen);
+  kapitel.addEventListener('change', kapitelPruefen);
+  beispielZeigen();
+  kapitelPruefen();
+
+  /* Seitennummerierung */
+  const nummerierung = document.createElement('fieldset');
+  nummerierung.className = 'zahlfenster__block';
+  nummerierung.innerHTML = '<legend>Seitennummerierung</legend>';
+  const wahlReihe = (name, wert, gruppe, an) => {
+    const w = document.createElement('label');
+    w.className = 'absatzfenster__haken';
+    const e = document.createElement('input');
+    e.type = 'radio'; e.name = gruppe; e.value = wert; e.checked = !!an;
+    const t = document.createElement('span');
+    t.textContent = name;
+    w.append(e, t);
+    w.eingabe = e;
+    return w;
+  };
+  const fortsetzen = wahlReihe('Fortsetzen vom vorherigen Abschnitt', 'fort', 'zahl-num', true);
+  const beginnen = wahlReihe('Beginnen mit:', 'neu', 'zahl-num', false);
+  const beginnFeld = document.createElement('input');
+  beginnFeld.type = 'number';
+  beginnFeld.className = 'feld zahlfenster__zahl';
+  beginnFeld.min = '1';
+  beginnFeld.value = String(seitenzahlBeginn);
+  beginnFeld.disabled = true;
+  beginnen.appendChild(beginnFeld);
+  const beginnPruefen = () => { beginnFeld.disabled = !beginnen.eingabe.checked; };
+  fortsetzen.eingabe.addEventListener('change', beginnPruefen);
+  beginnen.eingabe.addEventListener('change', beginnPruefen);
+  nummerierung.append(fortsetzen, beginnen);
+  kasten.appendChild(nummerierung);
+
+  /* Übernehmen für */
+  const wohin = document.createElement('fieldset');
+  wohin.className = 'zahlfenster__block';
+  wohin.innerHTML = '<legend>Übernehmen für</legend>';
+  const wohinZeile = document.createElement('div');
+  wohinZeile.className = 'zahlfenster__reihe';
+  const ganz = wahlReihe('Gesamtes Dokument', 'ganz', 'zahl-wohin', true);
+  const abhier = wahlReihe('Von aktueller Seite', 'abhier', 'zahl-wohin', false);
+  const abschnitt = wahlReihe('Aktueller Abschnitt', 'abschnitt', 'zahl-wohin', false);
+  wohinZeile.append(ganz, abhier, abschnitt);
+  wohin.appendChild(wohinZeile);
+  kasten.appendChild(wohin);
+
+  const knoepfe = document.createElement('div');
+  knoepfe.className = 'dialog__knoepfe';
+  const ab = document.createElement('button');
+  ab.type = 'button'; ab.className = 'knopf'; ab.textContent = 'Abbrechen';
+  ab.addEventListener('click', () => grund.remove());
+  const ok = document.createElement('button');
+  ok.type = 'button'; ok.className = 'knopf knopf--haupt'; ok.textContent = 'OK';
+  ok.addEventListener('click', () => {
+    grund.remove();
+    auswahlZurueck();
+    seitenzahlFormat = format.value;
+    Speicher.schreib('seitenzahlFormat', seitenzahlFormat);
+    seitenzahlKapitel = kapitel.checked;
+    seitenzahlTrenner = trenner.value;
+    seitenzahlBeginn = beginnen.eingabe.checked ? (parseInt(beginnFeld.value, 10) || 1) : 1;
+    const [stelle, seite] = position.value.split('-');
+    seitenzahlSetzen(stelle, seite);
   });
+  knoepfe.append(ab, ok);
+  kasten.appendChild(knoepfe);
+
+  grund.appendChild(kasten);
+  grund.addEventListener('mousedown', (e) => { if (e.target === grund) grund.remove(); });
+  document.addEventListener('keydown', function zu(e) {
+    if (e.key === 'Escape' && grund.isConnected) { grund.remove(); document.removeEventListener('keydown', zu); }
+  });
+  document.body.appendChild(grund);
 };
 
 B.seitenzahlFormat = () => {
@@ -7462,7 +7584,7 @@ const REGISTER_IM_ZUSAMMENHANG = [
     gruppen: [
       ['Kopfzeile', [['kopfz', 'Kopfzeile', () => B.kopfzeile(), 'gross']]],
       ['Fußzeile', [['fussz', 'Fußzeile', () => B.fusszeile(), 'gross']]],
-      ['Seitenzahl', [['zahlen', 'Seitenzahl', () => B.seitennummer(), 'gross'],
+      ['Seitenzahl', [['seitenzahl', 'Seitenzahl', () => B.seitenzahlFenster(), 'gross'],
                       ['datum', 'Datum', () => B.datum()],
                       ['uhrzeit', 'Uhrzeit', () => B.uhrzeit()]]],
       ['Navigation', [['zurueck', 'Zurück in den Text', () => B.zurueckInText(), 'gross'],
@@ -19328,7 +19450,7 @@ const MENUES = [
     { name: 'Kopf- und Fußzeile', unter: [
       { name: 'Kopfzeile', tun: B.kopfzeile, haken: () => kopfAn },
       { name: 'Fußzeile', tun: B.fusszeile, haken: () => fussAn },
-      { name: 'Seitenzahl', tun: B.seitennummer },
+      { name: 'Seitenzahl…', tun: () => B.seitenzahlFenster() },
     ] },
     { name: 'Text', unter: [
       { name: 'Textfeld', tun: B.textfeld },
@@ -20317,7 +20439,9 @@ function werkzeugeBauen() {
     knopf('kette', 'Hyperlink', B.hyperlink);
     knopf('kopfz', 'Kopfzeile', B.kopfzeile);
     knopf('fussz', 'Fußzeile', B.fusszeile);
-    knopf('zahl', 'Seitenzahl', B.seitennummer);
+    /* Dasselbe Fenster wie im Band - nicht der alte Befehl, der nur das
+       Wort "Seite" setzte. */
+    knopf('seitenzahl', 'Seitenzahl', () => B.seitenzahlFenster());
     trenner();
     knopf('textrahmen', 'Textfeld', B.textfeld);
     knopf('omega', 'Sonderzeichen', B.sonderzeichen);

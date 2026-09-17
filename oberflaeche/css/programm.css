@@ -5664,3 +5664,41 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 /* Das Feld im Blatt: nicht editierbar, damit die Zahl nicht zertippt wird. */
 .seitenzahl{color:inherit;user-select:none}
 .seitenzahl::after{content:none}
+
+/* ============================================================
+   SEITENZAHL EINFÜGEN — nach seinem Bild
+   ============================================================ */
+.dialog.zahlfenster{
+  max-width:560px;width:min(560px,94vw);
+  max-height:94vh;overflow:auto;
+}
+.zahlfenster__feld{max-width:none;margin-top:8px}
+.zahlfenster__feld > span:first-child{flex:0 0 13em;color:var(--schrift-2);font-size:.9rem}
+.zahlfenster__feld .feld{flex:1 1 auto;min-width:0}
+.zahlfenster__haken{margin-top:14px}
+/* Die drei Zeilen unter dem Haken bleiben grau, bis er gesetzt ist. */
+.zahlfenster__unter{
+  margin:2px 0 0 26px;padding-bottom:8px;
+  border-bottom:1px solid var(--rand);
+}
+.zahlfenster__unter--aus{opacity:.45;pointer-events:none}
+.zahlfenster__beispiel{
+  flex:1 1 auto;color:var(--schrift-2);font-size:.9rem;
+  font-variant-numeric:tabular-nums;
+}
+.zahlfenster__block{
+  border:0;border-top:1px solid var(--rand);
+  margin:14px 0 0;padding:6px 0 0;
+}
+.zahlfenster__block > legend{
+  padding:0 6px 0 0;color:var(--schrift-2);font-size:.82rem;
+}
+.zahlfenster__reihe{display:flex;gap:20px;flex-wrap:wrap}
+.zahlfenster__zahl{width:5em;margin-left:10px}
+.zahlfenster input:not([type="checkbox"]):not([type="radio"]),
+.zahlfenster select{
+  background-color:var(--grund);color:var(--schrift);
+  border:1px solid var(--rand);border-radius:6px;
+  padding:5px 9px;font:inherit;font-size:.9rem;
+}
+.zahlfenster select{padding-right:26px}
