@@ -5761,3 +5761,32 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
   margin:0;padding:6px 14px;
   color:var(--schrift-2);font-size:.82rem;
 }
+
+/* ============================================================
+   DIE ANGEHEFTETEN KNÖPFE AN KOPF- UND FUSSZEILE
+
+   Seine Ansage: „mit den Funktionen, die angeheftet sind." In seinen
+   Bildern klebt der Knopf „Seitenzahl einfügen ▾" im Blatt an der Zeile.
+   ============================================================ */
+.kopffussleiste{
+  position:absolute;left:0;right:0;z-index:5;
+  display:flex;align-items:center;gap:4px;flex-wrap:wrap;
+  padding:3px 6px;
+  font:400 11px/1.3 "Noto Sans", system-ui, sans-serif;
+  user-select:none;pointer-events:auto;
+}
+.kopffussleiste__marke{
+  color:var(--schrift-2);background:var(--grund);
+  border:1px solid var(--rand);border-radius:3px;
+  padding:2px 7px;margin-right:2px;
+}
+.kopffussleiste__knopf{
+  display:inline-flex;align-items:center;gap:3px;
+  padding:2px 8px;cursor:pointer;
+  background:var(--grund);color:var(--schrift);
+  border:1px solid var(--rand);border-radius:3px;
+  font:inherit;white-space:nowrap;
+}
+.kopffussleiste__knopf:hover{background:var(--blau);color:#fff;border-color:var(--blau)}
+.kopffussleiste__pfeil{opacity:.7;font-size:9px}
+@media print{ .kopffussleiste{display:none} }

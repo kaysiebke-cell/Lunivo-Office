@@ -4782,6 +4782,121 @@ function vorlageFuellen(muster) {
    Also kein Umweg ueber eine Klappe: ein Klick, beide Zeilen stehen da,
    der Zeiger sitzt in der Kopfzeile. Was man dann damit tun kann, steht
    unter der rechten Taste. */
+/* ============================================================
+   DIE ANGEHEFTETEN KNOEPFE AN DER KOPF- UND FUSSZEILE
+
+   Seine Ansage: "alle Einstellungen erfolgen im Dokument per Rechtsklick
+   an der Kopf- und Fusszeile MIT DEN FUNKTIONEN, DIE ANGEHEFTET SIND."
+   Und seine Bilder zeigen genau das: An der Zeile klebt im Blatt ein
+   Knopf "Seitenzahl einfuegen" mit Pfeil, daneben eine Marke mit einer
+   eigenen kleinen Klappe.
+
+   Ich hatte nur das Menue unter der rechten Taste gebaut. Das ist die
+   Haelfte: Wer nicht weiss, dass dort etwas ist, findet es nie. Diese
+   Leiste steht sichtbar an der Zeile, solange sie offen ist.
+   ============================================================ */
+function kopfFussLeisteBauen(wo) {
+  const leiste = document.createElement('div');
+  leiste.className = 'kopffussleiste';
+  leiste.contentEditable = 'false';
+  leiste.dataset.wo = wo;
+
+  const marke = document.createElement('span');
+  marke.className = 'kopffussleiste__marke';
+  marke.textContent = wo === 'kopf' ? 'Kopfzeile' : 'Fußzeile';
+  leiste.appendChild(marke);
+
+  const knopf = (name, titel, tun, mitPfeil) => {
+    const k = document.createElement('button');
+    k.type = 'button';
+    k.className = 'kopffussleiste__knopf';
+    k.title = titel || name;
+    k.textContent = name;
+    if (mitPfeil) {
+      const pfeil = document.createElement('span');
+      pfeil.className = 'kopffussleiste__pfeil';
+      pfeil.textContent = '▾';
+      k.appendChild(pfeil);
+    }
+    k.addEventListener('mousedown', (e) => e.preventDefault());
+    k.addEventListener('click', (e) => { e.stopPropagation(); tun(k); });
+    leiste.appendChild(k);
+    return k;
+  };
+
+  /* Der Zeiger muss IN der Zeile stehen, zu der die Leiste gehoert -
+     sonst schreibt "Datum" ins Blatt statt in die Kopfzeile, und
+     "Zur Fusszeile" springt nirgendwohin. Ein Klick auf einen Knopf
+     nimmt den Fokus mit preventDefault nicht weg, aber er setzt ihn auch
+     nicht: Wer vorher im Blatt stand, steht danach immer noch dort. */
+  const inDieZeile = () => {
+    const zeile = $(wo === 'kopf' ? 'kopfzeile' : 'fusszeile');
+    if (!zeile) return false;
+    kopfFussModus = true;
+    zeile.focus();
+    const bereich = document.createRange();
+    bereich.selectNodeContents(zeile);
+    bereich.collapse(false);
+    const auswahl = window.getSelection();
+    auswahl.removeAllRanges();
+    auswahl.addRange(bereich);
+    return true;
+  };
+
+  /* Dokument.einfuegen() ruft feld.focus() und schreibt damit IMMER ins
+     Blatt - auch wenn der Zeiger in der Kopfzeile steht. Das Datum landete
+     vor dem ersten Absatz statt in der Zeile. Hier wird deshalb direkt in
+     die Zeile geschrieben. */
+  const inZeileEinfuegen = (html) => {
+    if (!inDieZeile()) return;
+    document.execCommand('insertHTML', false, html);
+    seitenzahlenAuffrischen();
+    geaendertMelden();
+  };
+
+  knopf('Seitenzahl einfügen', 'Seitenzahl einfügen',
+        () => { inDieZeile(); B.seitenzahlFenster(); }, true);
+  knopf('Datum', 'Datum einfügen', () => {
+    const d = new Date();
+    inZeileEinfuegen(zweiStellen(d.getDate()) + '.' + zweiStellen(d.getMonth() + 1)
+                     + '.' + d.getFullYear());
+    melde('Datum eingefügt.');
+  });
+  knopf('Feld', 'Ein Feld einfügen', (k) => { inDieZeile(); B.kopfFussFelder(k); }, true);
+  knopf('Höhe', 'Höhe dieser Zeile', () => B.kopfZeilenhoehe(wo === 'kopf'));
+  knopf(wo === 'kopf' ? 'Zur Fußzeile' : 'Zur Kopfzeile', 'Wechseln',
+        () => { if (wo === 'kopf') B.zurFusszeile(); else B.zurKopfzeile(); });
+  knopf('Schließen', 'Kopf- und Fußzeile schließen', () => B.kopfFussSchliessen());
+  return leiste;
+}
+
+function kopfFussLeistenZeigen() {
+  document.querySelectorAll('.kopffussleiste').forEach((l) => l.remove());
+  if (!kopfFussModus) return;
+  const blatt = $('blatt');
+  if (!blatt) return;
+  if (kopfAn) blatt.appendChild(kopfFussLeisteBauen('kopf'));
+  if (fussAn) blatt.appendChild(kopfFussLeisteBauen('fuss'));
+  kopfFussLeistenStellen();
+}
+
+/* Die Leisten stehen an ihrer Zeile - sie muessen mitwandern, wenn sich
+   die Hoehen aendern oder das Fenster anders steht. */
+function kopfFussLeistenStellen() {
+  const blatt = $('blatt');
+  if (!blatt) return;
+  const bMasse = blatt.getBoundingClientRect();
+  for (const leiste of document.querySelectorAll('.kopffussleiste')) {
+    const zeile = $(leiste.dataset.wo === 'kopf' ? 'kopfzeile' : 'fusszeile');
+    if (!zeile || zeile.hidden) { leiste.remove(); continue; }
+    const zMasse = zeile.getBoundingClientRect();
+    const oben = leiste.dataset.wo === 'kopf'
+      ? zMasse.bottom - bMasse.top + 2
+      : zMasse.top - bMasse.top - leiste.offsetHeight - 2;
+    leiste.style.top = Math.max(0, oben) + 'px';
+  }
+}
+
 B.kopfFussZeigen = () => {
   if (!kopfAn) kopfAn = true;
   if (!fussAn) fussAn = true;
@@ -4795,7 +4910,8 @@ B.kopfFussZeigen = () => {
   auswahl.removeAllRanges();
   auswahl.addRange(bereich);
   kopfFussReiterZeigen();
-  melde('Kopf- und Fußzeile sind offen. Rechte Taste in der Zeile öffnet die Einstellungen.');
+  kopfFussLeistenZeigen();
+  melde('Kopf- und Fußzeile sind offen — die Knöpfe an der Zeile und die rechte Taste führen zu allem Weiteren.');
 };
 
 B.kopfFussVorlagen = (knopf) => {
@@ -4929,6 +5045,7 @@ B.kopfZeilenhoehe = (istKopf) => {
 
 B.kopfFussSchliessen = () => {
   kopfFussModus = false;
+  document.querySelectorAll('.kopffussleiste').forEach((l) => l.remove());
   feld.focus();
   const ende = document.createRange();
   ende.selectNodeContents(feld);
@@ -22501,6 +22618,8 @@ function titelSetzen() {
 function zahlenAuffrischen() {
   /* Zuerst die Umbrueche: Ihre Hoehe geht in die Seitenzahl ein. */
   umbruecheAuffrischen();
+  /* Und die angehefteten Leisten an ihre Zeile stellen. */
+  if (typeof kopfFussLeistenStellen === 'function') kopfFussLeistenStellen();
   /* Und die Seitenzahl-Felder, damit die Zahl mitwaechst. */
   seitenzahlenAuffrischen();
   const { zeichen: z, woerter } = Dokument.zaehle();
