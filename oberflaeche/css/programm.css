@@ -1771,8 +1771,11 @@ button.wz-wahl--schrift{
 
 /* KEIN kursives Schild mehr im Feld. Die Marke steht im Kasten an der
    Leiste - auf seinem Bild genau einmal. Ich hatte sie doppelt: einmal
-   kursiv im Balken, einmal im Kasten darunter. */
-.kopfzeile:focus::after,.fusszeile:focus::after{border-color:var(--blau)}
+   kursiv im Balken, einmal im Kasten darunter.
+
+   Und das Rechteck bleibt GRAU. Blau beim Hineinschreiben war meine
+   Erfindung; auf seinem Bild ist es dieselbe graue Strichlinie wie die
+   Trennlinie darunter. */
 
 /* Auf dem Papier ist beides weg — Band, Strich und Schild. */
 /* Auf dem Papier läuft beides wieder im Fluss: Dort setzt der Drucker die
@@ -5793,16 +5796,22 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
   font:400 11px/1.3 "Noto Sans", system-ui, sans-serif;
   user-select:none;pointer-events:auto;
 }
+/* DIE LEISTE LIEGT AUF DEM PAPIER, nicht in der Programmleiste.
+
+   Sie hatte var(--grund) und var(--schrift) - im Dunkelmodus also
+   dunkelgraue Kaesten mit heller Schrift, mitten auf dem cremeweissen
+   Blatt. Auf seinem Bild sind es helle Kaesten mit dunkler Schrift, wie
+   alles andere auf dem Papier auch. */
 .kopffussleiste__marke{
-  color:var(--schrift-2);background:var(--grund);
-  border:1px solid var(--rand);border-radius:3px;
+  color:var(--blatt-schrift);background:rgba(0,0,0,.07);
+  border:1px solid var(--marke);border-radius:3px;
   padding:2px 7px;margin-right:2px;
 }
 .kopffussleiste__knopf{
   display:inline-flex;align-items:center;gap:3px;
   padding:2px 8px;cursor:pointer;
-  background:var(--grund);color:var(--schrift);
-  border:1px solid var(--rand);border-radius:3px;
+  background:rgba(0,0,0,.07);color:var(--blatt-schrift);
+  border:1px solid var(--marke);border-radius:3px;
   font:inherit;white-space:nowrap;
 }
 .kopffussleiste__knopf:hover{background:var(--blau);color:#fff;border-color:var(--blau)}
