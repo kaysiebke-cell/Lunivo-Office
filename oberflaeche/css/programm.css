@@ -5802,6 +5802,10 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
   padding:3px 8px 3px 5px;
 }
 .wz__zeilenwort{font-size:.78rem;white-space:nowrap}
-/* Und die Zeile, in der sie stehen, richtet sich nach ihrem Inhalt. */
-.register__klein--reihen:has(.wz--zeilenwort){grid-auto-columns:max-content}
-.register__knopfreihe:has(.wz--zeilenwort){width:max-content}
+/* Und die Zeile, in der sie stehen, richtet sich nach ihrem Inhalt.
+   OHNE :has() - das kennt nicht jedes WebKit, und dann blieb die Spalte
+   88 Bildpunkte breit. Die Klassen setzt jetzt das Programm beim Bauen. */
+.register__klein--wort{grid-auto-columns:max-content !important}
+.register__klein--wort,
+.register__knopfreihe--wort{width:max-content}
+.register__klein--wort .wz--zeilenwort{max-width:none}

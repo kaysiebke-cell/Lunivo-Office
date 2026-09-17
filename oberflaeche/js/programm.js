@@ -9152,6 +9152,13 @@ function registerBauen() {
            anderen: Zeichen links, Wort daneben, zwei in einer Zeile.
            Ein nacktes Zeichen sagt dort nichts. */
         k.classList.add('wz--zeilenwort');
+        /* Die Kiste, in der er steht, muss sich nach dem Wort richten.
+           Das stand bisher im Stilblatt hinter :has() - und :has() kennt
+           nicht jedes WebKit. Ohne die Klasse bleibt die Spalte 88
+           Bildpunkte breit, und "Optionen fuer Kopf- und Fusszeile" legt
+           sich ueber den Nachbarn. Darum hier, beim Bauen. */
+        if (zeileJetzt) zeileJetzt.classList.add('register__knopfreihe--wort');
+        kleineKiste.classList.add('register__klein--wort');
         const beschriftung = document.createElement('span');
         beschriftung.className = 'wz__zeilenwort';
         beschriftung.textContent = titel;
