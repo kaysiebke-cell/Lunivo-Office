@@ -4640,8 +4640,35 @@ function kopfFussAnwenden() {
      irgendwohin klickt. */
   if (typeof zusammenhangPruefen === 'function') zusammenhangPruefen();
 }
-B.kopfzeile = () => { kopfAn = !kopfAn; kopfFussAnwenden(); if (kopfAn) $('kopfzeile').focus(); };
-B.fusszeile = () => { fussAn = !fussAn; kopfFussAnwenden(); if (fussAn) $('fusszeile').focus(); };
+/* Beim Hineingehen den Reiter aufschlagen. Kay: "Kopf und Fusszeile hast
+   du gekillt, denn es funktioniert nicht." Der Reiter ERSCHIEN zwar in der
+   Leiste, aber offen blieb "Einfuegen" - man landete in der schmalen Zeile
+   und sah keine Werkzeuge, also schien nichts zu geschehen. In WPS springt
+   die Ansicht sofort in den Reiter "Kopf- und Fusszeile". */
+/* Ein Zustand, kein Fokus. Der Reiter hing an kopfFussJetzt() - also
+   daran, wo der Zeiger GERADE steht. Sobald man einen seiner Knoepfe
+   drueckte, war der Fokus aus der Zeile heraus, der Reiter verschwand
+   und die Leiste sprang zurueck auf Start. Man konnte darin nichts tun.
+
+   In WPS bleibt der Reiter offen, bis man "Schliessen" drueckt. */
+let kopfFussModus = false;
+
+function kopfFussReiterZeigen() {
+  kopfFussModus = true;
+  registerOffen = 'Kopf- und Fußzeilenwerkzeuge';
+  registerBauen();
+}
+
+B.kopfzeile = () => {
+  kopfAn = !kopfAn;
+  kopfFussAnwenden();
+  if (kopfAn) { $('kopfzeile').focus(); kopfFussReiterZeigen(); }
+};
+B.fusszeile = () => {
+  fussAn = !fussAn;
+  kopfFussAnwenden();
+  if (fussAn) { $('fusszeile').focus(); kopfFussReiterZeigen(); }
+};
 
 /* Hin und zurück zwischen Blatt und Kopf-/Fußzeile.
 
@@ -4651,13 +4678,110 @@ B.fusszeile = () => { fussAn = !fussAn; kopfFussAnwenden(); if (fussAn) $('fussz
    an eine Stelle, die es gerade nicht gibt. */
 B.zurKopfzeile = () => {
   if (!kopfAn) { kopfAn = true; kopfFussAnwenden(); }
+  kopfFussModus = true;
   $('kopfzeile').focus();
 };
 B.zurFusszeile = () => {
   if (!fussAn) { fussAn = true; kopfFussAnwenden(); }
+  kopfFussModus = true;
   $('fusszeile').focus();
 };
 B.zurueckInText = () => feld.focus();
+
+/* Zwischen Kopf- und Fusszeile hin und her - in WPS ein eigener Knopf,
+   weil man beim Einrichten staendig zwischen beiden wechselt. */
+B.kopfFussWechseln = () => {
+  const jetzt = kopfFussJetzt();
+  if (jetzt && jetzt.id === 'kopfzeile') B.zurFusszeile();
+  else B.zurKopfzeile();
+};
+
+/* Die Hoehe beider Zeilen, wie in seinem Bild rechts: "Kopfzeilenhoehe"
+   und "Fusszeilenhoehe". Bei ihm in Zoll; hier in Millimetern, weil das
+   Blatt in Millimetern gerechnet wird. */
+B.kopfFussHoehe = () => {
+  const blatt = $('blatt');
+  const lies = (name, weich) => {
+    const wert = parseFloat(getComputedStyle(blatt).getPropertyValue(name));
+    return Number.isFinite(wert) && wert > 0 ? Math.round(wert * 10) / 10 : weich;
+  };
+  fenster('Höhe der Kopf- und Fußzeile', [
+    { art: 'satz', text: 'Wie hoch die beiden Zeilen sind, in Millimetern.' },
+    { schluessel: 'kopf', name: 'Kopfzeile', art: 'number',
+      wert: lies('--kopfhoehe', 12), schritt: '1' },
+    { schluessel: 'fuss', name: 'Fußzeile', art: 'number',
+      wert: lies('--fusshoehe', 12), schritt: '1' },
+  ], (werte) => {
+    blatt.style.setProperty('--kopfhoehe', (parseFloat(werte.kopf) || 12) + 'mm');
+    blatt.style.setProperty('--fusshoehe', (parseFloat(werte.fuss) || 12) + 'mm');
+    Speicher.schreib('kopfhoehe', parseFloat(werte.kopf) || 12);
+    Speicher.schreib('fusshoehe', parseFloat(werte.fuss) || 12);
+    geaendertMelden();
+    melde('Höhe gesetzt.');
+  }, 'Übernehmen');
+};
+
+/* "Optionen fuer Kopf- und Fusszeile" - in WPS die drei Haken:
+   Erste Seite anders, Gerade und ungerade Seiten anders, Text anzeigen. */
+B.kopfFussOptionen = () => {
+  fenster('Optionen für Kopf- und Fußzeile', [
+    { art: 'satz', text: 'Gilt für das ganze Dokument.' },
+    { schluessel: 'erste', name: 'Erste Seite anders', art: 'schalter',
+      wert: Speicher.lies('kopfErsteAnders', false) },
+    { schluessel: 'gerade', name: 'Gerade und ungerade Seiten anders', art: 'schalter',
+      wert: Speicher.lies('kopfGeradeAnders', false) },
+    { schluessel: 'text', name: 'Text des Dokuments anzeigen', art: 'schalter',
+      wert: Speicher.lies('kopfTextZeigen', true) },
+  ], (werte) => {
+    Speicher.schreib('kopfErsteAnders', werte.erste === true || werte.erste === 'true');
+    Speicher.schreib('kopfGeradeAnders', werte.gerade === true || werte.gerade === 'true');
+    Speicher.schreib('kopfTextZeigen', werte.text === true || werte.text === 'true');
+    melde('Einstellungen übernommen.');
+  }, 'Übernehmen');
+};
+
+/* Die Felder, die in eine Kopf- oder Fusszeile gehoeren. In WPS heisst
+   der Knopf "Felder". */
+B.kopfFussFelder = (knopf) => {
+  designTafelZeigen(knopf, 'Felder', (tafel) => {
+    const zeile = (bild, name, tun) => {
+      const k = document.createElement('button');
+      k.type = 'button';
+      k.className = 'designtafel__zeile richtungszeile';
+      k.appendChild(symbol(bild));
+      const w = document.createElement('span');
+      w.textContent = name;
+      k.appendChild(w);
+      k.addEventListener('mousedown', (e) => e.preventDefault());
+      k.addEventListener('click', () => { designTafelWeg(); tun(); });
+      tafel.appendChild(k);
+    };
+    zeile('seitenzahl', 'Seitenzahl', () => B.seitenzahlFenster());
+    zeile('datumuhrzeit', 'Datum', () => B.datum());
+    zeile('datumuhrzeit', 'Uhrzeit', () => B.uhrzeit());
+    zeile('verfolgt', 'Dateiname', () => {
+      elementEinfuegen('<span class="feld">' + alsSicher(dateiname || 'Unbenannt') + '</span>');
+      geaendertMelden();
+      melde('Dateiname eingefügt.');
+    });
+  });
+};
+
+/* "Schliessen" - der Weg zurueck ins Blatt. Er fehlte ganz: Man kam in
+   die Zeile und fand von dort nicht mehr heraus. */
+B.kopfFussSchliessen = () => {
+  kopfFussModus = false;
+  feld.focus();
+  const ende = document.createRange();
+  ende.selectNodeContents(feld);
+  ende.collapse(false);
+  const auswahl = window.getSelection();
+  auswahl.removeAllRanges();
+  auswahl.addRange(ende);
+  registerOffen = Speicher.lies('register', 'Start');
+  registerBauen();
+  melde('Kopf- und Fußzeile geschlossen.');
+};
 
 /* ============================================================
    Die Werkzeuge für das, was im Text steht
@@ -7696,16 +7820,38 @@ const REGISTER_IM_ZUSAMMENHANG = [
        wieder heraus. Der Weg zurück ist mit der Maus der fummeligste:
        Man trifft die schmale Zeile leichter, als man sie wieder verlässt. */
     name: 'Kopf- und Fußzeilenwerkzeuge',
-    gilt: () => !!kopfFussJetzt(),
+    gilt: () => kopfFussModus || !!kopfFussJetzt(),
     gruppen: [
-      ['Kopfzeile', [['kopfz', 'Kopfzeile', () => B.kopfzeile(), 'gross']]],
-      ['Fußzeile', [['fussz', 'Fußzeile', () => B.fusszeile(), 'gross']]],
-      ['Seitenzahl', [['seitenzahl', 'Seitenzahl', (k) => B.seitenzahlKlappe(k), 'gross'],
-                      ['datum', 'Datum', () => B.datum()],
-                      ['uhrzeit', 'Uhrzeit', () => B.uhrzeit()]]],
-      ['Navigation', [['zurueck', 'Zurück in den Text', () => B.zurueckInText(), 'gross'],
-                      ['kopfz', 'Zur Kopfzeile', () => B.zurKopfzeile()],
-                      ['fussz', 'Zur Fußzeile', () => B.zurFusszeile()]]],
+      /* NACH SEINEM WPS-BILD. Dort stehen der Reihe nach: Header,
+         Footer, Seitenzahl, Kopfzeilen | Datum und Uhrzeit, Bild,
+         Felder | Zwischen Kopf- und Fusszeile wechseln, Vorige
+         Kopfzeile, Naechste Kopfzeile | Optionen, Ausrichtungstabstopp |
+         Kopfzeilenhoehe, Fusszeilenhoehe | Einstellungen, Schliessen.
+
+         Hier standen vier Gruppen mit sieben Knoepfen; es fehlten das
+         Wechseln, die Hoehen, die Optionen und - am wichtigsten - ein
+         Knopf zum Schliessen. */
+      ['Kopf- und Fußzeile', [
+        ['kopfz', 'Kopfzeile', () => B.zurKopfzeile(), 'gross'],
+        ['fussz', 'Fußzeile', () => B.zurFusszeile(), 'gross'],
+        ['seitenzahl', 'Seitenzahl', (k) => B.seitenzahlKlappe(k), 'gross'],
+      ]],
+      ['Einfügen', [
+        ['datumuhrzeit', 'Datum und Uhrzeit', () => B.datumUhrzeit(), 'gross'],
+        ['bild', 'Bild', () => B.bild()],
+        ['feld', 'Felder', (k) => B.kopfFussFelder(k)],
+      ]],
+      ['Navigation', [
+        ['wechseln', 'Zwischen Kopf- und Fußzeile wechseln', () => B.kopfFussWechseln(), 'gross'],
+        ['zurueck', 'Zurück in den Text', () => B.zurueckInText()],
+      ]],
+      ['Größe', [
+        ['kopfhoehe', 'Höhe der Kopf- und Fußzeile…', () => B.kopfFussHoehe(), 'gross'],
+        ['zahnrad', 'Optionen für Kopf- und Fußzeile', () => B.kopfFussOptionen()],
+      ]],
+      ['Schließen', [
+        ['schliessen', 'Kopf- und Fußzeile schließen', () => B.kopfFussSchliessen(), 'gross'],
+      ]],
     ],
   },
 ];
