@@ -4288,7 +4288,19 @@ function seiteAnwenden() {
   linealAuffrischen();
 }
 
-B.seitenraender = () => {
+/* EIN FENSTER, NICHT ZWEI.
+
+   Seitenraender, Papierformat und Spalten waren drei getrennte kleine
+   Fenster. Seit es die Seiteneinrichtung mit seinen fuenf Karten gibt,
+   waeren es zwei Wege zur selben Einstellung - und zwei Wege gehen
+   irgendwann auseinander. Die alten Knoepfe oeffnen deshalb dasselbe
+   Fenster auf ihrer Karte.
+
+   Die ausfuehrliche Fassung steht weiter unten als seitenraenderFenster;
+   sie wird nicht mehr gerufen, bleibt aber lesbar. */
+B.seitenraender = () => B.seiteEinrichten('raender');
+
+const seitenraenderFenster = () => {
   fenster('Seitenränder', [
     { art: 'satz', text: 'In Millimetern. Ein Brief hat üblicherweise 20 mm ringsum.' },
     { schluessel: 'oben', name: 'oben', art: 'number', wert: seitenrand.oben },
@@ -5335,6 +5347,12 @@ B.seiteEinrichten = (karteZuerst) => {
     gerade: Speicher.lies('kopfGeradeAnders', false),
     raster: Speicher.lies('dokumentraster', 'ohne'),
     zeilen: Speicher.lies('rasterZeilen', 40),
+    /* Bundsteg und "Mehrere Seiten" stehen auf seinem Bild auf der Karte
+       Seitenraender - bei mir fehlten sie. Der Bundsteg ist der Rand
+       fuers Heften; er kommt zum eingestellten Rand hinzu. */
+    bundstegWo: Speicher.lies('bundstegWo', 'links'),
+    bundsteg: Speicher.lies('bundsteg', 0),
+    mehrere: Speicher.lies('mehrereSeiten', 'normal'),
   };
 
   const feldZeile = (name, wert, beiAenderung, einheit) => {
@@ -5364,6 +5382,24 @@ B.seiteEinrichten = (karteZuerst) => {
       g.appendChild(feldZeile(kante[0].toUpperCase() + kante.slice(1), stand.rand[kante],
         (v) => { if (!Number.isNaN(v)) stand.rand[kante] = Math.max(0, Math.min(80, v)); }, 'mm'));
     }
+
+    /* Bundstegposition und -breite - auf seinem Bild die dritte Zeile. */
+    const bz = document.createElement('label');
+    bz.className = 'seitentafel__feld';
+    bz.innerHTML = '<span>Bundstegposition:</span>';
+    const baus = document.createElement('select');
+    baus.className = 'feld';
+    for (const [marke, bname] of [['links', 'Links'], ['oben', 'Oben']]) {
+      const o = document.createElement('option');
+      o.value = marke; o.textContent = bname;
+      if (marke === stand.bundstegWo) o.selected = true;
+      baus.appendChild(o);
+    }
+    baus.addEventListener('change', () => { stand.bundstegWo = baus.value; });
+    bz.appendChild(baus);
+    g.appendChild(bz);
+    g.appendChild(feldZeile('Bundstegbreite', stand.bundsteg,
+      (v) => { if (!Number.isNaN(v)) stand.bundsteg = Math.max(0, Math.min(80, v)); }, 'mm'));
     k.appendChild(g);
 
     const ueber = document.createElement('p');
@@ -5394,6 +5430,60 @@ B.seiteEinrichten = (karteZuerst) => {
       wahl.appendChild(b);
     }
     k.appendChild(wahl);
+
+    const t2 = document.createElement('p');
+    t2.className = 'seitentafel__name';
+    t2.textContent = 'Seiten';
+    k.appendChild(t2);
+
+    const mz = document.createElement('label');
+    mz.className = 'seitentafel__feld';
+    mz.innerHTML = '<span>Mehrere Seiten:</span>';
+    const maus = document.createElement('select');
+    maus.className = 'feld';
+    for (const [marke, mname] of [['normal', 'Normal'],
+                                  ['gespiegelt', 'Gegenüberliegende Seiten'],
+                                  ['zweiproblatt', '2 Seiten pro Blatt']]) {
+      const o = document.createElement('option');
+      o.value = marke; o.textContent = mname;
+      if (marke === stand.mehrere) o.selected = true;
+      maus.appendChild(o);
+    }
+    maus.addEventListener('change', () => { stand.mehrere = maus.value; });
+    mz.appendChild(maus);
+    k.appendChild(mz);
+
+    const vt = document.createElement('p');
+    vt.className = 'seitentafel__name';
+    vt.textContent = 'Vorschau';
+    k.appendChild(vt);
+
+    const schau = document.createElement('div');
+    schau.className = 'seitenschau';
+    const schauBlatt = document.createElement('div');
+    schauBlatt.className = 'seitenschau__blatt';
+    const schauSatz = document.createElement('div');
+    schauSatz.className = 'seitenschau__satz';
+    for (let i = 0; i < 9; i++) schauSatz.appendChild(document.createElement('i'));
+    schauBlatt.appendChild(schauSatz);
+    schau.appendChild(schauBlatt);
+    k.appendChild(schau);
+
+    /* Sie rechnet mit den Werten in den Feldern. Eine Vorschau aus
+       gemalten Strichen hatte er mir schon einmal zu Recht vorgehalten. */
+    const schauStellen = () => {
+      const b = stand.quer ? 297 : 210, h = stand.quer ? 210 : 297;
+      schauBlatt.style.aspectRatio = b + ' / ' + h;
+      const links = stand.rand.links + (stand.bundstegWo === 'links' ? stand.bundsteg : 0);
+      const oben = stand.rand.oben + (stand.bundstegWo === 'oben' ? stand.bundsteg : 0);
+      schauSatz.style.left = (links / b * 100) + '%';
+      schauSatz.style.right = (stand.rand.rechts / b * 100) + '%';
+      schauSatz.style.top = (oben / h * 100) + '%';
+      schauSatz.style.bottom = (stand.rand.unten / h * 100) + '%';
+    };
+    schauStellen();
+    k.addEventListener('change', schauStellen);
+    k.addEventListener('click', () => setTimeout(schauStellen, 0));
     return k;
   };
 
@@ -5416,10 +5506,33 @@ B.seiteEinrichten = (karteZuerst) => {
     z.appendChild(aus);
     k.appendChild(z);
 
-    const hin = document.createElement('p');
-    hin.className = 'dialog__satz';
-    hin.textContent = 'Ein eigenes Maß stellst du unter Seitenlayout → Papierformat ein.';
-    k.appendChild(hin);
+    /* Breite und Hoehe, wie im alten Papierformat-Fenster. Ohne sie
+       zeigte der Hinweis auf ein Fenster, das jetzt dieses hier ist. */
+    const masse = document.createElement('div');
+    masse.className = 'seitentafel__gitter';
+    const jetzt = () => (PAPIERE[stand.papier] || PAPIERE.a4);
+    const bF = feldZeile('Breite', jetzt().breite, (v) => {
+      if (Number.isNaN(v)) return;
+      PAPIERE.eigen = { name: 'Eigenes Format',
+                        breite: Math.max(20, Math.min(1200, v)), hoehe: jetzt().hoehe };
+      stand.papier = 'eigen';
+    }, 'mm');
+    const hF = feldZeile('Höhe', jetzt().hoehe, (v) => {
+      if (Number.isNaN(v)) return;
+      PAPIERE.eigen = { name: 'Eigenes Format',
+                        breite: jetzt().breite, hoehe: Math.max(20, Math.min(1200, v)) };
+      stand.papier = 'eigen';
+    }, 'mm');
+    masse.append(bF, hF);
+    k.appendChild(masse);
+
+    /* Waehlt er oben ein fertiges Format, folgen die beiden Felder. */
+    aus.addEventListener('change', () => {
+      const p2 = PAPIERE[stand.papier];
+      if (!p2) return;
+      bF.querySelector('input').value = String(p2.breite);
+      hF.querySelector('input').value = String(p2.hoehe);
+    });
     return k;
   };
 
@@ -5543,7 +5656,23 @@ B.seiteEinrichten = (karteZuerst) => {
   kasten.appendChild(unten);
 
   const knoepfe = document.createElement('div');
-  knoepfe.className = 'dialog__knoepfe';
+  knoepfe.className = 'dialog__knoepfe dialog__knoepfe--geteilt';
+
+  /* "Standard..." steht bei ihm unten links: zurueck auf die Werte, mit
+     denen ein neues Dokument anfaengt. */
+  const standard = document.createElement('button');
+  standard.type = 'button'; standard.className = 'knopf';
+  standard.textContent = 'Standard…';
+  standard.addEventListener('click', () => {
+    stand.rand = { oben: 20, unten: 20, links: 20, rechts: 20 };
+    stand.bundsteg = 0; stand.bundstegWo = 'links';
+    stand.quer = false; stand.papier = 'a4'; stand.spalten = 1;
+    stand.kopfhoehe = 12; stand.fusshoehe = 12; stand.mehrere = 'normal';
+    karteZeigen(offen);
+    melde('Auf die Standardwerte zurückgesetzt — mit OK übernehmen.');
+  });
+  knoepfe.appendChild(standard);
+
   const ab = document.createElement('button');
   ab.type = 'button'; ab.className = 'knopf'; ab.textContent = 'Abbrechen';
   ab.addEventListener('click', () => grund.remove());
@@ -5555,6 +5684,7 @@ B.seiteEinrichten = (karteZuerst) => {
     Object.assign(seitenrand, stand.rand);
     spalten = stand.spalten;
     if (stand.papier !== papier) { papier = stand.papier; Speicher.schreib('papier', papier); }
+    if (PAPIERE.eigen) Speicher.schreib('papierEigen', PAPIERE.eigen);
     if (stand.quer !== quer) { quer = stand.quer; Speicher.schreib('quer', quer); }
     Speicher.schreib('kopfhoehe', stand.kopfhoehe);
     Speicher.schreib('fusshoehe', stand.fusshoehe);
@@ -5562,6 +5692,14 @@ B.seiteEinrichten = (karteZuerst) => {
     Speicher.schreib('kopfGeradeAnders', stand.gerade);
     Speicher.schreib('dokumentraster', stand.raster);
     Speicher.schreib('rasterZeilen', stand.zeilen);
+    Speicher.schreib('bundstegWo', stand.bundstegWo);
+    Speicher.schreib('bundsteg', stand.bundsteg);
+    Speicher.schreib('mehrereSeiten', stand.mehrere);
+    /* Der Bundsteg kommt zum Rand hinzu, auf der gewaehlten Seite. */
+    if (stand.bundsteg > 0) {
+      if (stand.bundstegWo === 'links') seitenrand.links += stand.bundsteg;
+      else seitenrand.oben += stand.bundsteg;
+    }
     papierAnwenden();
     seiteAnwenden();
     kopfFussRegelnAnwenden();
@@ -5587,7 +5725,7 @@ B.seiteEinrichten = (karteZuerst) => {
 };
 
 /* Der Knopf im Band zeigt darauf - kein eigener Nachbau. */
-B.kopfFussEinstellungen = () => B.seiteEinrichten('layout');
+B.kopfFussEinstellungen = () => B.seiteEinrichten('raender');
 
 B.kopfFussSchliessen = () => {
   kopfFussModus = false;
@@ -15356,7 +15494,9 @@ B.textrichtungFenster = () => {
 /* „Weitere Papierformate…" — Breite und Hoehe von Hand, wie in WPS
    hinter demselben Punkt. Etiketten, Klappkarten, alte Formate: Wer sie
    braucht, braucht sie genau und nicht ungefaehr. */
-B.papierformatFenster = () => {
+B.papierformatFenster = () => B.seiteEinrichten('papier');
+
+const papierformatFensterAlt = () => {
   const jetzt = PAPIERE[papier] || PAPIERE.a4;
   fenster('Papierformat', [
     { art: 'satz', text: 'In Millimetern. Hochformat; für Querformat gibt es '

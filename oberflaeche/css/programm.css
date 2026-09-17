@@ -5947,3 +5947,24 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 .seitentafel__blatt--quer{width:44px;height:34px}
 .seitentafel__unten{margin-top:14px;padding-top:12px;border-top:1px solid var(--rand)}
 .seitentafel__unten .feld{width:14em}
+
+/* Die Vorschau auf der Karte Seitenränder: ein Blatt, auf dem der Satz-
+   spiegel steht, wie die Felder ihn gerade angeben. Keine Attrappe —
+   sie rechnet mit den eingetragenen Werten. */
+.seitenschau{display:flex;justify-content:center;margin:6px 0 2px}
+.seitenschau__blatt{
+  position:relative;width:118px;aspect-ratio:210/297;
+  background:#fff;border:1px solid var(--marke);
+}
+.seitenschau__satz{
+  position:absolute;display:flex;flex-direction:column;
+  /* Die Zeilen fuellen den Satzspiegel, wie in seiner Vorschau - sie
+     kleben nicht oben. */
+  justify-content:space-between;
+}
+.seitenschau__satz i{display:block;height:2px;background:#9aa3ab}
+.seitenschau__satz i:last-child{width:60%}
+
+/* „Standard…" steht links, Abbrechen und OK rechts. */
+.dialog__knoepfe--geteilt{justify-content:space-between}
+.dialog__knoepfe--geteilt .knopf:first-child{margin-right:auto}
