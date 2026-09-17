@@ -5937,7 +5937,21 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
    var(--karte) ist im Hellen weiss und im Dunkeln dunkel; damit stimmt
    es in beiden Faellen, ohne dass es irgendwo zweimal steht. */
 
-.seitentafel{position:relative}
+/* FESTE GROESSE.
+
+   Die fuenf Karten sind verschieden hoch - die Spalten-Karte hat drei
+   Gruppen, die Papier-Karte zwei Listen. Weil das Fenster sich nach dem
+   Inhalt richtete, sprang es bei jedem Reiterwechsel. Kay: "es wechselt
+   staendig seine Groesse."
+
+   Jetzt steht die Breite fest und die Buehne hat eine feste Hoehe; was
+   nicht hineinpasst, rollt in der Buehne - das Fenster selbst bleibt,
+   wo es ist, und so gross, wie es ist. */
+.seitentafel.dialog--breit{
+  position:relative;
+  width:580px;min-width:580px;max-width:min(580px, 94vw);
+  box-sizing:border-box;
+}
 .seitentafel__titelleiste{
   display:flex;align-items:center;justify-content:space-between;gap:12px;
   margin:-20px -20px 12px;padding:10px 12px 10px 20px;
@@ -5975,7 +5989,10 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 /* .rahmentafel__karte ist eine ZEILE - richtig fuer "Rahmen und
    Schattierung", falsch hier. */
 .seitentafel .rahmentafel__karte{flex-direction:column;gap:0}
-.seitentafel .rahmentafel__buehne{min-height:300px;padding-top:12px}
+.seitentafel .rahmentafel__buehne{
+  height:360px;min-height:0;padding-top:12px;
+  overflow-y:auto;overflow-x:hidden;
+}
 
 /* Jede Gruppe in einem Kasten mit Namen - so steht es auf allen fuenf
    Bildern. */
