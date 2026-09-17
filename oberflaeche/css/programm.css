@@ -6150,3 +6150,41 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 }
 .seitenliste__zeile:hover{background:rgba(47,111,181,.14)}
 .seitenliste__zeile--an{background:var(--blau);color:#fff}
+
+/* Optionen — Drucken: bei ihm ein breites Fenster mit einer Spalte für
+   die Seiten links und dem Inhalt rechts. Meins hatte gar keine linke
+   Spalte und war schmal. */
+.druckoptionen.dialog{
+  width:900px;min-width:0;max-width:min(900px,95vw);
+  box-sizing:border-box;font-size:13px;padding:16px;
+}
+.druckoptionen__koerper{display:flex;gap:0;min-height:340px}
+.druckoptionen__seiten{
+  flex:0 0 160px;padding:6px;
+  border:1px solid var(--rand);border-right:none;
+  background:var(--tafel);
+}
+.druckoptionen__seite{
+  display:block;width:100%;text-align:left;
+  padding:5px 10px;cursor:pointer;
+  background:none;color:var(--schrift);border:0;border-radius:3px;
+  font:inherit;font-size:13px;
+}
+.druckoptionen__seite--an{background:var(--karte)}
+.druckoptionen__inhalt{
+  flex:1 1 auto;min-width:0;padding:10px 12px;
+  border:1px solid var(--rand);
+  max-height:60vh;overflow-y:auto;
+}
+.druckoptionen__zwei{display:grid;grid-template-columns:1fr 1fr;gap:6px 18px}
+.druckoptionen__zwei .seitentafel__feld{flex-direction:column;align-items:flex-start;gap:3px}
+.druckoptionen__zwei .seitentafel__feld > span:first-child{min-width:0}
+.druckoptionen__zwei .seitentafel__feld > select{width:100%}
+.druckoptionen__duplex{display:flex;align-items:center;gap:8px}
+.duplexbild{
+  flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+  width:22px;height:16px;font-size:10px;
+  background:var(--blatt);color:var(--blatt-schrift);
+  border:1px solid var(--marke);border-radius:2px;
+}
+.duplexbild--rueck{border-style:dashed}

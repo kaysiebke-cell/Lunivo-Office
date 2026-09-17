@@ -5353,13 +5353,15 @@ B.druckoptionen = () => {
   const grund = document.createElement('div');
   grund.className = 'dialoggrund';
   const kasten = document.createElement('div');
-  kasten.className = 'dialog dialog--breit seitentafel druckoptionen';
+  kasten.className = 'dialog seitentafel druckoptionen';
 
   const titelleiste = document.createElement('div');
   titelleiste.className = 'seitentafel__titelleiste';
   const titel = document.createElement('h3');
   titel.className = 'dialog__titel seitentafel__titel';
-  titel.textContent = 'Optionen — Drucken';
+  /* Bei ihm heisst das Fenster "Optionen"; welche Seite offen ist, sagt
+     die Liste links. */
+  titel.textContent = 'Optionen';
   const kreuz = document.createElement('button');
   kreuz.type = 'button';
   kreuz.className = 'seitentafel__kreuz';
@@ -5369,11 +5371,46 @@ B.druckoptionen = () => {
   titelleiste.append(titel, kreuz);
   kasten.appendChild(titelleiste);
 
+  /* Am Titel ziehen, wie bei der Seiteneinrichtung. */
+  let zieht = null;
+  titelleiste.addEventListener('mousedown', (e) => {
+    if (e.target === kreuz) return;
+    const r = kasten.getBoundingClientRect();
+    zieht = { x: e.clientX - r.left, y: e.clientY - r.top };
+    kasten.style.position = 'fixed';
+    kasten.style.margin = '0';
+    kasten.style.left = r.left + 'px';
+    kasten.style.top = r.top + 'px';
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove', function schieben(e) {
+    if (!zieht) return;
+    if (!grund.isConnected) { document.removeEventListener('mousemove', schieben); return; }
+    const b = kasten.offsetWidth, h = kasten.offsetHeight;
+    kasten.style.left = Math.max(0, Math.min(window.innerWidth - b, e.clientX - zieht.x)) + 'px';
+    kasten.style.top = Math.max(0, Math.min(window.innerHeight - h, e.clientY - zieht.y)) + 'px';
+  });
+  document.addEventListener('mouseup', () => { zieht = null; });
+
+  /* Zwei Spalten: links die Seiten des Optionenfensters, rechts der
+     Inhalt. Meins hatte gar keine linke Spalte. */
+  const koerper = document.createElement('div');
+  koerper.className = 'druckoptionen__koerper';
+
+  const seitenliste = document.createElement('div');
+  seitenliste.className = 'druckoptionen__seiten';
+  const seite = document.createElement('button');
+  seite.type = 'button';
+  seite.className = 'druckoptionen__seite druckoptionen__seite--an';
+  seite.textContent = 'Drucken';
+  seitenliste.appendChild(seite);
+  koerper.appendChild(seitenliste);
+
   const buehne = document.createElement('div');
-  buehne.className = 'rahmentafel__buehne';
+  buehne.className = 'druckoptionen__inhalt';
 
   const stand = {};
-  const hakenZeile = (name, text) => {
+  const hakenZeile = (name, text, aus) => {
     stand[name] = (typeof schalterStand !== 'undefined' && name in schalterStand)
       ? schalterStand[name]
       : Speicher.lies(name, false);
@@ -5381,11 +5418,30 @@ B.druckoptionen = () => {
     w.className = 'absatzfenster__haken';
     const e = document.createElement('input');
     e.type = 'checkbox'; e.checked = !!stand[name];
+    if (aus) e.disabled = true;
     e.addEventListener('change', () => { stand[name] = e.checked; });
     const t = document.createElement('span');
     t.textContent = text;
     w.append(e, t);
     return w;
+  };
+
+  const klappe = (name, text, werte, vorgabe) => {
+    const z = document.createElement('label');
+    z.className = 'seitentafel__feld';
+    const w = document.createElement('span');
+    w.textContent = text;
+    const aus = document.createElement('select');
+    for (const [m, t] of werte) {
+      const o = document.createElement('option');
+      o.value = m; o.textContent = t;
+      if (m === Speicher.lies(name, vorgabe)) o.selected = true;
+      aus.appendChild(o);
+    }
+    stand[name] = Speicher.lies(name, vorgabe);
+    aus.addEventListener('change', () => { stand[name] = aus.value; });
+    z.append(w, aus);
+    return z;
   };
 
   const gruppe = (name) => {
@@ -5403,38 +5459,51 @@ B.druckoptionen = () => {
   g1.appendChild(hakenZeile('dpHoheGuete', 'In hoher Qualität drucken'));
   buehne.appendChild(g1);
 
+  /* Bei ihm zweispaltig: links die Haken, rechts der ausgeblendete Text
+     und der Autor der Kommentare. */
   const g2 = gruppe('Mit dem Dokument ausdrucken');
-  g2.appendChild(hakenZeile('dpFeldfunktionen', 'Feldfunktionen'));
-  g2.appendChild(hakenZeile('dpZeichnungen', 'Zeichnungsobjekte'));
-  g2.appendChild(hakenZeile('dpHintergrund', 'Hintergrundfarben und -bilder drucken'));
-
-  const verborgen = document.createElement('label');
-  verborgen.className = 'seitentafel__feld';
-  verborgen.innerHTML = '<span>Ausgeblendeter Text:</span>';
-  const vAus = document.createElement('select');
-  for (const [m, t] of [['nicht', 'Ausgeblendeten Text nicht drucken'],
-                        ['drucken', 'Ausgeblendeten Text drucken'],
-                        ['strich', 'Mit Unterstreichung drucken']]) {
-    const o = document.createElement('option');
-    o.value = m; o.textContent = t;
-    if (m === Speicher.lies('dpVerborgenerText', 'nicht')) o.selected = true;
-    vAus.appendChild(o);
-  }
-  vAus.addEventListener('change', () => { stand.dpVerborgenerText = vAus.value; });
-  verborgen.appendChild(vAus);
-  g2.appendChild(verborgen);
+  const zwei = document.createElement('div');
+  zwei.className = 'druckoptionen__zwei';
+  const links = document.createElement('div');
+  links.appendChild(hakenZeile('dpFeldfunktionen', 'Feldfunktionen'));
+  links.appendChild(hakenZeile('dpZeichnungen', 'Zeichnungsobjekte'));
+  /* Bei ihm grau - es gilt nur, wenn ausgeblendeter Text ueberhaupt
+     gedruckt wird. */
+  links.appendChild(hakenZeile('dpVerborgenStrich',
+    'Unterstreichung für ausgeblendeten Text drucken',
+    Speicher.lies('dpVerborgenerText', 'nicht') === 'nicht'));
+  links.appendChild(hakenZeile('dpHintergrund', 'Hintergrundfarben und -bilder drucken'));
+  const rechts = document.createElement('div');
+  rechts.appendChild(klappe('dpVerborgenerText', 'Ausgeblendeter Text:',
+    [['nicht', 'Ausgeblendeten Text nicht drucken'],
+     ['drucken', 'Ausgeblendeten Text drucken']], 'nicht'));
+  rechts.appendChild(klappe('dpKommentarAutor', 'Autor der Kommentare und Überarbeitungen:',
+    [['voll', 'Vollständige'], ['kurz', 'Kürzel'], ['ohne', 'Ohne']], 'voll'));
+  zwei.append(links, rechts);
+  g2.appendChild(zwei);
   buehne.appendChild(g2);
 
   const g3 = gruppe('Optionen nur für aktuelles Dokument');
   g3.appendChild(hakenZeile('dpNurFormulardaten', 'Nur Formulardaten drucken'));
   buehne.appendChild(g3);
 
+  /* Mit den beiden Blattzeichen davor, wie bei ihm. */
   const g4 = gruppe('Optionen zum Duplexdrucken');
-  g4.appendChild(hakenZeile('dpVorderseite', 'Blattvorderseite'));
-  g4.appendChild(hakenZeile('dpRueckseite', 'Blattrückseite'));
+  for (const [name, text, oben] of [['dpVorderseite', 'Blattvorderseite', true],
+                                    ['dpRueckseite', 'Blattrückseite', false]]) {
+    const zeile = document.createElement('div');
+    zeile.className = 'druckoptionen__duplex';
+    const bild = document.createElement('span');
+    bild.className = 'duplexbild' + (oben ? '' : ' duplexbild--rueck');
+    bild.textContent = oben ? '1' : '2';
+    zeile.appendChild(bild);
+    zeile.appendChild(hakenZeile(name, text));
+    g4.appendChild(zeile);
+  }
   buehne.appendChild(g4);
 
-  kasten.appendChild(buehne);
+  koerper.appendChild(buehne);
+  kasten.appendChild(koerper);
 
   const knoepfe = document.createElement('div');
   knoepfe.className = 'dialog__knoepfe';
