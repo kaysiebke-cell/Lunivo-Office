@@ -4656,6 +4656,15 @@ let kopfFussModus = false;
 function kopfFussReiterZeigen() {
   kopfFussModus = true;
   registerOffen = 'Kopf- und Fußzeilenwerkzeuge';
+  /* Und das Band aufklappen. War es eingeklappt - ein Doppelklick auf
+     einen Reiter tut das -, blieb die Reiterleiste stehen und darunter
+     NICHTS: "was machst du eigentlich ausser dass du meine ganze
+     Reiterleiste ausblendest". Wer die Kopfzeile oeffnet, will die
+     Werkzeuge sehen. */
+  if (registerEingeklappt) {
+    registerEingeklappt = false;
+    Speicher.schreib('registerZu', false);
+  }
   registerBauen();
 }
 
@@ -8868,7 +8877,17 @@ function registerBauen() {
   band.innerHTML = '';
   /* Die Knöpfe von vorhin gibt es gleich nicht mehr. */
   registerSchalter = [];
-  if (registerEingeklappt) { registerPfeile(); return; }
+  if (registerEingeklappt) {
+    /* Eingeklappt heisst: nur die Reiterleiste. Damit das nicht aussieht,
+       als waere das Band kaputt, steht dort ein Hinweis - ein Doppelklick
+       auf einen Reiter klappt wieder auf. */
+    const hinweis = document.createElement('p');
+    hinweis.className = 'register__eingeklappt';
+    hinweis.textContent = 'Band eingeklappt — Doppelklick auf einen Reiter klappt es wieder auf.';
+    band.appendChild(hinweis);
+    registerPfeile();
+    return;
+  }
 
   const ausZusatz = zusatz.find((r) => r.name === registerOffen);
   const gewaehlt = ausZusatz

@@ -5754,3 +5754,10 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 .register__mass{color:var(--schrift-2);font-size:.72rem}
 /* Ein Ausrichtungstabstopp in der Kopf-/Fußzeile. */
 .tabstopp{display:inline-block;min-width:2em;flex:1 1 auto}
+
+/* Der Hinweis, wenn das Band eingeklappt ist — sonst sieht die leere
+   Fläche unter der Reiterleiste aus wie ein Fehler. */
+.register__eingeklappt{
+  margin:0;padding:6px 14px;
+  color:var(--schrift-2);font-size:.82rem;
+}
