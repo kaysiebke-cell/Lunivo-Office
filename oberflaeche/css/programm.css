@@ -5809,3 +5809,17 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 .register__klein--wort,
 .register__knopfreihe--wort{width:max-content}
 .register__klein--wort .wz--zeilenwort{max-width:none}
+
+/* Das kleine Fenster aus dem Blatt: Position als Kacheln, wie in seinem Bild. */
+.dialog.zahlfenster--klein{max-width:460px;width:min(460px,94vw)}
+.zahlfenster__kacheln{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:6px 0 2px;
+}
+.zahlkachel{
+  display:flex;flex-direction:column;align-items:center;gap:5px;
+  padding:9px 6px;cursor:pointer;color:var(--schrift);
+  background:none;border:1px solid var(--rand);border-radius:4px;
+}
+.zahlkachel:hover{border-color:var(--blau)}
+.zahlkachel--an{outline:2px solid var(--blau);outline-offset:-1px;background:rgba(47,111,181,.12)}
+.zahlkachel__name{font-size:.82rem}

@@ -4860,7 +4860,7 @@ function kopfFussLeisteBauen(wo) {
      Zeile lagen. Alles Weitere steht unter der rechten Taste; so hat er
      es auch gesagt. */
   knopf('Seitenzahl einfügen', 'Seitenzahl einfügen — alles Weitere mit der rechten Taste',
-        () => { inDieZeile(); B.seitenzahlFenster(); }, true);
+        () => { inDieZeile(); B.seitenzahlFensterKlein(); }, true);
   return leiste;
 }
 
@@ -6673,6 +6673,116 @@ const SEITENZAHLTRENNER = [
 let seitenzahlBeginn = 1;
 let seitenzahlKapitel = false;
 let seitenzahlTrenner = '-';
+
+/* ZWEI FENSTER, nicht eines.
+
+   Sein Bild aus dem Blatt zeigt ein KLEINES: Format, darunter die
+   Position als fuenf Kacheln (Links, Zentriert, Rechts / Aussen, Innen),
+   dann "Uebernehmen fuer" und OK. Kein "Kapitelnummer einbeziehen",
+   keine "Seitennummerierung" - das steht nur im grossen Fenster, das
+   ueber die Klappe im Band kommt.
+
+   Ich hatte das grosse an beide Stellen gehaengt. */
+B.seitenzahlFensterKlein = () => {
+  auswahlMerken();
+
+  const grund = document.createElement('div');
+  grund.className = 'dialoggrund';
+  const kasten = document.createElement('div');
+  kasten.className = 'dialog zahlfenster zahlfenster--klein';
+  kasten.innerHTML = '<h3 class="dialog__titel">Seitenzahl einfügen</h3>';
+
+  const zeile = document.createElement('label');
+  zeile.className = 'absatzfenster__feld zahlfenster__feld';
+  zeile.innerHTML = '<span>Format:</span>';
+  const format = document.createElement('select');
+  format.className = 'feld';
+  for (const [k, n2] of SEITENZAHLFORMATE) {
+    const o = document.createElement('option');
+    o.value = k; o.textContent = n2;
+    if (k === seitenzahlFormat) o.selected = true;
+    format.appendChild(o);
+  }
+  zeile.appendChild(format);
+  kasten.appendChild(zeile);
+
+  const frage = document.createElement('div');
+  frage.className = 'zahlfenster__name';
+  frage.textContent = 'Position:';
+  kasten.appendChild(frage);
+
+  /* Die fuenf Kacheln aus seinem Bild - Blatt im Kleinen, Zahl an ihrer
+     Stelle, Wort darunter. "Zentriert" steht vorgewaehlt. */
+  let gewaehlt = 'ende-mitte';
+  const gitter = document.createElement('div');
+  gitter.className = 'zahlfenster__kacheln';
+  for (const [wie, name] of SEITENZAHLVORLAGEN) {
+    const k = document.createElement('button');
+    k.type = 'button';
+    k.className = 'zahlkachel';
+    const wert = 'ende-' + wie;
+    if (wert === gewaehlt) k.classList.add('zahlkachel--an');
+    k.appendChild(seitenzahlBlatt('ende', wie));
+    const t = document.createElement('span');
+    t.className = 'zahlkachel__name';
+    t.textContent = name;
+    k.appendChild(t);
+    k.addEventListener('mousedown', (e) => e.preventDefault());
+    k.addEventListener('click', () => {
+      gewaehlt = wert;
+      [...gitter.children].forEach((c) => c.classList.remove('zahlkachel--an'));
+      k.classList.add('zahlkachel--an');
+    });
+    gitter.appendChild(k);
+  }
+  kasten.appendChild(gitter);
+
+  const wohin = document.createElement('fieldset');
+  wohin.className = 'zahlfenster__block';
+  wohin.innerHTML = '<legend>Übernehmen für:</legend>';
+  const reihe = document.createElement('div');
+  reihe.className = 'zahlfenster__reihe';
+  for (const [wert, name, an] of [['ganz', 'Gesamtes Dokument', true],
+                                  ['abhier', 'Von aktueller Seite', false],
+                                  ['abschnitt', 'Aktueller Abschnitt', false]]) {
+    const w = document.createElement('label');
+    w.className = 'absatzfenster__haken';
+    const e = document.createElement('input');
+    e.type = 'radio'; e.name = 'zahl-klein-wohin'; e.value = wert; e.checked = an;
+    const t = document.createElement('span');
+    t.textContent = name;
+    w.append(e, t);
+    reihe.appendChild(w);
+  }
+  wohin.appendChild(reihe);
+  kasten.appendChild(wohin);
+
+  const knoepfe = document.createElement('div');
+  knoepfe.className = 'dialog__knoepfe';
+  const ab = document.createElement('button');
+  ab.type = 'button'; ab.className = 'knopf'; ab.textContent = 'Abbrechen';
+  ab.addEventListener('click', () => grund.remove());
+  const ok = document.createElement('button');
+  ok.type = 'button'; ok.className = 'knopf knopf--haupt'; ok.textContent = 'OK';
+  ok.addEventListener('click', () => {
+    grund.remove();
+    auswahlZurueck();
+    seitenzahlFormat = format.value;
+    Speicher.schreib('seitenzahlFormat', seitenzahlFormat);
+    const [stelle, wie] = gewaehlt.split('-');
+    const seite = wie === 'aussen' ? 'rechts' : wie === 'innen' ? 'links' : wie;
+    seitenzahlSetzen(stelle, seite);
+  });
+  knoepfe.append(ab, ok);
+  kasten.appendChild(knoepfe);
+
+  grund.appendChild(kasten);
+  grund.addEventListener('mousedown', (e) => { if (e.target === grund) grund.remove(); });
+  document.addEventListener('keydown', function zu(e) {
+    if (e.key === 'Escape' && grund.isConnected) { grund.remove(); document.removeEventListener('keydown', zu); }
+  });
+  document.body.appendChild(grund);
+};
 
 B.seitenzahlFenster = () => {
   auswahlMerken();
