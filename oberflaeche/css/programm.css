@@ -5810,10 +5810,24 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 .register__knopfreihe--wort{width:max-content}
 .register__klein--wort .wz--zeilenwort{max-width:none}
 
-/* Das kleine Fenster aus dem Blatt: Position als Kacheln, wie in seinem Bild. */
-.dialog.zahlfenster--klein{max-width:460px;width:min(460px,94vw)}
-.zahlfenster__kacheln{
-  display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:6px 0 2px;
+/* Das Fenster am Knopf, nicht in der Mitte.
+
+   Auf seinem Bild haengt es unter "Seitenzahl einfuegen" - keine
+   Abdunklung, kein Abbrechen, die drei Radios in einer Zeile. */
+.zahlklappe{
+  position:fixed;z-index:70;width:540px;max-width:94vw;
+  background:var(--leiste);color:var(--schrift);
+  border:1px solid var(--rand);border-radius:6px;
+  box-shadow:var(--schatten);
+  padding:14px 16px 12px;
+}
+.zahlklappe__feld{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.zahlklappe__feld > span{flex:0 0 auto}
+.zahlklappe__feld .feld{flex:1 1 auto;min-width:0;box-sizing:border-box}
+.zahlklappe__name{margin:0 0 6px;font-size:.9rem}
+
+.zahlklappe__kacheln{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;
 }
 .zahlkachel{
   display:flex;flex-direction:column;align-items:center;gap:5px;
@@ -5823,3 +5837,17 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 .zahlkachel:hover{border-color:var(--blau)}
 .zahlkachel--an{outline:2px solid var(--blau);outline-offset:-1px;background:rgba(47,111,181,.12)}
 .zahlkachel__name{font-size:.82rem}
+
+/* Alle drei nebeneinander - nicht zwei und dann eine. */
+.zahlklappe__reihe{display:flex;gap:16px;flex-wrap:nowrap;align-items:center}
+.zahlklappe__wahl{
+  display:flex;align-items:center;gap:6px;white-space:nowrap;
+  font-size:.86rem;cursor:pointer;
+}
+.zahlklappe__strich{height:1px;background:var(--rand);margin:12px 0 10px}
+.zahlklappe__knoepfe{display:flex;justify-content:flex-end}
+.zahlklappe__knoepfe .knopf{width:auto;min-width:92px;padding:8px 18px}
+
+/* Der Knopf bleibt sichtbar und zeigt, dass seine Klappe offen ist. */
+.kopffussleiste__knopf--auf{background:var(--blau);color:#fff;border-color:var(--blau)}
+.kopffussleiste__knopf--auf .kopffussleiste__pfeil{transform:rotate(180deg)}

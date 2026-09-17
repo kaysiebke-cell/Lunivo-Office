@@ -4860,7 +4860,7 @@ function kopfFussLeisteBauen(wo) {
      Zeile lagen. Alles Weitere steht unter der rechten Taste; so hat er
      es auch gesagt. */
   knopf('Seitenzahl einfügen', 'Seitenzahl einfügen — alles Weitere mit der rechten Taste',
-        () => { inDieZeile(); B.seitenzahlFensterKlein(); }, true);
+        (k) => { inDieZeile(); B.seitenzahlFensterKlein(k); }, true);
   return leiste;
 }
 
@@ -6683,17 +6683,35 @@ let seitenzahlTrenner = '-';
    ueber die Klappe im Band kommt.
 
    Ich hatte das grosse an beide Stellen gehaengt. */
-B.seitenzahlFensterKlein = () => {
+/* SEIN BILD, genau gelesen.
+
+   Das Fenster im Blatt ist KEIN Dialog. Es haengt am Knopf "Seitenzahl
+   einfuegen": linke Kante an der des Knopfes, direkt darunter, ohne
+   abgedunkelten Hintergrund. Der Knopf bleibt sichtbar, ist blau
+   hinterlegt, und sein Pfeil zeigt nach oben. Unten steht nur OK - kein
+   Abbrechen; zum Abbrechen klickt man daneben. Und die drei Radios
+   stehen in EINER Zeile.
+
+   Ich hatte es als modalen Dialog mitten auf dem Schirm gebaut, mit
+   Overlay und Abbrechen. Deshalb stimmte das Layout im Dokument vorne
+   und hinten nicht. */
+let zahlklappe = null;
+function zahlklappeWeg() {
+  if (!zahlklappe) return;
+  if (zahlklappe.knopf) zahlklappe.knopf.classList.remove('kopffussleiste__knopf--auf');
+  zahlklappe.kasten.remove();
+  zahlklappe = null;
+}
+
+B.seitenzahlFensterKlein = (knopf) => {
+  if (zahlklappe) { zahlklappeWeg(); return; }
   auswahlMerken();
 
-  const grund = document.createElement('div');
-  grund.className = 'dialoggrund';
   const kasten = document.createElement('div');
-  kasten.className = 'dialog zahlfenster zahlfenster--klein';
-  kasten.innerHTML = '<h3 class="dialog__titel">Seitenzahl einfügen</h3>';
+  kasten.className = 'zahlklappe';
 
   const zeile = document.createElement('label');
-  zeile.className = 'absatzfenster__feld zahlfenster__feld';
+  zeile.className = 'zahlklappe__feld';
   zeile.innerHTML = '<span>Format:</span>';
   const format = document.createElement('select');
   format.className = 'feld';
@@ -6707,15 +6725,15 @@ B.seitenzahlFensterKlein = () => {
   kasten.appendChild(zeile);
 
   const frage = document.createElement('div');
-  frage.className = 'zahlfenster__name';
+  frage.className = 'zahlklappe__name';
   frage.textContent = 'Position:';
   kasten.appendChild(frage);
 
-  /* Die fuenf Kacheln aus seinem Bild - Blatt im Kleinen, Zahl an ihrer
-     Stelle, Wort darunter. "Zentriert" steht vorgewaehlt. */
+  /* Die fuenf Kacheln: Blatt im Kleinen, Zahl an ihrer Stelle, Wort
+     darunter. "Zentriert" steht vorgewaehlt. */
   let gewaehlt = 'ende-mitte';
   const gitter = document.createElement('div');
-  gitter.className = 'zahlfenster__kacheln';
+  gitter.className = 'zahlklappe__kacheln';
   for (const [wie, name] of SEITENZAHLVORLAGEN) {
     const k = document.createElement('button');
     k.type = 'button';
@@ -6737,35 +6755,39 @@ B.seitenzahlFensterKlein = () => {
   }
   kasten.appendChild(gitter);
 
-  const wohin = document.createElement('fieldset');
-  wohin.className = 'zahlfenster__block';
-  wohin.innerHTML = '<legend>Übernehmen für:</legend>';
+  const frage2 = document.createElement('div');
+  frage2.className = 'zahlklappe__name';
+  frage2.textContent = 'Übernehmen für:';
+  kasten.appendChild(frage2);
+
+  /* Alle drei nebeneinander, wie auf seinem Bild - nicht 2 + 1. */
   const reihe = document.createElement('div');
-  reihe.className = 'zahlfenster__reihe';
+  reihe.className = 'zahlklappe__reihe';
   for (const [wert, name, an] of [['ganz', 'Gesamtes Dokument', true],
                                   ['abhier', 'Von aktueller Seite', false],
                                   ['abschnitt', 'Aktueller Abschnitt', false]]) {
     const w = document.createElement('label');
-    w.className = 'absatzfenster__haken';
+    w.className = 'zahlklappe__wahl';
     const e = document.createElement('input');
-    e.type = 'radio'; e.name = 'zahl-klein-wohin'; e.value = wert; e.checked = an;
+    e.type = 'radio'; e.name = 'zahl-klappe-wohin'; e.value = wert; e.checked = an;
     const t = document.createElement('span');
     t.textContent = name;
     w.append(e, t);
     reihe.appendChild(w);
   }
-  wohin.appendChild(reihe);
-  kasten.appendChild(wohin);
+  kasten.appendChild(reihe);
+
+  const strich = document.createElement('div');
+  strich.className = 'zahlklappe__strich';
+  kasten.appendChild(strich);
 
   const knoepfe = document.createElement('div');
-  knoepfe.className = 'dialog__knoepfe';
-  const ab = document.createElement('button');
-  ab.type = 'button'; ab.className = 'knopf'; ab.textContent = 'Abbrechen';
-  ab.addEventListener('click', () => grund.remove());
+  knoepfe.className = 'zahlklappe__knoepfe';
   const ok = document.createElement('button');
   ok.type = 'button'; ok.className = 'knopf knopf--haupt'; ok.textContent = 'OK';
+  ok.addEventListener('mousedown', (e) => e.preventDefault());
   ok.addEventListener('click', () => {
-    grund.remove();
+    zahlklappeWeg();
     auswahlZurueck();
     seitenzahlFormat = format.value;
     Speicher.schreib('seitenzahlFormat', seitenzahlFormat);
@@ -6773,15 +6795,37 @@ B.seitenzahlFensterKlein = () => {
     const seite = wie === 'aussen' ? 'rechts' : wie === 'innen' ? 'links' : wie;
     seitenzahlSetzen(stelle, seite);
   });
-  knoepfe.append(ab, ok);
+  knoepfe.appendChild(ok);
   kasten.appendChild(knoepfe);
 
-  grund.appendChild(kasten);
-  grund.addEventListener('mousedown', (e) => { if (e.target === grund) grund.remove(); });
-  document.addEventListener('keydown', function zu(e) {
-    if (e.key === 'Escape' && grund.isConnected) { grund.remove(); document.removeEventListener('keydown', zu); }
-  });
-  document.body.appendChild(grund);
+  document.body.appendChild(kasten);
+  zahlklappe = { kasten, knopf };
+  if (knopf) knopf.classList.add('kopffussleiste__knopf--auf');
+
+  /* An den Knopf haengen: linke Kante buendig, direkt darunter. Nur wenn
+     unten kein Platz mehr ist, klappt es nach oben. */
+  const r = (knopf && knopf.getBoundingClientRect)
+    ? knopf.getBoundingClientRect() : { left: 120, bottom: 120, top: 120 };
+  const m = kasten.getBoundingClientRect();
+  const platzUnten = window.innerHeight - r.bottom - 8;
+  kasten.style.left = Math.round(Math.max(8,
+    Math.min(r.left, window.innerWidth - 8 - m.width))) + 'px';
+  kasten.style.top = Math.round(platzUnten >= m.height
+    ? r.bottom + 2
+    : Math.max(8, r.top - m.height - 2)) + 'px';
+
+  setTimeout(() => {
+    document.addEventListener('mousedown', function zu(ev) {
+      if (!zahlklappe) { document.removeEventListener('mousedown', zu); return; }
+      if (kasten.contains(ev.target) || (knopf && knopf.contains(ev.target))) return;
+      zahlklappeWeg();
+      document.removeEventListener('mousedown', zu);
+    });
+    document.addEventListener('keydown', function esc(ev) {
+      if (!zahlklappe) { document.removeEventListener('keydown', esc); return; }
+      if (ev.key === 'Escape') { zahlklappeWeg(); document.removeEventListener('keydown', esc); }
+    });
+  }, 0);
 };
 
 B.seitenzahlFenster = () => {
