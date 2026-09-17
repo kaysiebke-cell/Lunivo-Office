@@ -46,8 +46,8 @@ DIE BÄNDER
 │   │   ├── Einzug vergrößern
 │   │   ├── Einzug verringern
 │   │   ├── Genaues Maß…
-│   │   ├── Listenebene erhöhen
-│   │   └── Listenebene verringern
+│   │   ├── Listenebene verringern
+│   │   └── Listenebene erhöhen
 │   ├── Stile
 │   │   └── katalog
 │   └── Bearbeiten

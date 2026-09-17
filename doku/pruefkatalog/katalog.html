@@ -684,7 +684,11 @@
             .bild-weg, .bild-zeile { display: none; }
             .vorrat-eintrag { grid-template-columns: 200px 1fr; page-break-inside: avoid; }
         }
-    </style>
+    .speicher-stand{
+    margin-left:10px;color:#9aa3ab;font-size:.85em;white-space:nowrap;
+}
+.speicher-stand--voll{color:#e08469;font-weight:700}
+</style>
 
 
 <div class="container">
@@ -704,6 +708,11 @@
             <input type="file" id="importFile" style="display:none" onchange="importData(event)">
             <button onclick="window.print()">Drucken / PDF</button>
             <button id="kategorienToggleBtn" onclick="alleKategorienUmschaltenToggle()">Alle Kategorien aufklappen</button>
+            <!-- Der Speicher des Browsers endet bei rund 10 MB. Diese Anzeige
+                 sagt, wie voll er ist; der Knopf daneben verkleinert die
+                 vorhandenen Bilder und schafft Platz. -->
+            <button id="speicherKnopf" onclick="bilderEindampfen()" title="Verkleinert alle vorhandenen Bilder und schafft Platz für neue">Bilder verkleinern</button>
+            <span id="speicherStand" class="speicher-stand"></span>
         </div>
 
         <!-- Neue Fortschrittsanzeige -->
@@ -1892,6 +1901,7 @@ function laden() {
 }
 function speichern() {
     briefMerken();
+    setTimeout(speicherStandZeigen, 0);
     try {
         localStorage.setItem(SPEICHER_SCHLUESSEL, JSON.stringify({ items: testData, notesList: freeNotesList }));
     } catch (e) {
@@ -2155,6 +2165,11 @@ function init() {
     });
 
     freeNotesList = gespeichert ? (gespeichert.notesList || []) : [];
+
+    /* Zuerst Platz schaffen: Eine frueher angelegte Sicherung enthielt
+       alle Bilder ein zweites Mal und machte den Speicher voll. */
+    sicherungEntlasten();
+    speicherStandZeigen();
 
     /* Der Nachtrag aus der Werkstatt — vor dem Eintragen in die Felder,
        damit Status und Notizen gleich mitgezeichnet werden. */
@@ -2896,8 +2911,79 @@ function nurKiFilter() {
     });
 }
 
-const BILD_KANTE = 1400;     /* laengste Kante nach dem Verkleinern */
-const BILD_GUETE = 0.82;     /* JPEG-Guete */
+/* 1400 Bildpunkte und Guete 0,82 ergaben rund 50 kB je Bild. Bei 154
+   Bildern sind das 7,5 MB - und der Speicher des Browsers endet bei rund
+   10. Er konnte keine neuen Bilder mehr ablegen. Ein Ausschnitt aus einer
+   Menueleiste ist bei 1100 Punkten genauso zu lesen und braucht die
+   Haelfte. */
+const BILD_KANTE = 1100;     /* laengste Kante nach dem Verkleinern */
+const BILD_GUETE = 0.72;     /* JPEG-Guete */
+
+/* Wie viel Platz belegt der Stand gerade? Fuer die Anzeige im Kopf. */
+function speicherGroesse() {
+    try {
+        let n = 0;
+        for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && k.indexOf('wps_pruefkatalog') === 0) n += (localStorage.getItem(k) || '').length;
+        }
+        return n;
+    } catch (e) { return 0; }
+}
+
+/* Die vorhandenen Bilder nachtraeglich auf dasselbe Mass bringen. Laeuft
+   NUR auf Knopfdruck - an seinen Bildern rechne ich nicht von mir aus
+   herum. */
+function bilderEindampfen() {
+    const alle = [];
+    Object.keys(testData).forEach(function (k) {
+        (testData[k].bilder || []).forEach(function (b) { alle.push(b); });
+    });
+    (freeNotesList || []).forEach(function (n) {
+        (n.bilder || []).forEach(function (b) { alle.push(b); });
+    });
+    if (!alle.length) { alert('Es sind keine Bilder da.'); return; }
+
+    const vorher = speicherGroesse();
+    let fertig = 0;
+    const melden = function () {
+        fertig++;
+        if (fertig < alle.length) return;
+        speichern();
+        const nachher = speicherGroesse();
+        const mb = function (x) { return (x / 1048576).toFixed(2); };
+        alert('Fertig. ' + alle.length + ' Bilder verkleinert.\n\n'
+            + 'Vorher: ' + mb(vorher) + ' MB\nNachher: ' + mb(nachher) + ' MB\n\n'
+            + 'Damit ist wieder Platz für neue Bilder.');
+    };
+
+    /* Das Feld heisst an den Punkten „daten", im KI-Stand „datei". Ich
+       hatte blind „datei" genommen - die Funktion lief durch, meldete 164
+       verkleinerte Bilder und aenderte kein einziges. */
+    const holen = function (e) { return e.daten || e.datei || ''; };
+    const setzen = function (e, wert) { if (e.daten) e.daten = wert; else e.datei = wert; };
+
+    alle.forEach(function (eintrag) {
+        const bild = new Image();
+        bild.onload = function () {
+            try {
+                const faktor = Math.min(1, BILD_KANTE / Math.max(bild.width, bild.height));
+                const tafel = document.createElement('canvas');
+                tafel.width = Math.max(1, Math.round(bild.width * faktor));
+                tafel.height = Math.max(1, Math.round(bild.height * faktor));
+                const stift = tafel.getContext('2d');
+                stift.fillStyle = '#ffffff';
+                stift.fillRect(0, 0, tafel.width, tafel.height);
+                stift.drawImage(bild, 0, 0, tafel.width, tafel.height);
+                const neu = tafel.toDataURL('image/jpeg', BILD_GUETE);
+                if (neu.length < holen(eintrag).length) setzen(eintrag, neu);
+            } catch (e) { /* dieses Bild bleibt, wie es ist */ }
+            melden();
+        };
+        bild.onerror = melden;
+        bild.src = holen(eintrag);
+    });
+}
 
 let neueBilder = [];         /* Bilder, die am neuen Kommentar haengen */
 let bildZiel = null;         /* wohin das naechste gewaehlte Bild gehoert */
@@ -3465,6 +3551,42 @@ const NACHTRAG = {
  }
 };
 
+/* Eine Sicherung, die schon mit Bildern angelegt wurde, wieder schlank
+   machen. Das gibt den Platz sofort frei - ohne dass er etwas tun muss. */
+function sicherungEntlasten() {
+    try {
+        const roh = localStorage.getItem('wps_pruefkatalog_vor_2026_09_16');
+        if (!roh) return 0;
+        const daten = JSON.parse(roh);
+        if (!daten || !daten.items) return 0;
+        let befreit = 0;
+        Object.keys(daten.items).forEach(function (k) {
+            const e = daten.items[k];
+            if (e && Array.isArray(e.bilder) && e.bilder.length) {
+                befreit += e.bilder.length;
+                delete e.bilder;
+            }
+        });
+        if (befreit) {
+            localStorage.setItem('wps_pruefkatalog_vor_2026_09_16', JSON.stringify(daten));
+            console.info('Prüfkatalog: ' + befreit + ' doppelte Bilder aus der Sicherung entfernt.');
+        }
+        return befreit;
+    } catch (e) { return 0; }
+}
+
+/* Wie voll der Speicher ist, oben im Kopf. Wer nicht weiss, dass er voll
+   ist, sucht den Fehler bei sich. */
+function speicherStandZeigen() {
+    const el = document.getElementById('speicherStand');
+    if (!el) return;
+    const n = speicherGroesse();
+    const mb = (n / 1048576).toFixed(1);
+    const voll = n > 7 * 1048576;
+    el.textContent = 'Speicher: ' + mb + ' MB' + (voll ? ' — fast voll' : '');
+    el.className = 'speicher-stand' + (voll ? ' speicher-stand--voll' : '');
+}
+
 function nachtragEinspielen() {
     let schon = null;
     try { schon = localStorage.getItem('wps_pruefkatalog_' + NACHTRAG_KENNUNG); } catch (e) { return 0; }
@@ -3473,10 +3595,24 @@ function nachtragEinspielen() {
     /* Erst sichern, dann anfassen. Wer den Nachtrag rueckgaengig machen
        will, holt sich in der Konsole des Browsers zurueck:
          localStorage.setItem('wps_pruefkatalog_stand_v1',
-           localStorage.getItem('wps_pruefkatalog_vor_2026_09_16')) */
+           localStorage.getItem('wps_pruefkatalog_vor_2026_09_16'))
+
+       OHNE DIE BILDER. Hier stand eine Vollkopie von testData - mitsamt
+       allen Bildern, die er an den Punkten haengen hat. Damit lag jedes
+       Bild zweimal im Speicher des Browsers, der Speicher lief voll, und
+       er konnte KEINE NEUEN BILDER MEHR ABLEGEN: "der Browser speichert
+       keine neuen Bilder, daher kann ich dir deine Fehler nicht zeigen".
+
+       Zum Zurueckholen braucht die Sicherung nur Status und Notizen; die
+       Bilder haengen ohnehin am unveraenderten Stand. */
     try {
+        const schlank = {};
+        Object.keys(testData).forEach(function (k) {
+            const e = testData[k] || {};
+            schlank[k] = { status: e.status, note: e.note, notizen: e.notizen };
+        });
         localStorage.setItem('wps_pruefkatalog_vor_2026_09_16',
-            JSON.stringify({ items: testData, notesList: freeNotesList }));
+            JSON.stringify({ items: schlank, notesList: freeNotesList }));
     } catch (e) { /* ohne Speicher geht es auch */ }
 
     let gesetzt = 0;
