@@ -6092,8 +6092,12 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
      in der Datei weiter oben steht - ohne das bleibt der Pfeil neben
      einer Liste stehen, in der es nichts aufzuklappen gibt. */
   background-image:none !important;
-  background-color:var(--karte);
-  color:var(--schrift);
+  /* WEISS, wie auf seinem Bild. var(--karte) ist im dunklen Fenster
+     dunkel - das war der schwarze Kasten, den er zweimal angestrichen
+     hat. Eine Liste, in der man liest und waehlt, ist bei ihm Papier:
+     weisser Grund, dunkle Schrift. */
+  background-color:var(--blatt);
+  color:var(--blatt-schrift);
 }
 /* Hoch genug fuer alle vier Zeilen. Vorher rollte die Liste, und das
    schmale Kaestchen rechts - das ich fuer einen Pfeil hielt - war ihre
@@ -6101,8 +6105,8 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 .seitentafel__liste{height:auto;min-height:5.8em}
 .seitentafel__liste option{
   padding:3px 6px;
-  background-color:var(--karte);
-  color:var(--schrift);
+  background-color:var(--blatt);
+  color:var(--blatt-schrift);
 }
 /* Die gewaehlte Zeile.
 
@@ -6119,7 +6123,7 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
   color:#fff;
   -webkit-text-fill-color:#fff;
 }
-.seitentafel__liste option{-webkit-text-fill-color:var(--schrift)}
+.seitentafel__liste option{-webkit-text-fill-color:var(--blatt-schrift)}
 .seitentafel__nebenknopf{width:auto;margin-top:2px;align-self:flex-start}
 .seitentafel__knopfreihe{display:flex;gap:8px;margin-top:4px}
 .seitentafel__knopfreihe .knopf{width:auto;padding:6px 14px}
