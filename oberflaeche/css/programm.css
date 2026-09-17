@@ -5932,7 +5932,11 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
    Schattierung", falsch hier: Die Felder liefen nebeneinander aus dem
    Fenster. */
 .seitentafel .rahmentafel__karte{flex-direction:column;gap:0}
-.seitentafel .rahmentafel__buehne{min-height:280px}
+/* DAS FENSTER SPRINGT NICHT - dieselbe Regel, die er fuer "Rahmen und
+   Schattierung" schon hat. Meine fuenf Karten sind verschieden hoch;
+   ohne Mass zappelt der Kasten bei jedem Reiterwechsel, und die Knoepfe
+   unten wandern. Das Mass ist das der hoechsten Karte (Dokumentraster). */
+.seitentafel .rahmentafel__buehne{min-height:420px}
 
 .seitentafel__gitter{
   display:grid;grid-template-columns:repeat(2,1fr);gap:2px 14px;margin-bottom:6px;
@@ -5949,9 +5953,14 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 /* Ausrichtung: zwei Blattkacheln. */
 .seitentafel__wahlreihe{display:flex;gap:10px;margin-bottom:2px}
 .seitentafel__wahlreihe .zahlkachel{min-width:92px}
+/* KEIN #fff. Seine Blattvorschauen (.fwv__blatt) nehmen var(--blatt)
+   und var(--marke) - im dunklen Fenster ist ein weisser Kasten ein
+   Fremdkoerper. Dieselbe Regel hatte ich bei den Klappfeldern schon
+   dreimal gebrochen. */
 .seitentafel__blatt{
   display:flex;align-items:center;justify-content:center;
-  width:34px;height:44px;background:#fff;color:#333;
+  width:34px;height:44px;
+  background:var(--blatt);color:var(--blatt-schrift);
   border:1px solid var(--marke);font:600 15px Georgia,serif;
 }
 .seitentafel__blatt--quer{width:44px;height:34px}
@@ -5972,10 +5981,10 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 .seitentafel__spaltenwahl{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:8px}
 .spaltenbild{
   display:flex;gap:2px;width:38px;height:30px;padding:2px;
-  background:#fff;border:1px solid var(--marke);
+  background:var(--blatt);border:1px solid var(--marke);
 }
 .spaltenbild i{display:block;background:repeating-linear-gradient(
-  to bottom,#8b949c 0 1px,transparent 1px 3px)}
+  to bottom,var(--marke) 0 1px,transparent 1px 3px);opacity:.55}
 .seitentafel__spaltenmasse{display:flex;flex-direction:column;gap:3px;margin-bottom:6px}
 .seitentafel__spaltenkopf,.seitentafel__spaltenzeile{
   display:grid;grid-template-columns:3.2em 1fr 1fr;gap:8px;align-items:center;
@@ -5993,13 +6002,13 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 .seitenschau{display:flex;justify-content:flex-end}
 .seitenschau__blatt{
   position:relative;width:76px;aspect-ratio:210/297;
-  background:#fff;border:1px solid var(--marke);
+  background:var(--blatt);border:1px solid var(--marke);
 }
 .seitenschau__satz{position:absolute;display:flex;gap:2px}
 .seitenschau__spalte{
   flex:1 1 0;display:flex;flex-direction:column;justify-content:space-between;
 }
-.seitenschau__spalte i{display:block;height:1px;background:#9aa3ab}
+.seitenschau__spalte i{display:block;height:1px;background:var(--marke);opacity:.6}
 .seitenschau__spalte i:last-child{width:62%}
 
 /* „Standard…" steht links, Abbrechen und OK rechts. */

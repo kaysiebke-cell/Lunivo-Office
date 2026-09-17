@@ -4288,10 +4288,14 @@ function seiteAnwenden() {
   linealAuffrischen();
 }
 
-/* SEIN Fenster. Ich hatte es einmal auf die Seiteneinrichtung umgebogen
-   und damit etwas Fertiges verdraengt - das war falsch. Es bleibt, wie es
-   ist, und wird von "Benutzerdefinierte Seitenraender..." gerufen. */
-B.seitenraender = () => {
+/* "Benutzerdefinierte Seitenraender..." fuehrt in die Seiteneinrichtung,
+   auf die Karte Seitenraender - so wie bei ihm. Seine Ansage: "du hast es
+   nicht mit den benutzerdefinierten Seitenraendern verbunden."
+
+   Die ausfuehrliche alte Fassung bleibt darunter lesbar stehen. */
+B.seitenraender = () => B.seiteEinrichten('raender');
+
+const seitenraenderFensterAlt = () => {
   fenster('Seitenränder', [
     { art: 'satz', text: 'In Millimetern. Ein Brief hat üblicherweise 20 mm ringsum.' },
     { schluessel: 'oben', name: 'oben', art: 'number', wert: seitenrand.oben },
@@ -5437,6 +5441,19 @@ B.seiteEinrichten = (karteZuerst) => {
     return p2;
   };
 
+  /* Auf allen fuenf Bildern steht jede Gruppe in einem umrandeten Kasten
+     mit ihrem Namen oben links - "Seitenraender", "Ausrichtung",
+     "Seiten", "Abschnitt", "Raster"... Ich hatte nur fette Ueberschriften
+     ohne Rahmen; deshalb sah die Karte anders aus als seine. */
+  const gruppe = (name) => {
+    const g = document.createElement('fieldset');
+    g.className = 'seitengruppe';
+    const l = document.createElement('legend');
+    l.textContent = name;
+    g.appendChild(l);
+    return g;
+  };
+
   /* ---- Karte 1: Seitenränder ---- */
   const karteRaender = () => {
     const k = document.createElement('div');
@@ -5831,7 +5848,11 @@ B.seiteEinrichten = (karteZuerst) => {
   for (const [marke, name] of KARTEN) {
     const b = document.createElement('button');
     b.type = 'button';
-    b.className = 'rahmentafel__reiterknopf';
+    /* SEINE Klasse heisst rahmentafel__reiter-knopf, mit Bindestrich.
+       Ich hatte sie ohne geschrieben - dadurch bekamen die Reiter gar
+       kein Aussehen und sahen aus wie irgendwelche Kaesten statt wie
+       Karteireiter. */
+    b.className = 'rahmentafel__reiter-knopf';
     b.dataset.marke = marke;
     b.textContent = name;
     b.addEventListener('click', () => karteZeigen(marke));
@@ -15681,8 +15702,10 @@ B.textrichtungFenster = () => {
 /* „Weitere Papierformate…" — Breite und Hoehe von Hand, wie in WPS
    hinter demselben Punkt. Etiketten, Klappkarten, alte Formate: Wer sie
    braucht, braucht sie genau und nicht ungefaehr. */
-/* Ebenso seins - nicht umgebogen. */
-B.papierformatFenster = () => {
+/* Und das Papierformat auf die Karte Papier. */
+B.papierformatFenster = () => B.seiteEinrichten('papier');
+
+const papierformatFensterAlt = () => {
   const jetzt = PAPIERE[papier] || PAPIERE.a4;
   fenster('Papierformat', [
     { art: 'satz', text: 'In Millimetern. Hochformat; für Querformat gibt es '
