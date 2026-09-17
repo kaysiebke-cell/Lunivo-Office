@@ -6125,37 +6125,90 @@ function seitenzahlSetzen(stelle, seite) {
   melde('Seitenzahl eingefügt.');
 }
 
+/* Die Klappe nach seinem WPS-Bild: eine Ueberschrift, darunter ZWEI
+   Reihen mit je fuenf Vorlagen - oben die fuer die Kopfzeile, unten die
+   fuer die Fusszeile -, und als Abschluss zwei Punkte.
+
+   Ich hatte drei Gruppen mit je drei leeren Blaettchen gebaut. In seinem
+   Bild sind es zehn Kacheln, jede zeigt ein Blatt MIT Textzeilen und der
+   "1" an ihrer Stelle; die letzten beiden je Reihe zeigen eine
+   Doppelseite mit der Zahl aussen bzw. innen. Und "Seitenzahlen
+   formatieren..." steht dort nicht - das gehoert ins Fenster. */
+
+const SEITENZAHLVORLAGEN = [
+  ['links',   'Links'],
+  ['mitte',   'Zentriert'],
+  ['rechts',  'Rechts'],
+  ['aussen',  'Außen'],
+  ['innen',   'Innen'],
+];
+
+/* Ein Blatt im Kleinen: Textzeilen und die Zahl an ihrer Stelle. Bei
+   "aussen" und "innen" zwei Blaetter nebeneinander, wie beim doppelseitigen
+   Druck. */
+function seitenzahlBlatt(stelle, wie) {
+  const doppelt = wie === 'aussen' || wie === 'innen';
+  const huelle = document.createElement('span');
+  huelle.className = 'zahlvorlage__bild' + (doppelt ? ' zahlvorlage__bild--paar' : '');
+
+  const blatt = (seite) => {
+    const b = document.createElement('span');
+    b.className = 'zahlvorlage__blatt';
+    const zahl = document.createElement('span');
+    zahl.className = 'zahlvorlage__zahl';
+    zahl.textContent = '1';
+    /* Wo die Zahl steht: oben oder unten, und waagerecht nach Vorlage.
+       Bei einer Doppelseite heisst "aussen" am linken Blatt links, am
+       rechten rechts - "innen" umgekehrt. */
+    const waag = doppelt
+      ? (wie === 'aussen' ? (seite === 'l' ? 'links' : 'rechts')
+                          : (seite === 'l' ? 'rechts' : 'links'))
+      : wie;
+    zahl.dataset.waag = waag;
+    zahl.dataset.senk = stelle === 'anfang' ? 'oben' : 'unten';
+    const zeilen = document.createElement('span');
+    zeilen.className = 'zahlvorlage__zeilen';
+    for (let i = 0; i < 7; i++) zeilen.appendChild(document.createElement('i'));
+    if (stelle === 'anfang') b.append(zahl, zeilen);
+    else b.append(zeilen, zahl);
+    return b;
+  };
+
+  if (doppelt) { huelle.append(blatt('l'), blatt('r')); }
+  else { huelle.appendChild(blatt('e')); }
+  return huelle;
+}
+
 B.seitenzahlKlappe = (knopf) => {
   designTafelZeigen(knopf, 'Seitenzahl', (tafel) => {
-    tafel.classList.add('designtafel--breit');
+    tafel.classList.add('designtafel--breit', 'zahlklappe');
 
-    for (const [stelle, name] of SEITENZAHLSTELLEN) {
-      const kopf = document.createElement('div');
-      kopf.className = 'effekttafel__kopf';
-      kopf.textContent = name;
-      tafel.appendChild(kopf);
+    const kopf = document.createElement('div');
+    kopf.className = 'effekttafel__kopf';
+    kopf.textContent = 'Vorlagen';
+    tafel.appendChild(kopf);
 
+    for (const stelle of ['anfang', 'ende']) {
       const reihe = document.createElement('div');
-      reihe.className = 'seitenzahlreihe';
-      for (const [seite, wie] of SEITENZAHLSEITEN) {
+      reihe.className = 'zahlvorlagenreihe';
+      for (const [wie, name] of SEITENZAHLVORLAGEN) {
         const k = document.createElement('button');
         k.type = 'button';
-        k.className = 'seitenzahlprobe';
-        k.title = name + ', ' + wie;
-        /* Ein Blatt im Kleinen, die Zahl an ihrer Stelle - so zeigt es
-           WPS auch. */
-        const blatt = document.createElement('span');
-        blatt.className = 'seitenzahlprobe__blatt';
-        blatt.dataset.stelle = stelle;
-        blatt.dataset.seite = seite;
-        blatt.textContent = '1';
-        const w = document.createElement('span');
-        w.className = 'seitenzahlprobe__name';
-        w.textContent = wie;
-        k.append(blatt, w);
+        k.className = 'zahlvorlage';
+        const wo = stelle === 'anfang' ? 'Kopfzeile' : 'Fußzeile';
+        k.title = wo + ', ' + name;
+        k.appendChild(seitenzahlBlatt(stelle, wie));
+        const t = document.createElement('span');
+        t.className = 'zahlvorlage__name';
+        t.textContent = wo;
+        k.appendChild(t);
         k.addEventListener('mousedown', (e) => e.preventDefault());
         k.addEventListener('click', () => {
           designTafelWeg();
+          /* "Aussen" und "innen" stehen im einseitigen Blatt links
+             bzw. rechts - mehr kann ein Dokument ohne Doppelseiten
+             nicht unterscheiden. */
+          const seite = wie === 'aussen' ? 'rechts' : wie === 'innen' ? 'links' : wie;
           seitenzahlSetzen(stelle, seite);
         });
         reihe.appendChild(k);
@@ -6179,11 +6232,7 @@ B.seitenzahlKlappe = (knopf) => {
       k.addEventListener('click', () => { designTafelWeg(); tun(); });
       tafel.appendChild(k);
     };
-    /* Sein Bild zeigt das Fenster ALS UNTERPUNKT - ich hatte die Klappe
-       dadurch ersetzt: "du hast die Unterfunktion als Hauptfunktion
-       eingestellt". */
     zeile('seitenzahl', 'Seitenzahl einfügen…', () => B.seitenzahlFenster());
-    zeile('zahnrad', 'Seitenzahlen formatieren…', () => B.seitenzahlFormat());
     zeile('radierer', 'Seitenzahlen entfernen', () => {
       document.querySelectorAll('.seitenzahl').forEach((a) => a.remove());
       geaendertMelden();

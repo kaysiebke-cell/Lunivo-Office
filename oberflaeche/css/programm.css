@@ -5706,3 +5706,39 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
   padding:5px 9px;font:inherit;font-size:.9rem;
 }
 .zahlfenster select{padding-right:26px}
+
+/* Die Seitenzahl-Vorlagen: zwei Reihen à fünf, Blätter mit Textzeilen
+   und der Zahl an ihrer Stelle — nach seinem WPS-Bild. */
+.zahlklappe{max-width:min(94vw,430px)}
+.zahlvorlagenreihe{
+  display:grid;grid-template-columns:repeat(5,1fr);gap:5px;padding:3px 4px 7px;
+}
+.zahlvorlage{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:5px 3px;background:none;border:1px solid transparent;
+  border-radius:4px;cursor:pointer;color:var(--schrift);
+}
+.zahlvorlage:hover{border-color:var(--blau);background:rgba(127,127,127,.1)}
+.zahlvorlage__bild{display:flex;gap:2px}
+.zahlvorlage__blatt{
+  position:relative;display:flex;flex-direction:column;
+  width:34px;height:44px;padding:3px;
+  background:var(--blatt,#fff);border:1px solid var(--rand);
+  color:var(--blatt-schrift,#111417);
+}
+.zahlvorlage__bild--paar .zahlvorlage__blatt{width:24px}
+.zahlvorlage__zeilen{
+  flex:1 1 auto;display:flex;flex-direction:column;justify-content:center;gap:2px;
+}
+.zahlvorlage__zeilen i{display:block;height:1px;background:currentColor;opacity:.3}
+.zahlvorlage__zahl{
+  font:600 6px/1 "Noto Sans", system-ui, sans-serif;
+  flex:0 0 auto;
+}
+.zahlvorlage__zahl[data-waag="mitte"]{text-align:center}
+.zahlvorlage__zahl[data-waag="rechts"]{text-align:right}
+.zahlvorlage__zahl[data-waag="links"]{text-align:left}
+.zahlvorlage__name{
+  font-size:.62rem;color:var(--schrift-2);
+  max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
