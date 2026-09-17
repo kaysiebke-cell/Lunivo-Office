@@ -6002,12 +6002,206 @@ B.formelAendern = () => {
 /* Die Seitenzahl steht als Platzhalter da und wird beim Drucken vom Browser
    selbst gefüllt — im Blatt kann sie nicht stimmen, dort gibt es noch keine
    Seiten. */
-B.seitennummer = () => {
-  if (!fussAn) { fussAn = true; kopfFussAnwenden(); }
-  $('fusszeile').focus();
-  document.execCommand('insertHTML', false, '<span class="seitenzahl">Seite</span>');
-  melde('Die Zahl erscheint beim Drucken.');
+/* ============================================================
+   SEITENZAHL
+
+   Kay: "die funktion fehlt koplet."
+
+   Sie stand als einzelner Punkt in der Klappe von "Kopf- und Fusszeile"
+   und setzte das WORT "Seite" in die Fusszeile - keine Zahl. Wer es
+   anklickte, sah im Blatt nichts geschehen.
+
+   In WPS ist es ein eigener Knopf mit einer Klappe:
+
+       Seitenanfang         ▸  links | mitte | rechts
+       Seitenende           ▸  links | mitte | rechts
+       Aktuelle Position    ▸  links | mitte | rechts
+       ------------------------------------------------
+       Seitenzahlen formatieren…
+       Seitenzahlen entfernen
+
+   Und die Zahl ist eine Zahl: Auf dem Blatt steht die Seite, auf der das
+   Feld liegt, im Druck setzt der Zaehler des Browsers sie ein.
+   ============================================================ */
+
+const SEITENZAHLSTELLEN = [
+  ['anfang',   'Seitenanfang'],
+  ['ende',     'Seitenende'],
+  ['position', 'Aktuelle Position'],
+];
+
+const SEITENZAHLSEITEN = [
+  ['links',  'Links'],
+  ['mitte',  'Zentriert'],
+  ['rechts', 'Rechts'],
+];
+
+/* In welchem Format? WPS nennt es "Zahlenformat". */
+const SEITENZAHLFORMATE = [
+  ['dezimal',   '1, 2, 3, …'],
+  ['dezimalvon','1 von N'],
+  ['seitevon',  'Seite 1 von N'],
+  ['roemisch',  'I, II, III, …'],
+  ['buchstabe', 'A, B, C, …'],
+];
+
+let seitenzahlFormat = Speicher.lies('seitenzahlFormat', 'dezimal');
+
+/* Auf welcher Seite liegt das Feld? Gerechnet wie in der Statuszeile. */
+function seiteVonFeld(el) {
+  if (!el) return 1;
+  const masse = PAPIERE[papier] || PAPIERE.a4;
+  const hoeheMm = (quer ? masse.breite : masse.hoehe) - seitenrand.oben - seitenrand.unten;
+  const proSeite = Math.max(1, hoeheMm * CM / 10);
+  /* Ein Feld in der Fusszeile gilt fuer jede Seite; dort zaehlt die Zahl
+     der Seiten, nicht die Lage des Feldes. */
+  if (el.closest('.fusszeile, .kopfzeile')) return null;
+  const obenFeld = feld.getBoundingClientRect().top;
+  const oben = el.getBoundingClientRect().top - obenFeld + feld.scrollTop;
+  return Math.max(1, Math.floor(oben / proSeite) + 1);
+}
+
+function seitenAnzahl() {
+  const masse = PAPIERE[papier] || PAPIERE.a4;
+  const hoeheMm = (quer ? masse.breite : masse.hoehe) - seitenrand.oben - seitenrand.unten;
+  const proSeite = Math.max(1, hoeheMm * CM / 10);
+  return Math.max(1, Math.ceil((feld.scrollHeight - 2) / proSeite));
+}
+
+function zahlAlsRoemisch(n) {
+  const paare = [[1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'], [100, 'C'],
+                 [90, 'XC'], [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'],
+                 [5, 'V'], [4, 'IV'], [1, 'I']];
+  let raus = '';
+  for (const [wert, zeichen] of paare) { while (n >= wert) { raus += zeichen; n -= wert; } }
+  return raus || 'I';
+}
+
+function seitenzahlText(nummer, gesamt) {
+  switch (seitenzahlFormat) {
+    case 'dezimalvon': return nummer + ' von ' + gesamt;
+    case 'seitevon':   return 'Seite ' + nummer + ' von ' + gesamt;
+    case 'roemisch':   return zahlAlsRoemisch(nummer);
+    case 'buchstabe':  return String.fromCharCode(64 + Math.min(26, nummer));
+    default:           return String(nummer);
+  }
+}
+
+/* Alle Seitenzahl-Felder im Blatt nachrechnen. Laeuft mit
+   zahlenAuffrischen, damit die Zahl stimmt, wenn der Text waechst. */
+function seitenzahlenAuffrischen() {
+  const felder = document.querySelectorAll('.seitenzahl');
+  if (!felder.length) return;
+  const gesamt = seitenAnzahl();
+  for (const f of felder) {
+    const eigene = seiteVonFeld(f);
+    const nummer = eigene === null ? 1 : eigene;
+    f.textContent = seitenzahlText(nummer, gesamt);
+    f.dataset.format = seitenzahlFormat;
+  }
+}
+
+function seitenzahlSetzen(stelle, seite) {
+  const feldchen = '<span class="seitenzahl" contenteditable="false"'
+                 + ' data-stelle="' + stelle + '">1</span>';
+
+  if (stelle === 'position') {
+    elementEinfuegen(feldchen);
+  } else {
+    const wohin = stelle === 'anfang' ? 'kopfzeile' : 'fusszeile';
+    if (wohin === 'kopfzeile' && !kopfAn) { kopfAn = true; kopfFussAnwenden(); }
+    if (wohin === 'fusszeile' && !fussAn) { fussAn = true; kopfFussAnwenden(); }
+    const kasten = $(wohin);
+    if (!kasten) { melde('Die Zeile ließ sich nicht öffnen.'); return; }
+    /* Eine Zahl je Zeile - eine zweite daneben waere nur Verwirrung. */
+    kasten.querySelectorAll('.seitenzahl').forEach((a) => a.remove());
+    kasten.style.textAlign = seite === 'mitte' ? 'center' : seite === 'rechts' ? 'right' : 'left';
+    kasten.insertAdjacentHTML('beforeend', feldchen);
+  }
+  seitenzahlenAuffrischen();
+  geaendertMelden();
+  melde('Seitenzahl eingefügt.');
+}
+
+B.seitenzahlKlappe = (knopf) => {
+  designTafelZeigen(knopf, 'Seitenzahl', (tafel) => {
+    tafel.classList.add('designtafel--breit');
+
+    for (const [stelle, name] of SEITENZAHLSTELLEN) {
+      const kopf = document.createElement('div');
+      kopf.className = 'effekttafel__kopf';
+      kopf.textContent = name;
+      tafel.appendChild(kopf);
+
+      const reihe = document.createElement('div');
+      reihe.className = 'seitenzahlreihe';
+      for (const [seite, wie] of SEITENZAHLSEITEN) {
+        const k = document.createElement('button');
+        k.type = 'button';
+        k.className = 'seitenzahlprobe';
+        k.title = name + ', ' + wie;
+        /* Ein Blatt im Kleinen, die Zahl an ihrer Stelle - so zeigt es
+           WPS auch. */
+        const blatt = document.createElement('span');
+        blatt.className = 'seitenzahlprobe__blatt';
+        blatt.dataset.stelle = stelle;
+        blatt.dataset.seite = seite;
+        blatt.textContent = '1';
+        const w = document.createElement('span');
+        w.className = 'seitenzahlprobe__name';
+        w.textContent = wie;
+        k.append(blatt, w);
+        k.addEventListener('mousedown', (e) => e.preventDefault());
+        k.addEventListener('click', () => {
+          designTafelWeg();
+          seitenzahlSetzen(stelle, seite);
+        });
+        reihe.appendChild(k);
+      }
+      tafel.appendChild(reihe);
+    }
+
+    const strichel = document.createElement('hr');
+    strichel.className = 'designtafel__strich';
+    tafel.appendChild(strichel);
+
+    const zeile = (bild, text, tun) => {
+      const k = document.createElement('button');
+      k.type = 'button';
+      k.className = 'designtafel__zeile richtungszeile';
+      k.appendChild(symbol(bild));
+      const w = document.createElement('span');
+      w.textContent = text;
+      k.appendChild(w);
+      k.addEventListener('mousedown', (e) => e.preventDefault());
+      k.addEventListener('click', () => { designTafelWeg(); tun(); });
+      tafel.appendChild(k);
+    };
+    zeile('zahnrad', 'Seitenzahlen formatieren…', () => B.seitenzahlFormat());
+    zeile('radierer', 'Seitenzahlen entfernen', () => {
+      document.querySelectorAll('.seitenzahl').forEach((a) => a.remove());
+      geaendertMelden();
+      melde('Seitenzahlen entfernt.');
+    });
+  });
 };
+
+B.seitenzahlFormat = () => {
+  fenster('Seitenzahlen formatieren', [
+    { art: 'satz', text: 'Wie die Zahl geschrieben wird.' },
+    { schluessel: 'art', name: 'Zahlenformat', art: 'auswahl',
+      werte: SEITENZAHLFORMATE, wert: seitenzahlFormat },
+  ], (werte) => {
+    seitenzahlFormat = werte.art;
+    Speicher.schreib('seitenzahlFormat', seitenzahlFormat);
+    seitenzahlenAuffrischen();
+    geaendertMelden();
+    melde('Zahlenformat: ' + (SEITENZAHLFORMATE.find(([k]) => k === werte.art) || [])[1] + '.');
+  }, 'Übernehmen');
+};
+
+/* Der alte Name bleibt: Menue und Klappe der Kopfzeile rufen ihn. */
+B.seitennummer = () => seitenzahlSetzen('ende', 'mitte');
 
 /* ---- Ansicht: Lineal, Steuerzeichen ---- */
 let lineal = Speicher.lies('lineal', false);
@@ -21605,6 +21799,8 @@ function titelSetzen() {
 function zahlenAuffrischen() {
   /* Zuerst die Umbrueche: Ihre Hoehe geht in die Seitenzahl ein. */
   umbruecheAuffrischen();
+  /* Und die Seitenzahl-Felder, damit die Zahl mitwaechst. */
+  seitenzahlenAuffrischen();
   const { zeichen: z, woerter } = Dokument.zaehle();
   $('status-zahl').textContent = woerter + (woerter === 1 ? ' Wort, ' : ' Wörter, ')
                                + z + (z === 1 ? ' Zeichen' : ' Zeichen');

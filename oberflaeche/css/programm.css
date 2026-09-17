@@ -5629,3 +5629,38 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 .liste--gliederung[data-gliederung^="gl-roman"] > li::before{content:counter(stufe, upper-roman) ". "}
 .liste--gliederung[data-gliederung^="gl-klein"] > li::before{content:counter(stufe, lower-roman) ". "}
 .liste--gliederung[data-gliederung^="gl-alpha"] > li::before{content:counter(stufe, upper-alpha) ". "}
+
+/* Die Seitenzahl-Klappe: je Stelle drei Blätter im Kleinen, die Zahl an
+   ihrem Platz — so zeigt es WPS. */
+.seitenzahlreihe{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:2px 4px 6px}
+.seitenzahlprobe{
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:6px 4px;background:none;border:1px solid transparent;
+  border-radius:4px;cursor:pointer;color:var(--schrift);
+}
+.seitenzahlprobe:hover{border-color:var(--blau);background:rgba(127,127,127,.1)}
+.seitenzahlprobe__blatt{
+  position:relative;width:38px;height:48px;
+  background:var(--blatt,#fff);border:1px solid var(--rand);
+  color:var(--blatt-schrift,#111417);
+  font:600 8px/1 "Noto Sans", system-ui, sans-serif;
+  display:block;
+}
+.seitenzahlprobe__blatt::before{
+  content:attr(data-nichts);position:absolute;left:4px;right:4px;top:14px;height:1px;
+  box-shadow:0 0 0 0 transparent, 0 4px 0 0 currentColor, 0 8px 0 0 currentColor,
+             0 12px 0 0 currentColor, 0 16px 0 0 currentColor;
+  background:currentColor;opacity:.22;
+}
+/* Wo die Zahl sitzt: oben, unten oder mittendrin; links, zentriert, rechts. */
+.seitenzahlprobe__blatt{padding:3px 4px}
+.seitenzahlprobe__blatt[data-stelle="anfang"]{align-content:start;text-align:left}
+.seitenzahlprobe__blatt[data-stelle="ende"]{display:flex;align-items:flex-end}
+.seitenzahlprobe__blatt[data-stelle="position"]{display:flex;align-items:center}
+.seitenzahlprobe__blatt[data-seite="mitte"]{justify-content:center;text-align:center}
+.seitenzahlprobe__blatt[data-seite="rechts"]{justify-content:flex-end;text-align:right}
+.seitenzahlprobe__name{font-size:.72rem;color:var(--schrift-2)}
+
+/* Das Feld im Blatt: nicht editierbar, damit die Zahl nicht zertippt wird. */
+.seitenzahl{color:inherit;user-select:none}
+.seitenzahl::after{content:none}

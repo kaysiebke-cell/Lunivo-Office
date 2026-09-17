@@ -151,7 +151,7 @@ Name im Band zurückgedreht. Das entscheidet er, nicht ich.
 | Kopf- und Fußzeile | gleich | `kopffuss` |
 | Kopfzeile bearbeiten | gleich | — |
 | Fußzeile bearbeiten | gleich | — |
-| Seitenzahl einfügen | gleich | — |
+| Seitenzahl einfügen | gleich | `seitenzahl` |
 
 ### Text
 

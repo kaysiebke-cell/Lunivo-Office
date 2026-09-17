@@ -109,9 +109,9 @@ EINFÜGEN
 │   └── Querverweis
 ├── Kopf- und Fußzeile
 │   ├── Kopf- und Fußzeile
+│   ├── Seitenzahl
 │   ├── Kopfzeile bearbeiten
-│   ├── Fußzeile bearbeiten
-│   └── Seitenzahl einfügen
+│   └── Fußzeile bearbeiten
 ├── Text
 │   ├── Textfeld
 │   ├── Initiale
@@ -460,7 +460,7 @@ genannt — das ist Absicht: ein Schalter, mehrere Stellen, ein Zustand.
 | Seitenleiste Schreibhilfe | Schreibhilfe ▸ Anzeigen |
 | Seitenränder | Seitenlayout ▸ Seitenhintergrund |
 | Seitenumbruch | Einfügen ▸ Seiten |
-| Seitenzahl einfügen | Einfügen ▸ Kopf- und Fußzeile |
+| Seitenzahl | Einfügen ▸ Kopf- und Fußzeile |
 | Seriendruck-Assistent | Sendungen ▸ Seriendruck |
 | Seriendruckfeld | Sendungen ▸ Seriendruck |
 | Silbentrennung | Seitenlayout ▸ Absatz · Schreibhilfe ▸ Sprache |

@@ -188,12 +188,17 @@ function REGISTER_BAUEN(B, w) {
                     ['querverweis', 'Querverweis', () => B.querverweis()]]],
     /* „Kopf- und Fusszeile kann man in einem Icon mit Funktion
        zusammenfassen." Ein Knopf, eine Klappe, beide Wege darin. */
+    /* Die Seitenzahl ist ein EIGENER Knopf mit eigener Klappe. Sie stand
+       als einzelner Punkt in der Klappe der Kopfzeile und setzte nur das
+       Wort „Seite" - "die funktion fehlt koplet". In WPS hat sie ihren
+       eigenen Knopf mit Seitenanfang, Seitenende, Aktueller Position und
+       den beiden Punkten zum Formatieren und Entfernen. */
     ['Kopf- und Fußzeile', [['kopffuss', 'Kopf- und Fußzeile', [
                       ['Kopfzeile bearbeiten', () => B.kopfzeile(), () => w.an('kopfzeile')],
                       ['Fußzeile bearbeiten', () => B.fusszeile(), () => w.an('fusszeile')],
-                      ['-'],
-                      ['Seitenzahl einfügen', () => B.seitennummer()],  /* Zeichen: seitenzahl */
-                    ], 'gross']]],
+                    ], 'gross'],
+                    ['seitenzahl', 'Seitenzahl',
+                      { tun: () => B.seitennummer(), klappe: (k) => B.seitenzahlKlappe(k) }]]],
     ['Text', [['textrahmen', 'Textfeld', () => B.textfeld(), 'gross'],
                     /* „Textbaustein ist ein Pluspunkt fuer Legastheniker,
                        was WPS nicht so in der Form hat. Das gehoert eher in

@@ -83,9 +83,9 @@ DIE BÄNDER
 │   │   └── Querverweis
 │   ├── Kopf- und Fußzeile
 │   │   ├── Kopf- und Fußzeile
+│   │   ├── Seitenzahl
 │   │   ├── Kopfzeile bearbeiten
-│   │   ├── Fußzeile bearbeiten
-│   │   └── Seitenzahl einfügen
+│   │   └── Fußzeile bearbeiten
 │   ├── Text
 │   │   ├── Textfeld
 │   │   ├── Initiale
