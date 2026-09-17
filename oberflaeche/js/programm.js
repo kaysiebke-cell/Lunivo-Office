@@ -4854,19 +4854,13 @@ function kopfFussLeisteBauen(wo) {
     geaendertMelden();
   };
 
-  knopf('Seitenzahl einfügen', 'Seitenzahl einfügen',
+  /* NUR DIESER EINE KNOPF. Auf seinem Bild steht im Blatt das Etikett
+     "Kopfzeile" und daneben "Seitenzahl einfuegen" mit Pfeil - sonst
+     nichts. Ich hatte sieben Kaesten hingestellt, die quer ueber der
+     Zeile lagen. Alles Weitere steht unter der rechten Taste; so hat er
+     es auch gesagt. */
+  knopf('Seitenzahl einfügen', 'Seitenzahl einfügen — alles Weitere mit der rechten Taste',
         () => { inDieZeile(); B.seitenzahlFenster(); }, true);
-  knopf('Datum', 'Datum einfügen', () => {
-    const d = new Date();
-    inZeileEinfuegen(zweiStellen(d.getDate()) + '.' + zweiStellen(d.getMonth() + 1)
-                     + '.' + d.getFullYear());
-    melde('Datum eingefügt.');
-  });
-  knopf('Feld', 'Ein Feld einfügen', (k) => { inDieZeile(); B.kopfFussFelder(k); }, true);
-  knopf('Höhe', 'Höhe dieser Zeile', () => B.kopfZeilenhoehe(wo === 'kopf'));
-  knopf(wo === 'kopf' ? 'Zur Fußzeile' : 'Zur Kopfzeile', 'Wechseln',
-        () => { if (wo === 'kopf') B.zurFusszeile(); else B.zurKopfzeile(); });
-  knopf('Schließen', 'Kopf- und Fußzeile schließen', () => B.kopfFussSchliessen());
   return leiste;
 }
 
@@ -8122,15 +8116,34 @@ const REGISTER_IM_ZUSAMMENHANG = [
         ['bild', 'Bild', () => B.bild(), 'gross'],
         ['feld', 'Felder', (k) => B.kopfFussFelder(k), 'gross'],
       ]],
+      /* Auf seinem Bild tragen AUCH die kleinen Knoepfe ihr Wort:
+         "Vorige Kopfzeile", "Naechste Kopfzeile", "Mit vorheriger
+         verknuepfen", "Optionen fuer Kopf- und Fusszeile",
+         "Ausrichtungstabstopp einfuegen". Bei mir standen dort nackte
+         Pfeile und zwei Zahnraeder - daran erkennt niemand etwas. */
+      /* SEIN BILD, Zeile fuer Zeile: Links der grosse Knopf "Zwischen
+         Kopf- und Fusszeile wechseln", daneben UNTEREINANDER "Vorige
+         Kopfzeile" und "Naechste Kopfzeile", dahinter der grosse "Mit
+         vorheriger verknuepfen". Dann eine eigene Gruppe mit "Optionen
+         fuer Kopf- und Fusszeile" und "Ausrichtungstabstopp einfuegen",
+         ebenfalls untereinander.
+
+         Ohne die Zeilenmarken fuellt sich das Gitter SPALTENweise, und
+         die Woerter liefen uebereinander - genau der Fehler, der hier
+         schon dreimal passiert ist. */
       ['Navigation', [
         ['wechseln', 'Zwischen Kopf- und Fußzeile wechseln', () => B.kopfFussWechseln(), 'gross'],
-        ['voriges', 'Vorige Kopfzeile', () => B.kopfVorige()],
-        ['naechstes', 'Nächste Kopfzeile', () => B.kopfNaechste()],
-        ['verknuepft', 'Mit vorheriger verknüpfen', () => B.kopfVerknuepfen()],
+        ['voriges', 'Vorige Kopfzeile', () => B.kopfVorige(), 'wort'],
+        ['//'],
+        ['naechstes', 'Nächste Kopfzeile', () => B.kopfNaechste(), 'wort'],
+      ]],
+      ['Verknüpfung', [
+        ['verknuepft', 'Mit vorheriger verknüpfen', () => B.kopfVerknuepfen(), 'gross'],
       ]],
       ['Optionen', [
-        ['zahnrad', 'Optionen für Kopf- und Fußzeile', () => B.kopfFussOptionen()],
-        ['tabstopp', 'Ausrichtungstabstopp einfügen', () => B.ausrichtungstabstopp()],
+        ['zahnrad', 'Optionen für Kopf- und Fußzeile', () => B.kopfFussOptionen(), 'wort'],
+        ['//'],
+        ['tabstopp', 'Ausrichtungstabstopp einfügen', () => B.ausrichtungstabstopp(), 'wort'],
       ]],
       ['Größe', 'kopfhoehen'],
       ['Schließen', [
@@ -9093,7 +9106,11 @@ function registerBauen() {
 
     const bauen = (zeichen, titel, tun, gross) => {
       const k = document.createElement('button');
-      k.className = gross ? 'wz register__gross' : 'wz';
+      /* 'wort' ist KEIN grosser Knopf - er ist klein und traegt sein
+         Wort daneben. Hier stand ein blosses `gross ?`, und weil jeder
+         nicht-leere String wahr ist, wurde aus 'wort' ein grosser
+         Knopf mit 88 Bildpunkten fester Breite. */
+      k.className = (gross === true || gross === 'gross') ? 'wz register__gross' : 'wz';
       k.type = 'button';
       k.title = titel;
       k.setAttribute('aria-label', titel);
@@ -9122,11 +9139,21 @@ function registerBauen() {
       }
       /* Ein großer Knopf ohne Symbol trägt nur sein Wort. Sonst stünde bei
          „Übersetzen" zweimal dasselbe untereinander. */
-      if (gross) {
+      if (gross === true || gross === 'gross') {
         const beschriftung = document.createElement('span');
         beschriftung.className = hatSymbol
           ? 'register__beschriftung'
           : 'register__beschriftung register__beschriftung--allein';
+        beschriftung.textContent = titel;
+        k.appendChild(beschriftung);
+      } else if (gross === 'wort') {
+        /* KLEIN, ABER MIT WORT - so stehen auf seinem WPS-Bild "Vorige
+           Kopfzeile", "Optionen fuer Kopf- und Fusszeile" und die
+           anderen: Zeichen links, Wort daneben, zwei in einer Zeile.
+           Ein nacktes Zeichen sagt dort nichts. */
+        k.classList.add('wz--zeilenwort');
+        const beschriftung = document.createElement('span');
+        beschriftung.className = 'wz__zeilenwort';
         beschriftung.textContent = titel;
         k.appendChild(beschriftung);
       }
@@ -9181,7 +9208,11 @@ function registerBauen() {
       const kiste = document.createElement('span');
       kiste.className = 'wz-geteilt' + (gross ? ' wz-geteilt--gross' : '');
 
-      const k = bauen(zeichen, titel, tun, !!gross);
+      /* NICHT !!gross - das macht aus 'wort' ein true, und der Knopf
+         wird gross gebaut. Genau daran lag es, dass "Optionen fuer
+         Kopf- und Fusszeile" auf 88 Bildpunkte umbrach und ueber dem
+         Nachbarn lag. */
+      const k = bauen(zeichen, titel, tun, gross);
       k.classList.add('wz-geteilt__tat');
       kiste.appendChild(k);
 
@@ -9240,19 +9271,23 @@ function registerBauen() {
       /* Ist statt eines Befehls ein Paar angegeben, wird es ein
          geteilter Knopf: { tun, klappe }. */
       if (tun && typeof tun === 'object' && typeof tun.tun === 'function') {
-        const { kiste, knopf } = bauenGeteilt(zeichen, titel, tun.tun, tun.klappe, !!gross);
+        const { kiste, knopf } = bauenGeteilt(zeichen, titel, tun.tun, tun.klappe, gross);
         if (typeof zustand === 'function') registerSchalter.push({ knopf, ist: zustand });
         /* Ein grosser geteilter Knopf gehoert in die Reihe, nicht in das
            Gitter der kleinen — sonst steht „Einfuegen" plotzlich
            zwischen den Zeichen. */
-        if (gross) reihe.appendChild(kiste);
+        if (gross === true || gross === 'gross') reihe.appendChild(kiste);
         else (zeileJetzt || kleineKiste).appendChild(kiste);
         continue;
       }
 
-      const k = bauen(zeichen, titel, tun, !!gross);
+      /* NICHT !!gross - das macht aus 'wort' ein true, und der Knopf
+         wird gross gebaut. Genau daran lag es, dass "Optionen fuer
+         Kopf- und Fusszeile" auf 88 Bildpunkte umbrach und ueber dem
+         Nachbarn lag. */
+      const k = bauen(zeichen, titel, tun, gross);
       if (typeof zustand === 'function') registerSchalter.push({ knopf: k, ist: zustand });
-      if (gross) reihe.appendChild(k);
+      if (gross === true || gross === 'gross') reihe.appendChild(k);
       else (zeileJetzt || kleineKiste).appendChild(k);
     }
     if (kleineKiste.childNodes.length) reihe.appendChild(kleineKiste);

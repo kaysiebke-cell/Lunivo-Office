@@ -5790,3 +5790,18 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 .kopffussleiste__knopf:hover{background:var(--blau);color:#fff;border-color:var(--blau)}
 .kopffussleiste__pfeil{opacity:.7;font-size:9px}
 @media print{ .kopffussleiste{display:none} }
+
+/* Kleiner Knopf mit Wort daneben — wie „Vorige Kopfzeile" in seinem Bild.
+
+   Die Breite muss dem WORT folgen. Im Gitter der kleinen Knöpfe stehen
+   feste 88 Bildpunkte; „Optionen für Kopf- und Fußzeile" ist doppelt so
+   lang und lief über den Nachbarn. */
+.wz--zeilenwort{
+  display:inline-flex;align-items:center;gap:6px;
+  width:max-content;min-width:0;justify-content:flex-start;
+  padding:3px 8px 3px 5px;
+}
+.wz__zeilenwort{font-size:.78rem;white-space:nowrap}
+/* Und die Zeile, in der sie stehen, richtet sich nach ihrem Inhalt. */
+.register__klein--reihen:has(.wz--zeilenwort){grid-auto-columns:max-content}
+.register__knopfreihe:has(.wz--zeilenwort){width:max-content}
