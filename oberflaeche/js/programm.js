@@ -5481,12 +5481,18 @@ B.druckoptionen = () => {
     [['nicht', 'Ausgeblendeten Text nicht drucken'],
      ['drucken', 'Ausgeblendeten Text drucken'],
      ['leerzeichen', 'Leerzeichen vom ausgeblendeten Text drucken']], 'nicht'));
-  rechts.appendChild(klappe('dpKommentarAutor', 'Autor der Kommentare und Überarbeitungen:',
-    [['voll', 'Vollständigen Namen drucken'],
-     ['initialen', 'Initialen drucken'],
-     ['nicht', 'Nicht drucken']], 'voll'));
   zwei.append(links, rechts);
   g2.appendChild(zwei);
+
+  /* Der Autor steht UNTER beiden Spalten, ueber die volle Breite, mit der
+     Beschriftung links und dem Klappfeld daneben - nicht untereinander in
+     der rechten Spalte, wo ich ihn hatte. */
+  const autor = klappe('dpKommentarAutor', 'Autor der Kommentare und Überarbeitungen:',
+    [['voll', 'Vollständigen Namen drucken'],
+     ['initialen', 'Initialen drucken'],
+     ['nicht', 'Nicht drucken']], 'voll');
+  autor.classList.add('druckoptionen__breit');
+  g2.appendChild(autor);
   buehne.appendChild(g2);
 
   const g3 = gruppe('Optionen nur für aktuelles Dokument');
