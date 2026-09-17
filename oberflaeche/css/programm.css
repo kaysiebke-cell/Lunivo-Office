@@ -6104,10 +6104,22 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
   background-color:var(--karte);
   color:var(--schrift);
 }
+/* Die gewaehlte Zeile.
+
+   WebKit zeichnet den Auswahlbalken selbst und laesst sich davon weder
+   mit background noch mit background-color abbringen: Es blieb ein
+   grauer Balken mit dunkler Schrift darauf - Kay: "wer soll das bitte
+   lesen koennen".
+
+   Was wirkt, ist ein einwaerts gelegter Schatten, der die ganze Zeile
+   fuellt, und -webkit-text-fill-color fuer die Schrift; die normale
+   color-Angabe wird vom Systembalken ebenfalls uebergangen. */
 .seitentafel__liste option:checked{
-  background:var(--blau) linear-gradient(var(--blau),var(--blau));
+  box-shadow:inset 0 0 0 100px var(--blau);
   color:#fff;
+  -webkit-text-fill-color:#fff;
 }
+.seitentafel__liste option{-webkit-text-fill-color:var(--schrift)}
 .seitentafel__nebenknopf{width:auto;margin-top:2px;align-self:flex-start}
 .seitentafel__knopfreihe{display:flex;gap:8px;margin-top:4px}
 .seitentafel__knopfreihe .knopf{width:auto;padding:6px 14px}
@@ -6154,3 +6166,8 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 .seitentafel .absatzfenster__haken{font-size:13px;margin-bottom:3px}
 .seitentafel .knopf{font-size:13px;padding:5px 12px}
 .seitentafel .dialog__titel{font-size:15px}
+
+/* Die Zusatzknöpfe der Karte stehen unten links, unter „Übernehmen für" —
+   nicht mitten in der Karte. */
+.seitentafel__fusslinks{display:flex;flex-direction:column;gap:8px;min-width:0}
+.druckoptionen .rahmentafel__buehne{height:auto;max-height:60vh;overflow-y:auto}

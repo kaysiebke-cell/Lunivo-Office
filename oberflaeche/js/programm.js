@@ -5318,6 +5318,134 @@ B.kopfZeilenhoehe = (istKopf) => {
    Spalten gibt es laengst. Dieses Fenster ruft sie, es baut sie nicht
    noch einmal.
    ============================================================ */
+/* DRUCKOPTIONEN  (der Knopf auf der Karte Papier)
+
+   Sein Bild zeigt, was dahinter steht: ein Fenster "Optionen" mit der
+   Seite "Drucken" - Druckoptionen, "Mit dem Dokument ausdrucken",
+   "Optionen nur fuer aktuelles Dokument", "Optionen zum Duplexdrucken".
+
+   Ich hatte den Knopf auf B.drucken gelegt, und das ist der Druckdialog -
+   das falsche Fenster. Die Schalter dafuer gab es laengst (SCHALTER,
+   dpFeldfunktionen und die anderen); es fehlte nur die Stelle, an der man
+   sie sieht. */
+B.druckoptionen = () => {
+  const grund = document.createElement('div');
+  grund.className = 'dialoggrund';
+  const kasten = document.createElement('div');
+  kasten.className = 'dialog dialog--breit seitentafel druckoptionen';
+
+  const titelleiste = document.createElement('div');
+  titelleiste.className = 'seitentafel__titelleiste';
+  const titel = document.createElement('h3');
+  titel.className = 'dialog__titel seitentafel__titel';
+  titel.textContent = 'Optionen — Drucken';
+  const kreuz = document.createElement('button');
+  kreuz.type = 'button';
+  kreuz.className = 'seitentafel__kreuz';
+  kreuz.title = 'Schließen';
+  kreuz.textContent = '✕';
+  kreuz.addEventListener('click', () => grund.remove());
+  titelleiste.append(titel, kreuz);
+  kasten.appendChild(titelleiste);
+
+  const buehne = document.createElement('div');
+  buehne.className = 'rahmentafel__buehne';
+
+  const stand = {};
+  const hakenZeile = (name, text) => {
+    stand[name] = (typeof schalterStand !== 'undefined' && name in schalterStand)
+      ? schalterStand[name]
+      : Speicher.lies(name, false);
+    const w = document.createElement('label');
+    w.className = 'absatzfenster__haken';
+    const e = document.createElement('input');
+    e.type = 'checkbox'; e.checked = !!stand[name];
+    e.addEventListener('change', () => { stand[name] = e.checked; });
+    const t = document.createElement('span');
+    t.textContent = text;
+    w.append(e, t);
+    return w;
+  };
+
+  const gruppe = (name) => {
+    const g = document.createElement('fieldset');
+    g.className = 'seitengruppe';
+    const l = document.createElement('legend');
+    l.textContent = name;
+    g.appendChild(l);
+    return g;
+  };
+
+  const g1 = gruppe('Druckoptionen');
+  g1.appendChild(hakenZeile('dpFelderAktualisieren', 'Felder aktualisieren'));
+  g1.appendChild(hakenZeile('dpUmgekehrt', 'Umgekehrte Druckreihenfolge'));
+  g1.appendChild(hakenZeile('dpHoheGuete', 'In hoher Qualität drucken'));
+  buehne.appendChild(g1);
+
+  const g2 = gruppe('Mit dem Dokument ausdrucken');
+  g2.appendChild(hakenZeile('dpFeldfunktionen', 'Feldfunktionen'));
+  g2.appendChild(hakenZeile('dpZeichnungen', 'Zeichnungsobjekte'));
+  g2.appendChild(hakenZeile('dpHintergrund', 'Hintergrundfarben und -bilder drucken'));
+
+  const verborgen = document.createElement('label');
+  verborgen.className = 'seitentafel__feld';
+  verborgen.innerHTML = '<span>Ausgeblendeter Text:</span>';
+  const vAus = document.createElement('select');
+  for (const [m, t] of [['nicht', 'Ausgeblendeten Text nicht drucken'],
+                        ['drucken', 'Ausgeblendeten Text drucken'],
+                        ['strich', 'Mit Unterstreichung drucken']]) {
+    const o = document.createElement('option');
+    o.value = m; o.textContent = t;
+    if (m === Speicher.lies('dpVerborgenerText', 'nicht')) o.selected = true;
+    vAus.appendChild(o);
+  }
+  vAus.addEventListener('change', () => { stand.dpVerborgenerText = vAus.value; });
+  verborgen.appendChild(vAus);
+  g2.appendChild(verborgen);
+  buehne.appendChild(g2);
+
+  const g3 = gruppe('Optionen nur für aktuelles Dokument');
+  g3.appendChild(hakenZeile('dpNurFormulardaten', 'Nur Formulardaten drucken'));
+  buehne.appendChild(g3);
+
+  const g4 = gruppe('Optionen zum Duplexdrucken');
+  g4.appendChild(hakenZeile('dpVorderseite', 'Blattvorderseite'));
+  g4.appendChild(hakenZeile('dpRueckseite', 'Blattrückseite'));
+  buehne.appendChild(g4);
+
+  kasten.appendChild(buehne);
+
+  const knoepfe = document.createElement('div');
+  knoepfe.className = 'dialog__knoepfe';
+  const ab = document.createElement('button');
+  ab.type = 'button'; ab.className = 'knopf'; ab.textContent = 'Abbrechen';
+  ab.addEventListener('click', () => grund.remove());
+  const ok = document.createElement('button');
+  ok.type = 'button'; ok.className = 'knopf knopf--haupt'; ok.textContent = 'OK';
+  ok.addEventListener('click', () => {
+    grund.remove();
+    for (const [name, wert] of Object.entries(stand)) {
+      Speicher.schreib(name, wert);
+      if (typeof schalterStand !== 'undefined' && name in schalterStand) {
+        schalterStand[name] = wert;
+        if (typeof schalterAnwenden === 'function') schalterAnwenden(name);
+      }
+    }
+    melde('Druckoptionen übernommen.');
+  });
+  knoepfe.append(ab, ok);
+  kasten.appendChild(knoepfe);
+
+  grund.appendChild(kasten);
+  grund.addEventListener('mousedown', (e) => { if (e.target === grund) grund.remove(); });
+  document.addEventListener('keydown', function zu(e) {
+    if (e.key === 'Escape' && grund.isConnected) {
+      grund.remove(); document.removeEventListener('keydown', zu);
+    }
+  });
+  document.body.appendChild(grund);
+};
+
 B.seiteEinrichten = (karteZuerst) => {
   const grund = document.createElement('div');
   grund.className = 'dialoggrund';
@@ -5615,16 +5743,6 @@ B.seiteEinrichten = (karteZuerst) => {
     g2.appendChild(zufuhr);
     k.appendChild(g2);
 
-    const druck = document.createElement('button');
-    druck.type = 'button';
-    druck.className = 'knopf seitentafel__nebenknopf';
-    druck.textContent = 'Druckoptionen…';
-    druck.addEventListener('click', () => {
-      grund.remove();
-      if (typeof B.drucken === 'function') B.drucken();
-      else melde('Die Druckoptionen stehen im Menü unter „Drucken".');
-    });
-    k.appendChild(druck);
     return k;
   };
 
@@ -5699,25 +5817,6 @@ B.seiteEinrichten = (karteZuerst) => {
       '(1–51)', zeilenAus));
     k.appendChild(g4);
 
-    const reihe = document.createElement('div');
-    reihe.className = 'seitentafel__knopfreihe';
-    for (const [name, tun] of [
-      ['Zeichnungsraster…', () => {
-        if (typeof B.netzlinien === 'function') { grund.remove(); B.netzlinien(); }
-        else melde('Das Zeichnungsraster steht im Reiter Ansicht.');
-      }],
-      ['Schriftart…', () => {
-        grund.remove();
-        if (typeof B.schriftFenster === 'function') B.schriftFenster();
-        else melde('Die Schriftart stellst du im Reiter Start ein.');
-      }],
-    ]) {
-      const b = document.createElement('button');
-      b.type = 'button'; b.className = 'knopf'; b.textContent = name;
-      b.addEventListener('click', tun);
-      reihe.appendChild(b);
-    }
-    k.appendChild(reihe);
     return k;
   };
 
@@ -5837,7 +5936,42 @@ B.seiteEinrichten = (karteZuerst) => {
     wofuer.appendChild(o);
   }
   unten.appendChild(wofuer);
-  fussInhalt.appendChild(unten);
+
+  const fussLinks = document.createElement('div');
+  fussLinks.className = 'seitentafel__fusslinks';
+  fussLinks.appendChild(unten);
+
+  /* Die Zusatzknoepfe der Karte: Auf seinen Bildern stehen sie unten
+     links unter "Uebernehmen fuer" - nicht mitten in der Karte, wo ich
+     sie hingestellt hatte. Welche es sind, haengt an der offenen Karte. */
+  const kartenknoepfe = document.createElement('div');
+  kartenknoepfe.className = 'seitentafel__knopfreihe';
+  fussLinks.appendChild(kartenknoepfe);
+  fussInhalt.appendChild(fussLinks);
+
+  const ZUSATZ = {
+    papier: [['Druckoptionen…', () => { grund.remove(); B.druckoptionen(); }]],
+    raster: [
+      ['Zeichnungsraster…', () => {
+        if (typeof B.netzlinien === 'function') { grund.remove(); B.netzlinien(); }
+        else melde('Das Zeichnungsraster steht im Reiter Ansicht.');
+      }],
+      ['Schriftart…', () => {
+        grund.remove();
+        if (typeof B.schriftFenster === 'function') B.schriftFenster();
+        else melde('Die Schriftart stellst du im Reiter Start ein.');
+      }],
+    ],
+  };
+  function kartenknoepfeStellen(marke) {
+    kartenknoepfe.innerHTML = '';
+    for (const [name, tun] of (ZUSATZ[marke] || [])) {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'knopf'; b.textContent = name;
+      b.addEventListener('click', tun);
+      kartenknoepfe.appendChild(b);
+    }
+  }
 
   const schau = document.createElement('div');
   schau.className = 'seitenschau';
@@ -5881,6 +6015,7 @@ B.seiteEinrichten = (karteZuerst) => {
     [...reiter.children].forEach((b) => {
       b.classList.toggle('rahmentafel__reiter--an', b.dataset.marke === marke);
     });
+    kartenknoepfeStellen(marke);
     schauStellen();
   }
 
