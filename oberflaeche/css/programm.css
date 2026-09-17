@@ -5898,3 +5898,11 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 .absatzlayout svg{width:15px;height:15px}
 .absatzlayout__pfeil{opacity:.7;font-size:9px}
 @media print{ .absatzlayout{display:none} }
+
+/* Die beiden Zeilenhoehen stehen untereinander, nicht nebeneinander:
+   .register__raender hat zwei Spalten fuer die vier Seitenraender, auf
+   seinem Bild ist es hier eine. */
+.register__raender--einspaltig{grid-template-columns:auto}
+.register__raender--einspaltig .register__rand svg{
+  width:15px;height:15px;flex:0 0 auto;opacity:.85;
+}

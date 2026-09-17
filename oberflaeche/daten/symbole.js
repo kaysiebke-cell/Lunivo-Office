@@ -267,6 +267,8 @@ const SYMBOLE = {
   wortextras:    'M4 6h16 M4 12h10 M4 18h13 M17 9 l3 3 -3 3',   /* eigen: Absaetze, die weiterruecken */
   schriftfarbe:  'M4 16 l6-12h1.6l6 12 M6.4 11.6h8.2 M3 19.5h18v2.5H3z',   /* eigen: A ueber einem Farbbalken, wie in WPS */
   filter:        'M3 4h18l-7 8.5V20l-4-2v-5.5z',   /* lucide: filter — Daten auswaehlen */
+  kopfhoehe2:    'M4 3h16v5H4z M4 11h12 M4 14h12 M4 17h8',   /* eigen: der Kopfbereich gefuellt, darunter der Text - sein Zeichen vor "Kopfzeilenhoehe" */
+  fusshoehe2:    'M4 20h16v-5H4z M4 12h12 M4 9h12 M4 6h8',   /* eigen: dasselbe gespiegelt - vor "Fusszeilenhoehe" */
   einstellungen: 'M3 4h8v7H3z M13 4h8v7h-8z M3 13h8v7H3z M20.5 14.5a2.5 2.5 0 0 1-3.4 3.2l-2.6 2.6-1.4-1.4 2.6-2.6a2.5 2.5 0 0 1 3.2-3.4l-1.7 1.7 1.2 1.2z',   /* eigen: Schraubenschluessel ueber den Feldern - sein Zeichen fuer "Einstellungen" */
   zahnrad:       'M9.5 12a2.5 2.5 0 1 0 5 0a2.5 2.5 0 1 0 -5 0 M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z',   /* lucide: settings */
   pinselchen:    'M9 11 l-6 6v3h9l3-3 M22 12 l-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4',   /* lucide: highlighter — Formatvorlage */

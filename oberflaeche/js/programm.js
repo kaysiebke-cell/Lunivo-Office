@@ -8421,7 +8421,11 @@ const REGISTER_IM_ZUSAMMENHANG = [
       /* Zwischen den Hoehen und dem Schliessen steht auf seinem Bild
          "Einstellungen" mit einer eigenen Klappe. Die Gruppe fehlte. */
       ['Einstellungen', [
-        ['einstellungen', 'Einstellungen', (k) => B.kopfFussEinstellungen(k), 'gross'],
+        /* Mit Klappenpfeil - auf seinem Bild steht neben "Einstellungen"
+           ein Pfeil, wie bei jedem Knopf, der noch etwas aufmacht. Dafuer
+           gibt es hier schon die Form { klappe: ... }. */
+        ['einstellungen', 'Einstellungen',
+         { klappe: (k) => B.kopfFussEinstellungen(k) }, 'gross'],
       ]],
       ['Schließen', [
         ['schliessen', 'Schließen', () => B.kopfFussSchliessen(), 'gross'],
@@ -8735,14 +8739,20 @@ if (registerEingeklappt && !Speicher.lies('bandRepariert', false)) {
    hatte dafuer ein Fenster gebaut; im Bild ist es keines. */
 function kopfhoehenKiste() {
   const kiste = document.createElement('div');
-  kiste.className = 'register__raender';
+  /* UNTEREINANDER, nicht nebeneinander. .register__raender hat zwei
+     Spalten - das passt fuer die vier Seitenraender, aber auf seinem
+     Bild stehen die beiden Zeilenhoehen in einer Spalte, jede mit einem
+     kleinen Zeichen davor. */
+  kiste.className = 'register__raender register__raender--einspaltig';
   const blatt = $('blatt');
 
-  for (const [was, name, merker] of [['--kopfhoehe', 'Kopfzeilenhöhe', 'kopfhoehe'],
-                                     ['--fusshoehe', 'Fußzeilenhöhe', 'fusshoehe']]) {
+  for (const [was, name, merker, zeichen] of
+       [['--kopfhoehe', 'Kopfzeilenhöhe', 'kopfhoehe', 'kopfhoehe2'],
+        ['--fusshoehe', 'Fußzeilenhöhe', 'fusshoehe', 'fusshoehe2']]) {
     const zeile = document.createElement('label');
     zeile.className = 'register__rand register__rand--breit';
 
+    zeile.appendChild(symbol(zeichen));
     const wort = document.createElement('span');
     wort.textContent = name + ':';
     zeile.appendChild(wort);
