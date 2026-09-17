@@ -5672,10 +5672,14 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
   max-width:560px;width:min(560px,94vw);
   max-height:94vh;overflow:auto;
 }
-.zahlfenster__feld{max-width:none;margin-top:8px}
+/* flex:0 0 auto - die Feldklasse kommt aus dem Absatz-Fenster, wo Felder
+   NEBENeinander stehen und wachsen duerfen. Untereinander wuchsen sie in
+   die Hoehe und rissen Luecken zwischen Format, Position und dem Haken.
+   Derselbe Fehler wie im Farben-Fenster. */
+.zahlfenster__feld{max-width:none;flex:0 0 auto;margin-top:6px}
 .zahlfenster__feld > span:first-child{flex:0 0 13em;color:var(--schrift-2);font-size:.9rem}
 .zahlfenster__feld .feld{flex:1 1 auto;min-width:0}
-.zahlfenster__haken{margin-top:14px}
+.zahlfenster__haken{margin-top:12px}
 /* Die drei Zeilen unter dem Haken bleiben grau, bis er gesetzt ist. */
 .zahlfenster__unter{
   margin:2px 0 0 26px;padding-bottom:8px;
@@ -5688,7 +5692,7 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 }
 .zahlfenster__block{
   border:0;border-top:1px solid var(--rand);
-  margin:14px 0 0;padding:6px 0 0;
+  margin:10px 0 0;padding:5px 0 0;
 }
 .zahlfenster__block > legend{
   padding:0 6px 0 0;color:var(--schrift-2);font-size:.82rem;

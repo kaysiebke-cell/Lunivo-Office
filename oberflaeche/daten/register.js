@@ -201,7 +201,11 @@ function REGISTER_BAUEN(B, w) {
                        es nicht zu erkennen: „soll ich eine Lupe benutzen, um
                        das Symbol zu erkennen". In WPS steht es ebenso gross
                        neben Kopf- und Fusszeile. */
-                    ['seitenzahl', 'Seitenzahl', () => B.seitenzahlFenster(), 'gross']]],
+                    /* Die KLAPPE ist die Hauptfunktion, wie in WPS; das Fenster
+                       "Seitenzahl einfuegen..." steht als Punkt darin. */
+                    ['seitenzahl', 'Seitenzahl',
+                      { tun: (k) => B.seitenzahlKlappe(k), klappe: (k) => B.seitenzahlKlappe(k) },
+                      'gross']]],
     ['Text', [['textrahmen', 'Textfeld', () => B.textfeld(), 'gross'],
                     /* „Textbaustein ist ein Pluspunkt fuer Legastheniker,
                        was WPS nicht so in der Form hat. Das gehoert eher in

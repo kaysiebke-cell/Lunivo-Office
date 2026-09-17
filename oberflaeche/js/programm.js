@@ -6125,7 +6125,74 @@ function seitenzahlSetzen(stelle, seite) {
   melde('Seitenzahl eingefügt.');
 }
 
-/* Sein Bild zeigt an dieser Stelle ein FENSTER, keine Klappe:
+B.seitenzahlKlappe = (knopf) => {
+  designTafelZeigen(knopf, 'Seitenzahl', (tafel) => {
+    tafel.classList.add('designtafel--breit');
+
+    for (const [stelle, name] of SEITENZAHLSTELLEN) {
+      const kopf = document.createElement('div');
+      kopf.className = 'effekttafel__kopf';
+      kopf.textContent = name;
+      tafel.appendChild(kopf);
+
+      const reihe = document.createElement('div');
+      reihe.className = 'seitenzahlreihe';
+      for (const [seite, wie] of SEITENZAHLSEITEN) {
+        const k = document.createElement('button');
+        k.type = 'button';
+        k.className = 'seitenzahlprobe';
+        k.title = name + ', ' + wie;
+        /* Ein Blatt im Kleinen, die Zahl an ihrer Stelle - so zeigt es
+           WPS auch. */
+        const blatt = document.createElement('span');
+        blatt.className = 'seitenzahlprobe__blatt';
+        blatt.dataset.stelle = stelle;
+        blatt.dataset.seite = seite;
+        blatt.textContent = '1';
+        const w = document.createElement('span');
+        w.className = 'seitenzahlprobe__name';
+        w.textContent = wie;
+        k.append(blatt, w);
+        k.addEventListener('mousedown', (e) => e.preventDefault());
+        k.addEventListener('click', () => {
+          designTafelWeg();
+          seitenzahlSetzen(stelle, seite);
+        });
+        reihe.appendChild(k);
+      }
+      tafel.appendChild(reihe);
+    }
+
+    const strichel = document.createElement('hr');
+    strichel.className = 'designtafel__strich';
+    tafel.appendChild(strichel);
+
+    const zeile = (bild, text, tun) => {
+      const k = document.createElement('button');
+      k.type = 'button';
+      k.className = 'designtafel__zeile richtungszeile';
+      k.appendChild(symbol(bild));
+      const w = document.createElement('span');
+      w.textContent = text;
+      k.appendChild(w);
+      k.addEventListener('mousedown', (e) => e.preventDefault());
+      k.addEventListener('click', () => { designTafelWeg(); tun(); });
+      tafel.appendChild(k);
+    };
+    /* Sein Bild zeigt das Fenster ALS UNTERPUNKT - ich hatte die Klappe
+       dadurch ersetzt: "du hast die Unterfunktion als Hauptfunktion
+       eingestellt". */
+    zeile('seitenzahl', 'Seitenzahl einfügen…', () => B.seitenzahlFenster());
+    zeile('zahnrad', 'Seitenzahlen formatieren…', () => B.seitenzahlFormat());
+    zeile('radierer', 'Seitenzahlen entfernen', () => {
+      document.querySelectorAll('.seitenzahl').forEach((a) => a.remove());
+      geaendertMelden();
+      melde('Seitenzahlen entfernt.');
+    });
+  });
+};
+
+/* Und das Fenster dahinter:
 
        Seitenzahl einfügen
        Format:      [1, 2, 3 …            v]
@@ -6239,7 +6306,7 @@ B.seitenzahlFenster = () => {
   /* Seitennummerierung */
   const nummerierung = document.createElement('fieldset');
   nummerierung.className = 'zahlfenster__block';
-  nummerierung.innerHTML = '<legend>Seitennummerierung</legend>';
+  nummerierung.innerHTML = '<legend>Seitennummerierung:</legend>';
   const wahlReihe = (name, wert, gruppe, an) => {
     const w = document.createElement('label');
     w.className = 'absatzfenster__haken';
@@ -6269,7 +6336,7 @@ B.seitenzahlFenster = () => {
   /* Übernehmen für */
   const wohin = document.createElement('fieldset');
   wohin.className = 'zahlfenster__block';
-  wohin.innerHTML = '<legend>Übernehmen für</legend>';
+  wohin.innerHTML = '<legend>Übernehmen für:</legend>';
   const wohinZeile = document.createElement('div');
   wohinZeile.className = 'zahlfenster__reihe';
   const ganz = wahlReihe('Gesamtes Dokument', 'ganz', 'zahl-wohin', true);
@@ -7584,7 +7651,7 @@ const REGISTER_IM_ZUSAMMENHANG = [
     gruppen: [
       ['Kopfzeile', [['kopfz', 'Kopfzeile', () => B.kopfzeile(), 'gross']]],
       ['Fußzeile', [['fussz', 'Fußzeile', () => B.fusszeile(), 'gross']]],
-      ['Seitenzahl', [['seitenzahl', 'Seitenzahl', () => B.seitenzahlFenster(), 'gross'],
+      ['Seitenzahl', [['seitenzahl', 'Seitenzahl', (k) => B.seitenzahlKlappe(k), 'gross'],
                       ['datum', 'Datum', () => B.datum()],
                       ['uhrzeit', 'Uhrzeit', () => B.uhrzeit()]]],
       ['Navigation', [['zurueck', 'Zurück in den Text', () => B.zurueckInText(), 'gross'],
@@ -20441,7 +20508,7 @@ function werkzeugeBauen() {
     knopf('fussz', 'Fußzeile', B.fusszeile);
     /* Dasselbe Fenster wie im Band - nicht der alte Befehl, der nur das
        Wort "Seite" setzte. */
-    knopf('seitenzahl', 'Seitenzahl', () => B.seitenzahlFenster());
+    knopf('seitenzahl', 'Seitenzahl', (k) => B.seitenzahlKlappe(k));
     trenner();
     knopf('textrahmen', 'Textfeld', B.textfeld);
     knopf('omega', 'Sonderzeichen', B.sonderzeichen);
