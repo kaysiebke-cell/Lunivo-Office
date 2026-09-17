@@ -5742,3 +5742,15 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
   font-size:.62rem;color:var(--schrift-2);
   max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
+
+/* Die beiden Höhenfelder in der Leiste: − Zahl + mm, wie auf seinem Bild. */
+.register__rand--breit{gap:4px}
+.register__stufe{
+  width:18px;height:18px;padding:0;flex:0 0 auto;
+  background:none;border:1px solid var(--rand);border-radius:3px;
+  color:var(--schrift);font:600 12px/1 system-ui,sans-serif;cursor:pointer;
+}
+.register__stufe:hover{background:rgba(127,127,127,.18)}
+.register__mass{color:var(--schrift-2);font-size:.72rem}
+/* Ein Ausrichtungstabstopp in der Kopf-/Fußzeile. */
+.tabstopp{display:inline-block;min-width:2em;flex:1 1 auto}

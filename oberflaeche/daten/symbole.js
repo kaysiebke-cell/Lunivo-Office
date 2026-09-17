@@ -202,6 +202,10 @@ const SYMBOLE = {
   pinsel:        'M14.622 17.897 l-10.68-2.913 M18.376 2.622a1 1 0 1 1 3.002 3.002L17.36 9.643a.5.5 0 0 0 0 .707l.944.944a2.41 2.41 0 0 1 0 3.408l-.944.944a.5.5 0 0 1-.707 0L8.354 7.348a.5.5 0 0 1 0-.707l.944-.944a2.41 2.41 0 0 1 3.408 0l.944.944a.5.5 0 0 0 .707 0z M9 8c-1.804 2.71-3.97 3.46-6.583 3.948a.507.507 0 0 0-.302.819l7.32 8.883a1 1 0 0 0 1.185.204C12.735 20.405 16 16.792 16 15',   /* lucide: paintbrush */
   tabelle:       'M12 3v18 M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2z M3 9h18 M3 15h18',   /* lucide: table */
   /* Fuer den Reiter Kopf- und Fusszeile, nach seinem WPS-Bild. */
+  voriges:       'M12 19V5 M5 12l7-7 7 7',   /* eigen: Pfeil nach oben - vorige Kopfzeile */
+  naechstes:     'M12 5v14 M5 12l7 7 7-7',   /* eigen: Pfeil nach unten - naechste Kopfzeile */
+  verknuepft:    'M9 15 l6-6 M10.5 7.5 L13 5a3.5 3.5 0 0 1 5 5l-2.5 2.5 M13.5 16.5 L11 19a3.5 3.5 0 0 1-5-5l2.5-2.5',   /* eigen: zwei Kettenglieder */
+  tabstopp:      'M4 6h16 M4 18h16 M8 12h8 M12 9v6',   /* eigen: Marke zwischen zwei Linien */
   feld:          'M5 4h14v16H5z M9 8h6 M9 12h6 M9 16h3',   /* eigen: Blatt mit Feldzeilen */
   wechseln:      'M7 4 L4 7 l3 3 M4 7h10a3 3 0 0 1 3 3v1 M17 20 l3-3 -3-3 M20 17H10a3 3 0 0 1-3-3v-1',   /* eigen: zwei Pfeile im Kreis - hin und zurueck */
   kopfhoehe:     'M4 4h16 M4 20h16 M12 8v8 M9 11l3-3 3 3 M9 13l3 3 3-3',   /* eigen: Hoehe zwischen zwei Linien */

@@ -109,9 +109,7 @@ EINFÜGEN
 │   └── Querverweis
 ├── Kopf- und Fußzeile
 │   ├── Kopf- und Fußzeile
-│   ├── Seitenzahl
-│   ├── Kopfzeile bearbeiten
-│   └── Fußzeile bearbeiten
+│   └── Seitenzahl
 ├── Text
 │   ├── Textfeld
 │   ├── Initiale
@@ -385,7 +383,6 @@ genannt — das ist Absicht: ein Schalter, mehrere Stellen, ein Zustand.
 | Formel | Einfügen ▸ Symbole |
 | Formen | Einfügen ▸ Illustrationen |
 | Fußnote | Referenzen ▸ Fußnoten |
-| Fußzeile bearbeiten | Einfügen ▸ Kopf- und Fußzeile |
 | Genaues Maß… | Start ▸ Absatz |
 | Gitternetzlinien | Ansicht ▸ Anzeigen |
 | Gliederung | Ansicht ▸ Dokumentansichten |
@@ -408,7 +405,6 @@ genannt — das ist Absicht: ein Schalter, mehrere Stellen, ein Zustand.
 | Kommentar löschen | Überprüfen ▸ Kommentare |
 | Kontrollkästchen | Sendungen ▸ Formular |
 | Kopf- und Fußzeile | Einfügen ▸ Kopf- und Fußzeile |
-| Kopfzeile bearbeiten | Einfügen ▸ Kopf- und Fußzeile |
 | Kopieren | Start ▸ Zwischenablage |
 | Korrektursprache | Überprüfen ▸ Sprache |
 | Kursiv | Start ▸ Schriftart |

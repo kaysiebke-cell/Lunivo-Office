@@ -193,10 +193,10 @@ function REGISTER_BAUEN(B, w) {
        Wort „Seite" - "die funktion fehlt koplet". In WPS hat sie ihren
        eigenen Knopf mit Seitenanfang, Seitenende, Aktueller Position und
        den beiden Punkten zum Formatieren und Entfernen. */
-    ['Kopf- und Fußzeile', [['kopffuss', 'Kopf- und Fußzeile', [
-                      ['Kopfzeile bearbeiten', () => B.kopfzeile(), () => w.an('kopfzeile')],
-                      ['Fußzeile bearbeiten', () => B.fusszeile(), () => w.an('fusszeile')],
-                    ], 'gross'],
+    /* Seine Ansage: ein Klick, beide Zeilen sind da. Keine Klappe davor -
+       alles Weitere steht unter der rechten Taste in der Zeile. */
+    ['Kopf- und Fußzeile', [['kopffuss', 'Kopf- und Fußzeile',
+                      () => B.kopfFussZeigen(), 'gross'],
                     /* GROSS mit Beschriftung. Als kleines Zeichen daneben war
                        es nicht zu erkennen: „soll ich eine Lupe benutzen, um
                        das Symbol zu erkennen". In WPS steht es ebenso gross

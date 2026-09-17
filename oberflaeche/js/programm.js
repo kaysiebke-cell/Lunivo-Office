@@ -4696,30 +4696,9 @@ B.kopfFussWechseln = () => {
   else B.zurKopfzeile();
 };
 
-/* Die Hoehe beider Zeilen, wie in seinem Bild rechts: "Kopfzeilenhoehe"
-   und "Fusszeilenhoehe". Bei ihm in Zoll; hier in Millimetern, weil das
-   Blatt in Millimetern gerechnet wird. */
-B.kopfFussHoehe = () => {
-  const blatt = $('blatt');
-  const lies = (name, weich) => {
-    const wert = parseFloat(getComputedStyle(blatt).getPropertyValue(name));
-    return Number.isFinite(wert) && wert > 0 ? Math.round(wert * 10) / 10 : weich;
-  };
-  fenster('Höhe der Kopf- und Fußzeile', [
-    { art: 'satz', text: 'Wie hoch die beiden Zeilen sind, in Millimetern.' },
-    { schluessel: 'kopf', name: 'Kopfzeile', art: 'number',
-      wert: lies('--kopfhoehe', 12), schritt: '1' },
-    { schluessel: 'fuss', name: 'Fußzeile', art: 'number',
-      wert: lies('--fusshoehe', 12), schritt: '1' },
-  ], (werte) => {
-    blatt.style.setProperty('--kopfhoehe', (parseFloat(werte.kopf) || 12) + 'mm');
-    blatt.style.setProperty('--fusshoehe', (parseFloat(werte.fuss) || 12) + 'mm');
-    Speicher.schreib('kopfhoehe', parseFloat(werte.kopf) || 12);
-    Speicher.schreib('fusshoehe', parseFloat(werte.fuss) || 12);
-    geaendertMelden();
-    melde('Höhe gesetzt.');
-  }, 'Übernehmen');
-};
+/* B.kopfFussHoehe ist weg: Die beiden Hoehen stehen jetzt als Felder
+   IN der Leiste, wie auf seinem Bild - nicht in einem Fenster. Siehe
+   kopfhoehenKiste(). */
 
 /* "Optionen fuer Kopf- und Fusszeile" - in WPS die drei Haken:
    Erste Seite anders, Gerade und ungerade Seiten anders, Text anzeigen. */
@@ -4769,6 +4748,176 @@ B.kopfFussFelder = (knopf) => {
 
 /* "Schliessen" - der Weg zurueck ins Blatt. Er fehlte ganz: Man kam in
    die Zeile und fand von dort nicht mehr heraus. */
+/* Vorlagen fuer Kopf- UND Fusszeile zusammen - in WPS der erste Knopf
+   des Reiters. Drei Muster, wie man sie im Briefkopf braucht. */
+const KOPFFUSSVORLAGEN = [
+  { name: 'Schlicht', kopf: '', fuss: '{seite}' },
+  { name: 'Titel und Seite', kopf: '{titel}', fuss: '{seite}' },
+  { name: 'Titel, Datum, Seite', kopf: '{titel}\t{datum}', fuss: '{seite}' },
+  { name: 'Nur Seitenzahl', kopf: '', fuss: 'Seite {seite}' },
+];
+
+function vorlageFuellen(muster) {
+  return String(muster)
+    .replace(/\{titel\}/g, alsSicher(dateiname || 'Unbenannt'))
+    .replace(/\{datum\}/g, new Date().toLocaleDateString('de-DE'))
+    .replace(/\{seite\}/g, '<span class="seitenzahl" contenteditable="false">1</span>')
+    .replace(/\t/g, '<span class="tabstopp"></span>');
+}
+
+/* SEINE ANSAGE, nicht das WPS-Bild: "wenn ich auf den Button druecke,
+   erscheinen direkt die Kopf- und Fusszeile im Dokument. Alle
+   Einstellungen erfolgen im Dokument per Rechtsklick an der Kopf- und
+   Fusszeile mit den Funktionen, die angeheftet sind."
+
+   Also kein Umweg ueber eine Klappe: ein Klick, beide Zeilen stehen da,
+   der Zeiger sitzt in der Kopfzeile. Was man dann damit tun kann, steht
+   unter der rechten Taste. */
+B.kopfFussZeigen = () => {
+  if (!kopfAn) kopfAn = true;
+  if (!fussAn) fussAn = true;
+  kopfFussAnwenden();
+  kopfFussModus = true;
+  $('kopfzeile').focus();
+  const bereich = document.createRange();
+  bereich.selectNodeContents($('kopfzeile'));
+  bereich.collapse(false);
+  const auswahl = window.getSelection();
+  auswahl.removeAllRanges();
+  auswahl.addRange(bereich);
+  kopfFussReiterZeigen();
+  melde('Kopf- und Fußzeile sind offen. Rechte Taste in der Zeile öffnet die Einstellungen.');
+};
+
+B.kopfFussVorlagen = (knopf) => {
+  designTafelZeigen(knopf, 'Kopf- und Fußzeile', (tafel) => {
+    tafel.classList.add('designtafel--breit');
+    for (const v of KOPFFUSSVORLAGEN) {
+      const k = document.createElement('button');
+      k.type = 'button';
+      k.className = 'designtafel__zeile richtungszeile';
+      k.appendChild(symbol('kopffuss'));
+      const w = document.createElement('span');
+      w.textContent = v.name;
+      k.appendChild(w);
+      k.addEventListener('mousedown', (e) => e.preventDefault());
+      k.addEventListener('click', () => {
+        designTafelWeg();
+        if (!kopfAn) { kopfAn = true; }
+        if (!fussAn) { fussAn = true; }
+        kopfFussAnwenden();
+        $('kopfzeile').innerHTML = vorlageFuellen(v.kopf) || '<br>';
+        $('fusszeile').innerHTML = vorlageFuellen(v.fuss) || '<br>';
+        $('fusszeile').style.textAlign = 'center';
+        seitenzahlenAuffrischen();
+        kopfFussReiterZeigen();
+        geaendertMelden();
+        melde('Vorlage „' + v.name + '" gesetzt.');
+      });
+      tafel.appendChild(k);
+    }
+  });
+};
+
+/* Nur die Kopfzeile oder nur die Fusszeile - in WPS "Header" und
+   "Footer" mit je einer eigenen Galerie. */
+B.kopfzeilenVorlagen = (knopf, wo) => {
+  const istKopf = wo === 'kopf';
+  const muster = istKopf
+    ? [['Leer', ''], ['Titel', '{titel}'], ['Titel und Datum', '{titel}\t{datum}'],
+       ['Datum', '{datum}']]
+    : [['Leer', ''], ['Seitenzahl', '{seite}'], ['Seite von', 'Seite {seite}'],
+       ['Titel und Seite', '{titel}\t{seite}']];
+  designTafelZeigen(knopf, istKopf ? 'Kopfzeile' : 'Fußzeile', (tafel) => {
+    tafel.classList.add('designtafel--breit');
+    for (const [name, inhalt] of muster) {
+      const k = document.createElement('button');
+      k.type = 'button';
+      k.className = 'designtafel__zeile richtungszeile';
+      k.appendChild(symbol(istKopf ? 'kopfz' : 'fussz'));
+      const w = document.createElement('span');
+      w.textContent = name;
+      k.appendChild(w);
+      k.addEventListener('mousedown', (e) => e.preventDefault());
+      k.addEventListener('click', () => {
+        designTafelWeg();
+        if (istKopf) { if (!kopfAn) { kopfAn = true; kopfFussAnwenden(); } }
+        else if (!fussAn) { fussAn = true; kopfFussAnwenden(); }
+        const kasten = $(istKopf ? 'kopfzeile' : 'fusszeile');
+        kasten.innerHTML = vorlageFuellen(inhalt) || '<br>';
+        seitenzahlenAuffrischen();
+        kopfFussModus = true;
+        kasten.focus();
+        geaendertMelden();
+        melde((istKopf ? 'Kopfzeile' : 'Fußzeile') + ': ' + name + '.');
+      });
+      tafel.appendChild(k);
+    }
+  });
+};
+
+/* "Vorige" und "Naechste Kopfzeile" - in WPS springt man damit durch die
+   Abschnitte. Solange es nur einen gibt, sagt das Programm das auch,
+   statt stumm nichts zu tun. */
+B.kopfVorige = () => {
+  const zahl = document.querySelectorAll('hr.abschnitt').length + 1;
+  if (zahl < 2) { melde('Das Dokument hat nur einen Abschnitt.'); return; }
+  B.zurKopfzeile();
+  melde('Vorige Kopfzeile.');
+};
+
+B.kopfNaechste = () => {
+  const zahl = document.querySelectorAll('hr.abschnitt').length + 1;
+  if (zahl < 2) { melde('Das Dokument hat nur einen Abschnitt.'); return; }
+  B.zurKopfzeile();
+  melde('Nächste Kopfzeile.');
+};
+
+/* "Mit vorheriger verknuepfen" - bei ihm grau, solange es nur einen
+   Abschnitt gibt. Ein Schalter, kein Befehl. */
+let kopfVerknuepft = true;
+B.kopfVerknuepfen = () => {
+  const zahl = document.querySelectorAll('hr.abschnitt').length + 1;
+  if (zahl < 2) {
+    melde('Das gilt erst, wenn das Dokument mehrere Abschnitte hat.');
+    return;
+  }
+  kopfVerknuepft = !kopfVerknuepft;
+  melde(kopfVerknuepft
+    ? 'Die Kopfzeile übernimmt die des vorherigen Abschnitts.'
+    : 'Die Kopfzeile ist jetzt eigenständig.');
+};
+
+/* "Ausrichtungstabstopp einfuegen": In einer Kopfzeile will man links,
+   mittig und rechts etwas stehen haben - dafuer setzt WPS Tabstopps. */
+B.ausrichtungstabstopp = () => {
+  const jetzt = kopfFussJetzt();
+  if (!jetzt) { melde('Dafür muss der Zeiger in der Kopf- oder Fußzeile stehen.'); return; }
+  document.execCommand('insertHTML', false, '<span class="tabstopp"></span>');
+  geaendertMelden();
+  melde('Ausrichtungstabstopp gesetzt — der Text dahinter rückt an die nächste Marke.');
+};
+
+/* Die Hoehe EINER Zeile - aus dem Kontextmenue heraus, wo man immer in
+   genau einer von beiden steht. */
+B.kopfZeilenhoehe = (istKopf) => {
+  const merker = istKopf ? 'kopfhoehe' : 'fusshoehe';
+  const was = istKopf ? '--kopfhoehe' : '--fusshoehe';
+  const name = istKopf ? 'Kopfzeile' : 'Fußzeile';
+  fenster('Höhe der ' + name, [
+    { art: 'satz', text: 'In Millimetern.' },
+    { schluessel: 'hoehe', name: name, art: 'number',
+      wert: Speicher.lies(merker, 12), schritt: '1' },
+  ], (werte) => {
+    const wert = Math.max(0, Math.min(80, parseFloat(werte.hoehe) || 12));
+    $('blatt').style.setProperty(was, wert + 'mm');
+    Speicher.schreib(merker, wert);
+    registerBauen();
+    geaendertMelden();
+    melde(name + ': ' + wert + ' mm.');
+  }, 'Übernehmen');
+};
+
 B.kopfFussSchliessen = () => {
   kopfFussModus = false;
   feld.focus();
@@ -7831,26 +7980,35 @@ const REGISTER_IM_ZUSAMMENHANG = [
          Hier standen vier Gruppen mit sieben Knoepfen; es fehlten das
          Wechseln, die Hoehen, die Optionen und - am wichtigsten - ein
          Knopf zum Schliessen. */
+      /* SEIN BILD, Knopf fuer Knopf. Es fehlten: die Vorlagen fuer
+         Kopf- und Fusszeile, die Kopfzeilen-Galerie, Vorige und
+         Naechste Kopfzeile, "Mit vorheriger verknuepfen" (bei ihm
+         grau), der Ausrichtungstabstopp, die beiden Hoehen als Felder
+         IN der Leiste und die Einstellungen. */
       ['Kopf- und Fußzeile', [
-        ['kopfz', 'Kopfzeile', () => B.zurKopfzeile(), 'gross'],
-        ['fussz', 'Fußzeile', () => B.zurFusszeile(), 'gross'],
+        ['kopffuss', 'Kopf- und Fußzeile', (k) => B.kopfFussVorlagen(k), 'gross'],
+        ['kopfz', 'Kopfzeile', (k) => B.kopfzeilenVorlagen(k, 'kopf'), 'gross'],
+        ['fussz', 'Fußzeile', (k) => B.kopfzeilenVorlagen(k, 'fuss'), 'gross'],
         ['seitenzahl', 'Seitenzahl', (k) => B.seitenzahlKlappe(k), 'gross'],
       ]],
       ['Einfügen', [
         ['datumuhrzeit', 'Datum und Uhrzeit', () => B.datumUhrzeit(), 'gross'],
-        ['bild', 'Bild', () => B.bild()],
-        ['feld', 'Felder', (k) => B.kopfFussFelder(k)],
+        ['bild', 'Bild', () => B.bild(), 'gross'],
+        ['feld', 'Felder', (k) => B.kopfFussFelder(k), 'gross'],
       ]],
       ['Navigation', [
         ['wechseln', 'Zwischen Kopf- und Fußzeile wechseln', () => B.kopfFussWechseln(), 'gross'],
-        ['zurueck', 'Zurück in den Text', () => B.zurueckInText()],
+        ['voriges', 'Vorige Kopfzeile', () => B.kopfVorige()],
+        ['naechstes', 'Nächste Kopfzeile', () => B.kopfNaechste()],
+        ['verknuepft', 'Mit vorheriger verknüpfen', () => B.kopfVerknuepfen()],
       ]],
-      ['Größe', [
-        ['kopfhoehe', 'Höhe der Kopf- und Fußzeile…', () => B.kopfFussHoehe(), 'gross'],
+      ['Optionen', [
         ['zahnrad', 'Optionen für Kopf- und Fußzeile', () => B.kopfFussOptionen()],
+        ['tabstopp', 'Ausrichtungstabstopp einfügen', () => B.ausrichtungstabstopp()],
       ]],
+      ['Größe', 'kopfhoehen'],
       ['Schließen', [
-        ['schliessen', 'Kopf- und Fußzeile schließen', () => B.kopfFussSchliessen(), 'gross'],
+        ['schliessen', 'Schließen', () => B.kopfFussSchliessen(), 'gross'],
       ]],
     ],
   },
@@ -8141,6 +8299,71 @@ let registerEingeklappt = Speicher.lies('registerZu', false);
    stehen. Bisher lagen sie hinter „Eigene Raender…" in einem Fenster —
    drei Klicks fuer eine Zahl, die man im Blick haben will, waehrend man
    sie aendert. */
+/* Kopfzeilenhoehe und Fusszeilenhoehe als Felder IN der Leiste - so
+   steht es auf seinem WPS-Bild rechts, mit Minus und Plus daneben. Ich
+   hatte dafuer ein Fenster gebaut; im Bild ist es keines. */
+function kopfhoehenKiste() {
+  const kiste = document.createElement('div');
+  kiste.className = 'register__raender';
+  const blatt = $('blatt');
+
+  for (const [was, name, merker] of [['--kopfhoehe', 'Kopfzeilenhöhe', 'kopfhoehe'],
+                                     ['--fusshoehe', 'Fußzeilenhöhe', 'fusshoehe']]) {
+    const zeile = document.createElement('label');
+    zeile.className = 'register__rand register__rand--breit';
+
+    const wort = document.createElement('span');
+    wort.textContent = name + ':';
+    zeile.appendChild(wort);
+
+    const weniger = document.createElement('button');
+    weniger.type = 'button';
+    weniger.className = 'register__stufe';
+    weniger.textContent = '−';
+    weniger.title = name + ' verringern';
+
+    const eingabe = document.createElement('input');
+    eingabe.type = 'number';
+    eingabe.min = '0'; eingabe.max = '80'; eingabe.step = '1';
+    eingabe.value = String(Speicher.lies(merker, 12));
+    eingabe.title = name + ' in Millimetern';
+
+    const mehr = document.createElement('button');
+    mehr.type = 'button';
+    mehr.className = 'register__stufe';
+    mehr.textContent = '+';
+    mehr.title = name + ' vergrößern';
+
+    const uebernehmen = () => {
+      const zahl = parseFloat(String(eingabe.value).replace(',', '.'));
+      const wert = Number.isNaN(zahl) ? Speicher.lies(merker, 12)
+                                      : Math.max(0, Math.min(80, zahl));
+      eingabe.value = String(wert);
+      blatt.style.setProperty(was, wert + 'mm');
+      Speicher.schreib(merker, wert);
+      melde(name + ': ' + wert + ' mm.');
+    };
+    const stufe = (richtung) => {
+      eingabe.value = String(Math.max(0, (parseFloat(eingabe.value) || 0) + richtung));
+      uebernehmen();
+    };
+    weniger.addEventListener('click', () => stufe(-1));
+    mehr.addEventListener('click', () => stufe(1));
+    eingabe.addEventListener('change', uebernehmen);
+    eingabe.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); uebernehmen(); }
+    });
+
+    zeile.append(weniger, eingabe, mehr);
+    const mm = document.createElement('span');
+    mm.className = 'register__mass';
+    mm.textContent = 'mm';
+    zeile.appendChild(mm);
+    kiste.appendChild(zeile);
+  }
+  return kiste;
+}
+
 function raenderKiste() {
   const kiste = document.createElement('div');
   kiste.className = 'register__raender';
@@ -8675,6 +8898,17 @@ function registerBauen() {
 
     /* Die Wähler wandern aus der Werkzeugleiste hierher. Beim Zurückschalten
        baut werkzeugeBauen() sie ohnehin neu — es geht also nichts verloren. */
+    if (eintraege === 'kopfhoehen') {
+      gruppe.appendChild(kopfhoehenKiste());
+
+      const name = document.createElement('span');
+      name.className = 'register__name';
+      name.textContent = gruppenName;
+      gruppe.appendChild(name);
+      band.appendChild(gruppe);
+      continue;
+    }
+
     if (eintraege === 'raender') {
       gruppe.appendChild(raenderKiste());
 
@@ -21618,6 +21852,54 @@ function rechtsMenueZeigen(e) {
                       && auswahl.toString().length);
   const gesperrt = feld.contentEditable === 'false';
 
+  /* ---- 0. Kopf- oder Fusszeile ----
+
+     Seine Ansage: "alle Einstellungen erfolgen im Dokument per
+     Rechtsklick an der Kopf- und Fusszeile mit den Funktionen, die
+     angeheftet sind." Deshalb steht hier alles, was der Reiter kann -
+     und zwar GANZ OBEN, denn wer in der Zeile die rechte Taste drueckt,
+     sucht diese Funktionen und nicht die Rechtschreibung. */
+  const inKopfFuss = ziel ? ziel.closest('#kopfzeile, #fusszeile') : null;
+  if (inKopfFuss) {
+    const istKopf = inKopfFuss.id === 'kopfzeile';
+    kopfzeileSetzen(istKopf ? 'Kopfzeile' : 'Fußzeile');
+
+    eintrag({ zeichen: 'seitenzahl', name: 'Seitenzahl einfügen…',
+              tun: () => B.seitenzahlFenster() });
+    eintrag({ zeichen: 'datumuhrzeit', name: 'Datum und Uhrzeit…',
+              tun: () => B.datumUhrzeit() });
+    eintrag({ zeichen: 'feld', name: 'Feld einfügen', tun: (k) => B.kopfFussFelder(k) });
+    eintrag({ zeichen: 'tabstopp', name: 'Ausrichtungstabstopp einfügen',
+              tun: () => B.ausrichtungstabstopp() });
+    trennlinie();
+
+    eintrag({ zeichen: istKopf ? 'fussz' : 'kopfz',
+              name: istKopf ? 'Zur Fußzeile' : 'Zur Kopfzeile',
+              tun: () => B.kopfFussWechseln() });
+    eintrag({ zeichen: 'kopffuss', name: (istKopf ? 'Kopfzeile' : 'Fußzeile') + ' — Vorlagen',
+              tun: (k) => B.kopfzeilenVorlagen(k, istKopf ? 'kopf' : 'fuss') });
+    trennlinie();
+
+    eintrag({ zeichen: 'kopfhoehe', name: 'Höhe der Zeile…', tun: () => B.kopfZeilenhoehe(istKopf) });
+    eintrag({ zeichen: 'zahnrad', name: 'Optionen für Kopf- und Fußzeile…',
+              tun: () => B.kopfFussOptionen() });
+    trennlinie();
+
+    eintrag({ zeichen: 'radierer', name: (istKopf ? 'Kopfzeile' : 'Fußzeile') + ' leeren',
+              tun: () => {
+                inKopfFuss.innerHTML = '<br>';
+                geaendertMelden();
+                melde((istKopf ? 'Kopfzeile' : 'Fußzeile') + ' geleert.');
+              } });
+    eintrag({ zeichen: 'schliessen', name: 'Kopf- und Fußzeile schließen',
+              tun: () => B.kopfFussSchliessen() });
+    trennlinie();
+    /* Kein Abbruch: Kopieren, Einfuegen und die Absatzpunkte darunter
+       sind auch in einer Kopfzeile nuetzlich. Was dort nichts zu suchen
+       hat - Tabellen, Bilder, Rechtschreibung - haengt ohnehin an
+       eigenen Bedingungen und erscheint nicht. */
+  }
+
   /* ---- 1. Das Wort, auf das gezeigt wurde ---- */
 
   const stelle = wortAnPunkt(e.clientX, e.clientY);
@@ -22380,6 +22662,12 @@ feld.addEventListener('blur', () => setTimeout(vorhersageWeg, 200));
 document.addEventListener('selectionchange', () => { if (vorhersageKasten) vorhersageWeg(); });
 
 feld.addEventListener('contextmenu', rechtsMenueZeigen);
+/* Kopf- und Fusszeile haengen NEBEN dem Blatt, nicht darin - ohne diese
+   beiden Zeilen kam dort unter der rechten Taste das Menue des Browsers.
+   Seine Ansage: "alle Einstellungen erfolgen im Dokument per Rechtsklick
+   an der Kopf- und Fusszeile". */
+$('kopfzeile').addEventListener('contextmenu', rechtsMenueZeigen);
+$('fusszeile').addEventListener('contextmenu', rechtsMenueZeigen);
 feld.addEventListener('beforeinput', verfolgenAbfangen);
 feld.addEventListener('input', geaendertMelden);
 /* Die AutoKorrektur greift, wenn ein Wort abgeschlossen ist — nicht

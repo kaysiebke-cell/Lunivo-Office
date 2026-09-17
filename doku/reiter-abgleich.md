@@ -4,7 +4,7 @@ Geschrieben von `werkzeug/reiter-abgleich.py`. Das SOLL kommt aus
 seinem Prüfkatalog (Lesekopie in `doku/wps-soll-lesekopie.txt`),
 der IST-Stand aus `oberflaeche/daten/register.js`.
 
-**270 gleich · 4 fehlen · 36 eigen · 0 ohne Bild**
+**268 gleich · 6 fehlen · 37 eigen · 0 ohne Bild**
 
 - **fehlt** — steht im SOLL, nicht im Band. Kein Ermessen.
 - **eigen** — steht im Band, nicht im SOLL. Das heißt nicht
@@ -149,8 +149,8 @@ Name im Band zurückgedreht. Das entscheidet er, nicht ich.
 | Punkt | Stand | Bild |
 |---|---|---|
 | Kopf- und Fußzeile | gleich | `kopffuss` |
-| Kopfzeile bearbeiten | gleich | — |
-| Fußzeile bearbeiten | gleich | — |
+| Kopfzeile bearbeiten | **fehlt** | — |
+| Fußzeile bearbeiten | **fehlt** | — |
 | Seitenzahl einfügen | gleich | `seitenzahl` |
 
 ### Text
@@ -563,6 +563,7 @@ und fehlten darum im Bogen ganz.
 | Kopf- und Fußzeilenwerkzeuge | Seitenzahl | **fehlt** |
 | Kopf- und Fußzeilenwerkzeuge | Navigation | gleich |
 | Kopf- und Fußzeilenwerkzeuge | Einfügen | eigen |
+| Kopf- und Fußzeilenwerkzeuge | Optionen | eigen |
 | Kopf- und Fußzeilenwerkzeuge | Größe | eigen |
 | Kopf- und Fußzeilenwerkzeuge | Schließen | eigen |
 
