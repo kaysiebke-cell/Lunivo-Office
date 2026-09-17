@@ -5928,18 +5928,68 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 .dialog__knoepfe--geteilt .knopf:first-child{margin-right:auto}
 
 /* ---------- Seiteneinrichtung: seine fuenf Karten ---------- */
+
+/* KEINE WEISSEN KACHELN.
+
+   Seine stehende Regel, und ich habe sie wieder gebrochen: background:#fff
+   fest verdrahtet, also im dunklen Fenster drei weisse Flecken - das
+   Blattbild der Ausrichtung, die Spaltenbildchen und die Vorschau.
+   var(--karte) ist im Hellen weiss und im Dunkeln dunkel; damit stimmt
+   es in beiden Faellen, ohne dass es irgendwo zweimal steht. */
+
+.seitentafel{position:relative}
+.seitentafel__titelleiste{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  margin:-20px -20px 12px;padding:10px 12px 10px 20px;
+  background:var(--tafel);border-bottom:1px solid var(--rand);
+  border-radius:10px 10px 0 0;cursor:move;user-select:none;
+}
+.seitentafel__titel{margin:0}
+.seitentafel__kreuz{
+  flex:0 0 auto;width:26px;height:26px;padding:0;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  background:none;color:var(--schrift-2);
+  border:1px solid transparent;border-radius:4px;font-size:14px;
+}
+.seitentafel__kreuz:hover{background:var(--karte);color:var(--schrift);border-color:var(--rand)}
+
+/* Echte Karteireiter: der offene haengt an der Flaeche darunter, statt
+   als eigener Kasten daneben zu stehen. */
+.seitentafel .rahmentafel__reiter{
+  display:flex;gap:2px;margin-bottom:0;
+  border-bottom:1px solid var(--rand);
+}
+.seitentafel .rahmentafel__reiterknopf{
+  padding:6px 14px;cursor:pointer;
+  background:var(--tafel);color:var(--schrift-2);
+  border:1px solid var(--rand);border-bottom:none;
+  border-radius:5px 5px 0 0;margin-bottom:-1px;
+  font:inherit;font-size:.9rem;
+}
+.seitentafel .rahmentafel__reiterknopf:hover{color:var(--schrift)}
+.seitentafel .rahmentafel__reiter--an{
+  background:var(--leiste);color:var(--schrift);
+  border-bottom:1px solid var(--leiste);
+}
+
 /* .rahmentafel__karte ist eine ZEILE - richtig fuer "Rahmen und
-   Schattierung", falsch hier: Die Felder liefen nebeneinander aus dem
-   Fenster. */
+   Schattierung", falsch hier. */
 .seitentafel .rahmentafel__karte{flex-direction:column;gap:0}
-/* DAS FENSTER SPRINGT NICHT - dieselbe Regel, die er fuer "Rahmen und
-   Schattierung" schon hat. Meine fuenf Karten sind verschieden hoch;
-   ohne Mass zappelt der Kasten bei jedem Reiterwechsel, und die Knoepfe
-   unten wandern. Das Mass ist das der hoechsten Karte (Dokumentraster). */
-.seitentafel .rahmentafel__buehne{min-height:420px}
+.seitentafel .rahmentafel__buehne{min-height:300px;padding-top:12px}
+
+/* Jede Gruppe in einem Kasten mit Namen - so steht es auf allen fuenf
+   Bildern. */
+.seitengruppe{
+  margin:0 0 10px;padding:6px 12px 10px;
+  border:1px solid var(--rand);border-radius:5px;
+  min-width:0;
+}
+.seitengruppe > legend{
+  padding:0 6px;font-size:.85rem;color:var(--schrift-2);
+}
 
 .seitentafel__gitter{
-  display:grid;grid-template-columns:repeat(2,1fr);gap:2px 14px;margin-bottom:6px;
+  display:grid;grid-template-columns:repeat(2,1fr);gap:2px 14px;margin-bottom:2px;
 }
 .seitentafel__gitter--eins{grid-template-columns:1fr}
 .seitentafel__feld{display:flex;align-items:center;gap:8px;margin-bottom:5px}
@@ -5950,42 +6000,36 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 .seitentafel__name{margin:8px 0 4px;font-size:.9rem;font-weight:600}
 .seitentafel__kleinname{margin:0 0 4px;font-size:.85rem;color:var(--schrift-2)}
 
-/* Ausrichtung: zwei Blattkacheln. */
-.seitentafel__wahlreihe{display:flex;gap:10px;margin-bottom:2px}
+/* Ausrichtung: zwei Blattkacheln - in der Kartenfarbe, nicht weiss. */
+.seitentafel__wahlreihe{display:flex;gap:10px}
 .seitentafel__wahlreihe .zahlkachel{min-width:92px}
-/* KEIN #fff. Seine Blattvorschauen (.fwv__blatt) nehmen var(--blatt)
-   und var(--marke) - im dunklen Fenster ist ein weisser Kasten ein
-   Fremdkoerper. Dieselbe Regel hatte ich bei den Klappfeldern schon
-   dreimal gebrochen. */
 .seitentafel__blatt{
   display:flex;align-items:center;justify-content:center;
   width:34px;height:44px;
-  background:var(--blatt);color:var(--blatt-schrift);
+  background-color:var(--karte);color:var(--schrift);
   border:1px solid var(--marke);font:600 15px Georgia,serif;
 }
 .seitentafel__blatt--quer{width:44px;height:34px}
 
-/* Radios - beim Raster zweispaltig, wie auf seinem Bild. */
-.seitentafel__radios{display:flex;gap:18px;flex-wrap:wrap;margin-bottom:4px}
+.seitentafel__radios{display:flex;gap:18px;flex-wrap:wrap}
 .seitentafel__radios--zwei{display:grid;grid-template-columns:repeat(2,1fr);gap:2px 14px}
 
-/* Papierzufuhr: zwei Listen nebeneinander. */
 .seitentafel__zweispalten{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
 .seitentafel__zweispalten .seitentafel__spalte{display:flex;flex-direction:column;min-width:0}
 .seitentafel__liste{width:100%;box-sizing:border-box}
-.seitentafel__nebenknopf{width:auto;margin-top:10px;align-self:flex-start}
-.seitentafel__knopfreihe{display:flex;gap:8px;margin-top:10px}
+.seitentafel__nebenknopf{width:auto;margin-top:2px;align-self:flex-start}
+.seitentafel__knopfreihe{display:flex;gap:8px;margin-top:4px}
 .seitentafel__knopfreihe .knopf{width:auto;padding:6px 14px}
 
-/* Spalten: fuenf Voreinstellungen und die Breitentabelle. */
+/* Spalten: fuenf Voreinstellungen, ebenfalls in der Kartenfarbe. */
 .seitentafel__spaltenwahl{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:8px}
 .spaltenbild{
   display:flex;gap:2px;width:38px;height:30px;padding:2px;
-  background:var(--blatt);border:1px solid var(--marke);
+  background-color:var(--karte);border:1px solid var(--marke);
 }
-.spaltenbild i{display:block;background:repeating-linear-gradient(
-  to bottom,var(--marke) 0 1px,transparent 1px 3px);opacity:.55}
-.seitentafel__spaltenmasse{display:flex;flex-direction:column;gap:3px;margin-bottom:6px}
+.spaltenbild i{display:block;background-image:repeating-linear-gradient(
+  to bottom,var(--marke) 0 1px,transparent 1px 3px)}
+.seitentafel__spaltenmasse{display:flex;flex-direction:column;gap:3px;margin-bottom:4px}
 .seitentafel__spaltenkopf,.seitentafel__spaltenzeile{
   display:grid;grid-template-columns:3.2em 1fr 1fr;gap:8px;align-items:center;
 }
@@ -5994,7 +6038,7 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 .seitentafel__spaltenzeile .feld:disabled{opacity:.45}
 
 /* Der Fuss steht auf JEDER Karte - so wie auf allen fuenf Bildern. */
-.seitentafel__fuss{margin-top:10px;padding-top:8px;border-top:1px solid var(--rand)}
+.seitentafel__fuss{margin-top:6px;padding-top:8px;border-top:1px solid var(--rand)}
 .seitentafel__fussinhalt{display:flex;align-items:flex-end;gap:16px;justify-content:space-between}
 .seitentafel__unten{margin:0}
 .seitentafel__unten .feld{width:13em}
@@ -6002,13 +6046,13 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 .seitenschau{display:flex;justify-content:flex-end}
 .seitenschau__blatt{
   position:relative;width:76px;aspect-ratio:210/297;
-  background:var(--blatt);border:1px solid var(--marke);
+  background-color:var(--karte);border:1px solid var(--marke);
 }
 .seitenschau__satz{position:absolute;display:flex;gap:2px}
 .seitenschau__spalte{
   flex:1 1 0;display:flex;flex-direction:column;justify-content:space-between;
 }
-.seitenschau__spalte i{display:block;height:1px;background:var(--marke);opacity:.6}
+.seitenschau__spalte i{display:block;height:1px;background-color:var(--marke)}
 .seitenschau__spalte i:last-child{width:62%}
 
 /* „Standard…" steht links, Abbrechen und OK rechts. */
