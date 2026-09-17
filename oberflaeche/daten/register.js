@@ -114,8 +114,13 @@ function REGISTER_BAUEN(B, w) {
                       ['Einzug verringern', () => B.einzugWeniger()],
                       ['Genaues Maß…', () => B.einzugGenau()],
                       ['-'],
-                      ['Listenebene erhöhen', () => B.ebeneHoeher()],
+                      /* Seine Frage im Bogen: „Was soll das fuer eine Funktion
+                         in Lunivo sein?" — sie macht aus einem Listenpunkt den
+                         Unterpunkt des Punktes darueber, fuer eine Gliederung.
+                         Die NAMEN bleiben, wie sie in seinem SOLL stehen; was
+                         sie tun, steht im Titel am Knopf. */
                       ['Listenebene verringern', () => B.ebeneTiefer()],
+                      ['Listenebene erhöhen', () => B.ebeneHoeher()],
                     ]],
                     ['sortieren', 'Sortieren', () => B.sortieren()],
                     ['¶', 'Steuerzeichen', () => B.steuerzeichenZeigen(), false, () => w.an('steuerzeichen')],

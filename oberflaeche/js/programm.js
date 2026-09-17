@@ -1230,8 +1230,35 @@ B.block = () => {
   });
 };
 
-B.einzugMehr    = () => Dokument.befehl('indent');
-B.einzugWeniger = () => Dokument.befehl('outdent');
+/* ============================================================
+   EINZUG
+
+   Hier stand execCommand('indent'). Der Browser wickelt den Absatz dann
+   in ein <blockquote> mit 40 Bildpunkten - und beim zweiten Klick in ein
+   zweites. Drei Folgen:
+
+   - Der Absatz selbst hat keinen Einzug. Das Absatz-Fenster liest
+     margin-left und zeigt 0, obwohl der Text eingerueckt dasteht.
+   - Wer dort einen Wert eintraegt, setzt ihn INNERHALB des blockquote -
+     die beiden Wege addieren sich, statt sich zu ersetzen.
+   - Im gespeicherten Text stehen verschachtelte Zitatbloecke, die
+     niemand gemeint hat.
+
+   Jetzt geht beides ueber dieselbe Eigenschaft am Absatz, in Schritten
+   von 12,5 mm - dem Mass, das Word und WPS je Klick nehmen.
+   ============================================================ */
+const EINZUGSCHRITT = 12.5;   /* mm */
+
+function einzugVerschieben(richtung) {
+  aufAbsaetze((el) => {
+    const jetzt = parseFloat(el.style.marginLeft) || 0;
+    const neu = Math.max(0, Math.round((jetzt + richtung * EINZUGSCHRITT) * 10) / 10);
+    el.style.marginLeft = neu ? neu + 'mm' : '';
+  });
+}
+
+B.einzugMehr    = () => { einzugVerschieben(1);  melde('Einzug vergrößert.'); };
+B.einzugWeniger = () => { einzugVerschieben(-1); melde('Einzug verringert.'); };
 B.schlicht      = () => { Dokument.befehl('removeFormat'); Dokument.befehl('formatBlock', 'p'); };
 
 const absatz = (was) => Dokument.befehl('formatBlock', was);
@@ -3324,7 +3351,9 @@ function aufAbsaetze(tun) {
   geaendertMelden();
 }
 
-const zeilenabstand = (wert) => () => aufAbsaetze((el) => { el.style.lineHeight = wert; });
+/* zeilenabstand() ist weg. Sie wurde an drei Stellen mit eigenen
+   Wertpaaren gefuettert - und alle drei logen: "1,0" setzte 1,15.
+   Jetzt geht alles ueber ZEILENABSTAENDE und zeilenabstandSetzen(). */
 
 /* „Icon ist als solches nicht erkennbar, Funktion ist nach WPS
    auszubauen."
@@ -11809,14 +11838,81 @@ B.unterstrichArt = () => {
 /* ---- Liste mit mehreren Ebenen ----
    Tiefer heißt: eine Liste in der Liste. Genau das macht Word, wenn man in
    einer Aufzählung die Tabulatortaste drückt. */
+/* ============================================================
+   LISTENEBENE
+
+   Hier stand execCommand('indent') und ('outdent') - und zwar vertauscht:
+   "Listenebene erhoehen" rief outdent. In Word rueckt dieser Befehl EIN.
+
+   Schlimmer war, was outdent tat: Aus
+
+       <ul><li>Erster</li><li>Zweiter</li></ul>
+
+   wurde
+
+       <ul><li>Erster</li></ul><span>Zweiter</span>
+
+   - der Punkt flog aus der Liste heraus und verlor sein Zeichen. Jetzt
+   wandert er in eine Unterliste im Punkt davor und wieder heraus, ohne
+   dass etwas verlorengeht. */
+function listenpunktJetzt() {
+  const auswahl = window.getSelection();
+  if (!auswahl || !auswahl.rangeCount) return null;
+  let knoten = auswahl.getRangeAt(0).startContainer;
+  if (knoten && knoten.nodeType === Node.TEXT_NODE) knoten = knoten.parentElement;
+  if (!knoten || !feld.contains(knoten) || !knoten.closest) return null;
+  return knoten.closest('li');
+}
+
 B.ebeneTiefer = () => {
-  Dokument.befehl('indent');
-  melde('Eine Ebene tiefer.');
+  const li = listenpunktJetzt();
+  if (!li) { melde('Dafür muss der Zeiger in einem Listenpunkt stehen.'); return; }
+  const davor = li.previousElementSibling;
+  if (!davor) { melde('Der erste Punkt einer Liste kann kein Unterpunkt sein.'); return; }
+
+  /* In eine Unterliste im Punkt davor. Hat er schon eine, kommt der Punkt
+     ans Ende - sonst entstuenden zwei Unterlisten nebeneinander. */
+  const art = li.parentElement.tagName;
+  let unter = davor.querySelector(':scope > ul, :scope > ol');
+  if (!unter) {
+    unter = document.createElement(art);
+    davor.appendChild(unter);
+  }
+  unter.appendChild(li);
+  zeigerAnsEnde(li);
+  geaendertMelden();
+  melde('Unterpunkt von „' + (davor.firstChild ? davor.textContent.slice(0, 30) : '') + '".');
 };
+
 B.ebeneHoeher = () => {
-  Dokument.befehl('outdent');
-  melde('Eine Ebene höher.');
+  const li = listenpunktJetzt();
+  if (!li) { melde('Dafür muss der Zeiger in einem Listenpunkt stehen.'); return; }
+  const liste = li.parentElement;
+  const elternPunkt = liste.parentElement;
+  if (!elternPunkt || elternPunkt.tagName !== 'LI') {
+    melde('Der Punkt steht schon auf der obersten Ebene.');
+    return;
+  }
+  /* Hinter den Punkt, in dem die Unterliste steckt. */
+  elternPunkt.parentElement.insertBefore(li, elternPunkt.nextSibling);
+  if (!liste.children.length) liste.remove();
+  zeigerAnsEnde(li);
+  geaendertMelden();
+  melde('Eine Ebene zurück — der Punkt steht wieder in der Liste darüber.');
 };
+
+/* Der Zeiger soll nach dem Verschieben dort stehen, wo er war - sonst
+   springt er ans Blattende und man tippt an der falschen Stelle weiter. */
+function zeigerAnsEnde(el) {
+  try {
+    const bereich = document.createRange();
+    bereich.selectNodeContents(el);
+    bereich.collapse(false);
+    const auswahl = window.getSelection();
+    auswahl.removeAllRanges();
+    auswahl.addRange(bereich);
+  } catch (e) { /* Dann bleibt der Zeiger, wo er ist. */ }
+}
 
 /* ---- Sortieren ---- */
 B.sortieren = () => {
@@ -18625,9 +18721,11 @@ const MENUES = [
       { name: 'Rechtsbündig', tun: B.rechts },
       { name: 'Blocksatz', tun: B.block },
       { name: 'Zeilenabstand', unter: [
-        { name: 'Einfach (1,0)', tun: zeilenabstand('1.15') },
-        { name: 'Eineinhalb (1,5)', tun: zeilenabstand('1.6') },
-        { name: 'Doppelt (2,0)', tun: zeilenabstand('2.1') },
+        /* Auch hier die echten Werte: "Einfach (1,0)" setzte 1,15. */
+        { name: 'Einfach (1,0)', tun: () => zeilenabstandSetzen(1, '1,0') },
+        { name: 'Eineinhalb (1,5)', tun: () => zeilenabstandSetzen(1.5, '1,5') },
+        { name: 'Doppelt (2,0)', tun: () => zeilenabstandSetzen(2, '2,0') },
+        { name: 'Mehr…', tun: () => B.absatz('masse') },
       ] },
       { name: 'Absatzrahmen', tun: B.absatzRahmen },
       { name: 'Absatzschattierung', tun: B.absatzSchattierung },
@@ -19734,9 +19832,19 @@ function werkzeugeBauen() {
 
     /* Der Zeilenabstand ist eine Wahl aus dreien — als drei einzelne Knöpfe
        wäre die Leiste noch länger, und man sähe nicht, welcher gerade gilt. */
+    /* AUS ZEILENABSTAENDE, nicht aus einer zweiten Liste. Hier standen
+       drei eigene Paare - und sie logen: "Zeilen 1,0" setzte 1,15,
+       "1,5" setzte 1,6, "2,0" setzte 2,1. Wer 1,0 waehlte, bekam 1,15.
+       Dazu fehlte "Mehr...", das im Band den Absatz-Dialog oeffnet:
+       "die funktion mehr funktioniert nicht". In dieser Ansicht gab es
+       sie gar nicht. */
     const abstand = auswahl('wz-wahl--abstand',
-      [['1.15', 'Zeilen 1,0'], ['1.6', 'Zeilen 1,5'], ['2.1', 'Zeilen 2,0']],
-      (wert) => zeilenabstand(wert)(), 'Zeilenabstand');
+      ZEILENABSTAENDE.map(([, name, wert]) => [String(wert), 'Zeilen ' + name])
+        .concat([['mehr', 'Mehr…']]),
+      (wert) => {
+        if (wert === 'mehr') { B.absatz('masse'); return; }
+        zeilenabstandSetzen(parseFloat(wert), 'Zeilen ' + wert.replace('.', ','));
+      }, 'Zeilenabstand');
     leiste.appendChild(abstand);
 
     knopf('rahmen', 'Absatzrahmen', B.absatzRahmen);
@@ -20379,8 +20487,11 @@ function rechtsLeisteBauen(gesperrt) {
   klappfeld(oben, GROESSEN.map((g) => [g, g]), 12, 'Schriftgröße', (g) => schriftgroesse(+g));
   zeichen(oben, 'groesserA', 'Schrift vergrößern', B.schriftGroesser);
   zeichen(oben, 'kleinerA', 'Schrift verkleinern', B.schriftKleiner);
-  klappfeld(oben, [['1.15', '1,0'], ['1.6', '1,5'], ['2.1', '2,0']],
-            null, 'Zeilenabstand', (wert) => zeilenabstand(wert)());
+  /* Dritte Stelle mit denselben falschen Werten: "1,0" setzte 1,15.
+     Jetzt aus ZEILENABSTAENDE, wie Band und Leiste. */
+  klappfeld(oben, ZEILENABSTAENDE.map(([, name, wert]) => [String(wert), name]),
+            null, 'Zeilenabstand',
+            (wert) => zeilenabstandSetzen(parseFloat(wert), wert.replace('.', ',')));
 
   /* Zweite Reihe: wie der Text aussieht. */
   const unten = reihe();
