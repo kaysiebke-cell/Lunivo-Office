@@ -9452,16 +9452,14 @@ const REGISTER_IM_ZUSAMMENHANG = [
        wieder heraus. Der Weg zurück ist mit der Maus der fummeligste:
        Man trifft die schmale Zeile leichter, als man sie wieder verlässt. */
     name: 'Kopf- und Fußzeile',
-    /* IMMER DA.
+    /* Er ist nur da, solange Kopf- oder Fusszeile offen sind - sonst
+       nicht. So hat Kay es beschrieben, und so war es vorher auch: "der
+       Reiter aktiviert sich erst, wenn Kopf und Fusszeile aktiviert
+       wird. Solange ist die Funktion deaktiviert."
 
-       Er galt nur, solange der Zeiger schon in einer der beiden Zeilen
-       stand. Damit war alles darin unerreichbar, bis man auf anderem Weg
-       hineingefunden hatte - Kay: "solange ist die Funktion deaktiviert".
-       Ein Weg, den man nicht findet, ist keiner. */
-    gilt: () => true,
-    /* Und wer ihn anklickt, ohne in einer Zeile zu stehen, kommt hinein:
-       Der Reiter macht auf, wofuer er da ist. */
-    beimOeffnen: () => { if (!kopfFussModus && !kopfFussJetzt()) B.kopfFussZeigen(); },
+       Ich hatte das als Klage gelesen und ihn dauerhaft ins Band
+       gestellt. Es war eine Feststellung, wie es sein soll. */
+    gilt: () => kopfFussModus || !!kopfFussJetzt(),
     gruppen: [
       /* NACH SEINEM WPS-BILD. Dort stehen der Reihe nach: Header,
          Footer, Seitenzahl, Kopfzeilen | Datum und Uhrzeit, Bild,
