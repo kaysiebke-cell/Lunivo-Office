@@ -1112,13 +1112,16 @@ const AUFZAEHLUNGSZEICHEN = [
   ['"\u25C6  "', '\u25C6', 'Raute'],
 ];
 
+/* Je Art die DREI Zeilen, die die Musterkachel zeigt. Vorher stand hier
+   ein Satz wie "01. 02.", der fuer die dritte Zeile aufgeteilt wurde -
+   bei zwei Teilen kam dann "01. 02. 01. 02." heraus. */
 const NUMMERNARTEN = [
-  ['decimal',              '1. 2. 3.',    'Zahlen mit Punkt'],
-  ['decimal-leading-zero', '01. 02.',     'Zahlen mit Null'],
-  ['lower-alpha',          'a) b) c)',    'Kleine Buchstaben'],
-  ['upper-alpha',          'A. B. C.',    'Grosse Buchstaben'],
-  ['lower-roman',          'i. ii. iii.', 'Kleine roemische'],
-  ['upper-roman',          'I. II. III.', 'Grosse roemische'],
+  ['decimal',              ['1.', '2.', '3.'],       'Zahlen mit Punkt'],
+  ['decimal-leading-zero', ['01.', '02.', '03.'],    'Zahlen mit Null'],
+  ['lower-alpha',          ['a)', 'b)', 'c)'],       'Kleine Buchstaben'],
+  ['upper-alpha',          ['A.', 'B.', 'C.'],       'Gro\u00dfe Buchstaben'],
+  ['lower-roman',          ['i.', 'ii.', 'iii.'],    'Kleine r\u00f6mische'],
+  ['upper-roman',          ['I.', 'II.', 'III.'],    'Gro\u00dfe r\u00f6mische'],
 ];
 
 /* Die Liste, in der der Zeiger steht.
@@ -1144,29 +1147,66 @@ function listenKatalog(knopf, art) {
   auswahlMerken();
   const istPunkte = art === 'punkte';
   const eintraege = istPunkte ? AUFZAEHLUNGSZEICHEN : NUMMERNARTEN;
+
   designTafelZeigen(knopf, istPunkte ? 'Aufz\u00e4hlung' : 'Nummerierung', (tafel) => {
     tafel.classList.add('designtafel--breit', 'listentafel');
+
+    const kopf = document.createElement('div');
+    kopf.className = 'listentafel__kopf';
+    kopf.textContent = istPunkte
+      ? 'Aufz\u00e4hlungszeichenbibliothek'
+      : 'Nummerierungsbibliothek';
+    tafel.appendChild(kopf);
+
     const gitter = document.createElement('div');
     gitter.className = 'listengitter';
-    gitter.style.setProperty('--spalten', istPunkte ? '4' : '3');
-    for (const [wert, probe, name] of eintraege) {
+    gitter.style.setProperty('--spalten', '3');
+
+    /* WIE IN WPS: Jede Kachel zeigt eine MUSTERLISTE aus drei Zeilen -
+       das Zeichen und dahinter ein Balken fuer den Text. Vorher stand
+       dort ein einzelnes Zeichen mit dem Namen darunter; damit sah man
+       nicht, wie die Liste spaeter aussieht. Die erste Kachel ist
+       "Keine", auch das steht so in seiner Vorlage. */
+    const kachel = (inhalt, name, beiKlick, istKeine) => {
       const k = document.createElement('button');
       k.type = 'button';
-      k.className = 'listenprobe';
+      k.className = 'listenprobe' + (istKeine ? ' listenprobe--keine' : '');
       k.title = name;
-      const p = document.createElement('span');
-      p.className = 'listenprobe__zeichen';
-      p.textContent = probe;
-      const w = document.createElement('span');
-      w.className = 'listenprobe__name';
-      w.textContent = name;
-      k.append(p, w);
+      const muster = document.createElement('span');
+      muster.className = 'listenmuster';
+      if (istKeine) {
+        muster.textContent = 'Keine';
+      } else {
+        for (let i = 0; i < 3; i++) {
+          const zeile = document.createElement('i');
+          zeile.className = 'listenmuster__zeile';
+          const z = document.createElement('b');
+          z.textContent = typeof inhalt === 'function' ? inhalt(i) : inhalt;
+          const balken = document.createElement('u');
+          zeile.append(z, balken);
+          muster.appendChild(zeile);
+        }
+      }
+      k.appendChild(muster);
       k.addEventListener('mousedown', (e) => e.preventDefault());
-      k.addEventListener('click', () => {
+      k.addEventListener('click', beiKlick);
+      gitter.appendChild(k);
+    };
+
+    kachel(null, 'Keine', () => {
+      designTafelWeg();
+      auswahlZurueck();
+      Dokument.befehl(istPunkte ? 'insertUnorderedList' : 'insertOrderedList');
+      geaendertMelden();
+      melde('Liste aufgehoben.');
+    }, true);
+
+    for (const [wert, probe, name] of eintraege) {
+      const inhalt = Array.isArray(probe) ? ((i) => probe[i] || '') : probe;
+      kachel(inhalt, name, () => {
         designTafelWeg();
         listenArtSetzen(art, wert, name);
       });
-      gitter.appendChild(k);
     }
     tafel.appendChild(gitter);
 
@@ -1174,22 +1214,51 @@ function listenKatalog(knopf, art) {
     strichel.className = 'designtafel__strich';
     tafel.appendChild(strichel);
 
-    const weg = document.createElement('button');
-    weg.type = 'button';
-    weg.className = 'designtafel__zeile richtungszeile';
-    weg.appendChild(symbol('radierer'));
+    /* Der letzte Punkt heisst in WPS "Neues Aufzaehlungszeichen
+       definieren..." bzw. "Neues Zahlenformat definieren...". */
+    const eigen = document.createElement('button');
+    eigen.type = 'button';
+    eigen.className = 'designtafel__zeile richtungszeile';
+    eigen.appendChild(symbol('stift'));
     const t = document.createElement('span');
-    t.textContent = 'Keine Liste';
-    weg.appendChild(t);
-    weg.addEventListener('mousedown', (e) => e.preventDefault());
-    weg.addEventListener('click', () => {
-      designTafelWeg();
-      Dokument.befehl(istPunkte ? 'insertUnorderedList' : 'insertOrderedList');
-      geaendertMelden();
-      melde('Liste aufgehoben.');
-    });
-    tafel.appendChild(weg);
+    t.textContent = istPunkte
+      ? 'Neues Aufz\u00e4hlungszeichen definieren\u2026'
+      : 'Neues Zahlenformat definieren\u2026';
+    eigen.appendChild(t);
+    eigen.addEventListener('mousedown', (e) => e.preventDefault());
+    eigen.addEventListener('click', () => { designTafelWeg(); listeneigenes(art); });
+    tafel.appendChild(eigen);
   });
+}
+
+/* Ein eigenes Zeichen oder Zahlenformat. In WPS ein kleines Fenster mit
+   einem Feld und einer Vorschau. */
+function listeneigenes(art) {
+  const istPunkte = art === 'punkte';
+  auswahlMerken();
+  fenster(istPunkte ? 'Neues Aufz\u00e4hlungszeichen' : 'Neues Zahlenformat', [
+    { art: 'satz', text: istPunkte
+        ? 'Das Zeichen, das vor jedem Punkt stehen soll \u2014 ein Buchstabe, '
+          + 'eine Ziffer oder ein Sonderzeichen.'
+        : 'Das Format, zum Beispiel "1)" oder "\u00a7 1". Die Zahl selbst '
+          + 'setzt das Programm ein.' },
+    { schluessel: 'zeichen', name: istPunkte ? 'Zeichen' : 'Format',
+      art: 'text', wert: istPunkte ? '\u2794' : '1)' },
+  ], (werte) => {
+    auswahlZurueck();
+    const eingabe = (werte.zeichen || '').trim();
+    if (!eingabe) { melde('Es wurde nichts eingetragen.'); return; }
+    if (istPunkte) {
+      listenArtSetzen(art, '"' + eingabe + '  "', 'Eigenes Zeichen');
+    } else {
+      /* Aus "1)" wird die CSS-Angabe decimal + Klammer. Mehr als das
+         Nachstellzeichen laesst sich am Blatt nicht frei setzen. */
+      const nach = eingabe.replace(/[0-9]+/, '').trim();
+      listenArtSetzen(art, 'decimal', 'Eigenes Format');
+      const liste = listeJetzt('ol');
+      if (liste && nach) liste.style.setProperty('list-style-type', '"' + nach + '"');
+    }
+  }, 'Übernehmen');
 }
 
 function listenArtSetzen(art, wert, name) {

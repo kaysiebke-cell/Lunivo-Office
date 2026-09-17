@@ -5514,15 +5514,28 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
   display:grid;grid-template-columns:repeat(var(--spalten,4), 1fr);
   gap:4px;padding:4px;
 }
+/* Jede Kachel zeigt eine Musterliste aus drei Zeilen - Zeichen und
+   dahinter ein Balken fuer den Text. So steht es in WPS; ein einzelnes
+   Zeichen sagt nicht, wie die Liste spaeter aussieht. */
+.listentafel__kopf{
+  color:var(--schrift-2);font-size:.78rem;
+  padding:4px 6px 6px;
+}
 .listenprobe{
-  display:flex;flex-direction:column;align-items:center;gap:3px;
-  padding:8px 4px;background:var(--blatt,#fff);
+  display:grid;place-items:center;
+  padding:8px 6px;background:var(--blatt,#fff);
   border:1px solid var(--rand);border-radius:4px;cursor:pointer;
-  color:var(--blatt-schrift,#111417);
+  color:var(--blatt-schrift,#111417);min-height:52px;
 }
 .listenprobe:hover{outline:2px solid var(--blau);outline-offset:1px}
-.listenprobe__zeichen{font:600 15px/1 "Noto Sans", system-ui, sans-serif}
-.listenprobe__name{
-  font-size:.66rem;color:var(--schrift-2);
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;
+.listenprobe--keine{color:var(--schrift-2);font-size:.8rem}
+.listenmuster{display:flex;flex-direction:column;gap:3px;width:100%}
+.listenmuster__zeile{display:flex;align-items:center;gap:4px;font-style:normal}
+.listenmuster__zeile b{
+  font:600 9px/1 "Noto Sans", system-ui, sans-serif;
+  min-width:1.1em;text-align:right;
+}
+.listenmuster__zeile u{
+  flex:1 1 auto;height:3px;border-radius:2px;
+  background:currentColor;opacity:.3;text-decoration:none;
 }
