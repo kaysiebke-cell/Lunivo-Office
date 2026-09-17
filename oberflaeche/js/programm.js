@@ -5474,11 +5474,17 @@ B.druckoptionen = () => {
     Speicher.lies('dpVerborgenerText', 'nicht') === 'nicht'));
   links.appendChild(hakenZeile('dpHintergrund', 'Hintergrundfarben und -bilder drucken'));
   const rechts = document.createElement('div');
+  /* Er hat beide Klappen aufgeklappt und mir die Eintraege gezeigt.
+     Bei "Ausgeblendeter Text" fehlte mir der dritte, und beim Autor
+     hatte ich die Woerter selbst erfunden. */
   rechts.appendChild(klappe('dpVerborgenerText', 'Ausgeblendeter Text:',
     [['nicht', 'Ausgeblendeten Text nicht drucken'],
-     ['drucken', 'Ausgeblendeten Text drucken']], 'nicht'));
+     ['drucken', 'Ausgeblendeten Text drucken'],
+     ['leerzeichen', 'Leerzeichen vom ausgeblendeten Text drucken']], 'nicht'));
   rechts.appendChild(klappe('dpKommentarAutor', 'Autor der Kommentare und Überarbeitungen:',
-    [['voll', 'Vollständige'], ['kurz', 'Kürzel'], ['ohne', 'Ohne']], 'voll'));
+    [['voll', 'Vollständigen Namen drucken'],
+     ['initialen', 'Initialen drucken'],
+     ['nicht', 'Nicht drucken']], 'voll'));
   zwei.append(links, rechts);
   g2.appendChild(zwei);
   buehne.appendChild(g2);
