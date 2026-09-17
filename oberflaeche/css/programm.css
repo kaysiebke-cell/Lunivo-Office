@@ -5539,3 +5539,93 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
   flex:1 1 auto;height:3px;border-radius:2px;
   background:currentColor;opacity:.3;text-decoration:none;
 }
+
+/* ============================================================
+   NUMMERIERUNG UND AUFZÄHLUNGSZEICHEN
+
+   Nach seinen fünf Bildern: vier Karteireiter, je acht Kacheln mit drei
+   Musterzeilen, unten die Klappe „Änderungen übernehmen für".
+   ============================================================ */
+/* Kompakt: Auf einen Blick, ohne Rollen - sonst stehen "Änderungen
+   übernehmen für" und die Knöpfe unter dem Bildschirmrand. Derselbe
+   Fehler wie beim Absatz-Fenster. */
+.dialog.listenfenster{
+  max-width:640px;width:min(640px,94vw);max-height:92vh;
+  display:flex;flex-direction:column;
+}
+.listenfenster .dialog__titel{margin-bottom:4px}
+.listenfenster .rahmentafel__reiter-knopf{padding:6px 10px;font-size:.88rem}
+.listenfenster__buehne{
+  border:1px solid var(--rand);border-radius:5px;
+  padding:10px;margin-top:6px;overflow:auto;
+}
+.listenfenster__karte{display:flex;flex-direction:column;gap:12px}
+.listenfenster__gitter{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:8px;
+}
+.listenkachel{
+  background:var(--blatt,#fff);color:var(--blatt-schrift,#111417);
+  border:1px solid var(--rand);border-radius:3px;
+  padding:8px 7px;min-height:60px;cursor:pointer;
+  display:grid;place-items:center;
+}
+.listenkachel:hover{border-color:var(--blau)}
+.listenkachel--an{outline:2px solid var(--blau);outline-offset:-1px}
+.listenkachel__kein{
+  display:grid;place-items:center;
+  width:50px;height:38px;border:1px solid var(--rand);
+  font-size:.82rem;
+}
+.listenkachel__muster{display:flex;flex-direction:column;gap:5px;width:100%}
+.listenkachel__zeile{display:flex;align-items:center;gap:5px;font-style:normal}
+.listenkachel__zeile b{
+  font:400 10px/1 "Noto Sans", system-ui, sans-serif;
+  min-width:2.2em;text-align:left;
+}
+/* Gestrichelt wie in seinem Bild, nicht durchgezogen. */
+.listenkachel__zeile u{
+  flex:1 1 auto;height:0;text-decoration:none;
+  border-top:1px dashed currentColor;opacity:.55;
+}
+.listenfenster__block{
+  border:1px solid var(--rand);border-radius:5px;
+  padding:2px 10px 10px;margin:0;
+}
+.listenfenster__block > legend{padding:0 5px;color:var(--schrift-2);font-size:.78rem}
+.listenfenster__zeile{display:flex;gap:20px;flex-wrap:wrap;margin-top:6px}
+.listenfenster__paar{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.listenfenster__name{color:var(--schrift-2);font-size:.82rem;margin-bottom:5px}
+.listenfenster__eigenliste,.listenfenster__schau{
+  border:1px solid var(--rand);border-radius:3px;
+  background:var(--blatt,#fff);color:var(--blatt-schrift,#111417);
+  height:150px;overflow:auto;
+}
+.listenfenster__schau{display:grid;place-items:center;font-size:2rem}
+.listenfenster__eintrag{
+  display:block;width:100%;text-align:left;
+  border:0;background:none;color:inherit;font:inherit;
+  padding:6px 9px;cursor:pointer;
+}
+.listenfenster__eintrag--an{background:var(--blau);color:#fff}
+.listenfenster__fuss{
+  display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:10px;
+}
+.listenfenster__fuss .absatzfenster__feld{flex:0 1 auto;max-width:none}
+.listenfenster__fuss .dialog__knoepfe{margin-left:auto;margin-top:0}
+.listenfenster input:not([type="radio"]),.listenfenster select{
+  background-color:var(--grund);color:var(--schrift);
+  border:1px solid var(--rand);border-radius:6px;
+  padding:4px 8px;font:inherit;font-size:.88rem;
+}
+.listenfenster select{padding-right:26px}
+
+/* Gliederungslisten: die mehrstufige Nummer rechnet das Stilblatt. */
+.liste--gliederung{counter-reset:stufe;list-style:none}
+.liste--gliederung > li{counter-increment:stufe;position:relative}
+.liste--gliederung > li::before{
+  content:counter(stufe) ". ";
+  position:absolute;left:-2.4em;
+}
+.liste--gliederung[data-gliederung^="gl-roman"] > li::before{content:counter(stufe, upper-roman) ". "}
+.liste--gliederung[data-gliederung^="gl-klein"] > li::before{content:counter(stufe, lower-roman) ". "}
+.liste--gliederung[data-gliederung^="gl-alpha"] > li::before{content:counter(stufe, upper-alpha) ". "}

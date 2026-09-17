@@ -1221,44 +1221,325 @@ function listenKatalog(knopf, art) {
     eigen.className = 'designtafel__zeile richtungszeile';
     eigen.appendChild(symbol('stift'));
     const t = document.createElement('span');
-    t.textContent = istPunkte
-      ? 'Neues Aufz\u00e4hlungszeichen definieren\u2026'
-      : 'Neues Zahlenformat definieren\u2026';
+    /* In WPS heisst der Punkt, der dieses Fenster oeffnet, wie das
+       Fenster selbst. */
+    t.textContent = 'Nummerierung und Aufz\u00e4hlungszeichen\u2026';
     eigen.appendChild(t);
     eigen.addEventListener('mousedown', (e) => e.preventDefault());
-    eigen.addEventListener('click', () => { designTafelWeg(); listeneigenes(art); });
+    eigen.addEventListener('click', () => {
+      designTafelWeg();
+      B.listenFenster(istPunkte ? 'zeichen' : 'nummern');
+    });
     tafel.appendChild(eigen);
   });
 }
 
-/* Ein eigenes Zeichen oder Zahlenformat. In WPS ein kleines Fenster mit
-   einem Feld und einer Vorschau. */
-function listeneigenes(art) {
-  const istPunkte = art === 'punkte';
+/* ============================================================
+   NUMMERIERUNG UND AUFZÄHLUNGSZEICHEN
+
+   Seine fuenf Bilder zeigen EIN Fenster mit vier Karteireitern:
+
+     Aufzaehlungszeichen | Nummerierung | Gliederung nummeriert |
+     Benutzerdefinierte Liste
+
+   Je Reiter acht Kacheln, die erste "Kein". Jede Kachel zeigt drei
+   Zeilen: das Zeichen und dahinter gestrichelte Linien fuer den Text.
+   Unten "Listennummerierung" mit "Neu nummerieren" / "Liste fortfuehren"
+   und "Anpassen...", darunter "Aenderungen uebernehmen fuer:" mit
+   Komplette Liste / Dokument ab hier / Markierter Text, rechts Abbrechen
+   und OK.
+
+   Die Klappen an den beiden Knoepfen bleiben - in WPS gibt es beides.
+   Ihr letzter Punkt fuehrt jetzt hierher.
+   ============================================================ */
+
+/* Die acht Kacheln je Reiter. Erste ist immer "Kein". */
+const LISTENKARTEN = {
+  zeichen: {
+    name: 'Aufzählungszeichen',
+    kacheln: [
+      ['disc',       ['●', '●', '●']],
+      ['square',     ['■', '■', '■']],
+      ['"◆  "', ['◆', '◆', '◆']],
+      ['"❖  "', ['❖', '❖', '❖']],
+      ['"➢  "', ['➢', '➢', '➢']],
+      ['"✓  "', ['✓', '✓', '✓']],
+      ['"✧  "', ['✧', '✧', '✧']],
+    ],
+  },
+  nummern: {
+    name: 'Nummerierung',
+    kacheln: [
+      ['decimal',     ['1.', '2.', '3.']],
+      ['"" decimal',  ['1)', '2)', '3)']],
+      ['upper-roman', ['I.', 'II.', 'III.']],
+      ['upper-alpha', ['A.', 'B.', 'C.']],
+      ['lower-alpha', ['a)', 'b)', 'c)']],
+      ['lower-alpha-ohne', ['a', 'b', 'c']],
+      ['lower-roman', ['i.', 'ii.', 'iii.']],
+    ],
+  },
+  gliederung: {
+    name: 'Gliederung nummeriert',
+    kacheln: [
+      ['gl-roman-punkt', ['I.', 'I.I.', 'I.I.I.']],
+      ['gl-roman-ohne',  ['I.', 'I.I', 'I.I.I']],
+      ['gl-klein-punkt', ['i.', 'i.i.', 'i.i.i.']],
+      ['gl-klein-ohne',  ['i.', 'i.i', 'i.i.i.']],
+      ['gl-zahl-punkt',  ['1.', '1.1.', '1.1.1.']],
+      ['gl-zahl-ohne',   ['1.', '1.1', '1.1.1']],
+      ['gl-alpha',       ['A.', 'A.A.', 'A.A.A.']],
+    ],
+  },
+};
+
+/* Wohin die Änderung gilt — die Klappe unten in seinem Bild. */
+const LISTENBEREICHE = [
+  ['liste',    'Komplette Liste'],
+  ['abhier',   'Dokument ab hier'],
+  ['markiert', 'Markierter Text'],
+];
+
+B.listenFenster = (karteZuerst) => {
   auswahlMerken();
-  fenster(istPunkte ? 'Neues Aufz\u00e4hlungszeichen' : 'Neues Zahlenformat', [
-    { art: 'satz', text: istPunkte
-        ? 'Das Zeichen, das vor jedem Punkt stehen soll \u2014 ein Buchstabe, '
-          + 'eine Ziffer oder ein Sonderzeichen.'
-        : 'Das Format, zum Beispiel "1)" oder "\u00a7 1". Die Zahl selbst '
-          + 'setzt das Programm ein.' },
-    { schluessel: 'zeichen', name: istPunkte ? 'Zeichen' : 'Format',
-      art: 'text', wert: istPunkte ? '\u2794' : '1)' },
-  ], (werte) => {
-    auswahlZurueck();
-    const eingabe = (werte.zeichen || '').trim();
-    if (!eingabe) { melde('Es wurde nichts eingetragen.'); return; }
-    if (istPunkte) {
-      listenArtSetzen(art, '"' + eingabe + '  "', 'Eigenes Zeichen');
-    } else {
-      /* Aus "1)" wird die CSS-Angabe decimal + Klammer. Mehr als das
-         Nachstellzeichen laesst sich am Blatt nicht frei setzen. */
-      const nach = eingabe.replace(/[0-9]+/, '').trim();
-      listenArtSetzen(art, 'decimal', 'Eigenes Format');
-      const liste = listeJetzt('ol');
-      if (liste && nach) liste.style.setProperty('list-style-type', '"' + nach + '"');
+
+  const grund = document.createElement('div');
+  grund.className = 'dialoggrund';
+  const kasten = document.createElement('div');
+  kasten.className = 'dialog dialog--breit listenfenster';
+  kasten.innerHTML = '<h3 class="dialog__titel">Nummerierung und Aufzählungszeichen</h3>';
+
+  const reiter = document.createElement('div');
+  reiter.className = 'rahmentafel__reiter';
+  const buehne = document.createElement('div');
+  buehne.className = 'listenfenster__buehne';
+
+  let gewaehlt = null;          /* {art, wert} */
+  let offeneKarte = 'zeichen';
+
+  function karteBauen(kuerzel) {
+    const k = document.createElement('div');
+    k.className = 'listenfenster__karte';
+
+    if (kuerzel === 'eigen') {
+      /* Vierter Reiter: links die Liste, rechts die Vorschau. */
+      const paar = document.createElement('div');
+      paar.className = 'listenfenster__paar';
+
+      const links = document.createElement('div');
+      links.innerHTML = '<div class="listenfenster__name">Benutzerdefinierte Liste:</div>';
+      const liste = document.createElement('div');
+      liste.className = 'listenfenster__eigenliste';
+      const nichts = document.createElement('button');
+      nichts.type = 'button';
+      nichts.className = 'listenfenster__eintrag listenfenster__eintrag--an';
+      nichts.textContent = 'Keine Liste';
+      liste.appendChild(nichts);
+      links.appendChild(liste);
+
+      const rechts = document.createElement('div');
+      rechts.innerHTML = '<div class="listenfenster__name">Listenvorschau:</div>';
+      const schau = document.createElement('div');
+      schau.className = 'listenfenster__schau';
+      schau.textContent = 'Keine';
+      rechts.appendChild(schau);
+
+      paar.append(links, rechts);
+      k.appendChild(paar);
+      return k;
     }
-  }, 'Übernehmen');
+
+    const karte = LISTENKARTEN[kuerzel];
+    const gitter = document.createElement('div');
+    gitter.className = 'listenfenster__gitter';
+
+    const kachel = (wert, zeilen, istKein) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'listenkachel' + (istKein ? ' listenkachel--kein' : '');
+      if (gewaehlt && gewaehlt.wert === wert) b.classList.add('listenkachel--an');
+      if (istKein) {
+        const rahmen = document.createElement('span');
+        rahmen.className = 'listenkachel__kein';
+        rahmen.textContent = 'Kein';
+        b.appendChild(rahmen);
+      } else {
+        const muster = document.createElement('span');
+        muster.className = 'listenkachel__muster';
+        zeilen.forEach((zeichen, i) => {
+          const z = document.createElement('i');
+          z.className = 'listenkachel__zeile';
+          /* Gliederungen ruecken je Stufe ein, wie auf seinem Bild. */
+          if (kuerzel === 'gliederung') z.style.paddingLeft = (i * 7) + 'px';
+          const w = document.createElement('b');
+          w.textContent = zeichen;
+          const strich = document.createElement('u');
+          z.append(w, strich);
+          muster.appendChild(z);
+        });
+        b.appendChild(muster);
+      }
+      b.addEventListener('mousedown', (e) => e.preventDefault());
+      b.addEventListener('click', () => {
+        gewaehlt = { art: kuerzel, wert: wert };
+        [...gitter.children].forEach((c) => c.classList.remove('listenkachel--an'));
+        b.classList.add('listenkachel--an');
+      });
+      gitter.appendChild(b);
+    };
+
+    kachel('kein', null, true);
+    for (const [wert, zeilen] of karte.kacheln) kachel(wert, zeilen, false);
+    k.appendChild(gitter);
+
+    /* "Listennummerierung" steht nur unter Nummerierung und Gliederung -
+       auf seinem Bild unter Aufzaehlungszeichen nicht. */
+    if (kuerzel !== 'zeichen') {
+      const block = document.createElement('fieldset');
+      block.className = 'listenfenster__block';
+      block.innerHTML = '<legend>Listennummerierung</legend>';
+      const zeile = document.createElement('div');
+      zeile.className = 'listenfenster__zeile';
+      for (const [wert, name] of [['neu', 'Neu nummerieren'], ['fort', 'Liste fortführen']]) {
+        const w = document.createElement('label');
+        w.className = 'absatzfenster__haken';
+        const e = document.createElement('input');
+        e.type = 'radio'; e.name = 'listen-nummerierung'; e.value = wert;
+        e.checked = wert === 'neu';
+        const t = document.createElement('span');
+        t.textContent = name;
+        w.append(e, t);
+        zeile.appendChild(w);
+      }
+      block.appendChild(zeile);
+      k.appendChild(block);
+    }
+    return k;
+  }
+
+  const KARTEN = [
+    ['zeichen',    'Aufzählungszeichen'],
+    ['nummern',    'Nummerierung'],
+    ['gliederung', 'Gliederung nummeriert'],
+    ['eigen',      'Benutzerdefinierte Liste'],
+  ];
+  const zeige = (kuerzel) => {
+    offeneKarte = kuerzel;
+    buehne.textContent = '';
+    buehne.appendChild(karteBauen(kuerzel));
+    [...reiter.children].forEach((c) => {
+      c.classList.toggle('rahmentafel__reiter--an', c.dataset.karte === kuerzel);
+    });
+  };
+  for (const [kuerzel, name] of KARTEN) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'rahmentafel__reiter-knopf';
+    b.dataset.karte = kuerzel;
+    b.textContent = name;
+    b.addEventListener('click', () => zeige(kuerzel));
+    reiter.appendChild(b);
+  }
+
+  kasten.append(reiter, buehne);
+
+  /* Fusszeile: "Änderungen übernehmen für" links, Abbrechen und OK rechts. */
+  const fuss = document.createElement('div');
+  fuss.className = 'listenfenster__fuss';
+  const wohin = document.createElement('label');
+  wohin.className = 'absatzfenster__feld';
+  wohin.innerHTML = '<span>Änderungen übernehmen für:</span>';
+  const wohinWahl = document.createElement('select');
+  wohinWahl.className = 'feld';
+  for (const [wert, name] of LISTENBEREICHE) {
+    const o = document.createElement('option');
+    o.value = wert; o.textContent = name;
+    wohinWahl.appendChild(o);
+  }
+  wohin.appendChild(wohinWahl);
+
+  const knoepfe = document.createElement('div');
+  knoepfe.className = 'dialog__knoepfe';
+  const ab = document.createElement('button');
+  ab.type = 'button'; ab.className = 'knopf'; ab.textContent = 'Abbrechen';
+  ab.addEventListener('click', () => grund.remove());
+  const ok = document.createElement('button');
+  ok.type = 'button'; ok.className = 'knopf knopf--haupt'; ok.textContent = 'OK';
+  ok.addEventListener('click', () => {
+    grund.remove();
+    auswahlZurueck();
+    if (!gewaehlt || gewaehlt.wert === 'kein') {
+      const liste = listeJetzt('ul') || listeJetzt('ol');
+      if (liste) {
+        Dokument.befehl(liste.tagName === 'UL' ? 'insertUnorderedList' : 'insertOrderedList');
+        geaendertMelden();
+      }
+      melde('Keine Liste.');
+      return;
+    }
+    listenWahlAnwenden(gewaehlt, wohinWahl.value);
+  });
+  knoepfe.append(ab, ok);
+  fuss.append(wohin, knoepfe);
+  kasten.appendChild(fuss);
+
+  grund.appendChild(kasten);
+  grund.addEventListener('mousedown', (e) => { if (e.target === grund) grund.remove(); });
+  document.addEventListener('keydown', function zu(e) {
+    if (e.key === 'Escape' && grund.isConnected) { grund.remove(); document.removeEventListener('keydown', zu); }
+  });
+  document.body.appendChild(grund);
+  zeige(karteZuerst || 'zeichen');
+};
+
+/* Was das Fenster am Blatt tut. "Gliederung" bekommt eine eigene Klasse:
+   Die mehrstufige Nummer kann kein list-style-type, das rechnet das
+   Stilblatt mit Zaehlern aus. */
+function listenWahlAnwenden(wahl, wohin) {
+  const istZeichen = wahl.art === 'zeichen';
+  const istGliederung = wahl.art === 'gliederung';
+
+  /* "Markierter Text" ist das, was contenteditable ohnehin tut. Bei
+     "Komplette Liste" wird die ganze Liste umgestellt, bei "Dokument ab
+     hier" alle Listen ab dieser Stelle. */
+  let liste = listeJetzt(istZeichen ? 'ul' : 'ol');
+  if (!liste) {
+    Dokument.befehl(istZeichen ? 'insertUnorderedList' : 'insertOrderedList');
+    listeGeradeziehen();
+    liste = listeJetzt(istZeichen ? 'ul' : 'ol');
+  }
+  if (!liste) { melde('Dafür muss der Zeiger in einem Absatz stehen.'); return; }
+
+  const ziele = [liste];
+  if (wohin === 'abhier') {
+    let n = liste.nextElementSibling;
+    while (n) {
+      if (n.tagName === (istZeichen ? 'UL' : 'OL')) ziele.push(n);
+      n = n.nextElementSibling;
+    }
+  }
+
+  for (const z of ziele) {
+    z.classList.remove('liste--gliederung');
+    delete z.dataset.gliederung;
+    if (istGliederung) {
+      z.classList.add('liste--gliederung');
+      z.dataset.gliederung = wahl.wert;
+      z.style.removeProperty('list-style-type');
+    } else if (wahl.wert === 'lower-alpha-ohne') {
+      z.style.setProperty('list-style-type', 'lower-alpha');
+      z.dataset.ohnepunkt = 'ja';
+    } else if (wahl.wert === '"" decimal') {
+      z.style.setProperty('list-style-type', 'decimal');
+      z.dataset.klammer = 'ja';
+    } else {
+      delete z.dataset.ohnepunkt;
+      delete z.dataset.klammer;
+      z.style.setProperty('list-style-type', wahl.wert);
+    }
+  }
+  geaendertMelden();
+  melde('Liste gesetzt.');
 }
 
 function listenArtSetzen(art, wert, name) {
