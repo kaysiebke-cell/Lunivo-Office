@@ -5412,7 +5412,7 @@ B.seiteEinrichten = (karteZuerst) => {
     const w = document.createElement('span');
     w.textContent = name + ':';
     const e = document.createElement('input');
-    e.type = 'number'; e.value = String(wert); e.step = '1'; e.className = 'feld';
+    e.type = 'number'; e.value = String(wert); e.step = '1'; 
     if (aus) e.disabled = true;
     e.addEventListener('change', () => { beiAenderung(parseFloat(e.value)); schauStellen(); });
     z.append(w, e);
@@ -5432,7 +5432,7 @@ B.seiteEinrichten = (karteZuerst) => {
     const w = document.createElement('span');
     w.textContent = name + ':';
     const aus = document.createElement('select');
-    aus.className = 'feld';
+    
     for (const [marke, text] of werte) {
       const o = document.createElement('option');
       o.value = marke; o.textContent = text;
@@ -5600,7 +5600,7 @@ B.seiteEinrichten = (karteZuerst) => {
       t.textContent = titel;
       sp.appendChild(t);
       const liste = document.createElement('select');
-      liste.className = 'feld seitentafel__liste';
+      liste.className = 'seitentafel__liste';
       liste.size = 4;
       for (const [sm, sn] of schaechte) {
         const o = document.createElement('option');
@@ -5785,11 +5785,11 @@ B.seiteEinrichten = (karteZuerst) => {
       nr.className = 'seitentafel__spaltennr';
       nr.textContent = (i + 1) + ':';
       const br = document.createElement('input');
-      br.type = 'number'; br.className = 'feld';
+      br.type = 'number';
       br.value = Math.round((satzbreite - abstand * (stand.spalten - 1)) / stand.spalten);
       br.disabled = stand.gleicheBreite && i > 0;
       const ab2 = document.createElement('input');
-      ab2.type = 'number'; ab2.className = 'feld';
+      ab2.type = 'number';
       ab2.value = String(abstand);
       ab2.disabled = (i === stand.spalten - 1);
       z.append(nr, br, ab2);
@@ -5828,7 +5828,7 @@ B.seiteEinrichten = (karteZuerst) => {
   unten.className = 'seitentafel__feld seitentafel__unten';
   unten.innerHTML = '<span>Übernehmen für:</span>';
   const wofuer = document.createElement('select');
-  wofuer.className = 'feld';
+  
   for (const [w, name] of [['ganz', 'Gesamtes Dokument'],
                            ['abschnitt', 'Aktuellen Abschnitt'],
                            ['abhier', 'Ab hier']]) {

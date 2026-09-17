@@ -5863,7 +5863,7 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 }
 .zahlkachel:hover{border-color:var(--blau)}
 .zahlkachel--an{outline:2px solid var(--blau);outline-offset:-1px;background:rgba(47,111,181,.12)}
-.zahlkachel__name{font-size:.82rem}
+.zahlkachel__name{font-size:12px}
 
 /* Alle drei nebeneinander - nicht zwei und dann eine. */
 .zahlklappe__reihe{display:flex;gap:16px;flex-wrap:nowrap;align-items:center}
@@ -5949,12 +5949,22 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
    wo es ist, und so gross, wie es ist. */
 .seitentafel.dialog--breit{
   position:relative;
-  width:580px;min-width:580px;max-width:min(580px, 94vw);
+  /* Sein Fenster ist 546 Bildpunkte breit und hochkant - nicht breit.
+     Ich hatte 580 geraten. */
+  width:546px;min-width:546px;max-width:min(546px, 94vw);
   box-sizing:border-box;
+  /* ZU GROSSER INHALT.
+
+     Das Fenster erbt die Bedienschrift des Programms - die ist gross,
+     weil Fliesstext gross sein soll. In einem Einstellungsfenster mit
+     fuenf Karten passt damit nichts mehr auf eine Zeile. Auf seinem Bild
+     sind die Beschriftungen klein und die Felder flach. */
+  font-size:13px;
+  padding:16px;
 }
 .seitentafel__titelleiste{
   display:flex;align-items:center;justify-content:space-between;gap:12px;
-  margin:-20px -20px 12px;padding:10px 12px 10px 20px;
+  margin:-16px -16px 10px;padding:8px 10px 8px 16px;
   background:var(--tafel);border-bottom:1px solid var(--rand);
   border-radius:10px 10px 0 0;cursor:move;user-select:none;
 }
@@ -5974,11 +5984,11 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
   border-bottom:1px solid var(--rand);
 }
 .seitentafel .rahmentafel__reiterknopf{
-  padding:6px 14px;cursor:pointer;
+  padding:5px 12px;cursor:pointer;
   background:var(--tafel);color:var(--schrift-2);
   border:1px solid var(--rand);border-bottom:none;
   border-radius:5px 5px 0 0;margin-bottom:-1px;
-  font:inherit;font-size:.9rem;
+  font:inherit;font-size:13px;
 }
 .seitentafel .rahmentafel__reiterknopf:hover{color:var(--schrift)}
 .seitentafel .rahmentafel__reiter--an{
@@ -5990,50 +6000,72 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
    Schattierung", falsch hier. */
 .seitentafel .rahmentafel__karte{flex-direction:column;gap:0}
 .seitentafel .rahmentafel__buehne{
-  height:360px;min-height:0;padding-top:12px;
+  height:340px;min-height:0;padding-top:10px;
   overflow-y:auto;overflow-x:hidden;
 }
 
 /* Jede Gruppe in einem Kasten mit Namen - so steht es auf allen fuenf
    Bildern. */
 .seitengruppe{
-  margin:0 0 10px;padding:6px 12px 10px;
+  margin:0 0 8px;padding:4px 10px 7px;
   border:1px solid var(--rand);border-radius:5px;
   min-width:0;
 }
 .seitengruppe > legend{
-  padding:0 6px;font-size:.85rem;color:var(--schrift-2);
+  padding:0 5px;font-size:12px;color:var(--schrift-2);
 }
 
 .seitentafel__gitter{
   display:grid;grid-template-columns:repeat(2,1fr);gap:2px 14px;margin-bottom:2px;
 }
 .seitentafel__gitter--eins{grid-template-columns:1fr}
-.seitentafel__feld{display:flex;align-items:center;gap:8px;margin-bottom:5px}
-.seitentafel__feld > span:first-child{flex:0 0 auto;min-width:9.5em}
-.seitentafel__feld .feld{flex:0 1 auto;width:9em;box-sizing:border-box}
-.seitentafel__feld .feld:disabled{opacity:.5}
-.seitentafel__mass{color:var(--schrift-2);font-size:.85rem}
-.seitentafel__name{margin:8px 0 4px;font-size:.9rem;font-weight:600}
-.seitentafel__kleinname{margin:0 0 4px;font-size:.85rem;color:var(--schrift-2)}
+.seitentafel__feld{display:flex;align-items:center;gap:7px;margin-bottom:4px}
+.seitentafel__feld > span:first-child{flex:0 0 auto;min-width:8.6em}
+/* EINGABEFELDER.
+
+   Ich hatte class="feld" an Auswahl- und Zahlenfelder gehaengt - aber
+   .feld ist bei ihm eine MENUEZEILE (display:block, 14 px Polster,
+   Trennlinie darunter), kein Eingabefeld. Also blieb die Farbgebung aus,
+   und WebKit zeichnete sie nach dem System: weisse Kaesten im dunklen
+   Fenster. Genau der Fehler, den sein Absatz-Fenster schon laenger
+   richtig loest - hier dieselbe Regel.
+
+   background-color, nicht die Kurzform background: die loescht auch
+   background-image und damit den Pfeil des Auswahlfeldes. */
+.seitentafel input:not([type="checkbox"]):not([type="radio"]),
+.seitentafel select{
+  min-width:0;box-sizing:border-box;
+  background-color:var(--grund);color:var(--schrift);
+  border:1px solid var(--rand);border-radius:4px;
+  padding:3px 7px;font:inherit;font-size:13px;
+}
+.seitentafel select{padding-right:30px}
+.seitentafel input:focus,.seitentafel select:focus{
+  outline:none;border-color:var(--blau-hell);
+}
+.seitentafel input:disabled,.seitentafel select:disabled{opacity:.5}
+.seitentafel__feld > input,.seitentafel__feld > select{flex:0 1 auto;width:9em}
+.seitentafel__mass{color:var(--schrift-2);font-size:12px}
+.seitentafel__name{margin:6px 0 3px;font-size:13px;font-weight:600}
+.seitentafel__kleinname{margin:0 0 3px;font-size:12px;color:var(--schrift-2)}
 
 /* Ausrichtung: zwei Blattkacheln - in der Kartenfarbe, nicht weiss. */
 .seitentafel__wahlreihe{display:flex;gap:10px}
-.seitentafel__wahlreihe .zahlkachel{min-width:92px}
+.seitentafel__wahlreihe .zahlkachel{min-width:78px;padding:6px 4px}
 .seitentafel__blatt{
   display:flex;align-items:center;justify-content:center;
-  width:34px;height:44px;
+  width:28px;height:36px;
   background-color:var(--karte);color:var(--schrift);
   border:1px solid var(--marke);font:600 15px Georgia,serif;
 }
-.seitentafel__blatt--quer{width:44px;height:34px}
+.seitentafel__blatt--quer{width:36px;height:28px}
 
 .seitentafel__radios{display:flex;gap:18px;flex-wrap:wrap}
 .seitentafel__radios--zwei{display:grid;grid-template-columns:repeat(2,1fr);gap:2px 14px}
 
 .seitentafel__zweispalten{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
 .seitentafel__zweispalten .seitentafel__spalte{display:flex;flex-direction:column;min-width:0}
-.seitentafel__liste{width:100%;box-sizing:border-box}
+.seitentafel__liste{width:100%;box-sizing:border-box;padding:4px}
 .seitentafel__nebenknopf{width:auto;margin-top:2px;align-self:flex-start}
 .seitentafel__knopfreihe{display:flex;gap:8px;margin-top:4px}
 .seitentafel__knopfreihe .knopf{width:auto;padding:6px 14px}
@@ -6041,7 +6073,7 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 /* Spalten: fuenf Voreinstellungen, ebenfalls in der Kartenfarbe. */
 .seitentafel__spaltenwahl{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:8px}
 .spaltenbild{
-  display:flex;gap:2px;width:38px;height:30px;padding:2px;
+  display:flex;gap:2px;width:32px;height:25px;padding:2px;
   background-color:var(--karte);border:1px solid var(--marke);
 }
 .spaltenbild i{display:block;background-image:repeating-linear-gradient(
@@ -6050,19 +6082,18 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 .seitentafel__spaltenkopf,.seitentafel__spaltenzeile{
   display:grid;grid-template-columns:3.2em 1fr 1fr;gap:8px;align-items:center;
 }
-.seitentafel__spaltenkopf{font-size:.82rem;color:var(--schrift-2)}
-.seitentafel__spaltenzeile .feld{width:100%;box-sizing:border-box}
-.seitentafel__spaltenzeile .feld:disabled{opacity:.45}
+.seitentafel__spaltenkopf{font-size:12px;color:var(--schrift-2)}
+.seitentafel__spaltenzeile input{width:100%}
 
 /* Der Fuss steht auf JEDER Karte - so wie auf allen fuenf Bildern. */
-.seitentafel__fuss{margin-top:6px;padding-top:8px;border-top:1px solid var(--rand)}
+.seitentafel__fuss{margin-top:4px;padding-top:6px;border-top:1px solid var(--rand)}
 .seitentafel__fussinhalt{display:flex;align-items:flex-end;gap:16px;justify-content:space-between}
 .seitentafel__unten{margin:0}
-.seitentafel__unten .feld{width:13em}
+.seitentafel__unten select{width:13em}
 
 .seitenschau{display:flex;justify-content:flex-end}
 .seitenschau__blatt{
-  position:relative;width:76px;aspect-ratio:210/297;
+  position:relative;width:66px;aspect-ratio:210/297;
   background-color:var(--karte);border:1px solid var(--marke);
 }
 .seitenschau__satz{position:absolute;display:flex;gap:2px}
@@ -6075,3 +6106,9 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 /* „Standard…" steht links, Abbrechen und OK rechts. */
 .dialog__knoepfe--geteilt{justify-content:space-between}
 .dialog__knoepfe--geteilt .knopf:first-child{margin-right:auto}
+
+/* Die Haken und Knöpfe im Fenster ebenfalls klein - sie erben sonst die
+   Bedienschrift des Programms. */
+.seitentafel .absatzfenster__haken{font-size:13px;margin-bottom:3px}
+.seitentafel .knopf{font-size:13px;padding:5px 12px}
+.seitentafel .dialog__titel{font-size:15px}
