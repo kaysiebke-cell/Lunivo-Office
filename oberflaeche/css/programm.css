@@ -6198,23 +6198,9 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
 .druckoptionen__breit > span:first-child{flex:0 0 auto;min-width:0}
 .druckoptionen__breit > select{flex:0 1 240px}
 
-/* Der Reiter, der nur im Zusammenhang da ist, sieht bei ihm anders aus
-   als die festen: eine blaue Pille, nicht ein Wort wie die anderen.
+/* KEIN FETTER BLAUER KASTEN.
 
-   Mit .register__zusatz allein greift das nicht - die Regel weiter oben
-   steht als .register__reiter button.register__zusatz da und ist
-   spezifischer. Also hier derselbe Weg. */
-.register__reiter button.register__zusatz{
-  background:var(--blau);color:#fff;font-weight:600;
-  border-radius:999px;padding:3px 14px;
-  border-bottom-color:transparent;
-}
-.register__reiter button.register__zusatz:hover{
-  background:var(--blau-hell);color:#fff;
-}
-.register__reiter button.register__zusatz.register--offen{
-  background:var(--blau);color:#fff;
-  border-bottom-color:transparent;
-  box-shadow:0 0 0 2px rgba(47,111,181,.35);
-}
-.register__reiter button.register__zusatz.register--offen::after{display:none}
+   Ich hatte aus dem Reiter eine blaue Pille gemacht. Im Band ist das ein
+   Klotz, der alles daneben erschlaegt - Kay: "was soll ich mit so einem
+   fetten blauen Kasten". Er bleibt ein Wort wie die anderen; die Regel
+   weiter oben faerbt ihn blau, und das reicht. */
