@@ -1743,16 +1743,16 @@ button.wz-wahl--schrift{
    die durchgehende Trennlinie sitzt auf dem Seitenrand. Genau das steht
    jetzt hier. */
 .kopfzeile{
-  top:var(--kopfhoehe,12.7mm);
+  top:var(--kopfhoehe,12mm);
   bottom:auto;
-  min-height:calc(var(--rand-oben,2cm) - var(--kopfhoehe,12.7mm));
+  min-height:calc(var(--rand-oben,2cm) - var(--kopfhoehe,12mm));
   border-bottom:1px dashed var(--marke);
   padding-top:0;padding-bottom:0;
 }
 .fusszeile{
-  bottom:var(--fusshoehe,12.7mm);
+  bottom:var(--fusshoehe,12mm);
   top:auto;
-  min-height:calc(var(--rand-unten,2cm) - var(--fusshoehe,12.7mm));
+  min-height:calc(var(--rand-unten,2cm) - var(--fusshoehe,12mm));
   border-top:1px dashed var(--marke);
   padding-top:0;padding-bottom:0;
 }

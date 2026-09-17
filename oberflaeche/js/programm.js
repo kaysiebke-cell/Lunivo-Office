@@ -4274,6 +4274,13 @@ function seiteAnwenden() {
   for (const kante of ['oben', 'unten', 'links', 'rechts']) {
     blatt.style.setProperty('--rand-' + kante, seitenrand[kante] + 'mm');
   }
+
+  /* Und die beiden Zeilenhoehen. Sie wurden nur gesetzt, wenn er das Feld
+     in der Leiste anfasste - beim Start nie. Das Stilblatt rechnete
+     solange mit seinem Ausweichwert, waehrend das Feld daneben etwas
+     anderes anzeigte. */
+  blatt.style.setProperty('--kopfhoehe', Speicher.lies('kopfhoehe', 12) + 'mm');
+  blatt.style.setProperty('--fusshoehe', Speicher.lies('fusshoehe', 12) + 'mm');
   feld.style.columnCount = spalten > 1 ? spalten : '';
   feld.style.columnGap = spalten > 1 ? '8mm' : '';
   Speicher.schreib('seitenrand', seitenrand);
