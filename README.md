@@ -5,10 +5,7 @@
          style="max-width: 100%; height: auto;"
          alt="Lunivo-Office Logo">
   </picture>
-</p>
-
 <p align="center">
-  <strong>Ein Raum für Worte.</strong><br>
   Was geschrieben wird, bleibt auf diesem Rechner.<br>
   Nichts geht hinaus, ohne dass du es selbst schickst.
 </p>
