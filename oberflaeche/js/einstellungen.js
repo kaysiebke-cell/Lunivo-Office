@@ -322,9 +322,308 @@ function modellHinweisZeigen() {
   if (KI.istLokal(modell)) {
     hinweis.textContent = 'Läuft auf diesem Rechner: kostenlos, ohne Internet, der '
       + 'Text bleibt hier. Dauert länger und korrigiert gröber als Claude.';
+  } else if (KI.istEigenerAnbieter(modell)) {
+    const anbieter = KI.Anbieter.holen(KI.eigenerAnbieterId(modell));
+    hinweis.textContent = anbieter
+      ? 'Läuft über „' + anbieter.name + '" — ' + anbieter.url + '. Verwenden für: '
+        + (anbieter.verwendungFuer || []).map((t) => KI.ANBIETER_TAG_NAMEN[t]).filter(Boolean).join(', ') + '.'
+      : 'Dieser Anbieter ist nicht mehr da — unten neu anlegen oder ein anderes Modell wählen.';
   } else {
     hinweis.textContent = 'Läuft im Netz: braucht Schlüssel und Guthaben, antwortet '
       + 'in Sekunden. Der Text geht dafür an Anthropic.';
+  }
+}
+
+/* ------------------------------------------------------------
+   Eigene Anbieter.
+
+   Anders als bei Ollama steht die Liste schon da, sobald das Fenster
+   aufgeht — sie kommt aus dem eigenen Speicher, nicht von einem Dienst,
+   den man erst fragen muss. Trotzdem in einer eigenen Funktion, weil sie
+   nach jedem Anlegen und jedem Entfernen neu gebaut werden muss.
+   ------------------------------------------------------------ */
+function eigeneAnbieterZeigen() {
+  const gewaehlt = KI.modellJetzt();
+  const liste = KI.Anbieter.liste();
+
+  const kasten = $('einst-modell-eigen');
+  kasten.innerHTML = '';
+  for (const anbieter of liste) {
+    const eintrag = document.createElement('option');
+    eintrag.value = KI.EIGEN_MARKE + anbieter.id;
+    eintrag.textContent = anbieter.name + ' (' + anbieter.modell + ')';
+    kasten.appendChild(eintrag);
+  }
+  if (KI.istEigenerAnbieter(gewaehlt)) $('einst-modell').value = gewaehlt;
+
+  const zeile = $('einst-anbieter-liste');
+  zeile.innerHTML = '';
+  if (!liste.length) {
+    const leer = document.createElement('p');
+    leer.className = 'anbieter-liste__leer';
+    leer.textContent = 'Noch keiner eingetragen.';
+    zeile.appendChild(leer);
+    return;
+  }
+
+  for (const anbieter of liste) {
+    const eintrag = document.createElement('div');
+    eintrag.className = 'zeile';
+
+    const namensfeld = document.createElement('span');
+    namensfeld.className = 'anbieter-liste__name';
+    namensfeld.textContent = anbieter.name;
+    const meta = document.createElement('em');
+    meta.className = 'anbieter-liste__meta';
+    meta.textContent = anbieter.modell + ' · '
+      + (anbieter.verwendungFuer || []).map((t) => KI.ANBIETER_TAG_NAMEN[t]).filter(Boolean).join(', ');
+    namensfeld.appendChild(meta);
+
+    const weg = document.createElement('button');
+    weg.className = 'knopf';
+    weg.type = 'button';
+    weg.textContent = 'Entfernen';
+    weg.addEventListener('click', () => {
+      /* War er gerade gewählt, fällt die Wahl zurück auf Claude — sonst
+         zeigt das Feld auf eine Option, die es nicht mehr gibt. */
+      if (KI.modellJetzt() === KI.EIGEN_MARKE + anbieter.id) {
+        KI.modellSetzen('claude-opus-5');
+      }
+      KI.Anbieter.entfernen(anbieter.id);
+      eigeneAnbieterZeigen();
+      $('einst-modell').value = KI.modellJetzt();
+      modellHinweisZeigen();
+    });
+
+    eintrag.append(namensfeld, weg);
+    zeile.appendChild(eintrag);
+  }
+}
+
+/* Bekannte Anbieter, mit der Anschrift, die sie selbst angeben — wählt man
+   einen, füllt sich die Anschrift von selbst, wie im Vorbild. „Andere"
+   lässt beides leer; wer dort landet, trägt seine eigene Anschrift ein. */
+const ANBIETER_VORLAGEN = [
+  ['andere', 'Andere', ''],
+  /* Ollama läuft auf diesem Rechner bereits über einen eigenen, kürzeren
+     Weg (das Feld „KI-Modell" weiter oben, „Auf diesem Rechner"). Diese
+     Zeile ist der zweite, längere Weg dorthin — über dieselbe OpenAI-
+     verträgliche Schnittstelle, die Ollama seit Version 0.x zusätzlich
+     anbietet (Port 11434, Pfad „/v1"). Sie steht trotzdem hier, weil
+     „Eigenen Anbieter hinzufügen" sonst so aussähe, als kenne es Ollama
+     gar nicht — und genau das stiftet Verwirrung. */
+  ['ollama', 'Ollama (auf diesem Rechner)', 'http://localhost:11434/v1'],
+  ['openai', 'OpenAI', 'https://api.openai.com/v1'],
+  ['mistral', 'Mistral', 'https://api.mistral.ai/v1'],
+  ['groq', 'Groq', 'https://api.groq.com/openai/v1'],
+  ['deepseek', 'DeepSeek', 'https://api.deepseek.com/v1'],
+  ['together', 'Together AI', 'https://api.together.xyz/v1'],
+];
+
+/* Die Zeile „Modell" — ein Textfeld und ein Knopf, der die Liste beim
+   Anbieter selbst abfragt. Ein eigener DOM-Knoten, weil „fenster()" kein
+   Feld kennt, das während des Ausfüllens noch etwas nachlädt; er wird als
+   „knoten" hereingereicht, sein Textfeld hält Kay selbst in der Hand.
+
+   „bezug" hält die Verweise auf die Felder „Anschrift" und „Schlüssel" —
+   „fenster()" baut sie erst, wenn der Dialog aufgeht, und reicht sie beim
+   ersten Tippen in irgendein Feld über „beiWechsel" herein (siehe unten).
+   Bis dahin steht hier {}; ein Tastendruck in die Anschrift selbst reicht
+   schon, um die Verweise zu füllen — das ist keine besondere Handlung. */
+function modellZeileBauen(bezug) {
+  /* Dieselbe Zeilenform wie bei Name, Anbieter, URL und Schlüssel — Label
+     links in derselben Breite, Inhalt rechts. „fenster()" baut das für
+     seine eigenen Felder selbst; ein „knoten" muss es sich nachbauen,
+     sonst fällt er aus der Reihe der anderen Felder heraus. */
+  const kasten = document.createElement('div');
+  kasten.className = 'dialog__zeile anbieter-modellzeile';
+  const titel = document.createElement('span');
+  titel.textContent = 'Modell';
+  kasten.appendChild(titel);
+
+  const inhalt = document.createElement('div');
+  inhalt.className = 'anbieter-modellzeile__inhalt';
+  kasten.appendChild(inhalt);
+
+  /* Das Feld allein in seiner Zeile — dieselbe Breite wie die Eingaben der
+     anderen Felder, kein zweites Element daneben, das nach einer zweiten
+     Beschriftung aussieht. Der Verweis zum Abrufen steht als eigene Zeile
+     darunter, wie „Von Hand eintragen" es bei der Auswahl auch tut. */
+  const reihe = document.createElement('div');
+  reihe.className = 'anbieter-modellzeile__reihe';
+  const feld = document.createElement('input');
+  feld.type = 'text';
+  feld.placeholder = 'z. B. gpt-4o-mini';
+  const abrufen = document.createElement('button');
+  abrufen.type = 'button';
+  abrufen.className = 'verweis anbieter-modellzeile__vonhand';
+  abrufen.textContent = 'Liste der Modelle abrufen';
+  reihe.append(feld, abrufen);
+
+  const stand = document.createElement('p');
+  stand.className = 'hinweis';
+
+  /* Die Liste als echtes Auswahlfeld, nicht als Kärtchenreihe — Kay wollte
+     ein Dropdown, kein Getippe aus Knöpfen. Sie ersetzt das Textfeld dabei,
+     statt daneben stehen zu bleiben: Beide zugleich zeigen denselben
+     Namen doppelt und niemand weiß, welches der beiden jetzt gilt. Ein
+     „Von Hand eintragen"-Verweis führt zurück, für Modelle, die der
+     Anbieter nicht nennt. */
+  const auswahl = document.createElement('select');
+  auswahl.hidden = true;
+  const vonHand = document.createElement('button');
+  vonHand.type = 'button';
+  vonHand.className = 'verweis anbieter-modellzeile__vonhand';
+  vonHand.textContent = 'Von Hand eintragen';
+  vonHand.hidden = true;
+
+  const zeileZeigen = () => {
+    reihe.hidden = false;
+    auswahl.hidden = true;
+    vonHand.hidden = true;
+  };
+  const auswahlZeigen = () => {
+    reihe.hidden = true;
+    auswahl.hidden = false;
+    vonHand.hidden = false;
+  };
+
+  auswahl.addEventListener('change', () => {
+    if (!auswahl.value) return;
+    feld.value = auswahl.value;
+    stand.textContent = '';
+    zeileZeigen();
+  });
+  vonHand.addEventListener('click', () => { stand.textContent = ''; zeileZeigen(); });
+
+  /* Als eigene Funktion, nicht nur als Klick-Handler — Ollama braucht
+     keinen Schlüssel und antwortet auf dem eigenen Rechner, ohne dass
+     jemand extra danach fragen sollte. Sie läuft deshalb auch von selbst:
+     beim Öffnen mit der vorbelegten Ollama-Vorlage, und jedes Mal, wenn
+     „Anbieter" auf eine Vorlage mit eigener URL wechselt. */
+  async function abrufenLauf(still) {
+    const url = (bezug.url ? bezug.url.value : '').trim();
+    if (!url) { if (!still) stand.textContent = 'Erst die URL eintragen.'; return; }
+    abrufen.disabled = true;
+    stand.textContent = 'Wird geholt …';
+    try {
+      const namen = await KI.anbieterModelle(url, bezug.schluessel ? bezug.schluessel.value.trim() : '');
+      if (!namen.length) { stand.textContent = 'Der Anbieter nennt keine Modelle.'; return; }
+      stand.textContent = namen.length + ' gefunden:';
+      auswahl.innerHTML = '';
+      const erste = document.createElement('option');
+      erste.value = '';
+      erste.textContent = '— Modell wählen —';
+      auswahl.appendChild(erste);
+      for (const name of namen) {
+        const eintrag = document.createElement('option');
+        eintrag.value = name;
+        eintrag.textContent = name;
+        if (name === feld.value) eintrag.selected = true;
+        auswahl.appendChild(eintrag);
+      }
+      auswahlZeigen();
+    } catch (e) {
+      /* Beim selbsttätigen Lauf — der Mensch hat nichts gedrückt — bleibt
+         das still: Ein OpenAI ohne Schlüssel soll nicht gleich meckern,
+         bevor überhaupt einer eingetragen ist. Nach einem echten Klick auf
+         den Knopf dagegen schon. */
+      stand.textContent = still ? '' : 'Ging nicht — stimmen URL und Schlüssel? (' + e.message + ')';
+    } finally {
+      abrufen.disabled = false;
+    }
+  }
+  abrufen.addEventListener('click', () => abrufenLauf(false));
+
+  inhalt.append(reihe, stand, auswahl, vonHand);
+  return { knoten: kasten, feld, abrufenLauf };
+}
+
+function eigenenAnbieterHinzufuegen() {
+  if (!griffe.fenster) return;
+
+  const bezug = {};
+  const modellZeile = modellZeileBauen(bezug);
+  const vorDenDialogen = new Set(document.querySelectorAll('.dialoggrund'));
+  /* Die Vorlage, mit der das Feld aufgeht — „beiWechsel" vergleicht damit,
+     ob sich „Anbieter" wirklich geändert hat. */
+  let letzteVorlage = 'ollama';
+
+  griffe.fenster('Eigenen Anbieter hinzufügen', [
+    { art: 'satz', text: 'Oben den Anbieter wählen — die URL darunter füllt sich von '
+                       + 'selbst und lässt sich danach noch ändern. Nur bei „Andere" '
+                       + 'bleibt sie leer und will von Hand eingetragen werden.' },
+    { schluessel: 'vorlage', name: 'Anbieter', art: 'auswahl',
+      werte: ANBIETER_VORLAGEN.map(([k, n]) => [k, n]), wert: 'ollama' },
+    { schluessel: 'name', name: 'Modellname', art: 'text', wert: 'Ollama (auf diesem Rechner)' },
+    { schluessel: 'url', name: 'URL', art: 'text', wert: 'http://localhost:11434/v1' },
+    { schluessel: 'schluessel', name: 'Schlüssel', art: 'password', wert: '' },
+    { art: 'knoten', name: 'Modell', knoten: modellZeile.knoten },
+    { schluessel: 'verwendung', name: 'Modell verwenden für', art: 'auswahl',
+      werte: KI.ANBIETER_TAGS, wert: 'text' },
+  ], (werte) => {
+    const name = (werte.name || '').trim();
+    const url = (werte.url || '').trim();
+    const modell = modellZeile.feld.value.trim();
+    if (!name || !url || !modell) {
+      $('einst-modell-hinweis').textContent =
+        'Modellname, URL und Modell werden gebraucht — nichts angelegt.';
+      return;
+    }
+    const angelegt = KI.Anbieter.hinzufuegen({
+      name, url, schluessel: werte.schluessel, modell,
+      verwendungFuer: [werte.verwendung],
+    });
+    eigeneAnbieterZeigen();
+    KI.modellSetzen(KI.EIGEN_MARKE + angelegt.id);
+    $('einst-modell').value = KI.modellJetzt();
+    modellHinweisZeigen();
+  }, 'Hinzufügen', false, null, (werte, eingaben) => {
+    /* Die Verweise auf „Anschrift" und „Schlüssel" — der Modell-Knopf
+       braucht sie, kennt die Felder selbst aber nicht, weil „fenster()"
+       sie erst beim Aufgehen baut. Jeder Wechsel reicht sie nach; billig
+       genug, um es bei jedem einfach neu zu tun. */
+    bezug.url = eingaben.url;
+    bezug.schluessel = eingaben.schluessel;
+
+    /* „beiWechsel" meldet jeden Tastendruck in jedem Feld, nicht nur den
+       Wechsel des Anbieters — ohne diesen Vergleich liefe die Modell-
+       Abfrage bei jedem Buchstaben im Modellnamen neu an. */
+    if (werte.vorlage === letzteVorlage) return;
+    letzteVorlage = werte.vorlage;
+
+    const vorlage = ANBIETER_VORLAGEN.find(([k]) => k === werte.vorlage);
+    if (!vorlage) return;
+    const [, anbieterName, url] = vorlage;
+    eingaben.url.value = url;
+    /* Den Modellnamen nur vorschlagen, wenn noch nichts Eigenes dasteht —
+       wer schon getippt hat, soll nicht überschrieben werden. */
+    if (!eingaben.name.value.trim() && anbieterName !== 'Andere') eingaben.name.value = anbieterName;
+    /* Und gleich nachsehen, was der Anbieter für Modelle hat — bei Ollama
+       auf dem eigenen Rechner kostet das nichts und niemand soll extra
+       danach fragen müssen. Still, wenn es nicht klappt: Ein Wechsel auf
+       „OpenAI" ohne Schlüssel ist noch kein Fehler, nur ein Zwischenstand. */
+    if (url) modellZeile.abrufenLauf(true);
+  });
+
+  /* „fenster()" baut den Dialog, bevor es zurückkehrt — direkt danach steht
+     er schon im DOM, und der Modell-Knopf muss nicht erst auf einen
+     Wechsel warten, den es nie gibt: Wer die vorbelegte Anschrift stehen
+     lässt und gleich auf „Liste der Modelle abrufen" drückt, rührt „url"
+     und „schluessel" nie an, und „beiWechsel" käme dann nie. Der neue
+     Dialog ist der einzige, der vorher noch nicht da war. */
+  const neuerDialog = [...document.querySelectorAll('.dialoggrund')]
+    .find((d) => !vorDenDialogen.has(d));
+  if (neuerDialog) {
+    /* In der Reihenfolge der Felder oben: Modellname zuerst, Anschrift
+       als zweites Textfeld. Über den Namen zu suchen ginge nicht — die
+       Felder tragen keinen. */
+    const textfelder = [...neuerDialog.querySelectorAll('.dialog__zeile input[type="text"]')];
+    bezug.url = textfelder[1];
+    bezug.schluessel = neuerDialog.querySelector('.dialog__zeile input[type="password"]');
+    /* Die Vorlage, mit der das Feld aufgeht, ist Ollama — gleich nachsehen,
+       welche Modelle da sind, ohne dass erst ein Wechsel nötig wäre. */
+    modellZeile.abrufenLauf(true);
   }
 }
 
@@ -994,6 +1293,7 @@ function oeffnen(bereich) {
 
   $('einst-schluessel').value = KI.schluesselLies();
   $('einst-modell').value = KI.modellJetzt();
+  eigeneAnbieterZeigen();
   schluesselStandZeigen();
   modellHinweisZeigen();
   kostenZeigen();
@@ -1466,6 +1766,8 @@ function verdrahten() {
     griffe.neuZeichnen();
   });
 
+  $('einst-anbieter-neu').addEventListener('click', eigenenAnbieterHinzufuegen);
+
   $('einst-kosten-weg').addEventListener('click', () => { KI.kostenLeeren(); kostenZeigen(); });
 
   $('einst-gelernt-weg').addEventListener('click', () => { KI.Gedaechtnis.leeren(); gedaechtnisZeigen(); });
@@ -1493,10 +1795,12 @@ function verdrahten() {
     $('einst-sprache').value = KI.Speicher.lies('sprache', 'Englisch');
     modellHinweisZeigen();
     gedaechtnisZeigen();
+    eigeneAnbieterZeigen();
     griffe.neuZeichnen();
 
     $('einst-gelernt-stand').textContent = 'Eingespielt: ' + ergebnis.neueWoerter
-      + ' Schreibweisen, ' + ergebnis.neueRuhe + ' Wörter in Ruhe. '
+      + ' Schreibweisen, ' + ergebnis.neueRuhe + ' Wörter in Ruhe, '
+      + ergebnis.neueAssistenten + ' eigene Assistenten. '
       + 'Was hier schon stand, blieb erhalten.';
   });
 
@@ -1601,6 +1905,17 @@ function verdrahten() {
 
 verdrahten();
 
+/* Von aussen — Menüband, Menü, Seitenleiste — soll derselbe Weg gelten
+   wie der Knopf hier auf der Seite: erst die Seite an der richtigen
+   Stelle aufmachen, dann den Dialog davor. Sonst legte sich der Dialog
+   über eine Seite, die noch die Lesehilfe zeigt, und beim Zumachen stünde
+   man an einer Stelle, die nichts mit dem eben Angelegten zu tun hat. */
+function eigenenAnbieterHinzufuegenVonAussen() {
+  oeffnen('ki');
+  eigenenAnbieterHinzufuegen();
+}
+
 return { oeffnen, schliessen, verbinde, offen: () => offen, gedaechtnisZeigen,
-         flaecheAnspringen };
+         flaecheAnspringen,
+         eigenenAnbieterHinzufuegen: eigenenAnbieterHinzufuegenVonAussen };
 })();

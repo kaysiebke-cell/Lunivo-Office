@@ -9218,6 +9218,10 @@ const REGISTER = REGISTER_BAUEN(B, {
   kiKorrigieren:    ()     => KIteil.kiKorrigieren(),
   kiVorschlaege:    ()     => KIteil.kiVorschlaege(),
   kiUebersetzen:    ()     => KIteil.kiUebersetzen(),
+  kiZusammenfassen: ()     => KIteil.kiZusammenfassen(),
+  assistentErstellen: ()  => KIteil.assistentErstellen(),
+  chatUmschalten:   ()     => Chat.umschalten(),
+  eigenenAnbieterHinzufuegen: () => Einstellungen.eigenenAnbieterHinzufuegen(),
   sucheZeigen:      (an)   => sucheZeigen(an),
   setzeLayout:      (wahl) => setzeLayout(wahl),
   setzePapier:      (art)  => setzePapier(art),
@@ -21377,6 +21381,7 @@ function ansichtAnwenden() {
   $('griff').classList.toggle('griff--zu', !tafelOffen);
   $('blatt').classList.toggle('blatt--ohne-marken', !marken);
   menueBauen();
+  if (typeof slSchmalAuffrischen === 'function') slSchmalAuffrischen();
 }
 
 /* ============================================================
@@ -21704,6 +21709,9 @@ const MENUES = [
     { name: 'KI', unter: [
       { name: 'KI-Korrektur', tun: () => KIteil.kiKorrigieren(), taste: 'F8' },
       { name: 'Vorschläge', tun: () => KIteil.kiVorschlaege() },
+      { name: 'Zusammenfassen', tun: () => KIteil.kiZusammenfassen() },
+      { name: 'KI-Chat', tun: () => Chat.umschalten(), taste: 'Strg+/' },
+      { name: 'Eigenen Anbieter hinzufügen…', tun: () => Einstellungen.eigenenAnbieterHinzufuegen() },
     ] },
     { name: 'Anzeigen', unter: [
       { name: 'Seitenleiste Schreibhilfe', tun: B.tafelZeigen, taste: 'F5' },
@@ -22634,6 +22642,7 @@ function sucheZeigen(an) {
   $('suchleiste').hidden = !an;
   if (an) $('suche-was').focus();
   else feld.focus();
+  if (typeof slSchmalAuffrischen === 'function') slSchmalAuffrischen();
 }
 
 function suche(ab) {
@@ -24024,6 +24033,7 @@ const KIteil = KI_BAUEN(B, {
   leereFunde:  (...a) => leereFunde(...a),
   kuerze:      (s)    => kuerze(s),
   menueBauen:  ()     => menueBauen(),
+  fenster:     (...a) => fenster(...a),
   /* Der einzige Schreibzugriff nach drinnen: Zeigt die KI Vorschlaege,
      muessen die Funde der Rechtschreibpruefung aus der Seitenleiste
      weichen — sie teilen sich denselben Platz. */
@@ -24032,6 +24042,13 @@ const KIteil = KI_BAUEN(B, {
      Antwort spät kommt: Über Ollama dauert eine Anfrage bis zu zehn
      Minuten, und in zehn Minuten schreibt ein Mensch weiter. */
   fassung:     ()     => (Bruecke ? Bruecke.fassung : null),
+});
+
+const Chat = CHAT_BAUEN(B, {
+  melde:        (...a) => melde(...a),
+  tafelOffen:   ()     => tafelOffen,
+  tafelZeigen:  ()     => B.tafelZeigen(),
+  slAuffrischen: ()    => { if (typeof slSchmalAuffrischen === 'function') slSchmalAuffrischen(); },
 });
 
 /* ============================================================
@@ -24183,6 +24200,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'F8') { e.preventDefault(); KIteil.kiKorrigieren(); return; }
   if (e.key === 'F9') { e.preventDefault(); Einstellungen.oeffnen(); return; }
   if (e.key === 'F5') { e.preventDefault(); B.tafelZeigen(); return; }
+  if ((e.ctrlKey || e.metaKey) && e.key === '/') { e.preventDefault(); Chat.umschalten(); return; }
   /* Zuerst die Fenster, die über allem liegen: Wer sie nicht mehr
      zubekommt, kommt an gar nichts mehr heran. Ein Rückfrage-Kasten liegt
      noch darüber und bringt seinen eigenen Ausgang mit — solange einer
@@ -24315,11 +24333,39 @@ $('zettel').addEventListener('change', () => {
 $('btn-ki').addEventListener('click', () => KIteil.kiKorrigieren());
 $('btn-vorschlaege').addEventListener('click', () => KIteil.kiVorschlaege());
 $('btn-uebersetzen').addEventListener('click', () => KIteil.kiUebersetzen());
+$('btn-zusammenfassen').addEventListener('click', () => KIteil.kiZusammenfassen());
+$('ki-eigene-neu').addEventListener('click', () => KIteil.assistentErstellen());
+$('ki-anbieter-link').addEventListener('click', () => Einstellungen.eigenenAnbieterHinzufuegen());
+
+/* Das schmale Symbolband ganz rechts. Es zeigt an, welcher der drei
+   Bereiche gerade offen ist — „an" auf dem Knopf, nicht nur am Bereich
+   selbst, sonst müsste man erst hinsehen, um zu wissen, was gerade zu
+   sehen ist. */
+function slSchmalAuffrischen() {
+  $('sl-suchen').classList.toggle('sl-schmal__knopf--an', !$('suchleiste').hidden);
+  $('sl-chat').classList.toggle('sl-schmal__knopf--an', tafelOffen && !$('tafel-chat').hidden);
+  $('sl-schreibhilfe').classList.toggle('sl-schmal__knopf--an', tafelOffen && $('tafel-chat').hidden);
+}
+$('sl-suchen').addEventListener('click', () => {
+  sucheZeigen($('suchleiste').hidden);
+  slSchmalAuffrischen();
+});
+$('sl-chat').addEventListener('click', () => { Chat.umschalten(); slSchmalAuffrischen(); });
+$('sl-schreibhilfe').addEventListener('click', () => {
+  /* Ist der Chat gerade offen, soll der Knopf zur Schreibhilfe zurück
+     führen, nicht die Tafel zumachen — dasselbe, was „Zur Schreibhilfe"
+     im Chat selbst tut. Ist die Tafel dagegen zu, öffnet er sie. */
+  if (tafelOffen && !$('tafel-chat').hidden) Chat.verbergen();
+  else B.tafelZeigen();
+  slSchmalAuffrischen();
+});
+slSchmalAuffrischen();
 
 /* Die Einstellungsseite verstellt Schriftgröße, Helligkeit und die vier
    Ecken nicht selbst — sie ruft die Griffe hier. Sonst gäbe es zwei Stellen,
    die dasselbe tun, und irgendwann widersprächen sie sich. */
 Einstellungen.verbinde({
+  fenster:    (...a) => fenster(...a),
   zoom: () => zoom,
   zoomSetzen: setzeZoom,
   thema: () => thema,
@@ -24328,7 +24374,7 @@ Einstellungen.verbinde({
      von zehn Schaltern und stehen weiter unten in einer Liste — einzeln
      verdrahtet wären es zwanzig fast gleiche Zeilen, und die elfte
      vergisst man. */
-  neuZeichnen: () => KIteil.kiKnoepfeAuffrischen(),
+  neuZeichnen: () => { KIteil.kiKnoepfeAuffrischen(); KIteil.eigeneAssistentenBauen(); },
 
   /* Die Optionenseite füllt jetzt auch Listen, die das Programm führt. Sie
      hier zu reichen ist richtiger, als sie ein zweites Mal zu schreiben:
@@ -25007,6 +25053,7 @@ menueBauen();
 werkzeugeBauen();
 KIteil.empfaengerBauen();
 KIteil.kiKnoepfeAuffrischen();
+KIteil.eigeneAssistentenBauen();
 ansichtAnwenden();
 /* Erst die Schalter aus der Tabelle, dann das Übrige: „Steuerzeichen"
    fragt die fünf Formatierungszeichen ab, und die müssen dafür stehen. */

@@ -283,6 +283,21 @@ const anweisungVorschlaege = () =>
   + 'acht Wörtern, warum das leichter ist. '
   + 'Gibt es nichts zu verbessern, bleibt die Liste leer.';
 
+/* Zusammenfassen ist wieder etwas anderes: Das Ergebnis ersetzt den Text
+   nicht — es fasst ihn, in eigenen Worten, kurz zusammen, damit jemand ohne
+   Vorwissen weiß, worum es geht. */
+const anweisungZusammenfassung = () =>
+  'Fasse den folgenden Text in eigenen Worten zusammen. Nenne nur die '
+  + 'wichtigsten Aussagen, keine Nebensächlichkeiten. '
+  + 'Halte dich an das, was im Text steht — erfinde nichts dazu und lass '
+  + 'keine wichtige Aussage weg. '
+  + 'Schreibe in ganzen Sätzen, nicht als Stichpunkte, so kurz wie möglich, '
+  + 'aber verständlich für sich allein — auch für jemanden, der den Text '
+  + 'selbst nicht gelesen hat. '
+  + 'Der Text kann in jeder Sprache stehen; antworte in der Sprache des Textes. '
+  + 'Antworte ausschließlich mit der Zusammenfassung: keine Erklärung, keine '
+  + 'Anführungszeichen, keine Vorrede, keine Überschrift wie „Zusammenfassung:".';
+
 /* Der Bauplan der Antwort. Er wird als JSON-Schema mitgeschickt, und die
    Antwort MUSS ihm entsprechen — kein Fließtext, kein Code-Zaun, keine
    fehlenden Felder. Was früher als Bitte in der Anweisung stand, ist damit
@@ -357,38 +372,125 @@ const kostenLeeren = () => Speicher.loesch('kosten');
 
 /* ============================================================
    5. Welches Modell?
+
+   Drei Wege, nicht zwei: Claude im Netz, Ollama auf diesem Rechner — und,
+   seit hier, ein eigener Anbieter. Der dritte ist für alles, was weder das
+   eine noch das andere ist: ein Modell bei einem anderen Anbieter, eines
+   mit eigener Rechnung, oder eines, das Bilder versteht und deshalb für
+   die Bildanalyse taugt. Die Marke „eigen:" vor der ID hält ihn von den
+   beiden anderen auseinander, genau wie „ollama:" es für Ollama tut.
    ============================================================ */
 const OLLAMA_ADRESSE = 'http://localhost:11434';
 const OLLAMA_MARKE = 'ollama:';
 const OLLAMA_GEDULD = 600000;        // zehn Minuten: ohne Grafikkarte dauert es
+const EIGEN_MARKE = 'eigen:';
 
 const modellJetzt = () => Speicher.lies('modell', 'claude-opus-5');
 const modellSetzen = (wert) => Speicher.schreib('modell', wert);
 
 const istLokal = (modell) => String(modell || '').startsWith(OLLAMA_MARKE);
+const istEigenerAnbieter = (modell) => String(modell || '').startsWith(EIGEN_MARKE);
 
 /* „ollama:qwen3:8b" → „qwen3:8b". Der Doppelpunkt gehört zum Modellnamen
    dazu, deshalb wird nur die Marke vorne abgeschnitten, nicht gesplittet. */
 const lokalerName = (modell) => String(modell || '').slice(OLLAMA_MARKE.length);
+const eigenerAnbieterId = (modell) => String(modell || '').slice(EIGEN_MARKE.length);
 
 const schluesselLies = () => Speicher.lies('apiKey', '');
 const schluesselSetzen = (wert) => Speicher.schreib('apiKey', String(wert).trim());
 const schluesselLoeschen = () => Speicher.loesch('apiKey');
 
-/* Ein lokales Modell braucht keinen Schlüssel — ohne diese Unterscheidung
-   blieben die Knöpfe dort für immer grau. */
-const verfuegbar = () => istLokal(modellJetzt()) || !!schluesselLies();
+/* ------------------------------------------------------------
+   Eigene Anbieter.
+
+   Jeder trägt seine eigene Anschrift und seinen eigenen Schlüssel — anders
+   als bei Claude, wo ein Schlüssel für alle drei Modelle reicht. Deshalb
+   liegt der Schlüssel hier beim Anbieter, nicht in „apiKey".
+   ------------------------------------------------------------ */
+/* Wofür ein Anbieter taugt — dieselbe Liste wie im Wochenendentwurf, als
+   Kennzeichnung, nicht als Schranke: Lunivo fragt heute noch keinen
+   Anbieter gezielt nach „Audioverarbeitung", aber die Wahl steht schon,
+   für den Tag, an dem eine dieser Aufgaben hinzukommt — und damit man auf
+   einen Blick sieht, dass „gpt-4o-mini" hier auch Bilder versteht, ohne
+   im Modellnamen danach zu suchen. */
+const ANBIETER_TAGS = [
+  ['text', 'Text'],
+  ['bilder', 'Bilder'],
+  ['einbettungen', 'Einbettungen'],
+  ['audio', 'Audioverarbeitung'],
+  ['moderation', 'Inhaltsmoderation'],
+  ['echtzeit', 'Echtzeitaufgaben'],
+  ['programmieren', 'Hilfe zum Programmieren'],
+  ['visuell', 'Visuelle Analyse'],
+];
+const ANBIETER_TAG_NAMEN = Object.fromEntries(ANBIETER_TAGS);
+
+const Anbieter = {
+  liste() {
+    return Speicher.lies('anbieter', []);
+  },
+  schreib(liste) {
+    Speicher.schreib('anbieter', liste);
+  },
+  holen(id) {
+    return this.liste().find((a) => a.id === id) || null;
+  },
+  hinzufuegen({ name, url, schluessel, modell, verwendungFuer }) {
+    const liste = this.liste();
+    const gueltig = new Set(ANBIETER_TAGS.map(([k]) => k));
+    const eintrag = {
+      id: 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      name: String(name || '').trim().slice(0, 60) || 'Eigenes Modell',
+      url: String(url || '').trim().replace(/\/+$/, ''),
+      schluessel: String(schluessel || '').trim(),
+      modell: String(modell || '').trim(),
+      verwendungFuer: Array.isArray(verwendungFuer)
+        ? verwendungFuer.filter((t) => gueltig.has(t))
+        : ['text'],
+    };
+    liste.push(eintrag);
+    this.schreib(liste);
+    return eintrag;
+  },
+  entfernen(id) {
+    this.schreib(this.liste().filter((a) => a.id !== id));
+  },
+};
+
+/* Ein lokales Modell und ein eigener Anbieter brauchen keinen der beiden
+   „apiKey" — der eine gar keinen Schlüssel, der andere seinen eigenen.
+   Ohne diese Unterscheidung blieben die Knöpfe dort für immer grau. */
+const verfuegbar = () => {
+  const modell = modellJetzt();
+  if (istEigenerAnbieter(modell)) return !!Anbieter.holen(eigenerAnbieterId(modell));
+  return istLokal(modell) || !!schluesselLies();
+};
 
 /* ============================================================
-   6. Eine Anfrage, drei Anwendungen
+   6. Eine Anfrage, viele Anwendungen
 
    Korrigieren, Übersetzen und Vorschläge unterscheiden sich nur in der
-   Anweisung — alles andere ist dasselbe.
-   ============================================================ */
+   Anweisung — alles andere ist dasselbe. Der Chat unterscheidet sich in
+   einem zweiten Punkt: „text" ist dort nicht ein Stück, sondern der ganze
+   bisherige Verlauf. Beide Formen gehen in dieselbe Anfrage — eine zweite
+   Anfrage-Art für den Chat zu bauen hieße, denselben Weg zu Claude und zu
+   Ollama ein zweites Mal zu legen. */
 async function anfrage(anweisung, text, bauplan) {
-  return istLokal(modellJetzt())
+  const modell = modellJetzt();
+  if (istEigenerAnbieter(modell)) {
+    return eigenerAnbieterAnfrage(Anbieter.holen(eigenerAnbieterId(modell)), anweisung, text, bauplan);
+  }
+  return istLokal(modell)
     ? ollamaAnfrage(anweisung, text, bauplan)
     : claudeAnfrage(anweisung, text, bauplan);
+}
+
+/* Ein Stück Text wird zu einer einzelnen Frage. Ein Verlauf — Array aus
+   { rolle: 'mensch'|'ki', text } — bleibt, was er ist: mehrere Runden,
+   damit die KI sich an das vorher Gesagte hält. */
+function alsNachrichten(text) {
+  if (!Array.isArray(text)) return [{ role: 'user', content: text }];
+  return text.map((z) => ({ role: z.rolle === 'ki' ? 'assistant' : 'user', content: z.text }));
 }
 
 async function claudeAnfrage(anweisung, text, bauplan) {
@@ -406,7 +508,7 @@ async function claudeAnfrage(anweisung, text, bauplan) {
        für sich genommen nichts. */
     max_tokens: 16000,
     system: anweisung,
-    messages: [{ role: 'user', content: text }],
+    messages: alsNachrichten(text),
   };
 
   const ausgabe = {};
@@ -514,10 +616,7 @@ async function ollamaAnfrage(anweisung, text, bauplan) {
     stream: false,
     /* Die Anweisung steht als „system", genau wie bei Claude — sonst
        korrigierte der eigene Rechner nach anderen Regeln. */
-    messages: [
-      { role: 'system', content: anweisung },
-      { role: 'user',   content: text },
-    ],
+    messages: [{ role: 'system', content: anweisung }, ...alsNachrichten(text)],
     /* Wenig Fantasie: Korrigieren ist kein Dichten. Ohne diese Zeile
        schreiben die kleinen Modelle gern ganze Sätze um. */
     options: { temperature: 0.2 },
@@ -589,6 +688,80 @@ async function ollamaAnfrage(anweisung, text, bauplan) {
   }
 }
 
+/* ------------------------------------------------------------
+   Dieselbe Anfrage, an einen Anbieter, den Kay selbst eingetragen hat.
+
+   Die Schnittstelle ist die, die inzwischen die meisten Anbieter neben
+   OpenAI selbst sprechen: POST an „<Anschrift>/chat/completions" mit
+   Modell und Nachrichten, Schlüssel im „Authorization"-Kopf. Was für
+   Claude und Ollama eigene Funktionen sind, weil ihre Schnittstellen sich
+   unterscheiden, ist hier eine dritte — dieselbe Sorte Anfrage, ein
+   dritter Zielort.
+   ------------------------------------------------------------ */
+async function eigenerAnbieterAnfrage(anbieter, anweisung, text, bauplan) {
+  if (!anbieter) {
+    return { fehler: 'Der gewählte Anbieter ist nicht mehr da. In den Einstellungen '
+                   + 'neu wählen oder neu anlegen.' };
+  }
+  if (!anbieter.modell) {
+    return { fehler: 'Für „' + anbieter.name + '" ist kein Modell eingetragen.' };
+  }
+
+  const bitte = {
+    model: anbieter.modell,
+    messages: [{ role: 'system', content: anweisung }, ...alsNachrichten(text)],
+  };
+  /* Ein Bauplan ist hier nur ein Versuch, kein Versprechen: „response_format"
+     mit einem JSON-Schema versteht nicht jeder Anbieter, der sich sonst wie
+     OpenAI verhält. Klappt es nicht, meldet der Anbieter selbst einen Fehler
+     — besser als so zu tun, als gäbe es die Funktion nicht. */
+  if (bauplan) {
+    bitte.response_format = {
+      type: 'json_schema',
+      json_schema: { name: 'antwort', schema: bauplan, strict: true },
+    };
+  }
+
+  const abbruch = new AbortController();
+  const wecker = setTimeout(() => abbruch.abort(), 90000);
+
+  try {
+    const antwort = await fetch(anbieter.url + '/chat/completions', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        ...(anbieter.schluessel ? { authorization: 'Bearer ' + anbieter.schluessel } : {}),
+      },
+      body: JSON.stringify(bitte),
+      signal: abbruch.signal,
+    });
+
+    if (!antwort.ok) {
+      let zusatz = '';
+      try { zusatz = (await antwort.json())?.error?.message || ''; } catch (e) { /* egal */ }
+      return { fehler: '„' + anbieter.name + '" meldet Fehler ' + antwort.status
+                     + (zusatz ? ' (' + zusatz + ')' : '') };
+    }
+
+    const daten = await antwort.json();
+    const ergebnis = daten?.choices?.[0]?.message?.content;
+    return ergebnis ? { ergebnis } : { fehler: 'Es kam keine Antwort zurück.' };
+
+  } catch (fehler) {
+    if (fehler.name === 'AbortError') {
+      return { fehler: '„' + anbieter.name + '" hat zu lange gebraucht. Bitte noch '
+                     + 'einmal versuchen.' };
+    }
+    if (fehler instanceof TypeError) {
+      return { fehler: '„' + anbieter.name + '" ist unter ' + anbieter.url + ' nicht zu '
+                     + 'erreichen. Stimmt die URL?' };
+    }
+    return { fehler: 'Es hat nicht geklappt: ' + fehler.message };
+  } finally {
+    clearTimeout(wecker);
+  }
+}
+
 /* Denkmodelle schreiben ihr Grübeln in <think>-Klammern mit. Ollama trennt
    es sauber ab, sobald es vom Denken weiß — nur eben nicht bei jedem Modell.
    Was durchrutscht, hat im Brief eines Menschen nichts zu suchen. */
@@ -605,6 +778,24 @@ async function ollamaModelle() {
   if (!antwort.ok) throw new Error('Fehler ' + antwort.status);
   const daten = await antwort.json();
   return sortiereModelle((daten?.models || []).map((m) => m.name).filter(Boolean));
+}
+
+/* Welche Modelle bietet ein eigener Anbieter an? Dieselbe Frage wie bei
+   Ollama, nur an einen anderen Dienst gestellt: GET „<Anschrift>/models",
+   wie es OpenAI und die meisten Anbieter, die sich wie OpenAI verhalten,
+   beantworten. Ohne diese Liste müsste man den Modellnamen von einer
+   fremden Seite abschreiben, Buchstabe für Buchstabe. */
+async function anbieterModelle(url, schluessel) {
+  const antwort = await fetch(url + '/models', {
+    headers: {
+      accept: 'application/json',
+      ...(schluessel ? { authorization: 'Bearer ' + schluessel } : {}),
+    },
+  });
+  if (!antwort.ok) throw new Error('Fehler ' + antwort.status);
+  const daten = await antwort.json();
+  const namen = (daten?.data || []).map((m) => m.id).filter(Boolean);
+  return sortiereModelle(namen);
 }
 
 /* Alphabetisch allein wäre schädlich: „codellama" stünde ganz oben und damit
@@ -642,6 +833,14 @@ async function korrigieren(text) {
 /** Übersetzen. Dieselbe Anfrage, andere Anweisung. */
 async function uebersetzen(text, sprache) {
   const { ergebnis, fehler, cent } = await anfrage(anweisungUebersetzung(sprache), text);
+  if (fehler) return { fehler };
+  if (cent) merkeKosten(cent);
+  return { text: ergebnis, cent };
+}
+
+/** Zusammenfassen. Gibt { text } oder { fehler } zurück. */
+async function zusammenfassen(text) {
+  const { ergebnis, fehler, cent } = await anfrage(anweisungZusammenfassung(), text);
   if (fehler) return { fehler };
   if (cent) merkeKosten(cent);
   return { text: ergebnis, cent };
@@ -812,20 +1011,115 @@ async function synonyme(wort, umgebung) {
 }
 
 /* ============================================================
-   8. Die Sicherung — die Brücke zwischen den Geräten
+   8. Eigene Assistenten
+
+   Korrigieren, Übersetzen und Zusammenfassen decken ab, was die meisten
+   brauchen — aber nicht das Eigene: „Fakten prüfen", „In Stichpunkte
+   fassen", „Förmlicher". Ein Assistent ist nichts als ein Name und ein
+   Prompt; die Anfrage dahinter ist dieselbe wie überall hier.
+
+   Zwei Wirkungen, „modus" genannt:
+     · ersetzen — wie Korrigieren: das Ergebnis tritt an die Stelle des Textes.
+     · hinweis  — wie Zusammenfassen: das Ergebnis steht als Karte daneben.
+   ============================================================ */
+const Assistenten = {
+  liste() {
+    return Speicher.lies('assistenten', []);
+  },
+  schreib(liste) {
+    Speicher.schreib('assistenten', liste);
+  },
+  hinzufuegen({ name, prompt, modus }) {
+    const liste = this.liste();
+    const eintrag = {
+      id: 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+      name: String(name || '').trim().slice(0, 40),
+      prompt: String(prompt || '').trim().slice(0, 2000),
+      modus: modus === 'ersetzen' ? 'ersetzen' : 'hinweis',
+    };
+    liste.push(eintrag);
+    this.schreib(liste);
+    return eintrag;
+  },
+  entfernen(id) {
+    this.schreib(this.liste().filter((a) => a.id !== id));
+  },
+};
+
+function anweisungAssistent(prompt, modus) {
+  const rahmen = modus === 'ersetzen'
+    ? 'Wende die folgende Anweisung auf den Text an und antworte ausschließlich '
+      + 'mit dem Ergebnis: keine Erklärung, keine Anführungszeichen, keine '
+      + 'Vorrede. Absätze und Zeilenumbrüche bleiben, wie sie sind — gib genau '
+      + 'so viele Zeilen zurück, wie hereinkamen. '
+    : 'Wende die folgende Anweisung auf den Text an und antworte in ganzen '
+      + 'Sätzen. Das hier ist ein Hinweis, kein Textaustausch — du darfst frei '
+      + 'antworten, aber beim Text bleiben. ';
+  return rahmen + 'Die Anweisung: „' + prompt + '"';
+}
+
+/** Einen eigenen Assistenten ausführen. Gibt { text } oder { fehler } zurück. */
+async function assistentAusfuehren(assistent, text) {
+  const { ergebnis, fehler, cent } =
+    await anfrage(anweisungAssistent(assistent.prompt, assistent.modus), text);
+  if (fehler) return { fehler };
+  if (cent) merkeKosten(cent);
+  return { text: ergebnis, cent };
+}
+
+/* ============================================================
+   9. Der Chat
+
+   Alles bisher Gebaute stellt eine Frage und bekommt eine Antwort — der
+   Chat stellt mehrere, und jede kennt die vorigen. Er bekommt den Text des
+   Dokuments als Auskunft mit, damit „was fehlt in diesem Brief noch"
+   funktioniert, ohne dass jemand ihn erst hineinkopiert.
+   ============================================================ */
+function anweisungChat(dokumentText) {
+  let anweisung =
+    'Du bist die KI-Hilfe in Lunivo-Office, einem Schreibprogramm für einen '
+    + 'Menschen mit Legasthenie. Beantworte Fragen zum Schreiben und zum '
+    + 'Dokument unten kurz und in einfachen Worten — keine Fachwörter ohne '
+    + 'Erklärung. Schlägst du einen Satz oder Text vor, setz ihn in '
+    + 'Anführungszeichen, damit er sich vom Rest der Antwort abhebt.';
+
+  if (dokumentText && dokumentText.trim()) {
+    anweisung += '\n\nDas Dokument, um das es geht:\n„' + dokumentText.trim() + '"';
+  } else {
+    anweisung += '\n\nEs steht noch kein Text im Dokument.';
+  }
+  return anweisung;
+}
+
+/** Eine Chat-Runde. „verlauf" ist [{ rolle: 'mensch'|'ki', text }, …], die
+    letzte Zeile die neue Frage. Gibt { text } oder { fehler } zurück. */
+async function chatNachricht(verlauf, dokumentText) {
+  const { ergebnis, fehler, cent } = await anfrage(anweisungChat(dokumentText), verlauf);
+  if (fehler) return { fehler };
+  if (cent) merkeKosten(cent);
+  return { text: ergebnis, cent };
+}
+
+/* ============================================================
+   10. Die Sicherung — die Brücke zwischen den Geräten
 
    Handy, App und Lunivo-Office lernen jedes für sich. „Sichern" legt
    alles Gelernte als Text ab, „Einspielen" nimmt ihn anderswo wieder auf.
 
-   Zwei Dinge bleiben bewusst draußen:
+   Drei Dinge bleiben bewusst draußen:
      · Der API-Schlüssel. Ein Schlüssel gehört nicht in einen Text, den man
        durch die Gegend schickt — er ist anderswo in einer Minute neu
        eingetragen.
+     · Die eigenen Anbieter. Aus demselben Grund wie der Schlüssel — jeder
+       trägt seinen eigenen. Wer sie mitnehmen will, trägt sie auf dem
+       anderen Gerät einmal neu ein; das ist der bewusste Weg, kein
+       Umstand.
      · Der Zähler „gezeigt". Er zählt Prüfungen auf DIESEM Gerät.
 
    Eingespielt wird ZUSAMMENGEFÜHRT, nicht ersetzt: Was hier schon gelernt
    war, bleibt. Sonst löschte die Reise vom Handy zum PC das Gelernte des
-   PCs aus.
+   PCs aus. Das gilt auch für die eigenen Assistenten — sie tragen keinen
+   Schlüssel, nur Name und Prompt, und dürfen deshalb mit.
    ============================================================ */
 const SICHERUNG_FASSUNG = 1;
 const SICHERBAR = ['empfaenger', 'tonfall', 'modell', 'sprache'];
@@ -844,6 +1138,7 @@ function sicherungBauen() {
     woerter: g.woerter,
     inRuhe: g.inRuhe,
     einstellungen,
+    assistenten: Assistenten.liste(),
   });
 }
 
@@ -884,7 +1179,24 @@ function sicherungEinspielen(roh) {
     if (SICHERBAR.includes(name)) Speicher.schreib(name, wert);
   }
 
-  return { neueWoerter, neueRuhe };
+  /* Zusammengeführt, nicht ersetzt: gleicher Name heißt „ist schon da,
+     überspringen" — wie beim Wort oben zählt nur, was neu dazukommt, ein
+     zweiter Assistent mit demselben Namen wäre eine Verwechslung mehr,
+     keine Verbesserung. */
+  let neueAssistenten = 0;
+  if (Array.isArray(daten.assistenten)) {
+    const vorhandeneNamen = new Set(Assistenten.liste().map((a) => a.name));
+    for (const roh of daten.assistenten) {
+      if (!roh || typeof roh.name !== 'string' || typeof roh.prompt !== 'string') continue;
+      if (!roh.name.trim() || !roh.prompt.trim()) continue;
+      if (vorhandeneNamen.has(roh.name)) continue;
+      Assistenten.hinzufuegen({ name: roh.name, prompt: roh.prompt, modus: roh.modus });
+      vorhandeneNamen.add(roh.name);
+      neueAssistenten++;
+    }
+  }
+
+  return { neueWoerter, neueRuhe, neueAssistenten };
 }
 
 /* Das Gelernte gilt ab dem ersten Zeichen — nicht erst, wenn jemand die
@@ -892,12 +1204,15 @@ function sicherungEinspielen(roh) {
 Gedaechtnis.anPruefungGeben();
 
 return {
-  Speicher, Gedaechtnis,
+  Speicher, Gedaechtnis, Assistenten,
   EMPFAENGER, EMPFAENGER_STANDARD, empfaengerLies,
   zettelLies, ZETTEL_GRENZE, SPRACHEN,
   verfuegbar, modellJetzt, modellSetzen, istLokal, lokalerName, OLLAMA_MARKE,
+  Anbieter, istEigenerAnbieter, eigenerAnbieterId, EIGEN_MARKE, anbieterModelle,
+  ANBIETER_TAGS, ANBIETER_TAG_NAMEN,
   schluesselLies, schluesselSetzen, schluesselLoeschen,
-  ollamaModelle, korrigieren, uebersetzen, vorschlaege, synonyme, sprachfunde,
+  ollamaModelle, korrigieren, uebersetzen, zusammenfassen, vorschlaege, synonyme, sprachfunde,
+  assistentAusfuehren, chatNachricht,
   centFuer, alsGeld, kostenStand, kostenLeeren,
   sicherungBauen, sicherungEinspielen,
 };

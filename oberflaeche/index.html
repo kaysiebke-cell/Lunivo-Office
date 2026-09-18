@@ -179,39 +179,108 @@
        title="Breite der Seitenleiste ziehen"></div>
 
   <aside class="tafel" id="tafel" aria-label="Schreibhilfe">
-    <div class="tafel__kopf">
-      <h1 class="tafel__name">Schreib <span>|</span> hilfe</h1>
-      <p class="tafel__satz">Sucht die Fehler, die ein Rechtschreibprüfer nicht finden kann.</p>
-      <button class="knopf" id="btn-pruefen">Prüfen</button>
+    <div id="tafel-schreibhilfe">
+      <div class="tafel__kopf">
+        <h1 class="tafel__name">Schreib <span>|</span> hilfe</h1>
+        <p class="tafel__satz">Sucht die Fehler, die ein Rechtschreibprüfer nicht finden kann.</p>
+        <button class="knopf" id="btn-pruefen">Prüfen</button>
 
-      <!-- Schnellzugriff auf die Stufen. Er steht hier und nicht im Menü,
-           weil das der Ort ist, an den man beim Schreiben ohnehin sieht.
-           Vorher lagen die drei Schalter in Extras ▸ Beim Schreiben — wer
-           sie nicht kennt, findet sie dort nie, und wer sie sucht, hat
-           schon aufgegeben. -->
-      <div class="schnell" id="hilfe-schnell" role="group"
-           aria-label="Welche Hilfe an ist"></div>
-    </div>
-
-    <div class="tafel__funde" id="funde" role="region" aria-live="polite" aria-label="Gefundene Stellen"></div>
-
-    <div class="tafel__fuss">
-      <div class="tafel__ueberschrift">Für wen?</div>
-      <div class="marken" id="empfaenger"></div>
-      <input class="zettel" id="zettel" type="text" placeholder="Worum geht’s? (freiwillig)"
-             aria-label="Worum geht’s? (freiwillig)">
-      <div class="ki">
-        <button class="knopf" id="btn-ki" disabled>KI-Korrektur</button>
-        <button class="knopf" id="btn-vorschlaege" disabled>Vorschläge</button>
-        <button class="knopf" id="btn-uebersetzen" disabled>Übersetzen</button>
+        <!-- Schnellzugriff auf die Stufen. Er steht hier und nicht im Menü,
+             weil das der Ort ist, an den man beim Schreiben ohnehin sieht.
+             Vorher lagen die drei Schalter in Extras ▸ Beim Schreiben — wer
+             sie nicht kennt, findet sie dort nie, und wer sie sucht, hat
+             schon aufgegeben. -->
+        <div class="schnell" id="hilfe-schnell" role="group"
+             aria-label="Welche Hilfe an ist"></div>
       </div>
 
-      <!-- Warum die drei grau sind, und was dagegen hilft. Ohne diese Zeile
-           sieht man drei tote Knöpfe und weiß nicht, woran es liegt — der
-           Grund stand bisher nur in einem Tooltip, den niemand aufklappt. -->
-      <p class="ki__hinweis" id="ki-hinweis" hidden></p>
+      <div class="tafel__funde" id="funde" role="region" aria-live="polite" aria-label="Gefundene Stellen"></div>
+
+      <div class="tafel__fuss">
+        <div class="tafel__ueberschrift">Für wen?</div>
+        <div class="marken" id="empfaenger"></div>
+        <input class="zettel" id="zettel" type="text" placeholder="Worum geht’s? (freiwillig)"
+               aria-label="Worum geht’s? (freiwillig)">
+        <div class="ki">
+          <button class="knopf" id="btn-ki" disabled>KI-Korrektur</button>
+          <button class="knopf" id="btn-vorschlaege" disabled>Vorschläge</button>
+          <button class="knopf" id="btn-uebersetzen" disabled>Übersetzen</button>
+          <button class="knopf" id="btn-zusammenfassen" disabled>Zusammenfassen</button>
+        </div>
+
+        <!-- Eigene Assistenten: Name und Prompt, die man sich selbst anlegt.
+             Eigener Kopf mit Überschrift und Anlegen-Knopf, damit die Liste
+             darunter nicht wie ein Rest unter den vier festen Knöpfen wirkt,
+             sondern als eigener Bereich zu erkennen ist. -->
+        <div class="ki-eigene-kopf">
+          <span class="tafel__ueberschrift">Eigene Assistenten</span>
+          <button class="ki-eigene-neu" id="ki-eigene-neu" type="button"
+                  title="Neuen Assistenten anlegen" aria-label="Neuen Assistenten anlegen">+</button>
+        </div>
+        <div class="ki-eigene" id="ki-eigene"></div>
+
+        <!-- Derselbe Weg wie im Menüband und im Menü „KI" — hier, weil man
+             beim Schreiben ohnehin in diese Ecke sieht, nicht erst in die
+             Einstellungen muss, um zu wissen, dass es diesen Weg gibt. -->
+        <button class="ki-anbieter-link" id="ki-anbieter-link" type="button">
+          Eigenen Anbieter hinzufügen …
+        </button>
+
+        <!-- Warum die drei grau sind, und was dagegen hilft. Ohne diese Zeile
+             sieht man drei tote Knöpfe und weiß nicht, woran es liegt — der
+             Grund stand bisher nur in einem Tooltip, den niemand aufklappt. -->
+        <p class="ki__hinweis" id="ki-hinweis" hidden></p>
+      </div>
+    </div>
+
+    <!-- Der KI-Chat: ersetzt die Schreibhilfe-Ansicht, statt daneben zu
+         stehen — die Seitenleiste ist für beides nebeneinander zu schmal. -->
+    <div id="tafel-chat" hidden>
+      <div class="tafel__kopf">
+        <h1 class="tafel__name">KI <span>|</span> Chat</h1>
+        <p class="tafel__satz">Frag etwas zum Text oder zum Schreiben.</p>
+        <button class="knopf" id="chat-schliessen">Zur Schreibhilfe</button>
+      </div>
+
+      <div class="chat__verlauf" id="chat-verlauf" role="log" aria-live="polite"
+           aria-label="Gespräch mit der KI"></div>
+
+      <div class="chat__eingabe">
+        <textarea id="chat-eingabe" rows="2" placeholder="Frage schreiben …"
+                  aria-label="Nachricht an die KI"></textarea>
+        <button class="knopf" id="chat-senden">Senden</button>
+      </div>
     </div>
   </aside>
+
+  <!-- Das schmale Symbolband ganz rechts — Suchen, KI-Chat, Schreibhilfe.
+       Es steht für sich, unabhängig davon, ob die Tafel gerade offen ist
+       (F5 blendet nur sie aus, nicht dieses Band): der eine feste Ort, an
+       dem alle drei Seitenbereiche zu finden sind, statt verteilt auf
+       Menü, Menüband und Tastenkürzel. -->
+  <nav class="sl-schmal" id="sl-schmal" aria-label="Schnellzugriff auf Seitenbereiche">
+    <button class="sl-schmal__knopf" id="sl-suchen" type="button"
+            title="Suchen (Strg+F)" aria-label="Suchen">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.34-4.34"/>
+      </svg>
+    </button>
+    <button class="sl-schmal__knopf" id="sl-chat" type="button"
+            title="KI-Chat (Strg+/)" aria-label="KI-Chat">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719"/>
+      </svg>
+    </button>
+    <button class="sl-schmal__knopf" id="sl-schreibhilfe" type="button"
+            title="Seitenleiste Schreibhilfe (F5)" aria-label="Seitenleiste Schreibhilfe">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2z M15 3v18"/>
+      </svg>
+    </button>
+  </nav>
 </div>
 
 <!-- ============================================================
@@ -891,8 +960,20 @@
               <option value="claude-haiku-4-5">Günstig &amp; schnell · Haiku 4.5</option>
             </optgroup>
             <optgroup label="Auf diesem Rechner — kostenlos, ohne Internet" id="einst-modell-lokal"></optgroup>
+            <optgroup label="Eigene Anbieter" id="einst-modell-eigen"></optgroup>
           </select>
           <em class="feld__satz" id="einst-modell-hinweis"></em>
+        </div>
+
+        <!-- Eigene Anbieter: ein beliebiger Anbieter mit eigener Anschrift
+             und eigenem Schlüssel — für ein Modell, das weder Claude noch
+             Ollama ist, zum Beispiel eines, das auch Bilder versteht. -->
+        <div class="feld">
+          <span class="feld__name">Eigene Anbieter</span>
+          <em class="feld__satz">Ein Modell bei einem anderen Anbieter — eigene Anschrift, eigener
+            Schlüssel. Einmal eingetragen, steht es oben bei „KI-Modell" zur Wahl.</em>
+          <div class="anbieter-liste" id="einst-anbieter-liste"></div>
+          <button class="knopf" id="einst-anbieter-neu" type="button">Anbieter hinzufügen …</button>
         </div>
 
         <!-- „Für wen?" stand früher hier. Es ist jetzt die Frage in der
@@ -2251,6 +2332,8 @@
 <script src="js/bausteine.js"></script>
 <!-- Die KI: korrigieren, vorschlagen, übersetzen. Freiwillig. -->
 <script src="js/kiteil.js"></script>
+<!-- Der KI-Chat: freie Fragen zum Text, mehrere Runden. -->
+<script src="js/chat.js"></script>
 <!-- Referenzen: Fußnoten, Zitate, Verzeichnisse. -->
 <script src="js/referenzen.js"></script>
 <!-- Language Bridge: Zentrale Sprachprüfungs-Engine (hängt sich selbst in programm.js ein) -->

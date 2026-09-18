@@ -10,11 +10,13 @@
 
    WAS „umg" IST
 
-   Fuenf Namen, mehr braucht diese Datei vom Programm nicht. Vier davon sind
-   Handgriffe der Oberflaeche; der fuenfte, „fundeLeeren", ist der einzige
+   Sechs Namen, mehr braucht diese Datei vom Programm nicht. Fuenf davon
+   sind Handgriffe der Oberflaeche; „fundeLeeren" ist der einzige
    Schreibzugriff nach draussen: Wenn die KI Vorschlaege zeigt, muessen die
    Funde der Rechtschreibpruefung aus der Seitenleiste weichen — sie teilen
-   sich denselben Platz.
+   sich denselben Platz. „fenster" baut den Dialog, in dem ein eigener
+   Assistent angelegt wird — derselbe Baukasten, mit dem auch ein Baustein
+   oder eine Formatvorlage entsteht.
 
    Beim Messen sahen es erst sieben Namen aus. „geaendert" war keiner: Im
    KI-Block ist das ein eigener Zaehler und nicht das Flag des Programms.
@@ -46,6 +48,7 @@ const KI_KNOEPFE = [
   ['btn-ki', 'KI-Korrektur'],
   ['btn-vorschlaege', 'Vorschläge'],
   ['btn-uebersetzen', 'Übersetzen'],
+  ['btn-zusammenfassen', 'Zusammenfassen'],
 ];
 
 /* Solange kein Schlüssel da ist, sehen die drei Knöpfe blass aus — aber sie
@@ -316,6 +319,192 @@ async function kiUebersetzen() {
 }
 
 /* ------------------------------------------------------------
+   Die Hinweiskarte.
+
+   Manche Antworten dürfen den Text nicht einfach ersetzen — eine
+   Zusammenfassung lässt absichtlich das meiste weg, und „ersetzeErgebnis"
+   über den ganzen Text gelegt würde den Brief selbst wegwerfen. Sie stehen
+   deshalb als Karte in der Seitenleiste, wie ein Vorschlag, und werden nur
+   auf ausdrücklichen Wunsch vorn eingefügt. Zusammenfassen nutzt das
+   genauso wie ein eigener Assistent im Modus „Hinweis" — eine Karte, kein
+   zweites Stück Code. */
+let hinweisKarte = null;         // { titel, text, cent }
+
+function hinweisKarteZeigen(titel, text, cent) {
+  hinweisKarte = { titel, text: String(text).trim(), cent };
+  umg.fundeLeeren();
+  zeichneHinweisKarte();
+}
+
+function zeichneHinweisKarte() {
+  const liste = $('funde');
+  liste.innerHTML = '';
+  if (!hinweisKarte) return;
+
+  const karte = document.createElement('div');
+  karte.className = 'fund fund--vorschlag';
+
+  const sorte = document.createElement('span');
+  sorte.className = 'fund__sorte';
+  sorte.textContent = hinweisKarte.titel;
+  karte.appendChild(sorte);
+
+  const text = document.createElement('div');
+  text.className = 'fund__neu';
+  text.textContent = hinweisKarte.text;
+  karte.appendChild(text);
+
+  const knoepfe = document.createElement('div');
+  knoepfe.className = 'fund__knoepfe';
+
+  const einfuegen = document.createElement('button');
+  einfuegen.className = 'knopf knopf--klein';
+  einfuegen.textContent = 'Am Anfang einfügen';
+  einfuegen.addEventListener('click', () => {
+    Dokument.ersetze(0, 0, hinweisKarte.text + '\n\n');
+    hinweisKarte = null;
+    zeichneHinweisKarte();
+    melde('Eingefügt. Strg+Z macht es rückgängig.');
+  });
+  knoepfe.appendChild(einfuegen);
+
+  const verwerfen = document.createElement('button');
+  verwerfen.className = 'knopf knopf--klein';
+  verwerfen.textContent = 'Verwerfen';
+  verwerfen.addEventListener('click', () => {
+    hinweisKarte = null;
+    zeichneHinweisKarte();
+  });
+  knoepfe.appendChild(verwerfen);
+
+  karte.appendChild(knoepfe);
+  liste.appendChild(karte);
+}
+
+/* ------------------------------------------------------------
+   Zusammenfassen.
+   ------------------------------------------------------------ */
+async function kiZusammenfassen() {
+  const ergebnis = await kiLauf('Die KI liest den ganzen Text, um ihn zusammenzufassen …',
+                                (text) => KI.zusammenfassen(text));
+  if (!ergebnis) return;
+
+  hinweisKarteZeigen('Zusammenfassung', ergebnis.text, ergebnis.cent);
+  melde('Zusammengefasst.' + preisAnhang(ergebnis.cent));
+}
+
+/* ------------------------------------------------------------
+   Eigene Assistenten.
+
+   Ein Assistent ist ein Name und ein Prompt, mehr nicht — die Anfrage
+   dahinter läuft über denselben „kiLauf" wie die drei Knöpfe oben. Der
+   Modus entscheidet nur, was mit dem Ergebnis geschieht: „ersetzen" wie
+   Korrigieren, „hinweis" wie Zusammenfassen.
+   ------------------------------------------------------------ */
+async function kiAssistentAusfuehren(assistent) {
+  if (assistent.modus === 'ersetzen') {
+    const vorher = Dokument.lies().text;
+    const ergebnis = await kiLauf('„' + assistent.name + '" arbeitet …',
+                                  (text) => KI.assistentAusfuehren(assistent, text));
+    if (!ergebnis) return;
+
+    if (ergebnis.text.trim() === vorher.trim()) {
+      melde('„' + assistent.name + '" hat nichts geändert.' + preisAnhang(ergebnis.cent));
+      return;
+    }
+    const { zeilen, ganz } = ersetzeErgebnis(vorher, ergebnis.text);
+    leereFunde();
+    melde((ganz
+      ? 'Ersetzt. Strg+Z macht es rückgängig.'
+      : zeilen + (zeilen === 1 ? ' Absatz geändert.' : ' Absätze geändert.')
+        + ' Strg+Z macht es rückgängig.') + preisAnhang(ergebnis.cent));
+    return;
+  }
+
+  const ergebnis = await kiLauf('„' + assistent.name + '" arbeitet …',
+                                (text) => KI.assistentAusfuehren(assistent, text));
+  if (!ergebnis) return;
+  hinweisKarteZeigen(assistent.name, ergebnis.text, ergebnis.cent);
+  melde('„' + assistent.name + '" fertig.' + preisAnhang(ergebnis.cent));
+}
+
+/* Name, Prompt, Modus erfragen — über den Dialogbaukasten aus programm.js,
+   denselben, mit dem auch ein Baustein oder eine Formatvorlage angelegt
+   wird. Eine eigene Fenstersorte dafür wäre nur eine vierte Abschrift
+   desselben Kastens. */
+function assistentErstellen() {
+  umg.fenster('Neuen Assistenten erstellen', [
+    { art: 'satz', text: 'Ein eigener Knopf für eine Textaufgabe, die immer '
+                       + 'wiederkehrt — zum Beispiel „Fakten prüfen" oder '
+                       + '„In Stichpunkte fassen".' },
+    { schluessel: 'name', name: 'Name', art: 'text', wert: '' },
+    { schluessel: 'prompt', name: 'Prompt', art: 'flaeche', zeilen: 4, wert: '' },
+    { schluessel: 'modus', name: 'Aktion', art: 'auswahl', werte: [
+        ['hinweis', 'Hinweis — zeigt das Ergebnis als Karte'],
+        ['ersetzen', 'Ersetzen — tauscht den Text aus'],
+      ], wert: 'hinweis' },
+  ], (werte) => {
+    const name = (werte.name || '').trim();
+    const prompt = (werte.prompt || '').trim();
+    if (!name || !prompt) {
+      melde('Name und Prompt werden gebraucht — nichts angelegt.');
+      return;
+    }
+    KI.Assistenten.hinzufuegen({ name, prompt, modus: werte.modus });
+    eigeneAssistentenBauen();
+    melde('„' + name + '" angelegt.');
+  }, 'Erstellen');
+}
+
+/* Die Knöpfe der eigenen Assistenten, unter der Überschrift „Eigene
+   Assistenten" mit ihrem eigenen Anlegen-Knopf (im HTML, fest verdrahtet —
+   siehe unten). Diese Funktion füllt nur noch die Liste selbst: ein
+   Assistent je Zeile, mit „×" daneben zum Wegnehmen — ohne Rückfrage, wie
+   „Löschen" bei den Textbausteinen auch ohne sie auskommt. Ist noch
+   keiner angelegt, steht das als Satz da statt als leere Fläche, die wie
+   ein Fehler aussieht. */
+function eigeneAssistentenBauen() {
+  const kasten = $('ki-eigene');
+  if (!kasten) return;
+  kasten.innerHTML = '';
+
+  const liste = KI.Assistenten.liste();
+  if (!liste.length) {
+    const leer = document.createElement('p');
+    leer.className = 'ki-eigene__leer';
+    leer.textContent = 'Noch keiner angelegt.';
+    kasten.appendChild(leer);
+    return;
+  }
+
+  for (const assistent of liste) {
+    const zeile = document.createElement('div');
+    zeile.className = 'ki-eigene__zeile';
+
+    const lauf = document.createElement('button');
+    lauf.className = 'knopf knopf--klein';
+    lauf.textContent = assistent.name;
+    lauf.title = assistent.prompt + (assistent.modus === 'ersetzen'
+      ? ' (ersetzt den Text)' : ' (zeigt einen Hinweis)');
+    lauf.addEventListener('click', () => kiAssistentAusfuehren(assistent));
+    zeile.appendChild(lauf);
+
+    const weg = document.createElement('button');
+    weg.className = 'knopf knopf--klein ki-eigene__weg';
+    weg.textContent = '×';
+    weg.title = '„' + assistent.name + '" löschen';
+    weg.addEventListener('click', () => {
+      KI.Assistenten.entfernen(assistent.id);
+      eigeneAssistentenBauen();
+      melde('„' + assistent.name + '" gelöscht.');
+    });
+    zeile.appendChild(weg);
+
+    kasten.appendChild(zeile);
+  }
+}
+
+/* ------------------------------------------------------------
    Vorschläge.
 
    Sie kommen nicht als fertiger Text zurück, sondern als Liste einzelner
@@ -456,8 +645,8 @@ function empfaengerBauen() {
    beansprucht: Vorher stand dort dreimal „vorschlaege = []", ein roher
    Griff in fremden Zustand. Jetzt hat er einen Namen. */
 return {
-  kiKorrigieren, kiVorschlaege, kiUebersetzen,
-  kiKnoepfeAuffrischen, empfaengerBauen,
+  kiKorrigieren, kiVorschlaege, kiUebersetzen, kiZusammenfassen,
+  kiKnoepfeAuffrischen, empfaengerBauen, eigeneAssistentenBauen, assistentErstellen,
   vorschlaegeLeeren: () => { vorschlaege = []; },
 };
 }
