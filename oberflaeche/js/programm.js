@@ -2937,6 +2937,16 @@ function fenster(titel, felder, beiOk, knopfName = 'Übernehmen', breit = false,
       inhalt.appendChild(p);
       continue;
     }
+    /* Eine kleine Zwischenüberschrift, wenn mehrere Felder zu einer Gruppe
+       gehören — „Anbieter" vor Name/URL/Schlüssel etwa. Kein eigenes Feld,
+       nichts in „eingaben", nur ein Wegweiser im langen Formular. */
+    if (feldChen.art === 'unterkopf') {
+      const h = document.createElement('p');
+      h.className = 'dialog__unterkopf';
+      h.textContent = feldChen.text;
+      inhalt.appendChild(h);
+      continue;
+    }
     /* Ein fertig gebauter Block. Für Seiten, die mehr sind als ein Absatz —
        die Hilfe etwa, die eine Treppe zeichnet statt einen Satz zu schreiben. */
     if (feldChen.art === 'knoten') {
@@ -4431,20 +4441,14 @@ B.linkKopieren = async (a) => {
   melde(ging ? 'Adresse kopiert.' : 'Die Adresse ließ sich nicht kopieren: ' + ziel);
 };
 
+/* Ein eigenes Fenster stand hier einmal — dieselbe Sackgasse wie eine
+   Tafel, die das Ergebnis sowieso zeigt, plus ein Fenster obendrauf.
+   Jetzt öffnet sich die Kommentare-Tafel, und das Eingabefeld erscheint
+   darin — ein Weg, ob der Kommentar über das Menüband, das
+   Rechtsklickmenü oder die Tafel selbst angelegt wird. */
 B.kommentar = () => {
-  auswahlMerken();
-  fenster('Kommentar', [
-    { art: 'satz', text: 'Steht am Rand und wird nicht mitgedruckt.' },
-    { schluessel: 'text', name: 'Anmerkung' },
-  ], (werte) => {
-    const text = werte.text.trim();
-    if (!text) return;
-    auswahlZurueck();
-    const marke = '<span class="kommentar" contenteditable="false" title="'
-                + text.replace(/"/g, '&quot;') + '">✎</span>';
-    elementEinfuegen(marke);
-    melde('Kommentar gesetzt — er wird nicht mitgedruckt.');
-  }, 'Setzen');
+  liTafelKommentareZeigen();
+  kommentarFormularZeigen();
 };
 
 /* ============================================================
@@ -9220,8 +9224,12 @@ const REGISTER = REGISTER_BAUEN(B, {
   kiUebersetzen:    ()     => KIteil.kiUebersetzen(),
   kiZusammenfassen: ()     => KIteil.kiZusammenfassen(),
   assistentErstellen: ()  => KIteil.assistentErstellen(),
+  textAktionDialog: ()     => KIteil.textAktionDialog(),
+  /* Führt direkt zur zentralen Konfiguration statt zu einem eigenen
+     Dialog im Menüband — das Schnellmenü/Menüband bekommt keine eigene
+     Provider-/API-Konfiguration, siehe Teil A2 des Auftrags. */
+  kiEinstellungenOeffnen: () => Einstellungen.oeffnen('ki'),
   chatUmschalten:   ()     => Chat.umschalten(),
-  eigenenAnbieterHinzufuegen: () => Einstellungen.eigenenAnbieterHinzufuegen(),
   sucheZeigen:      (an)   => sucheZeigen(an),
   setzeLayout:      (wahl) => setzeLayout(wahl),
   setzePapier:      (art)  => setzePapier(art),
@@ -16932,6 +16940,11 @@ B.kommentarWeg = () => {
   marke.remove();
   kommentarStelle = -1;
   geaendertMelden();
+  /* „geaendertMelden()" ist der Zuhörer selbst, kein Auslöser — er räumt
+     nicht die Tafel und nicht den Rand auf. Das muss hier stehen, sonst
+     zeigen beide den gelöschten Kommentar weiter, als wäre nichts
+     geschehen. */
+  kommentareZeichnen();
   melde('Kommentar gelöscht: ' + text);
 };
 
@@ -16941,8 +16954,394 @@ B.kommentareAlleWeg = () => {
   for (const marke of alle) marke.remove();
   kommentarStelle = -1;
   geaendertMelden();
+  kommentareZeichnen();
   melde(alle.length + ' Kommentare gelöscht.');
 };
+
+/* ============================================================
+   Die Kommentare-Tafel (links) und die Karten am Rand des Blatts.
+
+   Ein Kommentar existiert genau einmal im Dokument — als
+   „span.kommentar" —, wird aber an zwei Stellen gezeigt: als Zeile in
+   der Tafel (zum Überblicken, Sortieren, Filtern) und als Karte am Rand
+   des Blatts (auf Höhe seiner Stelle im Text, wie im Vorbild WPS). Beide
+   Ansichten zeichnet dieselbe Funktion neu — „kommentareZeichnen" —,
+   damit sie nie auseinanderlaufen.
+   ============================================================ */
+let kommentareSortierung = 'neueste';   // neueste | aelteste | oben | unten
+let kommentareFilter = 'alle';          // alle | offen | geloest
+
+function kommentareSortiert() {
+  const alle = kommentare();
+  const zeit = (m) => Number(m.dataset.zeit) || 0;
+  const nachOben = alle.slice();
+  const nachUnten = nachOben.slice().reverse();
+  const gefiltert = (liste) => kommentareFilter === 'alle' ? liste
+    : liste.filter((m) => (m.dataset.geloest === 'true') === (kommentareFilter === 'geloest'));
+
+  if (kommentareSortierung === 'neueste') return gefiltert(nachOben.slice().sort((a, b) => zeit(b) - zeit(a)));
+  if (kommentareSortierung === 'aelteste') return gefiltert(nachOben.slice().sort((a, b) => zeit(a) - zeit(b)));
+  if (kommentareSortierung === 'unten') return gefiltert(nachUnten);
+  return gefiltert(nachOben);   // 'oben' — dieselbe Reihenfolge wie im Dokument
+}
+
+/* Verbindet Marke und Karte in beide Richtungen: „Zeigen" in der Liste
+   springt zur Marke UND lässt die Karte kurz aufleuchten; ein Klick auf
+   die Marke im Text (weiter unten, delegiert am Blatt) tut das Gleiche
+   andersherum. Beide finden die Karte über denselben Index, in dem
+   „kommentare()" und die Kinder von „blatt-rand" gleich sortiert sind. */
+function randKommentarZeigen(marke) {
+  marke.scrollIntoView({ block: 'center' });
+  marke.classList.add('kommentar--gezeigt');
+  setTimeout(() => marke.classList.remove('kommentar--gezeigt'), 1500);
+
+  const rand = $('blatt-rand');
+  const index = kommentare().indexOf(marke);
+  const karte = rand && !rand.hidden ? rand.children[index] : null;
+  if (karte) {
+    karte.scrollIntoView({ block: 'center' });
+    karte.classList.add('rand-karte--gezeigt');
+    setTimeout(() => karte.classList.remove('rand-karte--gezeigt'), 1500);
+  }
+}
+
+function kommentareZeichnen() {
+  const liste = $('li-kommentare-inhalt');
+  liste.innerHTML = '';
+
+  if (!kommentare().length) {
+    const leer = document.createElement('p');
+    leer.className = 'li-tafel__leer';
+    leer.textContent = 'Das Dokument enthält keine Kommentare.';
+    liste.appendChild(leer);
+    /* Ohne diesen Aufruf bliebe der Rand stehen, wenn der letzte
+       Kommentar gerade weggefallen war — beide „return" hier kommen VOR
+       dem Zeichnen des Rands am Ende der Funktion. */
+    randKommentareZeichnen();
+    return;
+  }
+
+  const sichtbar = kommentareSortiert();
+  if (!sichtbar.length) {
+    const leer = document.createElement('p');
+    leer.className = 'li-tafel__leer';
+    leer.textContent = kommentareFilter === 'offen' ? 'Keine offenen Kommentare.' : 'Keine gelösten Kommentare.';
+    liste.appendChild(leer);
+    randKommentareZeichnen();
+    return;
+  }
+
+  for (const marke of sichtbar) {
+    const geloest = marke.dataset.geloest === 'true';
+    const zeile = document.createElement('div');
+    zeile.className = 'li-kommentar' + (geloest ? ' li-kommentar--geloest' : '');
+
+    const text = document.createElement('p');
+    text.className = 'li-kommentar__text';
+    text.textContent = marke.title;
+    zeile.appendChild(text);
+
+    const knoepfe = document.createElement('div');
+    knoepfe.className = 'li-kommentar__knoepfe';
+    const zeigen = document.createElement('button');
+    zeigen.className = 'knopf knopf--klein';
+    zeigen.textContent = 'Zeigen';
+    zeigen.addEventListener('click', () => randKommentarZeigen(marke));
+    knoepfe.appendChild(zeigen);
+
+    const geloestKnopf = document.createElement('button');
+    geloestKnopf.className = 'knopf knopf--klein';
+    geloestKnopf.textContent = geloest ? 'Wieder öffnen' : 'Gelöst';
+    geloestKnopf.addEventListener('click', () => {
+      marke.dataset.geloest = geloest ? 'false' : 'true';
+      kommentareZeichnen();
+    });
+    knoepfe.appendChild(geloestKnopf);
+
+    const weg = document.createElement('button');
+    weg.className = 'knopf knopf--klein';
+    weg.textContent = 'Löschen';
+    weg.addEventListener('click', () => {
+      const geloescht = marke.title;
+      marke.remove();
+      geaendertMelden();
+      kommentareZeichnen();
+      melde('Kommentar gelöscht: ' + geloescht);
+    });
+    knoepfe.appendChild(weg);
+    zeile.appendChild(knoepfe);
+    liste.appendChild(zeile);
+  }
+
+  randKommentareZeichnen();
+}
+
+/* Die drei Punkte im Kopf: Sortieren und „Kommentare anzeigen" als
+   Untermenüs — die Häkchen über das Symbol „haken", nicht über eine
+   eigene Klasse, die es für dieses Menü sonst nirgends gibt. */
+function kommentareMenueZeigen() {
+  const sortHaken = (art) => kommentareSortierung === art ? 'haken' : '';
+  const filterHaken = (art) => kommentareFilter === art ? 'haken' : '';
+  const neuZeichnenUndMerken = (feldName, wert) => () => {
+    if (feldName === 'sort') kommentareSortierung = wert; else kommentareFilter = wert;
+    kommentareZeichnen();
+  };
+  kleinmenueZeigen($('li-kommentare-menu'), [
+    { name: 'Sortieren', kinder: [
+      { name: 'Neueste zuerst', zeichen: sortHaken('neueste'), tun: neuZeichnenUndMerken('sort', 'neueste') },
+      { name: 'Älteste zuerst', zeichen: sortHaken('aelteste'), tun: neuZeichnenUndMerken('sort', 'aelteste') },
+      { name: 'Position im Dokument (oben zuerst)', zeichen: sortHaken('oben'), tun: neuZeichnenUndMerken('sort', 'oben') },
+      { name: 'Position im Dokument (unten zuerst)', zeichen: sortHaken('unten'), tun: neuZeichnenUndMerken('sort', 'unten') },
+    ] },
+    { name: 'Kommentare anzeigen', kinder: [
+      { name: 'Alle', zeichen: filterHaken('alle'), tun: neuZeichnenUndMerken('filter', 'alle') },
+      { name: 'Nur offene', zeichen: filterHaken('offen'), tun: neuZeichnenUndMerken('filter', 'offen') },
+      { name: 'Nur gelöste', zeichen: filterHaken('geloest'), tun: neuZeichnenUndMerken('filter', 'geloest') },
+    ] },
+  ]);
+}
+
+/* ---- Neuer Kommentar, ohne eigenes Fenster ----
+   Die Tafel steht schon offen, und der Kommentar erscheint gleich in
+   ihrer eigenen Liste — ein Fenster obendrauf wäre derselbe Weg noch
+   einmal. Stattdessen ein Eingabefeld, das sich in der Tafel selbst
+   auf- und zumacht. Die Schreibstelle wird beim Öffnen gemerkt
+   (auswahlMerken, dieselbe Funktion wie beim Rechtsklickmenü) und beim
+   Setzen zurückgeholt — sonst hätte der Klick auf „✎" sie schon
+   weggenommen, bevor der Kommentar überhaupt entsteht. */
+function kommentarFormularZeigen() {
+  auswahlMerken();
+  $('li-kommentar-neu-formular').hidden = false;
+  $('li-kommentar-neu-text').value = '';
+  $('li-kommentar-neu-text').focus();
+}
+
+function kommentarFormularAbbrechen() {
+  $('li-kommentar-neu-formular').hidden = true;
+  $('li-kommentar-neu-text').value = '';
+}
+
+function kommentarFormularSetzen() {
+  const text = $('li-kommentar-neu-text').value.trim();
+  if (!text) { kommentarFormularAbbrechen(); return; }
+
+  auswahlZurueck();
+  const marke = '<span class="kommentar" contenteditable="false" data-zeit="' + Date.now()
+              + '" data-autor="' + kommentarAutorName().replace(/"/g, '&quot;')
+              + '" title="' + text.replace(/"/g, '&quot;') + '">✎</span>';
+  elementEinfuegen(marke);
+  kommentarFormularAbbrechen();
+  melde('Kommentar gesetzt — er wird nicht mitgedruckt.');
+  kommentareZeichnen();
+}
+
+function liTafelKommentareZeigen() {
+  $('li-tafel-kommentare').hidden = false;
+  kommentarFormularAbbrechen();
+  kommentareZeichnen();
+}
+
+function liTafelKommentareSchliessen() {
+  $('li-tafel-kommentare').hidden = true;
+  feld.focus();
+}
+
+/* ---- Kommentare am Rand ----
+   Dieselben Marken wie in der Liste oben (span.kommentar), aber auf Höhe
+   ihrer Stelle im Text gezeichnet — wie im Vorbild (WPS), nicht in einer
+   Liste weit weg vom Text. Der Rand ist ein Geschwister des Blatts
+   (index.html), damit „overflow:hidden" am Blatt keine Karte abschneidet.
+
+   Ein Gerät, ein Schreibender — aber wer eine Antwort schreibt, tut das
+   unter dem eigenen Namen, nicht unter dem des ersten Kommentars. Der
+   Name selbst kommt aus KI.Speicher (dort auch „sprache" & Co.), weil
+   chat.js und kiteil.js ihn für ihre eigenen Kommentar-Marken ebenso
+   brauchen und programm.js' eigener „Speicher" ihre Grenze nicht
+   überschreitet. */
+function kommentarAutorName() {
+  return (KI.Speicher.lies('kommentarAutor', '') || '').trim() || 'Ich';
+}
+
+function kommentarAntworten(marke) {
+  try { return JSON.parse(marke.dataset.antworten || '[]'); }
+  catch (e) { return []; }
+}
+
+function zeitAlsText(zeit) {
+  const d = new Date(Number(zeit) || Date.now());
+  const zwei = (n) => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + zwei(d.getMonth() + 1) + '-' + zwei(d.getDate())
+       + ' ' + zwei(d.getHours()) + ':' + zwei(d.getMinutes());
+}
+
+let randAntwortOffenFuer = null;   // welche Karte gerade ihr Antwortfeld zeigt
+
+function randKommentarAntwortSetzen(marke, text) {
+  if (text.trim()) {
+    const antworten = kommentarAntworten(marke);
+    antworten.push({ autor: kommentarAutorName(), zeit: Date.now(), text: text.trim() });
+    marke.dataset.antworten = JSON.stringify(antworten);
+    geaendertMelden();
+    melde('Antwort gesetzt.');
+  }
+  randAntwortOffenFuer = null;
+  kommentareZeichnen();
+}
+
+function randKommentarMenueZeigen(anker, marke) {
+  const geloest = marke.dataset.geloest === 'true';
+  kleinmenueZeigen(anker, [
+    { name: 'Auf Kommentar antworten', tun: () => { randAntwortOffenFuer = marke; randKommentareZeichnen(); } },
+    { name: geloest ? 'Wieder öffnen' : 'Fertiger Kommentar', tun: () => {
+        marke.dataset.geloest = geloest ? 'false' : 'true';
+        kommentareZeichnen();
+      } },
+    { name: 'Kommentar löschen', tun: () => {
+        const geloescht = marke.title;
+        marke.remove();
+        geaendertMelden();
+        kommentareZeichnen();
+        melde('Kommentar gelöscht: ' + geloescht);
+      } },
+  ]);
+}
+
+function randKommentarPersonZeile(klasse, autor, zeit) {
+  const kopf = document.createElement('div');
+  kopf.className = klasse;
+  const bild = document.createElement('span');
+  bild.className = 'rand-karte__bild';
+  bild.textContent = (autor || '?').trim().charAt(0).toUpperCase() || '?';
+  const name = document.createElement('span');
+  name.className = 'rand-karte__autor';
+  name.textContent = autor;
+  kopf.append(bild, name);
+  if (zeit !== null) {
+    const zeitSpanne = document.createElement('span');
+    zeitSpanne.className = 'rand-karte__zeit';
+    zeitSpanne.textContent = zeitAlsText(zeit);
+    kopf.appendChild(zeitSpanne);
+  }
+  return kopf;
+}
+
+function randKommentarKarteBauen(marke) {
+  const geloest = marke.dataset.geloest === 'true';
+  const karte = document.createElement('div');
+  karte.className = 'rand-karte' + (geloest ? ' rand-karte--geloest' : '');
+
+  const linie = document.createElement('div');
+  linie.className = 'rand-karte__linie';
+  karte.appendChild(linie);
+
+  const kopf = randKommentarPersonZeile('rand-karte__kopf',
+    marke.dataset.autor || kommentarAutorName(), marke.dataset.zeit);
+  const menu = document.createElement('button');
+  menu.type = 'button';
+  menu.className = 'rand-karte__menu';
+  menu.textContent = '☰';
+  menu.title = 'Weitere Möglichkeiten';
+  menu.addEventListener('mousedown', (e) => e.preventDefault());
+  menu.addEventListener('click', () => randKommentarMenueZeigen(menu, marke));
+  kopf.appendChild(menu);
+  karte.appendChild(kopf);
+
+  const text = document.createElement('div');
+  text.className = 'rand-karte__text';
+  text.textContent = marke.title;
+  karte.appendChild(text);
+
+  for (const antwort of kommentarAntworten(marke)) {
+    const box = document.createElement('div');
+    box.className = 'rand-karte__antwort';
+    box.appendChild(randKommentarPersonZeile('rand-karte__antwort-kopf', antwort.autor || 'Ich', antwort.zeit));
+    const aText = document.createElement('div');
+    aText.className = 'rand-karte__text';
+    aText.textContent = antwort.text;
+    box.appendChild(aText);
+    karte.appendChild(box);
+  }
+
+  if (randAntwortOffenFuer === marke) {
+    const eingabe = document.createElement('textarea');
+    eingabe.className = 'rand-karte__eingabe';
+    eingabe.placeholder = 'Antworten …';
+    karte.appendChild(eingabe);
+    const knoepfe = document.createElement('div');
+    knoepfe.className = 'rand-karte__knoepfe';
+    const senden = document.createElement('button');
+    senden.className = 'knopf knopf--klein';
+    senden.textContent = 'Antworten';
+    senden.addEventListener('click', () => randKommentarAntwortSetzen(marke, eingabe.value));
+    const abbrechen = document.createElement('button');
+    abbrechen.className = 'knopf knopf--klein';
+    abbrechen.textContent = 'Abbrechen';
+    abbrechen.addEventListener('click', () => { randAntwortOffenFuer = null; randKommentareZeichnen(); });
+    knoepfe.append(senden, abbrechen);
+    karte.appendChild(knoepfe);
+    setTimeout(() => eingabe.focus(), 0);
+  }
+
+  return karte;
+}
+
+/* Baut die Karten neu — nach Anlegen, Löschen, Lösen, Antworten. Wer nur
+   eine Stelle verschieben will, weil sich darüber der Text geändert hat,
+   nimmt „randKommentarePositionieren" — die baut nichts neu und wirft
+   damit auch kein offenes Antwortfeld weg. */
+function randKommentareZeichnen() {
+  const rand = $('blatt-rand');
+  if (!rand) return;
+  rand.innerHTML = '';
+  const marken = kommentare();
+  if (!marken.length) { rand.hidden = true; return; }
+  rand.hidden = false;
+
+  const randRect = rand.getBoundingClientRect();
+  let unterkante = 0;
+  const abstand = 10;
+  for (const marke of marken) {
+    const karte = randKommentarKarteBauen(marke);
+    rand.appendChild(karte);
+    const mRect = marke.getBoundingClientRect();
+    let top = mRect.top - randRect.top;
+    if (top < unterkante) top = unterkante;
+    karte.style.top = top + 'px';
+    unterkante = top + karte.offsetHeight + abstand;
+  }
+}
+
+let randPositionAusstehend = false;
+function randKommentarePositionieren() {
+  const rand = $('blatt-rand');
+  if (!rand) return;
+  const marken = kommentare();
+  if (rand.hidden || rand.children.length !== marken.length) { randKommentareZeichnen(); return; }
+  const karten = [...rand.children];
+
+  const randRect = rand.getBoundingClientRect();
+  let unterkante = 0;
+  const abstand = 10;
+  for (let i = 0; i < marken.length; i++) {
+    const mRect = marken[i].getBoundingClientRect();
+    let top = mRect.top - randRect.top;
+    if (top < unterkante) top = unterkante;
+    karten[i].style.top = top + 'px';
+    unterkante = top + karten[i].offsetHeight + abstand;
+  }
+}
+function randKommentarePositionierenVerzoegert() {
+  if (randPositionAusstehend) return;
+  randPositionAusstehend = true;
+  requestAnimationFrame(() => { randPositionAusstehend = false; randKommentarePositionieren(); });
+}
+document.addEventListener('dokument:geaendert', randKommentarePositionierenVerzoegert);
+window.addEventListener('resize', randKommentarePositionierenVerzoegert);
+
+feld.addEventListener('click', (e) => {
+  const marke = e.target.closest('span.kommentar');
+  if (marke) randKommentarZeigen(marke);
+});
 
 /* ---- Einzelne Änderungen annehmen und ablehnen ----
    „Alles übernehmen" gab es schon. Wer eine Überarbeitung durchgeht, will
@@ -17474,10 +17873,98 @@ B.netzlinien = () => {
    der schnellste Weg zur richtigen Stelle. */
 let navOffen = false;
 
+/* Der Text unter einer Überschrift, bis zur nächsten Überschrift gleicher
+   oder höherer Ebene — das, was „Abschnitt zusammenfassen" und die
+   Alternativ-Vorschläge als Zusammenhang brauchen. Kein KI-Aufruf ohne
+   das: eine Überschrift allein („Anhang") sagt der KI zu wenig. */
+function abschnittText(el) {
+  const ebene = parseInt(el.tagName[1], 10);
+  let stueck = '';
+  let knoten = el.nextElementSibling;
+  while (knoten) {
+    if (/^H[1-4]$/.test(knoten.tagName) && parseInt(knoten.tagName[1], 10) <= ebene) break;
+    stueck += (stueck ? '\n' : '') + knoten.textContent;
+    if (stueck.length > 4000) break;          // genug für eine Zusammenfassung
+    knoten = knoten.nextElementSibling;
+  }
+  return stueck.trim();
+}
+
+/* Verbessern, Alternativen, Zusammenfassen — dieselbe zentrale KI wie die
+   Schreibhilfe, nur mit der Überschrift und ihrem Abschnitt als Text.
+   Ein Dialog statt drei Knöpfen je Zeile: Bei vier Überschriften wären
+   das zwölf Knöpfe in einer schmalen Klappe — siehe
+   [[rollende-kaesten-schneiden-ab]]. */
+function ueberschriftKI(punkt, el) {
+  const abschnitt = abschnittText(el);
+  fenster('KI für diese Überschrift', [
+    { art: 'satz', text: '„' + punkt.text + '"' },
+    { schluessel: 'aktion', name: 'Aktion', art: 'auswahl', werte: [
+        ['verbessern', 'Verbessern'],
+        ['alternativen', 'Alternativen erzeugen'],
+        ['zusammenfassen', 'Abschnitt zusammenfassen'],
+      ], wert: 'verbessern' },
+  ], async (werte) => {
+    if (werte.aktion === 'verbessern') {
+      melde('Die KI überarbeitet die Überschrift …');
+      const r = await KI.ueberschriftVerbessern(punkt.text, abschnitt);
+      if (r.fehler || !r.text) { melde(r.fehler || 'Keine Antwort.'); return; }
+      el.textContent = r.text;
+      geaendertMelden();
+      navBauen();
+      melde('Überschrift geändert. Strg+Z macht es rückgängig.');
+    } else if (werte.aktion === 'alternativen') {
+      melde('Die KI sucht Alternativen …');
+      const r = await KI.ueberschriftAlternativen(punkt.text, abschnitt);
+      if (r.fehler) { melde(r.fehler); return; }
+      fenster('Alternative Überschriften', [
+        { art: 'satz', text: r.vorschlaege.length
+            ? r.vorschlaege.map((v, i) => (i + 1) + '. ' + v).join('\n')
+            : 'Keine Vorschläge gefunden.' },
+      ], () => {}, 'Schließen');
+    } else {
+      melde('Die KI fasst den Abschnitt zusammen …');
+      const r = await KI.abschnittZusammenfassen(abschnitt || punkt.text);
+      if (r.fehler) { melde(r.fehler); return; }
+      fenster('Zusammenfassung', [{ art: 'satz', text: r.text }], () => {}, 'Schließen');
+    }
+  }, 'Los');
+}
+
+/* Eine neue Überschrift aus der Markierung vorschlagen — für den Fall,
+   dass noch gar keine Überschriften da sind. Setzt keine Formatvorlage,
+   sondern zeigt den Vorschlag: welche Ebene passt, entscheidet weiterhin
+   der Mensch über Formatvorlagen, nicht ein Rateschritt hier. */
+async function ueberschriftErzeugenDialog() {
+  const markiert = String(window.getSelection()).trim();
+  if (!markiert) { melde('Erst den Abschnitt markieren, für den eine Überschrift entstehen soll.'); return; }
+  melde('Die KI liest den markierten Text …');
+  const r = await KI.ueberschriftErzeugen(markiert);
+  if (r.fehler || !r.text) { melde(r.fehler || 'Keine Antwort.'); return; }
+  fenster('Vorschlag für eine Überschrift', [
+    { art: 'satz', text: '„' + r.text + '"\n\nÜber Formatvorlagen (Start ▸ Formatvorlagen) '
+                       + 'als Überschrift einsetzen.' },
+  ], () => {}, 'Schließen');
+}
+
 function navBauen() {
   const kasten = $('navigation');
   const punkte = Referenzen.ueberschriftenSammeln();
-  kasten.innerHTML = '<p class="navigation__titel">Überschriften</p>';
+  kasten.innerHTML = '';
+
+  const kopf = document.createElement('div');
+  kopf.className = 'navigation__kopfzeile';
+  const titel = document.createElement('p');
+  titel.className = 'navigation__titel';
+  titel.textContent = 'Überschriften';
+  const erzeugenKnopf = document.createElement('button');
+  erzeugenKnopf.type = 'button';
+  erzeugenKnopf.className = 'navigation__ki-erzeugen';
+  erzeugenKnopf.textContent = '✨ Überschrift erzeugen';
+  erzeugenKnopf.title = 'Aus der Markierung eine Überschrift vorschlagen';
+  erzeugenKnopf.addEventListener('click', ueberschriftErzeugenDialog);
+  kopf.append(titel, erzeugenKnopf);
+  kasten.appendChild(kopf);
 
   if (!punkte.length) {
     const leer = document.createElement('p');
@@ -17489,14 +17976,29 @@ function navBauen() {
   }
 
   for (const punkt of punkte) {
-    const zeile = document.createElement('button');
-    zeile.type = 'button';
-    zeile.className = 'navigation__zeile navigation__zeile--' + punkt.ebene;
-    zeile.textContent = punkt.text;
-    zeile.addEventListener('click', () => {
+    const zeile = document.createElement('div');
+    zeile.className = 'navigation__eintrag';
+
+    const sprung = document.createElement('button');
+    sprung.type = 'button';
+    sprung.className = 'navigation__zeile navigation__zeile--' + punkt.ebene;
+    sprung.textContent = punkt.text;
+    sprung.addEventListener('click', () => {
       const ziel = document.getElementById(punkt.kennung);
       if (ziel) ziel.scrollIntoView({ block: 'start' });
     });
+
+    const ki = document.createElement('button');
+    ki.type = 'button';
+    ki.className = 'navigation__ki';
+    ki.textContent = '✨';
+    ki.title = 'KI für diese Überschrift: Verbessern, Alternativen, Zusammenfassen';
+    ki.addEventListener('click', () => {
+      const el = document.getElementById(punkt.kennung);
+      if (el) ueberschriftKI(punkt, el);
+    });
+
+    zeile.append(sprung, ki);
     kasten.appendChild(zeile);
   }
 }
@@ -20270,7 +20772,22 @@ B.ueberarbeitungsbereich = () => {
   kopf.textContent = alle.length + ' Änderungen · ' + kommentareAlle.length + ' Kommentare';
   liste.appendChild(kopf);
 
-  const karte = (art, text, farbe, hin) => {
+  /* Kommentare per KI zusammenfassen — erst ab zwei, eine Zusammenfassung
+     von einem einzigen Kommentar sagte nur ihn selbst noch einmal. */
+  if (kommentareAlle.length >= 2) {
+    const zusammen = document.createElement('button');
+    zusammen.className = 'knopf knopf--klein';
+    zusammen.textContent = '✨ Kommentare zusammenfassen';
+    zusammen.addEventListener('click', async () => {
+      melde('Die KI liest alle Kommentare …');
+      const r = await KI.kommentareZusammenfassen(kommentareAlle.map((m) => m.title));
+      if (r.fehler) { melde(r.fehler); return; }
+      fenster('Kommentare zusammengefasst', [{ art: 'satz', text: r.text }], () => {}, 'Schließen');
+    });
+    liste.appendChild(zusammen);
+  }
+
+  const karte = (art, text, farbe, hin, kiKnoepfe) => {
     const k = document.createElement('div');
     k.className = 'fund fund--' + farbe;
     const sorte = document.createElement('span');
@@ -20288,6 +20805,13 @@ B.ueberarbeitungsbereich = () => {
     zeigen.textContent = 'Zeigen';
     zeigen.addEventListener('click', hin);
     knoepfe.appendChild(zeigen);
+    for (const { text: beschriftung, tun } of (kiKnoepfe || [])) {
+      const knopf = document.createElement('button');
+      knopf.className = 'knopf knopf--klein';
+      knopf.textContent = beschriftung;
+      knopf.addEventListener('click', tun);
+      knoepfe.appendChild(knopf);
+    }
     k.appendChild(knoepfe);
     liste.appendChild(k);
   };
@@ -20303,7 +20827,21 @@ B.ueberarbeitungsbereich = () => {
     karte('Kommentar', marke.title, 'tipp',
           () => { marke.scrollIntoView({ block: 'center' });
                   marke.classList.add('kommentar--gezeigt');
-                  setTimeout(() => marke.classList.remove('kommentar--gezeigt'), 1500); });
+                  setTimeout(() => marke.classList.remove('kommentar--gezeigt'), 1500); },
+          [
+            { text: '✨ Antworten', tun: async () => {
+                melde('Die KI formuliert eine Antwort …');
+                const r = await KI.kommentarAntwort(marke.title, Dokument.lies().text.slice(0, 2000));
+                if (r.fehler) { melde(r.fehler); return; }
+                fenster('Antwortvorschlag', [{ art: 'satz', text: r.text }], () => {}, 'Schließen');
+              } },
+            { text: '✨ Analysieren', tun: async () => {
+                melde('Die KI liest den Kommentar …');
+                const r = await KI.kommentarAnalysieren(marke.title);
+                if (r.fehler) { melde(r.fehler); return; }
+                fenster('Kommentar analysiert', [{ art: 'satz', text: r.text }], () => {}, 'Schließen');
+              } },
+          ]);
   }
 
   if (!tafelOffen) B.tafelZeigen();
@@ -21706,12 +22244,22 @@ const MENUES = [
         { name: 'Stimme und Tempo', tun: B.stimmeWaehlen },
       ] },
     ] },
+    /* Das Schnellmenü — nur die häufigen KI-Wege, keine eigene Provider-
+       oder API-Konfiguration. Die braucht Optionen ▸ Schreibhilfe und KI;
+       „KI-Einstellungen" ganz unten führt genau dorthin. „KI-Korrektur"
+       steht zusätzlich zu „Text verbessern", weil sie den eigenen
+       Kurzbefehl F8 trägt — sie darf beim Umbau nicht verschwinden. */
     { name: 'KI', unter: [
+      { name: 'Schreibhilfe', tun: () => B.tafelZeigen() },
       { name: 'KI-Korrektur', tun: () => KIteil.kiKorrigieren(), taste: 'F8' },
-      { name: 'Vorschläge', tun: () => KIteil.kiVorschlaege() },
       { name: 'Zusammenfassen', tun: () => KIteil.kiZusammenfassen() },
-      { name: 'KI-Chat', tun: () => Chat.umschalten(), taste: 'Strg+/' },
-      { name: 'Eigenen Anbieter hinzufügen…', tun: () => Einstellungen.eigenenAnbieterHinzufuegen() },
+      { name: 'Text verbessern', tun: () => KIteil.textAktionDialog() },
+      { name: 'Text analysieren', tun: () => KIteil.kiVorschlaege() },
+      { name: 'Übersetzen', tun: () => KIteil.kiUebersetzen() },
+      { name: 'Frage an KI', tun: () => Chat.umschalten(), taste: 'Strg+/' },
+      { name: 'Kommentar beantworten', tun: () => B.ueberarbeitungsbereich() },
+      { name: 'Überschrift erzeugen', tun: () => ueberschriftErzeugenDialog() },
+      { name: 'KI-Einstellungen', tun: () => Einstellungen.oeffnen('ki') },
     ] },
     { name: 'Anzeigen', unter: [
       { name: 'Seitenleiste Schreibhilfe', tun: B.tafelZeigen, taste: 'F5' },
@@ -22926,6 +23474,121 @@ function rechtsMenueSchliessen() {
 }
 
 /* ------------------------------------------------------------
+   Ein kleines, angedocktes Menü unter einem Knopf.
+
+   Dieselbe Bildsprache wie das Rechtsklickmenü (rechtsmenue__*), aber
+   unter einem Knopf statt am Mauszeiger, und ohne dessen Symbolleiste
+   obendrüber — für „Einfügen als" bei der Hinweiskarte und die drei
+   Punkte im Kommentare-Kopf. Zwei Stellen, ein Bauplan, statt ihn
+   zweimal abzuschreiben.
+
+   „punkte" ist eine Liste aus Einträgen { name, tun }, dem Strich „-"
+   für eine Trennlinie, oder { name, kinder } für ein Untermenü, das zur
+   Seite aufklappt.
+   ------------------------------------------------------------ */
+let offenesKleinmenue = null;
+
+function kleinmenueSchliessen() {
+  if (offenesKleinmenue) { offenesKleinmenue.remove(); offenesKleinmenue = null; }
+}
+
+function kleinmenueZeigen(anker, punkte) {
+  kleinmenueSchliessen();
+
+  const kasten = document.createElement('div');
+  kasten.className = 'rechtsmenue kleinmenue';
+
+  const knopfBauen = (p) => {
+    const k = document.createElement('button');
+    k.type = 'button';
+    k.className = 'rechtsmenue__punkt';
+    const bildchen = document.createElement('span');
+    bildchen.className = 'rechtsmenue__bild';
+    if (p.zeichen && SYMBOLE[p.zeichen]) bildchen.appendChild(symbol(p.zeichen));
+    k.appendChild(bildchen);
+    const wort = document.createElement('span');
+    wort.className = 'rechtsmenue__wort';
+    wort.textContent = p.name;
+    k.appendChild(wort);
+    if (p.tun) {
+      k.addEventListener('mousedown', (ev) => ev.preventDefault());
+      k.addEventListener('click', () => { kleinmenueSchliessen(); p.tun(); });
+    }
+    return k;
+  };
+
+  const gruppe = (p) => {
+    const huelle = document.createElement('div');
+    huelle.className = 'rechtsmenue__gruppe';
+    const kopf = knopfBauen({ zeichen: p.zeichen, name: p.name });
+    kopf.classList.add('rechtsmenue__punkt--auf');
+    const pfeil = document.createElement('span');
+    pfeil.className = 'rechtsmenue__pfeil';
+    pfeil.textContent = '›';
+    kopf.appendChild(pfeil);
+    huelle.appendChild(kopf);
+
+    const klappe = document.createElement('div');
+    klappe.className = 'rechtsmenue__klappe';
+    for (const kind of p.kinder) {
+      if (kind === '-') {
+        const s = document.createElement('div');
+        s.className = 'rechtsmenue__strich';
+        klappe.appendChild(s);
+        continue;
+      }
+      klappe.appendChild(knopfBauen(kind));
+    }
+    huelle.appendChild(klappe);
+
+    huelle.addEventListener('mouseenter', () => {
+      for (const andere of kasten.querySelectorAll('.rechtsmenue__gruppe--offen')) {
+        andere.classList.remove('rechtsmenue__gruppe--offen');
+      }
+      huelle.classList.add('rechtsmenue__gruppe--offen');
+      klappe.classList.remove('rechtsmenue__klappe--links');
+      if (klappe.getBoundingClientRect().right > window.innerWidth - 6) {
+        klappe.classList.add('rechtsmenue__klappe--links');
+      }
+    });
+    huelle.addEventListener('mouseleave', () => huelle.classList.remove('rechtsmenue__gruppe--offen'));
+    kasten.appendChild(huelle);
+  };
+
+  for (const p of punkte) {
+    if (p === '-') {
+      const s = document.createElement('div');
+      s.className = 'rechtsmenue__strich';
+      kasten.appendChild(s);
+      continue;
+    }
+    if (p.kinder) { gruppe(p); continue; }
+    kasten.appendChild(knopfBauen(p));
+  }
+
+  kasten.style.visibility = 'hidden';
+  document.body.appendChild(kasten);
+
+  const ankerMasse = anker.getBoundingClientRect();
+  const eigeneMasse = kasten.getBoundingClientRect();
+  const rand = 6;
+  let x = ankerMasse.right - eigeneMasse.width;
+  if (x < rand) x = rand;
+  let y = ankerMasse.bottom + 4;
+  if (y + eigeneMasse.height > window.innerHeight - rand) y = Math.max(rand, ankerMasse.top - 4 - eigeneMasse.height);
+  kasten.style.left = x + 'px';
+  kasten.style.top = y + 'px';
+  kasten.style.visibility = '';
+
+  document.body.appendChild(kasten);
+  offenesKleinmenue = kasten;
+
+  setTimeout(() => {
+    document.addEventListener('click', kleinmenueSchliessen, { once: true });
+  }, 0);
+}
+
+/* ------------------------------------------------------------
    Das Wort unter dem Mauszeiger.
 
    Für das Menü unter der rechten Maustaste: Wer auf ein rot angestrichenes
@@ -23764,6 +24427,27 @@ function rechtsMenueZeigen(e) {
   if (markiert) {
     eintrag({ zeichen: 'unterart', name: 'Groß-/Kleinschreibung…',
               tun: B.schreibweise, aus: gesperrt });
+    /* Dieselben Funktionen wie in kiteil.js (Korrigieren, Text bearbeiten,
+       Zusammenfassen) — sie wirken schon auf die Markierung, wenn eine
+       da ist (kiLauf/markierungOffsets). Hier stehen sie nur zusätzlich
+       da, wo man beim Markieren sowieso schon ist, statt erst zum Knopf
+       in der Seitenleiste zu greifen. */
+    gruppe('ki', 'KI', [
+      { name: 'Zusammenfassen', tun: () => KIteil.kiZusammenfassen(), aus: gesperrt },
+      strich,
+      { name: 'Rechtschreibung und Grammatik korrigieren',
+        tun: () => KIteil.kiKorrigieren(), aus: gesperrt },
+      { name: 'Anders umschreiben',
+        tun: () => KIteil.kiTextAktionAusfuehren('umformulieren'), aus: gesperrt },
+      { name: 'Länger machen',
+        tun: () => KIteil.kiTextAktionAusfuehren('erweitern'), aus: gesperrt },
+      { name: 'Kürzer machen',
+        tun: () => KIteil.kiTextAktionAusfuehren('kuerzen'), aus: gesperrt },
+      { name: 'Einfacher machen',
+        tun: () => KIteil.kiTextAktionAusfuehren('einfacher'), aus: gesperrt },
+      strich,
+      { name: 'Text- und Wortanalyse', tun: () => KIteil.kiTextAnalyse(), aus: gesperrt },
+    ]);
   }
   gruppe('abstand', 'Absatz', [
     { name: 'Absatz…', tun: () => B.absatz('masse'), aus: gesperrt },
@@ -24034,6 +24718,7 @@ const KIteil = KI_BAUEN(B, {
   kuerze:      (s)    => kuerze(s),
   menueBauen:  ()     => menueBauen(),
   fenster:     (...a) => fenster(...a),
+  kleinmenue:  (...a) => kleinmenueZeigen(...a),
   /* Der einzige Schreibzugriff nach drinnen: Zeigt die KI Vorschlaege,
      muessen die Funde der Rechtschreibpruefung aus der Seitenleiste
      weichen — sie teilen sich denselben Platz. */
@@ -24334,8 +25019,43 @@ $('btn-ki').addEventListener('click', () => KIteil.kiKorrigieren());
 $('btn-vorschlaege').addEventListener('click', () => KIteil.kiVorschlaege());
 $('btn-uebersetzen').addEventListener('click', () => KIteil.kiUebersetzen());
 $('btn-zusammenfassen').addEventListener('click', () => KIteil.kiZusammenfassen());
-$('ki-eigene-neu').addEventListener('click', () => KIteil.assistentErstellen());
-$('ki-anbieter-link').addEventListener('click', () => Einstellungen.eigenenAnbieterHinzufuegen());
+$('btn-textaktion').addEventListener('click', () => KIteil.textAktionDialog());
+
+/* ---- Die Kommentare-Tafel: Kopfknöpfe und das Eingabefeld ---- */
+$('li-kommentar-neu').addEventListener('mousedown', (e) => e.preventDefault());
+$('li-kommentar-neu').addEventListener('click', () => kommentarFormularZeigen());
+$('li-kommentare-menu').addEventListener('click', () => kommentareMenueZeigen());
+$('li-kommentare-schliessen').addEventListener('click', () => liTafelKommentareSchliessen());
+$('li-kommentar-neu-setzen').addEventListener('click', () => kommentarFormularSetzen());
+$('li-kommentar-neu-abbrechen').addEventListener('click', () => kommentarFormularAbbrechen());
+$('li-kommentar-neu-text').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); kommentarFormularSetzen(); }
+  if (e.key === 'Escape') { e.preventDefault(); kommentarFormularAbbrechen(); }
+});
+/* „Eigene Assistenten" und „Eigenen Anbieter hinzufügen" hatten hier ihre
+   Knöpfe — die Seitenleiste ist zum Schreiben da, nicht zur Verwaltung.
+   Beides läuft jetzt ausschließlich über Optionen ▸ Schreibhilfe und KI
+   (siehe einstellungen.js: eigeneAssistentenZeigen, eigeneAnbieterZeigen). */
+
+/* Das Zahnrad vor „Prüfen": öffnet/schließt die Klappe mit den drei
+   Stufen-Marken (schnellzugriffBauen füllt sie). Ein Klick daneben oder
+   Escape schließt wieder — derselbe Ausgang wie bei jedem anderen
+   schwebenden Element hier (siehe fenster()). */
+(() => {
+  const knopf  = $('hilfe-schnell-knopf');
+  const klappe = $('hilfe-schnell');
+  const setzeOffen = (offen) => {
+    klappe.hidden = !offen;
+    knopf.setAttribute('aria-expanded', offen ? 'true' : 'false');
+  };
+  knopf.addEventListener('click', (e) => { e.stopPropagation(); setzeOffen(klappe.hidden); });
+  document.addEventListener('click', (e) => {
+    if (!klappe.hidden && !klappe.contains(e.target) && e.target !== knopf) setzeOffen(false);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !klappe.hidden) setzeOffen(false);
+  });
+})();
 
 /* Das schmale Symbolband ganz rechts. Es zeigt an, welcher der drei
    Bereiche gerade offen ist — „an" auf dem Knopf, nicht nur am Bereich
@@ -24374,7 +25094,13 @@ Einstellungen.verbinde({
      von zehn Schaltern und stehen weiter unten in einer Liste — einzeln
      verdrahtet wären es zwanzig fast gleiche Zeilen, und die elfte
      vergisst man. */
-  neuZeichnen: () => { KIteil.kiKnoepfeAuffrischen(); KIteil.eigeneAssistentenBauen(); },
+  neuZeichnen: () => { KIteil.kiKnoepfeAuffrischen(); },
+  /* Der Dialog „Neuen Assistenten erstellen" bleibt in kiteil.js — die
+     Optionen brauchen nur den Weg dorthin, wie schon bei „fenster" oben.
+     „cb" ruft die Optionsseite ihre eigene Liste neu auf, nachdem
+     angelegt wurde (siehe eigeneAssistentenZeigen). */
+  assistentErstellen: (cb) => KIteil.assistentErstellen(cb),
+  assistentAusfuehren: (assistent) => KIteil.kiAssistentAusfuehren(assistent),
 
   /* Die Optionenseite füllt jetzt auch Listen, die das Programm führt. Sie
      hier zu reichen ist richtiger, als sie ein zweites Mal zu schreiben:
@@ -25053,7 +25779,6 @@ menueBauen();
 werkzeugeBauen();
 KIteil.empfaengerBauen();
 KIteil.kiKnoepfeAuffrischen();
-KIteil.eigeneAssistentenBauen();
 ansichtAnwenden();
 /* Erst die Schalter aus der Tabelle, dann das Übrige: „Steuerzeichen"
    fragt die fünf Formatierungszeichen ab, und die müssen dafür stehen. */

@@ -263,6 +263,15 @@ select option{background:var(--karte);color:var(--schrift)}
   display:flex;justify-content:flex-start;align-items:flex-start;
 }
 
+/* Blatt und Rand als eine Einheit, gemeinsam zentriert — siehe
+   index.html. Das Zentrieren (margin:auto) sitzt HIER, nicht mehr am
+   Blatt allein: Am Blatt hätte es den Rand an die ferne Kante der
+   Fläche gezogen, weit weg von der Seite, zu der er gehört. */
+.blatt-bereich{
+  flex:0 0 auto;margin-left:auto;margin-right:auto;
+  display:flex;align-items:flex-start;
+}
+
 /* Das Blatt: A4 mit echtem Rand. Die Zahl 21cm ist kein Geschmack,
    sie ist das Papier, das nachher aus dem Drucker kommt. */
 .blatt{
@@ -273,7 +282,6 @@ select option{background:var(--karte);color:var(--schrift)}
      Stellen um als auf dem Papier, und die Seitenzahl in der Statuszeile
      stimmte nicht mehr. Jetzt wird gerollt, so wie es sein soll. */
   flex:0 0 auto;
-  margin-left:auto;margin-right:auto;
   width:21cm;min-height:29.7cm;
   background:var(--blatt);color:var(--blatt-schrift);
   box-shadow:0 1px 3px rgba(0,0,0,.4),0 12px 32px rgba(0,0,0,.28);
@@ -391,6 +399,40 @@ select option{background:var(--karte);color:var(--schrift)}
 .tafel__name span{color:var(--schrift-3);font-weight:400}
 .tafel__satz{margin:3px 0 10px;color:var(--schrift-3);font-size:12px}
 
+/* Schreibhilfe-Kopf kompakt: Titel, Stufen-Marken und „Prüfen" in einer
+   Zeile, ca. 36px hoch statt vorher mit Untertitel und eigener Zeile für
+   die Marken rund 90px. Der Erklärsatz „Sucht die Fehler …" ist aus dem
+   Markup weg — er stand nur hier, nirgends sonst; die Prüfung selbst
+   bleibt unberührt. Nur dieser eine Kopf wird umgestellt, nicht die
+   gemeinsame Klasse „.tafel__kopf" — der KI-Chat-Kopf daneben behält
+   seinen Untertitel und seine eigene Zeile. */
+#tafel-schreibhilfe .tafel__kopf{
+  display:flex;align-items:center;gap:8px;position:relative;
+  padding:6px 14px;border-bottom:1px solid var(--rand);
+}
+#tafel-schreibhilfe .tafel__name{flex:0 0 auto;white-space:nowrap;margin-right:auto}
+#btn-pruefen{flex:0 0 auto}
+
+/* Das Zahnrad öffnet/schließt die Stufen-Klappe — selbst so schmal, dass
+   es bei jeder Seitenleistenbreite neben Titel und „Prüfen" passt. */
+.schnell-knopf{
+  flex:0 0 auto;width:24px;height:24px;padding:0;border-radius:5px;
+  background:var(--karte);border:1px solid var(--rand);color:var(--schrift-2);
+  font-size:13px;line-height:1;cursor:pointer;
+}
+.schnell-knopf:hover{background:var(--rand);color:var(--schrift)}
+.schnell-knopf[aria-expanded="true"]{background:var(--blau);border-color:var(--blau);color:#fff}
+
+/* Die Klappe selbst: unter dem Kopf, schwebend — verändert dessen Höhe
+   nicht, im Gegensatz zur früheren eigenen Zeile. */
+#hilfe-schnell{
+  position:absolute;top:100%;right:14px;margin-top:4px;z-index:5;
+  background:var(--karte);border:1px solid var(--rand);border-radius:8px;
+  padding:8px;box-shadow:0 4px 14px rgba(0,0,0,.25);
+  max-width:calc(100% - 28px);
+}
+#hilfe-schnell[hidden]{display:none}
+
 .knopf{
   width:100%;padding:7px 12px;border-radius:5px;
   background:var(--karte);border:1px solid var(--rand);
@@ -443,27 +485,12 @@ select option{background:var(--karte);color:var(--schrift)}
 }
 .zettel::placeholder{color:var(--warm);opacity:.85}
 .zettel:focus{outline:0;border-bottom-style:solid}
-.ki{display:flex;gap:8px;margin-top:12px}
-.ki .knopf{flex:1 1 0;font-size:12px;padding:6px 4px}
-.ki-eigene-kopf{display:flex;align-items:center;justify-content:space-between;margin-top:14px}
-.ki-eigene-kopf .tafel__ueberschrift{margin-bottom:0}
-.ki-eigene-neu{
-  width:20px;height:20px;flex:0 0 auto;padding:0;border-radius:50%;
-  border:1px solid var(--rand);background:var(--karte);color:var(--schrift-2);
-  font:inherit;font-size:14px;line-height:1;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-}
-.ki-eigene-neu:hover{background:var(--rand);color:var(--schrift)}
-.ki-eigene{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.ki-eigene__zeile{display:flex;gap:2px}
-.ki-eigene__weg{padding-left:8px;padding-right:8px}
-.ki-eigene__leer{color:var(--schrift-3);font-size:12px;margin:0}
-.ki-anbieter-link{
-  display:block;width:100%;margin-top:10px;padding:0;
-  background:none;border:0;text-align:left;
-  color:var(--blau-hell);font:inherit;font-size:12px;cursor:pointer;
-}
-.ki-anbieter-link:hover{text-decoration:underline}
+/* Fünf Knöpfe statt vier seit „Text bearbeiten" dazukam — flex-wrap,
+   sonst quetschte sich „Text bearbeiten" auf eine Kantenlänge, die kein
+   Wort mehr zeigt. Fester Mindestwert statt „flex:1 1 0": zwei bis drei
+   je Zeile, statt fünf gleich schmale in einer. */
+.ki{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.ki .knopf{flex:1 1 88px;font-size:12px;padding:6px 4px}
 
 /* ---------- Der KI-Chat ---------- */
 .chat__verlauf{flex:1 1 auto;overflow:auto;padding:0 14px 14px;min-height:0}
@@ -480,6 +507,15 @@ select option{background:var(--karte);color:var(--schrift)}
   border-bottom-left-radius:4px;
 }
 .chat__nachricht--wartet{color:var(--schrift-3);font-style:italic}
+.chat__aktionen{
+  display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;margin-right:auto;max-width:85%;
+}
+.chat__aktion{
+  border:1px solid var(--rand);background:var(--karte);color:var(--schrift-2);
+  border-radius:5px;padding:3px 9px;font-size:11.5px;cursor:default;
+}
+.chat__aktion:hover:not(:disabled){background:var(--rand);color:var(--schrift)}
+.chat__aktion:disabled{opacity:.45;cursor:default}
 .chat__eingabe{
   flex:0 0 auto;display:flex;gap:8px;padding:12px 14px;
   border-top:1px solid var(--rand);
@@ -1256,11 +1292,45 @@ select option{background:var(--karte);color:var(--schrift)}
 }
 .seite__fuss .knopf{width:auto}
 
+/* „.karte > .feld:not(.feld--schalter) > .feld__name" (oben) ist
+   spezifischer als „.feld--flaeche"s eigene Regel und gewinnt sonst gegen
+   sie — der Name bliebe schmal, und die fünf Zeilen rückten daneben statt
+   darunter. Über die ID lässt sich das ohne Eingriff in die gemeinsame
+   Regel richtigstellen. */
+#einst-aufgaben-titel{flex:1 1 100%;margin:0 0 10px}
+.aufgaben-liste{flex:1 1 100%;display:flex;flex-direction:column;gap:2px}
+.aufgaben-liste .zeile select{flex:0 1 260px;min-width:0}
+.einst-aufgaben-verweis{margin-top:10px}
+
+/* „Liste der KI-Modelle": dieselbe Zeilenform wie „Eigene Anbieter",
+   nur mit zwei Symbolknöpfen (Bearbeiten, Löschen) statt einem. Im
+   Dialog gebaut über „art:'knoten'" — deshalb hier keine .feld-Regeln,
+   sondern eigene, knappe Maße. */
+.modelle-liste{min-width:280px}
+.modelle-liste .zeile{margin-top:8px}
+.modelle-liste .knopf{width:auto;padding:6px 10px}
+
+/* „Einstellungen der Übersetzung": eine Zeile je Sprache statt eines
+   Klappfelds — angeklickt heißt gewählt, „OK" übernimmt erst dann. */
+.sprachliste{max-height:280px;overflow-y:auto;border:1px solid var(--rand);border-radius:8px;min-width:260px}
+.sprachliste__zeile{
+  display:block;width:100%;text-align:left;padding:8px 12px;
+  background:none;border:0;border-bottom:1px solid var(--rand);
+  color:var(--schrift);font:inherit;font-size:13px;cursor:pointer;
+}
+.sprachliste__zeile:last-child{border-bottom:0}
+.sprachliste__zeile:hover{background:var(--karte)}
+.sprachliste__zeile--an{background:var(--blau);color:#fff}
+
 .anbieter-liste{margin-top:4px}
 .anbieter-liste .zeile{margin-top:6px}
 .anbieter-liste__name{font-size:13px}
 .anbieter-liste__meta{display:block;font-size:11.5px;color:var(--schrift-3)}
 .anbieter-liste__leer{margin:6px 0 0;font-size:12px;color:var(--schrift-3)}
+/* Zwei Knöpfe einer Zeile (Starten, Entfernen) als ein Block — sonst
+   drückt „justify-content:space-between" sie auseinander wie drei
+   eigenständige Spalten statt wie ein zusammengehöriges Paar rechts. */
+.anbieter-liste__knoepfe{display:flex;gap:8px;flex:0 0 auto}
 
 /* ---------- Der Dialog „Eigenen Anbieter hinzufügen" ---------- */
 /* Dieselbe Zeilenform wie bei den übrigen Feldern (.dialog__zeile: Label
@@ -2024,6 +2094,13 @@ button.wz-wahl--schrift{
   margin:0 0 12px;color:var(--schrift-2);font-size:13px;
   white-space:pre-line;line-height:1.6;
 }
+.dialog__unterkopf{
+  margin:4px 0 8px;font-size:10.5px;font-weight:700;letter-spacing:.7px;
+  text-transform:uppercase;color:var(--schrift-3);
+}
+/* Kärtchenreihe für „Modell verwenden für" — dieselbe Marken-Optik wie
+   „Für wen?" in der Seitenleiste, hier mehrfach wählbar statt einfach. */
+.verwendung-chips{display:flex;flex-wrap:wrap;gap:6px}
 .dialog__zeile{display:flex;align-items:center;gap:12px;margin-bottom:10px}
 .dialog__zeile span{flex:0 0 110px;font-size:13px}
 .dialog__zeile input,.dialog__zeile select,
@@ -2364,6 +2441,26 @@ button.wz-wahl--schrift{
 .navigation__zeile--4{padding-left:44px;font-size:12px;color:var(--schrift-2)}
 .navigation__leer{margin:4px;font-size:12px;color:var(--schrift-3);line-height:1.5}
 
+/* Kopfzeile mit „Überschrift erzeugen" und je Zeile ein ✨-Knopf für
+   Verbessern/Alternativen/Zusammenfassen — dieselbe zentrale KI wie
+   überall sonst, hier auf die Gliederung angewandt. */
+.navigation__kopfzeile{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:6px}
+.navigation__kopfzeile .navigation__titel{margin:0}
+.navigation__eintrag{display:flex;align-items:center;gap:2px}
+.navigation__eintrag .navigation__zeile{flex:1 1 auto;min-width:0}
+.navigation__ki{
+  flex:0 0 auto;width:22px;height:22px;padding:0;border-radius:5px;
+  background:none;border:1px solid transparent;color:var(--schrift-3);
+  font-size:12px;cursor:pointer;
+}
+.navigation__ki:hover{background:var(--karte);border-color:var(--rand);color:var(--schrift)}
+.navigation__ki-erzeugen{
+  flex:0 0 auto;padding:3px 8px;border-radius:5px;
+  background:none;border:1px solid var(--rand);color:var(--schrift-3);
+  font:inherit;font-size:10.5px;cursor:pointer;white-space:nowrap;
+}
+.navigation__ki-erzeugen:hover{background:var(--karte);color:var(--schrift)}
+
 /* ---- Zeilennummern ----
    Ein Zähler je Absatz, links neben dem Blatt. Beim Drucken bleibt er. */
 /* Der Zaehler beginnt, wo der Anwender ihn haben will. --nummern-beginn
@@ -2510,6 +2607,83 @@ body.ohne-kopftipp .fusszeile:empty::before{content:none}
   background:var(--warm);color:#fff;border-radius:3px;
 }
 .verfolgt--gezeigt{outline:2px solid var(--blau);outline-offset:2px}
+
+/* ---- Die Kommentare-Tafel (links) ---- */
+.li-tafel{
+  flex:0 0 260px;overflow-y:auto;
+  background:var(--tafel);border-right:1px solid var(--rand);
+  padding:12px 10px;display:flex;flex-direction:column;
+}
+.li-tafel[hidden]{display:none}
+.li-tafel__kopf{display:flex;align-items:center;gap:6px;margin-bottom:10px}
+.li-tafel__titel{flex:1 1 auto;margin:0;font-size:14px}
+.li-tafel__knopf{
+  flex:0 0 auto;border:0;background:none;color:var(--schrift-2);
+  cursor:default;padding:3px 6px;border-radius:4px;font-size:14px;
+}
+.li-tafel__knopf:hover{background:var(--karte);color:var(--schrift)}
+.li-tafel__leer{color:var(--schrift-3);font-size:12.5px;padding:4px}
+.li-tafel__inhalt{flex:1 1 auto;overflow-y:auto}
+
+.li-kommentar-neu{margin-bottom:12px}
+.li-kommentar-neu[hidden]{display:none}
+.li-kommentar-neu textarea{
+  width:100%;min-height:60px;border:1px solid var(--rand);border-radius:5px;
+  background:var(--blatt);color:var(--blatt-schrift);padding:6px 8px;
+  font:inherit;font-size:13px;resize:vertical;
+}
+.li-kommentar-neu__knoepfe{display:flex;gap:6px;margin-top:6px}
+
+.li-kommentar{
+  border-bottom:1px solid var(--rand);padding:8px 2px 12px;margin-bottom:4px;
+}
+.li-kommentar--geloest{opacity:.55;text-decoration:line-through}
+.li-kommentar__text{margin:0 0 8px;font-size:13px}
+.li-kommentar__knoepfe{display:flex;gap:6px;flex-wrap:wrap}
+
+/* ---- Kommentare am Rand ----
+   Ein Geschwister des Blatts (siehe index.html), nicht sein Kind — sonst
+   würde „overflow:hidden" am Blatt jede Karte abschneiden. */
+.blatt-rand{flex:0 0 260px;margin-left:20px;position:relative;min-height:1px}
+.blatt-rand[hidden]{display:none}
+
+.rand-karte{
+  position:absolute;left:0;right:0;
+  background:var(--karte);border:1px solid var(--rand);border-radius:6px;
+  padding:8px 10px 9px;font-size:12.5px;line-height:1.4;
+}
+.rand-karte--geloest{opacity:.55}
+.rand-karte--gezeigt{outline:2px solid var(--warm);outline-offset:1px}
+.rand-karte__linie{position:absolute;top:14px;right:100%;width:18px;height:0;border-top:1px solid var(--warm)}
+.rand-karte__kopf{display:flex;align-items:center;gap:7px}
+.rand-karte__bild{
+  flex:0 0 auto;width:22px;height:22px;border-radius:50%;
+  background:var(--warm);color:#fff;font-weight:700;font-size:11px;
+  display:flex;align-items:center;justify-content:center;
+}
+.rand-karte__autor{flex:1 1 auto;min-width:0;color:var(--warm);font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rand-karte__zeit{flex:0 0 auto;color:var(--schrift-3);font-size:10.5px}
+.rand-karte__menu{
+  flex:0 0 auto;border:0;background:none;color:var(--schrift-3);
+  cursor:default;padding:2px 3px;font-size:13px;line-height:1;border-radius:3px;
+}
+.rand-karte__menu:hover{background:var(--rand);color:var(--schrift)}
+.rand-karte__text{margin-top:6px;white-space:pre-wrap;word-break:break-word}
+.rand-karte__antwort{margin-top:8px;padding-top:8px;border-top:1px solid var(--rand)}
+.rand-karte__antwort .rand-karte__bild{width:18px;height:18px;font-size:9.5px}
+.rand-karte__antwort-kopf{display:flex;align-items:center;gap:6px;margin-bottom:2px}
+.rand-karte__eingabe{
+  width:100%;margin-top:8px;border:1px solid var(--rand);border-radius:5px;
+  background:var(--blatt);color:var(--blatt-schrift);padding:5px 7px;
+  font:inherit;font-size:12px;resize:vertical;min-height:42px;
+}
+.rand-karte__knoepfe{display:flex;gap:6px;margin-top:6px}
+
+/* ---- Das kleine Klappmenü ----
+   Derselbe Bildkasten wie das Rechtsklickmenü (.rechtsmenue), nur unter
+   einem Knopf statt am Mauszeiger — für „Einfügen als" und die drei
+   Punkte am Kopf der Kommentare-Tafel. */
+.kleinmenue{min-width:200px}
 
 /* „Einfaches Markup": der Text, wie er nach dem Annehmen aussähe. */
 .dokument--markup-schlicht ins.verfolgt{
@@ -4219,6 +4393,12 @@ body.flaeche--register .werkzeugleiste--zwei{display:none}
   display:flex;flex-wrap:wrap;align-items:center;gap:5px;
   margin-top:9px;
 }
+/* In der kompakten Kopfzeile steht „.schnell" nicht mehr unter dem
+   Prüfen-Knopf, sondern daneben — keine eigene Zeile, kein oberer Abstand.
+   Der Verweis „Welche Hilfe wann?" bräuchte hier eine zweite Zeile, die es
+   nicht mehr gibt; er bleibt über F6 und das Menüband erreichbar. */
+#hilfe-schnell{flex:1 1 auto;min-width:0;margin-top:0;overflow:hidden}
+#hilfe-schnell .schnell__mehr{display:none}
 .schnell__marke{
   padding:3px 9px;border-radius:11px;
   border:1px solid var(--rand);background:none;

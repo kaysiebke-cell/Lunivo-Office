@@ -335,6 +335,50 @@ function modellHinweisZeigen() {
 }
 
 /* ------------------------------------------------------------
+   KI-Konfiguration: welches Modell für welche Aufgabe.
+
+   Fünf feste Zeilen (KI.AUFGABEN), jede ein Auswahlfeld mit „Standard"
+   ganz oben — leer lassen heißt weiter das global gewählte „KI-Modell"
+   verwenden, wie es bisher für alles galt. Die Liste der wählbaren
+   Modelle kommt aus KI.alleModelle() und ändert sich mit „Eigene
+   Anbieter" — deshalb wird diese Funktion überall dort mit aufgerufen,
+   wo auch eigeneAnbieterZeigen() läuft.
+   ------------------------------------------------------------ */
+function aufgabenZeigen() {
+  const kasten = $('einst-aufgaben-liste');
+  kasten.innerHTML = '';
+
+  const modelle = KI.alleModelle();
+  const jetzt = modelle.find((m) => m.id === KI.modellJetzt());
+  const standardName = jetzt ? jetzt.name : KI.modellJetzt();
+
+  for (const [aufgabe, name] of KI.AUFGABEN) {
+    const zeile = document.createElement('div');
+    zeile.className = 'zeile';
+
+    const label = document.createElement('span');
+    label.textContent = name;
+
+    const auswahl = document.createElement('select');
+    const standard = document.createElement('option');
+    standard.value = '';
+    standard.textContent = 'Standard (' + standardName + ')';
+    auswahl.appendChild(standard);
+    for (const modell of modelle) {
+      const o = document.createElement('option');
+      o.value = modell.id;
+      o.textContent = modell.name + (modell.lokal ? ' — auf diesem Rechner' : '');
+      auswahl.appendChild(o);
+    }
+    auswahl.value = KI.aufgabenModellRoh(aufgabe);
+    auswahl.addEventListener('change', () => KI.aufgabenModellSetzen(aufgabe, auswahl.value));
+
+    zeile.append(label, auswahl);
+    kasten.appendChild(zeile);
+  }
+}
+
+/* ------------------------------------------------------------
    Eigene Anbieter.
 
    Anders als bei Ollama steht die Liste schon da, sobald das Fenster
@@ -342,6 +386,18 @@ function modellHinweisZeigen() {
    den man erst fragen muss. Trotzdem in einer eigenen Funktion, weil sie
    nach jedem Anlegen und jedem Entfernen neu gebaut werden muss.
    ------------------------------------------------------------ */
+/* Wofür ein Anbieter steht, in einer Zeile — dieselbe Zusammensetzung an
+   allen drei Stellen, die es zeigen (hier, „Liste der KI-Modelle", das
+   Klappfeld „KI-Modell"). „Lokaler Anbieter" nur, wenn die Anschrift
+   wirklich auf diesem Rechner liegt (siehe KI.istLokaleUrl) — Teil A4 #22
+   will das erkennbar machen, nicht nur bei Ollamas eigenem, kürzerem Weg. */
+function anbieterMetaText(anbieter) {
+  const marken = (anbieter.verwendungFuer || [])
+    .map((t) => KI.ANBIETER_TAG_NAMEN[t]).filter(Boolean).join(', ');
+  return anbieter.modell + (marken ? ' · ' + marken : '')
+    + (KI.istLokaleUrl(anbieter.url) ? ' · Lokaler Anbieter' : '');
+}
+
 function eigeneAnbieterZeigen() {
   const gewaehlt = KI.modellJetzt();
   const liste = KI.Anbieter.liste();
@@ -351,7 +407,8 @@ function eigeneAnbieterZeigen() {
   for (const anbieter of liste) {
     const eintrag = document.createElement('option');
     eintrag.value = KI.EIGEN_MARKE + anbieter.id;
-    eintrag.textContent = anbieter.name + ' (' + anbieter.modell + ')';
+    eintrag.textContent = anbieter.name + ' (' + anbieter.modell + ')'
+      + (KI.istLokaleUrl(anbieter.url) ? ' — auf diesem Rechner' : '');
     kasten.appendChild(eintrag);
   }
   if (KI.istEigenerAnbieter(gewaehlt)) $('einst-modell').value = gewaehlt;
@@ -375,8 +432,7 @@ function eigeneAnbieterZeigen() {
     namensfeld.textContent = anbieter.name;
     const meta = document.createElement('em');
     meta.className = 'anbieter-liste__meta';
-    meta.textContent = anbieter.modell + ' · '
-      + (anbieter.verwendungFuer || []).map((t) => KI.ANBIETER_TAG_NAMEN[t]).filter(Boolean).join(', ');
+    meta.textContent = anbieterMetaText(anbieter);
     namensfeld.appendChild(meta);
 
     const weg = document.createElement('button');
@@ -391,12 +447,75 @@ function eigeneAnbieterZeigen() {
       }
       KI.Anbieter.entfernen(anbieter.id);
       eigeneAnbieterZeigen();
+      aufgabenZeigen();
       $('einst-modell').value = KI.modellJetzt();
       modellHinweisZeigen();
     });
 
     eintrag.append(namensfeld, weg);
     zeile.appendChild(eintrag);
+  }
+}
+
+/* ------------------------------------------------------------
+   Eigene Assistenten — dieselbe Listenform wie „Eigene Anbieter" eben,
+   nur mit zwei Knöpfen statt einem: „Starten" führt ihn sofort aus,
+   „Entfernen" löscht ihn ohne Rückfrage, wie bei den Anbietern auch.
+   Stand bis vor Kurzem als eigene Verwaltungsfläche in der Seitenleiste —
+   jetzt nur noch hier. Anlegen läuft über denselben Dialog wie im
+   Menüband (griffe.assistentErstellen, siehe kiteil.js). Starten schließt
+   die Optionen zuerst, sonst liefe die KI-Antwort hinter einer Wand ab,
+   die niemand sieht. */
+function eigeneAssistentenZeigen() {
+  const liste = KI.Assistenten.liste();
+  const kasten = $('einst-assistenten-liste');
+  kasten.innerHTML = '';
+
+  if (!liste.length) {
+    const leer = document.createElement('p');
+    leer.className = 'anbieter-liste__leer';
+    leer.textContent = 'Noch keiner angelegt.';
+    kasten.appendChild(leer);
+    return;
+  }
+
+  for (const assistent of liste) {
+    const zeile = document.createElement('div');
+    zeile.className = 'zeile';
+
+    const namensfeld = document.createElement('span');
+    namensfeld.className = 'anbieter-liste__name';
+    namensfeld.textContent = assistent.name;
+    const meta = document.createElement('em');
+    meta.className = 'anbieter-liste__meta';
+    meta.textContent = assistent.modus === 'ersetzen' ? 'Ersetzt den Text' : 'Zeigt einen Hinweis';
+    namensfeld.appendChild(meta);
+
+    const knoepfe = document.createElement('div');
+    knoepfe.className = 'anbieter-liste__knoepfe';
+
+    const start = document.createElement('button');
+    start.className = 'knopf';
+    start.type = 'button';
+    start.textContent = 'Starten';
+    start.title = assistent.prompt;
+    start.addEventListener('click', () => {
+      schliessen();
+      griffe.assistentAusfuehren(assistent);
+    });
+
+    const weg = document.createElement('button');
+    weg.className = 'knopf';
+    weg.type = 'button';
+    weg.textContent = 'Entfernen';
+    weg.addEventListener('click', () => {
+      KI.Assistenten.entfernen(assistent.id);
+      eigeneAssistentenZeigen();
+    });
+
+    knoepfe.append(start, weg);
+    zeile.append(namensfeld, knoepfe);
+    kasten.appendChild(zeile);
   }
 }
 
@@ -438,7 +557,7 @@ function modellZeileBauen(bezug) {
   const kasten = document.createElement('div');
   kasten.className = 'dialog__zeile anbieter-modellzeile';
   const titel = document.createElement('span');
-  titel.textContent = 'Modell';
+  titel.textContent = 'Modell *';
   kasten.appendChild(titel);
 
   const inhalt = document.createElement('div');
@@ -457,7 +576,7 @@ function modellZeileBauen(bezug) {
   const abrufen = document.createElement('button');
   abrufen.type = 'button';
   abrufen.className = 'verweis anbieter-modellzeile__vonhand';
-  abrufen.textContent = 'Liste der Modelle abrufen';
+  abrufen.textContent = 'Liste der Modelle aktualisieren';
   reihe.append(feld, abrufen);
 
   const stand = document.createElement('p');
@@ -539,28 +658,124 @@ function modellZeileBauen(bezug) {
   return { knoten: kasten, feld, abrufenLauf };
 }
 
-function eigenenAnbieterHinzufuegen() {
+/* Die Zeile „Modell verwenden für" — dieselben acht Marken wie in der
+   Liste „Eigene Anbieter" (KI.ANBIETER_TAGS), nur als Kärtchenreihe zum
+   An- und Abwählen statt als Dropdown mit genau einem Treffer. Ein Modell
+   kann mehr als eine Fähigkeit haben — „gpt-4o-mini" versteht Text UND
+   Bilder —, darum hier mehrere zugleich wählbar, wie die Marken bei
+   „Für wen?" in der Seitenleiste. „Alle" ist eine Abkürzung, kein neunter
+   Wert: Sie setzt oder leert die anderen acht in einem Klick. */
+function verwendungChipsBauen(anfangswerte) {
+  const kasten = document.createElement('div');
+  kasten.className = 'dialog__zeile anbieter-modellzeile';
+  const titel = document.createElement('span');
+  titel.textContent = 'Modell verwenden für';
+  kasten.appendChild(titel);
+
+  const inhalt = document.createElement('div');
+  inhalt.className = 'verwendung-chips';
+  kasten.appendChild(inhalt);
+
+  const alleSchluessel = KI.ANBIETER_TAGS.map(([k]) => k);
+  let ausgewaehlt = new Set(anfangswerte && anfangswerte.length ? anfangswerte : ['text']);
+  const chips = new Map();
+
+  const alleChip = document.createElement('button');
+  alleChip.type = 'button';
+  alleChip.className = 'marke';
+  alleChip.textContent = 'Alle';
+
+  function zeichne() {
+    for (const [schluessel, chip] of chips) chip.classList.toggle('marke--an', ausgewaehlt.has(schluessel));
+    alleChip.classList.toggle('marke--an', alleSchluessel.every((k) => ausgewaehlt.has(k)));
+  }
+  alleChip.addEventListener('click', () => {
+    ausgewaehlt = alleSchluessel.every((k) => ausgewaehlt.has(k)) ? new Set() : new Set(alleSchluessel);
+    zeichne();
+  });
+  inhalt.appendChild(alleChip);
+
+  for (const [schluessel, name] of KI.ANBIETER_TAGS) {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'marke';
+    chip.textContent = name;
+    chip.addEventListener('click', () => {
+      if (ausgewaehlt.has(schluessel)) ausgewaehlt.delete(schluessel); else ausgewaehlt.add(schluessel);
+      zeichne();
+    });
+    chips.set(schluessel, chip);
+    inhalt.appendChild(chip);
+  }
+  zeichne();
+
+  return { knoten: kasten, werte: () => [...ausgewaehlt] };
+}
+
+/* „bestehender" ist null beim Anlegen — dann heißt es „Eigenen Anbieter
+   hinzufügen" und schreibt einen neuen Eintrag. Ist ein Anbieter gegeben
+   (Bearbeiten-Symbol in „Liste der KI-Modelle"), heißt der Dialog
+   „Modell bearbeiten" und ändert genau diesen Eintrag — derselbe Kasten,
+   dieselben Felder, kein zweites Formular. „nachSpeichern" ruft — falls
+   gegeben — die Liste auf, aus der heraus bearbeitet wurde. */
+/* Der Verweis „Benutzerdefinierte Anbieter" unten im Formular — führt zur
+   Liste aller eigenen Anbieter (Bearbeiten, Löschen, Anlegen), statt das
+   hier offene Formular ein zweites Mal anzubieten. Schließt sich selbst,
+   wie „Abbrechen" es täte, und öffnet direkt danach die Liste. */
+function benutzerdefinierteAnbieterLinkBauen() {
+  const link = document.createElement('button');
+  link.type = 'button';
+  link.className = 'verweis anbieter-modellzeile__vonhand';
+  link.textContent = 'Benutzerdefinierte Anbieter';
+  link.addEventListener('click', (e) => {
+    const grund = e.target.closest('.dialoggrund');
+    if (grund) grund.remove();
+    modelleListeOeffnen();
+  });
+  return link;
+}
+
+/* Ollama braucht in der Standardeinrichtung keinen Schlüssel — statt
+   einer künstlichen Pflicht dazu steht das eindeutig am Feld selbst,
+   nicht nur im Fließtext darüber, den man leicht überliest. */
+function schluesselPlatzhalterSetzen(feld, vorlageKey) {
+  if (!feld) return;
+  feld.placeholder = vorlageKey === 'ollama' ? 'Nicht erforderlich' : 'z. B. sk-…';
+  feld.title = vorlageKey === 'ollama'
+    ? 'Ollama braucht in der Standardeinrichtung keinen Schlüssel.' : '';
+}
+
+function anbieterFormular(bestehender, nachSpeichern) {
   if (!griffe.fenster) return;
 
   const bezug = {};
   const modellZeile = modellZeileBauen(bezug);
+  if (bestehender) modellZeile.feld.value = bestehender.modell;
+  const verwendungChips = verwendungChipsBauen(bestehender ? bestehender.verwendungFuer : ['text']);
   const vorDenDialogen = new Set(document.querySelectorAll('.dialoggrund'));
   /* Die Vorlage, mit der das Feld aufgeht — „beiWechsel" vergleicht damit,
-     ob sich „Anbieter" wirklich geändert hat. */
-  let letzteVorlage = 'ollama';
+     ob sich „Anbieter" wirklich geändert hat. Beim Bearbeiten: die Vorlage,
+     deren Anschrift zur gespeicherten passt, sonst „Andere". */
+  let letzteVorlage = bestehender
+    ? (ANBIETER_VORLAGEN.find(([, , url]) => url === bestehender.url)?.[0] || 'andere')
+    : 'ollama';
 
-  griffe.fenster('Eigenen Anbieter hinzufügen', [
+  griffe.fenster(bestehender ? 'Modell bearbeiten' : 'Eigenen Anbieter hinzufügen', [
+    { schluessel: 'name', name: 'Modellname *', art: 'text',
+      wert: bestehender ? bestehender.name : 'Ollama (auf diesem Rechner)' },
+    { art: 'unterkopf', text: 'Anbieter' },
     { art: 'satz', text: 'Oben den Anbieter wählen — die URL darunter füllt sich von '
                        + 'selbst und lässt sich danach noch ändern. Nur bei „Andere" '
                        + 'bleibt sie leer und will von Hand eingetragen werden.' },
-    { schluessel: 'vorlage', name: 'Anbieter', art: 'auswahl',
-      werte: ANBIETER_VORLAGEN.map(([k, n]) => [k, n]), wert: 'ollama' },
-    { schluessel: 'name', name: 'Modellname', art: 'text', wert: 'Ollama (auf diesem Rechner)' },
-    { schluessel: 'url', name: 'URL', art: 'text', wert: 'http://localhost:11434/v1' },
-    { schluessel: 'schluessel', name: 'Schlüssel', art: 'password', wert: '' },
+    { schluessel: 'vorlage', name: 'Name *', art: 'auswahl',
+      werte: ANBIETER_VORLAGEN.map(([k, n]) => [k, n]), wert: letzteVorlage },
+    { schluessel: 'url', name: 'URL *', art: 'text',
+      wert: bestehender ? bestehender.url : 'http://localhost:11434/v1' },
+    { schluessel: 'schluessel', name: 'Schlüssel', art: 'password',
+      wert: bestehender ? bestehender.schluessel : '' },
     { art: 'knoten', name: 'Modell', knoten: modellZeile.knoten },
-    { schluessel: 'verwendung', name: 'Modell verwenden für', art: 'auswahl',
-      werte: KI.ANBIETER_TAGS, wert: 'text' },
+    { art: 'knoten', name: 'Modell verwenden für', knoten: verwendungChips.knoten },
+    { art: 'knoten', name: '', knoten: benutzerdefinierteAnbieterLinkBauen() },
   ], (werte) => {
     const name = (werte.name || '').trim();
     const url = (werte.url || '').trim();
@@ -570,15 +785,20 @@ function eigenenAnbieterHinzufuegen() {
         'Modellname, URL und Modell werden gebraucht — nichts angelegt.';
       return;
     }
-    const angelegt = KI.Anbieter.hinzufuegen({
-      name, url, schluessel: werte.schluessel, modell,
-      verwendungFuer: [werte.verwendung],
-    });
+    const angaben = { name, url, schluessel: werte.schluessel, modell,
+      verwendungFuer: verwendungChips.werte() };
+    if (bestehender) {
+      KI.Anbieter.aktualisieren(bestehender.id, angaben);
+    } else {
+      const angelegt = KI.Anbieter.hinzufuegen(angaben);
+      KI.modellSetzen(KI.EIGEN_MARKE + angelegt.id);
+      $('einst-modell').value = KI.modellJetzt();
+    }
     eigeneAnbieterZeigen();
-    KI.modellSetzen(KI.EIGEN_MARKE + angelegt.id);
-    $('einst-modell').value = KI.modellJetzt();
+    aufgabenZeigen();
     modellHinweisZeigen();
-  }, 'Hinzufügen', false, null, (werte, eingaben) => {
+    if (typeof nachSpeichern === 'function') nachSpeichern();
+  }, bestehender ? 'Speichern' : 'Hinzufügen', false, null, (werte, eingaben) => {
     /* Die Verweise auf „Anschrift" und „Schlüssel" — der Modell-Knopf
        braucht sie, kennt die Felder selbst aber nicht, weil „fenster()"
        sie erst beim Aufgehen baut. Jeder Wechsel reicht sie nach; billig
@@ -591,6 +811,7 @@ function eigenenAnbieterHinzufuegen() {
        Abfrage bei jedem Buchstaben im Modellnamen neu an. */
     if (werte.vorlage === letzteVorlage) return;
     letzteVorlage = werte.vorlage;
+    schluesselPlatzhalterSetzen(eingaben.schluessel, werte.vorlage);
 
     const vorlage = ANBIETER_VORLAGEN.find(([k]) => k === werte.vorlage);
     if (!vorlage) return;
@@ -621,10 +842,147 @@ function eigenenAnbieterHinzufuegen() {
     const textfelder = [...neuerDialog.querySelectorAll('.dialog__zeile input[type="text"]')];
     bezug.url = textfelder[1];
     bezug.schluessel = neuerDialog.querySelector('.dialog__zeile input[type="password"]');
+    schluesselPlatzhalterSetzen(bezug.schluessel, letzteVorlage);
     /* Die Vorlage, mit der das Feld aufgeht, ist Ollama — gleich nachsehen,
        welche Modelle da sind, ohne dass erst ein Wechsel nötig wäre. */
     modellZeile.abrufenLauf(true);
   }
+}
+
+/* Der bisherige Name — Menüband, Menü und der Knopf hier auf der Seite
+   rufen ihn unverändert; „anbieterFormular(null)" ist genau der
+   Anlegen-Fall von eben. */
+function eigenenAnbieterHinzufuegen() { anbieterFormular(null); }
+
+/* ------------------------------------------------------------
+   Liste der KI-Modelle — alle eigenen Anbieter an einer Stelle, mit
+   Anlegen-, Bearbeiten- und Löschen-Symbol. Die Seite „Schreibhilfe und
+   KI" zeigt „Eigene Anbieter" zwar schon direkt (Löschen genügte bisher),
+   aber ein Bearbeiten-Symbol braucht ein eigenes Formular — dasselbe wie
+   beim Anlegen, nur mit einem vorhandenen Eintrag gefüttert. Dieses
+   Fenster bündelt beides, wie „Liste der KI-Modelle" es vorgibt: ein
+   Knopf „+" oben, darunter jede Zeile mit ✎ und 🗑.
+   ------------------------------------------------------------ */
+function modelleListeBauen() {
+  const kasten = document.createElement('div');
+  kasten.className = 'modelle-liste';
+
+  function zeichne() {
+    kasten.innerHTML = '';
+    const liste = KI.Anbieter.liste();
+
+    if (!liste.length) {
+      const leer = document.createElement('p');
+      leer.className = 'anbieter-liste__leer';
+      leer.textContent = 'Noch keiner eingetragen.';
+      kasten.appendChild(leer);
+    }
+
+    for (const anbieter of liste) {
+      const zeile = document.createElement('div');
+      zeile.className = 'zeile';
+
+      const namensfeld = document.createElement('span');
+      namensfeld.className = 'anbieter-liste__name';
+      namensfeld.textContent = anbieter.name;
+      const meta = document.createElement('em');
+      meta.className = 'anbieter-liste__meta';
+      meta.textContent = anbieterMetaText(anbieter);
+      namensfeld.appendChild(meta);
+
+      const knoepfe = document.createElement('div');
+      knoepfe.className = 'anbieter-liste__knoepfe';
+
+      const bearbeiten = document.createElement('button');
+      bearbeiten.className = 'knopf'; bearbeiten.type = 'button';
+      bearbeiten.textContent = '✎';
+      bearbeiten.title = '„' + anbieter.name + '" bearbeiten';
+      bearbeiten.setAttribute('aria-label', 'Bearbeiten');
+      bearbeiten.addEventListener('click', () => anbieterFormular(anbieter, zeichne));
+
+      const weg = document.createElement('button');
+      weg.className = 'knopf'; weg.type = 'button';
+      weg.textContent = '🗑';
+      weg.title = '„' + anbieter.name + '" löschen';
+      weg.setAttribute('aria-label', 'Löschen');
+      weg.addEventListener('click', () => {
+        if (KI.modellJetzt() === KI.EIGEN_MARKE + anbieter.id) KI.modellSetzen('claude-opus-5');
+        KI.Anbieter.entfernen(anbieter.id);
+        zeichne();
+        eigeneAnbieterZeigen();
+        aufgabenZeigen();
+        $('einst-modell').value = KI.modellJetzt();
+        modellHinweisZeigen();
+      });
+
+      knoepfe.append(bearbeiten, weg);
+      zeile.append(namensfeld, knoepfe);
+      kasten.appendChild(zeile);
+    }
+
+    const neu = document.createElement('button');
+    neu.className = 'knopf'; neu.type = 'button';
+    neu.textContent = '+ Modell hinzufügen …';
+    neu.addEventListener('click', () => anbieterFormular(null, zeichne));
+    kasten.appendChild(neu);
+  }
+
+  zeichne();
+  return kasten;
+}
+
+function modelleListeOeffnen() {
+  if (!griffe.fenster) return;
+  griffe.fenster('Liste der KI-Modelle', [
+    { art: 'knoten', name: '', knoten: modelleListeBauen() },
+  ], () => {}, 'Schließen');
+}
+
+/* ------------------------------------------------------------
+   Übersetzen nach — eine Sprache aus einer Liste wählen, nicht aus einem
+   Klappfeld. Eine Zeile je Sprache, angeklickt heißt gewählt; „OK"
+   übernimmt erst dann. Der gespeicherte Wert bleibt derselbe String wie
+   bisher (KI.Speicher „sprache") — nur der Weg dorthin ist neu.
+   ------------------------------------------------------------ */
+function spracheKnopfZeigen() {
+  $('einst-sprache-knopf').textContent = KI.Speicher.lies('sprache', 'Englisch');
+}
+
+function sprachlisteBauen(anfangswert) {
+  const kasten = document.createElement('div');
+  kasten.className = 'sprachliste';
+  let gewaehlt = anfangswert;
+  const zeilen = new Map();
+
+  function markiere() {
+    for (const [sprache, zeile] of zeilen) {
+      zeile.classList.toggle('sprachliste__zeile--an', sprache === gewaehlt);
+    }
+  }
+  for (const sprache of KI.SPRACHEN) {
+    const zeile = document.createElement('button');
+    zeile.type = 'button';
+    zeile.className = 'sprachliste__zeile';
+    zeile.textContent = sprache;
+    zeile.addEventListener('click', () => { gewaehlt = sprache; markiere(); });
+    zeilen.set(sprache, zeile);
+    kasten.appendChild(zeile);
+  }
+  markiere();
+  return { knoten: kasten, wert: () => gewaehlt };
+}
+
+function uebersetzungsSpracheOeffnen() {
+  if (!griffe.fenster) return;
+  const liste = sprachlisteBauen(KI.Speicher.lies('sprache', 'Englisch'));
+  griffe.fenster('Einstellungen der Übersetzung', [
+    { art: 'satz', text: 'Sprache für die KI-Übersetzung wählen.' },
+    { art: 'knoten', name: '', knoten: liste.knoten },
+  ], () => {
+    KI.Speicher.schreib('sprache', liste.wert());
+    spracheKnopfZeigen();
+    griffe.neuZeichnen();
+  }, 'OK');
 }
 
 /* ------------------------------------------------------------
@@ -1294,6 +1652,8 @@ function oeffnen(bereich) {
   $('einst-schluessel').value = KI.schluesselLies();
   $('einst-modell').value = KI.modellJetzt();
   eigeneAnbieterZeigen();
+  eigeneAssistentenZeigen();
+  aufgabenZeigen();
   schluesselStandZeigen();
   modellHinweisZeigen();
   kostenZeigen();
@@ -1723,17 +2083,8 @@ function schluesselUebernehmen() {
    Verdrahtung
    ------------------------------------------------------------ */
 function verdrahten() {
-  for (const sprache of KI.SPRACHEN) {
-    const eintrag = document.createElement('option');
-    eintrag.value = sprache;
-    eintrag.textContent = sprache;
-    $('einst-sprache').appendChild(eintrag);
-  }
-  $('einst-sprache').value = KI.Speicher.lies('sprache', 'Englisch');
-  $('einst-sprache').addEventListener('change', (e) => {
-    KI.Speicher.schreib('sprache', e.target.value);
-    griffe.neuZeichnen();
-  });
+  spracheKnopfZeigen();
+  $('einst-sprache-knopf').addEventListener('click', uebersetzungsSpracheOeffnen);
 
   $('einst-zu').addEventListener('click', schliessen);
   $('einst-fertig').addEventListener('click', schliessen);
@@ -1763,10 +2114,17 @@ function verdrahten() {
     KI.modellSetzen(e.target.value);
     modellHinweisZeigen();
     schluesselStandZeigen();
+    /* Die Vorbelegung „Standard (…)" in der KI-Konfiguration nennt den
+       Namen dieses Modells — bei einem Wechsel muss sie mitziehen. */
+    aufgabenZeigen();
     griffe.neuZeichnen();
   });
 
   $('einst-anbieter-neu').addEventListener('click', eigenenAnbieterHinzufuegen);
+  $('einst-modelle-liste').addEventListener('click', modelleListeOeffnen);
+
+  $('einst-assistenten-neu').addEventListener('click',
+    () => griffe.assistentErstellen(eigeneAssistentenZeigen));
 
   $('einst-kosten-weg').addEventListener('click', () => { KI.kostenLeeren(); kostenZeigen(); });
 
@@ -1792,10 +2150,12 @@ function verdrahten() {
 
     // Die Einstellungen können sich geändert haben — die Felder nachziehen.
     $('einst-modell').value = KI.modellJetzt();
-    $('einst-sprache').value = KI.Speicher.lies('sprache', 'Englisch');
+    spracheKnopfZeigen();
     modellHinweisZeigen();
     gedaechtnisZeigen();
     eigeneAnbieterZeigen();
+    eigeneAssistentenZeigen();
+    aufgabenZeigen();
     griffe.neuZeichnen();
 
     $('einst-gelernt-stand').textContent = 'Eingespielt: ' + ergebnis.neueWoerter
@@ -1905,17 +2265,11 @@ function verdrahten() {
 
 verdrahten();
 
-/* Von aussen — Menüband, Menü, Seitenleiste — soll derselbe Weg gelten
-   wie der Knopf hier auf der Seite: erst die Seite an der richtigen
-   Stelle aufmachen, dann den Dialog davor. Sonst legte sich der Dialog
-   über eine Seite, die noch die Lesehilfe zeigt, und beim Zumachen stünde
-   man an einer Stelle, die nichts mit dem eben Angelegten zu tun hat. */
-function eigenenAnbieterHinzufuegenVonAussen() {
-  oeffnen('ki');
-  eigenenAnbieterHinzufuegen();
-}
-
+/* Menüband und Schnellmenü führen jetzt nur noch zur Optionsseite selbst
+   (Einstellungen.oeffnen('ki')) — keine eigene Provider-/API-Konfiguration
+   außerhalb von Optionen mehr, siehe Teil A2 des Auftrags. Der Dialog
+   „Eigenen Anbieter hinzufügen" bleibt dadurch ausschließlich über den
+   Knopf hier auf der Seite und über „Liste der KI-Modelle" erreichbar. */
 return { oeffnen, schliessen, verbinde, offen: () => offen, gedaechtnisZeigen,
-         flaecheAnspringen,
-         eigenenAnbieterHinzufuegen: eigenenAnbieterHinzufuegenVonAussen };
+         flaecheAnspringen };
 })();

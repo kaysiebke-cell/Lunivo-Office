@@ -298,6 +298,60 @@ const anweisungZusammenfassung = () =>
   + 'Antworte ausschließlich mit der Zusammenfassung: keine Erklärung, keine '
   + 'Anführungszeichen, keine Vorrede, keine Überschrift wie „Zusammenfassung:".';
 
+/* ------------------------------------------------------------
+   Text bearbeiten — Verbessern, Umformulieren, Kürzen, Erweitern,
+   Professioneller/Einfacher formulieren, Tonalität ändern.
+
+   Sieben verschiedene Wünsche, eine Anweisung mit einem Satz Unterschied
+   — genau wie Korrigieren und Übersetzen oben schon zeigen, dass eine
+   Anfrage für vieles reicht. Eine siebte Funktion für jede Variante wäre
+   dieselbe Anfrage siebenmal abgeschrieben.
+   ------------------------------------------------------------ */
+const TEXT_AKTIONEN = [
+  ['verbessern', 'Verbessern'],
+  ['umformulieren', 'Umformulieren'],
+  ['kuerzen', 'Kürzen'],
+  ['erweitern', 'Erweitern'],
+  ['professioneller', 'Professioneller formulieren'],
+  ['einfacher', 'Einfacher formulieren'],
+  ['ton-freundlich', 'Tonalität: Freundlich'],
+  ['ton-foermlich', 'Tonalität: Förmlich'],
+  ['ton-sachlich', 'Tonalität: Sachlich'],
+  ['ton-locker', 'Tonalität: Locker'],
+  ['ton-bestimmt', 'Tonalität: Bestimmt'],
+];
+const TEXT_AKTION_SAETZE = {
+  verbessern: 'Verbessere den folgenden Text — klarer und natürlicher, ohne den Sinn zu ändern.',
+  umformulieren: 'Formuliere den folgenden Text um — derselbe Sinn, andere Worte und Sätze.',
+  kuerzen: 'Kürze den folgenden Text deutlich — nur das Wichtigste bleibt.',
+  erweitern: 'Erweitere den folgenden Text um sinnvolle Einzelheiten, ohne abzuschweifen.',
+  professioneller: 'Formuliere den folgenden Text professioneller und sachlicher.',
+  einfacher: 'Formuliere den folgenden Text einfacher — kurze Sätze, geläufige Wörter.',
+  'ton-freundlich': 'Ändere die Tonalität des folgenden Textes zu freundlich und zugewandt.',
+  'ton-foermlich': 'Ändere die Tonalität des folgenden Textes zu förmlich.',
+  'ton-sachlich': 'Ändere die Tonalität des folgenden Textes zu sachlich und neutral.',
+  'ton-locker': 'Ändere die Tonalität des folgenden Textes zu locker und ungezwungen.',
+  'ton-bestimmt': 'Ändere die Tonalität des folgenden Textes zu bestimmt und klar.',
+};
+const anweisungTextAktion = (aktion) =>
+  (TEXT_AKTION_SAETZE[aktion] || TEXT_AKTION_SAETZE.verbessern) + ' '
+  + EMPFAENGER[empfaengerLies()].anweisung + ' '
+  + alsZettel(zettelLies())
+  + 'Ändere nichts am Sinn, erfinde nichts hinzu, was nicht sinngemäß schon dastand. '
+  + 'Absätze und Zeilenumbrüche bleiben, wie sie sind — gib genau so viele '
+  + 'Zeilen zurück, wie hereinkamen. '
+  + 'Der Text kann in jeder Sprache stehen; antworte in der Sprache des Textes. '
+  + 'Antworte ausschließlich mit dem neuen Text: keine Erklärung, keine '
+  + 'Anführungszeichen, keine Vorrede.';
+
+/** Text bearbeiten. Gibt { text } oder { fehler } zurück. */
+async function textAktion(text, aktion) {
+  const { ergebnis, fehler, cent } = await anfrage(anweisungTextAktion(aktion), text);
+  if (fehler) return { fehler };
+  if (cent) merkeKosten(cent);
+  return { text: ergebnis, cent };
+}
+
 /* Der Bauplan der Antwort. Er wird als JSON-Schema mitgeschickt, und die
    Antwort MUSS ihm entsprechen — kein Fließtext, kein Code-Zaun, keine
    fehlenden Felder. Was früher als Bitte in der Anweisung stand, ist damit
@@ -452,10 +506,95 @@ const Anbieter = {
     this.schreib(liste);
     return eintrag;
   },
+  /** Ein vorhandener Eintrag wird geändert, nicht ein zweiter angelegt —
+      das Bearbeiten-Symbol in „Liste der KI-Modelle" braucht das. Die id
+      bleibt, alles andere darf sich ändern. */
+  aktualisieren(id, { name, url, schluessel, modell, verwendungFuer }) {
+    const gueltig = new Set(ANBIETER_TAGS.map(([k]) => k));
+    const eintrag = this.liste().find((a) => a.id === id);
+    if (!eintrag) return null;
+    eintrag.name = String(name || '').trim().slice(0, 60) || 'Eigenes Modell';
+    eintrag.url = String(url || '').trim().replace(/\/+$/, '');
+    eintrag.schluessel = String(schluessel || '').trim();
+    eintrag.modell = String(modell || '').trim();
+    if (Array.isArray(verwendungFuer)) {
+      eintrag.verwendungFuer = verwendungFuer.filter((t) => gueltig.has(t));
+    }
+    this.schreib(this.liste().map((a) => (a.id === id ? eintrag : a)));
+    return eintrag;
+  },
   entfernen(id) {
     this.schreib(this.liste().filter((a) => a.id !== id));
   },
 };
+
+/* ------------------------------------------------------------
+   Zentrale Aufgaben-/Modellzuweisung.
+
+   Bisher lief jede Anfrage über EIN Modell — „KI-Modell" oben, für
+   Korrigieren, Übersetzen, Zusammenfassen und den Chat gleichermaßen. Das
+   bleibt der Normalfall und die Vorbelegung. Wer aber etwa Zusammenfassen
+   lieber mit einem größeren Modell laufen lassen will als den Chat, kann
+   das hier je Aufgabe überschreiben — „Standard" (leer) heißt weiterhin
+   „nimm KI-Modell von oben". Kein Automatismus wechselt eigenmächtig zu
+   einem anderen Anbieter: Ist eine Zuweisung leer, gilt genau das eine
+   global gewählte Modell, sonst nichts.
+
+   „Bildgenerierung" hat noch keine Funktion, die sie abfragen würde —
+   genau wie „Bilder" und „Audioverarbeitung" bei den Modell-Fähigkeiten
+   unten schon länger nicht. Die Zeile steht trotzdem bereit, für den Tag,
+   an dem eine Bildfunktion hinzukommt, statt dann eine zweite Liste
+   anzulegen. */
+const AUFGABEN = [
+  ['chatbot', 'Chatbot'],
+  ['zusammenfassen', 'Zusammenfassen'],
+  ['uebersetzung', 'Übersetzung'],
+  ['textanalyse', 'Textanalyse'],
+  ['bildgenerierung', 'Bildgenerierung'],
+];
+
+const aufgabenModelle = () => Speicher.lies('aufgabenModelle', {});
+/** Was für „aufgabe" eingetragen ist — leer, wenn „Standard" gilt. */
+const aufgabenModellRoh = (aufgabe) => aufgabenModelle()[aufgabe] || '';
+/** Was für „aufgabe" tatsächlich verwendet wird — mit Rückfall auf das
+    global gewählte Modell, wenn nichts Eigenes eingetragen ist. */
+const aufgabenModellLies = (aufgabe) => aufgabenModellRoh(aufgabe) || modellJetzt();
+function aufgabenModellSetzen(aufgabe, wert) {
+  const alle = aufgabenModelle();
+  if (wert) alle[aufgabe] = wert; else delete alle[aufgabe];
+  Speicher.schreib('aufgabenModelle', alle);
+}
+
+/* Eine Liste für alle Wahlfelder, die „welches Modell?" fragen — dieselben
+   drei Herkünfte, die „KI-Modell" oben schon kennt (Claude, was auf dem
+   Rechner installiert wurde, eigene Anbieter), nur einmal zusammengefasst
+   statt an jeder Stelle einzeln aufgebaut. Ollama-Modelle, die noch nicht
+   als eigener Anbieter eingetragen sind, fehlen hier bewusst — ohne
+   Eintrag gäbe es keine Fähigkeits-Marken und keinen festen Namen, den man
+   später wiederfindet; „Anbieter hinzufügen…" mit der Ollama-Vorlage legt
+   das in einem Zug an. */
+const MODELLE_FEST = [
+  ['claude-opus-5', 'Beste Qualität · Opus 5'],
+  ['claude-sonnet-5', 'Mittelweg · Sonnet 5'],
+  ['claude-haiku-4-5', 'Günstig & schnell · Haiku 4.5'],
+];
+/* Läuft die Anschrift auf diesem Rechner? Eine Zeile, an einer Stelle —
+   überall sonst, wo „lokal?" gefragt wird (die Liste hier, „Eigene
+   Anbieter", „Liste der KI-Modelle"), wird diese Funktion gerufen statt
+   dieselbe Regel ein zweites oder drittes Mal hinzuschreiben. */
+const istLokaleUrl = (url) => /^https?:\/\/localhost[:/]|^https?:\/\/127\.0\.0\.1/.test(String(url || ''));
+
+function alleModelle() {
+  const eigene = Anbieter.liste().map((a) => ({
+    id: EIGEN_MARKE + a.id, name: a.name + ' (' + a.modell + ')',
+    lokal: istLokaleUrl(a.url),
+    verwendungFuer: a.verwendungFuer || [],
+  }));
+  return [
+    ...MODELLE_FEST.map(([id, name]) => ({ id, name, lokal: false, verwendungFuer: ['text'] })),
+    ...eigene,
+  ];
+}
 
 /* Ein lokales Modell und ein eigener Anbieter brauchen keinen der beiden
    „apiKey" — der eine gar keinen Schlüssel, der andere seinen eigenen.
@@ -475,14 +614,14 @@ const verfuegbar = () => {
    bisherige Verlauf. Beide Formen gehen in dieselbe Anfrage — eine zweite
    Anfrage-Art für den Chat zu bauen hieße, denselben Weg zu Claude und zu
    Ollama ein zweites Mal zu legen. */
-async function anfrage(anweisung, text, bauplan) {
-  const modell = modellJetzt();
+async function anfrage(anweisung, text, bauplan, modellUeberschreibung) {
+  const modell = modellUeberschreibung || modellJetzt();
   if (istEigenerAnbieter(modell)) {
     return eigenerAnbieterAnfrage(Anbieter.holen(eigenerAnbieterId(modell)), anweisung, text, bauplan);
   }
   return istLokal(modell)
-    ? ollamaAnfrage(anweisung, text, bauplan)
-    : claudeAnfrage(anweisung, text, bauplan);
+    ? ollamaAnfrage(anweisung, text, bauplan, modell)
+    : claudeAnfrage(anweisung, text, bauplan, modell);
 }
 
 /* Ein Stück Text wird zu einer einzelnen Frage. Ein Verlauf — Array aus
@@ -493,9 +632,9 @@ function alsNachrichten(text) {
   return text.map((z) => ({ role: z.rolle === 'ki' ? 'assistant' : 'user', content: z.text }));
 }
 
-async function claudeAnfrage(anweisung, text, bauplan) {
+async function claudeAnfrage(anweisung, text, bauplan, modellUeberschreibung) {
   const schluessel = schluesselLies();
-  const modell = modellJetzt();
+  const modell = modellUeberschreibung || modellJetzt();
   if (!schluessel) {
     return { fehler: 'Es ist kein Schlüssel gespeichert. Schreibhilfe → Einstellungen.' };
   }
@@ -605,8 +744,8 @@ async function claudeAnfrage(anweisung, text, bauplan) {
    wird in Wartezeit: Ohne Grafikkarte rechnet ein 8-Milliarden-Modell an
    einem Brief mehrere Minuten, wo Claude Sekunden braucht.
    ------------------------------------------------------------ */
-async function ollamaAnfrage(anweisung, text, bauplan) {
-  const modell = lokalerName(modellJetzt());
+async function ollamaAnfrage(anweisung, text, bauplan, modellUeberschreibung) {
+  const modell = lokalerName(modellUeberschreibung || modellJetzt());
   if (!modell) return { fehler: 'Es ist noch kein Modell gewählt. In den Einstellungen nachholen.' };
 
   const bitte = {
@@ -832,7 +971,8 @@ async function korrigieren(text) {
 
 /** Übersetzen. Dieselbe Anfrage, andere Anweisung. */
 async function uebersetzen(text, sprache) {
-  const { ergebnis, fehler, cent } = await anfrage(anweisungUebersetzung(sprache), text);
+  const { ergebnis, fehler, cent } =
+    await anfrage(anweisungUebersetzung(sprache), text, null, aufgabenModellLies('uebersetzung'));
   if (fehler) return { fehler };
   if (cent) merkeKosten(cent);
   return { text: ergebnis, cent };
@@ -840,7 +980,22 @@ async function uebersetzen(text, sprache) {
 
 /** Zusammenfassen. Gibt { text } oder { fehler } zurück. */
 async function zusammenfassen(text) {
-  const { ergebnis, fehler, cent } = await anfrage(anweisungZusammenfassung(), text);
+  const { ergebnis, fehler, cent } =
+    await anfrage(anweisungZusammenfassung(), text, null, aufgabenModellLies('zusammenfassen'));
+  if (fehler) return { fehler };
+  if (cent) merkeKosten(cent);
+  return { text: ergebnis, cent };
+}
+
+const anweisungTextanalyse = () =>
+  'Analysiere diesen Text kurz: wie viele Wörter, welcher Tonfall, wie leicht lesbar für '
+  + 'einen Menschen mit Legasthenie, und was sich verbessern ließe. In wenigen, einfachen Sätzen. '
+  + 'Antworte in der Sprache des Textes.';
+
+/** Text- und Wortanalyse — kein Ersatz, nur eine Einschätzung. */
+async function textAnalyse(text) {
+  const { ergebnis, fehler, cent } =
+    await anfrage(anweisungTextanalyse(), text, null, aufgabenModellLies('textanalyse'));
   if (fehler) return { fehler };
   if (cent) merkeKosten(cent);
   return { text: ergebnis, cent };
@@ -848,7 +1003,8 @@ async function zusammenfassen(text) {
 
 /** Vorschläge holen. Gibt { vorschlaege } oder { fehler } zurück. */
 async function vorschlaege(text) {
-  const { ergebnis, fehler, cent } = await anfrage(anweisungVorschlaege(), text, VORSCHLAG_BAUPLAN);
+  const { ergebnis, fehler, cent } = await anfrage(anweisungVorschlaege(), text, VORSCHLAG_BAUPLAN,
+    aufgabenModellLies('textanalyse'));
   if (fehler) return { fehler };
   if (cent) merkeKosten(cent);
 
@@ -932,8 +1088,8 @@ function anweisungSprachfunde(eigeneWoerter) {
 
 /** Funde der KI, mit Stelle im Text. Gibt { funde } oder { fehler }. */
 async function sprachfunde(text, eigeneWoerter) {
-  const { ergebnis, fehler, cent } =
-    await anfrage(anweisungSprachfunde(eigeneWoerter), text, SPRACHFUND_BAUPLAN);
+  const { ergebnis, fehler, cent } = await anfrage(anweisungSprachfunde(eigeneWoerter), text,
+    SPRACHFUND_BAUPLAN, aufgabenModellLies('textanalyse'));
   if (fehler) return { fehler, funde: [] };
   if (cent) merkeKosten(cent);
 
@@ -1075,7 +1231,7 @@ async function assistentAusfuehren(assistent, text) {
    Dokuments als Auskunft mit, damit „was fehlt in diesem Brief noch"
    funktioniert, ohne dass jemand ihn erst hineinkopiert.
    ============================================================ */
-function anweisungChat(dokumentText) {
+function anweisungChat(dokumentText, markierterText) {
   let anweisung =
     'Du bist die KI-Hilfe in Lunivo-Office, einem Schreibprogramm für einen '
     + 'Menschen mit Legasthenie. Beantworte Fragen zum Schreiben und zum '
@@ -1088,13 +1244,121 @@ function anweisungChat(dokumentText) {
   } else {
     anweisung += '\n\nEs steht noch kein Text im Dokument.';
   }
+
+  /* War beim Fragen ein Stück Text markiert, ist DAS gemeint, wenn die
+     Frage von „der markierten Stelle" oder „dem Wort" spricht — nicht
+     irgendeine Stelle, die die KI selbst im Dokument sucht. */
+  if (markierterText && markierterText.trim()) {
+    anweisung += '\n\nMarkiert ist gerade: „' + markierterText.trim() + '". Bezieht sich die Frage '
+      + 'auf „die markierte Stelle", „das markierte Wort" oder Ähnliches, ist genau das gemeint.';
+  }
   return anweisung;
 }
 
 /** Eine Chat-Runde. „verlauf" ist [{ rolle: 'mensch'|'ki', text }, …], die
     letzte Zeile die neue Frage. Gibt { text } oder { fehler } zurück. */
-async function chatNachricht(verlauf, dokumentText) {
-  const { ergebnis, fehler, cent } = await anfrage(anweisungChat(dokumentText), verlauf);
+async function chatNachricht(verlauf, dokumentText, markierterText) {
+  const { ergebnis, fehler, cent } =
+    await anfrage(anweisungChat(dokumentText, markierterText), verlauf, null, aufgabenModellLies('chatbot'));
+  if (fehler) return { fehler };
+  if (cent) merkeKosten(cent);
+  return { text: ergebnis, cent };
+}
+
+/* ============================================================
+   9b. Kommentare und Überschriften
+
+   Kein eigenes Konfigurationsfeld für keins von beiden — beide nutzen
+   dieselben fünf Aufgaben von oben (Zusammenfassen, Textanalyse, Chatbot).
+   Eine sechste oder siebte Zuweisung anzulegen hieße, „Standard" ein
+   zweites Mal zu erfinden.
+   ============================================================ */
+
+/** Mehrere Kommentare zu einem Satz zusammenfassen. */
+async function kommentareZusammenfassen(kommentare) {
+  const text = kommentare.map((k, i) => (i + 1) + '. ' + k).join('\n');
+  const anweisung = 'Das sind Kommentare an verschiedenen Stellen eines deutschen '
+    + 'Dokuments. Fasse in zwei bis drei Sätzen zusammen, worum es ihnen gemeinsam geht.';
+  const { ergebnis, fehler, cent } =
+    await anfrage(anweisung, text, null, aufgabenModellLies('zusammenfassen'));
+  if (fehler) return { fehler };
+  if (cent) merkeKosten(cent);
+  return { text: ergebnis, cent };
+}
+
+/** Eine kurze, sachliche Antwort auf einen Kommentar vorschlagen. */
+async function kommentarAntwort(kommentarText, dokumentText) {
+  let anweisung = 'Ein Kommentar steht an einer Stelle in einem deutschen Dokument. '
+    + 'Schlage eine kurze, sachliche Antwort darauf vor — einfache Worte, keine Floskeln.';
+  if (dokumentText && dokumentText.trim()) {
+    anweisung += '\n\nZusammenhang aus dem Dokument:\n„' + dokumentText.trim() + '"';
+  }
+  const { ergebnis, fehler, cent } =
+    await anfrage(anweisung, kommentarText, null, aufgabenModellLies('chatbot'));
+  if (fehler) return { fehler };
+  if (cent) merkeKosten(cent);
+  return { text: ergebnis, cent };
+}
+
+/** Erklären, was ein Kommentar verlangt oder meint. */
+async function kommentarAnalysieren(kommentarText) {
+  const anweisung = 'Erkläre in ein bis zwei Sätzen, was dieser Kommentar an einem '
+    + 'Dokument verlangt oder meint — für jemanden, der ihn schnell verstehen will.';
+  const { ergebnis, fehler, cent } =
+    await anfrage(anweisung, kommentarText, null, aufgabenModellLies('textanalyse'));
+  if (fehler) return { fehler };
+  if (cent) merkeKosten(cent);
+  return { text: ergebnis, cent };
+}
+
+/** Eine neue Überschrift für einen Textabschnitt formulieren. */
+async function ueberschriftErzeugen(abschnittText) {
+  const anweisung = 'Formuliere eine kurze, klare Überschrift für diesen Textabschnitt '
+    + 'eines deutschen Dokuments. Antworte NUR mit der Überschrift, ohne Anführungszeichen.';
+  const { ergebnis, fehler, cent } =
+    await anfrage(anweisung, abschnittText, null, aufgabenModellLies('textanalyse'));
+  if (fehler) return { fehler };
+  if (cent) merkeKosten(cent);
+  return { text: (ergebnis || '').trim(), cent };
+}
+
+/** Eine vorhandene Überschrift verbessern, mit dem Abschnitt als Zusammenhang. */
+async function ueberschriftVerbessern(text, abschnittText) {
+  let anweisung = 'Verbessere diese Überschrift eines deutschen Dokuments — kurz, klar, '
+    + 'ohne den Sinn zu ändern. Antworte NUR mit der neuen Überschrift, ohne Anführungszeichen.';
+  if (abschnittText) anweisung += '\n\nDer Text darunter beginnt so:\n„' + abschnittText.trim() + '"';
+  const { ergebnis, fehler, cent } =
+    await anfrage(anweisung, text, null, aufgabenModellLies('textanalyse'));
+  if (fehler) return { fehler };
+  if (cent) merkeKosten(cent);
+  return { text: (ergebnis || '').trim(), cent };
+}
+
+/** Drei alternative Überschriften vorschlagen. */
+async function ueberschriftAlternativen(text, abschnittText) {
+  let anweisung = 'Schlage drei alternative Überschriften für diesen Abschnitt eines '
+    + 'deutschen Dokuments vor — unterschiedlich im Ton, alle kurz und klar.';
+  if (abschnittText) anweisung += '\n\nDer Text darunter beginnt so:\n„' + abschnittText.trim() + '"';
+  const bauplan = {
+    type: 'object',
+    properties: { vorschlaege: { type: 'array', items: { type: 'string' } } },
+    required: ['vorschlaege'], additionalProperties: false,
+  };
+  const { ergebnis, fehler, cent } =
+    await anfrage(anweisung, text, bauplan, aufgabenModellLies('textanalyse'));
+  if (fehler) return { fehler, vorschlaege: [] };
+  if (cent) merkeKosten(cent);
+  const daten = alsJson(ergebnis);
+  if (!daten || !Array.isArray(daten.vorschlaege)) {
+    return { fehler: 'Die Antwort kam nicht in der erwarteten Form.', vorschlaege: [] };
+  }
+  return { vorschlaege: daten.vorschlaege.filter((v) => typeof v === 'string' && v.trim()).slice(0, 3) };
+}
+
+/** Den Abschnitt unter einer Überschrift zusammenfassen. */
+async function abschnittZusammenfassen(abschnittText) {
+  const { ergebnis, fehler, cent } =
+    await anfrage(anweisungZusammenfassung(), abschnittText, null, aufgabenModellLies('zusammenfassen'));
   if (fehler) return { fehler };
   if (cent) merkeKosten(cent);
   return { text: ergebnis, cent };
@@ -1210,9 +1474,14 @@ return {
   verfuegbar, modellJetzt, modellSetzen, istLokal, lokalerName, OLLAMA_MARKE,
   Anbieter, istEigenerAnbieter, eigenerAnbieterId, EIGEN_MARKE, anbieterModelle,
   ANBIETER_TAGS, ANBIETER_TAG_NAMEN,
+  AUFGABEN, aufgabenModellRoh, aufgabenModellLies, aufgabenModellSetzen, alleModelle, istLokaleUrl,
   schluesselLies, schluesselSetzen, schluesselLoeschen,
   ollamaModelle, korrigieren, uebersetzen, zusammenfassen, vorschlaege, synonyme, sprachfunde,
+  textAnalyse,
+  TEXT_AKTIONEN, textAktion,
   assistentAusfuehren, chatNachricht,
+  kommentareZusammenfassen, kommentarAntwort, kommentarAnalysieren,
+  ueberschriftErzeugen, ueberschriftVerbessern, ueberschriftAlternativen, abschnittZusammenfassen,
   centFuer, alsGeld, kostenStand, kostenLeeren,
   sicherungBauen, sicherungEinspielen,
 };

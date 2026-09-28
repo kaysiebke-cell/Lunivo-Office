@@ -10,13 +10,14 @@
 
    WAS „umg" IST
 
-   Sechs Namen, mehr braucht diese Datei vom Programm nicht. Fuenf davon
+   Acht Namen, mehr braucht diese Datei vom Programm nicht. Die meisten
    sind Handgriffe der Oberflaeche; „fundeLeeren" ist der einzige
    Schreibzugriff nach draussen: Wenn die KI Vorschlaege zeigt, muessen die
    Funde der Rechtschreibpruefung aus der Seitenleiste weichen — sie teilen
    sich denselben Platz. „fenster" baut den Dialog, in dem ein eigener
    Assistent angelegt wird — derselbe Baukasten, mit dem auch ein Baustein
-   oder eine Formatvorlage entsteht.
+   oder eine Formatvorlage entsteht. „kleinmenue" baut das kleine
+   Klappmenü, mit dem die Hinweiskarte „Einfügen als" anbietet.
 
    Beim Messen sahen es erst sieben Namen aus. „geaendert" war keiner: Im
    KI-Block ist das ein eigener Zaehler und nicht das Flag des Programms.
@@ -30,6 +31,7 @@ const melde      = (...a) => umg.melde(...a);
 const leereFunde = (...a) => umg.leereFunde(...a);
 const kuerze     = (s)    => umg.kuerze(s);
 const menueBauen = ()     => umg.menueBauen();
+const kleinmenue  = (...a) => umg.kleinmenue(...a);
 
 /* ============================================================
    6b. Die KI: korrigieren, vorschlagen, übersetzen
@@ -49,6 +51,7 @@ const KI_KNOEPFE = [
   ['btn-vorschlaege', 'Vorschläge'],
   ['btn-uebersetzen', 'Übersetzen'],
   ['btn-zusammenfassen', 'Zusammenfassen'],
+  ['btn-textaktion', 'Text bearbeiten'],
 ];
 
 /* Solange kein Schlüssel da ist, sehen die drei Knöpfe blass aus — aber sie
@@ -233,11 +236,51 @@ function ersetzeErgebnis(alt, neu) {
   return { zeilen: geaendert, ganz: false };
 }
 
-/* Der gemeinsame Ablauf: Text holen, Knöpfe sperren, Ergebnis einsetzen. */
+/* ------------------------------------------------------------
+   Ist Text markiert? Dann gilt der, nicht das ganze Dokument.
+
+   Die Stellen (von/bis) stehen in derselben Zählung wie
+   Dokument.lies().text — nicht im nativen Range.toString(), das bei
+   einer Markierung über mehrere Absätze hinweg den Zeilenumbruch
+   verschluckt, den Dokument.lies() sonst einfügt. Erkannt wird nur der
+   häufige Fall, in dem Anfang und Ende der Auswahl direkt in einem
+   Text-Knoten liegen (ein normales Ziehen mit der Maus). Alles andere —
+   etwa eine ganze Zeile per Dreifachklick, deren Rand zwischen zwei
+   Knoten liegt — fällt zurück auf den ganzen Text, statt an einer
+   möglicherweise falschen Stelle zu schreiben. */
+function markierungOffsets() {
+  const auswahl = window.getSelection();
+  if (!auswahl.rangeCount || auswahl.isCollapsed) return null;
+  const range = auswahl.getRangeAt(0);
+  if (!Dokument.feld.contains(range.commonAncestorContainer)) return null;
+  if (range.startContainer.nodeType !== Node.TEXT_NODE
+   || range.endContainer.nodeType !== Node.TEXT_NODE) return null;
+
+  const { text, karte } = Dokument.lies();
+  const start = karte.find((e) => e.knoten === range.startContainer);
+  const ende = karte.find((e) => e.knoten === range.endContainer);
+  if (!start || !ende) return null;
+
+  const von = start.von + range.startOffset;
+  const bis = ende.von + range.endOffset;
+  if (bis <= von) return null;
+  const markiert = text.slice(von, bis);
+  return markiert.trim() ? { von, bis, text: markiert } : null;
+}
+
+/* Der gemeinsame Ablauf: Text holen, Knöpfe sperren, Ergebnis einsetzen.
+
+   „eingabeText" im Rückgabewert ist genau das, was wirklich an die KI
+   ging — Markierung oder ganzer Text. Wer das Ergebnis einsetzt, braucht
+   sich den Ausgangstext nicht selbst noch einmal zu merken; zwei Lesungen
+   kurz hintereinander (einmal hier, einmal beim Aufrufer) könnten sonst
+   knapp auseinanderlaufen. */
 async function kiLauf(laeuft, arbeit) {
   if (kiLaeuft) return null;
-  const text = Dokument.lies().text.trim();
-  if (!text) { melde('Es steht noch kein Text da.'); return null; }
+
+  const markierung = markierungOffsets();
+  const eingabeText = markierung ? markierung.text : Dokument.lies().text.trim();
+  if (!eingabeText) { melde('Es steht noch kein Text da.'); return null; }
   if (!KI.verfuegbar()) {
     /* Nicht bloß melden, sondern hinbringen: Die Meldung allein ließe den
        Menschen mit der Frage stehen, wo denn nun dieser Schlüssel hingehört. */
@@ -248,7 +291,11 @@ async function kiLauf(laeuft, arbeit) {
 
   kiLaeuft = true;
   kiKnoepfeAuffrischen();
-  melde(laeuft);
+  /* Wer eine Markierung hat, soll sehen, dass NUR sie gelesen wird —
+     nicht dieselbe Meldung wie beim ganzen Text. */
+  melde(markierung
+    ? 'Die KI liest die Markierung (' + eingabeText.length + ' Zeichen) …'
+    : laeuft);
 
   /* Welche Fassung des Textes gefragt wurde.
 
@@ -257,14 +304,15 @@ async function kiLauf(laeuft, arbeit) {
      Mensch weiter. Käme die Antwort dann ungeprüft ins Blatt, würde sie
      über den neuen Text gelegt: ersetzeErgebnis rechnet alle Stellen aus
      dem Text von vorhin, und bei „ersetze(0, alt.length, neu)" fiele
-     alles weg, was inzwischen dazugekommen ist.
+     alles weg, was inzwischen dazugekommen ist. Bei einer Markierung
+     wären „von"/„bis" ebenso nicht mehr verlässlich.
 
      Also wird die Fassung vorher gemerkt und nachher verglichen. */
   const fassungVorher = umg.fassung ? umg.fassung() : null;
 
   let ergebnis;
   try {
-    ergebnis = await arbeit(Dokument.lies().text);
+    ergebnis = await arbeit(eingabeText);
   } finally {
     kiLaeuft = false;
     kiKnoepfeAuffrischen();
@@ -279,43 +327,94 @@ async function kiLauf(laeuft, arbeit) {
     return null;
   }
 
-  return ergebnis;
+  return { ...ergebnis, eingabeText, markierung };
 }
 
 const preisAnhang = (cent) =>
   (cent === null || cent === undefined) ? '' : ' · ' + KI.alsGeld(cent);
 
-async function kiKorrigieren() {
-  const vorher = Dokument.lies().text;
-  const ergebnis = await kiLauf('Die KI liest den ganzen Text …',
-                                (text) => KI.korrigieren(text));
-  if (!ergebnis) return;
-
-  if (ergebnis.text.trim() === vorher.trim()) {
-    melde('Die KI hat nichts zu ändern gefunden.' + preisAnhang(ergebnis.cent));
+/* Eine Markierung wird zielgenau ersetzt (Dokument.ersetze mit ihren
+   eigenen Stellen); der ganze Text weiter wie bisher über den
+   Absatz-für-Absatz-Vergleich. Beides mündet in dieselbe Meldung, nur
+   mit einem anderen ersten Wort — „Markierung" statt „Korrigiert" —,
+   damit sichtbar bleibt, was gerade passiert ist. */
+function ergebnisEinsetzen(ergebnis, wennGanzMeldung, wennMarkiertMeldung) {
+  if (ergebnis.markierung) {
+    Dokument.ersetze(ergebnis.markierung.von, ergebnis.markierung.bis, ergebnis.text);
+    leereFunde();
+    melde(wennMarkiertMeldung + ' Strg+Z macht es rückgängig.' + preisAnhang(ergebnis.cent));
     return;
   }
-
-  const { zeilen, ganz } = ersetzeErgebnis(vorher, ergebnis.text);
+  const { zeilen, ganz } = ersetzeErgebnis(ergebnis.eingabeText, ergebnis.text);
   leereFunde();
   melde((ganz
-    ? 'Korrigiert. Strg+Z macht es rückgängig.'
+    ? wennGanzMeldung + ' Strg+Z macht es rückgängig.'
     : zeilen + (zeilen === 1 ? ' Absatz geändert.' : ' Absätze geändert.')
       + ' Strg+Z macht es rückgängig.') + preisAnhang(ergebnis.cent));
 }
 
+/* ------------------------------------------------------------
+   Text bearbeiten — Verbessern, Umformulieren, Kürzen, Erweitern,
+   Professioneller/Einfacher formulieren, Tonalität ändern. Ein Dialog
+   mit einer Wahl statt sieben Knöpfen, aus demselben Grund wie bei den
+   Überschriften: sieben Knöpfe in der schmalen Leiste wären eine
+   abgeschnittene Klappe, siehe [[rollende-kaesten-schneiden-ab]].
+   ------------------------------------------------------------ */
+async function kiTextAktionAusfuehren(aktion) {
+  const namen = Object.fromEntries(KI.TEXT_AKTIONEN);
+  const ergebnis = await kiLauf('„' + namen[aktion] + '" …',
+                                (text) => KI.textAktion(text, aktion));
+  if (!ergebnis) return;
+
+  if (ergebnis.text.trim() === ergebnis.eingabeText.trim()) {
+    melde('Die KI hat nichts geändert.' + preisAnhang(ergebnis.cent));
+    return;
+  }
+  ergebnisEinsetzen(ergebnis, namen[aktion] + '.', 'Markierung: ' + namen[aktion] + '.');
+}
+
+/* ------------------------------------------------------------
+   Text- und Wortanalyse — ersetzt nichts, zeigt nur, was die KI über
+   den Text sagt. Deshalb kein „ergebnisEinsetzen", sondern ein Fenster,
+   genau wie das Vorbild es für diese eine Aktion vorsieht. */
+async function kiTextAnalyse() {
+  const ergebnis = await kiLauf('Die KI liest den Text …', (text) => KI.textAnalyse(text));
+  if (!ergebnis) return;
+  umg.fenster('Text- und Wortanalyse', [
+    { art: 'satz', text: ergebnis.text.trim() },
+  ], () => {}, 'Schließen');
+}
+
+function textAktionDialog() {
+  umg.fenster('Text bearbeiten', [
+    { art: 'satz', text: 'Wirkt auf die Markierung, wenn Text markiert ist — '
+                       + 'sonst auf den ganzen Text.' },
+    { schluessel: 'aktion', name: 'Aktion', art: 'auswahl',
+      werte: KI.TEXT_AKTIONEN, wert: 'verbessern' },
+  ], (werte) => kiTextAktionAusfuehren(werte.aktion), 'Los');
+}
+
+async function kiKorrigieren() {
+  const ergebnis = await kiLauf('Die KI liest den ganzen Text …',
+                                (text) => KI.korrigieren(text));
+  if (!ergebnis) return;
+
+  if (ergebnis.text.trim() === ergebnis.eingabeText.trim()) {
+    melde('Die KI hat nichts zu ändern gefunden.' + preisAnhang(ergebnis.cent));
+    return;
+  }
+
+  ergebnisEinsetzen(ergebnis, 'Korrigiert.', 'Markierung korrigiert.');
+}
+
 async function kiUebersetzen() {
   const sprache = KI.Speicher.lies('sprache', 'Englisch');
-  const vorher = Dokument.lies().text;
   const ergebnis = await kiLauf('Wird nach ' + sprache + ' übersetzt …',
                                 (text) => KI.uebersetzen(text, sprache));
   if (!ergebnis) return;
 
-  const { zeilen, ganz } = ersetzeErgebnis(vorher, ergebnis.text);
-  leereFunde();
-  melde('Nach ' + sprache + ' übersetzt'
-    + (ganz ? '' : ' (' + zeilen + ' Absätze)')
-    + '. Strg+Z macht es rückgängig.' + preisAnhang(ergebnis.cent));
+  ergebnisEinsetzen(ergebnis, 'Nach ' + sprache + ' übersetzt.',
+                             'Markierung nach ' + sprache + ' übersetzt.');
 }
 
 /* ------------------------------------------------------------
@@ -334,6 +433,57 @@ function hinweisKarteZeigen(titel, text, cent) {
   hinweisKarte = { titel, text: String(text).trim(), cent };
   umg.fundeLeeren();
   zeichneHinweisKarte();
+}
+
+const alsHtmlSicher = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const alsHtmlZeilenLokal = (text) => text.trim().split('\n').map(alsHtmlSicher).join('<br>');
+
+/* Vier Wege, wie eine Hinweiskarte ins Dokument kommt — dieselben vier,
+   die auch die Zusammenfassung im Vorbild anbietet. Keiner ist der eine
+   „richtige" Weg; welcher passt, hängt davon ab, ob das Ergebnis mit dem
+   Text mitgedruckt werden soll (Rezension, Ersetzen, Am Ende) oder nur
+   als Randbemerkung dabeisteht (Kommentar). */
+function hinweisAlsRezension() {
+  if (!hinweisKarte) return;
+  const { karte } = Dokument.lies();
+  Dokument.waehle(Dokument.bereich(karte, 0, 0));
+  Dokument.einfuegen('<ins class="verfolgt">' + alsHtmlZeilenLokal(hinweisKarte.text) + '</ins><br><br>');
+  hinweisKarte = null;
+  zeichneHinweisKarte();
+  melde('Als Rezension eingefügt — sichtbar im Überarbeitungsbereich.');
+}
+
+function hinweisAlsKommentar() {
+  if (!hinweisKarte) return;
+  const { karte } = Dokument.lies();
+  Dokument.waehle(Dokument.bereich(karte, 0, 0));
+  const autor = (KI.Speicher.lies('kommentarAutor', '') || '').trim() || 'Ich';
+  const marke = '<span class="kommentar" contenteditable="false" data-zeit="' + Date.now()
+              + '" data-autor="' + autor.replace(/"/g, '&quot;')
+              + '" title="' + hinweisKarte.text.replace(/"/g, '&quot;') + '">✎</span>';
+  Dokument.einfuegen(marke);
+  hinweisKarte = null;
+  zeichneHinweisKarte();
+  melde('Als Kommentar eingefügt. Strg+Z macht es rückgängig.');
+}
+
+function hinweisOriginaltextErsetzen() {
+  if (!hinweisKarte) return;
+  const { text } = Dokument.lies();
+  Dokument.ersetze(0, text.length, hinweisKarte.text);
+  hinweisKarte = null;
+  zeichneHinweisKarte();
+  leereFunde();
+  melde('Text ersetzt. Strg+Z macht es rückgängig.');
+}
+
+function hinweisAmEndeEinfuegen() {
+  if (!hinweisKarte) return;
+  const { text } = Dokument.lies();
+  Dokument.ersetze(text.length, text.length, '\n\n' + hinweisKarte.text);
+  hinweisKarte = null;
+  zeichneHinweisKarte();
+  melde('Am Ende eingefügt. Strg+Z macht es rückgängig.');
 }
 
 function zeichneHinweisKarte() {
@@ -359,12 +509,14 @@ function zeichneHinweisKarte() {
 
   const einfuegen = document.createElement('button');
   einfuegen.className = 'knopf knopf--klein';
-  einfuegen.textContent = 'Am Anfang einfügen';
+  einfuegen.textContent = 'Einfügen als ▾';
   einfuegen.addEventListener('click', () => {
-    Dokument.ersetze(0, 0, hinweisKarte.text + '\n\n');
-    hinweisKarte = null;
-    zeichneHinweisKarte();
-    melde('Eingefügt. Strg+Z macht es rückgängig.');
+    kleinmenue(einfuegen, [
+      { name: 'Als Rezension', tun: hinweisAlsRezension },
+      { name: 'Als Kommentar', tun: hinweisAlsKommentar },
+      { name: 'Den Originaltext ersetzen', tun: hinweisOriginaltextErsetzen },
+      { name: 'Am Ende des Dokuments', tun: hinweisAmEndeEinfuegen },
+    ]);
   });
   knoepfe.appendChild(einfuegen);
 
@@ -403,21 +555,15 @@ async function kiZusammenfassen() {
    ------------------------------------------------------------ */
 async function kiAssistentAusfuehren(assistent) {
   if (assistent.modus === 'ersetzen') {
-    const vorher = Dokument.lies().text;
     const ergebnis = await kiLauf('„' + assistent.name + '" arbeitet …',
                                   (text) => KI.assistentAusfuehren(assistent, text));
     if (!ergebnis) return;
 
-    if (ergebnis.text.trim() === vorher.trim()) {
+    if (ergebnis.text.trim() === ergebnis.eingabeText.trim()) {
       melde('„' + assistent.name + '" hat nichts geändert.' + preisAnhang(ergebnis.cent));
       return;
     }
-    const { zeilen, ganz } = ersetzeErgebnis(vorher, ergebnis.text);
-    leereFunde();
-    melde((ganz
-      ? 'Ersetzt. Strg+Z macht es rückgängig.'
-      : zeilen + (zeilen === 1 ? ' Absatz geändert.' : ' Absätze geändert.')
-        + ' Strg+Z macht es rückgängig.') + preisAnhang(ergebnis.cent));
+    ergebnisEinsetzen(ergebnis, 'Ersetzt.', 'Markierung ersetzt.');
     return;
   }
 
@@ -431,8 +577,15 @@ async function kiAssistentAusfuehren(assistent) {
 /* Name, Prompt, Modus erfragen — über den Dialogbaukasten aus programm.js,
    denselben, mit dem auch ein Baustein oder eine Formatvorlage angelegt
    wird. Eine eigene Fenstersorte dafür wäre nur eine vierte Abschrift
-   desselben Kastens. */
-function assistentErstellen() {
+   desselben Kastens.
+
+   „nachAnlegen" ist die einzige Verbindung zu dem, was nach dem Anlegen
+   eine Liste zeigen will: Früher zeichnete diese Funktion die Liste in
+   der Seitenleiste gleich selbst neu — seit die Verwaltung ausschließlich
+   in den Optionen steht (siehe einstellungen.js, eigeneAssistentenZeigen),
+   kennt sie deren Seite nicht mehr. Ruft das Menüband ohne Rückfrage-
+   Wunsch, bleibt der Parameter leer und es passiert einfach nichts weiter. */
+function assistentErstellen(nachAnlegen) {
   umg.fenster('Neuen Assistenten erstellen', [
     { art: 'satz', text: 'Ein eigener Knopf für eine Textaufgabe, die immer '
                        + 'wiederkehrt — zum Beispiel „Fakten prüfen" oder '
@@ -451,57 +604,9 @@ function assistentErstellen() {
       return;
     }
     KI.Assistenten.hinzufuegen({ name, prompt, modus: werte.modus });
-    eigeneAssistentenBauen();
+    if (typeof nachAnlegen === 'function') nachAnlegen();
     melde('„' + name + '" angelegt.');
   }, 'Erstellen');
-}
-
-/* Die Knöpfe der eigenen Assistenten, unter der Überschrift „Eigene
-   Assistenten" mit ihrem eigenen Anlegen-Knopf (im HTML, fest verdrahtet —
-   siehe unten). Diese Funktion füllt nur noch die Liste selbst: ein
-   Assistent je Zeile, mit „×" daneben zum Wegnehmen — ohne Rückfrage, wie
-   „Löschen" bei den Textbausteinen auch ohne sie auskommt. Ist noch
-   keiner angelegt, steht das als Satz da statt als leere Fläche, die wie
-   ein Fehler aussieht. */
-function eigeneAssistentenBauen() {
-  const kasten = $('ki-eigene');
-  if (!kasten) return;
-  kasten.innerHTML = '';
-
-  const liste = KI.Assistenten.liste();
-  if (!liste.length) {
-    const leer = document.createElement('p');
-    leer.className = 'ki-eigene__leer';
-    leer.textContent = 'Noch keiner angelegt.';
-    kasten.appendChild(leer);
-    return;
-  }
-
-  for (const assistent of liste) {
-    const zeile = document.createElement('div');
-    zeile.className = 'ki-eigene__zeile';
-
-    const lauf = document.createElement('button');
-    lauf.className = 'knopf knopf--klein';
-    lauf.textContent = assistent.name;
-    lauf.title = assistent.prompt + (assistent.modus === 'ersetzen'
-      ? ' (ersetzt den Text)' : ' (zeigt einen Hinweis)');
-    lauf.addEventListener('click', () => kiAssistentAusfuehren(assistent));
-    zeile.appendChild(lauf);
-
-    const weg = document.createElement('button');
-    weg.className = 'knopf knopf--klein ki-eigene__weg';
-    weg.textContent = '×';
-    weg.title = '„' + assistent.name + '" löschen';
-    weg.addEventListener('click', () => {
-      KI.Assistenten.entfernen(assistent.id);
-      eigeneAssistentenBauen();
-      melde('„' + assistent.name + '" gelöscht.');
-    });
-    zeile.appendChild(weg);
-
-    kasten.appendChild(zeile);
-  }
 }
 
 /* ------------------------------------------------------------
@@ -646,7 +751,8 @@ function empfaengerBauen() {
    Griff in fremden Zustand. Jetzt hat er einen Namen. */
 return {
   kiKorrigieren, kiVorschlaege, kiUebersetzen, kiZusammenfassen,
-  kiKnoepfeAuffrischen, empfaengerBauen, eigeneAssistentenBauen, assistentErstellen,
+  kiKnoepfeAuffrischen, empfaengerBauen, assistentErstellen, kiAssistentAusfuehren,
+  textAktionDialog, kiTextAktionAusfuehren, kiTextAnalyse,
   vorschlaegeLeeren: () => { vorschlaege = []; },
 };
 }

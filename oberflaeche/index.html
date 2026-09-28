@@ -113,6 +113,29 @@
        Bei einem langen Schreiben der schnellste Weg zur richtigen Stelle. -->
   <aside class="navigation" id="navigation" hidden aria-label="Navigationsbereich"></aside>
 
+  <!-- Die Kommentare-Tafel: alle Kommentare auf einen Blick, mit einem
+       Eingabefeld, das sich in ihr selbst auf- und zumacht — kein eigenes
+       Fenster, wo die Tafel das Ergebnis sowieso zeigt. -->
+  <aside class="li-tafel" id="li-tafel-kommentare" hidden aria-label="Kommentare">
+    <div class="li-tafel__kopf">
+      <h2 class="li-tafel__titel">Kommentare</h2>
+      <button class="li-tafel__knopf" id="li-kommentar-neu" type="button"
+              title="Neuer Kommentar" aria-label="Neuer Kommentar">✎</button>
+      <button class="li-tafel__knopf" id="li-kommentare-menu" type="button"
+              title="Sortieren und Anzeigen" aria-label="Sortieren und Anzeigen">⋯</button>
+      <button class="li-tafel__knopf" id="li-kommentare-schliessen" type="button"
+              title="Schließen" aria-label="Kommentare schließen">×</button>
+    </div>
+    <div class="li-kommentar-neu" id="li-kommentar-neu-formular" hidden>
+      <textarea id="li-kommentar-neu-text" placeholder="Anmerkung …"></textarea>
+      <div class="li-kommentar-neu__knoepfe">
+        <button class="knopf knopf--klein" id="li-kommentar-neu-setzen" type="button">Setzen</button>
+        <button class="knopf knopf--klein" id="li-kommentar-neu-abbrechen" type="button">Abbrechen</button>
+      </div>
+    </div>
+    <div class="li-tafel__inhalt" id="li-kommentare-inhalt"></div>
+  </aside>
+
   <!-- Die Werkbank: das Lineal und darunter die Fläche, auf der das Blatt
        liegt. Beide gehören zusammen und sind gleich breit. Das Lineal
        stand einmal über dem ganzen Fenster — dann lief es bei schmalem
@@ -149,6 +172,10 @@
     </div>
 
   <div class="arbeitsflaeche" id="arbeitsflaeche">
+    <!-- Blatt und Rand zusammen als eine Einheit, sonst zöge das Zentrieren
+         (margin:auto, siehe CSS) den Rand an den fernen Rand der Fläche
+         statt direkt neben das Blatt. -->
+    <div class="blatt-bereich">
     <div class="blatt" id="blatt">
       <!-- Die vier Ecken zeigen, wo der bedruckbare Bereich beginnt. -->
       <div class="blatt__marken" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
@@ -171,6 +198,13 @@
       <div class="fusszeile" id="fusszeile" contenteditable="true" hidden
            spellcheck="false" aria-label="Fußzeile"></div>
     </div>
+    <!-- Der Rand rechts vom Blatt: Kommentare stehen hier, auf Höhe ihrer
+         Stelle im Text — nicht in einer Liste weit weg davon. Er ist ein
+         Geschwister des Blatts, kein Kind: Das Blatt schneidet ab, was
+         über seinen Rand hinausragt (overflow:hidden), und eine
+         Kommentarkarte darf das nicht. -->
+    <div class="blatt-rand" id="blatt-rand" hidden aria-label="Kommentare am Rand"></div>
+    </div>
   </div>
   </div>
   </div>
@@ -182,16 +216,20 @@
     <div id="tafel-schreibhilfe">
       <div class="tafel__kopf">
         <h1 class="tafel__name">Schreib <span>|</span> hilfe</h1>
-        <p class="tafel__satz">Sucht die Fehler, die ein Rechtschreibprüfer nicht finden kann.</p>
-        <button class="knopf" id="btn-pruefen">Prüfen</button>
 
-        <!-- Schnellzugriff auf die Stufen. Er steht hier und nicht im Menü,
-             weil das der Ort ist, an den man beim Schreiben ohnehin sieht.
-             Vorher lagen die drei Schalter in Extras ▸ Beim Schreiben — wer
-             sie nicht kennt, findet sie dort nie, und wer sie sucht, hat
-             schon aufgegeben. -->
-        <div class="schnell" id="hilfe-schnell" role="group"
+        <!-- Schnellzugriff auf die Stufen — bei schmaler Seitenleiste passen
+             „Wellen"/„Vorhersage"/„AutoKorr" nicht mehr neben Titel und
+             „Prüfen" in eine Zeile. Deshalb hinter einem kleinen Zahnrad:
+             ein Klick öffnet sie als Klappe unter dem Kopf, ohne dass die
+             Kopfzeile selbst höher würde. Funktion und Zustand (an/aus)
+             bleiben dieselben wie vorher — nur der Weg dorthin ist neu. -->
+        <button class="schnell-knopf" id="hilfe-schnell-knopf" type="button"
+                aria-expanded="false" aria-controls="hilfe-schnell"
+                title="Welche Hilfe an ist">⚙</button>
+        <div class="schnell" id="hilfe-schnell" role="group" hidden
              aria-label="Welche Hilfe an ist"></div>
+
+        <button class="knopf knopf--klein" id="btn-pruefen">Prüfen</button>
       </div>
 
       <div class="tafel__funde" id="funde" role="region" aria-live="polite" aria-label="Gefundene Stellen"></div>
@@ -206,25 +244,17 @@
           <button class="knopf" id="btn-vorschlaege" disabled>Vorschläge</button>
           <button class="knopf" id="btn-uebersetzen" disabled>Übersetzen</button>
           <button class="knopf" id="btn-zusammenfassen" disabled>Zusammenfassen</button>
+          <!-- Verbessern, Umformulieren, Kürzen, Erweitern, Professioneller/
+               Einfacher formulieren, Tonalität ändern — sieben Wünsche,
+               ein Knopf mit Auswahl (siehe KIteil.textAktionDialog). -->
+          <button class="knopf" id="btn-textaktion" disabled>Text bearbeiten</button>
         </div>
 
-        <!-- Eigene Assistenten: Name und Prompt, die man sich selbst anlegt.
-             Eigener Kopf mit Überschrift und Anlegen-Knopf, damit die Liste
-             darunter nicht wie ein Rest unter den vier festen Knöpfen wirkt,
-             sondern als eigener Bereich zu erkennen ist. -->
-        <div class="ki-eigene-kopf">
-          <span class="tafel__ueberschrift">Eigene Assistenten</span>
-          <button class="ki-eigene-neu" id="ki-eigene-neu" type="button"
-                  title="Neuen Assistenten anlegen" aria-label="Neuen Assistenten anlegen">+</button>
-        </div>
-        <div class="ki-eigene" id="ki-eigene"></div>
-
-        <!-- Derselbe Weg wie im Menüband und im Menü „KI" — hier, weil man
-             beim Schreiben ohnehin in diese Ecke sieht, nicht erst in die
-             Einstellungen muss, um zu wissen, dass es diesen Weg gibt. -->
-        <button class="ki-anbieter-link" id="ki-anbieter-link" type="button">
-          Eigenen Anbieter hinzufügen …
-        </button>
+        <!-- Eigene Assistenten und eigene Anbieter werden ausschließlich in
+             Optionen ▸ Schreibhilfe und KI verwaltet (Anlegen, Liste,
+             Entfernen) — nicht mehr hier. Diese Seitenleiste ist zum
+             Schreiben da, nicht zur Verwaltung; siehe einstellungen.js
+             (eigeneAssistentenZeigen, eigeneAnbieterZeigen). -->
 
         <!-- Warum die drei grau sind, und was dagegen hilft. Ohne diese Zeile
              sieht man drei tote Knöpfe und weiß nicht, woran es liegt — der
@@ -479,10 +509,10 @@
           <select id="einst-pruefsprache2"></select>
         </div>
         <div class="feld">
-          <label class="feld__name" for="einst-sprache">Übersetzen nach</label>
+          <span class="feld__name">Übersetzen nach</span>
           <em class="feld__satz">Der Knopf steht in der Seitenleiste. Hier steht,
             wohin übersetzt wird — vierzehn Sprachen.</em>
-          <select id="einst-sprache"></select>
+          <button class="knopf" id="einst-sprache-knopf" type="button"></button>
         </div>
       </div>
 
@@ -927,6 +957,19 @@
       <span class="gruppe__titel">Prüfung und KI</span>
       <div class="karte">
 
+        <!-- KI-Konfiguration: welches Modell für welche Aufgabe. Bleibt eine
+             Zeile leer auf „Standard", gilt für sie das „KI-Modell" weiter
+             unten — dieselbe zentrale Wahl wie bisher, nur je Aufgabe
+             überschreibbar. Alle fünf Zeilen füllt aufgabenZeigen(). -->
+        <div class="feld feld--flaeche">
+          <span class="feld__name" id="einst-aufgaben-titel">KI-Konfiguration</span>
+          <em class="feld__satz">Welches Modell für welche Aufgabe — „Standard" verwendet
+            das KI-Modell weiter unten.</em>
+          <div class="aufgaben-liste" id="einst-aufgaben-liste"></div>
+          <button class="verweis anbieter-modellzeile__vonhand einst-aufgaben-verweis"
+                  id="einst-modelle-liste" type="button">KI-Modelle bearbeiten</button>
+        </div>
+
         <div class="feld">
           <label class="feld__name" for="einst-schluessel">API-Schlüssel</label>
           <em class="feld__satz">für Korrigieren, Vorschläge und Übersetzen</em>
@@ -974,6 +1017,19 @@
             Schlüssel. Einmal eingetragen, steht es oben bei „KI-Modell" zur Wahl.</em>
           <div class="anbieter-liste" id="einst-anbieter-liste"></div>
           <button class="knopf" id="einst-anbieter-neu" type="button">Anbieter hinzufügen …</button>
+        </div>
+
+        <!-- Eigene Assistenten: Name und Prompt, die man sich selbst anlegt.
+             Stand bis vor Kurzem in der Seitenleiste — dort war es die
+             einzige Stelle mit einer Verwaltungsoberfläche mitten im
+             Schreiben. Jetzt ausschließlich hier: anlegen, sehen, entfernen. -->
+        <div class="feld">
+          <span class="feld__name">Eigene Assistenten</span>
+          <em class="feld__satz">Ein eigener Knopf für eine Textaufgabe, die immer wiederkehrt —
+            zum Beispiel „Fakten prüfen" oder „In Stichpunkte fassen". Anlegen, Starten und
+            Entfernen geschieht hier.</em>
+          <div class="anbieter-liste" id="einst-assistenten-liste"></div>
+          <button class="knopf" id="einst-assistenten-neu" type="button">Neuen Assistenten erstellen …</button>
         </div>
 
         <!-- „Für wen?" stand früher hier. Es ist jetzt die Frage in der
