@@ -931,6 +931,67 @@ function modelleListeBauen() {
   return kasten;
 }
 
+/* ------------------------------------------------------------
+   KI-Konfiguration — die eine Tür für alles, was mit KI-Modellen und
+   ihrer Verwendung zu tun hat. Statt eines eigenen Menüband-Knopfs je
+   Einstellung (Modell wählen, Anbieter verwalten, Übersetzungssprache)
+   hängen die anderen drei Fenster hier als Verweise dran — ein Weg
+   hinein, drei Wege weiter, statt drei eigenständiger Türen im
+   Menüband. */
+function kiKonfiguration() {
+  if (!griffe.fenster) return;
+
+  const modelle = KI.alleModelle();
+  const alle = modelle.map((m) => [m.id, m.name]);
+  const bildOptionen = [['', '— kein Modell gewählt —'],
+    ...modelle.filter((m) => (m.verwendungFuer || []).includes('bilder')).map((m) => [m.id, m.name])];
+
+  const felder = [
+    { art: 'satz', text: 'Fügen Sie hinzu und wählen Sie KI-Modelle für verschiedene '
+                       + 'Aufgaben aus.' },
+  ];
+  for (const [aufgabe, name] of KI.AUFGABEN) {
+    felder.push({
+      schluessel: aufgabe, name, art: 'auswahl',
+      werte: aufgabe === 'bildgenerierung' ? bildOptionen : alle,
+      wert: KI.aufgabenModellRoh(aufgabe) || KI.modellJetzt(),
+    });
+  }
+
+  /* Alle drei hängen an diesem einen Fenster, statt eigene Knöpfe im
+     Menüband zu bekommen — „KI-Konfiguration" ist die eine Tür für
+     alles, was mit KI-Modellen und ihrer Verwendung zu tun hat. */
+  const verweise = document.createElement('div');
+  verweise.className = 'ki-konfig-verweise';
+
+  const modelleKnoten = document.createElement('button');
+  modelleKnoten.type = 'button';
+  modelleKnoten.className = 'verweis';
+  modelleKnoten.textContent = 'KI-Modelle bearbeiten';
+  modelleKnoten.addEventListener('click', () => modelleListeOeffnen());
+  verweise.appendChild(modelleKnoten);
+
+  const anbieterKnoten = document.createElement('button');
+  anbieterKnoten.type = 'button';
+  anbieterKnoten.className = 'verweis';
+  anbieterKnoten.textContent = 'Eigenen Anbieter hinzufügen';
+  anbieterKnoten.addEventListener('click', () => anbieterFormular(null));
+  verweise.appendChild(anbieterKnoten);
+
+  const uebersetzungKnoten = document.createElement('button');
+  uebersetzungKnoten.type = 'button';
+  uebersetzungKnoten.className = 'verweis';
+  uebersetzungKnoten.textContent = 'Einstellungen der Übersetzung';
+  uebersetzungKnoten.addEventListener('click', () => uebersetzungsSpracheOeffnen());
+  verweise.appendChild(uebersetzungKnoten);
+
+  felder.push({ art: 'knoten', name: '', knoten: verweise });
+
+  griffe.fenster('KI-Konfiguration', felder, (werte) => {
+    for (const [aufgabe] of KI.AUFGABEN) KI.aufgabenModellSetzen(aufgabe, werte[aufgabe]);
+  }, 'OK');
+}
+
 function modelleListeOeffnen() {
   if (!griffe.fenster) return;
   griffe.fenster('Liste der KI-Modelle', [
@@ -2271,5 +2332,5 @@ verdrahten();
    „Eigenen Anbieter hinzufügen" bleibt dadurch ausschließlich über den
    Knopf hier auf der Seite und über „Liste der KI-Modelle" erreichbar. */
 return { oeffnen, schliessen, verbinde, offen: () => offen, gedaechtnisZeigen,
-         flaecheAnspringen };
+         flaecheAnspringen, kiKonfiguration, eigenenAnbieterHinzufuegen };
 })();

@@ -51,7 +51,6 @@ const KI_KNOEPFE = [
   ['btn-vorschlaege', 'Vorschläge'],
   ['btn-uebersetzen', 'Übersetzen'],
   ['btn-zusammenfassen', 'Zusammenfassen'],
-  ['btn-textaktion', 'Text bearbeiten'],
 ];
 
 /* Solange kein Schlüssel da ist, sehen die drei Knöpfe blass aus — aber sie

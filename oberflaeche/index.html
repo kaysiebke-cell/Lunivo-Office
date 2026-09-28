@@ -109,13 +109,19 @@
 </div>
 
 <div class="mitte">
-  <!-- Ein schmaler Rand mit einem einzigen Knopf: „Neuer Kommentar" allein
-       öffnet die Tafel nur beim Anlegen — wer schon gesetzte Kommentare
-       nur ansehen will, braucht einen Weg dahin, der nicht am Anlegen
-       hängt. Sonst ist ein Befehl, den man nicht findet, nicht gebaut. -->
-  <nav class="li-schmal" aria-label="Kommentare">
+  <!-- Derselbe Gedanke wie beim schmalen Rand rechts (sl-schmal): ein
+       Schnellzugriff auf Bereiche, die sonst verteilt in Menüband und
+       Tastenkürzeln stecken — hier die drei, die mit der Stelle im
+       Dokument zu tun haben, statt mit der KI. „Neuer Kommentar" allein
+       öffnete die Kommentare-Tafel nur als Nebenwirkung des Anlegens;
+       wer nur ansehen will, braucht einen eigenen Weg dahin. -->
+  <nav class="li-schmal" aria-label="Schnellzugriff auf Bereiche des Dokuments">
     <button class="li-schmal__knopf" id="li-schmal-kommentare" type="button"
             title="Kommentare" aria-label="Kommentare"></button>
+    <button class="li-schmal__knopf" id="li-schmal-ueberschriften" type="button"
+            title="Überschriften" aria-label="Überschriften"></button>
+    <button class="li-schmal__knopf" id="li-schmal-vorlesen" type="button"
+            title="Vorlesen (F4)" aria-label="Vorlesen"></button>
   </nav>
 
   <!-- Der Navigationsbereich: die Überschriften als Liste zum Anspringen.
@@ -253,10 +259,6 @@
           <button class="knopf" id="btn-vorschlaege" disabled>Vorschläge</button>
           <button class="knopf" id="btn-uebersetzen" disabled>Übersetzen</button>
           <button class="knopf" id="btn-zusammenfassen" disabled>Zusammenfassen</button>
-          <!-- Verbessern, Umformulieren, Kürzen, Erweitern, Professioneller/
-               Einfacher formulieren, Tonalität ändern — sieben Wünsche,
-               ein Knopf mit Auswahl (siehe KIteil.textAktionDialog). -->
-          <button class="knopf" id="btn-textaktion" disabled>Text bearbeiten</button>
         </div>
 
         <!-- Eigene Assistenten und eigene Anbieter werden ausschließlich in

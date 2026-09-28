@@ -9225,10 +9225,8 @@ const REGISTER = REGISTER_BAUEN(B, {
   kiZusammenfassen: ()     => KIteil.kiZusammenfassen(),
   assistentErstellen: ()  => KIteil.assistentErstellen(),
   textAktionDialog: ()     => KIteil.textAktionDialog(),
-  /* Führt direkt zur zentralen Konfiguration statt zu einem eigenen
-     Dialog im Menüband — das Schnellmenü/Menüband bekommt keine eigene
-     Provider-/API-Konfiguration, siehe Teil A2 des Auftrags. */
-  kiEinstellungenOeffnen: () => Einstellungen.oeffnen('ki'),
+  kiKonfiguration:  ()     => Einstellungen.kiKonfiguration(),
+  eigenenAnbieterHinzufuegen: () => Einstellungen.eigenenAnbieterHinzufuegen(),
   chatUmschalten:   ()     => Chat.umschalten(),
   sucheZeigen:      (an)   => sucheZeigen(an),
   setzeLayout:      (wahl) => setzeLayout(wahl),
@@ -25026,7 +25024,6 @@ $('btn-ki').addEventListener('click', () => KIteil.kiKorrigieren());
 $('btn-vorschlaege').addEventListener('click', () => KIteil.kiVorschlaege());
 $('btn-uebersetzen').addEventListener('click', () => KIteil.kiUebersetzen());
 $('btn-zusammenfassen').addEventListener('click', () => KIteil.kiZusammenfassen());
-$('btn-textaktion').addEventListener('click', () => KIteil.textAktionDialog());
 
 /* ---- Die Kommentare-Tafel: Kopfknöpfe und das Eingabefeld ---- */
 $('li-kommentar-neu').addEventListener('mousedown', (e) => e.preventDefault());
@@ -25034,7 +25031,20 @@ $('li-kommentar-neu').addEventListener('click', () => kommentarFormularZeigen())
 $('li-kommentare-menu').addEventListener('click', () => kommentareMenueZeigen());
 $('li-kommentare-schliessen').addEventListener('click', () => liTafelKommentareSchliessen());
 $('li-schmal-kommentare').appendChild(symbol('notiz'));
-$('li-schmal-kommentare').addEventListener('click', () => liTafelKommentareUmschalten());
+$('li-schmal-kommentare').addEventListener('click', () => { liTafelKommentareUmschalten(); liSchmalAuffrischen(); });
+$('li-schmal-ueberschriften').appendChild(symbol('gliederung'));
+$('li-schmal-ueberschriften').addEventListener('click', () => { B.navigation(); liSchmalAuffrischen(); });
+$('li-schmal-vorlesen').appendChild(symbol('vorlesen'));
+$('li-schmal-vorlesen').addEventListener('click', async () => { await B.vorlesen(); liSchmalAuffrischen(); });
+
+/* Derselbe Zweck wie „slSchmalAuffrischen" rechts, nur für die drei
+   Knöpfe links: zeigt, welcher Bereich gerade offen ist bzw. ob
+   Vorlesen gerade läuft. */
+function liSchmalAuffrischen() {
+  $('li-schmal-kommentare').classList.toggle('li-schmal__knopf--an', !$('li-tafel-kommentare').hidden);
+  $('li-schmal-ueberschriften').classList.toggle('li-schmal__knopf--an', !$('navigation').hidden);
+  $('li-schmal-vorlesen').classList.toggle('li-schmal__knopf--an', spricht);
+}
 $('li-kommentar-neu-setzen').addEventListener('click', () => kommentarFormularSetzen());
 $('li-kommentar-neu-abbrechen').addEventListener('click', () => kommentarFormularAbbrechen());
 $('li-kommentar-neu-text').addEventListener('keydown', (e) => {

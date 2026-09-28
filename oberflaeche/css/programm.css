@@ -1365,6 +1365,8 @@ select option{background:var(--karte);color:var(--schrift)}
 .hinweis{margin:0;font-size:12px;color:var(--schrift-3)}
 .verweis{color:var(--blau-hell);text-decoration:none;font-size:12px;font-weight:600}
 .verweis:hover{text-decoration:underline}
+button.verweis{background:none;border:0;padding:0;font:inherit;cursor:pointer}
+.ki-konfig-verweise{display:flex;gap:16px;flex-wrap:wrap;margin-top:4px}
 
 /* Die Knöpfe der Darstellung wirken auf das Blatt — und das ist von hier
    aus nicht zu sehen. Ohne diese Probezeile drückt man A+ und nichts
