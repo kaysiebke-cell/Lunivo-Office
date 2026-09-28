@@ -394,6 +394,19 @@ select option{background:var(--karte);color:var(--schrift)}
 .sl-schmal__knopf--an{background:var(--blau);border-color:var(--blau);color:#fff}
 .sl-schmal__knopf--an:hover{background:var(--blau);color:#fff}
 
+.li-schmal{
+  flex:0 0 44px;display:flex;flex-direction:column;align-items:center;
+  gap:4px;padding:10px 0;background:var(--tafel);border-right:1px solid var(--rand);
+}
+.li-schmal__knopf{
+  width:32px;height:32px;border-radius:8px;border:1px solid transparent;
+  background:none;color:var(--schrift-2);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+}
+.li-schmal__knopf:hover{background:var(--karte);border-color:var(--rand);color:var(--schrift)}
+.li-schmal__knopf--an{background:var(--blau);border-color:var(--blau);color:#fff}
+.li-schmal__knopf--an:hover{background:var(--blau);color:#fff}
+
 .tafel__kopf{padding:12px 14px 10px}
 .tafel__name{margin:0;font-size:14px;font-weight:600;letter-spacing:.2px}
 .tafel__name span{color:var(--schrift-3);font-weight:400}

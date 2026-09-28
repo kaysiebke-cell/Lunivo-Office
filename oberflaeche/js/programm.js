@@ -17139,11 +17139,18 @@ function liTafelKommentareZeigen() {
   $('li-tafel-kommentare').hidden = false;
   kommentarFormularAbbrechen();
   kommentareZeichnen();
+  $('li-schmal-kommentare').classList.add('li-schmal__knopf--an');
 }
 
 function liTafelKommentareSchliessen() {
   $('li-tafel-kommentare').hidden = true;
+  $('li-schmal-kommentare').classList.remove('li-schmal__knopf--an');
   feld.focus();
+}
+
+function liTafelKommentareUmschalten() {
+  if ($('li-tafel-kommentare').hidden) liTafelKommentareZeigen();
+  else liTafelKommentareSchliessen();
 }
 
 /* ---- Kommentare am Rand ----
@@ -25026,6 +25033,8 @@ $('li-kommentar-neu').addEventListener('mousedown', (e) => e.preventDefault());
 $('li-kommentar-neu').addEventListener('click', () => kommentarFormularZeigen());
 $('li-kommentare-menu').addEventListener('click', () => kommentareMenueZeigen());
 $('li-kommentare-schliessen').addEventListener('click', () => liTafelKommentareSchliessen());
+$('li-schmal-kommentare').appendChild(symbol('notiz'));
+$('li-schmal-kommentare').addEventListener('click', () => liTafelKommentareUmschalten());
 $('li-kommentar-neu-setzen').addEventListener('click', () => kommentarFormularSetzen());
 $('li-kommentar-neu-abbrechen').addEventListener('click', () => kommentarFormularAbbrechen());
 $('li-kommentar-neu-text').addEventListener('keydown', (e) => {

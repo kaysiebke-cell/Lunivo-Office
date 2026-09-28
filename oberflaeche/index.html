@@ -109,6 +109,15 @@
 </div>
 
 <div class="mitte">
+  <!-- Ein schmaler Rand mit einem einzigen Knopf: „Neuer Kommentar" allein
+       öffnet die Tafel nur beim Anlegen — wer schon gesetzte Kommentare
+       nur ansehen will, braucht einen Weg dahin, der nicht am Anlegen
+       hängt. Sonst ist ein Befehl, den man nicht findet, nicht gebaut. -->
+  <nav class="li-schmal" aria-label="Kommentare">
+    <button class="li-schmal__knopf" id="li-schmal-kommentare" type="button"
+            title="Kommentare" aria-label="Kommentare"></button>
+  </nav>
+
   <!-- Der Navigationsbereich: die Überschriften als Liste zum Anspringen.
        Bei einem langen Schreiben der schnellste Weg zur richtigen Stelle. -->
   <aside class="navigation" id="navigation" hidden aria-label="Navigationsbereich"></aside>
