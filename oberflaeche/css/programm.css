@@ -2458,25 +2458,10 @@ button.wz-wahl--schrift{
 .navigation__zeile--4{padding-left:44px;font-size:12px;color:var(--schrift-2)}
 .navigation__leer{margin:4px;font-size:12px;color:var(--schrift-3);line-height:1.5}
 
-/* Kopfzeile mit „Überschrift erzeugen" und je Zeile ein ✨-Knopf für
-   Verbessern/Alternativen/Zusammenfassen — dieselbe zentrale KI wie
-   überall sonst, hier auf die Gliederung angewandt. */
 .navigation__kopfzeile{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:6px}
 .navigation__kopfzeile .navigation__titel{margin:0}
 .navigation__eintrag{display:flex;align-items:center;gap:2px}
 .navigation__eintrag .navigation__zeile{flex:1 1 auto;min-width:0}
-.navigation__ki{
-  flex:0 0 auto;width:22px;height:22px;padding:0;border-radius:5px;
-  background:none;border:1px solid transparent;color:var(--schrift-3);
-  font-size:12px;cursor:pointer;
-}
-.navigation__ki:hover{background:var(--karte);border-color:var(--rand);color:var(--schrift)}
-.navigation__ki-erzeugen{
-  flex:0 0 auto;padding:3px 8px;border-radius:5px;
-  background:none;border:1px solid var(--rand);color:var(--schrift-3);
-  font:inherit;font-size:10.5px;cursor:pointer;white-space:nowrap;
-}
-.navigation__ki-erzeugen:hover{background:var(--karte);color:var(--schrift)}
 .navigation__einstellung{
   flex:0 0 auto;width:22px;height:22px;padding:0;border-radius:5px;
   display:flex;align-items:center;justify-content:center;

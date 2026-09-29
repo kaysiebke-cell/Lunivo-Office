@@ -17888,64 +17888,6 @@ B.netzlinien = () => {
    der schnellste Weg zur richtigen Stelle. */
 let navOffen = false;
 
-/* Der Text unter einer Überschrift, bis zur nächsten Überschrift gleicher
-   oder höherer Ebene — das, was „Abschnitt zusammenfassen" und die
-   Alternativ-Vorschläge als Zusammenhang brauchen. Kein KI-Aufruf ohne
-   das: eine Überschrift allein („Anhang") sagt der KI zu wenig. */
-function abschnittText(el) {
-  const ebene = parseInt(el.tagName[1], 10);
-  let stueck = '';
-  let knoten = el.nextElementSibling;
-  while (knoten) {
-    if (/^H[1-4]$/.test(knoten.tagName) && parseInt(knoten.tagName[1], 10) <= ebene) break;
-    stueck += (stueck ? '\n' : '') + knoten.textContent;
-    if (stueck.length > 4000) break;          // genug für eine Zusammenfassung
-    knoten = knoten.nextElementSibling;
-  }
-  return stueck.trim();
-}
-
-/* Verbessern, Alternativen, Zusammenfassen — dieselbe zentrale KI wie die
-   Schreibhilfe, nur mit der Überschrift und ihrem Abschnitt als Text.
-   Ein Dialog statt drei Knöpfen je Zeile: Bei vier Überschriften wären
-   das zwölf Knöpfe in einer schmalen Klappe — siehe
-   [[rollende-kaesten-schneiden-ab]]. */
-function ueberschriftKI(punkt, el) {
-  const abschnitt = abschnittText(el);
-  fenster('KI für diese Überschrift', [
-    { art: 'satz', text: '„' + punkt.text + '"' },
-    { schluessel: 'aktion', name: 'Aktion', art: 'auswahl', werte: [
-        ['verbessern', 'Verbessern'],
-        ['alternativen', 'Alternativen erzeugen'],
-        ['zusammenfassen', 'Abschnitt zusammenfassen'],
-      ], wert: 'verbessern' },
-  ], async (werte) => {
-    if (werte.aktion === 'verbessern') {
-      melde('Die KI überarbeitet die Überschrift …');
-      const r = await KI.ueberschriftVerbessern(punkt.text, abschnitt);
-      if (r.fehler || !r.text) { melde(r.fehler || 'Keine Antwort.'); return; }
-      el.textContent = r.text;
-      geaendertMelden();
-      navBauen();
-      melde('Überschrift geändert. Strg+Z macht es rückgängig.');
-    } else if (werte.aktion === 'alternativen') {
-      melde('Die KI sucht Alternativen …');
-      const r = await KI.ueberschriftAlternativen(punkt.text, abschnitt);
-      if (r.fehler) { melde(r.fehler); return; }
-      fenster('Alternative Überschriften', [
-        { art: 'satz', text: r.vorschlaege.length
-            ? r.vorschlaege.map((v, i) => (i + 1) + '. ' + v).join('\n')
-            : 'Keine Vorschläge gefunden.' },
-      ], () => {}, 'Schließen');
-    } else {
-      melde('Die KI fasst den Abschnitt zusammen …');
-      const r = await KI.abschnittZusammenfassen(abschnitt || punkt.text);
-      if (r.fehler) { melde(r.fehler); return; }
-      fenster('Zusammenfassung', [{ art: 'satz', text: r.text }], () => {}, 'Schließen');
-    }
-  }, 'Los');
-}
-
 /* Eine neue Überschrift aus der Markierung vorschlagen — für den Fall,
    dass noch gar keine Überschriften da sind. Setzt keine Formatvorlage,
    sondern zeigt den Vorschlag: welche Ebene passt, entscheidet weiterhin
@@ -18052,13 +17994,7 @@ function navBauen() {
   einstellungKnopf.setAttribute('aria-label', 'Einstellungen für die Überschriften');
   einstellungKnopf.appendChild(symbol('zahnrad'));
   einstellungKnopf.addEventListener('click', () => navMenueZeigen(einstellungKnopf));
-  const erzeugenKnopf = document.createElement('button');
-  erzeugenKnopf.type = 'button';
-  erzeugenKnopf.className = 'navigation__ki-erzeugen';
-  erzeugenKnopf.textContent = '✨ Überschrift erzeugen';
-  erzeugenKnopf.title = 'Aus der Markierung eine Überschrift vorschlagen';
-  erzeugenKnopf.addEventListener('click', ueberschriftErzeugenDialog);
-  kopf.append(titel, einstellungKnopf, erzeugenKnopf);
+  kopf.append(titel, einstellungKnopf);
   kasten.appendChild(kopf);
 
   if (!punkte.length) {
@@ -18114,17 +18050,7 @@ function navBauen() {
       if (ziel) ziel.scrollIntoView({ block: 'start' });
     });
 
-    const ki = document.createElement('button');
-    ki.type = 'button';
-    ki.className = 'navigation__ki';
-    ki.textContent = '✨';
-    ki.title = 'KI für diese Überschrift: Verbessern, Alternativen, Zusammenfassen';
-    ki.addEventListener('click', () => {
-      const el = document.getElementById(punkt.kennung);
-      if (el) ueberschriftKI(punkt, el);
-    });
-
-    zeile.append(pfeil, sprung, ki);
+    zeile.append(pfeil, sprung);
     kasten.appendChild(zeile);
   }
 }
