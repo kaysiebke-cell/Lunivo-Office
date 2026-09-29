@@ -420,31 +420,11 @@ select option{background:var(--karte);color:var(--schrift)}
    gemeinsame Klasse „.tafel__kopf" — der KI-Chat-Kopf daneben behält
    seinen Untertitel und seine eigene Zeile. */
 #tafel-schreibhilfe .tafel__kopf{
-  display:flex;align-items:center;gap:8px;position:relative;
+  display:flex;align-items:center;gap:8px;
   padding:6px 14px;border-bottom:1px solid var(--rand);
 }
-#tafel-schreibhilfe .tafel__name{flex:0 0 auto;white-space:nowrap;margin-right:auto}
-#btn-pruefen{flex:0 0 auto}
-
-/* Das Zahnrad öffnet/schließt die Stufen-Klappe — selbst so schmal, dass
-   es bei jeder Seitenleistenbreite neben Titel und „Prüfen" passt. */
-.schnell-knopf{
-  flex:0 0 auto;width:24px;height:24px;padding:0;border-radius:5px;
-  background:var(--karte);border:1px solid var(--rand);color:var(--schrift-2);
-  font-size:13px;line-height:1;cursor:pointer;
-}
-.schnell-knopf:hover{background:var(--rand);color:var(--schrift)}
-.schnell-knopf[aria-expanded="true"]{background:var(--blau);border-color:var(--blau);color:#fff}
-
-/* Die Klappe selbst: unter dem Kopf, schwebend — verändert dessen Höhe
-   nicht, im Gegensatz zur früheren eigenen Zeile. */
-#hilfe-schnell{
-  position:absolute;top:100%;right:14px;margin-top:4px;z-index:5;
-  background:var(--karte);border:1px solid var(--rand);border-radius:8px;
-  padding:8px;box-shadow:0 4px 14px rgba(0,0,0,.25);
-  max-width:calc(100% - 28px);
-}
-#hilfe-schnell[hidden]{display:none}
+#tafel-schreibhilfe .tafel__name{flex:0 0 auto;white-space:nowrap}
+#btn-pruefen{flex:0 0 auto;margin-left:auto}
 
 .knopf{
   width:100%;padding:7px 12px;border-radius:5px;
@@ -1067,25 +1047,30 @@ select option{background:var(--karte);color:var(--schrift)}
   white-space:nowrap;
 }
 
-/* ---------- Suchen und Ersetzen ---------- */
-.suchleiste{
-  display:flex;align-items:center;gap:8px;flex-wrap:wrap;
-  background:var(--leiste);border-bottom:1px solid var(--rand);padding:7px 10px;
-}
-.suchleiste[hidden]{display:none}
-.suchleiste input{
+/* ---------- Suchen und Ersetzen — Tafel wie Kommentare/Überschriften ---------- */
+.li-suchen__feld{
+  display:block;width:100%;margin:0 0 8px;
   background:var(--karte);border:1px solid var(--rand);border-radius:5px;
-  color:var(--schrift);font:inherit;padding:4px 8px;width:180px;
+  color:var(--schrift);font:inherit;padding:6px 8px;
 }
-.suchleiste .knopf{width:auto;padding:4px 12px;font-size:12px}
-.suchleiste input[type="checkbox"]{width:auto;padding:0;background:none;border:0}
-.suchleiste__haken{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--schrift-2);cursor:default}
-.suchleiste__ende{margin-left:auto}
+.li-suchen__ergebnis{
+  display:flex;align-items:center;gap:6px;margin-bottom:10px;
+  color:var(--schrift-3);font-size:12px;
+}
+.li-suchen__ergebnis span{flex:1 1 auto;min-width:0}
+.li-suchen__ergebnis button{
+  flex:0 0 auto;width:24px;height:24px;padding:0;border-radius:5px;
+  background:none;border:1px solid var(--rand);color:var(--schrift-2);
+  font-size:10px;cursor:pointer;
+}
+.li-suchen__ergebnis button:hover{background:var(--karte);color:var(--schrift)}
+.li-suchen__knoepfe{display:flex;gap:6px;margin-bottom:12px}
+.li-suchen__haken{display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:12.5px;color:var(--schrift-2);cursor:default}
 
 /* ---------- Drucken: nur das Blatt, ohne alles ---------- */
 @media print{
   body{background:#fff;display:block;overflow:visible}
-  .menueleiste,.werkzeugleiste,.tafel,.griff,.statuszeile,.suchleiste,.blatt__marken{display:none !important}
+  .menueleiste,.werkzeugleiste,.tafel,.griff,.statuszeile,.li-schmal,.li-tafel,.navigation,.blatt-rand,.blatt__marken{display:none !important}
   .mitte,.arbeitsflaeche{display:block;overflow:visible;padding:0}
   .blatt{width:auto;min-height:0;box-shadow:none;padding:0;transform:none}
   .dokument{color:#000}

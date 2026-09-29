@@ -17139,11 +17139,12 @@ function kommentarFormularSetzen() {
 }
 
 function liTafelKommentareZeigen() {
-  /* Kommentare und Überschriften teilen sich den schmalen Rand links —
-     beide gleichzeitig offen fräße die Hälfte des Blatts weg, nur um
+  /* Suchen, Kommentare und Überschriften teilen sich den schmalen Rand
+     links — alle gleichzeitig offen fräße das halbe Blatt weg, nur um
      nebeneinander zu stehen. Genau wie rechts (Chat/Schreibhilfe) gilt:
-     immer nur eins von beiden. */
+     immer nur eine Tafel von dreien. */
   if (navOffen) { navOffen = false; $('navigation').hidden = true; }
+  if (!$('li-tafel-suchen').hidden) sucheZeigen(false);
   $('li-tafel-kommentare').hidden = false;
   kommentarFormularAbbrechen();
   kommentareZeichnen();
@@ -18058,9 +18059,10 @@ function navBauen() {
 B.navigation = () => {
   navOffen = !navOffen;
   $('navigation').hidden = !navOffen;
-  /* Dieselbe Regel wie umgekehrt in liTafelKommentareZeigen: nur eins
-     der beiden Felder links zeigt sich gleichzeitig. */
+  /* Dieselbe Regel wie umgekehrt in liTafelKommentareZeigen: nur eine
+     der drei Tafeln links zeigt sich gleichzeitig. */
   if (navOffen && !$('li-tafel-kommentare').hidden) liTafelKommentareSchliessen();
+  if (navOffen && !$('li-tafel-suchen').hidden) sucheZeigen(false);
   if (navOffen) navBauen();
   menueBauen();
 };
@@ -21367,11 +21369,11 @@ B.tastenHilfe = () => {
    hinsieht. Ein Klick schaltet, die Farbe sagt den Stand.
    ------------------------------------------------------------ */
 const SCHNELL = [
-  { name: 'Wellen',     lang: 'Rote Wellenlinien unter unbekannten Wörtern',
+  { name: 'Wellen',     kurz: 'We', lang: 'Rote Wellenlinien unter unbekannten Wörtern',
     an: () => lebendAn,             tun: () => B.rechtschreibung() },
-  { name: 'Vorhersage', lang: 'Wortvorhersage ab drei Buchstaben',
+  { name: 'Vorhersage', kurz: 'Vo', lang: 'Wortvorhersage ab drei Buchstaben',
     an: () => vorhersageAn,         tun: () => B.vorhersage() },
-  { name: 'AutoKorr',   lang: 'AutoKorrektur beim Tippen',
+  { name: 'AutoKorr',   kurz: 'Ko', lang: 'AutoKorrektur beim Tippen',
     an: () => autokorrekturAn,      tun: () => B.autokorrektur() },
 ];
 
@@ -21385,8 +21387,8 @@ function schnellzugriffBauen() {
     k.type = 'button';
     const an = !!stufe.an();
     k.className = 'schnell__marke' + (an ? ' schnell__marke--an' : '');
-    k.textContent = stufe.name;
-    k.title = stufe.lang + (an ? ' — an' : ' — aus');
+    k.textContent = stufe.kurz;
+    k.title = stufe.name + ' — ' + stufe.lang + (an ? ' — an' : ' — aus');
     k.setAttribute('aria-pressed', an ? 'true' : 'false');
     k.addEventListener('mousedown', (e) => e.preventDefault());
     k.addEventListener('click', () => { stufe.tun(); schnellzugriffBauen(); });
@@ -23241,11 +23243,20 @@ function werkzeugeAuffrischen() {
    5. Suchen und Ersetzen
    ============================================================ */
 
+/* Suchen und ersetzen steht als eigene Tafel links, wie Kommentare und
+   Überschriften — nur eine der vier Tafeln gleichzeitig offen, sonst
+   fräße alles zusammen die Hälfte des Blatts weg (siehe
+   liTafelKommentareZeigen/B.navigation). */
 function sucheZeigen(an) {
-  $('suchleiste').hidden = !an;
-  if (an) $('suche-was').focus();
+  if (an) {
+    if (!$('li-tafel-kommentare').hidden) liTafelKommentareSchliessen();
+    if (navOffen) { navOffen = false; $('navigation').hidden = true; }
+  }
+  $('li-tafel-suchen').hidden = !an;
+  $('li-schmal-suchen').classList.toggle('li-schmal__knopf--an', an);
+  if (an) { $('suche-was').focus(); sucheMeldungAktualisieren(); }
   else feld.focus();
-  if (typeof slSchmalAuffrischen === 'function') slSchmalAuffrischen();
+  if (typeof liSchmalAuffrischen === 'function') liSchmalAuffrischen();
 }
 
 /* „Nur ganze Wörter" prüft, was rechts und links vom Fund steht — ein
@@ -23254,30 +23265,76 @@ function sucheZeigen(an) {
    „Übung" auch als ganzes Wort erkannt wird, nicht nur „bung". */
 const WORTZEICHEN = /[\p{L}\p{N}_]/u;
 
-function suche(ab) {
+function suchePasstGanzesWort(textVergleich, stelle, was, ganz) {
+  if (!ganz) return true;
+  const davor = stelle > 0 ? textVergleich[stelle - 1] : '';
+  const danach = textVergleich[stelle + was.length] || '';
+  return !WORTZEICHEN.test(davor) && !WORTZEICHEN.test(danach);
+}
+
+/* Text und Suchwort einmal aufbereitet — Groß-/Kleinschreibung schon
+   angewendet — für alle vier Funktionen hier, statt es viermal zu tun. */
+function sucheAufbereitung() {
   const rohWas = $('suche-was').value;
-  if (!rohWas) return -1;
   const gross = $('suche-gross').checked;
   const ganz = $('suche-ganz').checked;
   const text = Dokument.lies().text;
   const textVergleich = gross ? text : text.toLowerCase();
   const was = gross ? rohWas : rohWas.toLowerCase();
+  return { rohWas, was, ganz, textVergleich };
+}
 
-  const passtGanzesWort = (stelle) => {
-    if (!ganz) return true;
-    const davor = stelle > 0 ? textVergleich[stelle - 1] : '';
-    const danach = textVergleich[stelle + was.length] || '';
-    return !WORTZEICHEN.test(davor) && !WORTZEICHEN.test(danach);
-  };
+function suche(ab) {
+  const { rohWas, was, ganz, textVergleich } = sucheAufbereitung();
+  if (!rohWas) return -1;
   const naechsteStelle = (von) => {
     let stelle = textVergleich.indexOf(was, von);
-    while (stelle !== -1 && !passtGanzesWort(stelle)) stelle = textVergleich.indexOf(was, stelle + 1);
+    while (stelle !== -1 && !suchePasstGanzesWort(textVergleich, stelle, was, ganz)) {
+      stelle = textVergleich.indexOf(was, stelle + 1);
+    }
     return stelle;
   };
-
   let stelle = naechsteStelle(ab);
   if (stelle === -1) stelle = naechsteStelle(0);
   return stelle;
+}
+
+/* Der gleiche Weg rückwärts — der letzte Treffer VOR „vor", oder, wenn
+   keiner mehr kommt, der letzte Treffer im ganzen Text (Umlauf). */
+function sucheRueckwaerts(vor) {
+  const { rohWas, was, ganz, textVergleich } = sucheAufbereitung();
+  if (!rohWas) return -1;
+  let letzterDavor = -1;
+  let letzterUeberhaupt = -1;
+  let stelle = textVergleich.indexOf(was);
+  while (stelle !== -1) {
+    if (suchePasstGanzesWort(textVergleich, stelle, was, ganz)) {
+      letzterUeberhaupt = stelle;
+      if (stelle < vor) letzterDavor = stelle;
+    }
+    stelle = textVergleich.indexOf(was, stelle + 1);
+  }
+  return letzterDavor !== -1 ? letzterDavor : letzterUeberhaupt;
+}
+
+function sucheAlleTreffer() {
+  const { rohWas, was, ganz, textVergleich } = sucheAufbereitung();
+  if (!rohWas) return [];
+  const treffer = [];
+  let stelle = textVergleich.indexOf(was);
+  while (stelle !== -1) {
+    if (suchePasstGanzesWort(textVergleich, stelle, was, ganz)) treffer.push(stelle);
+    stelle = textVergleich.indexOf(was, stelle + 1);
+  }
+  return treffer;
+}
+
+function sucheMeldungAktualisieren() {
+  if (!$('suche-was').value) { $('suche-meldung').textContent = 'Keine Suchergebnisse'; return; }
+  const anzahl = sucheAlleTreffer().length;
+  $('suche-meldung').textContent = anzahl
+    ? anzahl + (anzahl === 1 ? ' Ergebnis' : ' Ergebnisse')
+    : 'Keine Suchergebnisse';
 }
 
 let sucheAb = 0;
@@ -23285,8 +23342,18 @@ let sucheAb = 0;
 function sucheWeiter() {
   const stelle = suche(sucheAb);
   const was = $('suche-was').value;
-  if (stelle === -1) { $('suche-meldung').textContent = 'Nicht gefunden.'; return null; }
-  $('suche-meldung').textContent = '';
+  sucheMeldungAktualisieren();
+  if (stelle === -1) return null;
+  Dokument.zeige(stelle, stelle + was.length);
+  sucheAb = stelle + was.length;
+  return stelle;
+}
+
+function sucheZurueck() {
+  const was = $('suche-was').value;
+  const stelle = sucheRueckwaerts(Math.max(0, sucheAb - was.length));
+  sucheMeldungAktualisieren();
+  if (stelle === -1) return null;
   Dokument.zeige(stelle, stelle + was.length);
   sucheAb = stelle + was.length;
   return stelle;
@@ -24976,7 +25043,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && lesemodus) { B.lesemodus(); return; }
   if (e.key === 'Escape' && Einstellungen.offen()) { Einstellungen.schliessen(); return; }
   if (e.key === 'F6') { e.preventDefault(); B.welcheHilfe(); return; }
-  if (e.key === 'Escape' && !$('suchleiste').hidden) { sucheZeigen(false); return; }
+  if (e.key === 'Escape' && !$('li-tafel-suchen').hidden) { sucheZeigen(false); return; }
   if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
 
   if (e.key === 'Enter') { e.preventDefault(); B.seitenumbruch(); return; }
@@ -25066,12 +25133,22 @@ feld.addEventListener('mouseup', () => setTimeout(pinselAnwenden, 0));
 
 $('btn-pruefen').addEventListener('click', () => pruefen());
 $('suche-weiter').addEventListener('click', sucheWeiter);
-$('suche-zu').addEventListener('click', () => sucheZeigen(false));
+$('suche-zurueck').addEventListener('click', sucheZurueck);
+$('li-suchen-schliessen').addEventListener('click', () => sucheZeigen(false));
+$('suche-was').addEventListener('input', sucheMeldungAktualisieren);
+$('suche-gross').addEventListener('change', sucheMeldungAktualisieren);
+$('suche-ganz').addEventListener('change', sucheMeldungAktualisieren);
+$('suche-was').addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter') return;
+  e.preventDefault();
+  if (e.shiftKey) sucheZurueck(); else sucheWeiter();
+});
 $('suche-ersetze').addEventListener('click', () => {
   const stelle = suche(Math.max(0, sucheAb - $('suche-was').value.length));
-  if (stelle === -1) { $('suche-meldung').textContent = 'Nicht gefunden.'; return; }
+  if (stelle === -1) { sucheMeldungAktualisieren(); return; }
   Dokument.ersetze(stelle, stelle + $('suche-was').value.length, $('suche-womit').value);
   sucheAb = stelle + $('suche-womit').value.length;
+  sucheMeldungAktualisieren();
 });
 $('suche-alle').addEventListener('click', () => {
   const was = $('suche-was').value;
@@ -25103,6 +25180,11 @@ $('li-kommentar-neu').addEventListener('mousedown', (e) => e.preventDefault());
 $('li-kommentar-neu').addEventListener('click', () => kommentarFormularZeigen());
 $('li-kommentare-menu').addEventListener('click', () => kommentareMenueZeigen());
 $('li-kommentare-schliessen').addEventListener('click', () => liTafelKommentareSchliessen());
+$('li-schmal-suchen').appendChild(symbol('lupe'));
+$('li-schmal-suchen').addEventListener('click', () => {
+  sucheZeigen($('li-tafel-suchen').hidden);
+  liSchmalAuffrischen();
+});
 $('li-schmal-kommentare').appendChild(symbol('notiz'));
 $('li-schmal-kommentare').addEventListener('click', () => { liTafelKommentareUmschalten(); liSchmalAuffrischen(); });
 $('li-schmal-ueberschriften').appendChild(symbol('gliederung'));
@@ -25110,10 +25192,11 @@ $('li-schmal-ueberschriften').addEventListener('click', () => { B.navigation(); 
 $('li-schmal-vorlesen').appendChild(symbol('vorlesen'));
 $('li-schmal-vorlesen').addEventListener('click', async () => { await B.vorlesen(); liSchmalAuffrischen(); });
 
-/* Derselbe Zweck wie „slSchmalAuffrischen" rechts, nur für die drei
+/* Derselbe Zweck wie „slSchmalAuffrischen" rechts, nur für die vier
    Knöpfe links: zeigt, welcher Bereich gerade offen ist bzw. ob
    Vorlesen gerade läuft. */
 function liSchmalAuffrischen() {
+  $('li-schmal-suchen').classList.toggle('li-schmal__knopf--an', !$('li-tafel-suchen').hidden);
   $('li-schmal-kommentare').classList.toggle('li-schmal__knopf--an', !$('li-tafel-kommentare').hidden);
   $('li-schmal-ueberschriften').classList.toggle('li-schmal__knopf--an', !$('navigation').hidden);
   $('li-schmal-vorlesen').classList.toggle('li-schmal__knopf--an', spricht);
@@ -25129,39 +25212,15 @@ $('li-kommentar-neu-text').addEventListener('keydown', (e) => {
    Beides läuft jetzt ausschließlich über Optionen ▸ Schreibhilfe und KI
    (siehe einstellungen.js: eigeneAssistentenZeigen, eigeneAnbieterZeigen). */
 
-/* Das Zahnrad vor „Prüfen": öffnet/schließt die Klappe mit den drei
-   Stufen-Marken (schnellzugriffBauen füllt sie). Ein Klick daneben oder
-   Escape schließt wieder — derselbe Ausgang wie bei jedem anderen
-   schwebenden Element hier (siehe fenster()). */
-(() => {
-  const knopf  = $('hilfe-schnell-knopf');
-  const klappe = $('hilfe-schnell');
-  const setzeOffen = (offen) => {
-    klappe.hidden = !offen;
-    knopf.setAttribute('aria-expanded', offen ? 'true' : 'false');
-  };
-  knopf.addEventListener('click', (e) => { e.stopPropagation(); setzeOffen(klappe.hidden); });
-  document.addEventListener('click', (e) => {
-    if (!klappe.hidden && !klappe.contains(e.target) && e.target !== knopf) setzeOffen(false);
-  });
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && !klappe.hidden) setzeOffen(false);
-  });
-})();
-
-/* Das schmale Symbolband ganz rechts. Es zeigt an, welcher der drei
+/* Das schmale Symbolband ganz rechts. Es zeigt an, welcher der beiden
    Bereiche gerade offen ist — „an" auf dem Knopf, nicht nur am Bereich
    selbst, sonst müsste man erst hinsehen, um zu wissen, was gerade zu
-   sehen ist. */
+   sehen ist. Suchen steht seit dem entsprechenden Rand links nicht mehr
+   hier (siehe li-schmal-suchen). */
 function slSchmalAuffrischen() {
-  $('sl-suchen').classList.toggle('sl-schmal__knopf--an', !$('suchleiste').hidden);
   $('sl-chat').classList.toggle('sl-schmal__knopf--an', tafelOffen && !$('tafel-chat').hidden);
   $('sl-schreibhilfe').classList.toggle('sl-schmal__knopf--an', tafelOffen && $('tafel-chat').hidden);
 }
-$('sl-suchen').addEventListener('click', () => {
-  sucheZeigen($('suchleiste').hidden);
-  slSchmalAuffrischen();
-});
 $('sl-chat').addEventListener('click', () => { Chat.umschalten(); slSchmalAuffrischen(); });
 $('sl-schreibhilfe').addEventListener('click', () => {
   /* Ist der Chat gerade offen, soll der Knopf zur Schreibhilfe zurück

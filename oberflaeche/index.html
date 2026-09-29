@@ -98,26 +98,16 @@
   </div>
 </div>
 
-<div class="suchleiste" id="suchleiste" hidden>
-  <label>Suchen <input id="suche-was" type="search" placeholder="Wonach?"></label>
-  <label>Ersetzen durch <input id="suche-womit" type="text" placeholder="Wodurch?"></label>
-  <button class="knopf" id="suche-weiter">Weiter</button>
-  <button class="knopf" id="suche-ersetze">Ersetzen</button>
-  <button class="knopf" id="suche-alle">Alle ersetzen</button>
-  <label class="suchleiste__haken"><input type="checkbox" id="suche-gross"> Groß-/Kleinschreibung beachten</label>
-  <label class="suchleiste__haken"><input type="checkbox" id="suche-ganz"> Nur ganze Wörter</label>
-  <span id="suche-meldung"></span>
-  <button class="knopf suchleiste__ende" id="suche-zu">Schließen</button>
-</div>
-
 <div class="mitte">
   <!-- Derselbe Gedanke wie beim schmalen Rand rechts (sl-schmal): ein
        Schnellzugriff auf Bereiche, die sonst verteilt in Menüband und
-       Tastenkürzeln stecken — hier die drei, die mit der Stelle im
-       Dokument zu tun haben, statt mit der KI. „Neuer Kommentar" allein
-       öffnete die Kommentare-Tafel nur als Nebenwirkung des Anlegens;
-       wer nur ansehen will, braucht einen eigenen Weg dahin. -->
+       Tastenkürzeln stecken. „Neuer Kommentar" allein öffnete die
+       Kommentare-Tafel nur als Nebenwirkung des Anlegens; wer nur ansehen
+       will, braucht einen eigenen Weg dahin. Nur eine der vier Tafeln
+       steht gleichzeitig offen, wie rechts bei Chat/Schreibhilfe auch. -->
   <nav class="li-schmal" aria-label="Schnellzugriff auf Bereiche des Dokuments">
+    <button class="li-schmal__knopf" id="li-schmal-suchen" type="button"
+            title="Suchen (Strg+F)" aria-label="Suchen"></button>
     <button class="li-schmal__knopf" id="li-schmal-kommentare" type="button"
             title="Kommentare" aria-label="Kommentare"></button>
     <button class="li-schmal__knopf" id="li-schmal-ueberschriften" type="button"
@@ -125,6 +115,29 @@
     <button class="li-schmal__knopf" id="li-schmal-vorlesen" type="button"
             title="Vorlesen (F4)" aria-label="Vorlesen"></button>
   </nav>
+
+  <!-- Suchen und ersetzen — als Tafel wie Kommentare und Überschriften,
+       nicht mehr als Leiste über dem Blatt. -->
+  <aside class="li-tafel li-tafel--suchen" id="li-tafel-suchen" hidden aria-label="Suchen und ersetzen">
+    <div class="li-tafel__kopf">
+      <h2 class="li-tafel__titel">Suchen und ersetzen</h2>
+      <button class="li-tafel__knopf" id="li-suchen-schliessen" type="button"
+              title="Schließen" aria-label="Suchen schließen">×</button>
+    </div>
+    <input id="suche-was" class="li-suchen__feld" type="search" placeholder="Suchen">
+    <input id="suche-womit" class="li-suchen__feld" type="text" placeholder="Ersetzen durch">
+    <div class="li-suchen__ergebnis">
+      <span id="suche-meldung">Keine Suchergebnisse</span>
+      <button type="button" id="suche-zurueck" title="Voriger Treffer" aria-label="Voriger Treffer">▲</button>
+      <button type="button" id="suche-weiter" title="Nächster Treffer" aria-label="Nächster Treffer">▼</button>
+    </div>
+    <div class="li-suchen__knoepfe">
+      <button class="knopf knopf--klein" id="suche-ersetze" type="button">Ersetzen</button>
+      <button class="knopf knopf--klein" id="suche-alle" type="button">Alle ersetzen</button>
+    </div>
+    <label class="li-suchen__haken"><input type="checkbox" id="suche-gross"> Groß-/Kleinschreibung beachten</label>
+    <label class="li-suchen__haken"><input type="checkbox" id="suche-ganz"> Nur ganze Wörter</label>
+  </aside>
 
   <!-- Der Navigationsbereich: die Überschriften als Liste zum Anspringen.
        Bei einem langen Schreiben der schnellste Weg zur richtigen Stelle. -->
@@ -234,16 +247,12 @@
       <div class="tafel__kopf">
         <h1 class="tafel__name">Schreib <span>|</span> hilfe</h1>
 
-        <!-- Schnellzugriff auf die Stufen — bei schmaler Seitenleiste passen
-             „Wellen"/„Vorhersage"/„AutoKorr" nicht mehr neben Titel und
-             „Prüfen" in eine Zeile. Deshalb hinter einem kleinen Zahnrad:
-             ein Klick öffnet sie als Klappe unter dem Kopf, ohne dass die
-             Kopfzeile selbst höher würde. Funktion und Zustand (an/aus)
-             bleiben dieselben wie vorher — nur der Weg dorthin ist neu. -->
-        <button class="schnell-knopf" id="hilfe-schnell-knopf" type="button"
-                aria-expanded="false" aria-controls="hilfe-schnell"
-                title="Welche Hilfe an ist">⚙</button>
-        <div class="schnell" id="hilfe-schnell" role="group" hidden
+        <!-- Die drei Stufen als kurze Marken direkt neben dem Titel — zwei
+             Buchstaben statt des vollen Worts, damit sie neben Titel und
+             „Prüfen" in eine Zeile passen, ohne sich hinter einem Zahnrad
+             zu verstecken. Was „We/Vo/Ko" heißt, steht im Tooltip (title)
+             jeder Marke. -->
+        <div class="schnell" id="hilfe-schnell" role="group"
              aria-label="Welche Hilfe an ist"></div>
 
         <button class="knopf knopf--klein" id="btn-pruefen">Prüfen</button>
@@ -296,19 +305,14 @@
     </div>
   </aside>
 
-  <!-- Das schmale Symbolband ganz rechts — Suchen, KI-Chat, Schreibhilfe.
-       Es steht für sich, unabhängig davon, ob die Tafel gerade offen ist
-       (F5 blendet nur sie aus, nicht dieses Band): der eine feste Ort, an
-       dem alle drei Seitenbereiche zu finden sind, statt verteilt auf
-       Menü, Menüband und Tastenkürzel. -->
+  <!-- Das schmale Symbolband ganz rechts — KI-Chat, Schreibhilfe. Suchen
+       zog auf den entsprechenden Rand links, zu Kommentare und
+       Überschriften, mit denen es mehr gemein hat als mit der KI.
+       Das Band steht für sich, unabhängig davon, ob die Tafel gerade
+       offen ist (F5 blendet nur sie aus, nicht dieses Band): der eine
+       feste Ort, an dem die Seitenbereiche zu finden sind, statt
+       verteilt auf Menü, Menüband und Tastenkürzel. -->
   <nav class="sl-schmal" id="sl-schmal" aria-label="Schnellzugriff auf Seitenbereiche">
-    <button class="sl-schmal__knopf" id="sl-suchen" type="button"
-            title="Suchen (Strg+F)" aria-label="Suchen">
-      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
-           stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.34-4.34"/>
-      </svg>
-    </button>
     <button class="sl-schmal__knopf" id="sl-chat" type="button"
             title="KI-Chat (Strg+/)" aria-label="KI-Chat">
       <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
