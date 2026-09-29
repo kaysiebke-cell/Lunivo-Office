@@ -16966,12 +16966,13 @@ B.kommentareAlleWeg = () => {
    Ansichten zeichnet dieselbe Funktion neu — „kommentareZeichnen" —,
    damit sie nie auseinanderlaufen.
    ============================================================ */
-let kommentareSortierung = 'neueste';   // neueste | aelteste | oben | unten
+let kommentareSortierung = 'neueste';   // neueste | aelteste | oben | unten | verfasser-az | verfasser-za
 let kommentareFilter = 'alle';          // alle | offen | geloest
 
 function kommentareSortiert() {
   const alle = kommentare();
   const zeit = (m) => Number(m.dataset.zeit) || 0;
+  const autor = (m) => (m.dataset.autor || '').toLocaleLowerCase();
   const nachOben = alle.slice();
   const nachUnten = nachOben.slice().reverse();
   const gefiltert = (liste) => kommentareFilter === 'alle' ? liste
@@ -16979,6 +16980,8 @@ function kommentareSortiert() {
 
   if (kommentareSortierung === 'neueste') return gefiltert(nachOben.slice().sort((a, b) => zeit(b) - zeit(a)));
   if (kommentareSortierung === 'aelteste') return gefiltert(nachOben.slice().sort((a, b) => zeit(a) - zeit(b)));
+  if (kommentareSortierung === 'verfasser-az') return gefiltert(nachOben.slice().sort((a, b) => autor(a).localeCompare(autor(b))));
+  if (kommentareSortierung === 'verfasser-za') return gefiltert(nachOben.slice().sort((a, b) => autor(b).localeCompare(autor(a))));
   if (kommentareSortierung === 'unten') return gefiltert(nachUnten);
   return gefiltert(nachOben);   // 'oben' — dieselbe Reihenfolge wie im Dokument
 }
@@ -17088,8 +17091,10 @@ function kommentareMenueZeigen() {
     { name: 'Sortieren', kinder: [
       { name: 'Neueste zuerst', zeichen: sortHaken('neueste'), tun: neuZeichnenUndMerken('sort', 'neueste') },
       { name: 'Älteste zuerst', zeichen: sortHaken('aelteste'), tun: neuZeichnenUndMerken('sort', 'aelteste') },
-      { name: 'Position im Dokument (oben zuerst)', zeichen: sortHaken('oben'), tun: neuZeichnenUndMerken('sort', 'oben') },
-      { name: 'Position im Dokument (unten zuerst)', zeichen: sortHaken('unten'), tun: neuZeichnenUndMerken('sort', 'unten') },
+      { name: 'Verfasser (A-Z)', zeichen: sortHaken('verfasser-az'), tun: neuZeichnenUndMerken('sort', 'verfasser-az') },
+      { name: 'Verfasser (Z-A)', zeichen: sortHaken('verfasser-za'), tun: neuZeichnenUndMerken('sort', 'verfasser-za') },
+      { name: 'Von oben', zeichen: sortHaken('oben'), tun: neuZeichnenUndMerken('sort', 'oben') },
+      { name: 'Von unten', zeichen: sortHaken('unten'), tun: neuZeichnenUndMerken('sort', 'unten') },
     ] },
     { name: 'Kommentare anzeigen', kinder: [
       { name: 'Alle', zeichen: filterHaken('alle'), tun: neuZeichnenUndMerken('filter', 'alle') },
@@ -17134,6 +17139,11 @@ function kommentarFormularSetzen() {
 }
 
 function liTafelKommentareZeigen() {
+  /* Kommentare und Überschriften teilen sich den schmalen Rand links —
+     beide gleichzeitig offen fräße die Hälfte des Blatts weg, nur um
+     nebeneinander zu stehen. Genau wie rechts (Chat/Schreibhilfe) gilt:
+     immer nur eins von beiden. */
+  if (navOffen) { navOffen = false; $('navigation').hidden = true; }
   $('li-tafel-kommentare').hidden = false;
   kommentarFormularAbbrechen();
   kommentareZeichnen();
@@ -17952,23 +17962,103 @@ async function ueberschriftErzeugenDialog() {
   ], () => {}, 'Schließen');
 }
 
+/* ---- Ein-/Ausklappen, Ebene, Schriftgröße, Umbruch ----
+   Wie im Vorbild: das Zahnrad im Kopf öffnet ein Menü, in dem sich der
+   Baum steuern lässt, statt dass jede Überschrift für sich dasteht.
+   Gemerkt wird über denselben „Speicher" wie andere Blatt-Einstellungen
+   — je Dokument, nicht global, denn ein aufgeklapptes Kapitel in DIESEM
+   Text sagt nichts über ein anderes. */
+let navEingeklappt = new Set(Speicher.lies('navEingeklappt', []));
+let navSchriftgroesse = Speicher.lies('navSchriftgroesse', 'mittel');   // klein | mittel | gross
+let navUmbrechen = Speicher.lies('navUmbrechen', true);
+const NAV_EBENEN = 4;
+
+function navSpeichern() {
+  Speicher.schreib('navEingeklappt', [...navEingeklappt]);
+  Speicher.schreib('navSchriftgroesse', navSchriftgroesse);
+  Speicher.schreib('navUmbrechen', navUmbrechen);
+}
+
+/* Hat eine Überschrift Kinder? Die nächste in der flachen Liste steht
+   tiefer — mehr braucht die Frage nicht, die Liste kommt schon in der
+   Reihenfolge des Dokuments. */
+function navHatKinder(punkte, i) {
+  return i + 1 < punkte.length && punkte[i + 1].ebene > punkte[i].ebene;
+}
+
+function navAlleEinAusklappen(zu) {
+  navEingeklappt.clear();
+  if (zu) {
+    const punkte = Referenzen.ueberschriftenSammeln();
+    for (let i = 0; i < punkte.length; i++) {
+      if (navHatKinder(punkte, i)) navEingeklappt.add(punkte[i].kennung);
+    }
+  }
+  navSpeichern();
+  navBauen();
+}
+
+/* „Auf Ebene 2 erweitern" heißt: bis Ebene 2 aufgeklappt, ab da zu —
+   nicht „nur Ebene 2 zeigen". Zugeklappt wird darum jede Überschrift AB
+   der gewählten Ebene, die selbst Kinder hat. */
+function navAufEbeneErweitern(n) {
+  const punkte = Referenzen.ueberschriftenSammeln();
+  navEingeklappt.clear();
+  for (let i = 0; i < punkte.length; i++) {
+    if (punkte[i].ebene >= n && navHatKinder(punkte, i)) navEingeklappt.add(punkte[i].kennung);
+  }
+  navSpeichern();
+  navBauen();
+}
+
+function navMenueZeigen(anker) {
+  kleinmenueZeigen(anker, [
+    { name: 'Alle ausklappen', tun: () => navAlleEinAusklappen(false) },
+    { name: 'Alle einklappen', tun: () => navAlleEinAusklappen(true) },
+    { name: 'Auf Ebene erweitern', kinder:
+      Array.from({ length: NAV_EBENEN }, (_, i) => (
+        { name: String(i + 1), tun: () => navAufEbeneErweitern(i + 1) })) },
+    { name: 'Schriftgröße', kinder: [
+      { name: 'Klein', zeichen: navSchriftgroesse === 'klein' ? 'haken' : '',
+        tun: () => { navSchriftgroesse = 'klein'; navSpeichern(); navBauen(); } },
+      { name: 'Mittelgroß', zeichen: navSchriftgroesse === 'mittel' ? 'haken' : '',
+        tun: () => { navSchriftgroesse = 'mittel'; navSpeichern(); navBauen(); } },
+      { name: 'Groß', zeichen: navSchriftgroesse === 'gross' ? 'haken' : '',
+        tun: () => { navSchriftgroesse = 'gross'; navSpeichern(); navBauen(); } },
+    ] },
+    { name: 'Lange Überschriften umbrechen', zeichen: navUmbrechen ? 'haken' : '', tun: () => {
+      navUmbrechen = !navUmbrechen; navSpeichern(); navBauen();
+    } },
+  ]);
+}
+
 function navBauen() {
   const kasten = $('navigation');
   const punkte = Referenzen.ueberschriftenSammeln();
   kasten.innerHTML = '';
+  kasten.classList.toggle('navigation--schrift-klein', navSchriftgroesse === 'klein');
+  kasten.classList.toggle('navigation--schrift-gross', navSchriftgroesse === 'gross');
+  kasten.classList.toggle('navigation--umbrechen', navUmbrechen);
 
   const kopf = document.createElement('div');
   kopf.className = 'navigation__kopfzeile';
   const titel = document.createElement('p');
   titel.className = 'navigation__titel';
   titel.textContent = 'Überschriften';
+  const einstellungKnopf = document.createElement('button');
+  einstellungKnopf.type = 'button';
+  einstellungKnopf.className = 'navigation__einstellung';
+  einstellungKnopf.title = 'Einstellungen';
+  einstellungKnopf.setAttribute('aria-label', 'Einstellungen für die Überschriften');
+  einstellungKnopf.appendChild(symbol('zahnrad'));
+  einstellungKnopf.addEventListener('click', () => navMenueZeigen(einstellungKnopf));
   const erzeugenKnopf = document.createElement('button');
   erzeugenKnopf.type = 'button';
   erzeugenKnopf.className = 'navigation__ki-erzeugen';
   erzeugenKnopf.textContent = '✨ Überschrift erzeugen';
   erzeugenKnopf.title = 'Aus der Markierung eine Überschrift vorschlagen';
   erzeugenKnopf.addEventListener('click', ueberschriftErzeugenDialog);
-  kopf.append(titel, erzeugenKnopf);
+  kopf.append(titel, einstellungKnopf, erzeugenKnopf);
   kasten.appendChild(kopf);
 
   if (!punkte.length) {
@@ -17980,9 +18070,40 @@ function navBauen() {
     return;
   }
 
-  for (const punkt of punkte) {
+  /* Ein Stapel der echten Vorfahren: vor jeder Überschrift alles
+     abräumen, was auf gleicher oder tieferer Ebene stand — was übrig
+     bleibt, sind genau ihre Eltern, Großeltern und so weiter. Ist
+     irgendeiner davon eingeklappt, bleibt die Zeile ungezeichnet. */
+  const vorfahren = [];
+  for (let i = 0; i < punkte.length; i++) {
+    const punkt = punkte[i];
+    while (vorfahren.length && vorfahren[vorfahren.length - 1].ebene >= punkt.ebene) vorfahren.pop();
+    const versteckt = vorfahren.some((v) => navEingeklappt.has(v.kennung));
+    vorfahren.push(punkt);
+    if (versteckt) continue;
+
     const zeile = document.createElement('div');
     zeile.className = 'navigation__eintrag';
+
+    const hatKinder = navHatKinder(punkte, i);
+    const pfeil = document.createElement('button');
+    pfeil.type = 'button';
+    pfeil.className = 'navigation__pfeil';
+    if (hatKinder) {
+      const zu = navEingeklappt.has(punkt.kennung);
+      pfeil.classList.toggle('navigation__pfeil--zu', zu);
+      pfeil.textContent = '▾';
+      pfeil.title = zu ? 'Aufklappen' : 'Zuklappen';
+      pfeil.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (zu) navEingeklappt.delete(punkt.kennung); else navEingeklappt.add(punkt.kennung);
+        navSpeichern();
+        navBauen();
+      });
+    } else {
+      pfeil.disabled = true;
+      pfeil.setAttribute('aria-hidden', 'true');
+    }
 
     const sprung = document.createElement('button');
     sprung.type = 'button';
@@ -18003,7 +18124,7 @@ function navBauen() {
       if (el) ueberschriftKI(punkt, el);
     });
 
-    zeile.append(sprung, ki);
+    zeile.append(pfeil, sprung, ki);
     kasten.appendChild(zeile);
   }
 }
@@ -18011,6 +18132,9 @@ function navBauen() {
 B.navigation = () => {
   navOffen = !navOffen;
   $('navigation').hidden = !navOffen;
+  /* Dieselbe Regel wie umgekehrt in liTafelKommentareZeigen: nur eins
+     der beiden Felder links zeigt sich gleichzeitig. */
+  if (navOffen && !$('li-tafel-kommentare').hidden) liTafelKommentareSchliessen();
   if (navOffen) navBauen();
   menueBauen();
 };
@@ -23198,12 +23322,35 @@ function sucheZeigen(an) {
   if (typeof slSchmalAuffrischen === 'function') slSchmalAuffrischen();
 }
 
+/* „Nur ganze Wörter" prüft, was rechts und links vom Fund steht — ein
+   Buchstabe, eine Ziffer oder „_" davor oder danach heißt, es steckt
+   mitten in einem längeren Wort. \p{L}/\p{N} statt [a-zA-Z0-9], damit
+   „Übung" auch als ganzes Wort erkannt wird, nicht nur „bung". */
+const WORTZEICHEN = /[\p{L}\p{N}_]/u;
+
 function suche(ab) {
-  const was = $('suche-was').value;
-  if (!was) return -1;
+  const rohWas = $('suche-was').value;
+  if (!rohWas) return -1;
+  const gross = $('suche-gross').checked;
+  const ganz = $('suche-ganz').checked;
   const text = Dokument.lies().text;
-  let stelle = text.toLowerCase().indexOf(was.toLowerCase(), ab);
-  if (stelle === -1) stelle = text.toLowerCase().indexOf(was.toLowerCase());
+  const textVergleich = gross ? text : text.toLowerCase();
+  const was = gross ? rohWas : rohWas.toLowerCase();
+
+  const passtGanzesWort = (stelle) => {
+    if (!ganz) return true;
+    const davor = stelle > 0 ? textVergleich[stelle - 1] : '';
+    const danach = textVergleich[stelle + was.length] || '';
+    return !WORTZEICHEN.test(davor) && !WORTZEICHEN.test(danach);
+  };
+  const naechsteStelle = (von) => {
+    let stelle = textVergleich.indexOf(was, von);
+    while (stelle !== -1 && !passtGanzesWort(stelle)) stelle = textVergleich.indexOf(was, stelle + 1);
+    return stelle;
+  };
+
+  let stelle = naechsteStelle(ab);
+  if (stelle === -1) stelle = naechsteStelle(0);
   return stelle;
 }
 
