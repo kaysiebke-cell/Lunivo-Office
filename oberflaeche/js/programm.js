@@ -1949,6 +1949,31 @@ B.bild = () => {
   waehler.click();
 };
 
+/* ---- Text in Bild ----
+   Steht im Rechtsklickmenü, nur wenn Text markiert ist — der markierte
+   Text ist die Bildbeschreibung, genau wie im Vorbild („Text markieren,
+   Rechtsklick, KI → Text in Bild"). Das Ergebnis tritt an die Stelle
+   des markierten Textes, wie „Bild einfügen" auch in eine Auswahl hinein
+   einfügt. */
+B.textInBild = async () => {
+  const beschreibung = window.getSelection().toString().trim();
+  if (!beschreibung) { melde('Erst einen Text markieren, der das Bild beschreibt.'); return; }
+  if (!KI.istEigenerAnbieter(KI.aufgabenModellRoh('bildgenerierung'))) {
+    melde('Dafür fehlt ein Modell mit „Bilder" — in der KI-Konfiguration eintragen.');
+    Einstellungen.kiKonfiguration();
+    return;
+  }
+
+  melde('Die KI erzeugt das Bild …');
+  const ergebnis = await KI.bildErzeugen(beschreibung);
+  if (ergebnis.fehler) { melde(ergebnis.fehler); return; }
+
+  auswahlZurueck();
+  Dokument.einfuegen('<img src="' + ergebnis.bild + '" alt="'
+    + beschreibung.replace(/"/g, '&quot;') + '">');
+  melde('Bild eingefügt. Strg+Z macht es rückgängig.');
+};
+
 /* ============================================================
    DER RASTER-WÄHLER FÜR TABELLEN
 
@@ -24592,6 +24617,8 @@ function rechtsMenueZeigen(e) {
         tun: () => KIteil.kiTextAktionAusfuehren('einfacher'), aus: gesperrt },
       strich,
       { name: 'Text- und Wortanalyse', tun: () => KIteil.kiTextAnalyse(), aus: gesperrt },
+      strich,
+      { name: 'Text in Bild', tun: () => B.textInBild(), aus: gesperrt },
     ]);
   }
   gruppe('abstand', 'Absatz', [

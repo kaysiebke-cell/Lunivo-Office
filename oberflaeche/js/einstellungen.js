@@ -533,10 +533,18 @@ const ANBIETER_VORLAGEN = [
      gar nicht — und genau das stiftet Verwirrung. */
   ['ollama', 'Ollama (auf diesem Rechner)', 'http://localhost:11434/v1'],
   ['openai', 'OpenAI', 'https://api.openai.com/v1'],
+  ['openrouter', 'OpenRouter', 'https://openrouter.ai/api/v1'],
+  ['gemini', 'Google Gemini', 'https://generativelanguage.googleapis.com/v1beta/openai'],
   ['mistral', 'Mistral', 'https://api.mistral.ai/v1'],
   ['groq', 'Groq', 'https://api.groq.com/openai/v1'],
   ['deepseek', 'DeepSeek', 'https://api.deepseek.com/v1'],
   ['together', 'Together AI', 'https://api.together.xyz/v1'],
+  /* Anthropic/Claude fehlt hier bewusst: Es hat kein zu OpenAI
+     verträgliches „/chat/completions" — anders als die übrigen hier.
+     Claude läuft in Lunivo über den eigenen, direkten Weg (Feld
+     „KI-Modell" oben), nicht über „Eigenen Anbieter hinzufügen". Ein
+     Eintrag hier wäre gewählt, sähe aus wie die anderen — und schlüge
+     bei jeder Anfrage fehl. */
 ];
 
 /* Die Zeile „Modell" — ein Textfeld und ein Knopf, der die Liste beim

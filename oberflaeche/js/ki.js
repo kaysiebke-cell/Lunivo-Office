@@ -901,6 +901,63 @@ async function eigenerAnbieterAnfrage(anbieter, anweisung, text, bauplan) {
   }
 }
 
+/* ------------------------------------------------------------
+   Bild erzeugen — nur eigene Anbieter mit „Bilder" unter den
+   Fähigkeiten können das; Claude und die lokalen Text-Modelle in
+   AUFGABEN kennen kein Bildgenerierungs-Modell und werden hier gar
+   nicht erst gefragt. Dieselbe Schnittstelle wie bei den meisten
+   Anbietern neben OpenAI: POST an „<Anschrift>/images/generations". */
+async function bildErzeugen(beschreibung) {
+  const modell = aufgabenModellRoh('bildgenerierung');
+  if (!modell || !istEigenerAnbieter(modell)) {
+    return { fehler: 'Dafür fehlt ein Anbieter mit „Bilder" — in der KI-Konfiguration eintragen.' };
+  }
+  const anbieter = Anbieter.holen(eigenerAnbieterId(modell));
+  if (!anbieter) {
+    return { fehler: 'Der gewählte Anbieter ist nicht mehr da. In den Einstellungen neu wählen.' };
+  }
+  if (!anbieter.modell) {
+    return { fehler: 'Für „' + anbieter.name + '" ist kein Modell eingetragen.' };
+  }
+
+  const abbruch = new AbortController();
+  const wecker = setTimeout(() => abbruch.abort(), 90000);
+  try {
+    const antwort = await fetch(anbieter.url + '/images/generations', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        ...(anbieter.schluessel ? { authorization: 'Bearer ' + anbieter.schluessel } : {}),
+      },
+      body: JSON.stringify({ model: anbieter.modell, prompt: beschreibung, n: 1, size: '1024x1024' }),
+      signal: abbruch.signal,
+    });
+
+    if (!antwort.ok) {
+      let zusatz = '';
+      try { zusatz = (await antwort.json())?.error?.message || ''; } catch (e) { /* egal */ }
+      return { fehler: '„' + anbieter.name + '" meldet Fehler ' + antwort.status
+                     + (zusatz ? ' (' + zusatz + ')' : '') };
+    }
+
+    const daten = await antwort.json();
+    const eintrag = daten?.data?.[0];
+    const bild = eintrag?.url || (eintrag?.b64_json ? 'data:image/png;base64,' + eintrag.b64_json : null);
+    return bild ? { bild } : { fehler: '„' + anbieter.name + '" hat kein Bild zurückgegeben.' };
+
+  } catch (fehler) {
+    if (fehler.name === 'AbortError') {
+      return { fehler: '„' + anbieter.name + '" hat zu lange gebraucht. Bitte noch einmal versuchen.' };
+    }
+    if (fehler instanceof TypeError) {
+      return { fehler: '„' + anbieter.name + '" ist unter ' + anbieter.url + ' nicht zu erreichen. Stimmt die URL?' };
+    }
+    return { fehler: 'Es hat nicht geklappt: ' + fehler.message };
+  } finally {
+    clearTimeout(wecker);
+  }
+}
+
 /* Denkmodelle schreiben ihr Grübeln in <think>-Klammern mit. Ollama trennt
    es sauber ab, sobald es vom Denken weiß — nur eben nicht bei jedem Modell.
    Was durchrutscht, hat im Brief eines Menschen nichts zu suchen. */
@@ -1479,7 +1536,7 @@ return {
   ollamaModelle, korrigieren, uebersetzen, zusammenfassen, vorschlaege, synonyme, sprachfunde,
   textAnalyse,
   TEXT_AKTIONEN, textAktion,
-  assistentAusfuehren, chatNachricht,
+  assistentAusfuehren, chatNachricht, bildErzeugen,
   kommentareZusammenfassen, kommentarAntwort, kommentarAnalysieren,
   ueberschriftErzeugen, ueberschriftVerbessern, ueberschriftAlternativen, abschnittZusammenfassen,
   centFuer, alsGeld, kostenStand, kostenLeeren,
