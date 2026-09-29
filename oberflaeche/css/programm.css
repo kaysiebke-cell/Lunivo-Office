@@ -1302,13 +1302,36 @@ select option{background:var(--karte);color:var(--schrift)}
 .aufgaben-liste .zeile select{flex:0 1 260px;min-width:0}
 .einst-aufgaben-verweis{margin-top:10px}
 
-/* „Liste der KI-Modelle": dieselbe Zeilenform wie „Eigene Anbieter",
-   nur mit zwei Symbolknöpfen (Bearbeiten, Löschen) statt einem. Im
-   Dialog gebaut über „art:'knoten'" — deshalb hier keine .feld-Regeln,
-   sondern eigene, knappe Maße. */
-.modelle-liste{min-width:280px}
-.modelle-liste .zeile{margin-top:8px}
-.modelle-liste .knopf{width:auto;padding:6px 10px}
+/* „Liste der KI-Modelle" und „Benutzerdefinierte Anbieter": ein Kasten
+   zum Auswählen links, eine Knopfspalte (+/✎/🗑) rechts — nach seinem
+   Bild, nicht die Knöpfe in jeder Zeile wie vorher. Erst eine Zeile
+   anklicken markiert sie; Bearbeiten und Löschen wirken auf die
+   Markierung, „+" braucht keine. */
+.anbieter-auswahlliste{display:flex;gap:8px;align-items:stretch;min-width:300px}
+.anbieter-auswahlliste__box{
+  flex:1 1 auto;min-width:0;min-height:140px;max-height:240px;overflow-y:auto;
+  border:1px solid var(--rand);border-radius:6px;background:var(--grund);
+  padding:4px;
+}
+.anbieter-auswahlliste__leer{
+  display:flex;align-items:center;justify-content:center;height:100%;
+  min-height:132px;color:var(--schrift-3);font-size:12.5px;
+  text-align:center;padding:10px;margin:0;
+}
+.anbieter-auswahlliste__zeile{
+  padding:7px 9px;border-radius:5px;cursor:pointer;font-size:13px;
+}
+.anbieter-auswahlliste__zeile:hover{background:var(--karte)}
+.anbieter-auswahlliste__zeile--an{background:var(--blau);color:#fff}
+.anbieter-auswahlliste__zeile em{display:block;font-size:11px;font-style:normal;opacity:.75}
+.anbieter-auswahlliste__knoepfe{display:flex;flex-direction:column;gap:6px;flex:0 0 auto}
+.anbieter-auswahlliste__knoepfe button{
+  width:34px;height:34px;padding:0;border-radius:6px;
+  background:var(--karte);border:1px solid var(--rand);color:var(--schrift-2);
+  font-size:14px;cursor:pointer;
+}
+.anbieter-auswahlliste__knoepfe button:hover:not(:disabled){background:var(--rand);color:var(--schrift)}
+.anbieter-auswahlliste__knoepfe button:disabled{opacity:.4;cursor:default}
 
 /* „Einstellungen der Übersetzung": eine Zeile je Sprache statt eines
    Klappfelds — angeklickt heißt gewählt, „OK" übernimmt erst dann. */
@@ -1321,16 +1344,6 @@ select option{background:var(--karte);color:var(--schrift)}
 .sprachliste__zeile:last-child{border-bottom:0}
 .sprachliste__zeile:hover{background:var(--karte)}
 .sprachliste__zeile--an{background:var(--blau);color:#fff}
-
-.anbieter-liste{margin-top:4px}
-.anbieter-liste .zeile{margin-top:6px}
-.anbieter-liste__name{font-size:13px}
-.anbieter-liste__meta{display:block;font-size:11.5px;color:var(--schrift-3)}
-.anbieter-liste__leer{margin:6px 0 0;font-size:12px;color:var(--schrift-3)}
-/* Zwei Knöpfe einer Zeile (Starten, Entfernen) als ein Block — sonst
-   drückt „justify-content:space-between" sie auseinander wie drei
-   eigenständige Spalten statt wie ein zusammengehöriges Paar rechts. */
-.anbieter-liste__knoepfe{display:flex;gap:8px;flex:0 0 auto}
 
 /* ---------- Der Dialog „Eigenen Anbieter hinzufügen" ---------- */
 /* Dieselbe Zeilenform wie bei den übrigen Feldern (.dialog__zeile: Label

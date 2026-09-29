@@ -718,25 +718,20 @@ function verwendungChipsBauen(anfangswerte) {
    „Modell bearbeiten" und ändert genau diesen Eintrag — derselbe Kasten,
    dieselben Felder, kein zweites Formular. „nachSpeichern" ruft — falls
    gegeben — die Liste auf, aus der heraus bearbeitet wurde. */
-/* Der Verweis unten im Formular führt zur Liste aller eigenen Anbieter
-   (Bearbeiten, Löschen, Anlegen), statt das hier offene Formular ein
-   zweites Mal anzubieten. Schließt sich selbst, wie „Abbrechen" es täte,
-   und öffnet direkt danach die Liste.
-
-   Er hieß hier einmal „Benutzerdefinierte Anbieter" — derselbe Name wie
-   in KI-Konfiguration, aber ein anderes Ziel: dort öffnet er DIESES
-   Formular neu, hier führte er zur Liste. Zwei Verweise mit demselben
-   Namen, die zu verschiedenen Orten führen, sind schlimmer als gar
-   keiner — jetzt heißt er, wohin er tatsächlich führt. */
+/* Der Verweis unten im Formular führt zu den Anbietern, die aus einer
+   Datei verbunden wurden, statt das hier offene Formular ein zweites
+   Mal anzubieten. Schließt sich selbst, wie „Abbrechen" es täte, und
+   öffnet direkt danach die Liste — nach seinem Bild, nicht dieselbe
+   Liste wie „KI-Modelle bearbeiten" unter anderem Namen. */
 function benutzerdefinierteAnbieterLinkBauen() {
   const link = document.createElement('button');
   link.type = 'button';
   link.className = 'verweis anbieter-modellzeile__vonhand';
-  link.textContent = 'KI-Modelle bearbeiten';
+  link.textContent = 'Benutzerdefinierte Anbieter';
   link.addEventListener('click', (e) => {
     const grund = e.target.closest('.dialoggrund');
     if (grund) grund.remove();
-    modelleListeOeffnen();
+    benutzerdefinierteAnbieterFenster();
   });
   return link;
 }
@@ -869,69 +864,94 @@ function eigenenAnbieterHinzufuegen() { anbieterFormular(null); }
    Fenster bündelt beides, wie „Liste der KI-Modelle" es vorgibt: ein
    Knopf „+" oben, darunter jede Zeile mit ✎ und 🗑.
    ------------------------------------------------------------ */
-function modelleListeBauen() {
+/* Ein Kasten zum Auswählen, eine Knopfspalte (+/✎/🗑) daneben — nach
+   seinem Bild, für „Liste der KI-Modelle" und „Benutzerdefinierte
+   Anbieter" gleichermaßen: eine Zeile anklicken markiert sie, erst
+   dann wirken Bearbeiten und Löschen auf sie; „+" braucht keine
+   Markierung. Ein Bauplan statt zwei fast gleicher Listen. */
+function auswahllisteBauen({ eintraege, zeigeText, zeigeMeta, leerText, neu, bearbeiten, loeschen }) {
   const kasten = document.createElement('div');
-  kasten.className = 'modelle-liste';
+  kasten.className = 'anbieter-auswahlliste';
+
+  const box = document.createElement('div');
+  box.className = 'anbieter-auswahlliste__box';
+  box.setAttribute('role', 'listbox');
+
+  const knoepfe = document.createElement('div');
+  knoepfe.className = 'anbieter-auswahlliste__knoepfe';
+
+  const neuKnopf = document.createElement('button');
+  neuKnopf.type = 'button';
+  neuKnopf.textContent = '+';
+  neuKnopf.title = 'Hinzufügen';
+  neuKnopf.setAttribute('aria-label', 'Hinzufügen');
+
+  const bearbeitenKnopf = document.createElement('button');
+  bearbeitenKnopf.type = 'button';
+  bearbeitenKnopf.textContent = '✎';
+  bearbeitenKnopf.title = 'Bearbeiten';
+  bearbeitenKnopf.setAttribute('aria-label', 'Bearbeiten');
+
+  const loeschenKnopf = document.createElement('button');
+  loeschenKnopf.type = 'button';
+  loeschenKnopf.textContent = '🗑';
+  loeschenKnopf.title = 'Löschen';
+  loeschenKnopf.setAttribute('aria-label', 'Löschen');
+
+  knoepfe.append(neuKnopf, bearbeitenKnopf, loeschenKnopf);
+  kasten.append(box, knoepfe);
+
+  /* Gemerkt wird die id, nicht der Eintrag selbst: „eintraege()" liest
+     bei KI.Anbieter.liste() aus dem Speicher, und jeder Aufruf liefert
+     frisch aus JSON gebaute, neue Objekte — „===" fände nach dem
+     nächsten Zeichnen nie wieder dieselbe Zeile, obwohl es dieselbe
+     Zeile ist. Über die id bleibt die Markierung stehen. */
+  let gewaehltId = null;
 
   function zeichne() {
-    kasten.innerHTML = '';
-    const liste = KI.Anbieter.liste();
+    box.innerHTML = '';
+    const liste = eintraege();
+    bearbeitenKnopf.disabled = true;
+    loeschenKnopf.disabled = true;
 
     if (!liste.length) {
       const leer = document.createElement('p');
-      leer.className = 'anbieter-liste__leer';
-      leer.textContent = 'Noch keiner eingetragen.';
-      kasten.appendChild(leer);
+      leer.className = 'anbieter-auswahlliste__leer';
+      leer.textContent = leerText;
+      box.appendChild(leer);
+      return;
     }
 
-    for (const anbieter of liste) {
+    for (const eintrag of liste) {
+      const an = gewaehltId === eintrag.id;
       const zeile = document.createElement('div');
-      zeile.className = 'zeile';
-
-      const namensfeld = document.createElement('span');
-      namensfeld.className = 'anbieter-liste__name';
-      namensfeld.textContent = anbieter.name;
-      const meta = document.createElement('em');
-      meta.className = 'anbieter-liste__meta';
-      meta.textContent = anbieterMetaText(anbieter);
-      namensfeld.appendChild(meta);
-
-      const knoepfe = document.createElement('div');
-      knoepfe.className = 'anbieter-liste__knoepfe';
-
-      const bearbeiten = document.createElement('button');
-      bearbeiten.className = 'knopf'; bearbeiten.type = 'button';
-      bearbeiten.textContent = '✎';
-      bearbeiten.title = '„' + anbieter.name + '" bearbeiten';
-      bearbeiten.setAttribute('aria-label', 'Bearbeiten');
-      bearbeiten.addEventListener('click', () => anbieterFormular(anbieter, zeichne));
-
-      const weg = document.createElement('button');
-      weg.className = 'knopf'; weg.type = 'button';
-      weg.textContent = '🗑';
-      weg.title = '„' + anbieter.name + '" löschen';
-      weg.setAttribute('aria-label', 'Löschen');
-      weg.addEventListener('click', () => {
-        if (KI.modellJetzt() === KI.EIGEN_MARKE + anbieter.id) KI.modellSetzen('claude-opus-5');
-        KI.Anbieter.entfernen(anbieter.id);
-        zeichne();
-        eigeneAnbieterZeigen();
-        aufgabenZeigen();
-        $('einst-modell').value = KI.modellJetzt();
-        modellHinweisZeigen();
-      });
-
-      knoepfe.append(bearbeiten, weg);
-      zeile.append(namensfeld, knoepfe);
-      kasten.appendChild(zeile);
+      zeile.className = 'anbieter-auswahlliste__zeile' + (an ? ' anbieter-auswahlliste__zeile--an' : '');
+      zeile.setAttribute('role', 'option');
+      zeile.tabIndex = 0;
+      zeile.textContent = zeigeText(eintrag);
+      if (zeigeMeta) {
+        const meta = document.createElement('em');
+        meta.textContent = zeigeMeta(eintrag);
+        zeile.appendChild(meta);
+      }
+      zeile.addEventListener('click', () => { gewaehltId = eintrag.id; zeichne(); });
+      box.appendChild(zeile);
+      if (an) { bearbeitenKnopf.disabled = false; loeschenKnopf.disabled = false; }
     }
-
-    const neu = document.createElement('button');
-    neu.className = 'knopf'; neu.type = 'button';
-    neu.textContent = '+ Modell hinzufügen …';
-    neu.addEventListener('click', () => anbieterFormular(null, zeichne));
-    kasten.appendChild(neu);
   }
+
+  neuKnopf.addEventListener('click', () => neu(zeichne));
+  bearbeitenKnopf.addEventListener('click', () => {
+    const eintrag = eintraege().find((e) => e.id === gewaehltId);
+    if (eintrag) bearbeiten(eintrag, zeichne);
+  });
+  loeschenKnopf.addEventListener('click', () => {
+    const eintrag = eintraege().find((e) => e.id === gewaehltId);
+    if (!eintrag) return;
+    loeschen(eintrag, zeichne);
+    gewaehltId = null;
+    zeichne();
+  });
 
   zeichne();
   return kasten;
@@ -1000,9 +1020,94 @@ function kiKonfiguration() {
 
 function modelleListeOeffnen() {
   if (!griffe.fenster) return;
+  const liste = auswahllisteBauen({
+    eintraege: () => KI.Anbieter.liste(),
+    zeigeText: (a) => a.name,
+    zeigeMeta: (a) => anbieterMetaText(a),
+    leerText: 'Noch keiner eingetragen. „+" legt einen an.',
+    neu: (neuZeichnen) => anbieterFormular(null, neuZeichnen),
+    bearbeiten: (a, neuZeichnen) => anbieterFormular(a, neuZeichnen),
+    loeschen: (a, neuZeichnen) => {
+      if (KI.modellJetzt() === KI.EIGEN_MARKE + a.id) KI.modellSetzen('claude-opus-5');
+      KI.Anbieter.entfernen(a.id);
+      neuZeichnen();
+      eigeneAnbieterZeigen();
+      aufgabenZeigen();
+      $('einst-modell').value = KI.modellJetzt();
+      modellHinweisZeigen();
+    },
+  });
   griffe.fenster('Liste der KI-Modelle', [
-    { art: 'knoten', name: '', knoten: modelleListeBauen() },
-  ], () => {}, 'Schließen');
+    { art: 'knoten', name: '', knoten: liste },
+  ], () => {}, 'OK');
+}
+
+/* ------------------------------------------------------------
+   Benutzerdefinierte Anbieter — verbundene Anbieter, die aus einer
+   Datei eingelesen wurden, statt von Hand eingetragen. Dieselbe
+   Auswahlliste wie oben, nur über einer anderen Teilmenge: nicht jeder
+   Eintrag in KI.Anbieter kam aus einer Datei, hier zählen nur die, für
+   die „anbieterDateien" (unten) einen Dateinamen gemerkt hat.
+   ------------------------------------------------------------ */
+function benutzerdefinierteAnbieterDateien() {
+  return KI.Speicher.lies('anbieterDateien', []);   // [{ id, dateiname }]
+}
+function benutzerdefinierteAnbieterDateienSchreiben(liste) {
+  KI.Speicher.schreib('anbieterDateien', liste);
+}
+
+/* Die Datei soll dieselben Felder tragen, die das Formular „Eigenen
+   Anbieter hinzufügen" von Hand abfragt — wer eine Konfiguration
+   einmal eingerichtet hat, kann sie als JSON weitergeben, statt sie
+   ein zweites Mal einzutippen. */
+function benutzerdefinierterAnbieterAusDatei(neuZeichnen) {
+  const waehler = document.createElement('input');
+  waehler.type = 'file';
+  waehler.accept = 'application/json,.json';
+  waehler.addEventListener('change', async () => {
+    const datei = waehler.files[0];
+    if (!datei) return;
+    try {
+      const inhalt = JSON.parse(await datei.text());
+      const eintrag = KI.Anbieter.hinzufuegen({
+        name: inhalt.name, url: inhalt.url, schluessel: inhalt.schluessel,
+        modell: inhalt.modell, verwendungFuer: inhalt.verwendungFuer,
+      });
+      const dateien = benutzerdefinierteAnbieterDateien();
+      dateien.push({ id: eintrag.id, dateiname: datei.name });
+      benutzerdefinierteAnbieterDateienSchreiben(dateien);
+    } catch (e) { /* keine gültige Datei — die Liste bleibt einfach, wie sie war */ }
+    neuZeichnen();
+  });
+  waehler.click();
+}
+
+function benutzerdefinierteAnbieterFenster() {
+  if (!griffe.fenster) return;
+  const liste = auswahllisteBauen({
+    eintraege: () => {
+      const alle = KI.Anbieter.liste();
+      return benutzerdefinierteAnbieterDateien()
+        .map((d) => ({ ...d, anbieter: alle.find((a) => a.id === d.id) }))
+        .filter((e) => e.anbieter);
+    },
+    zeigeText: (e) => e.anbieter.name,
+    zeigeMeta: (e) => e.dateiname,
+    leerText: 'Die Liste ist leer. Drücken Sie +, um die Datei hinzuzufügen.',
+    neu: (neuZeichnen) => benutzerdefinierterAnbieterAusDatei(neuZeichnen),
+    bearbeiten: (e, neuZeichnen) => anbieterFormular(e.anbieter, neuZeichnen),
+    loeschen: (e, neuZeichnen) => {
+      if (KI.modellJetzt() === KI.EIGEN_MARKE + e.id) KI.modellSetzen('claude-opus-5');
+      KI.Anbieter.entfernen(e.id);
+      benutzerdefinierteAnbieterDateienSchreiben(
+        benutzerdefinierteAnbieterDateien().filter((d) => d.id !== e.id));
+      neuZeichnen();
+    },
+  });
+  griffe.fenster('Benutzerdefinierte Anbieter', [
+    { art: 'satz', text: 'Verbundene benutzerdefinierte Anbieter' },
+    { art: 'knoten', name: '', knoten: liste },
+  ], () => {}, 'Zurück');
 }
 
 /* ------------------------------------------------------------
