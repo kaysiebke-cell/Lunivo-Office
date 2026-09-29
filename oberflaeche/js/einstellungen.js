@@ -718,15 +718,21 @@ function verwendungChipsBauen(anfangswerte) {
    „Modell bearbeiten" und ändert genau diesen Eintrag — derselbe Kasten,
    dieselben Felder, kein zweites Formular. „nachSpeichern" ruft — falls
    gegeben — die Liste auf, aus der heraus bearbeitet wurde. */
-/* Der Verweis „Benutzerdefinierte Anbieter" unten im Formular — führt zur
-   Liste aller eigenen Anbieter (Bearbeiten, Löschen, Anlegen), statt das
-   hier offene Formular ein zweites Mal anzubieten. Schließt sich selbst,
-   wie „Abbrechen" es täte, und öffnet direkt danach die Liste. */
+/* Der Verweis unten im Formular führt zur Liste aller eigenen Anbieter
+   (Bearbeiten, Löschen, Anlegen), statt das hier offene Formular ein
+   zweites Mal anzubieten. Schließt sich selbst, wie „Abbrechen" es täte,
+   und öffnet direkt danach die Liste.
+
+   Er hieß hier einmal „Benutzerdefinierte Anbieter" — derselbe Name wie
+   in KI-Konfiguration, aber ein anderes Ziel: dort öffnet er DIESES
+   Formular neu, hier führte er zur Liste. Zwei Verweise mit demselben
+   Namen, die zu verschiedenen Orten führen, sind schlimmer als gar
+   keiner — jetzt heißt er, wohin er tatsächlich führt. */
 function benutzerdefinierteAnbieterLinkBauen() {
   const link = document.createElement('button');
   link.type = 'button';
   link.className = 'verweis anbieter-modellzeile__vonhand';
-  link.textContent = 'Benutzerdefinierte Anbieter';
+  link.textContent = 'KI-Modelle bearbeiten';
   link.addEventListener('click', (e) => {
     const grund = e.target.closest('.dialoggrund');
     if (grund) grund.remove();

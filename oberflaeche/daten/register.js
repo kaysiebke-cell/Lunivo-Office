@@ -420,7 +420,7 @@ function REGISTER_BAUEN(B, w) {
                     ], 'gross']]],
     ['KI', [['chat', 'KI-Chat', () => w.chatUmschalten(), 'gross'],
                     ['assistent', 'Eigenen Assistenten erstellen', () => w.assistentErstellen(), 'gross'],
-                    ['optionen', 'Eigenen Anbieter hinzufügen', () => w.eigenenAnbieterHinzufuegen(), 'gross'],
+                    ['assistent', 'Eigenen Anbieter hinzufügen', () => w.eigenenAnbieterHinzufuegen(), 'gross'],
                     ['optionen', 'KI-Konfiguration', () => w.kiKonfiguration(), 'gross']]],
     ['Anzeigen', [['tafel', 'Seitenleiste Schreibhilfe', () => B.tafelZeigen(), 'gross'],
                     ['optionen', 'Optionen', () => Einstellungen.oeffnen()]]],
