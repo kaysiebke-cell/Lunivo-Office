@@ -422,8 +422,7 @@ function REGISTER_BAUEN(B, w) {
                     ['assistent', 'Eigenen Assistenten erstellen', () => w.assistentErstellen(), 'gross'],
                     ['assistent', 'Eigenen Anbieter hinzufügen', () => w.eigenenAnbieterHinzufuegen(), 'gross'],
                     ['optionen', 'KI-Konfiguration', () => w.kiKonfiguration(), 'gross']]],
-    ['Anzeigen', [['tafel', 'Seitenleiste Schreibhilfe', () => B.tafelZeigen(), 'gross'],
-                    ['optionen', 'Optionen', () => Einstellungen.oeffnen()]]],
+    ['Anzeigen', [['tafel', 'Seitenleiste Schreibhilfe', () => B.tafelZeigen(), 'gross']]],
   ]],
 
   ['Sendungen', [
