@@ -502,7 +502,7 @@ select option{background:var(--karte);color:var(--schrift)}
    sonst quetschte sich „Text bearbeiten" auf eine Kantenlänge, die kein
    Wort mehr zeigt. Fester Mindestwert statt „flex:1 1 0": zwei bis drei
    je Zeile, statt fünf gleich schmale in einer. */
-.ki{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.ki{display:flex;gap:8px;margin-top:12px}
 .ki .knopf{flex:1 1 88px;font-size:12px;padding:6px 4px}
 
 /* ---------- Der KI-Chat ---------- */
