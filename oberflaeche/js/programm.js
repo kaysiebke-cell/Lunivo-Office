@@ -26025,11 +26025,27 @@ statuszeileBauen();
 dokumentleisteBauen();
 
 /* Beim Start steht eine leere Seite bereit, nicht das, was zuletzt
-   geschrieben wurde. Das Zuletztgeschriebene geht dabei nicht verloren: Es
-   bleibt in seinem Reiter daneben. Wer es lieber doch beim Start vorn haben
-   will, setzt „startMitLetztem" auf true. Steht ohnehin nichts im vordersten
-   Dokument, bleibt es, wie es ist — es gibt keinen leeren Reiter obendrauf. */
-if (!Speicher.lies('startMitLetztem', false)) dokumentPlatzSchaffen();
+   geschrieben wurde — und kein zusätzlicher Reiter: Ein Reiter, den man
+   nicht angelegt hat, ist eine Überraschung. Was gestern offen war, wird
+   dabei verworfen; wer es behalten will, speichert es als Datei. Wer das
+   alte Verhalten will, setzt „startMitLetztem" auf true. */
+if (!Speicher.lies('startMitLetztem', false)) {
+  for (const nr of Dokumente.liste()) {
+    if (nr !== Dokumente.aktiv()) Dokumente.entfernen(nr);
+  }
+  if (Dokument.lies().text.trim() || $('kopfzeile').textContent.trim()
+      || $('fusszeile').textContent.trim()) {
+    Dateien.stileSetzen('');
+    Speicher.schreib('importstil', '');
+    Speicher.schreib('inhalt', '<p><br></p>');
+    Speicher.schreib('kopfinhalt', '<br>');
+    Speicher.schreib('fussinhalt', '<br>');
+    Speicher.schreib('abschnitte', null);
+    Speicher.schreib('dateiname', 'Unbenannt 1');
+    dokumentZustandLaden();
+  }
+  dokumentleisteBauen();
+}
 
 
 })();
