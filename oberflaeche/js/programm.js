@@ -26024,5 +26024,12 @@ statuszeileBauen();
    Änderungsstand aller Dokumente zeigt — beides steht erst jetzt fest. */
 dokumentleisteBauen();
 
+/* Beim Start steht eine leere Seite bereit, nicht das, was zuletzt
+   geschrieben wurde. Das Zuletztgeschriebene geht dabei nicht verloren: Es
+   bleibt in seinem Reiter daneben. Wer es lieber doch beim Start vorn haben
+   will, setzt „startMitLetztem" auf true. Steht ohnehin nichts im vordersten
+   Dokument, bleibt es, wie es ist — es gibt keinen leeren Reiter obendrauf. */
+if (!Speicher.lies('startMitLetztem', false)) dokumentPlatzSchaffen();
+
 
 })();
