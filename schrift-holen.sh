@@ -19,12 +19,23 @@
 #   Hyperlegible  entworfen. Sie unterscheidet die Formen, die einander
 #                 ähneln, so weit wie möglich: I, l und 1; O und 0.
 #
+# Dazu eine vierte Auswahl, die nichts mit Legasthenie zu tun hat, sondern
+# mit Word: Wer ein Dokument bekommt, das in Calibri oder Cambria gesetzt
+# ist, und diese Schriften nicht hat, sieht anderen Umbruch als der Absender.
+#
+#   kompatibel    Carlito (statt Calibri) und Caladea (statt Cambria).
+#                 Sie sind gleich breit gezeichnet wie die Vorbilder, so
+#                 dass Zeilen und Seiten genauso fallen wie in Word.
+#                 Für Arial, Times New Roman und Courier New gibt es
+#                 Liberation — meist schon da (Paket fonts-liberation).
+#
 # Alles landet unter ~/.local/share/fonts/lunivo-office — nichts im System,
 # nichts im Projekt. Zum Entfernen: ./schrift-holen.sh --weg
 #
 #   ./schrift-holen.sh                 OpenDyslexic, der Grundstock
 #   ./schrift-holen.sh lexend atkinson weitere dazu
-#   ./schrift-holen.sh --alle          alle drei
+#   ./schrift-holen.sh kompatibel      Ersatz für Calibri und Cambria
+#   ./schrift-holen.sh --alle          alle vier
 #   ./schrift-holen.sh --liste         nur zeigen, was es gibt
 #   ./schrift-holen.sh --weg           alles wieder entfernen
 #
@@ -40,8 +51,9 @@ declare -A WAHL=(
   [opendyslexic]="OpenDyslexic:3,6 MB:Buchstaben mit Gewicht — gegen b/d und p/q"
   [lexend]="Lexend:240 KB:weit und luftig — für das Lesetempo"
   [atkinson]="Atkinson Hyperlegible:220 KB:unterscheidet I, l und 1 — für wenig Sehkraft"
+  [kompatibel]="Carlito:1,5 MB:Ersatz für Calibri und Cambria — Word-Dokumente brechen gleich um"
 )
-REIHE=(opendyslexic lexend atkinson)
+REIHE=(opendyslexic lexend atkinson kompatibel)
 
 da_schon() {
     fc-list : family 2>/dev/null | grep -qi "^$1\|,$1" && return 0
@@ -100,6 +112,8 @@ SIL Open Font License, Version 1.1 — https://openfontlicense.org
                           https://github.com/googlefonts/lexend
   Atkinson Hyperlegible   https://brailleinstitute.org/freefont
                           https://github.com/googlefonts/atkinson-hyperlegible
+  Carlito                 https://github.com/googlefonts/carlito
+  Caladea                 https://github.com/googlefonts/caladea
 
 Benutzen, weitergeben und verändern ist erlaubt, auch gewerblich. Die
 Schriften dürfen nicht einzeln verkauft werden, und ein verändertes
@@ -116,7 +130,7 @@ hole() {
 
 for name in "${GEWUENSCHT[@]}"; do
     IFS=':' read -r pruef groesse wozu <<< "${WAHL[$name]}"
-    if da_schon "$pruef"; then
+    if [ "$name" != kompatibel ] && da_schon "$pruef"; then
         echo "$pruef liegt schon da."
         continue
     fi
@@ -147,6 +161,25 @@ for name in "${GEWUENSCHT[@]}"; do
                      "https://raw.githubusercontent.com/googlefonts/atkinson-hyperlegible/main/fonts/ttf/AtkinsonHyperlegible-$schnitt.ttf"
             done
             ;;
+        kompatibel)
+            # Zwei Familien, jede für sich geprüft: Liegt eine schon da,
+            # wird nur die andere geholt.
+            for familie in Carlito:carlito/main Caladea:caladea/master; do
+                fname="${familie%%:*}"; quelle="${familie#*:}"
+                if da_schon "$fname"; then
+                    echo "   $fname liegt schon da."
+                    continue
+                fi
+                for schnitt in Regular Bold Italic BoldItalic; do
+                    hole "$ZIEL/$fname-$schnitt.ttf" \
+                         "https://raw.githubusercontent.com/googlefonts/$quelle/fonts/ttf/$fname-$schnitt.ttf"
+                done
+            done
+            if ! da_schon "Liberation Sans"; then
+                echo "   Für Arial und Times New Roman fehlt noch Liberation:"
+                echo "   sudo apt install fonts-liberation   (oder dein Paketmanager)"
+            fi
+            ;;
     esac
 done
 
@@ -160,7 +193,8 @@ if command -v fc-cache >/dev/null; then
 fi
 
 echo
-echo "Fertig. Die Schriften stehen jetzt oben in der Schriftliste,"
-echo "unter „Leichter zu lesen“."
+echo "Fertig. Die Lesehilfe-Schriften stehen jetzt oben in der Schriftliste,"
+echo "unter „Leichter zu lesen“. Carlito und Caladea springen von selbst ein,"
+echo "wenn ein Dokument Calibri oder Cambria verlangt."
 echo
 echo "Als Grundschrift für alles Neue: Optionen (F9) ▸ Schriftarten."
