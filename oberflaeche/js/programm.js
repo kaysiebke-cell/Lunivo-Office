@@ -8460,6 +8460,10 @@ const SCHALTER = {
 
   /* ---- Allgemein und Speichern ---- */
   bilderNichtKomprimieren: { standard: false, wirkt: () => {} },
+
+  /* Ob beim Start das zuletzt geschriebene Dokument wieder da ist, statt
+     einer leeren Seite. Gelesen wird das ganz am Ende dieser Datei. */
+  startMitLetztem: { standard: false, wirkt: () => {} },
   kompUnterstreichen:      { standard: true,  wirkt: () => {} },
   kompUmbruchTeilen:       { standard: false, wirkt: () => {} },
   kompHaengendTabstopp:    { standard: false, wirkt: () => {} },

@@ -13,7 +13,7 @@ Zweigen, rechts der Bereich, zweispaltig und kompakt wie im WPS Writer.
 zuletzt *Nur bei Lunivo* — Schreibhilfe und KI, Gedächtnis und
 *Erweitert*, wo steht, was zusätzlich geholt wurde und ob es da ist.
 
-86 Schalter und 20 Klapplisten, keiner davon eine Attrappe. Die Schalter
+87 Schalter und 20 Klapplisten, keiner davon eine Attrappe. Die Schalter
 sind dieselben wie im Menü und im Band — ein Schalter, drei Stellen, ein
 Zustand; wer ihn irgendwo umlegt, sieht ihn überall wechseln.
 
