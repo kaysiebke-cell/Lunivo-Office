@@ -525,10 +525,30 @@ const Dateien = (() => {
     /* @page trägt die Seitenränder. Als Regel nützt sie hier nichts — als
        Angabe für das Blatt aber sehr wohl. */
     css = css.replace(/@page[^{]*\{([^}]*)\}/gi, (ganz, innen) => {
+      /* Länge in Millimetern — LibreOffice schreibt cm, mm, in oder pt. */
+      const mm = (z) => {
+        const t = /^([\d.]+)\s*(cm|mm|in|pt)$/i.exec(z.trim());
+        if (!t) return null;
+        const f = { cm: 10, mm: 1, in: 25.4, pt: 25.4 / 72 }[t[2].toLowerCase()];
+        return Math.round(parseFloat(t[1]) * f);
+      };
+
+      /* Kurzform „margin: 2.54cm" (ein bis vier Werte: oben, rechts, unten,
+         links wie in CSS). Ohne sie blieb bei Dateien mit gleichen Rändern
+         ringsum das Blatt auf den Standardrändern stehen. */
+      const kurz = /(?:^|[;\s])margin\s*:\s*([^;}]+)/i.exec(innen);
+      if (kurz) {
+        const w = kurz[1].trim().split(/\s+/).map(mm);
+        if (w.length && w.every((v) => v !== null) && w.length <= 4) {
+          const [o, r = o, u = o, l = r] = w;
+          Object.assign(seite, { oben: o, rechts: r, unten: u, links: l });
+        }
+      }
       for (const [name, schluessel] of [['margin-top', 'oben'], ['margin-bottom', 'unten'],
                                         ['margin-left', 'links'], ['margin-right', 'rechts']]) {
-        const treffer = new RegExp(name + '\\s*:\\s*([\\d.]+)\\s*cm', 'i').exec(innen);
-        if (treffer) seite[schluessel] = Math.round(parseFloat(treffer[1]) * 10);
+        const treffer = new RegExp(name + '\\s*:\\s*([\\d.]+\\s*(?:cm|mm|in|pt))', 'i').exec(innen);
+        const wert = treffer && mm(treffer[1]);
+        if (wert !== null && wert !== undefined) seite[schluessel] = wert;
       }
       return '';
     });
@@ -562,7 +582,12 @@ const Dateien = (() => {
         koerper = koerper.replace(/(^|;)\s*text-align\s*:[^;]*/gi, '$1');
       }
 
-      regeln.push(wahl.split(',').map((w) => '.dokument ' + w.trim()).join(',')
+      /* „.dokument.dokument" zählt doppelt: Was die Datei vorgibt, muss
+         schwerer wiegen als die Formatvorlagen des Programms und die
+         Regel für Überschriften im Design — beide heißen „.dokument h1"
+         und kämen sonst, weil später geladen, immer zuerst. Eine blaue
+         Word-Überschrift stand schwarz da. */
+      regeln.push(wahl.split(',').map((w) => '.dokument.dokument ' + w.trim()).join(',')
                   + '{' + koerper + '}');
     }
     return { css: regeln.join('\n'), seite };
@@ -615,7 +640,63 @@ const Dateien = (() => {
         }
       }
     }
+    leerraumGlaetten(baum.body);
+    rechtsNachLinks(baum.body);
     return baum.body.innerHTML || '<p><br></p>';
+  }
+
+  /* LibreOffice rückt sein HTML mit Zeilenumbrüchen und Tabs ein — für einen
+     Browser, der Leerraum zusammenfasst. Das Blatt hier steht aber auf
+     „pre-wrap", damit man in ihm schreiben kann; dort wird jeder Umbruch
+     sichtbar: „Top⏎left" in einer Tabellenzelle, eine Leerzeile vor dem
+     ersten Wort jedes Absatzes, hohe Tabellenzeilen. Also wird der Leerraum
+     hier so zusammengefasst, wie ein Browser es beim Anzeigen täte.
+     Geschützte Leerzeichen (U+00A0) bleiben, „pre" bleibt unberührt. */
+  function leerraumGlaetten(wurzel) {
+    const BLOCK = /^(P|H[1-6]|DIV|TABLE|THEAD|TBODY|TFOOT|TR|TD|TH|COLGROUP|COL|UL|OL|LI|BLOCKQUOTE|BODY|HR|CAPTION|SECTION|HEADER|FOOTER|BR)$/;
+    const GERUEST = /^(TABLE|THEAD|TBODY|TFOOT|TR|COLGROUP|UL|OL)$/;
+    const knoten = [];
+    const sammle = (el) => {
+      if (el.nodeName === 'PRE') return;
+      for (const k of el.childNodes) {
+        if (k.nodeType === 3) knoten.push(k); else if (k.nodeType === 1) sammle(k);
+      }
+    };
+    sammle(wurzel);
+
+    /* Liegt vor/hinter dem Knoten eine Blockgrenze? Dann zählt ein
+       Leerzeichen dort nicht. */
+    const anGrenze = (k, vorwaerts) => {
+      for (let n = k; n && n !== wurzel; n = n.parentNode) {
+        const nachbar = vorwaerts ? n.nextSibling : n.previousSibling;
+        if (nachbar) return nachbar.nodeType === 1 && BLOCK.test(nachbar.nodeName);
+        if (n.parentNode && BLOCK.test(n.parentNode.nodeName)) return true;
+      }
+      return true;
+    };
+
+    for (const k of knoten) {
+      let t = k.data.replace(/[ \t\r\n\f]+/g, ' ');
+      if (anGrenze(k, false)) t = t.replace(/^ /, '');
+      if (anGrenze(k, true)) t = t.replace(/ $/, '');
+      if (t === '' || (t === ' ' && GERUEST.test(k.parentNode.nodeName))) k.remove();
+      else k.data = t;
+    }
+  }
+
+  /* Arabisch und Hebräisch: LibreOffice schreibt die Schreibrichtung eines
+     Absatzes nicht ins HTML, und sein Stilblatt setzt „direction: ltr" auf
+     jeden. Der Absatz stünde dann linksbündig, wo er in Word am rechten
+     Rand beginnt. Wer mit einem Zeichen dieser Schriften anfängt, bekommt
+     die Richtung als eigene Angabe am Element zurück. */
+  function rechtsNachLinks(wurzel) {
+    const RTL = /[֐-ࣿיִ-﷿ﹰ-﻿]/;
+    const STARK = /[A-Za-zÀ-ɏͰ-ϿЀ-ӿ֐-ࣿיִ-﷿ﹰ-﻿]/;
+    for (const el of wurzel.querySelectorAll('p,h1,h2,h3,h4,h5,h6,li')) {
+      if (el.hasAttribute('dir') || /direction/i.test(el.style.cssText)) continue;
+      const erstes = (el.textContent.match(STARK) || [''])[0];
+      if (erstes && RTL.test(erstes)) el.style.direction = 'rtl';
+    }
   }
 
   /** Liest eine Datei und gibt das Dokument als HTML zurück. */
