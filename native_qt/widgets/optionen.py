@@ -327,6 +327,7 @@ class OptionenDialog(QDialog):
         p.haken(f, "pdf/lz_textmarken", "Textmarken übernehmen", False)
         p.haken(f, "pdf/lz_andere", "Titel, Untertitel und Zitat als Lesezeichen (andere Formatvorlagen)", False)
         p.haken(f, "pdf/kommentare", "Kommentare als PDF-Notizen mitnehmen", False)
+        p.haken(f, "pdf/notenlinks", "Fuß- und Endnoten mit ihrer Marke verknüpfen (Sprungverweise)", True)
         f3 = p.gruppe("Vorlagen")
         ve = QLineEdit(p.s.get("vorlagen/ordner", "")); ve.setPlaceholderText("leer = ~/Vorlagen")
         ve.textChanged.connect(lambda t: p.s.set("vorlagen/ordner", t)); f3.addRow("Vorlagenordner", ve)

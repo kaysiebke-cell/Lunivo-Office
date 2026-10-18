@@ -2,11 +2,11 @@
 
 Alle Angaben stammen aus tatsächlichen Läufen in der Entwicklungsumgebung (Linux, Qt „offscreen“, LibreOffice 25.x vorhanden).
 **Nicht** auf einem echten Linux-Mint-Desktop mit Bildschirm, Drucker, Ollama/Claude, LanguageTool, Piper oder WPS getestet —
-das ist offen (siehe 6). Der Prüfbogen ([PRUEFBOGEN.md](PRUEFBOGEN.md)) ist der Maßstab: **415 Punkte, ✅ 314 · ◐ 71 · ⬜ 30**;
+das ist offen (siehe 6). Der Prüfbogen ([PRUEFBOGEN.md](PRUEFBOGEN.md)) ist der Maßstab: **415 Punkte, ✅ 315 · ◐ 71 · ⬜ 29**;
 „✅“ heißt „Befehl/Funktion vorhanden“, einzeln durch `tests/` belegt nur dort, wo im Eintrag ein Test genannt ist.
 
 ## 1. Dateien
-`native_qt/` (≈ 15 700 Zeilen Python in 7 Paketen), `tests/` (22 Testdateien, 158 Tests), `werkzeug/` (Exportskripte für Register,
+`native_qt/` (≈ 15 700 Zeilen Python in 7 Paketen), `tests/` (22 Testdateien, 163 Tests), `werkzeug/` (Exportskripte für Register,
 Symbolkatalog, Vorlagen, Handbuch; Abgleich-Skripte), `starten-qt.sh`, `requirements*.txt`, `doku/native-qt/*`. Die alte
 Web-Oberfläche (`oberflaeche/`, `start.py`) ist unverändert; auf `main` wurde nichts geändert.
 
@@ -66,7 +66,7 @@ Hinweise: JSAPI-Erweiterungen laut Entwicklerdokumentation auf open.wps.cn (chin
 Steuerung ≠ Bibliothek: Das Programm benutzt **keine** WPS-Interna.
 
 ## 5. Tests (tatsächlich ausgeführt)
-`pytest tests`: **158 bestanden, 0 fehlgeschlagen** (≈ 45 s). Neben den Grundlagen (DOCX-Roundtrip, PDF, Einstellungen, Editor,
+`pytest tests`: **163 bestanden, 0 fehlgeschlagen** (≈ 45 s). Neben den Grundlagen (DOCX-Roundtrip, PDF, Einstellungen, Editor,
 Fenster, KI mit Fake-Servern) jetzt auch: Zoom, Lineale, Weblayout/Zwei Seiten/Gliederung, Seitenfarbe/-rahmen/Wasserzeichen,
 Kommentare/Noten/Änderungen (Editor und DOCX), Verweise und Verzeichnisse (mit LibreOffice-Öffnung), Einfügen, Sendungen,
 Vorlagen und Lücken, Hilfe/Funktionstasten, Oberfläche wechseln, Werkzeug-Reiter, Gedächtnis, Kennwort, HTML-Codierung, eine
@@ -83,7 +83,7 @@ Druckoptionen am Drucker, Zwischenstände, Sichern/Zurückholen, Gitternetz, Dun
 * **Nicht übertragen:** Tabellenblatt/Diagramm-Tools/SmartArt/Gleichungswerkzeuge/Zeichentools (Tabellenkalkulation und
   Präsentation sind ausgeschlossen), Sprechblasen bei Änderungen, „Gerade/ungerade Seiten“, „Dokument teilen“, Maßeinheit,
   Zuschnittsmarken drucken, Live-Vorschau/Minisymbolleiste, Wort-Extras.
-* **Optionen** (Rest): siehe `PRUEFBOGEN.md` (Abschnitt OPTIONEN) — 30 Punkte insgesamt offen.
+* **Optionen** (Rest): siehe `PRUEFBOGEN.md` (Abschnitt OPTIONEN) — 29 Punkte insgesamt offen.
 * Das **Handbuch** ist das der Web-Fassung (als Markdown); es beschreibt teils die Web-Oberfläche.
 * Keine Behauptung vollständiger Word- oder WPS-Kompatibilität; Word selbst stand nicht zum Gegenprüfen zur Verfügung
   (geprüft mit LibreOffice und python-docx).
@@ -122,3 +122,11 @@ Anbieters mit „Bilder“. Getestet gegen einen gefälschten OpenAI-Server; **n
   hohe Bilder) vom Druck um eine Zeile abweichen.
 * **Minisymbolleiste** bei Auswahl und Rechtsklick; **Einfügeoptionen** (Standardformat, Schaltfläche nach dem Einfügen); **PDF**: Kommentare als
   Notizen, Lesezeichen aus Titel/Untertitel/Zitat; Schalter „Immer Korrekturvorschläge“.
+
+### Nachtrag: Fußnoten am Seitenfuß, Verknüpfungen, Anzeige- und Druckoptionen
+* **Fußnoten am Seitenfuß** (Seitenansicht, Druck, PDF, Seitenzählung): Die Kopie wird so umbrochen, dass die Fußnoten der Seite unter dem Text
+  Platz haben (Absätze werden dazu geteilt); mit Trennstrich. Endnoten stehen am Textende. **Grenzen:** bei mehreren Spalten stehen die Fußnoten
+  weiter gesammelt am Ende; eine Fußnote läuft nie auf die nächste Seite weiter; in der Bearbeitungsansicht stehen die Noten im Navigationsbereich.
+* **PDF-Sprungverweise** Marke ↔ Note (Fuß- und Endnoten), Kommentare als Notizen, Lesezeichen aus Überschriften/Textmarken/Titel.
+* Ausgeblendeter Text (DOCX `w:vanish`), Objektanker, Feldschattierung und -codes, Zahl im Kreis, Kopf-/Fußzeile im Seitenrand (Tipp, Doppelklick),
+  Zeichnungsobjekte drucken, Änderungsbalken, Spalten live im Editor.

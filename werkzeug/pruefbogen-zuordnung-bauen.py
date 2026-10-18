@@ -133,7 +133,7 @@ s(O+"In PDF exportieren > Exportoptionen", "Überschriften als Lesezeichen; Text
 s(O+"In PDF exportieren > Exportoptionen", "Andere Formatvorlagen in Lesezeichen umwandeln", OK, "pdf/lz_andere: Titel, Untertitel, Zitat (test_werkzeuge)")
 s(O+"In PDF exportieren > Exportoptionen", "Eigene Formatvorlagen in Lesezeichen umwandeln", OFFEN, "es gibt keine selbst angelegten Formatvorlagen, nur das Ändern der vorhandenen")
 s(O+"In PDF exportieren > Exportoptionen", "Kommentare mitnehmen", OK, "pdf/kommentare → PDF-Notizen (pypdf, test_werkzeuge)")
-s(O+"In PDF exportieren > Exportoptionen", "Verknüpfung von Fuß- und Endnoten", OFFEN, "Noten stehen gesammelt am Textende; keine Sprungverweise im PDF")
+s(O+"In PDF exportieren > Exportoptionen", "Verknüpfung von Fuß- und Endnoten", OK, "pdf/notenlinks: Sprungverweise Marke ↔ Note (pagination.notenlinks_sammeln; test_fussnoten); bei mehreren Spalten stehen die Noten am Ende ohne Verweise")
 s(O+"Benutzerinformationen > Benutzerdaten", "Wer schreibt; Diese Benutzerinformationen verwenden", OK, "benutzer/name, benutzer/verwenden (_meta_fuer_speichern)")
 s(O+"Benutzerinformationen > Benutzerdaten", "Initialen", OFFEN, "nicht übertragen")
 s(O+"Drucken > Druckoptionen", "Hohe Qualität; Umgekehrte Reihenfolge; Hintergrundfarben und -bilder drucken; Leere Seiten mitdrucken; Felder vor dem Drucken aktualisieren", TEIL, "pagination.render/print_document, main_window.druckoptionen — seiten_liste getestet, übrige nur verdrahtet")

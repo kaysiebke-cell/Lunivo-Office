@@ -568,7 +568,8 @@ class MainWindow(QMainWindow):
             n = export_pdf(path, t.editor.document(), t.page, os.path.splitext(t.title)[0], autor, t.editor.noten, lz,
                            self._silben_fuer_druck(), komm,
                            {k: v for k, v in self.druckoptionen().items()
-                            if k in ("versteckt", "felder_code", "zeichnungen", "balken", "hervorhebungen", "textmarken", "textgrenzen", "zuschnitt")})
+                            if k in ("versteckt", "felder_code", "zeichnungen", "balken", "hervorhebungen", "textmarken", "textgrenzen", "zuschnitt",
+                                     "notenlinks")})
         except Exception as e:  # PDF-Ausgabe darf das Programm nicht beenden
             QMessageBox.critical(self, "PDF-Export fehlgeschlagen", str(e)); return
         self.statusBar().showMessage(f"PDF gespeichert ({n} Seiten): {path}", 5000)
@@ -613,7 +614,8 @@ class MainWindow(QMainWindow):
                 "versteckt": self.settings.get_bool("drucken/versteckt", False),
                 "felder_code": self.settings.get_bool("drucken/felder_code", False),
                 "zeichnungen": self.settings.get_bool("drucken/zeichnungen", True),
-                "balken": self.settings.get("aenderungen/balken", "links")}
+                "balken": self.settings.get("aenderungen/balken", "links"),
+                "notenlinks": self.settings.get_bool("pdf/notenlinks", True)}
 
     def _silben_fuer_druck(self):
         from ..editor import silbenfarben as S

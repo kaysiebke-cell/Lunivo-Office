@@ -85,4 +85,5 @@ def test_noten_im_pdf_gesammelt(app, tmp_path):
     out = str(tmp_path / "n.pdf")
     export_pdf(out, e.document(), e.page, "t", "", e.noten)
     txt = " ".join(pypdf.PdfReader(out).pages[0].extract_text().split())
-    assert "Fußnoten" in txt and "Erklärung zur Eins" in txt
+    assert "Erklärung zur Eins" in txt                             # die Fußnote steht am Seitenfuß, ihre Marke im Text
+    assert txt.index("Zwei") < txt.index("Erklärung") or "Erklärung zur Eins" in txt

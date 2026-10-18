@@ -268,9 +268,12 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         return dx, lp * g["ch"] + y_in
 
     def _sp_neu_zeichnen(self, *_) -> None:
-        if self._spalten_aktiv():
-            self._sp_caret = True
-            self.viewport().update()
+        try:
+            if self._spalten_aktiv():
+                self._sp_caret = True
+                self.viewport().update()
+        except RuntimeError:                           # beim Abbau ist das Widget schon weg
+            pass
 
     def _sp_blinken(self) -> None:
         if self._spalten_aktiv() and self.hasFocus():
@@ -620,11 +623,14 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
             return 1
         rect = self._paged.documentLayout().blockBoundingRect(blk)
         ch = self.page.content_height_px
-        return max(1, min(self._pages, int(rect.top() // ch) + 1))
+        return max(1, min(self._pages, int((rect.top() + 0.5) // ch) + 1))
 
     def _cursor_moved(self) -> None:
-        self.pageInfoChanged.emit(self.current_page(), self._pages)
-        self.formatChanged.emit()
+        try:
+            self.pageInfoChanged.emit(self.current_page(), self._pages)
+            self.formatChanged.emit()
+        except RuntimeError:                           # beim Abbau ist das Widget schon weg
+            return
         if self.opt_text("ui/feldschattierung", "Bei Auswahl") == "Bei Auswahl":
             self._zus_timer.start()
         hl = getattr(self, "_silben", None)
