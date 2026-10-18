@@ -20,12 +20,17 @@ from ..editor.page import PAPER_MM, HeaderFooter, PageSettings, px_to_mm
 from ..editor.pagination import export_pdf, print_document
 from ..storage import recovery
 from ..storage.settings import Settings
+from ..services.writing_assistant import WritingAssistant
 from ..widgets.dialogs import (
     FindReplaceDialog, HeaderFooterDialog, PageSetupDialog, ParagraphDialog, TableDialog,
 )
+from ..widgets.doc_tabs import DocTabs
 from ..widgets.document_tab import DocumentTab
-from ..widgets.ribbon import Ribbon
+from ..widgets.menue_tafel import MenueTafel
+from ..widgets.register_band import RegisterBand, lade_register
+from ..widgets.schreibhilfe_panel import SchreibhilfePanel
 from ..widgets.start_page import StartPage
+from .befehle import Befehle
 
 MARGIN_PRESETS = {
     "Normal (2,5 cm)": (25, 25, 25, 25),
@@ -41,29 +46,41 @@ class MainWindow(QMainWindow):
         self.settings = settings or Settings()
         self.setWindowTitle("Lunivo Writer")
         self.resize(1280, 860)
-        self.tabs = QTabWidget()
-        self.tabs.setTabsClosable(True)
-        self.tabs.setMovable(True)
-        self.tabs.setDocumentMode(True)
-        self.tabs.tabCloseRequested.connect(self.close_tab)
-        self.tabs.currentChanged.connect(self._tab_changed)
+        self.marks_on = False
+        self.docs = DocTabs()
+        self.docs.tabCloseRequested.connect(self.close_tab)
+        self.docs.currentChanged.connect(self._tab_changed)
+        self.docs.newRequested.connect(self.new_document)
+        self.tabs = self.docs                      # gleiche Schnittstelle wie ein QTabWidget
         self.start = StartPage()
         self.start.newRequested.connect(self.new_document)
         self.start.openRequested.connect(self.open_dialog)
         self.start.openPath.connect(self.open_path)
-        i = self.tabs.addTab(self.start, "Startseite")
-        self.tabs.tabBar().setTabButton(i, self.tabs.tabBar().ButtonPosition.RightSide, None)
+        self.docs.stack.insertWidget(0, self.start)
+        self.docs.stack.setCurrentWidget(self.start)
         self.find_dialog = FindReplaceDialog(self.current_editor, self)
+        self.assistant = WritingAssistant(self.settings, parent=self)
+        self.assistant.status.connect(lambda t: self.lbl_msg.setText(t))
+        self.befehle = Befehle(self)
         self._build_actions()
-        self._build_menu()
-        self._build_quick_access()
-        self._build_ribbon()
         self._build_status()
+        self.band = RegisterBand(self.befehle, lade_register())
+        self.band.menue_knopf.clicked.connect(self.show_main_menu)
+        self.menubar_wanted = self.settings.get_bool("ui/menueleiste", False)
+        self._build_menu()
+        self.menuBar().setVisible(self.menubar_wanted)
+        self.sidebar = SchreibhilfePanel(self.assistant)
+        self.sidebar.setVisible(self.settings.get_bool("ui/seitenleiste", True))
         central = QWidget()
-        from PySide6.QtWidgets import QVBoxLayout
+        from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout
         lay = QVBoxLayout(central)
         lay.setContentsMargins(0, 0, 0, 0); lay.setSpacing(0)
-        lay.addWidget(self.ribbon); lay.addWidget(self.tabs, 1)
+        lay.addWidget(self.docs.leiste)
+        lay.addWidget(self.band)
+        mitte = QHBoxLayout(); mitte.setSpacing(0)
+        mitte.addWidget(self.docs.stack, 1)
+        mitte.addWidget(self.sidebar)
+        lay.addLayout(mitte, 1)
         self.setCentralWidget(central)
         geo = self.settings.get("window/geometry")
         if geo:
@@ -72,6 +89,11 @@ class MainWindow(QMainWindow):
         self.autosave.timeout.connect(self.autosave_now)
         self.autosave.start(max(10, self.settings.get_int("autosave_seconds", 60)) * 1000)
         self.start.set_recent(self.settings.recent())
+        self._sync_timer = QTimer(self)
+        self._sync_timer.setSingleShot(True)
+        self._sync_timer.setInterval(60)
+        self._sync_timer.timeout.connect(self._sync_format)
+        self._verbinde_felder()
         self._refresh_ui()
 
     # ==== Aktionen =======================================================
@@ -200,102 +222,17 @@ class MainWindow(QMainWindow):
     def _clear_recent(self):
         self.settings.clear_recent(); self.start.set_recent([])
 
-    def _build_quick_access(self):
-        tb = QToolBar("Schnellzugriff")
-        tb.setMovable(False)
-        for a in (self.a_save, self.a_undo, self.a_redo, self.a_print):
-            tb.addAction(a)
-        self.addToolBar(Qt.TopToolBarArea, tb)
-        self.quick = tb
-
-    # ==== Ribbon ============================================================
-    def _build_ribbon(self):
-        r = self.ribbon = Ribbon()
-        # --- Start
-        t = r.add_tab("Start")
-        g = t.group("Zwischenablage")
-        g.add_action(self.a_paste, big=True)
-        g.add_action(self.a_cut); g.add_action(self.a_copy); g.add_action(self.a_paste_plain)
-        g = t.group("Schriftart")
-        self.font_box = QFontComboBox(); self.font_box.setFixedWidth(170)
-        self.font_box.activated.connect(lambda _: self._ed(lambda e: (e.set_font_family(self.font_box.currentFont().family()), e.setFocus())))
-        self.size_box = QComboBox(); self.size_box.setEditable(True); self.size_box.setFixedWidth(58)
-        self.size_box.addItems([str(s) for s in (8, 9, 10, 10.5, 11, 12, 14, 16, 18, 20, 24, 28, 36, 48, 72)])
-        self.size_box.activated.connect(self._size_chosen)
-        self.size_box.lineEdit().editingFinished.connect(self._size_chosen)
-        g.add_widget(self.font_box, True); g.add_widget(self.size_box)
-        g.add_action(self.a_grow); g.add_action(self.a_shrink)
-        for a in (self.a_bold, self.a_italic, self.a_under, self.a_strike, self.a_sup, self.a_sub):
-            g.add_action(a, new_row=(a is self.a_bold))
-        g.add_action(self.a_color); g.add_action(self.a_highlight)
-        cm = QMenu(self)
-        for label, mode in (("GROẞBUCHSTABEN", "upper"), ("kleinbuchstaben", "lower"), ("Jedes Wort Groß", "title")):
-            cm.addAction(label, lambda _=False, m=mode: self._ed(lambda e: e.change_case(m)))
-        cb = QToolButton(); cb.setText("Aa"); cb.setMenu(cm); cb.setPopupMode(QToolButton.InstantPopup)
-        cb.setToolTip("Groß-/Kleinschreibung"); cb.setAutoRaise(True)
-        g.add_widget(cb); g.add_action(self.a_clear)
-        g = t.group("Absatz")
-        for a in (self.a_bullets, self.a_numbers, self.a_indent_less, self.a_indent_more):
-            g.add_action(a)
-        for a in (self.a_left, self.a_center, self.a_right, self.a_justify):
-            g.add_action(a, new_row=(a is self.a_left))
-        ls = QMenu(self)
-        for f in (1.0, 1.15, 1.5, 2.0, 2.5, 3.0):
-            ls.addAction(f"{f:g}".replace(".", ","), lambda _=False, f=f: self._ed(lambda e: e.set_line_spacing(f)))
-        lb = QToolButton(); lb.setText("↕"); lb.setMenu(ls); lb.setPopupMode(QToolButton.InstantPopup)
-        lb.setToolTip("Zeilenabstand"); lb.setAutoRaise(True)
-        g.add_widget(lb); g.add_action(self.a_para); g.add_action(self.a_marks)
-        g = t.group("Formatvorlagen")
-        self.style_box = QComboBox(); self.style_box.addItems(list(STYLES)); self.style_box.setFixedWidth(150)
-        self.style_box.activated.connect(lambda _: self._ed(lambda e: e.apply_style(self.style_box.currentText())))
-        g.add_widget(self.style_box)
-        g = t.group("Bearbeiten")
-        g.add_action(self.a_find); g.add_action(self.a_replace); g.add_action(self.a_select_all, new_row=True)
-        # --- Einfügen
-        t = r.add_tab("Einfügen")
-        g = t.group("Seiten"); g.add_action(self.a_pagebreak, big=True)
-        g = t.group("Tabellen"); g.add_action(self.a_table, big=True)
-        g = t.group("Illustrationen"); g.add_action(self.a_image, big=True)
-        g = t.group("Links"); g.add_action(self.a_link, big=True)
-        g = t.group("Kopf- und Fußzeile")
-        g.add_action(self.a_header); g.add_action(self.a_footer); g.add_action(self.a_pagenum)
-        g = t.group("Text"); g.add_action(self.a_date)
-        # --- Seitenlayout
-        t = r.add_tab("Seitenlayout")
-        g = t.group("Seite einrichten")
-        mm = QMenu(self)
-        for name, vals in MARGIN_PRESETS.items():
-            mm.addAction(name, lambda _=False, v=vals: self.set_margins(*v))
-        b = QToolButton(); b.setText("Seitenränder"); b.setMenu(mm); b.setPopupMode(QToolButton.InstantPopup)
-        b.setAutoRaise(True); g.add_widget(b)
-        om = QMenu(self)
-        om.addAction("Hochformat", lambda: self.set_orientation(False))
-        om.addAction("Querformat", lambda: self.set_orientation(True))
-        b = QToolButton(); b.setText("Ausrichtung"); b.setMenu(om); b.setPopupMode(QToolButton.InstantPopup)
-        b.setAutoRaise(True); g.add_widget(b)
-        pm = QMenu(self)
-        for name, (w, h) in PAPER_MM.items():
-            pm.addAction(f"{name} ({w:g} × {h:g} mm)".replace(".", ","), lambda _=False, n=name: self.set_paper(n))
-        b = QToolButton(); b.setText("Papierformat"); b.setMenu(pm); b.setPopupMode(QToolButton.InstantPopup)
-        b.setAutoRaise(True); g.add_widget(b)
-        g.add_action(self.a_pagesetup, new_row=True)
-        g = t.group("Absatz"); g.add_action(self.a_para)
-        g = t.group("Umbruch"); g.add_action(self.a_pagebreak)
-        # --- Überprüfen
-        t = r.add_tab("Überprüfen")
-        g = t.group("Korrekturhilfen"); g.add_action(self.a_wordcount, big=True)
-        # --- Ansicht
-        t = r.add_tab("Ansicht")
-        g = t.group("Einblenden / Ausblenden"); g.add_action(self.a_marks)
-        g = t.group("Fenster"); g.add_action(self.a_fullscreen)
-
     # ==== Statusleiste ============================================================
     def _build_status(self):
         sb = QStatusBar(); self.setStatusBar(sb)
-        self.lbl_page = QLabel("Seite – / –"); self.lbl_words = QLabel("Wörter: 0")
+        sb.setSizeGripEnabled(True)
+        self.lbl_msg = QLabel("")
+        sb.addWidget(self.lbl_msg, 1)
+        self.lbl_words = QLabel("0 Wörter, 0 Zeichen")
+        self.lbl_page = QLabel("Seite 1 von 1")
         self.lbl_state = QLabel("")
-        for w in (self.lbl_page, self.lbl_words, self.lbl_state):
-            w.setMinimumWidth(110); sb.addPermanentWidget(w)
+        for w in (self.lbl_words, self.lbl_page):
+            w.setContentsMargins(10, 0, 10, 0); sb.addPermanentWidget(w)
 
     # ==== Hilfen ====================================================================
     def current_tab(self) -> DocumentTab | None:
@@ -339,58 +276,68 @@ class MainWindow(QMainWindow):
 
     def _refresh_ui(self):
         has = self.current_tab() is not None
-        for a in (self.a_save, self.a_save_as, self.a_save_copy, self.a_pdf, self.a_exp_docx, self.a_exp_odt,
-                  self.a_exp_txt, self.a_print, self.a_preview, self.a_info, self.a_close, self.a_undo,
-                  self.a_redo, self.a_cut, self.a_copy, self.a_paste, self.a_paste_plain, self.a_select_all,
-                  self.a_find, self.a_replace, self.a_wordcount, self.a_pagesetup, self.a_para):
+        self.docs.stack.setCurrentWidget(self.current_tab() if has else self.start)
+        self.band.aktualisieren(has)
+        for a in (self.a_undo, self.a_redo):
             a.setEnabled(has)
-        self.ribbon.setEnabled(True)
         self._update_window_title()
         self._sync_format()
         self._sync_status()
+        self.assistant.attach(self.current_editor())
 
     def _connect_tab(self, tab: DocumentTab):
         e = tab.editor
-        e.formatChanged.connect(self._sync_format)
+        e.formatChanged.connect(self._sync_later)
         e.pageInfoChanged.connect(lambda *_: self._sync_status())
         e.document().modificationChanged.connect(lambda _m: self._update_tab_titles())
         e.document().contentsChanged.connect(self._sync_status)
+        e.document().contentsChanged.connect(self.assistant.dokument_geaendert)
+        felder = self.band.felder
+        if felder and e is not None:
+            pass
+
+    def _sync_later(self):
+        self._sync_timer.start()
 
     def _sync_format(self):
         e = self.current_editor()
-        if e is None:
+        self.band.aktualisieren(e is not None)
+        f = self.band.felder
+        if e is None or not f:
             return
         cf = e.textCursor().charFormat()
-        for a, v in ((self.a_bold, cf.fontWeight() >= QFont.DemiBold), (self.a_italic, cf.fontItalic()),
-                     (self.a_under, cf.fontUnderline()), (self.a_strike, cf.fontStrikeOut())):
-            a.blockSignals(True); a.setChecked(bool(v)); a.blockSignals(False)
-        va = cf.verticalAlignment()
-        from PySide6.QtGui import QTextCharFormat as CF
-        for a, v in ((self.a_sup, va == CF.AlignSuperScript), (self.a_sub, va == CF.AlignSubScript)):
-            a.blockSignals(True); a.setChecked(v); a.blockSignals(False)
         fam = cf.fontFamilies()[0] if cf.fontFamilies() else e.document().defaultFont().family()
-        self.font_box.blockSignals(True); self.font_box.setCurrentFont(QFont(fam)); self.font_box.blockSignals(False)
+        f["font"].blockSignals(True); f["font"].setCurrentFont(QFont(fam)); f["font"].blockSignals(False)
         size = cf.fontPointSize() or e.document().defaultFont().pointSizeF() or 11
-        self.size_box.blockSignals(True); self.size_box.setEditText(f"{size:g}"); self.size_box.blockSignals(False)
-        al = e.alignment()
-        for a, f in ((self.a_center, Qt.AlignHCenter), (self.a_right, Qt.AlignRight), (self.a_justify, Qt.AlignJustify)):
-            if al & f:
-                a.blockSignals(True); a.setChecked(True); a.blockSignals(False); break
-        else:
-            self.a_left.blockSignals(True); self.a_left.setChecked(True); self.a_left.blockSignals(False)
-        self.style_box.blockSignals(True); self.style_box.setCurrentText(e.current_style()); self.style_box.blockSignals(False)
+        f["groesse"].blockSignals(True); f["groesse"].setEditText(f"{size:g}"); f["groesse"].blockSignals(False)
+        st = e.current_style()
+        f["stil"].blockSignals(True); f["stil"].setCurrentText("Fließtext" if st == "Standard" else st); f["stil"].blockSignals(False)
 
     def _sync_status(self):
         e = self.current_editor()
         if e is None:
-            self.lbl_page.setText("Seite – / –"); self.lbl_words.setText("Wörter: 0"); self.lbl_state.setText("")
+            self.lbl_page.setText("Seite – von –"); self.lbl_words.setText("0 Wörter, 0 Zeichen")
             return
-        self.lbl_page.setText(f"Seite {e.current_page()} / {e.page_count}")
-        self.lbl_words.setText(f"Wörter: {e.word_count()}")
+        txt = e.document().toPlainText()
+        self.lbl_page.setText(f"Seite {e.current_page()} von {e.page_count}")
+        self.lbl_words.setText(f"{len(txt.split())} Wörter, {len(txt)} Zeichen")
+
+    def _verbinde_felder(self):
+        f = self.band.felder
+        if not f:
+            return
+        f["font"].activated.connect(lambda _: self._ed(lambda e: (e.set_font_family(f["font"].currentFont().family()), e.setFocus())))
+        f["groesse"].activated.connect(self._size_chosen)
+        f["groesse"].lineEdit().editingFinished.connect(self._size_chosen)
+        f["stil"].activated.connect(lambda _: self.stil_anwenden(f["stil"].currentText()))
+
+    def stil_anwenden(self, name: str):
+        name = "Standard" if name in ("Fließtext", "Kein Abstand") else name
+        self._ed(lambda e: e.apply_style(name))
 
     def _size_chosen(self, *_):
         try:
-            pt = float(self.size_box.currentText().replace(",", "."))
+            pt = float(self.band.felder["groesse"].currentText().replace(",", "."))
         except ValueError:
             return
         self._ed(lambda e: (e.set_font_size(pt), e.setFocus()))
@@ -638,7 +585,45 @@ class MainWindow(QMainWindow):
             e.set_paragraph_spacing(d.before.value(), d.after.value())
             e.set_line_spacing(d.line.value())
 
+    def show_main_menu(self):
+        daten = next(m for m in self.band.daten["menues"] if m["name"] == "Datei")
+        self._tafel = MenueTafel(daten["punkte"], self.befehle, self)
+        self._tafel.zeigen_unter(self.band.menue_knopf)
+
+    def toggle_sidebar(self):
+        on = not self.sidebar.isVisible()
+        self.sidebar.setVisible(on)
+        self.settings.set("ui/seitenleiste", on)
+
+    def toggle_menubar(self):
+        self.menubar_wanted = not self.menubar_wanted
+        self.menuBar().setVisible(self.menubar_wanted)
+        self.settings.set("ui/menueleiste", self.menubar_wanted)
+
+    def rename_document(self):
+        t = self.current_tab()
+        if not t or not t.path:
+            QMessageBox.information(self, "Umbenennen", "Das Dokument ist noch nicht gespeichert.")
+            return
+        neu, ok = QInputDialog.getText(self, "Umbenennen", "Neuer Dateiname:", text=os.path.basename(t.path))
+        if not ok or not neu.strip() or neu == os.path.basename(t.path):
+            return
+        ziel = os.path.join(os.path.dirname(t.path), neu.strip())
+        if os.path.exists(ziel):
+            QMessageBox.warning(self, "Umbenennen", "Eine Datei mit diesem Namen gibt es schon.")
+            return
+        try:
+            os.rename(t.path, ziel)
+        except OSError as e:
+            QMessageBox.warning(self, "Umbenennen", f"Nicht möglich: {e.strerror or e}")
+            return
+        self.settings.remove_recent(t.path)
+        t.set_path(ziel)
+        self.settings.add_recent(ziel)
+        self._update_tab_titles()
+
     def toggle_marks(self, on: bool):
+        self.marks_on = on
         from PySide6.QtGui import QTextOption
         for t in self._doc_tabs():
             opt = t.editor.document().defaultTextOption()

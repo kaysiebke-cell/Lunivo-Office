@@ -1,16 +1,17 @@
 """Der Editor: QTextEdit mit Seitenbreite, Formatierungsbefehlen und Seitenzählung."""
 from __future__ import annotations
 
-from PySide6.QtCore import QTimer, Qt, Signal, QUrl
+from PySide6.QtCore import QPoint, QTimer, Qt, Signal, QUrl
 from PySide6.QtGui import (
     QBrush, QColor, QFont, QImage, QTextBlockFormat, QTextCharFormat, QTextCursor,
     QTextDocument, QTextFormat, QTextFrameFormat, QTextImageFormat, QTextListFormat,
     QTextTableFormat, QTextLength,
 )
-from PySide6.QtWidgets import QTextEdit
+from PySide6.QtWidgets import QListWidget, QTextEdit
 
 from ..document_io.docx_reader import LH_PROPORTIONAL, STYLE_PROP
 from .page import PageSettings, mm_to_px
+from ..services.autokorrektur import kleinste_aenderung
 from .pagination import bind_layout, paginated_copy
 
 # Formatvorlagen: Name → (Überschriftsebene, Punktgröße, fett, kursiv)
@@ -38,6 +39,13 @@ class DocumentEditor(QTextEdit):
         self.setUndoRedoEnabled(True)
         self.setLineWrapMode(QTextEdit.WidgetWidth)
         self.show_marks = False
+        self.vorhersage = None            # Rückruf: Wortanfang → Liste von Vorschlägen
+        self.autokorr = None              # Rückruf: Text vor dem Zeiger → korrigierter Text
+        self._wellen: list[dict] = []
+        self._popup = QListWidget(None)
+        self._popup.setWindowFlags(Qt.ToolTip)
+        self._popup.setFocusPolicy(Qt.NoFocus)
+        self._popup.itemClicked.connect(lambda it: self._vorschlag_nehmen(it.text()))
         self._pages = 1
         self._paged: QTextDocument | None = None
         self._timer = QTimer(self)
@@ -211,9 +219,10 @@ class DocumentEditor(QTextEdit):
             bf.setTopMargin(before_pt / 0.75); bf.setBottomMargin(after_pt / 0.75)
         self._block_merge(f)
 
-    def toggle_list(self, kind: str) -> None:
+    def toggle_list(self, kind: str, style=None) -> None:
         cur = self.textCursor()
-        style = QTextListFormat.ListDisc if kind == "bullet" else QTextListFormat.ListDecimal
+        style = style if style is not None else (
+            QTextListFormat.ListDisc if kind == "bullet" else QTextListFormat.ListDecimal)
         lst = cur.currentList()
         if lst and lst.format().style() == style:
             cur.beginEditBlock()
@@ -358,6 +367,122 @@ class DocumentEditor(QTextEdit):
             n += 1
         cur.endEditBlock()
         return n
+
+    # ---- Schreibhilfe: Wellenlinien, Ersetzen, Vorhersage, AutoKorrektur -------------------
+    WELLE = {"fehler": "#e8590c", "tipp": "#1c7ed6", "hinweis": "#868e96"}
+
+    def set_wellen(self, funde: list) -> None:
+        self._wellen = funde
+        sel = []
+        n = self.document().characterCount()
+        for f in funde:
+            if f["bis"] > n or f["von"] >= f["bis"]:
+                continue
+            c = QTextCursor(self.document())
+            c.setPosition(f["von"]); c.setPosition(f["bis"], QTextCursor.KeepAnchor)
+            fmt = QTextCharFormat()
+            fmt.setUnderlineStyle(QTextCharFormat.WaveUnderline)
+            fmt.setUnderlineColor(QColor(self.WELLE.get(f["art"], "#868e96")))
+            sel.append(QTextEdit.ExtraSelection())
+            sel[-1].cursor = c
+            sel[-1].format = fmt
+        self.setExtraSelections(sel)
+
+    def replace_range(self, von: int, bis: int, neu: str, erwartet: str | None = None) -> bool:
+        c = QTextCursor(self.document())
+        c.setPosition(von); c.setPosition(bis, QTextCursor.KeepAnchor)
+        if erwartet is not None and c.selectedText().replace("\u2029", "\n") != erwartet:
+            return False
+        fmt = QTextCharFormat(c.charFormat())
+        c.insertText(neu, fmt) if neu else c.removeSelectedText()
+        return True
+
+    def select_range(self, von: int, bis: int) -> None:
+        c = QTextCursor(self.document())
+        c.setPosition(von); c.setPosition(bis, QTextCursor.KeepAnchor)
+        self.setTextCursor(c); self.ensureCursorVisible(); self.setFocus()
+
+    def _wort_vor_cursor(self) -> str:
+        c = self.textCursor()
+        txt = c.block().text()[:c.positionInBlock()]
+        i = len(txt)
+        while i > 0 and (txt[i - 1].isalpha() or txt[i - 1] in "äöüßÄÖÜ"):
+            i -= 1
+        return txt[i:]
+
+    def _vorschlaege_zeigen(self) -> None:
+        if not self.vorhersage or self.textCursor().hasSelection():
+            self._popup.hide(); return
+        w = self._wort_vor_cursor()
+        vs = self.vorhersage(w) if len(w) >= 3 else []
+        if not vs:
+            self._popup.hide(); return
+        gross = w[:1].isupper()
+        self._popup.clear()
+        self._popup.addItems([v.capitalize() if gross else v for v in vs])
+        self._popup.setCurrentRow(0)
+        r = self.cursorRect()
+        self._popup.resize(220, min(200, 22 * len(vs) + 6))
+        self._popup.move(self.viewport().mapToGlobal(QPoint(r.left(), r.bottom() + 4)))
+        self._popup.show()
+
+    def _vorschlag_nehmen(self, wort: str) -> None:
+        w = self._wort_vor_cursor()
+        c = self.textCursor()
+        c.beginEditBlock()
+        c.movePosition(QTextCursor.Left, QTextCursor.KeepAnchor, len(w))
+        c.insertText(wort + " ")
+        c.endEditBlock()
+        self.setTextCursor(c); self._popup.hide()
+
+    def _autokorr_anwenden(self) -> None:
+        if not self.autokorr:
+            return
+        c = self.textCursor()
+        if c.hasSelection():
+            return
+        alt = c.block().text()[:c.positionInBlock()]
+        neu = self.autokorr(alt)
+        if neu == alt:
+            return
+        von, bis, ersatz = kleinste_aenderung(alt, neu)
+        start = c.block().position()
+        ed = QTextCursor(self.document())
+        ed.setPosition(start + von); ed.setPosition(start + bis, QTextCursor.KeepAnchor)
+        fmt = QTextCharFormat(ed.charFormat())
+        ed.insertText(ersatz, fmt) if ersatz else ed.removeSelectedText()
+        end = QTextCursor(self.document())
+        end.setPosition(start + len(neu))
+        self.setTextCursor(end)
+
+    def keyPressEvent(self, e) -> None:
+        if self._popup.isVisible():
+            k = e.key()
+            if k in (Qt.Key_Tab, Qt.Key_Return, Qt.Key_Enter):
+                it = self._popup.currentItem()
+                if it:
+                    self._vorschlag_nehmen(it.text()); e.accept(); return
+            if k == Qt.Key_Escape:
+                self._popup.hide(); e.accept(); return
+            if k in (Qt.Key_Down, Qt.Key_Up):
+                r = self._popup.currentRow() + (1 if k == Qt.Key_Down else -1)
+                self._popup.setCurrentRow(max(0, min(self._popup.count() - 1, r))); e.accept(); return
+        super().keyPressEvent(e)
+        t = e.text()
+        if t and t in " .,;:!?\n\r":
+            self._popup.hide()
+            self._autokorr_anwenden()
+        elif t and (t.isalpha() or e.key() == Qt.Key_Backspace):
+            self._vorschlaege_zeigen()
+        else:
+            self._popup.hide()
+
+    def focusOutEvent(self, e) -> None:
+        try:
+            self._popup.hide()
+        except RuntimeError:          # beim Beenden schon abgebaut
+            pass
+        super().focusOutEvent(e)
 
     # ---- Tastatur ----------------------------------------------------------------
     def insertFromMimeData(self, source) -> None:

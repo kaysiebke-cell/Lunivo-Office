@@ -1,0 +1,2942 @@
+{
+ "register": [
+  {
+   "name": "Start",
+   "gruppen": [
+    {
+     "name": "Zwischenablage",
+     "knoepfe": [
+      {
+       "symbol": "kleben",
+       "name": "Einfügen",
+       "gross": true,
+       "tun": "einfuegen",
+       "klappe": "einfuegenKlappe"
+      },
+      {
+       "symbol": "ohneformat",
+       "name": "Einfügen ohne Formatierung",
+       "gross": false,
+       "tun": "einfuegenOhne"
+      },
+      {
+       "symbol": "schere",
+       "name": "Ausschneiden",
+       "gross": false,
+       "tun": "ausschneiden"
+      },
+      {
+       "symbol": "kopie",
+       "name": "Kopieren",
+       "gross": false,
+       "tun": "kopieren"
+      },
+      {
+       "symbol": "pinsel",
+       "name": "Format übertragen",
+       "gross": false,
+       "tun": "formatUebertragen"
+      },
+      {
+       "symbol": "wortextras",
+       "name": "Wort-Extras",
+       "gross": false,
+       "tun": "wortExtras"
+      }
+     ]
+    },
+    {
+     "name": "Schriftart",
+     "knoepfe": [
+      {
+       "symbol": "groesserA",
+       "name": "Schrift vergrößern",
+       "gross": false,
+       "tun": "schriftGroesser"
+      },
+      {
+       "symbol": "kleinerA",
+       "name": "Schrift verkleinern",
+       "gross": false,
+       "tun": "schriftKleiner"
+      },
+      {
+       "symbol": "radierer",
+       "name": "Formatierung löschen",
+       "gross": false,
+       "tun": "schlicht"
+      },
+      {
+       "symbol": "Aa",
+       "name": "Groß-/Kleinschreibung",
+       "gross": false,
+       "tun": "schreibweise",
+       "klappe": "schreibweiseKlappe"
+      },
+      {
+       "zeilenumbruch": true
+      },
+      {
+       "symbol": "F",
+       "name": "Fett",
+       "gross": false,
+       "tun": "fett"
+      },
+      {
+       "symbol": "K",
+       "name": "Kursiv",
+       "gross": false,
+       "tun": "kursiv"
+      },
+      {
+       "symbol": "U",
+       "name": "Unterstrichen",
+       "gross": false,
+       "tun": "unter",
+       "klappe": "unterstrichKlappe"
+      },
+      {
+       "symbol": "durchgestrichen",
+       "name": "Durchgestrichen",
+       "gross": false,
+       "tun": "durch"
+      },
+      {
+       "symbol": "X²",
+       "name": "Hochgestellt",
+       "gross": false,
+       "tun": "hoch"
+      },
+      {
+       "symbol": "X₂",
+       "name": "Tiefgestellt",
+       "gross": false,
+       "tun": "tief"
+      },
+      {
+       "symbol": "umriss",
+       "name": "Zeichenumriss",
+       "gross": false,
+       "tun": "zeichenumriss"
+      },
+      {
+       "symbol": "marker",
+       "name": "Hervorheben",
+       "gross": false,
+       "tun": "hervorhebenJetzt",
+       "klappe": "hervorhebenKlappe"
+      },
+      {
+       "symbol": "schriftfarbe",
+       "name": "Schriftfarbe",
+       "gross": false,
+       "tun": "schriftfarbeJetzt",
+       "klappe": "schriftfarbeKlappe"
+      },
+      {
+       "symbol": "eingeschlossen",
+       "name": "Texteffekte",
+       "gross": false,
+       "tun": "effekt"
+      }
+     ],
+     "felder": true,
+     "pfeil": "schriftartMehr"
+    },
+    {
+     "name": "Absatz",
+     "knoepfe": [
+      {
+       "symbol": "punkte",
+       "name": "Aufzählung",
+       "gross": false,
+       "tun": "punkte",
+       "klappe": "aufzaehlungKlappe"
+      },
+      {
+       "symbol": "zahlen",
+       "name": "Nummerierung",
+       "gross": false,
+       "tun": "zahlen",
+       "klappe": "nummerierungKlappe"
+      },
+      {
+       "symbol": "einzug",
+       "name": "Einzug & Listenebene",
+       "gross": false,
+       "menue": [
+        {
+         "name": "Einzug vergrößern",
+         "tun": "einzugMehr"
+        },
+        {
+         "name": "Einzug verringern",
+         "tun": "einzugWeniger"
+        },
+        {
+         "name": "Genaues Maß…",
+         "tun": "einzugGenau"
+        },
+        {
+         "trenner": true
+        },
+        {
+         "name": "Listenebene verringern",
+         "tun": "ebeneTiefer"
+        },
+        {
+         "name": "Listenebene erhöhen",
+         "tun": "ebeneHoeher"
+        }
+       ]
+      },
+      {
+       "symbol": "sortieren",
+       "name": "Sortieren",
+       "gross": false,
+       "tun": "sortieren"
+      },
+      {
+       "symbol": "¶",
+       "name": "Steuerzeichen",
+       "gross": false,
+       "tun": "steuerzeichenZeigen",
+       "haken": true
+      },
+      {
+       "zeilenumbruch": true
+      },
+      {
+       "symbol": "links",
+       "name": "Linksbündig",
+       "gross": false,
+       "tun": "links"
+      },
+      {
+       "symbol": "mitte",
+       "name": "Zentriert",
+       "gross": false,
+       "tun": "mitte"
+      },
+      {
+       "symbol": "rechts",
+       "name": "Rechtsbündig",
+       "gross": false,
+       "tun": "rechts"
+      },
+      {
+       "symbol": "block",
+       "name": "Blocksatz",
+       "gross": false,
+       "tun": "block"
+      },
+      {
+       "symbol": "verteilt",
+       "name": "Verteilt",
+       "gross": false,
+       "tun": "verteilt"
+      },
+      {
+       "symbol": "abstand",
+       "name": "Zeilenabstand",
+       "gross": false,
+       "klappe": "zeilenabstandKlappe"
+      },
+      {
+       "symbol": "absatztoenung",
+       "name": "Absatzschattierung",
+       "gross": false,
+       "klappe": "absatzSchattierung"
+      },
+      {
+       "symbol": "absatzrahmen",
+       "name": "Absatzrahmen",
+       "gross": false,
+       "klappe": "absatzRahmen"
+      }
+     ],
+     "pfeil": "einzugGenau"
+    },
+    {
+     "name": "Stile",
+     "katalog": "katalog"
+    },
+    {
+     "name": "Bearbeiten",
+     "knoepfe": [
+      {
+       "symbol": "lupe",
+       "name": "Suchen",
+       "gross": true,
+       "tun": "suchen"
+      },
+      {
+       "symbol": "uebersetzen",
+       "name": "Ersetzen",
+       "gross": false,
+       "tun": "ersetzen"
+      },
+      {
+       "symbol": "lupe",
+       "name": "Suchen und Ersetzen",
+       "gross": false,
+       "tun": "w.sucheZeigen"
+      },
+      {
+       "symbol": "allesmark",
+       "name": "Alles auswählen",
+       "gross": false,
+       "tun": "allesMarkieren"
+      },
+      {
+       "symbol": "objekte",
+       "name": "Objekte auswählen",
+       "gross": false,
+       "tun": "objekteWaehlen"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Einfügen",
+   "gruppen": [
+    {
+     "name": "Seiten",
+     "knoepfe": [
+      {
+       "symbol": "deckblatt",
+       "name": "Deckblatt",
+       "gross": true,
+       "tun": "deckblatt"
+      },
+      {
+       "symbol": "leereseite",
+       "name": "Leere Seite",
+       "gross": false,
+       "menue": [
+        {
+         "name": "Hochformat",
+         "tun": "leereSeite"
+        },
+        {
+         "name": "Querformat",
+         "tun": "leereSeite"
+        }
+       ]
+      },
+      {
+       "symbol": "umbruch",
+       "name": "Seitenumbruch",
+       "gross": false,
+       "tun": "seitenumbruch"
+      }
+     ]
+    },
+    {
+     "name": "Tabellen",
+     "knoepfe": [
+      {
+       "symbol": "tabelle",
+       "name": "Tabelle einfügen",
+       "gross": true,
+       "tun": "tabelleRaster"
+      },
+      {
+       "symbol": "schnelltab",
+       "name": "Schnelltabelle",
+       "gross": false,
+       "tun": "schnelltabelle"
+      },
+      {
+       "symbol": "tabellenblatt",
+       "name": "Tabellenblatt",
+       "gross": false,
+       "tun": "tabellenblatt"
+      },
+      {
+       "symbol": "toenung",
+       "name": "Eigenschaften",
+       "gross": false,
+       "tun": "tabelleEigenschaften"
+      }
+     ]
+    },
+    {
+     "name": "Illustrationen",
+     "knoepfe": [
+      {
+       "symbol": "bild",
+       "name": "Bild",
+       "gross": true,
+       "tun": "bild"
+      },
+      {
+       "symbol": "stift",
+       "name": "Formen",
+       "gross": true,
+       "tun": "formenGalerie"
+      },
+      {
+       "symbol": "saeule",
+       "name": "Diagramm",
+       "gross": false,
+       "tun": "diagramm"
+      },
+      {
+       "symbol": "smartart",
+       "name": "SmartArt",
+       "gross": false,
+       "tun": "smartart"
+      },
+      {
+       "symbol": "wordart",
+       "name": "WordArt",
+       "gross": false,
+       "tun": "wordart"
+      },
+      {
+       "zeilenumbruch": true
+      },
+      {
+       "symbol": "stift",
+       "name": "Form mit eigener Farbe…",
+       "gross": false,
+       "tun": "zeichnen"
+      },
+      {
+       "symbol": "bildfoto",
+       "name": "Bildschirmfoto",
+       "gross": false,
+       "tun": "screenshot"
+      },
+      {
+       "symbol": "piktogramm",
+       "name": "Piktogramm",
+       "gross": false,
+       "tun": "piktogramm"
+      }
+     ]
+    },
+    {
+     "name": "Links",
+     "knoepfe": [
+      {
+       "symbol": "kette",
+       "name": "Hyperlink",
+       "gross": true,
+       "tun": "hyperlink"
+      },
+      {
+       "symbol": "textmarke",
+       "name": "Lesezeichen / Textmarke",
+       "gross": false,
+       "tun": "textmarke"
+      },
+      {
+       "symbol": "querverweis",
+       "name": "Querverweis",
+       "gross": false,
+       "tun": "querverweis"
+      }
+     ]
+    },
+    {
+     "name": "Kopf- und Fußzeile",
+     "knoepfe": [
+      {
+       "symbol": "kopffuss",
+       "name": "Kopf- und Fußzeile",
+       "gross": true,
+       "tun": "kopfFussZeigen"
+      },
+      {
+       "symbol": "seitenzahl",
+       "name": "Seitenzahl",
+       "gross": true,
+       "tun": "seitenzahlKlappe",
+       "klappe": "seitenzahlKlappe"
+      }
+     ]
+    },
+    {
+     "name": "Text",
+     "knoepfe": [
+      {
+       "symbol": "textrahmen",
+       "name": "Textfeld",
+       "gross": true,
+       "tun": "textfeld"
+      },
+      {
+       "symbol": "initiale",
+       "name": "Initiale",
+       "gross": false,
+       "tun": "initiale"
+      },
+      {
+       "symbol": "datumuhrzeit",
+       "name": "Datum und Uhrzeit",
+       "gross": true,
+       "tun": "datumUhrzeit"
+      },
+      {
+       "symbol": "ausdatei",
+       "name": "Text aus Datei",
+       "gross": false,
+       "tun": "textAusDatei"
+      }
+     ]
+    },
+    {
+     "name": "Symbole",
+     "knoepfe": [
+      {
+       "symbol": "omega",
+       "name": "Sonderzeichen",
+       "gross": true,
+       "tun": "sonderzeichen"
+      },
+      {
+       "symbol": "formel",
+       "name": "Formel",
+       "gross": false,
+       "tun": "formel"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Seitenlayout",
+   "gruppen": [
+    {
+     "name": "Designs",
+     "knoepfe": [
+      {
+       "symbol": "toenung",
+       "name": "Designs",
+       "gross": true,
+       "tun": "designs"
+      },
+      {
+       "symbol": "farbe",
+       "name": "Farben",
+       "gross": false,
+       "tun": "farbschema"
+      },
+      {
+       "symbol": "Aa",
+       "name": "Schriftarten",
+       "gross": false,
+       "tun": "designSchriften"
+      },
+      {
+       "symbol": "texteffekt",
+       "name": "Effekte",
+       "gross": false,
+       "tun": "designEffekte"
+      }
+     ]
+    },
+    {
+     "name": "Ränder",
+     "knoepfe": [
+      {
+       "symbol": "raender",
+       "name": "Ränder",
+       "gross": true,
+       "menue": [
+        {
+         "text": "[object Object]"
+        },
+        {
+         "text": "[object Object]"
+        },
+        {
+         "text": "[object Object]"
+        },
+        {
+         "text": "[object Object]"
+        },
+        {
+         "trenner": true
+        },
+        {
+         "text": "[object Object]"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "name": "Seitenränder",
+     "katalog": "raender"
+    },
+    {
+     "name": "Seite einrichten",
+     "knoepfe": [
+      {
+       "symbol": "ausrichtung",
+       "name": "Ausrichtung",
+       "gross": true,
+       "menue": [
+        {
+         "text": "[object Object]"
+        },
+        {
+         "text": "[object Object]"
+        }
+       ]
+      },
+      {
+       "symbol": "papiergroesse",
+       "name": "Größe",
+       "gross": true,
+       "menue": [
+        {
+         "text": "[object Object]"
+        },
+        {
+         "text": "[object Object]"
+        },
+        {
+         "text": "[object Object]"
+        },
+        {
+         "text": "[object Object]"
+        },
+        {
+         "text": "[object Object]"
+        },
+        {
+         "text": "[object Object]"
+        },
+        {
+         "text": "[object Object]"
+        },
+        {
+         "text": "[object Object]"
+        },
+        {
+         "text": "[object Object]"
+        },
+        {
+         "trenner": true
+        },
+        {
+         "text": "[object Object]"
+        }
+       ]
+      },
+      {
+       "symbol": "spalten",
+       "name": "Spalten",
+       "gross": false,
+       "menue": [
+        {
+         "text": "[object Object]"
+        },
+        {
+         "text": "[object Object]"
+        },
+        {
+         "text": "[object Object]"
+        },
+        {
+         "trenner": true
+        },
+        {
+         "text": "[object Object]"
+        }
+       ]
+      },
+      {
+       "symbol": "textrichtung",
+       "name": "Textrichtung",
+       "gross": false,
+       "tun": "textrichtung"
+      },
+      {
+       "symbol": "umbruch",
+       "name": "Umbrüche",
+       "gross": false,
+       "menue": [
+        {
+         "text": "[object Object]"
+        },
+        {
+         "text": "[object Object]"
+        },
+        {
+         "text": "[object Object]"
+        },
+        {
+         "trenner": true
+        },
+        {
+         "text": "[object Object]"
+        },
+        {
+         "text": "[object Object]"
+        },
+        {
+         "text": "[object Object]"
+        },
+        {
+         "text": "[object Object]"
+        }
+       ]
+      },
+      {
+       "symbol": "zeilennr",
+       "name": "Zeilennummern",
+       "gross": false,
+       "tun": "zeilennummern"
+      }
+     ],
+     "pfeil": "seitenraender"
+    },
+    {
+     "name": "Absatz",
+     "knoepfe": [
+      {
+       "symbol": "einzug",
+       "name": "Einzug",
+       "gross": true,
+       "tun": "einzugGenau"
+      },
+      {
+       "symbol": "abstand",
+       "name": "Absatzabstand",
+       "gross": false,
+       "tun": "absatzabstand"
+      },
+      {
+       "symbol": "trennung",
+       "name": "Silbentrennung",
+       "gross": false,
+       "tun": "silbentrennung",
+       "haken": true
+      }
+     ],
+     "pfeil": "einzugGenau"
+    },
+    {
+     "name": "Seitenhintergrund",
+     "knoepfe": [
+      {
+       "symbol": "farbe",
+       "name": "Seitenfarbe",
+       "gross": true,
+       "tun": "seitenfarbe"
+      },
+      {
+       "symbol": "wasserzeichen",
+       "name": "Wasserzeichen",
+       "gross": false,
+       "tun": "wasserzeichen"
+      },
+      {
+       "symbol": "seitenrahmen",
+       "name": "Seitenränder",
+       "gross": false,
+       "tun": "seitenraenderRahmen"
+      }
+     ]
+    },
+    {
+     "name": "Anordnen",
+     "knoepfe": [
+      {
+       "symbol": "anordnen",
+       "name": "Textfluss",
+       "gross": true,
+       "tun": "anordnen"
+      },
+      {
+       "symbol": "ausrichten",
+       "name": "Ausrichten",
+       "gross": false,
+       "tun": "objektAusrichten"
+      },
+      {
+       "symbol": "gruppieren",
+       "name": "Gruppieren",
+       "gross": false,
+       "tun": "gruppieren"
+      },
+      {
+       "symbol": "objektdrehen",
+       "name": "Drehen",
+       "gross": false,
+       "tun": "objektDrehen"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Referenzen",
+   "gruppen": [
+    {
+     "name": "Inhaltsverzeichnis",
+     "knoepfe": [
+      {
+       "symbol": "inhalt",
+       "name": "Inhaltsverzeichnis",
+       "gross": true,
+       "tun": "inhaltsverzeichnis"
+      },
+      {
+       "symbol": "haken",
+       "name": "Verzeichnisse aktualisieren",
+       "gross": false,
+       "tun": "verzeichnisseAktualisieren"
+      }
+     ]
+    },
+    {
+     "name": "Fußnoten",
+     "knoepfe": [
+      {
+       "symbol": "fussnote",
+       "name": "Fußnote",
+       "gross": true,
+       "tun": "fussnote"
+      },
+      {
+       "symbol": "endnote",
+       "name": "Endnote",
+       "gross": true,
+       "tun": "endnote"
+      },
+      {
+       "symbol": "vor",
+       "name": "Nächste Note",
+       "gross": false,
+       "tun": "noteWeiter"
+      },
+      {
+       "symbol": "zurueck",
+       "name": "Vorige Note",
+       "gross": false,
+       "tun": "noteZurueck"
+      },
+      {
+       "symbol": "bereich",
+       "name": "Notenbereich",
+       "gross": false,
+       "tun": "notenZeigen"
+      }
+     ]
+    },
+    {
+     "name": "Zitate und Literatur",
+     "knoepfe": [
+      {
+       "symbol": "zitat",
+       "name": "Zitat einfügen",
+       "gross": true,
+       "tun": "zitat"
+      },
+      {
+       "symbol": "eintrag",
+       "name": "Neue Quelle",
+       "gross": false,
+       "tun": "quelleNeu"
+      },
+      {
+       "symbol": "anpassen",
+       "name": "Quellen verwalten",
+       "gross": false,
+       "tun": "quellenVerwalten"
+      },
+      {
+       "symbol": "Stil",
+       "name": "Zitierweise",
+       "gross": false,
+       "tun": "zitierweise"
+      },
+      {
+       "symbol": "inhalt",
+       "name": "Literaturverzeichnis",
+       "gross": false,
+       "tun": "literaturverzeichnis"
+      }
+     ]
+    },
+    {
+     "name": "Beschriftungen",
+     "knoepfe": [
+      {
+       "symbol": "beschriftung",
+       "name": "Beschriftung",
+       "gross": true,
+       "tun": "beschriftung"
+      },
+      {
+       "symbol": "bild",
+       "name": "Abbildungsverzeichnis",
+       "gross": false,
+       "tun": "abbildungsverzeichnis"
+      },
+      {
+       "symbol": "querverweis",
+       "name": "Querverweis",
+       "gross": false,
+       "tun": "querverweis"
+      }
+     ]
+    },
+    {
+     "name": "Index",
+     "knoepfe": [
+      {
+       "symbol": "eintrag",
+       "name": "Indexeintrag",
+       "gross": true,
+       "tun": "indexEintrag"
+      },
+      {
+       "symbol": "inhalt",
+       "name": "Stichwortverzeichnis",
+       "gross": false,
+       "tun": "stichwortverzeichnis"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Überprüfen",
+   "gruppen": [
+    {
+     "name": "Dokumentprüfung",
+     "knoepfe": [
+      {
+       "symbol": "haken",
+       "name": "Prüfen",
+       "gross": true,
+       "tun": "w.pruefen"
+      },
+      {
+       "symbol": "gruendlich",
+       "name": "Gründlich prüfen",
+       "gross": true,
+       "tun": "gruendlichPruefen"
+      },
+      {
+       "symbol": "Duden",
+       "name": "Rechtschreibung",
+       "gross": false,
+       "tun": "rechtschreibung",
+       "haken": true
+      },
+      {
+       "symbol": "thesaurus",
+       "name": "Thesaurus",
+       "gross": false,
+       "tun": "thesaurus"
+      },
+      {
+       "symbol": "woerter",
+       "name": "Wörter zählen",
+       "gross": false,
+       "tun": "woerterZaehlen"
+      }
+     ]
+    },
+    {
+     "name": "Sprache",
+     "knoepfe": [
+      {
+       "symbol": "sprache",
+       "name": "Korrektursprache",
+       "gross": true,
+       "tun": "pruefsprache"
+      }
+     ]
+    },
+    {
+     "name": "Barrierefreiheit",
+     "knoepfe": [
+      {
+       "symbol": "barrierefrei",
+       "name": "Barrierefreiheit prüfen",
+       "gross": true,
+       "tun": "barrierefrei"
+      }
+     ]
+    },
+    {
+     "name": "Kommentare",
+     "knoepfe": [
+      {
+       "symbol": "notiz",
+       "name": "Neuer Kommentar",
+       "gross": true,
+       "tun": "kommentar"
+      },
+      {
+       "symbol": "vor",
+       "name": "Nächster Kommentar",
+       "gross": false,
+       "tun": "kommentarWeiter"
+      },
+      {
+       "symbol": "zurueck",
+       "name": "Voriger Kommentar",
+       "gross": false,
+       "tun": "kommentarZurueck"
+      },
+      {
+       "symbol": "kommentarweg",
+       "name": "Kommentar löschen",
+       "gross": false,
+       "tun": "kommentarWeg"
+      },
+      {
+       "symbol": "kommentareweg",
+       "name": "Alle Kommentare löschen",
+       "gross": false,
+       "tun": "kommentareAlleWeg"
+      }
+     ]
+    },
+    {
+     "name": "Änderungen",
+     "knoepfe": [
+      {
+       "symbol": "verfolgt",
+       "name": "Änderungen verfolgen",
+       "gross": true,
+       "tun": "verfolgen",
+       "haken": true
+      },
+      {
+       "symbol": "markup",
+       "name": "Markup anzeigen",
+       "gross": false,
+       "tun": "markupUmschalten"
+      },
+      {
+       "symbol": "bereich",
+       "name": "Überarbeitungsbereich",
+       "gross": false,
+       "tun": "ueberarbeitungsbereich"
+      },
+      {
+       "symbol": "annehmen",
+       "name": "Änderung annehmen",
+       "gross": false,
+       "tun": "aenderungAnnehmen"
+      },
+      {
+       "symbol": "ablehnen",
+       "name": "Änderung ablehnen",
+       "gross": false,
+       "tun": "aenderungAblehnen"
+      },
+      {
+       "symbol": "vor",
+       "name": "Nächste Änderung",
+       "gross": false,
+       "tun": "aenderungWeiter"
+      },
+      {
+       "symbol": "zurueck",
+       "name": "Vorige Änderung",
+       "gross": false,
+       "tun": "aenderungZurueck"
+      },
+      {
+       "symbol": "alleAn",
+       "name": "Alle annehmen",
+       "gross": false,
+       "tun": "aenderungenUebernehmen"
+      },
+      {
+       "symbol": "alleAb",
+       "name": "Alle verwerfen",
+       "gross": false,
+       "tun": "aenderungenVerwerfen"
+      }
+     ]
+    },
+    {
+     "name": "Schützen",
+     "knoepfe": [
+      {
+       "symbol": "sperren",
+       "name": "Bearbeitung sperren",
+       "gross": true,
+       "tun": "bearbeitungSperren"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Schreibhilfe",
+   "gruppen": [
+    {
+     "name": "Lesen",
+     "knoepfe": [
+      {
+       "symbol": "brille",
+       "name": "Lesehilfe",
+       "gross": true,
+       "tun": "lesehilfe"
+      },
+      {
+       "symbol": "zeile",
+       "name": "Zeilenfokus",
+       "gross": false,
+       "tun": "zeilenfokus",
+       "haken": true
+      },
+      {
+       "symbol": "buch",
+       "name": "Lesemodus",
+       "gross": false,
+       "tun": "lesemodus",
+       "haken": true
+      },
+      {
+       "symbol": "groesserA",
+       "name": "Schrift zum Lesen",
+       "gross": false,
+       "tun": "w.optionenOeffnen"
+      }
+     ],
+     "pfeil": "lesehilfe"
+    },
+    {
+     "name": "Prüfen",
+     "knoepfe": [
+      {
+       "symbol": "haken",
+       "name": "Dokumentprüfung",
+       "gross": true,
+       "menue": [
+        {
+         "name": "Prüfen",
+         "tun": "w.pruefen"
+        },
+        {
+         "name": "Gründlich prüfen",
+         "tun": "gruendlichPruefen"
+        },
+        {
+         "trenner": true
+        },
+        {
+         "name": "Welche Hilfe wann",
+         "tun": "welcheHilfe"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "name": "Beim Schreiben",
+     "knoepfe": [
+      {
+       "symbol": "wellen",
+       "name": "Rechtschreibprüfung",
+       "gross": false,
+       "tun": "rechtschreibung",
+       "klappe": "pruefungKlappe",
+       "haken": true
+      },
+      {
+       "symbol": "Vorhersage",
+       "name": "Wortvorhersage",
+       "gross": false,
+       "tun": "vorhersage"
+      },
+      {
+       "symbol": "autokorr",
+       "name": "AutoKorrektur",
+       "gross": false,
+       "tun": "autokorrektur"
+      }
+     ]
+    },
+    {
+     "name": "Vorlesen",
+     "knoepfe": [
+      {
+       "symbol": "vorlesen",
+       "name": "Vorlesen",
+       "gross": true,
+       "menue": [
+        {
+         "name": "Vorlesen",
+         "tun": "vorlesen"
+        },
+        {
+         "name": "Ab hier vorlesen",
+         "tun": "vorlesenAbSatz"
+        },
+        {
+         "name": "Anhalten",
+         "tun": "vorlesenStopp"
+        },
+        {
+         "trenner": true
+        },
+        {
+         "name": "Stimme und Tempo",
+         "tun": "stimmeWaehlen"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "name": "Sprache",
+     "knoepfe": [
+      {
+       "symbol": "silben",
+       "name": "Silbentrennung",
+       "gross": true,
+       "tun": "silbentrennung",
+       "haken": true
+      },
+      {
+       "symbol": "uebersetzen",
+       "name": "Übersetzen",
+       "gross": false,
+       "tun": "w.kiUebersetzen"
+      },
+      {
+       "symbol": "woerterbuch",
+       "name": "Thesaurus",
+       "gross": false,
+       "tun": "thesaurus"
+      },
+      {
+       "symbol": "sprache",
+       "name": "Sprache und Prüfung",
+       "gross": false,
+       "tun": "w.optionenOeffnen"
+      }
+     ],
+     "pfeil": "w.optionenOeffnen"
+    },
+    {
+     "name": "Bausteine",
+     "knoepfe": [
+      {
+       "symbol": "baustein",
+       "name": "Textbausteine",
+       "gross": true,
+       "menue": [
+        {
+         "name": "Bausteine verwalten…",
+         "tun": "textbausteine"
+        },
+        {
+         "name": "Schnellbaustein einfügen",
+         "tun": "schnellbaustein"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "name": "KI",
+     "knoepfe": [
+      {
+       "symbol": "chat",
+       "name": "KI-Chat",
+       "gross": true,
+       "tun": "w.chatUmschalten"
+      },
+      {
+       "symbol": "assistent",
+       "name": "Eigenen Assistenten erstellen",
+       "gross": true,
+       "tun": "w.assistentErstellen"
+      },
+      {
+       "symbol": "assistent",
+       "name": "Eigenen Anbieter hinzufügen",
+       "gross": true,
+       "tun": "w.eigenenAnbieterHinzufuegen"
+      },
+      {
+       "symbol": "optionen",
+       "name": "KI-Konfiguration",
+       "gross": true,
+       "tun": "w.kiKonfiguration"
+      }
+     ]
+    },
+    {
+     "name": "Anzeigen",
+     "knoepfe": [
+      {
+       "symbol": "tafel",
+       "name": "Seitenleiste Schreibhilfe",
+       "gross": true,
+       "tun": "tafelZeigen"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Sendungen",
+   "gruppen": [
+    {
+     "name": "Erstellen",
+     "knoepfe": [
+      {
+       "symbol": "kette",
+       "name": "Umschlag",
+       "gross": true,
+       "tun": "umschlag"
+      },
+      {
+       "symbol": "etiketten",
+       "name": "Etiketten",
+       "gross": true,
+       "tun": "etiketten"
+      }
+     ]
+    },
+    {
+     "name": "Seriendruck",
+     "knoepfe": [
+      {
+       "symbol": "serie",
+       "name": "Seriendruck-Assistent",
+       "gross": true,
+       "tun": "seriendruck"
+      },
+      {
+       "symbol": "seriefeld",
+       "name": "Seriendruckfeld",
+       "gross": true,
+       "tun": "seriendruckfeld"
+      },
+      {
+       "symbol": "adressblock",
+       "name": "Adressblock",
+       "gross": false,
+       "tun": "adressblock"
+      },
+      {
+       "symbol": "eintrag",
+       "name": "Regeln",
+       "gross": false,
+       "tun": "seriendruckregel"
+      }
+     ]
+    },
+    {
+     "name": "Vorschau",
+     "knoepfe": [
+      {
+       "symbol": "vorschau",
+       "name": "Ergebnisse anzeigen",
+       "gross": true,
+       "tun": "serienVorschau"
+      }
+     ]
+    },
+    {
+     "name": "Formular",
+     "knoepfe": [
+      {
+       "symbol": "formfeld",
+       "name": "Textfeld",
+       "gross": true,
+       "tun": "formTextfeld"
+      },
+      {
+       "symbol": "kaestchen",
+       "name": "Kontrollkästchen",
+       "gross": false,
+       "tun": "formKasten"
+      },
+      {
+       "symbol": "formknopf",
+       "name": "Schaltfläche",
+       "gross": false,
+       "tun": "formKnopf"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Ansicht",
+   "gruppen": [
+    {
+     "name": "Dokumentansichten",
+     "knoepfe": [
+      {
+       "symbol": "blattansicht",
+       "name": "Drucklayout",
+       "gross": true,
+       "tun": "w.setzeLayout"
+      },
+      {
+       "symbol": "lesen",
+       "name": "Lesemodus",
+       "gross": true,
+       "tun": "lesemodus",
+       "haken": true
+      },
+      {
+       "symbol": "zweiblatt",
+       "name": "Zwei Seiten",
+       "gross": false,
+       "tun": "w.setzeLayout"
+      },
+      {
+       "symbol": "fortlaufend",
+       "name": "Weblayout",
+       "gross": false,
+       "tun": "w.setzeLayout"
+      },
+      {
+       "symbol": "gliederung",
+       "name": "Gliederung",
+       "gross": false,
+       "tun": "gliederung"
+      }
+     ]
+    },
+    {
+     "name": "Anzeigen",
+     "knoepfe": [
+      {
+       "symbol": "linealIcon",
+       "name": "Lineal",
+       "gross": false,
+       "tun": "linealZeigen",
+       "haken": true
+      },
+      {
+       "symbol": "linealHochIcon",
+       "name": "Vertikales Lineal",
+       "gross": false,
+       "tun": "linealHochZeigen",
+       "haken": true
+      },
+      {
+       "symbol": "netz",
+       "name": "Gitternetzlinien",
+       "gross": false,
+       "tun": "netzlinien",
+       "haken": true
+      },
+      {
+       "symbol": "navigation",
+       "name": "Navigationsbereich",
+       "gross": false,
+       "tun": "navigation",
+       "haken": true
+      },
+      {
+       "symbol": "ecken",
+       "name": "Textbegrenzungen",
+       "gross": false,
+       "tun": "markenZeigen",
+       "haken": true
+      }
+     ],
+     "pfeil": "lesehilfe"
+    },
+    {
+     "name": "Zoom",
+     "knoepfe": [
+      {
+       "symbol": "lupe",
+       "name": "Vergrößern",
+       "gross": true,
+       "tun": "groesser"
+      },
+      {
+       "symbol": "kleinerLupe",
+       "name": "Verkleinern",
+       "gross": true,
+       "tun": "kleiner"
+      },
+      {
+       "symbol": "100 %",
+       "name": "100 %",
+       "gross": false,
+       "tun": "normal"
+      },
+      {
+       "symbol": "seitenbreite",
+       "name": "Seitenbreite",
+       "gross": false,
+       "tun": "zoomBreite"
+      },
+      {
+       "symbol": "eineSeite",
+       "name": "Eine Seite",
+       "gross": false,
+       "tun": "zoomSeite"
+      },
+      {
+       "symbol": "Prozent",
+       "name": "Zoom",
+       "gross": false,
+       "tun": "zoomStufe"
+      }
+     ],
+     "pfeil": "zoomStufe"
+    },
+    {
+     "name": "Fenster",
+     "knoepfe": [
+      {
+       "symbol": "neuesfenster",
+       "name": "Neues Fenster",
+       "gross": true,
+       "tun": "neuesFenster"
+      },
+      {
+       "symbol": "kacheln",
+       "name": "Anordnen",
+       "gross": true,
+       "menue": [
+        {
+         "name": "Nebeneinander",
+         "tun": "fensterNebeneinander"
+        },
+        {
+         "name": "Untereinander",
+         "tun": "fensterUntereinander"
+        },
+        {
+         "name": "Kacheln",
+         "tun": "fensterKacheln"
+        }
+       ]
+      },
+      {
+       "symbol": "fensterNeben",
+       "name": "Nebeneinander",
+       "gross": false,
+       "tun": "fensterNebeneinander"
+      },
+      {
+       "symbol": "fensterUnter",
+       "name": "Untereinander",
+       "gross": false,
+       "tun": "fensterUntereinander"
+      },
+      {
+       "symbol": "kacheln",
+       "name": "Kacheln",
+       "gross": false,
+       "tun": "fensterKacheln"
+      },
+      {
+       "symbol": "fensterliste",
+       "name": "Fensterliste",
+       "gross": false,
+       "tun": "fensterListe"
+      }
+     ]
+    },
+    {
+     "name": "Helligkeit",
+     "knoepfe": [
+      {
+       "symbol": "automatisch",
+       "name": "Wie das System",
+       "gross": false,
+       "tun": "w.setzeThema"
+      },
+      {
+       "symbol": "hell",
+       "name": "Immer hell",
+       "gross": false,
+       "tun": "w.setzeThema"
+      },
+      {
+       "symbol": "dunkel",
+       "name": "Immer dunkel",
+       "gross": false,
+       "tun": "w.setzeThema"
+      }
+     ]
+    },
+    {
+     "name": "Oberfläche",
+     "knoepfe": [
+      {
+       "symbol": "anpassen",
+       "name": "Register anpassen",
+       "gross": true,
+       "tun": "registerAnpassen"
+      },
+      {
+       "symbol": "piktogramm",
+       "name": "Symbol austauschen",
+       "gross": false,
+       "tun": "symbolTauschen"
+      },
+      {
+       "symbol": "Oberfläche",
+       "name": "Benutzeroberfläche",
+       "gross": false,
+       "tun": "benutzeroberflaeche"
+      },
+      {
+       "symbol": "menueleiste",
+       "name": "Menüleiste",
+       "gross": false,
+       "tun": "menueleisteZeigen"
+      },
+      {
+       "symbol": "leisten",
+       "name": "Symbolleisten",
+       "gross": false,
+       "tun": "leistenZeigen"
+      },
+      {
+       "symbol": "Zurück",
+       "name": "Vorlagen zurücksetzen",
+       "gross": false,
+       "tun": "vorlagenZurueck"
+      }
+     ],
+     "pfeil": "registerAnpassen"
+    }
+   ]
+  }
+ ],
+ "menues": [
+  {
+   "name": "Datei",
+   "punkte": [
+    {
+     "name": "Neu",
+     "tun": "neu",
+     "taste": "Strg+N"
+    },
+    {
+     "name": "Öffnen",
+     "tun": "oeffnen",
+     "taste": "Strg+O"
+    },
+    {
+     "name": "Zuletzt geöffnet",
+     "tun": "zuletztOeffnen"
+    },
+    {
+     "name": "Neu aus Vorlage",
+     "tun": "vorlagenWaehlen"
+    },
+    {
+     "name": "Vorlagenordner",
+     "tun": "vorlagenOrdner"
+    },
+    {
+     "trenner": true
+    },
+    {
+     "name": "Speichern",
+     "tun": "speichern",
+     "taste": "Strg+S"
+    },
+    {
+     "name": "Speichern unter",
+     "tun": "speichernUnter",
+     "taste": "Strg+Umschalt+S"
+    },
+    {
+     "trenner": true
+    },
+    {
+     "name": "Drucken",
+     "tun": "drucken",
+     "taste": "Strg+P"
+    },
+    {
+     "name": "Druckvorschau",
+     "tun": "vorschau"
+    },
+    {
+     "name": "Als PDF exportieren",
+     "tun": "speichernPdf"
+    },
+    {
+     "name": "Druckereinstellungen",
+     "tun": "druckerEinrichten"
+    },
+    {
+     "trenner": true
+    },
+    {
+     "name": "Dokumenteigenschaften",
+     "tun": "eigenschaften"
+    },
+    {
+     "name": "Umbenennen",
+     "tun": "umbenennen"
+    },
+    {
+     "trenner": true
+    },
+    {
+     "name": "Schließen",
+     "tun": "schliessen"
+    },
+    {
+     "trenner": true
+    },
+    {
+     "name": "Hilfe",
+     "unter": [
+      {
+       "name": "Handbuch",
+       "tun": "handbuch"
+      },
+      {
+       "name": "Tastenkürzel",
+       "tun": "tastenHilfe"
+      },
+      {
+       "name": "Erweiterungen",
+       "tun": "erweiterungen"
+      },
+      {
+       "name": "Über Lunivo Office",
+       "tun": "ueber"
+      }
+     ]
+    },
+    {
+     "name": "Optionen",
+     "tun": "eigen",
+     "taste": "F9"
+    },
+    {
+     "name": "Beenden",
+     "tun": "beenden"
+    }
+   ]
+  },
+  {
+   "name": "Start",
+   "punkte": [
+    {
+     "name": "Zwischenablage",
+     "unter": [
+      {
+       "name": "Einfügen",
+       "tun": "einfuegen",
+       "taste": "Strg+V"
+      },
+      {
+       "name": "Einfügen ohne Formatierung",
+       "tun": "einfuegenOhne"
+      },
+      {
+       "name": "Ausschneiden",
+       "tun": "ausschneiden",
+       "taste": "Strg+X"
+      },
+      {
+       "name": "Kopieren",
+       "tun": "kopieren",
+       "taste": "Strg+C"
+      },
+      {
+       "name": "Format übertragen",
+       "tun": "formatUebertragen"
+      },
+      {
+       "name": "Verlauf",
+       "unter": [
+        {
+         "name": "Rückgängig",
+         "tun": "rueckgaengig",
+         "taste": "Strg+Z"
+        },
+        {
+         "name": "Wiederholen",
+         "tun": "wiederholen",
+         "taste": "Strg+Y"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "name": "Schriftart",
+     "unter": [
+      {
+       "name": "Schriftart",
+       "tun": "eigen"
+      },
+      {
+       "name": "Schriftgröße",
+       "tun": "eigen"
+      },
+      {
+       "name": "Schrift vergrößern",
+       "tun": "schriftGroesser"
+      },
+      {
+       "name": "Schrift verkleinern",
+       "tun": "schriftKleiner"
+      },
+      {
+       "name": "Formatierung löschen",
+       "tun": "schlicht"
+      },
+      {
+       "trenner": true
+      },
+      {
+       "name": "Fett",
+       "tun": "fett",
+       "taste": "Strg+B"
+      },
+      {
+       "name": "Kursiv",
+       "tun": "kursiv",
+       "taste": "Strg+I"
+      },
+      {
+       "name": "Unterstrichen",
+       "tun": "unter",
+       "taste": "Strg+U"
+      },
+      {
+       "name": "Durchgestrichen",
+       "tun": "durch"
+      },
+      {
+       "name": "Hochgestellt",
+       "tun": "hoch"
+      },
+      {
+       "name": "Tiefgestellt",
+       "tun": "tief"
+      },
+      {
+       "name": "Hervorheben",
+       "tun": "hervorheben"
+      },
+      {
+       "name": "Schriftfarbe",
+       "tun": "schriftfarbe"
+      },
+      {
+       "name": "Groß-/Kleinschreibung",
+       "tun": "schreibweise"
+      },
+      {
+       "name": "Eingeschlossene Zeichen",
+       "tun": "eingeschlosseneZeichen"
+      },
+      {
+       "name": "Zeichenumriss",
+       "tun": "zeichenumriss"
+      },
+      {
+       "name": "Formatpipette",
+       "tun": "formatpipette"
+      },
+      {
+       "name": "Wort-Extras",
+       "tun": "eigen"
+      },
+      {
+       "name": "Unterstreichungsart",
+       "tun": "unterstrichArt"
+      },
+      {
+       "name": "Texteffekte",
+       "tun": "effekt"
+      }
+     ]
+    },
+    {
+     "name": "Absatz",
+     "unter": [
+      {
+       "name": "Aufzählung",
+       "tun": "punkte"
+      },
+      {
+       "name": "Nummerierung",
+       "tun": "zahlen"
+      },
+      {
+       "name": "Einzug & Listenebene",
+       "unter": [
+        {
+         "name": "Einzug verringern",
+         "tun": "einzugWeniger"
+        },
+        {
+         "name": "Einzug vergrößern",
+         "tun": "einzugMehr"
+        },
+        {
+         "name": "Listenebene erhöhen",
+         "tun": "ebeneHoeher"
+        },
+        {
+         "name": "Listenebene verringern",
+         "tun": "ebeneTiefer"
+        }
+       ]
+      },
+      {
+       "name": "Linksbündig",
+       "tun": "links"
+      },
+      {
+       "name": "Zentriert",
+       "tun": "mitte"
+      },
+      {
+       "name": "Rechtsbündig",
+       "tun": "rechts"
+      },
+      {
+       "name": "Blocksatz",
+       "tun": "block"
+      },
+      {
+       "name": "Zeilenabstand",
+       "unter": [
+        {
+         "name": "Einfach (1,0)",
+         "tun": "eigen"
+        },
+        {
+         "name": "Eineinhalb (1,5)",
+         "tun": "eigen"
+        },
+        {
+         "name": "Doppelt (2,0)",
+         "tun": "eigen"
+        },
+        {
+         "name": "Mehr…",
+         "tun": "eigen"
+        }
+       ]
+      },
+      {
+       "name": "Absatzrahmen",
+       "tun": "absatzRahmen"
+      },
+      {
+       "name": "Absatzschattierung",
+       "tun": "absatzSchattierung"
+      },
+      {
+       "name": "Sortieren",
+       "tun": "sortieren"
+      },
+      {
+       "name": "Steuerzeichen",
+       "tun": "steuerzeichenZeigen"
+      }
+     ]
+    },
+    {
+     "name": "Stile",
+     "unter": [
+      {
+       "name": "Formatvorlagen",
+       "unter": [
+        {
+         "name": "Formatvorlage auswählen",
+         "unter_dynamisch": true
+        },
+        {
+         "name": "Neue Formatvorlage…",
+         "tun": "vorlageNeu"
+        },
+        {
+         "name": "Formatvorlagen verwalten",
+         "tun": "vorlagenVerwalten"
+        },
+        {
+         "name": "Formatvorlage löschen…",
+         "tun": "vorlageLoeschen"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "name": "Bearbeiten",
+     "unter": [
+      {
+       "name": "Suchen",
+       "tun": "suchen",
+       "taste": "Strg+F"
+      },
+      {
+       "name": "Ersetzen",
+       "tun": "ersetzen"
+      },
+      {
+       "name": "Suchen und Ersetzen",
+       "tun": "eigen"
+      },
+      {
+       "name": "Alles auswählen",
+       "tun": "allesMarkieren",
+       "taste": "Strg+A"
+      },
+      {
+       "name": "Objekte auswählen",
+       "tun": "objekteWaehlen"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Einfügen",
+   "punkte": [
+    {
+     "name": "Seiten",
+     "unter": [
+      {
+       "name": "Deckblatt",
+       "tun": "deckblatt"
+      },
+      {
+       "name": "Leere Seite (Hochformat)",
+       "tun": "eigen"
+      },
+      {
+       "name": "Leere Seite (Querformat)",
+       "tun": "eigen"
+      },
+      {
+       "name": "Seitenumbruch",
+       "tun": "seitenumbruch",
+       "taste": "Strg+Enter"
+      }
+     ]
+    },
+    {
+     "name": "Tabellen",
+     "unter": [
+      {
+       "name": "Tabelle einfügen",
+       "tun": "tabelle"
+      },
+      {
+       "name": "Eigenschaften der Tabelle",
+       "tun": "tabelleEigenschaften"
+      },
+      {
+       "name": "Schnelltabelle",
+       "tun": "schnelltabelle"
+      },
+      {
+       "name": "Tabellenblatt",
+       "tun": "tabellenblatt"
+      }
+     ]
+    },
+    {
+     "name": "Illustrationen",
+     "unter": [
+      {
+       "name": "Bild",
+       "tun": "bild"
+      },
+      {
+       "name": "Formen",
+       "tun": "eigen"
+      },
+      {
+       "name": "Form mit eigener Farbe…",
+       "tun": "zeichnen"
+      },
+      {
+       "name": "Diagramm",
+       "tun": "diagramm"
+      },
+      {
+       "name": "Bildschirmfoto",
+       "tun": "screenshot"
+      },
+      {
+       "name": "SmartArt",
+       "tun": "smartart"
+      },
+      {
+       "name": "Piktogramm",
+       "tun": "piktogramm"
+      },
+      {
+       "name": "WordArt",
+       "tun": "wordart"
+      }
+     ]
+    },
+    {
+     "name": "Links",
+     "unter": [
+      {
+       "name": "Hyperlink",
+       "tun": "hyperlink"
+      },
+      {
+       "name": "Lesezeichen / Textmarke",
+       "tun": "textmarke"
+      },
+      {
+       "name": "Querverweis",
+       "tun": "querverweis"
+      }
+     ]
+    },
+    {
+     "name": "Kopf- und Fußzeile",
+     "unter": [
+      {
+       "name": "Kopfzeile",
+       "tun": "kopfzeile"
+      },
+      {
+       "name": "Fußzeile",
+       "tun": "fusszeile"
+      },
+      {
+       "name": "Seitenzahl…",
+       "tun": "eigen"
+      }
+     ]
+    },
+    {
+     "name": "Text",
+     "unter": [
+      {
+       "name": "Textfeld",
+       "tun": "textfeld"
+      },
+      {
+       "name": "Bausteine",
+       "unter": [
+        {
+         "name": "Textbaustein",
+         "tun": "textbausteine",
+         "taste": "F3"
+        },
+        {
+         "name": "Schnellbaustein",
+         "tun": "schnellbaustein"
+        }
+       ]
+      },
+      {
+       "name": "Initiale",
+       "tun": "initiale"
+      },
+      {
+       "name": "Datum",
+       "tun": "datum"
+      },
+      {
+       "name": "Uhrzeit",
+       "tun": "uhrzeit"
+      },
+      {
+       "name": "Text aus Datei",
+       "tun": "textAusDatei"
+      }
+     ]
+    },
+    {
+     "name": "Symbole",
+     "unter": [
+      {
+       "name": "Sonderzeichen",
+       "tun": "sonderzeichen"
+      },
+      {
+       "name": "Formel",
+       "tun": "formel"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Seitenlayout",
+   "punkte": [
+    {
+     "name": "Seite einrichten",
+     "unter": [
+      {
+       "name": "Ränder",
+       "unter": [
+        {
+         "name": "Normal — oben/unten 25, links/rechts 32 mm",
+         "tun": "setzeRandVorgabe()"
+        },
+        {
+         "name": "Schmal — 13 mm ringsum",
+         "tun": "setzeRandVorgabe()"
+        },
+        {
+         "name": "Moderat — oben/unten 25, links/rechts 19 mm",
+         "tun": "setzeRandVorgabe()"
+        },
+        {
+         "name": "Breit — oben/unten 25, links/rechts 51 mm",
+         "tun": "setzeRandVorgabe()"
+        },
+        {
+         "trenner": true
+        },
+        {
+         "name": "Benutzerdefinierte Seitenränder…",
+         "tun": "seitenraender"
+        }
+       ]
+      },
+      {
+       "name": "Ausrichtung",
+       "unter": [
+        {
+         "name": "Hochformat",
+         "tun": "eigen"
+        },
+        {
+         "name": "Querformat",
+         "tun": "eigen"
+        }
+       ]
+      },
+      {
+       "name": "Papierformat",
+       "unter": [
+        {
+         "name": "A4",
+         "tun": "setzePapier()"
+        },
+        {
+         "name": "A5",
+         "tun": "setzePapier()"
+        },
+        {
+         "name": "A3",
+         "tun": "setzePapier()"
+        },
+        {
+         "name": "Letter",
+         "tun": "setzePapier()"
+        },
+        {
+         "name": "Legal",
+         "tun": "setzePapier()"
+        }
+       ]
+      },
+      {
+       "name": "Spalten",
+       "tun": "spalten"
+      },
+      {
+       "name": "Textrichtung",
+       "tun": "eigen"
+      },
+      {
+       "name": "Umbrüche",
+       "unter": [
+        {
+         "name": "Seitenumbruch",
+         "tun": "seitenumbruch"
+        },
+        {
+         "name": "Spaltenumbruch",
+         "tun": "spaltenumbruch"
+        },
+        {
+         "name": "Textflussumbruch",
+         "tun": "textflussumbruch"
+        },
+        {
+         "trenner": true
+        },
+        {
+         "name": "Abschnittsumbruch auf nächster Seite",
+         "tun": "eigen"
+        },
+        {
+         "name": "Fortlaufender Abschnittsumbruch",
+         "tun": "eigen"
+        },
+        {
+         "name": "Abschnittsumbruch (gerade Seite)",
+         "tun": "eigen"
+        },
+        {
+         "name": "Abschnittsumbruch auf ungerader Seite",
+         "tun": "eigen"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "name": "Absatz",
+     "unter": [
+      {
+       "name": "Absatz…",
+       "tun": "eigen"
+      },
+      {
+       "name": "Zeilennummern",
+       "tun": "eigen"
+      },
+      {
+       "name": "Silbentrennung",
+       "tun": "silbentrennung"
+      }
+     ]
+    },
+    {
+     "name": "Anordnen",
+     "unter": [
+      {
+       "name": "Textumbruch",
+       "tun": "anordnen"
+      },
+      {
+       "trenner": true
+      },
+      {
+       "name": "Ausrichten",
+       "tun": "eigen"
+      },
+      {
+       "name": "Drehen",
+       "tun": "eigen"
+      }
+     ]
+    },
+    {
+     "name": "Seitenhintergrund",
+     "unter": [
+      {
+       "name": "Seitenfarbe",
+       "tun": "eigen"
+      },
+      {
+       "name": "Wasserzeichen",
+       "tun": "wasserzeichen"
+      },
+      {
+       "name": "Seitenrahmen",
+       "tun": "seitenrahmen"
+      }
+     ]
+    },
+    {
+     "name": "Anordnen",
+     "unter": [
+      {
+       "name": "Bild/Objekt anordnen",
+       "tun": "anordnen"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Referenzen",
+   "punkte": [
+    {
+     "name": "Inhaltsverzeichnis",
+     "unter": [
+      {
+       "name": "Inhaltsverzeichnis",
+       "tun": "inhaltsverzeichnis"
+      },
+      {
+       "name": "Verzeichnisse aktualisieren",
+       "tun": "verzeichnisseAktualisieren"
+      }
+     ]
+    },
+    {
+     "name": "Fußnoten",
+     "unter": [
+      {
+       "name": "Fußnote",
+       "tun": "fussnote"
+      },
+      {
+       "name": "Endnote",
+       "tun": "endnote"
+      },
+      {
+       "name": "Nächste Note",
+       "tun": "noteWeiter"
+      },
+      {
+       "name": "Vorige Note",
+       "tun": "noteZurueck"
+      },
+      {
+       "name": "Notenbereich",
+       "tun": "notenZeigen"
+      }
+     ]
+    },
+    {
+     "name": "Zitate und Literatur",
+     "unter": [
+      {
+       "name": "Zitat einfügen",
+       "tun": "zitat"
+      },
+      {
+       "name": "Neue Quelle",
+       "tun": "quelleNeu"
+      },
+      {
+       "name": "Quellen verwalten",
+       "tun": "quellenVerwalten"
+      },
+      {
+       "name": "Zitierweise",
+       "tun": "zitierweise"
+      },
+      {
+       "name": "Literaturverzeichnis",
+       "tun": "literaturverzeichnis"
+      }
+     ]
+    },
+    {
+     "name": "Beschriftungen",
+     "unter": [
+      {
+       "name": "Beschriftung",
+       "tun": "beschriftung"
+      },
+      {
+       "name": "Abbildungsverzeichnis",
+       "tun": "abbildungsverzeichnis"
+      },
+      {
+       "name": "Querverweis",
+       "tun": "querverweis"
+      }
+     ]
+    },
+    {
+     "name": "Index",
+     "unter": [
+      {
+       "name": "Indexeintrag",
+       "tun": "indexEintrag"
+      },
+      {
+       "name": "Stichwortverzeichnis",
+       "tun": "stichwortverzeichnis"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Überprüfen",
+   "punkte": [
+    {
+     "name": "Dokumentprüfung",
+     "unter": [
+      {
+       "name": "Prüfen",
+       "tun": "eigen",
+       "taste": "F7"
+      },
+      {
+       "name": "Gründlich prüfen",
+       "tun": "gruendlichPruefen"
+      },
+      {
+       "name": "Rechtschreibung",
+       "tun": "rechtschreibung"
+      },
+      {
+       "name": "Thesaurus",
+       "tun": "thesaurus"
+      },
+      {
+       "name": "Wörter zählen",
+       "tun": "woerterZaehlen"
+      }
+     ]
+    },
+    {
+     "name": "Sprache",
+     "unter": [
+      {
+       "name": "Korrektursprache",
+       "tun": "pruefsprache"
+      }
+     ]
+    },
+    {
+     "name": "Barrierefreiheit",
+     "unter": [
+      {
+       "name": "Barrierefreiheit prüfen",
+       "tun": "barrierefrei"
+      }
+     ]
+    },
+    {
+     "name": "Kommentare",
+     "unter": [
+      {
+       "name": "Neuer Kommentar",
+       "tun": "kommentar"
+      },
+      {
+       "name": "Nächster Kommentar",
+       "tun": "kommentarWeiter"
+      },
+      {
+       "name": "Voriger Kommentar",
+       "tun": "kommentarZurueck"
+      },
+      {
+       "name": "Kommentar löschen",
+       "tun": "kommentarWeg"
+      },
+      {
+       "name": "Alle Kommentare löschen",
+       "tun": "kommentareAlleWeg"
+      }
+     ]
+    },
+    {
+     "name": "Änderungen",
+     "unter": [
+      {
+       "name": "Änderungen verfolgen",
+       "tun": "verfolgen"
+      },
+      {
+       "name": "Markup anzeigen",
+       "tun": "markupUmschalten"
+      },
+      {
+       "name": "Überarbeitungsbereich",
+       "tun": "ueberarbeitungsbereich"
+      },
+      {
+       "name": "Änderung annehmen",
+       "tun": "aenderungAnnehmen"
+      },
+      {
+       "name": "Änderung ablehnen",
+       "tun": "aenderungAblehnen"
+      },
+      {
+       "name": "Nächste Änderung",
+       "tun": "aenderungWeiter"
+      },
+      {
+       "name": "Vorige Änderung",
+       "tun": "aenderungZurueck"
+      },
+      {
+       "name": "Alle annehmen",
+       "tun": "aenderungenUebernehmen"
+      },
+      {
+       "name": "Alle verwerfen",
+       "tun": "aenderungenVerwerfen"
+      }
+     ]
+    },
+    {
+     "name": "Schützen",
+     "unter": [
+      {
+       "name": "Bearbeitung sperren",
+       "tun": "bearbeitungSperren"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Schreibhilfe",
+   "punkte": [
+    {
+     "name": "Prüfen",
+     "unter": [
+      {
+       "name": "Dokumentprüfung",
+       "unter": [
+        {
+         "name": "Prüfen",
+         "tun": "eigen"
+        },
+        {
+         "name": "Gründlich prüfen",
+         "tun": "gruendlichPruefen"
+        },
+        {
+         "name": "Welche Hilfe wann",
+         "tun": "welcheHilfe"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "name": "Beim Schreiben",
+     "unter": [
+      {
+       "name": "Rechtschreibprüfung",
+       "tun": "rechtschreibung"
+      },
+      {
+       "name": "Wortvorhersage",
+       "tun": "vorhersage"
+      },
+      {
+       "name": "AutoKorrektur",
+       "tun": "autokorrektur"
+      }
+     ]
+    },
+    {
+     "name": "Vorlesen",
+     "unter": [
+      {
+       "name": "Vorlesen",
+       "unter": [
+        {
+         "name": "Vorlesen",
+         "tun": "vorlesen",
+         "taste": "F4"
+        },
+        {
+         "name": "Ab hier vorlesen",
+         "tun": "vorlesenAbSatz"
+        },
+        {
+         "name": "Anhalten",
+         "tun": "vorlesenStopp"
+        },
+        {
+         "name": "Stimme und Tempo",
+         "tun": "stimmeWaehlen"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "name": "KI",
+     "unter": [
+      {
+       "name": "Schreibhilfe",
+       "tun": "eigen"
+      },
+      {
+       "name": "KI-Korrektur",
+       "tun": "eigen",
+       "taste": "F8"
+      },
+      {
+       "name": "Zusammenfassen",
+       "tun": "eigen"
+      },
+      {
+       "name": "Text verbessern",
+       "tun": "eigen"
+      },
+      {
+       "name": "Text analysieren",
+       "tun": "eigen"
+      },
+      {
+       "name": "Übersetzen",
+       "tun": "eigen"
+      },
+      {
+       "name": "Frage an KI",
+       "tun": "eigen",
+       "taste": "Strg+/"
+      },
+      {
+       "name": "Kommentar beantworten",
+       "tun": "eigen"
+      },
+      {
+       "name": "Überschrift erzeugen",
+       "tun": "eigen"
+      },
+      {
+       "name": "KI-Einstellungen",
+       "tun": "eigen"
+      }
+     ]
+    },
+    {
+     "name": "Anzeigen",
+     "unter": [
+      {
+       "name": "Seitenleiste Schreibhilfe",
+       "tun": "tafelZeigen",
+       "taste": "F5"
+      },
+      {
+       "name": "Optionen",
+       "tun": "eigen"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Sendungen",
+   "punkte": [
+    {
+     "name": "Erstellen",
+     "unter": [
+      {
+       "name": "Umschlag",
+       "tun": "umschlag"
+      },
+      {
+       "name": "Etiketten",
+       "tun": "etiketten"
+      }
+     ]
+    },
+    {
+     "name": "Seriendruck",
+     "unter": [
+      {
+       "name": "Seriendruck-Assistent",
+       "tun": "seriendruck"
+      },
+      {
+       "name": "Seriendruckfeld",
+       "tun": "seriendruckfeld"
+      },
+      {
+       "name": "Adressblock",
+       "tun": "adressblock"
+      },
+      {
+       "name": "Regeln",
+       "tun": "seriendruckregel"
+      }
+     ]
+    },
+    {
+     "name": "Vorschau",
+     "unter": [
+      {
+       "name": "Ergebnisse anzeigen",
+       "tun": "serienVorschau"
+      }
+     ]
+    },
+    {
+     "name": "Formular",
+     "unter": [
+      {
+       "name": "Textfeld",
+       "tun": "formTextfeld"
+      },
+      {
+       "name": "Kontrollkästchen",
+       "tun": "formKasten"
+      },
+      {
+       "name": "Schaltfläche",
+       "tun": "formKnopf"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Ansicht",
+   "punkte": [
+    {
+     "name": "Dokumentansichten",
+     "unter": [
+      {
+       "name": "Drucklayout",
+       "tun": "setzeLayout()"
+      },
+      {
+       "name": "Lesemodus",
+       "tun": "lesemodus"
+      },
+      {
+       "name": "Zwei Seiten",
+       "tun": "setzeLayout()"
+      },
+      {
+       "name": "Weblayout",
+       "tun": "setzeLayout()"
+      },
+      {
+       "name": "Gliederung",
+       "tun": "gliederung"
+      }
+     ]
+    },
+    {
+     "name": "Lesehilfe",
+     "tun": "lesehilfe",
+     "taste": "F2"
+    },
+    {
+     "trenner": true
+    },
+    {
+     "name": "Anzeigen",
+     "unter": [
+      {
+       "name": "Lineal",
+       "tun": "linealZeigen"
+      },
+      {
+       "name": "Vertikales Lineal",
+       "tun": "linealHochZeigen"
+      },
+      {
+       "name": "Gitternetzlinien",
+       "tun": "netzlinien"
+      },
+      {
+       "name": "Navigationsbereich",
+       "tun": "navigation"
+      },
+      {
+       "name": "Textbegrenzungen",
+       "tun": "markenZeigen"
+      },
+      {
+       "name": "Seitenleiste Schreibhilfe",
+       "tun": "tafelZeigen"
+      },
+      {
+       "name": "Zeilenfokus",
+       "tun": "zeilenfokus"
+      }
+     ]
+    },
+    {
+     "name": "Zoom",
+     "unter": [
+      {
+       "name": "Vergrößern",
+       "tun": "groesser",
+       "taste": "Strg++"
+      },
+      {
+       "name": "Verkleinern",
+       "tun": "kleiner",
+       "taste": "Strg+−"
+      },
+      {
+       "name": "100 %",
+       "tun": "normal",
+       "taste": "Strg+0"
+      },
+      {
+       "name": "Seitenbreite",
+       "tun": "zoomBreite"
+      },
+      {
+       "name": "Eine Seite",
+       "tun": "zoomSeite"
+      },
+      {
+       "name": "Zoom",
+       "tun": "zoomStufe"
+      }
+     ]
+    },
+    {
+     "name": "Fenster",
+     "unter_dynamisch": true
+    },
+    {
+     "name": "Helligkeit",
+     "unter": [
+      {
+       "name": "Wie das System",
+       "tun": "setzeThema()"
+      },
+      {
+       "name": "Immer hell",
+       "tun": "setzeThema()"
+      },
+      {
+       "name": "Immer dunkel",
+       "tun": "setzeThema()"
+      },
+      {
+       "name": "Weicher Kontrast",
+       "tun": "eigen"
+      }
+     ]
+    },
+    {
+     "name": "Oberfläche",
+     "unter": [
+      {
+       "name": "Register anpassen",
+       "tun": "registerAnpassen"
+      },
+      {
+       "name": "Symbol austauschen",
+       "tun": "symbolTauschen"
+      },
+      {
+       "name": "Benutzeroberfläche",
+       "tun": "benutzeroberflaeche"
+      },
+      {
+       "name": "Menüleiste",
+       "tun": "menueleisteZeigen"
+      },
+      {
+       "name": "Symbolleisten",
+       "tun": "leistenZeigen"
+      },
+      {
+       "name": "Vorlagen zurücksetzen",
+       "tun": "vorlagenZurueck"
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}
