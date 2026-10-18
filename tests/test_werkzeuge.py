@@ -379,3 +379,41 @@ def test_pdf_kommentare_und_formatvorlagen(app, tmp_path):
     assert [o.title for o in r.outline if not isinstance(o, list)] == ["Mein Titel"]
     notizen = [a.get_object() for a in (r.pages[0].get("/Annots") or [])]
     assert any(n.get("/Contents") == "Autor: Bitte prüfen" and n.get("/Subtype") == "/Text" for n in notizen)
+
+
+def test_spalten_in_ausgabe_und_docx(app, tmp_path):
+    """Zwei Spalten: halb so viele Seiten, Text steht nebeneinander (PDF), DOCX merkt Spalten und Spaltenumbruch."""
+    import zipfile
+    from pypdf import PdfReader
+    from native_qt.document_io import formats
+    from native_qt.editor.editor_widget import DocumentEditor
+    from native_qt.editor.page import PageSettings
+    from native_qt.editor.pagination import ausgabe_seiten, export_pdf, page_count, paginated_copy
+    ed = DocumentEditor()
+    ed.setPlainText("\n".join(f"Zeile {i} mit etwas Text darin" for i in range(240)))
+    eins = PageSettings()
+    zwei = PageSettings(); zwei.spalten = 2; zwei.spalten_linie = True
+    n1, n2 = page_count(ed.document(), eins), page_count(ed.document(), zwei)
+    assert n1 >= 3 and n2 == -(-n1 // 2)
+    assert zwei.spalten_breite_px < eins.spalten_breite_px / 1.8
+    export_pdf(str(tmp_path / "s.pdf"), ed.document(), zwei, "t")
+    r = PdfReader(str(tmp_path / "s.pdf"))
+    assert len(r.pages) == n2
+    text = " ".join(r.pages[0].extract_text().split())
+    assert "Zeile 0 mit" in text and "Zeile 100 mit" in text       # einspaltig stünden auf Seite 1 nur etwa 50 Zeilen
+    # DOCX-Rundreise mit Spaltenumbruch
+    from native_qt.editor.zusatz import B_SPALTE
+    ed2 = DocumentEditor(); ed2.setPlainText("Links")
+    c = ed2.textCursor(); c.movePosition(c.MoveOperation.End); ed2.setTextCursor(c)
+    ed2.insert_column_break(); ed2.textCursor().insertText("Rechts")
+    pfad = str(tmp_path / "sp.docx")
+    formats.save(pfad, ed2.document(), zwei)
+    xml = zipfile.ZipFile(pfad).read("word/document.xml").decode()
+    assert 'w:num="2"' in xml and 'w:sep="1"' in xml and 'w:type="column"' in xml
+    neu = formats.load(pfad)
+    assert neu.page.spalten == 2 and neu.page.spalten_linie is True
+    blocks = []
+    b = neu.doc.firstBlock()
+    while b.isValid():
+        blocks.append((b.text(), b.blockFormat().hasProperty(B_SPALTE))); b = b.next()
+    assert ("Rechts", True) in blocks

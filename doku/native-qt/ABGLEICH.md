@@ -1,6 +1,6 @@
 # Abgleich: altes Register ↔ native Qt-Fassung
 
-Erzeugt von `werkzeug/abgleich-native.py`. **241 Knöpfe umgesetzt, 16 offen.** Offene Knöpfe stehen im Programm sichtbar, aber ausgegraut da.
+Erzeugt von `werkzeug/abgleich-native.py`. **248 Knöpfe umgesetzt, 11 offen.** Offene Knöpfe stehen im Programm sichtbar, aber ausgegraut da.
 
 ## Datei
 
@@ -181,7 +181,7 @@ Erzeugt von `werkzeug/abgleich-native.py`. **241 Knöpfe umgesetzt, 16 offen.** 
 
 - ✅ Ausrichtung
 - ✅ Größe
-- ⬜ Spalten  (`spaltenSetzen:[1], spaltenSetzen:[2], spaltenSetzen:[3], spalten`)
+- ✅ Spalten
 - ✅ Textrichtung
 - ✅ Umbrüche
 - ✅ Zeilennummern
@@ -190,7 +190,7 @@ Erzeugt von `werkzeug/abgleich-native.py`. **241 Knöpfe umgesetzt, 16 offen.** 
 
 - ✅ Einzug
 - ✅ Absatzabstand
-- ⬜ Silbentrennung  (`silbentrennung`)
+- ✅ Silbentrennung
 
 **Seitenhintergrund**
 
@@ -200,7 +200,7 @@ Erzeugt von `werkzeug/abgleich-native.py`. **241 Knöpfe umgesetzt, 16 offen.** 
 
 **Anordnen**
 
-- ⬜ Textfluss  (`anordnen`)
+- ✅ Textfluss
 - ✅ Ausrichten
 - ⬜ Gruppieren  (`gruppieren`)
 - ✅ Drehen
@@ -292,6 +292,8 @@ Erzeugt von `werkzeug/abgleich-native.py`. **241 Knöpfe umgesetzt, 16 offen.** 
 - ✅ Zeilenfokus
 - ✅ Lesemodus
 - ✅ Schrift zum Lesen
+- ✅ Silben farbig
+- ✅ Silben einstellen …
 
 **Prüfen**
 
@@ -309,7 +311,7 @@ Erzeugt von `werkzeug/abgleich-native.py`. **241 Knöpfe umgesetzt, 16 offen.** 
 
 **Sprache**
 
-- ⬜ Silbentrennung  (`silbentrennung`)
+- ✅ Silbentrennung
 - ✅ Übersetzen
 - ✅ Thesaurus
 - ✅ Sprache und Prüfung
@@ -482,7 +484,7 @@ Erzeugt von `werkzeug/abgleich-native.py`. **241 Knöpfe umgesetzt, 16 offen.** 
 - ✅ Bild entfernen
 - ✅ Zuschneiden
 - ✅ Helligkeit / Kontrast / Farbe
-- ⬜ Textumbruch / Position  (`anordnen`)
+- ✅ Textumbruch / Position
 
 
 ## Form- und WordArt-Tools (Kontext-Register)

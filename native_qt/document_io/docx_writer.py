@@ -45,6 +45,7 @@ def _has(fmt, prop) -> bool:
     return fmt.hasProperty(prop)
 
 
+from ..editor.zusatz import B_SPALTE  # noqa: E402
 from ..editor.zusatz import (  # noqa: E402
     B_ART, B_CAP, B_RAHMEN, B_TOC, P_AENDERUNG, P_AUTOR, P_DATUM, P_FELD, P_INDEX, P_KOMMENTAR, P_NOTE,
 )
@@ -134,6 +135,16 @@ class _Writer:
                 pb.append(e)
             pg_mar = sp.find(qn("w:pgMar"))
             (pg_mar.addnext(pb) if pg_mar is not None else sp.append(pb))
+        for alt in sp.findall(qn("w:cols")):
+            sp.remove(alt)
+        if p.spalten > 1:
+            co = OxmlElement("w:cols")
+            co.set(qn("w:num"), str(int(p.spalten)))
+            co.set(qn("w:space"), str(int(round(p.spalten_abstand_mm / 25.4 * 1440))))
+            if p.spalten_linie:
+                co.set(qn("w:sep"), "1")
+            anker = sp.find(qn("w:pgMar"))
+            (anker.addnext(co) if anker is not None else sp.append(co))
         for alt in sp.findall(qn("w:lnNumType")):
             sp.remove(alt)
         if p.zeilennummern:
@@ -276,7 +287,11 @@ class _Writer:
         elif int(lht) == LH_FIXED and lh:
             pf.line_spacing = Pt(lh * PX_TO_PT)
         if bf.pageBreakPolicy() & QTextFormat.PageBreak_AlwaysBefore:
-            pf.page_break_before = True
+            if bf.hasProperty(B_SPALTE):                              # Spaltenumbruch: <w:br w:type="column"/> am Absatzanfang
+                from docx.enum.text import WD_BREAK
+                para.add_run().add_break(WD_BREAK.COLUMN)
+            else:
+                pf.page_break_before = True
         tabs = bf.tabPositions()
         if tabs:
             from docx.enum.text import WD_TAB_ALIGNMENT

@@ -328,7 +328,7 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
 
     # ---- Seitenzählung -----------------------------------------------------
     def _recount(self) -> None:
-        self._paged = paginated_copy(self.document(), self.page, self.noten, silben=False)   # wie die Bearbeitungsansicht umbricht: ohne Trennstriche
+        self._paged = paginated_copy(self.document(), self.page, self.noten, silben=False, einspaltig=True)   # wie die Bearbeitungsansicht umbricht: ohne Trennstriche
         self._pages = max(1, self._paged.pageCount())
         self._breaks = self._seitenwechsel(self._paged)
         self.viewport().update()
@@ -635,6 +635,12 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
     def insert_page_break(self) -> None:
         cur = self.textCursor()
         bf = QTextBlockFormat(); bf.setPageBreakPolicy(QTextFormat.PageBreak_AlwaysBefore)
+        cur.insertBlock(bf)
+
+    def insert_column_break(self) -> None:
+        from .zusatz import B_SPALTE
+        cur = self.textCursor()
+        bf = QTextBlockFormat(); bf.setPageBreakPolicy(QTextFormat.PageBreak_AlwaysBefore); bf.setProperty(B_SPALTE, 1)
         cur.insertBlock(bf)
 
     def insert_table(self, rows: int, cols: int, borders: bool = True) -> None:

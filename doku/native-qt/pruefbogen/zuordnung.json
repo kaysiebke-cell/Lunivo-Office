@@ -1080,12 +1080,12 @@
   "wo": "befehle.objekteWaehlen (test_main_window)"
  },
  "SEITENLAYOUT|Spalten": {
-  "status": "⬜",
-  "wo": "Das Textmodul von Qt kennt keine Spalten"
+  "status": "◐",
+  "wo": "Spalten in Seitenansicht, Druck, PDF und DOCX (w:cols, Spaltenumbruch; mit LibreOffice geprüft, test_werkzeuge). Die Bearbeitungsansicht bleibt einspaltig; ein Seitenumbruch wirkt bei mehreren Spalten wie ein Spaltenumbruch"
  },
  "SEITENLAYOUT|Umbruch > Spaltenumbruch": {
-  "status": "⬜",
-  "wo": "Das Textmodul von Qt kennt keine Spalten"
+  "status": "◐",
+  "wo": "Spalten in Seitenansicht, Druck, PDF und DOCX (w:cols, Spaltenumbruch; mit LibreOffice geprüft, test_werkzeuge). Die Bearbeitungsansicht bleibt einspaltig; ein Seitenumbruch wirkt bei mehreren Spalten wie ein Spaltenumbruch"
  },
  "SEITENLAYOUT|Umbruch > Abschnittsumbruch": {
   "status": "◐",

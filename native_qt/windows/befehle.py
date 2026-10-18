@@ -497,6 +497,24 @@ class Befehle:
         return ""
 
     def seitenraender(self, k=None, *_): self.w.page_setup()
+
+    # ---- Spalten (Seitenansicht, Druck, PDF; die Bearbeitungsansicht bleibt einspaltig) ----------------------------------------------
+    def spaltenSetzen(self, k=None, n=1):
+        self.w._page_change(lambda p: setattr(p, "spalten", int(n)))
+        self.w.statusBar().showMessage(
+            "Eine Spalte." if int(n) == 1 else f"{int(n)} Spalten — sichtbar in Seitenansicht, Druck und PDF; beim Schreiben bleibt der Text einspaltig.", 7000)
+
+    def w_spaltenJetzt(self):
+        t = self.w.current_tab()
+        return t.page.spalten if t else 1
+
+    def spalten(self, k=None):
+        self.w.page_setup()
+
+    def spaltenumbruch(self, k=None):
+        """Der Text danach beginnt in der nächsten Spalte (bei einer Spalte: auf der nächsten Seite)."""
+        if self.ed:
+            self.ed.insert_column_break()
     seitenraenderRahmen = seitenraender
 
     def w_setzePapier(self, k, art):
@@ -1139,7 +1157,8 @@ class Befehle:
             return
         basis, _e = os.path.splitext(pfad)
         d = paginated_copy(t.editor.document(), t.page, t.editor.noten)
-        n = max(1, d.pageCount())
+        from ..editor.pagination import ausgabe_seiten
+        n = ausgabe_seiten(d.pageCount(), t.page)
         for i in range(1, n + 1):
             img = seite_als_bild(t.editor.document(), t.page, i, 1.5, d)
             img.save(basis + (f"-{i}" if n > 1 else "") + ".png", "PNG")

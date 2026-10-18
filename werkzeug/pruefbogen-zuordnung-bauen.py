@@ -180,7 +180,7 @@ s("START > Absatzlayout", "Absatzrahmen", OK, "B_RAHMEN: Editor, PDF/Druck und D
 s("START > Absatzlayout", "Einzug genau", OK, "Absatz-Dialog mit zwei Karteireitern und Vorschau; „Absatz nicht trennen“ u. ä. sind Qt-bedingt gesperrt")
 s("START > Stile & Bearbeiten", "Formatvorlagen verwalten", OK, "editor/stile.py + StileVerwaltenDialog; wirkt auf alle Absätze der Vorlage (test_editor)")
 s("START > Stile & Bearbeiten", "Objekte auswählen", OK, "befehle.objekteWaehlen (test_main_window)")
-s("SEITENLAYOUT", "Spalten; Umbruch > Spaltenumbruch", OFFEN, "Das Textmodul von Qt kennt keine Spalten")
+s("SEITENLAYOUT", "Spalten; Umbruch > Spaltenumbruch", TEIL, "Spalten in Seitenansicht, Druck, PDF und DOCX (w:cols, Spaltenumbruch; mit LibreOffice geprüft, test_werkzeuge). Die Bearbeitungsansicht bleibt einspaltig; ein Seitenumbruch wirkt bei mehreren Spalten wie ein Spaltenumbruch")
 s("SEITENLAYOUT", "Umbruch > Abschnittsumbruch", TEIL, "nur „Nächste Seite“ (Seitenumbruch); Abschnitte kennt Qt nicht")
 s("SEITENLAYOUT", "Silbentrennung", TEIL, "pyphen setzt weiche Trennstellen in Seitenansicht, Druck, PDF; DOCX autoHyphenation (test_werkzeuge). Die Bearbeitungsansicht zeigt keine Trennstriche")
 s("SEITENLAYOUT", "Textumbruch", TEIL, "Bild links/rechts vom Text umflossen (editor/umbruch.py, DOCX wp:anchor wrapSquare, test_werkzeuge); „Oben und unten“, „Hinter/vor dem Text“ und freie Position fehlen")

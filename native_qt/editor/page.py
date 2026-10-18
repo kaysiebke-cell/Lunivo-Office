@@ -52,6 +52,9 @@ class PageSettings:
     diff_first: bool = False                 # „Erste Seite anders“
     first_header: HeaderFooter = field(default_factory=HeaderFooter)
     first_footer: HeaderFooter = field(default_factory=HeaderFooter)
+    spalten: int = 1                         # Textspalten (Seitenansicht, Druck, PDF; die Bearbeitungsansicht bleibt einspaltig)
+    spalten_abstand_mm: float = 10.0
+    spalten_linie: bool = False              # Trennlinie zwischen den Spalten
     silbentrennung: bool = False             # automatische Silbentrennung (Seitenansicht, Druck, PDF; DOCX: autoHyphenation)
     silben_sprache: str = "de_DE"
 
@@ -85,13 +88,15 @@ class PageSettings:
         return mm_to_px(self.height_mm - self.margin_top_mm - self.margin_bottom_mm)
 
     def copy(self) -> "PageSettings":
-        return PageSettings(
-            self.width_mm, self.height_mm, self.margin_top_mm, self.margin_bottom_mm,
-            self.margin_left_mm, self.margin_right_mm,
-            HeaderFooter(self.header.text, self.header.align),
-            HeaderFooter(self.footer.text, self.footer.align),
-            self.color, dict(self.border) if self.border else None, dict(self.watermark) if self.watermark else None,
-            self.zeilennummern, self.diff_first,
-            HeaderFooter(self.first_header.text, self.first_header.align), HeaderFooter(self.first_footer.text, self.first_footer.align),
-            self.silbentrennung, self.silben_sprache,
-        )
+        import dataclasses
+        return dataclasses.replace(
+            self, header=HeaderFooter(self.header.text, self.header.align), footer=HeaderFooter(self.footer.text, self.footer.align),
+            border=dict(self.border) if self.border else None, watermark=dict(self.watermark) if self.watermark else None,
+            first_header=HeaderFooter(self.first_header.text, self.first_header.align),
+            first_footer=HeaderFooter(self.first_footer.text, self.first_footer.align))
+
+    @property
+    def spalten_breite_px(self) -> float:
+        """Breite einer Textspalte (bei einer Spalte: die ganze Textbreite)."""
+        n = max(1, int(self.spalten))
+        return (self.content_width_px - mm_to_px(self.spalten_abstand_mm) * (n - 1)) / n

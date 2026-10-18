@@ -130,7 +130,13 @@ def silben_einfuegen(d: QTextDocument, sprache: str) -> int:
     return n
 
 
-def paginated_copy(qdoc: QTextDocument, page: PageSettings, noten: dict | None = None, silben: bool | None = None) -> QTextDocument:
+def ausgabe_seiten(logisch: int, page: PageSettings) -> int:
+    """Seiten der Ausgabe: bei mehreren Spalten füllen je so viele „logische“ Spaltenseiten eine Blattseite."""
+    return max(1, -(-max(1, logisch) // max(1, int(page.spalten))))
+
+
+def paginated_copy(qdoc: QTextDocument, page: PageSettings, noten: dict | None = None, silben: bool | None = None,
+                   einspaltig: bool = False) -> QTextDocument:
     d = qdoc.clone()
     bind_layout(d)
     noten_anhaengen(d, noten)
@@ -141,12 +147,12 @@ def paginated_copy(qdoc: QTextDocument, page: PageSettings, noten: dict | None =
     ff.setMargin(0)
     root.setFrameFormat(ff)
     d.setDocumentMargin(0)
-    d.setPageSize(QSizeF(page.content_width_px, page.content_height_px))
+    d.setPageSize(QSizeF(page.content_width_px if einspaltig else page.spalten_breite_px, page.content_height_px))
     return d
 
 
 def page_count(qdoc: QTextDocument, page: PageSettings) -> int:
-    return max(1, paginated_copy(qdoc, page).pageCount())
+    return ausgabe_seiten(paginated_copy(qdoc, page).pageCount(), page)
 
 
 def _expand(text: str, n: int, total: int) -> str:
@@ -290,7 +296,7 @@ def render(qdoc: QTextDocument, page: PageSettings, device, first: int = 1, last
     if opt.get("silbenfarben"):
         from .silbenfarben import SilbenFarben
         _hl = SilbenFarben(d, opt["silbenfarben"])             # bleibt bis zum Zeichnen am Leben (lokale Variable)
-    total = max(1, d.pageCount())
+    total = ausgabe_seiten(d.pageCount(), page)
     last = total if last is None else min(last, total)
     p = QPainter(device)
     s = (dpi or device.logicalDpiX()) / 96.0
@@ -298,6 +304,7 @@ def render(qdoc: QTextDocument, page: PageSettings, device, first: int = 1, last
     ml, mt = mm_to_px(page.margin_left_mm), mm_to_px(page.margin_top_mm)
     pw, ph = mm_to_px(page.width_mm), mm_to_px(page.height_mm)
     base = qdoc.defaultFont()
+    spalten = max(1, int(page.spalten))
     first_page = True
     liste = seiten_liste(total, first, last, opt)
     if opt.get("leere") is False:
@@ -315,13 +322,14 @@ def render(qdoc: QTextDocument, page: PageSettings, device, first: int = 1, last
         p.restore()
     p.end()
     if opt.get("lesezeichen") is not None:
-        opt["lesezeichen_ergebnis"] = lesezeichen_sammeln(d, ch, liste, opt["lesezeichen"])
+        opt["lesezeichen_ergebnis"] = lesezeichen_sammeln(d, ch, liste, opt["lesezeichen"], spalten)
     if opt.get("kommentare"):
-        opt["kommentare_ergebnis"] = kommentarstellen(d, ch, liste, opt["kommentare"])
+        opt["kommentare_ergebnis"] = kommentarstellen(d, ch, liste, opt["kommentare"], spalten)
     return total
 
 
-def kommentarstellen(d: QTextDocument, ch: float, liste: list[int], kommentare: list[tuple[int, str]]) -> list[tuple[int, float, str]]:
+def kommentarstellen(d: QTextDocument, ch: float, liste: list[int], kommentare: list[tuple[int, str]],
+                     spalten: int = 1) -> list[tuple[int, float, str]]:
     """[(Seitenindex, y in px auf der Textfläche, Text)] für Kommentare — Position der Zeile, in der der Kommentar beginnt."""
     out = []
     for von, text in kommentare:
@@ -330,19 +338,20 @@ def kommentarstellen(d: QTextDocument, ch: float, liste: list[int], kommentare: 
             continue
         zeile = b.layout().lineForTextPosition(von - b.position())
         y = d.documentLayout().blockBoundingRect(b).top() + (zeile.y() if zeile.isValid() else 0)
-        seite = int(y // ch) + 1 if ch else 1
+        logisch = int(y // ch) if ch else 0
+        seite = logisch // spalten + 1
         if seite in liste:
-            out.append((liste.index(seite), y - (seite - 1) * ch, text))
+            out.append((liste.index(seite), y - logisch * ch, text))
     return out
 
 
-def lesezeichen_sammeln(d: QTextDocument, ch: float, liste: list[int], was: dict) -> list[tuple[int, str, int]]:
+def lesezeichen_sammeln(d: QTextDocument, ch: float, liste: list[int], was: dict, spalten: int = 1) -> list[tuple[int, str, int]]:
     """[(Ebene, Titel, Seitenindex 0-basiert)] für die PDF-Gliederung: Überschriften und/oder Textmarken."""
     lay = d.documentLayout()
     out = []
     b = d.firstBlock()
     while b.isValid():
-        seite = int(lay.blockBoundingRect(b).top() // ch) + 1 if ch else 1
+        seite = int(lay.blockBoundingRect(b).top() // ch) // spalten + 1 if ch else 1
         if seite in liste and b.isVisible():
             lv = b.blockFormat().headingLevel()
             if was.get("ueberschriften", True) and lv and b.text().strip():
@@ -424,19 +433,35 @@ def zeichne_seite(p: QPainter, d: QTextDocument, page: PageSettings, n: int, tot
     kopf, fuss = (page.first_header, page.first_footer) if (n == 1 and page.diff_first) else (page.header, page.footer)
     _draw_hf(p, kopf, QRectF(ml, mm_to_px(8), cw, mm_to_px(10)), n, total, base)
     _draw_hf(p, fuss, QRectF(ml, ph - mm_to_px(18), cw, mm_to_px(10)), n, total, base)
-    if page.zeilennummern:
+    if page.zeilennummern and page.spalten <= 1:
         p.save()
         p.translate(ml, mt)
         p.translate(0, -(n - 1) * ch)
         _zeilennummern(p, d, n, ch, base)
         p.restore()
-    p.save()
-    p.translate(ml, mt)
-    p.setClipRect(QRectF(-10, 0, cw + 20, ch))
-    p.translate(0, -(n - 1) * ch)
-    d.drawContents(p, QRectF(0, (n - 1) * ch, cw, ch))
-    absatzrahmen_zeichnen(p, d)
-    p.restore()
+    n_sp = max(1, int(page.spalten))
+    cb = page.spalten_breite_px
+    luecke = mm_to_px(page.spalten_abstand_mm)
+    for j in range(n_sp):
+        lp = (n - 1) * n_sp + j + 1                      # logische Spaltenseite, die in Spalte j dieser Blattseite steht
+        if lp > d.pageCount():
+            break
+        p.save()
+        p.translate(ml + j * (cb + luecke), mt)
+        p.setClipRect(QRectF(-10, 0, cb + 20, ch))
+        p.translate(0, -(lp - 1) * ch)
+        d.drawContents(p, QRectF(0, (lp - 1) * ch, cb, ch))
+        absatzrahmen_zeichnen(p, d)
+        p.restore()
+    if n_sp > 1 and page.spalten_linie:
+        from PySide6.QtGui import QColor, QPen
+        p.save()
+        pen = QPen(QColor("#888888")); pen.setWidthF(0.6)
+        p.setPen(pen)
+        for j in range(1, n_sp):
+            x = ml + j * (cb + luecke) - luecke / 2
+            p.drawLine(int(x), int(mt), int(x), int(mt + ch))
+        p.restore()
 
 
 def absatzrahmen_zeichnen(p: QPainter, d: QTextDocument, faktor: float = 1.0, polster: float = 4.0) -> None:
@@ -495,7 +520,7 @@ def seite_als_bild(qdoc: QTextDocument, page: PageSettings, n: int, faktor: floa
                    noten: dict | None = None) -> QImage:
     """Seite n als Bild (für die Zwei-Seiten-Ansicht und „Als Bild exportieren“)."""
     d = d or paginated_copy(qdoc, page, noten)
-    total = max(1, d.pageCount())
+    total = ausgabe_seiten(d.pageCount(), page)
     w, h = int(mm_to_px(page.width_mm) * faktor), int(mm_to_px(page.height_mm) * faktor)
     img = QImage(w, h, QImage.Format_RGB32)
     img.fill(Qt.white)
@@ -516,7 +541,7 @@ def _leere_seiten(d: QTextDocument, page: PageSettings, total: int) -> set[int]:
     while b.isValid():
         if b.text().strip(chr(0xfffc) + " \t\n") or b.text():
             r = lay.blockBoundingRect(b)
-            mit_text.add(int(r.top() // ch) + 1)
+            mit_text.add(int(r.top() // ch) // max(1, int(page.spalten)) + 1)
         b = b.next()
     return {n for n in range(1, total + 1) if n not in mit_text}
 
