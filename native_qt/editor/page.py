@@ -1,0 +1,84 @@
+"""Seiteneinrichtung: Papier, Ränder, Ausrichtung, Kopf- und Fußzeile.
+
+Alle Maße in Millimetern. Umrechnung in Bildpunkte (96 dpi) nur hier.
+"""
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+
+PX_PER_MM = 96.0 / 25.4
+
+PAPER_MM = {
+    "A4": (210.0, 297.0),
+    "A5": (148.0, 210.0),
+    "A3": (297.0, 420.0),
+    "Letter": (215.9, 279.4),
+    "Legal": (215.9, 355.6),
+}
+
+
+def mm_to_px(mm: float) -> float:
+    return mm * PX_PER_MM
+
+
+def px_to_mm(px: float) -> float:
+    return px / PX_PER_MM
+
+
+@dataclass
+class HeaderFooter:
+    """Text mit Platzhalter {PAGE} und {PAGES}. Ausrichtung: left|center|right."""
+    text: str = ""
+    align: str = "center"
+
+    def is_empty(self) -> bool:
+        return not self.text.strip()
+
+
+@dataclass
+class PageSettings:
+    width_mm: float = 210.0
+    height_mm: float = 297.0
+    margin_top_mm: float = 25.0
+    margin_bottom_mm: float = 25.0
+    margin_left_mm: float = 32.0
+    margin_right_mm: float = 32.0
+    header: HeaderFooter = field(default_factory=HeaderFooter)
+    footer: HeaderFooter = field(default_factory=HeaderFooter)
+
+    @property
+    def landscape(self) -> bool:
+        return self.width_mm > self.height_mm
+
+    def set_orientation(self, landscape: bool) -> None:
+        if landscape != self.landscape:
+            self.width_mm, self.height_mm = self.height_mm, self.width_mm
+
+    def set_paper(self, name: str) -> None:
+        w, h = PAPER_MM[name]
+        if self.landscape:
+            w, h = h, w
+        self.width_mm, self.height_mm = w, h
+
+    def paper_name(self) -> str:
+        a, b = sorted((self.width_mm, self.height_mm))
+        for name, (w, h) in PAPER_MM.items():
+            if abs(a - w) < 1.0 and abs(b - h) < 1.0:
+                return name
+        return "Benutzerdefiniert"
+
+    @property
+    def content_width_px(self) -> float:
+        return mm_to_px(self.width_mm - self.margin_left_mm - self.margin_right_mm)
+
+    @property
+    def content_height_px(self) -> float:
+        return mm_to_px(self.height_mm - self.margin_top_mm - self.margin_bottom_mm)
+
+    def copy(self) -> "PageSettings":
+        return PageSettings(
+            self.width_mm, self.height_mm, self.margin_top_mm, self.margin_bottom_mm,
+            self.margin_left_mm, self.margin_right_mm,
+            HeaderFooter(self.header.text, self.header.align),
+            HeaderFooter(self.footer.text, self.footer.align),
+        )

@@ -1,0 +1,485 @@
+"""QTextDocument → DOCX (python-docx).
+
+Schreibt Absätze, Überschriften (Formatvorlagen „Heading n“), Titel/Untertitel/
+Zitat, Zeichenformat, Ausrichtung, Einzüge, Abstände, Zeilenabstand, Listen,
+Seitenumbrüche, Tabellen (mit verbundenen Zellen), Bilder, Hyperlinks,
+Seitengröße, Ränder, Kopf- und Fußzeile (mit Seitenzahlfeld).
+"""
+from __future__ import annotations
+
+import io
+import os
+import tempfile
+from typing import Optional
+
+import docx
+from docx.enum.section import WD_ORIENT
+from docx.enum.style import WD_STYLE_TYPE
+from docx.enum.text import WD_ALIGN_PARAGRAPH, WD_LINE_SPACING
+from docx.opc.constants import RELATIONSHIP_TYPE as RT
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
+from docx.shared import Emu, Mm, Pt, RGBColor
+from PySide6.QtCore import QBuffer, QIODevice, QUrl, Qt
+from PySide6.QtGui import (
+    QFont, QImage, QTextBlock, QTextBlockFormat, QTextCharFormat, QTextDocument, QTextFormat,
+    QTextFrame, QTextListFormat, QTextTable,
+)
+
+from ..editor.page import PageSettings
+from .docx_reader import LH_FIXED, LH_PROPORTIONAL, STYLE_PROP
+from .report import DocumentIOError, IOReport
+
+PX_TO_PT = 0.75
+EMU_PER_PX = 9525
+
+_LIST_STYLES = {
+    QTextListFormat.ListDisc: "bullet", QTextListFormat.ListCircle: "bullet",
+    QTextListFormat.ListSquare: "bullet", QTextListFormat.ListDecimal: "number",
+    QTextListFormat.ListLowerAlpha: "number", QTextListFormat.ListUpperAlpha: "number",
+    QTextListFormat.ListLowerRoman: "number", QTextListFormat.ListUpperRoman: "number",
+}
+
+
+def _has(fmt, prop) -> bool:
+    return fmt.hasProperty(prop)
+
+
+class _Writer:
+    def __init__(self, qdoc: QTextDocument, page: PageSettings, meta: dict):
+        self.q = qdoc
+        self.page = page
+        self.meta = meta
+        self.report = IOReport()
+        self.d = docx.Document()
+        self._clear_body()
+        self._num_ids: dict[tuple, int] = {}
+        self.last_list_obj = None
+        self.last_num = None
+
+    def _clear_body(self):
+        body = self.d.element.body
+        for el in list(body):
+            if el.tag != qn("w:sectPr"):
+                body.remove(el)
+
+    # ---- Seite --------------------------------------------------------
+    def write_page(self):
+        s = self.d.sections[0]
+        p = self.page
+        s.page_width, s.page_height = Mm(p.width_mm), Mm(p.height_mm)
+        s.orientation = WD_ORIENT.LANDSCAPE if p.landscape else WD_ORIENT.PORTRAIT
+        s.top_margin, s.bottom_margin = Mm(p.margin_top_mm), Mm(p.margin_bottom_mm)
+        s.left_margin, s.right_margin = Mm(p.margin_left_mm), Mm(p.margin_right_mm)
+        for part, hf in ((s.header, p.header), (s.footer, p.footer)):
+            if hf.is_empty():
+                continue
+            part.is_linked_to_previous = False
+            lines = hf.text.split("\n")
+            for i, line in enumerate(lines):
+                para = part.paragraphs[0] if i == 0 else part.add_paragraph()
+                para.alignment = {"center": WD_ALIGN_PARAGRAPH.CENTER,
+                                  "right": WD_ALIGN_PARAGRAPH.RIGHT}.get(hf.align, WD_ALIGN_PARAGRAPH.LEFT)
+                self._text_with_fields(para, line)
+
+    def _text_with_fields(self, para, text: str):
+        import re
+        for tok in re.split(r"(\{PAGE\}|\{PAGES\})", text):
+            if tok in ("{PAGE}", "{PAGES}"):
+                self._field(para, "PAGE" if tok == "{PAGE}" else "NUMPAGES")
+            elif tok:
+                para.add_run(tok)
+
+    @staticmethod
+    def _field(para, name: str):
+        run = para.add_run()
+        for kind, extra in (("begin", None), (None, f" {name} "), ("separate", None), (None, "1"), ("end", None)):
+            if kind:
+                el = OxmlElement("w:fldChar")
+                el.set(qn("w:fldCharType"), kind)
+                run._r.append(el)
+            elif extra.strip() == name:
+                it = OxmlElement("w:instrText")
+                it.set(qn("xml:space"), "preserve")
+                it.text = extra
+                run._r.append(it)
+            else:
+                t = OxmlElement("w:t")
+                t.text = extra
+                run._r.append(t)
+
+    # ---- Grundschrift --------------------------------------------------
+    def write_defaults(self):
+        f: QFont = self.q.defaultFont()
+        normal = self.d.styles["Normal"]
+        normal.font.name = f.family()
+        if f.pointSizeF() > 0:
+            normal.font.size = Pt(f.pointSizeF())
+        rpr = normal.element.get_or_add_rPr()
+        rf = rpr.find(qn("w:rFonts"))
+        if rf is None:
+            rf = OxmlElement("w:rFonts")
+            rpr.insert(0, rf)
+        for a in ("w:ascii", "w:hAnsi", "w:cs", "w:eastAsia"):
+            rf.set(qn(a), f.family())
+        for a in ("w:asciiTheme", "w:hAnsiTheme", "w:cstheme", "w:eastAsiaTheme"):
+            if rf.get(qn(a)) is not None:
+                del rf.attrib[qn(a)]
+        pf = normal.paragraph_format
+        pf.space_after = Pt(0)
+        pf.space_before = Pt(0)
+
+    # ---- Durchlauf -----------------------------------------------------
+    def write_frame(self, frame: QTextFrame, container):
+        it = frame.begin()
+        first_in_cell = isinstance(container, _CellBox)
+        while not it.atEnd():
+            blk = it.currentBlock()
+            if blk.isValid():
+                para = container.first_paragraph() if first_in_cell else container.add_paragraph()
+                first_in_cell = False
+                self.write_block(blk, para)
+            else:
+                fr = it.currentFrame()
+                if isinstance(fr, QTextTable):
+                    self.write_table(fr, container)
+                    first_in_cell = False
+                elif fr is not None:
+                    self.report.warn("Ein Rahmen im Text wurde nur als Fließtext gespeichert.")
+                    self.write_frame(fr, container)
+            it += 1
+
+    def write_block(self, blk: QTextBlock, para):
+        bf = blk.blockFormat()
+        style_name = bf.property(STYLE_PROP) if _has(bf, STYLE_PROP) else None
+        lvl = bf.headingLevel()
+        lst = blk.textList()
+        if lvl:
+            para.style = self.d.styles[f"Heading {lvl}"]
+        elif style_name in ("Title", "Subtitle", "Quote"):
+            para.style = self.d.styles[style_name]
+        elif lst is not None:
+            self._apply_list(para, lst)
+        pf = para.paragraph_format
+        a = bf.alignment()
+        if a & Qt.AlignHCenter:
+            para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        elif a & Qt.AlignRight:
+            para.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+        elif a & Qt.AlignJustify:
+            para.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+        # Einzüge: bei Listen steckt der Listeneinzug in der Vorlage
+        if lst is None:
+            if bf.leftMargin():
+                pf.left_indent = Emu(int(bf.leftMargin() * EMU_PER_PX))
+            if bf.textIndent():
+                pf.first_line_indent = Emu(int(bf.textIndent() * EMU_PER_PX))
+        if bf.rightMargin():
+            pf.right_indent = Emu(int(bf.rightMargin() * EMU_PER_PX))
+        pf.space_before = Pt(bf.topMargin() * PX_TO_PT)
+        pf.space_after = Pt(bf.bottomMargin() * PX_TO_PT)
+        lh, lht = bf.lineHeight(), bf.lineHeightType()
+        if int(lht) == LH_PROPORTIONAL and lh and lh != 100:
+            pf.line_spacing = lh / 100.0
+        elif int(lht) == LH_FIXED and lh:
+            pf.line_spacing = Pt(lh * PX_TO_PT)
+        if bf.pageBreakPolicy() & QTextFormat.PageBreak_AlwaysBefore:
+            pf.page_break_before = True
+        tabs = bf.tabPositions()
+        if tabs:
+            from docx.enum.text import WD_TAB_ALIGNMENT
+            from PySide6.QtGui import QTextOption
+            art = {QTextOption.RightTab: WD_TAB_ALIGNMENT.RIGHT, QTextOption.CenterTab: WD_TAB_ALIGNMENT.CENTER,
+                   QTextOption.DelimiterTab: WD_TAB_ALIGNMENT.DECIMAL}
+            for t in tabs:
+                pf.tab_stops.add_tab_stop(Emu(int(t.position * EMU_PER_PX)), art.get(t.type, WD_TAB_ALIGNMENT.LEFT))
+        bg = bf.background()
+        if bg.style() != Qt.NoBrush and bg.color().isValid():
+            shd = OxmlElement("w:shd")
+            shd.set(qn("w:val"), "clear"); shd.set(qn("w:color"), "auto"); shd.set(qn("w:fill"), bg.color().name()[1:].upper())
+            para._p.get_or_add_pPr().append(shd)
+        # Läufe
+        it = blk.begin()
+        in_head = bool(lvl) or style_name in ("Title", "Subtitle")
+        while not it.atEnd():
+            frag = it.fragment()
+            if frag.isValid():
+                self.write_fragment(frag, para, in_head)
+            it += 1
+
+    def _apply_list(self, para, lst):
+        fmt = lst.format()
+        kind = _LIST_STYLES.get(fmt.style(), "bullet")
+        level = max(1, fmt.indent())
+        base = "List Bullet" if kind == "bullet" else "List Number"
+        name = base if level == 1 else f"{base} {min(level, 3)}"
+        try:
+            para.style = self.d.styles[name]
+        except KeyError:
+            para.style = self.d.styles[base]
+        if kind == "number":
+            key = lst.item(0).blockNumber()
+            if key not in self._num_ids:
+                self._num_ids[key] = self._new_num_instance(para)
+            numpr = para._p.get_or_add_pPr().get_or_add_numPr()
+            numpr.get_or_add_ilvl().val = 0
+            numpr.get_or_add_numId().val = self._num_ids[key]
+
+    def _new_num_instance(self, para) -> int:
+        """Eigene Zählung je Liste, damit „1.“ neu beginnt."""
+        numbering = self.d.part.numbering_part.element
+        base = None
+        for s in (para.style, para.style.base_style):
+            if s is not None and s.element.pPr is not None and s.element.pPr.numPr is not None:
+                base = s.element.pPr.numPr.numId.val
+                break
+        if base is None:
+            return 1
+        src = numbering.xpath(f'w:num[@w:numId="{base}"]')[0]
+        abs_id = src.xpath("w:abstractNumId/@w:val")[0]
+        new_id = max([int(n) for n in numbering.xpath("w:num/@w:numId")] + [0]) + 1
+        num = OxmlElement("w:num")
+        num.set(qn("w:numId"), str(new_id))
+        an = OxmlElement("w:abstractNumId")
+        an.set(qn("w:val"), abs_id)
+        num.append(an)
+        ov = OxmlElement("w:lvlOverride")
+        ov.set(qn("w:ilvl"), "0")
+        so = OxmlElement("w:startOverride")
+        so.set(qn("w:val"), "1")
+        ov.append(so)
+        num.append(ov)
+        numbering.append(num)
+        return new_id
+
+    # ---- Läufe ----------------------------------------------------------
+    def write_fragment(self, frag, para, in_head: bool):
+        cf: QTextCharFormat = frag.charFormat()
+        text = frag.text()
+        if cf.isImageFormat():
+            self._image(cf.toImageFormat(), para)
+            return
+        parent = para
+        href = cf.anchorHref() if cf.isAnchor() else ""
+        if href:
+            hl = self._hyperlink(para, href)
+            parent = hl
+        for chunk, kind in _split(text):
+            run = self._make_run(parent, para)
+            if kind == "text":
+                run.text = chunk
+            elif kind == "tab":
+                run.add_tab()
+            elif kind == "br":
+                run.add_break()
+            elif kind == "img":
+                continue
+            self._format_run(run, cf, in_head, bool(href))
+
+    def _make_run(self, parent, para):
+        if parent is para:
+            return para.add_run()
+        from docx.text.run import Run
+        r = OxmlElement("w:r")
+        parent.append(r)
+        return Run(r, para)
+
+    def _hyperlink(self, para, href: str):
+        h = OxmlElement("w:hyperlink")
+        if href.startswith("#"):
+            h.set(qn("w:anchor"), href[1:])
+        else:
+            rid = para.part.relate_to(href, RT.HYPERLINK, is_external=True)
+            h.set(qn("r:id"), rid)
+        para._p.append(h)
+        return h
+
+    def _format_run(self, run, cf: QTextCharFormat, in_head: bool, is_link: bool):
+        f = run.font
+        if _has(cf, QTextFormat.FontFamilies) and cf.fontFamilies():
+            fam = cf.fontFamilies()[0]
+            f.name = fam
+            rpr = run._r.get_or_add_rPr()
+            rf = rpr.find(qn("w:rFonts"))
+            for a in ("w:hAnsi", "w:cs", "w:eastAsia"):
+                rf.set(qn(a), fam)
+        elif _has(cf, QTextFormat.FontFamily):
+            f.name = cf.fontFamily()
+        if _has(cf, QTextFormat.FontPointSize) and cf.fontPointSize() > 0:
+            f.size = Pt(cf.fontPointSize())
+        if _has(cf, QTextFormat.FontWeight):
+            f.bold = cf.fontWeight() >= QFont.DemiBold
+        if _has(cf, QTextFormat.FontItalic):
+            f.italic = cf.fontItalic()
+        if cf.fontUnderline() and not is_link:
+            f.underline = True
+        if cf.fontStrikeOut():
+            f.strike = True
+        va = cf.verticalAlignment()
+        if va == QTextCharFormat.AlignSuperScript:
+            f.superscript = True
+        elif va == QTextCharFormat.AlignSubScript:
+            f.subscript = True
+        fg = cf.foreground()
+        if fg.style() != Qt.NoBrush and not is_link:
+            c = fg.color()
+            if c.isValid() and c.name().lower() != "#000000":
+                f.color.rgb = RGBColor(c.red(), c.green(), c.blue())
+        bg = cf.background()
+        if bg.style() != Qt.NoBrush:
+            c = bg.color()
+            if c.isValid():
+                shd = OxmlElement("w:shd")
+                shd.set(qn("w:val"), "clear")
+                shd.set(qn("w:color"), "auto")
+                shd.set(qn("w:fill"), c.name()[1:].upper())
+                run._r.get_or_add_rPr().append(shd)
+        cap = cf.fontCapitalization()
+        if cap == QFont.AllUppercase:
+            f.all_caps = True
+        elif cap == QFont.SmallCaps:
+            f.small_caps = True
+        if is_link:
+            run._r.get_or_add_rPr().append(_rstyle_hyperlink(self.d))
+
+    def _image(self, imf, para):
+        name = imf.name()
+        img = self.q.resource(QTextDocument.ImageResource, QUrl(name))
+        if not isinstance(img, QImage) or img.isNull():
+            img = QImage(name)
+        if img.isNull():
+            self.report.warn(f"Bild „{os.path.basename(name)}“ nicht lesbar und nicht gespeichert.")
+            return
+        buf = QBuffer()
+        buf.open(QIODevice.WriteOnly)
+        img.save(buf, "PNG")
+        data = bytes(buf.data())
+        w = imf.width() or img.width()
+        h = imf.height() or img.height()
+        run = para.add_run()
+        run.add_picture(io.BytesIO(data), width=Emu(int(w * EMU_PER_PX)), height=Emu(int(h * EMU_PER_PX)))
+
+    # ---- Tabellen -------------------------------------------------------
+    def write_table(self, qt: QTextTable, container):
+        rows, cols = qt.rows(), qt.columns()
+        t = container.add_table(rows, cols)
+        if qt.format().border() > 0:
+            t.style = self.d.styles["Table Grid"]
+        done = set()
+        for r in range(rows):
+            for c in range(cols):
+                cell = qt.cellAt(r, c)
+                key = (cell.row(), cell.column())
+                if key in done:
+                    continue
+                done.add(key)
+                rs, cs = cell.rowSpan(), cell.columnSpan()
+                dcell = t.cell(r, c)
+                if rs > 1 or cs > 1:
+                    dcell = dcell.merge(t.cell(r + rs - 1, c + cs - 1))
+                box = _CellBox(dcell)
+                # Zelleninhalt: Rahmen der Zelle durchlaufen
+                cit = cell.begin()
+                first = True
+                while not cit.atEnd():
+                    blk = cit.currentBlock()
+                    if blk.isValid():
+                        para = box.first_paragraph() if first else box.add_paragraph()
+                        first = False
+                        self.write_block(blk, para)
+                    cit += 1
+        if isinstance(container, _Body):
+            pass
+
+    # ---- Hauptlauf --------------------------------------------------------
+    def run(self) -> bytes:
+        self.write_defaults()
+        self.write_page()
+        self.write_frame(self.q.rootFrame(), _Body(self.d))
+        self._trim_trailing_empty()
+        cp = self.d.core_properties
+        cp.title = self.meta.get("title", "") or ""
+        cp.author = self.meta.get("author", "") or "Lunivo Writer"
+        out = io.BytesIO()
+        self.d.save(out)
+        return out.getvalue()
+
+    def _trim_trailing_empty(self):
+        body = self.d.element.body
+        kids = [k for k in body if k.tag != qn("w:sectPr")]
+        # Word verlangt nach einer Tabelle einen Absatz; leere Endabsätze sonst entfernen
+        while len(kids) > 1 and kids[-1].tag == qn("w:p") and not "".join(kids[-1].itertext()).strip() \
+                and kids[-2].tag == qn("w:p") and not kids[-1].xpath(".//w:drawing"):
+            body.remove(kids[-1])
+            kids.pop()
+
+
+
+
+def _split(text: str):
+    buf = ""
+    for ch in text:
+        if ch in ("\t", " ", "￼", "\n"):
+            if buf:
+                yield buf, "text"
+                buf = ""
+            yield "", {"\t": "tab", " ": "br", "\n": "br", "￼": "img"}[ch]
+        else:
+            buf += ch
+    if buf:
+        yield buf, "text"
+
+
+def _rstyle_hyperlink(d):
+    el = OxmlElement("w:rStyle")
+    el.set(qn("w:val"), "Hyperlink")
+    try:
+        d.styles["Hyperlink"]
+    except KeyError:
+        st = d.styles.add_style("Hyperlink", WD_STYLE_TYPE.CHARACTER)
+        st.font.underline = True
+        st.font.color.rgb = RGBColor(0x05, 0x63, 0xC1)
+    return el
+
+
+class _Body:
+    def __init__(self, d):
+        self.d = d
+
+    def add_paragraph(self):
+        return self.d.add_paragraph()
+
+    def add_table(self, r, c):
+        return self.d.add_table(rows=r, cols=c)
+
+
+class _CellBox:
+    def __init__(self, cell):
+        self.cell = cell
+
+    def first_paragraph(self):
+        return self.cell.paragraphs[0]
+
+    def add_paragraph(self):
+        return self.cell.add_paragraph()
+
+    def add_table(self, r, c):
+        return self.cell.add_table(r, c)
+
+
+def write_docx(path: str, qdoc: QTextDocument, page: PageSettings, meta: Optional[dict] = None) -> IOReport:
+    """Schreibt atomar (Temp-Datei, dann umbenennen). Wirft DocumentIOError."""
+    w = _Writer(qdoc, page, meta or {})
+    try:
+        data = w.run()
+    except Exception as e:
+        raise DocumentIOError(f"Das Dokument konnte nicht als DOCX aufgebaut werden: {e}") from e
+    folder = os.path.dirname(os.path.abspath(path))
+    try:
+        fd, tmp = tempfile.mkstemp(dir=folder, suffix=".tmp")
+        with os.fdopen(fd, "wb") as fh:
+            fh.write(data)
+        os.replace(tmp, path)
+    except OSError as e:
+        raise DocumentIOError(f"Speichern nicht möglich: {e.strerror or e}") from e
+    return w.report

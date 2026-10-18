@@ -1,0 +1,486 @@
+{
+ "DATEI|Neu": {
+  "status": "✅",
+  "wo": "Datei-Reiter, ☰-Menü, Schnellzugriff; windows/main_window.py (test_main_window)"
+ },
+ "DATEI|Öffnen": {
+  "status": "✅",
+  "wo": "Datei-Reiter, ☰-Menü, Schnellzugriff; windows/main_window.py (test_main_window)"
+ },
+ "DATEI|Speichern": {
+  "status": "✅",
+  "wo": "Datei-Reiter, ☰-Menü, Schnellzugriff; windows/main_window.py (test_main_window)"
+ },
+ "DATEI|Speichern unter": {
+  "status": "✅",
+  "wo": "Datei-Reiter, ☰-Menü, Schnellzugriff; windows/main_window.py (test_main_window)"
+ },
+ "DATEI|Schließen": {
+  "status": "✅",
+  "wo": "Datei-Reiter, ☰-Menü, Schnellzugriff; windows/main_window.py (test_main_window)"
+ },
+ "DATEI|Drucken": {
+  "status": "✅",
+  "wo": "Datei-Reiter, ☰-Menü, Schnellzugriff; windows/main_window.py (test_main_window)"
+ },
+ "DATEI|Druckvorschau": {
+  "status": "✅",
+  "wo": "Datei-Reiter, ☰-Menü, Schnellzugriff; windows/main_window.py (test_main_window)"
+ },
+ "DATEI|Als PDF exportieren": {
+  "status": "✅",
+  "wo": "Datei-Reiter, ☰-Menü, Schnellzugriff; windows/main_window.py (test_main_window)"
+ },
+ "DATEI|Zuletzt geöffnet": {
+  "status": "✅",
+  "wo": "☰-Menü (widgets/menue_tafel.py), Optionen F9"
+ },
+ "DATEI|Umbenennen": {
+  "status": "✅",
+  "wo": "☰-Menü (widgets/menue_tafel.py), Optionen F9"
+ },
+ "DATEI|Beenden": {
+  "status": "✅",
+  "wo": "☰-Menü (widgets/menue_tafel.py), Optionen F9"
+ },
+ "DATEI|Optionen (F9)": {
+  "status": "✅",
+  "wo": "☰-Menü (widgets/menue_tafel.py), Optionen F9"
+ },
+ "DATEI|Hilfe > Über Lunivo Office": {
+  "status": "✅",
+  "wo": "☰-Menü ▸ Hilfe ▸ Über"
+ },
+ "DATEI|Druckereinstellungen": {
+  "status": "◐",
+  "wo": "Drucken öffnet den Systemdialog; Dokumentinformationen nur lesend"
+ },
+ "DATEI|Dokumenteigenschaften": {
+  "status": "◐",
+  "wo": "Drucken öffnet den Systemdialog; Dokumentinformationen nur lesend"
+ },
+ "DATEI|Neu aus Vorlage": {
+  "status": "⬜",
+  "wo": "nicht übertragen"
+ },
+ "DATEI|Vorlagenordner": {
+  "status": "⬜",
+  "wo": "nicht übertragen"
+ },
+ "DATEI|Hilfe > Handbuch": {
+  "status": "⬜",
+  "wo": "nicht übertragen"
+ },
+ "DATEI|Hilfe > Tastenkürzel": {
+  "status": "⬜",
+  "wo": "nicht übertragen"
+ },
+ "DATEI|Hilfe > Erweiterungen": {
+  "status": "⬜",
+  "wo": "nicht übertragen"
+ },
+ "MENÜ UND SCHNELLZUGRIFF|☰ Menü links vor den Reitern": {
+  "status": "✅",
+  "wo": "widgets/menue_tafel.py, widgets/register_band.py"
+ },
+ "MENÜ UND SCHNELLZUGRIFF|Tafel mit zwei Spalten": {
+  "status": "✅",
+  "wo": "widgets/menue_tafel.py, widgets/register_band.py"
+ },
+ "MENÜ UND SCHNELLZUGRIFF|Untermenü füllt die rechte Spalte, kein eigenes Fenster": {
+  "status": "✅",
+  "wo": "widgets/menue_tafel.py, widgets/register_band.py"
+ },
+ "MENÜ UND SCHNELLZUGRIFF|Liste zuletzt verwendeter Dateien rechts": {
+  "status": "✅",
+  "wo": "widgets/menue_tafel.py, widgets/register_band.py"
+ },
+ "MENÜ UND SCHNELLZUGRIFF|× nimmt einen Eintrag aus der Liste": {
+  "status": "✅",
+  "wo": "widgets/menue_tafel.py, widgets/register_band.py"
+ },
+ "MENÜ UND SCHNELLZUGRIFF|↻ holt die Liste neu": {
+  "status": "✅",
+  "wo": "widgets/menue_tafel.py, widgets/register_band.py"
+ },
+ "MENÜ UND SCHNELLZUGRIFF|Schnellzugriff in der Reiterzeile": {
+  "status": "✅",
+  "wo": "widgets/menue_tafel.py, widgets/register_band.py"
+ },
+ "MENÜ UND SCHNELLZUGRIFF|Kein Datei-Reiter mehr": {
+  "status": "◐",
+  "wo": "Widerspruch: die neue Struktur („1. DATEI“) hat einen Datei-Reiter — beides ist vorhanden"
+ },
+ "MENÜ UND SCHNELLZUGRIFF|☰ Menü auch am Anfang der Symbolleiste": {
+  "status": "◐",
+  "wo": "widgets/symbolleisten.py gebaut, noch nicht als Oberfläche wählbar"
+ },
+ "MENÜ UND SCHNELLZUGRIFF|Als Bild exportieren (PNG)": {
+  "status": "⬜",
+  "wo": "nicht übertragen"
+ },
+ "MENÜ UND SCHNELLZUGRIFF|Dokumentverschlüsselung": {
+  "status": "⬜",
+  "wo": "nicht übertragen"
+ },
+ "START > Zwischenablage|Verlauf > Rückgängig": {
+  "status": "✅",
+  "wo": "Schnellzugriff (wie im Bogen: dort statt im Reiter)"
+ },
+ "START > Zwischenablage|Verlauf > Wiederholen": {
+  "status": "✅",
+  "wo": "Schnellzugriff (wie im Bogen: dort statt im Reiter)"
+ },
+ "START > Schriftart|Schriftart": {
+  "status": "✅",
+  "wo": "Felder im Band (widgets/register_band.py)"
+ },
+ "START > Schriftart|Schriftgröße": {
+  "status": "✅",
+  "wo": "Felder im Band (widgets/register_band.py)"
+ },
+ "START > Schriftart|Unterstreichungsart": {
+  "status": "⬜",
+  "wo": "nicht übertragen"
+ },
+ "START > Absatzlayout|Einzug genau": {
+  "status": "◐",
+  "wo": "Absatz-Dialog (widgets/dialogs.py) — einfacher als das Vorlagenbild (zwei Karteireiter, Vorschau)"
+ },
+ "START > Einstellungen|Optionen": {
+  "status": "✅",
+  "wo": "Datei-Reiter / ☰ / F9"
+ },
+ "START > Stile & Bearbeiten|Formatvorlage auswählen": {
+  "status": "✅",
+  "wo": "Stilkatalog + Feld im Band"
+ },
+ "START > Stile & Bearbeiten|Formatvorlagen verwalten": {
+  "status": "⬜",
+  "wo": "nicht übertragen"
+ },
+ "EINFÜGEN|Kopfzeile": {
+  "status": "✅",
+  "wo": "Dialoge (widgets/dialogs.py), PDF/Druck/DOCX getestet"
+ },
+ "EINFÜGEN|Fußzeile": {
+  "status": "✅",
+  "wo": "Dialoge (widgets/dialogs.py), PDF/Druck/DOCX getestet"
+ },
+ "EINFÜGEN|Datum": {
+  "status": "◐",
+  "wo": "Datum einfügen; Fenster mit Formatliste/Sprache fehlt"
+ },
+ "EINFÜGEN|Uhrzeit": {
+  "status": "◐",
+  "wo": "Datum einfügen; Fenster mit Formatliste/Sprache fehlt"
+ },
+ "EINFÜGEN|Zeichnen": {
+  "status": "⬜",
+  "wo": "nicht übertragen"
+ },
+ "EINFÜGEN|Textbaustein": {
+  "status": "⬜",
+  "wo": "nicht übertragen"
+ },
+ "EINFÜGEN|Schnellbaustein": {
+  "status": "⬜",
+  "wo": "nicht übertragen"
+ },
+ "SEITENLAYOUT|Papierformat": {
+  "status": "✅",
+  "wo": "Reiter Seitenlayout ▸ Größe (Befehle.w_setzePapier)"
+ },
+ "SEITENLAYOUT|Textumbruch": {
+  "status": "⬜",
+  "wo": "nicht übertragen"
+ },
+ "SEITENLAYOUT|Seitenrahmen": {
+  "status": "⬜",
+  "wo": "nicht übertragen"
+ },
+ "SEITENLAYOUT|Bild/Objekt anordnen": {
+  "status": "⬜",
+  "wo": "nicht übertragen"
+ },
+ "SCHREIBHILFE (Lunivo)|KI > Vorschläge": {
+  "status": "✅",
+  "wo": "Seitenleiste / KI-Reiter (test_schreibhilfe)"
+ },
+ "SCHREIBHILFE (Lunivo)|Anzeigen > Optionen": {
+  "status": "✅",
+  "wo": "Seitenleiste / KI-Reiter (test_schreibhilfe)"
+ },
+ "SENDUNGEN (Lunivo)|Umschlag": {
+  "status": "⬜",
+  "wo": "Reiter „Sendungen“ nicht in der neuen Struktur; Daten in register.json erhalten"
+ },
+ "SENDUNGEN (Lunivo)|Etiketten": {
+  "status": "⬜",
+  "wo": "Reiter „Sendungen“ nicht in der neuen Struktur; Daten in register.json erhalten"
+ },
+ "SENDUNGEN (Lunivo)|Seriendruck-Assistent": {
+  "status": "⬜",
+  "wo": "Reiter „Sendungen“ nicht in der neuen Struktur; Daten in register.json erhalten"
+ },
+ "SENDUNGEN (Lunivo)|Seriendruckfeld": {
+  "status": "⬜",
+  "wo": "Reiter „Sendungen“ nicht in der neuen Struktur; Daten in register.json erhalten"
+ },
+ "SENDUNGEN (Lunivo)|Adressblock": {
+  "status": "⬜",
+  "wo": "Reiter „Sendungen“ nicht in der neuen Struktur; Daten in register.json erhalten"
+ },
+ "SENDUNGEN (Lunivo)|Regeln": {
+  "status": "⬜",
+  "wo": "Reiter „Sendungen“ nicht in der neuen Struktur; Daten in register.json erhalten"
+ },
+ "SENDUNGEN (Lunivo)|Ergebnisse anzeigen": {
+  "status": "⬜",
+  "wo": "Reiter „Sendungen“ nicht in der neuen Struktur; Daten in register.json erhalten"
+ },
+ "SENDUNGEN (Lunivo)|Formular > Kontrollkästchen": {
+  "status": "⬜",
+  "wo": "Reiter „Sendungen“ nicht in der neuen Struktur; Daten in register.json erhalten"
+ },
+ "SENDUNGEN (Lunivo)|Formular > Schaltfläche": {
+  "status": "⬜",
+  "wo": "Reiter „Sendungen“ nicht in der neuen Struktur; Daten in register.json erhalten"
+ },
+ "KONTEXTTABELLEN|Tabellenwerkzeuge": {
+  "status": "◐",
+  "wo": "Reiter erscheint in der Tabelle (test_tabellentools_wirken); ohne Tabellenformatvorlagen"
+ },
+ "KONTEXTTABELLEN|Kopf- und Fußzeilenwerkzeuge": {
+  "status": "◐",
+  "wo": "Reiter vorhanden, Kopf/Fuß über Dialog statt am Blatt"
+ },
+ "KONTEXTTABELLEN|Zeichentools": {
+  "status": "⬜",
+  "wo": "nicht übertragen"
+ },
+ "KONTEXTTABELLEN|Diagrammtools": {
+  "status": "⬜",
+  "wo": "nicht übertragen"
+ },
+ "KONTEXTTABELLEN|SmartArt-Tools": {
+  "status": "⬜",
+  "wo": "nicht übertragen"
+ },
+ "KONTEXTTABELLEN|Gleichungswerkzeuge": {
+  "status": "⬜",
+  "wo": "nicht übertragen"
+ },
+ "LANGUAGE BRIDGE (Architektur)|Zentrale Sprachkontext-Verwaltung": {
+  "status": "✅",
+  "wo": "services/writing_assistant.py, storage/gelernt.py"
+ },
+ "LANGUAGE BRIDGE (Architektur)|Keine parallelen Wörterbücher": {
+  "status": "✅",
+  "wo": "services/writing_assistant.py, storage/gelernt.py"
+ },
+ "LANGUAGE BRIDGE (Architektur)|Benutzerwörter zentral speichern": {
+  "status": "✅",
+  "wo": "services/writing_assistant.py, storage/gelernt.py"
+ },
+ "LANGUAGE BRIDGE (Architektur)|Akzeptierte Korrektionen speichern": {
+  "status": "✅",
+  "wo": "services/writing_assistant.py, storage/gelernt.py"
+ },
+ "LANGUAGE BRIDGE (Architektur)|Dokumentversion-Tracking": {
+  "status": "✅",
+  "wo": "QTextDocument.revision() — verworfen, wenn sich der Text änderte (test_ki_korrektur_ende_zu_ende)"
+ },
+ "LANGUAGE BRIDGE (Architektur)|Prüfungs-ID-System": {
+  "status": "◐",
+  "wo": "Revision statt Prüf-ID; Fund = dict; Zustände nur angenommen/weggewinkt"
+ },
+ "LANGUAGE BRIDGE (Architektur)|Einheitlicher Fehlerstatus": {
+  "status": "◐",
+  "wo": "Revision statt Prüf-ID; Fund = dict; Zustände nur angenommen/weggewinkt"
+ },
+ "LANGUAGE BRIDGE (Architektur)|Fehler-Lebenszyklus (active/accepted/ignored/corrected)": {
+  "status": "◐",
+  "wo": "Revision statt Prüf-ID; Fund = dict; Zustände nur angenommen/weggewinkt"
+ },
+ "LANGUAGE BRIDGE (Architektur)|Ignorierte Wörter zentral speichern": {
+  "status": "◐",
+  "wo": "Revision statt Prüf-ID; Fund = dict; Zustände nur angenommen/weggewinkt"
+ },
+ "LANGUAGE BRIDGE (Spelling Engine)|Native Browser-Spellcheck deaktiviert": {
+  "status": "✅",
+  "wo": "gegenstandslos: kein Browser"
+ },
+ "LANGUAGE BRIDGE (Spelling Engine)|Lunivo-Regeln verwenden statt Browser": {
+  "status": "✅",
+  "wo": "services/pruefung.py (Parität zu pruefung.js getestet)"
+ },
+ "LANGUAGE BRIDGE (Spelling Engine)|Benutzerwörter in Rechtschreibung beachten": {
+  "status": "✅",
+  "wo": "services/pruefung.py (Parität zu pruefung.js getestet)"
+ },
+ "LANGUAGE BRIDGE (Spelling Engine)|Ignorierte Wörter in Rechtschreibung beachten": {
+  "status": "◐",
+  "wo": "inRuhe/weggewinkt beachtet; einheitliches Fund-dict"
+ },
+ "LANGUAGE BRIDGE (Spelling Engine)|Fehler als unified language-issue": {
+  "status": "◐",
+  "wo": "inRuhe/weggewinkt beachtet; einheitliches Fund-dict"
+ },
+ "LANGUAGE BRIDGE (Grammar Engine)|Dieselbe Sprachkontext wie Spelling": {
+  "status": "✅",
+  "wo": "gleiche Engine, regeln.js gelesen"
+ },
+ "LANGUAGE BRIDGE (Grammar Engine)|Grammatikregeln aus regeln.js nutzen": {
+  "status": "✅",
+  "wo": "gleiche Engine, regeln.js gelesen"
+ },
+ "LANGUAGE BRIDGE (Grammar Engine)|Benutzerwörter in Grammatik beachten": {
+  "status": "◐",
+  "wo": "gemeinsame Funde"
+ },
+ "LANGUAGE BRIDGE (Grammar Engine)|Fehler als unified language-issue": {
+  "status": "◐",
+  "wo": "gemeinsame Funde"
+ },
+ "LANGUAGE BRIDGE (AI Engine)|Asynchrone KI-Requests mit Validierung": {
+  "status": "✅",
+  "wo": "services/ki_dienst.py (Revision geprüft)"
+ },
+ "LANGUAGE BRIDGE (AI Engine)|Dokumentversion überprüfen": {
+  "status": "✅",
+  "wo": "services/ki_dienst.py (Revision geprüft)"
+ },
+ "LANGUAGE BRIDGE (AI Engine)|Keine veralteten Ergebnisse akzeptieren": {
+  "status": "✅",
+  "wo": "services/ki_dienst.py (Revision geprüft)"
+ },
+ "LANGUAGE BRIDGE (AI Engine)|CheckId überprüfen": {
+  "status": "◐",
+  "wo": "Revision statt Check-ID"
+ },
+ "LANGUAGE BRIDGE (AI Engine)|KI-Konfidenz-Score speichern": {
+  "status": "⬜",
+  "wo": "nicht übertragen"
+ },
+ "LANGUAGE BRIDGE (Fehler-Zusammenführung)|Fehler-Signatur für Identify verwenden": {
+  "status": "✅",
+  "wo": "WritingAssistant._key"
+ },
+ "LANGUAGE BRIDGE (Fehler-Zusammenführung)|Mehrere Quellen für gleiche Position zusammenführen": {
+  "status": "◐",
+  "wo": "LanguageTool-Funde ergänzen nur nicht überlappende (WritingAssistant._lt_fertig)"
+ },
+ "LANGUAGE BRIDGE (Fehler-Zusammenführung)|Hochwertige Vorschläge nicht überschreiben": {
+  "status": "◐",
+  "wo": "LanguageTool-Funde ergänzen nur nicht überlappende (WritingAssistant._lt_fertig)"
+ },
+ "LANGUAGE BRIDGE (Fehler-Zusammenführung)|Konflikt-Auflösung nach Quelle/Konfidenz/Typ": {
+  "status": "⬜",
+  "wo": "nicht übertragen"
+ },
+ "LANGUAGE BRIDGE (Invalidierung & Debouncing)|Debouncing für schnelle Eingaben": {
+  "status": "✅",
+  "wo": "Timer 900 ms; Gründlich prüfen"
+ },
+ "LANGUAGE BRIDGE (Invalidierung & Debouncing)|Vollständige Prüfung möglich (Gründlich prüfen)": {
+  "status": "✅",
+  "wo": "Timer 900 ms; Gründlich prüfen"
+ },
+ "LANGUAGE BRIDGE (Invalidierung & Debouncing)|Bereichs-Invalidierung bei Änderungen": {
+  "status": "⬜",
+  "wo": "es wird der ganze Text neu geprüft"
+ },
+ "LANGUAGE BRIDGE (Invalidierung & Debouncing)|Sicherheitsbereich um geänderte Stelle": {
+  "status": "⬜",
+  "wo": "es wird der ganze Text neu geprüft"
+ },
+ "SCHREIBHILFE (Sidebar-Integration)|Fehler aus Language Bridge anzeigen": {
+  "status": "✅",
+  "wo": "widgets/schreibhilfe_panel.py, editor_widget.set_wellen"
+ },
+ "SCHREIBHILFE (Sidebar-Integration)|Rote Wellenlinien aus Bridge-Status": {
+  "status": "✅",
+  "wo": "widgets/schreibhilfe_panel.py, editor_widget.set_wellen"
+ },
+ "SCHREIBHILFE (Sidebar-Integration)|Fehler annehmen/ignorieren/korrigieren": {
+  "status": "✅",
+  "wo": "widgets/schreibhilfe_panel.py, editor_widget.set_wellen"
+ },
+ "SCHREIBHILFE (Sidebar-Integration)|Kontextmenü für Fehler-Aktionen": {
+  "status": "⬜",
+  "wo": "Rechtsklick-Menü fehlt"
+ },
+ "SCHREIBHILFE (Sidebar-Integration)|Schalter 'Rote Wellenlinien' zeigt/versteckt nur": {
+  "status": "◐",
+  "wo": "Schalter hält auch die Prüfung an"
+ },
+ "SCHREIBHILFE (Menü-Integration)|Prüfen-Knopf löst check() aus": {
+  "status": "✅",
+  "wo": "Seitenleiste + Band"
+ },
+ "SCHREIBHILFE (Menü-Integration)|Gründlich prüfen-Knopf für volle Prüfung": {
+  "status": "✅",
+  "wo": "Seitenleiste + Band"
+ },
+ "SCHREIBHILFE (Menü-Integration)|Welche Hilfe wann anzeigen": {
+  "status": "✅",
+  "wo": "Seitenleiste + Band"
+ },
+ "SCHREIBHILFE (Menü-Integration)|Schreibhilfe-Register im Band": {
+  "status": "◐",
+  "wo": "nach der neuen Struktur in der rechten Seitenleiste (Bereich „Schreibhilfe“)"
+ },
+ "SCHREIBHILFE (Menü-Integration)|Vorlesen-Integration": {
+  "status": "◐",
+  "wo": "services/vorlesen.py — nur mit Attrappe getestet"
+ },
+ "SCHREIBHILFE (Menü-Integration)|Beim Schreiben-Optionen": {
+  "status": "◐",
+  "wo": "Optionen-Fenster, nicht alle Schalter des Vorbilds"
+ },
+ "SCHREIBHILFE (Menü-Integration)|KI-Korrektur-Optionen": {
+  "status": "◐",
+  "wo": "Optionen-Fenster, nicht alle Schalter des Vorbilds"
+ },
+ "SCHREIBHILFE (Menü-Integration)|Anzeigen-Optionen": {
+  "status": "◐",
+  "wo": "Optionen-Fenster, nicht alle Schalter des Vorbilds"
+ },
+ "DOKUMENTMODELL (Structure)|DocumentContent mit Blocks": {
+  "status": "✅",
+  "wo": "QTextDocument (Blöcke, Tabellen, Bilder)"
+ },
+ "DOKUMENTMODELL (Structure)|Document-Klasse mit Sections": {
+  "status": "◐",
+  "wo": "ein Abschnitt: PageSettings (Papier, Ränder, Kopf/Fuß); keine Spalten, keine mehreren Abschnitte"
+ },
+ "DOKUMENTMODELL (Structure)|Section mit Inhalt, Header, Footer": {
+  "status": "◐",
+  "wo": "ein Abschnitt: PageSettings (Papier, Ränder, Kopf/Fuß); keine Spalten, keine mehreren Abschnitte"
+ },
+ "DOKUMENTMODELL (Structure)|PageSetup mit Margins, PageSize, Columns": {
+  "status": "◐",
+  "wo": "ein Abschnitt: PageSettings (Papier, Ränder, Kopf/Fuß); keine Spalten, keine mehreren Abschnitte"
+ },
+ "DOKUMENTMODELL (Structure)|Block-Vererbung (Paragraph, Table, Image, Shape)": {
+  "status": "◐",
+  "wo": "Absatz, Tabelle, Bild; keine Formen"
+ },
+ "DOKUMENTMODELL (Callbacks)|Änderungs-Callbacks für Paragraph": {
+  "status": "✅",
+  "wo": "Qt-Signal contentsChanged → WritingAssistant.dokument_geaendert"
+ },
+ "DOKUMENTMODELL (Callbacks)|Änderungs-Callbacks für Table": {
+  "status": "✅",
+  "wo": "Qt-Signal contentsChanged → WritingAssistant.dokument_geaendert"
+ },
+ "DOKUMENTMODELL (Callbacks)|Änderungs-Callbacks für DocumentContent": {
+  "status": "✅",
+  "wo": "Qt-Signal contentsChanged → WritingAssistant.dokument_geaendert"
+ },
+ "DOKUMENTMODELL (Callbacks)|Callbacks triggern Language Bridge Update": {
+  "status": "✅",
+  "wo": "Qt-Signal contentsChanged → WritingAssistant.dokument_geaendert"
+ }
+}
