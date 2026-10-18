@@ -18,3 +18,10 @@ class IOReport:
 
 class DocumentIOError(Exception):
     """Datei nicht lesbar oder nicht schreibbar — Text ist für Anwender gedacht."""
+
+
+class PasswortNoetig(DocumentIOError):
+    """Das Dokument ist verschlüsselt; ohne (richtiges) Kennwort lässt es sich nicht öffnen."""
+    def __init__(self, falsch: bool = False):
+        super().__init__("Das Kennwort ist falsch." if falsch else "Das Dokument ist durch ein Kennwort geschützt.")
+        self.falsch = falsch

@@ -51,7 +51,7 @@ Umgesetzt ist nur die unterste Stufe: „Mit WPS Writer öffnen“ ruft ein inst
 Direkte Integration ≠ Steuerung ≠ Bibliothek: Das Programm benutzt **keine** WPS-Interna.
 
 ## 5. Tests (tatsächlich ausgeführt)
-`pytest tests`: **67 bestanden, 0 fehlgeschlagen** (≈ 24 s). Abgedeckt: DOCX-Roundtrip, ungültige Dateien, Meldung nicht unterstützter
+`pytest tests`: **76 bestanden, 0 fehlgeschlagen** (≈ 30 s). Abgedeckt: DOCX-Roundtrip, ungültige Dateien, Meldung nicht unterstützter
 Inhalte, PDF (Seiten, Kopf/Fuß, Querformat, Schriftgröße), TXT/ODT, LibreOffice-Roundtrip ODT/DOC/RTF, Einstellungen, Wiederherstellung,
 Editor-Befehle, Suchen/Ersetzen, Tabellentools, Fenster (neu/bearbeiten/speichern/erneut öffnen), Tastenkürzel (Aktion),
 Schutz vor Verlust, Prüfung (Parität zu JS), Wellen, AutoKorr, Vorhersage, KI mit Fake-Servern (Ollama/Claude/eigen),

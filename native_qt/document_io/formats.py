@@ -20,7 +20,9 @@ SAVE_FILTERS = {
     ".odt": "OpenDocument-Text (*.odt)",
     ".doc": "Word 97–2003 (*.doc)",
     ".rtf": "Rich Text (*.rtf)",
+    ".html": "Webseite (*.html)",
 }
+WEB_CODIERUNGEN = ["UTF-8", "ISO-8859-1", "ISO-8859-15", "Windows-1252", "UTF-16"]
 
 
 @dataclass
@@ -35,11 +37,44 @@ def ext(path: str) -> str:
     return os.path.splitext(path)[1].lower()
 
 
-def load(path: str) -> Loaded:
+def _verschluesselt(path: str) -> bool:
+    try:
+        with open(path, "rb") as fh:
+            return fh.read(4) == b"\xd0\xcf\x11\xe0"
+    except OSError:
+        return False
+
+
+def _entschluesseln(path: str, kennwort: str | None, ziel: str) -> None:
+    from .report import PasswortNoetig
+    if not kennwort:
+        raise PasswortNoetig()
+    try:
+        import msoffcrypto
+    except ImportError as ex:
+        raise DocumentIOError("Zum Öffnen kennwortgeschützter Dokumente wird das Paket „msoffcrypto-tool“ gebraucht "
+                              "(pip install msoffcrypto-tool).") from ex
+    try:
+        with open(path, "rb") as fh, open(ziel, "wb") as out:
+            f = msoffcrypto.OfficeFile(fh)
+            f.load_key(password=kennwort)
+            f.decrypt(out)
+    except Exception as ex:                      # falsches Kennwort oder beschädigt
+        raise PasswortNoetig(falsch=True) from ex
+
+
+def load(path: str, kennwort: str | None = None) -> Loaded:
     if not os.path.isfile(path):
         raise DocumentIOError(f"Die Datei „{path}“ existiert nicht.")
     e = ext(path)
     if e == ".docx":
+        if _verschluesselt(path):
+            with tempfile.TemporaryDirectory(prefix="lunivo-") as tmp:
+                klar = os.path.join(tmp, "klar.docx")
+                _entschluesseln(path, kennwort, klar)
+                doc, page, meta, rep = docx_reader.read_docx(klar)
+            meta["kennwort"] = kennwort
+            return Loaded(doc, page, meta, rep)
         doc, page, meta, rep = docx_reader.read_docx(path)
         return Loaded(doc, page, meta, rep)
     if e in (".txt", ".text", ""):
@@ -115,7 +150,22 @@ def _has_rich_content(doc: QTextDocument) -> bool:
 def save(path: str, doc: QTextDocument, page: PageSettings, meta: dict | None = None) -> IOReport:
     e = ext(path)
     if e == ".docx":
-        return docx_writer.write_docx(path, doc, page, meta)
+        kw = (meta or {}).get("kennwort")
+        if not kw:
+            return docx_writer.write_docx(path, doc, page, meta)
+        try:
+            import msoffcrypto
+        except ImportError as ex:
+            raise DocumentIOError("Zum Verschlüsseln wird das Paket „msoffcrypto-tool“ gebraucht.") from ex
+        with tempfile.TemporaryDirectory(prefix="lunivo-") as tmp:
+            klar = os.path.join(tmp, "klar.docx")
+            rep = docx_writer.write_docx(klar, doc, page, meta)
+            enc = os.path.join(tmp, "enc.docx")
+            with open(klar, "rb") as fh, open(enc, "wb") as out:
+                msoffcrypto.OfficeFile(fh).encrypt(kw, out)
+            with open(enc, "rb") as fh:
+                _atomic_write(path, fh.read())
+        return rep
     rep = IOReport()
     if e == ".txt":
         if _has_rich_content(doc):
@@ -123,6 +173,22 @@ def save(path: str, doc: QTextDocument, page: PageSettings, meta: dict | None = 
         if not page.header.is_empty() or not page.footer.is_empty():
             rep.warn("Kopf- und Fußzeile werden in der Textdatei nicht gespeichert.")
         _atomic_write(path, doc.toPlainText().replace(" ", "\n").encode("utf-8"))
+        return rep
+    if e in (".html", ".htm"):
+        cod = (meta or {}).get("codierung") or "UTF-8"
+        try:
+            "".encode(cod)
+        except LookupError:
+            raise DocumentIOError(f"Die Codierung „{cod}“ ist unbekannt.")
+        html = doc.toHtml()
+        if "<head>" in html:
+            html = html.replace("<head>", f'<head><meta charset="{cod}">', 1)
+        rep.warn("Als Webseite gehen Seitenränder, Kopf-/Fußzeile und Seitenumbrüche verloren.")
+        try:
+            data = html.encode(cod)
+        except UnicodeEncodeError:
+            raise DocumentIOError(f"Der Text enthält Zeichen, die in {cod} nicht darstellbar sind. Bitte UTF-8 wählen.")
+        _atomic_write(path, data)
         return rep
     if e in (".odt", ".doc", ".rtf"):
         from ..integrations import libreoffice

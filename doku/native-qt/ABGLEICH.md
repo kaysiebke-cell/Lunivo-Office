@@ -1,6 +1,6 @@
 # Abgleich: altes Register ↔ native Qt-Fassung
 
-Erzeugt von `werkzeug/abgleich-native.py`. **128 Knöpfe umgesetzt, 112 offen.** Offene Knöpfe stehen im Programm sichtbar, aber ausgegraut da.
+Erzeugt von `werkzeug/abgleich-native.py`. **129 Knöpfe umgesetzt, 111 offen.** Offene Knöpfe stehen im Programm sichtbar, aber ausgegraut da.
 
 ## Datei
 
@@ -280,7 +280,7 @@ Erzeugt von `werkzeug/abgleich-native.py`. **128 Knöpfe umgesetzt, 112 offen.**
 
 **Schützen**
 
-- ⬜ Bearbeitung sperren  (`bearbeitungSperren`)
+- ✅ Bearbeitung sperren
 
 
 ## KI

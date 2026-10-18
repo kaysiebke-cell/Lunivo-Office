@@ -8,13 +8,13 @@ from PySide6.QtCore import QSize, Qt, QTimer
 from PySide6.QtGui import QAction, QActionGroup, QColor, QFont, QKeySequence, QTextCursor
 from PySide6.QtPrintSupport import QPrintDialog, QPrintPreviewDialog, QPrinter
 from PySide6.QtWidgets import (
-    QApplication, QColorDialog, QComboBox, QFileDialog, QFontComboBox, QInputDialog, QLabel,
+    QApplication, QColorDialog, QComboBox, QFileDialog, QFontComboBox, QInputDialog, QLabel, QLineEdit,
     QMainWindow, QMenu, QMessageBox, QStatusBar, QTabWidget, QToolBar, QToolButton, QWidget,
 )
 
 from .. import __version__
 from ..document_io import formats
-from ..document_io.report import DocumentIOError, IOReport
+from ..document_io.report import DocumentIOError, IOReport, PasswortNoetig
 from ..editor.editor_widget import STYLES, DocumentEditor
 from ..editor.page import PAPER_MM, HeaderFooter, PageSettings, px_to_mm
 from ..editor.pagination import export_pdf, print_document
@@ -394,10 +394,23 @@ class MainWindow(QMainWindow):
         for i, t in enumerate(self._doc_tabs()):
             if t.path == path:
                 self.tabs.setCurrentWidget(t); return True
-        try:
-            loaded = formats.load(path)
-        except DocumentIOError as e:
-            QMessageBox.warning(self, "Öffnen nicht möglich", f"{os.path.basename(path)}\n\n{e}")
+        kennwort = None
+        while True:
+            try:
+                loaded = formats.load(path, kennwort)
+                break
+            except PasswortNoetig as e:
+                kennwort, ok = QInputDialog.getText(
+                    self, "Kennwort", ("Falsches Kennwort. " if e.falsch else "") +
+                    f"„{os.path.basename(path)}“ ist geschützt.\nKennwort:", QLineEdit.Password)
+                if not ok:
+                    return False
+                continue
+            except DocumentIOError as e:
+                loaded, fehler = None, e
+                break
+        if loaded is None:
+            QMessageBox.warning(self, "Öffnen nicht möglich", f"{os.path.basename(path)}\n\n{fehler}")
             self.settings.remove_recent(path); self.start.set_recent(self.settings.recent())
             return False
         tab = DocumentTab(loaded, path)
@@ -433,13 +446,14 @@ class MainWindow(QMainWindow):
             flt = formats.SAVE_FILTERS[only]; default = only
         else:
             standard = self.settings.get("speichern/standard", ".docx")
-            flt = "Word-Dokument (*.docx);;Textdatei (*.txt)" if standard != ".txt" else "Textdatei (*.txt);;Word-Dokument (*.docx)"
+            flt = ("Word-Dokument (*.docx);;Textdatei (*.txt);;Webseite (*.html)" if standard != ".txt"
+                   else "Textdatei (*.txt);;Word-Dokument (*.docx);;Webseite (*.html)")
             default = standard if standard in (".docx", ".txt") else ".docx"
         path, chosen = QFileDialog.getSaveFileName(self, title, os.path.join(folder, base + default), flt)
         if not path:
             return None
         if not os.path.splitext(path)[1]:
-            path += ".txt" if "txt" in chosen else default
+            path += ".txt" if "txt" in chosen else ".html" if "html" in chosen else default
         return path
 
     def _save_tab_as(self, tab: DocumentTab) -> bool:
@@ -455,6 +469,7 @@ class MainWindow(QMainWindow):
 
     def _meta_fuer_speichern(self, tab: DocumentTab) -> dict:
         m = dict(tab.meta)
+        m["codierung"] = self.settings.get("speichern/codierung", "UTF-8")
         if self.settings.get_bool("sicherheit/personendaten_weg", False) or not self.settings.get_bool("benutzer/verwenden", True):
             m["author"] = ""
         elif self.settings.get("benutzer/name", ""):

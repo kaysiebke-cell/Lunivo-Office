@@ -131,6 +131,7 @@ class OptionenDialog(QDialog):
                                    ("speichern", "Allgemein und Speichern", self._speichern),
                                    ("sicherung", "Sicherungseinstellungen", self._sicherung),
                                    ("drucken", "Drucken", self._drucken), ("benutzer", "Benutzerinformationen", self._benutzer),
+                                   ("sicherheit", "Sicherheit", self._sicherheit),
                                    ("verfolgen", "Änderungen verfolgen", self._verfolgen)]),
             ("Nur bei Lunivo", [("ki", "Schreibhilfe und KI", self._ki), ("gedaechtnis", "Gedächtnis", self._gedaechtnis),
                                 ("erweitert", "Erweitert", self._erweitert)]),
@@ -231,6 +232,7 @@ class OptionenDialog(QDialog):
     def _ansicht(self, titel):
         p = _Seite(self.w, titel, ["Lineal", "Vertikales Lineal", "Gitternetzlinien",
                                    "Live-Vorschau", "Minisymbolleiste", "Tipp für Kopf-/Fußzeile",
+                                   "Druckoptionen der Ansicht (Hervorhebungen, Textmarken, Feldfunktionen)",
                                    "Ausgeblendeter Text, Objektanker"])
         f = p.gruppe("Anzeigen")
         p.haken(f, "ui/marken", "Textbegrenzungen (Eckmarken)", True, self.w.set_marken)
@@ -280,6 +282,9 @@ class OptionenDialog(QDialog):
         f = p.gruppe("Neue Dokumente")
         e = QLineEdit(p.s.get("standard/schrift", "Liberation Sans")); e.textChanged.connect(lambda t: p.s.set("standard/schrift", t)); f.addRow("Schriftart", e)
         p.zahl(f, "standard/groesse", "Schriftgröße", 6, 72, 11, " pt")
+        f = p.gruppe("Webseite")
+        from ..document_io import formats as _f
+        p.auswahl(f, "speichern/codierung", "Webseitencodierung (Speichern als .html)", _f.WEB_CODIERUNGEN, "UTF-8")
         f = p.gruppe("PDF")
         p.haken(f, "pdf/oeffnen", "PDF nach dem Export öffnen", False)
         p.haken(f, "pdf/eigenschaften", "Dokumenteigenschaften (Autor) in das PDF übernehmen", True)
@@ -295,12 +300,48 @@ class OptionenDialog(QDialog):
         p.zahl(f, "sicherung/tage", "Zwischenstände aufheben (Tage)", 1, 365, 7, " Tage")
         p.zahl(f, "autosave_seconds", "Abstand der automatischen Sicherung", 10, 3600, 60, " s",
                wirkt=lambda v: self.w.autosave.start(int(v) * 1000))
+        f2 = p.gruppe("Einstellungen und Gelerntes sichern")
+        sb = QPushButton("Sichern …"); zb = QPushButton("Zurückholen …")
+        sb.clicked.connect(self._daten_sichern); zb.clicked.connect(self._daten_zurueckholen)
+        f2.addRow(sb); f2.addRow(zb)
+        p.hinweis("Gesichert werden Gedächtnis und Wörterbuch (ohne API-Schlüssel) als ZIP-Datei.")
         from ..storage import recovery
         p.zeile(f, "Gesichert wird nach: " + recovery.recovery_dir())
         from ..storage.settings import data_dir
         p.zeile(f, "Einstellungen und Daten liegen in: " + data_dir())
         p.abschluss()
         return p
+
+    def _daten_sichern(self):
+        import zipfile
+        from PySide6.QtWidgets import QFileDialog
+        from ..storage.settings import data_dir
+        pfad, _ = QFileDialog.getSaveFileName(self, "Sichern", "lunivo-sicherung.zip", "ZIP (*.zip)")
+        if not pfad:
+            return
+        with zipfile.ZipFile(pfad, "w", zipfile.ZIP_DEFLATED) as z:
+            for n in ("gelernt.json",):
+                f = os.path.join(data_dir(), n)
+                if os.path.exists(f):
+                    z.write(f, n)
+        QMessageBox.information(self, "Sichern", "Gesichert: " + pfad)
+
+    def _daten_zurueckholen(self):
+        import zipfile
+        from PySide6.QtWidgets import QFileDialog
+        from ..storage.settings import data_dir
+        pfad, _ = QFileDialog.getOpenFileName(self, "Zurückholen", "", "ZIP (*.zip)")
+        if not pfad:
+            return
+        try:
+            with zipfile.ZipFile(pfad) as z:
+                if "gelernt.json" in z.namelist():
+                    z.extract("gelernt.json", data_dir())
+            self.w.assistant.gelernt.laden(); self.w.assistant.pruefen()
+        except (OSError, zipfile.BadZipFile) as ex:
+            QMessageBox.warning(self, "Zurückholen", f"Das ging nicht: {ex}")
+            return
+        QMessageBox.information(self, "Zurückholen", "Zurückgeholt.")
 
     def _drucken(self, titel):
         p = _Seite(self.w, titel, ["Womit das Druckfenster aufgeht", "Textbegrenzungen / Zuschnittsmarken drucken"])
@@ -323,6 +364,43 @@ class OptionenDialog(QDialog):
         f.addRow("Name (Autor in DOCX-Dokumenten)", e)
         p.haken(f, "benutzer/verwenden", "Benutzerdaten in Dokumenten verwenden", True)
         p.haken(f, "sicherheit/personendaten_weg", "Beim Speichern persönliche Daten entfernen", False)
+        p.abschluss()
+        return p
+
+    def _sicherheit(self, titel):
+        p = _Seite(self.w, titel, ["Ausgeblendete Markups beim Öffnen anzeigen"])
+        f = p.gruppe("Kennwortschutz (aktuelles Dokument)")
+        t = self.w.current_tab()
+        lab = QLabel()
+        f.addRow(lab)
+
+        def stand():
+            lab.setText("Kein Dokument geöffnet." if not t else
+                        "Das Dokument wird beim Speichern verschlüsselt." if t.meta.get("kennwort") else "Kein Kennwort gesetzt.")
+        stand()
+        if t:
+            setzen = QPushButton("Kennwort setzen / ändern …")
+            weg = QPushButton("Kennwort entfernen")
+
+            def setze():
+                from PySide6.QtWidgets import QInputDialog
+                a, ok = QInputDialog.getText(self, "Kennwort", "Neues Kennwort:", QLineEdit.Password)
+                if not ok or not a:
+                    return
+                b, ok = QInputDialog.getText(self, "Kennwort", "Zur Bestätigung noch einmal:", QLineEdit.Password)
+                if not ok or a != b:
+                    QMessageBox.information(self, "Kennwort", "Die Eingaben stimmen nicht überein.")
+                    return
+                t.meta["kennwort"] = a
+                t.editor.document().setModified(True)
+                stand()
+            setzen.clicked.connect(setze)
+            weg.clicked.connect(lambda: (t.meta.pop("kennwort", None), t.editor.document().setModified(True), stand()))
+            f.addRow(setzen); f.addRow(weg)
+        p.hinweis("Verschlüsselt wird DOCX nach dem Office-Standard (AES) mit dem Paket msoffcrypto-tool. Ein vergessenes Kennwort "
+                  "lässt sich nicht wiederherstellen.")
+        f = p.gruppe("Datenschutz")
+        p.haken(f, "sicherheit/personendaten_weg", "Beim Speichern persönliche Daten (Autor) entfernen", False)
         p.abschluss()
         return p
 
@@ -408,11 +486,37 @@ class OptionenDialog(QDialog):
             d = g.daten
             lab.setText(f"{len(d['woerter'])} Wörter, die Sie richtiggestellt haben · {len(d['inRuhe'])} Wörter, die in Ruhe bleiben.")
         stand()
+        f = p.gruppe("Gelernte Schreibweisen")
+        from PySide6.QtWidgets import QListWidget
+        liste = QListWidget(); liste.setMinimumHeight(140)
+
+        def fuellen():
+            liste.clear()
+            for alt, neu in sorted(g.daten["woerter"].items()):
+                liste.addItem(f"{alt} → {neu}")
+            for w_ in sorted(g.daten["inRuhe"]):
+                liste.addItem(f"{w_} (in Ruhe lassen)")
+        fuellen()
+        f.addRow(liste)
+        eb = QPushButton("Markierten Eintrag entfernen")
+
+        def eintrag_weg():
+            it = liste.currentItem()
+            if not it:
+                return
+            t = it.text()
+            if " → " in t:
+                g.daten["woerter"].pop(t.split(" → ")[0], None)
+            else:
+                g.daten["inRuhe"].pop(t.replace(" (in Ruhe lassen)", ""), None)
+            g.speichern(); fuellen(); stand(); self.w.assistant.pruefen()
+        eb.clicked.connect(eintrag_weg)
+        f.addRow(eb)
         b = QPushButton("Alles Gelernte vergessen")
 
         def weg():
             if QMessageBox.question(self, "Vergessen", "Wirklich alles Gelernte löschen?") == QMessageBox.Yes:
-                g.vergessen(); stand(); self.w.assistant.pruefen()
+                g.vergessen(); fuellen(); stand(); self.w.assistant.pruefen()
         b.clicked.connect(weg)
         f.addRow(b)
         p.hinweis("Das Gedächtnis liegt als Datei auf diesem Rechner und wird nur auf Ihren Wunsch an eine KI mitgeschickt (als Steckbrief).")

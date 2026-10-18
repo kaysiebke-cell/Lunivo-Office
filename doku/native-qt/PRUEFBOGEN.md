@@ -1,6 +1,6 @@
 # Prüfbogen ↔ native Fassung
 
-Erzeugt von `werkzeug/pruefbogen-abgleich.py` aus dem Prüfkatalog (415 Punkte). **✅ 141 · ◐ 30 · ⬜ 244**. ✅ = Befehl/Funktion vorhanden (einzeln getestet nur, wo `tests/` es belegt); ◐ = teilweise oder anders gelöst; ⬜ = offen.
+Erzeugt von `werkzeug/pruefbogen-abgleich.py` aus dem Prüfkatalog (415 Punkte). **✅ 188 · ◐ 53 · ⬜ 174**. ✅ = Befehl/Funktion vorhanden (einzeln getestet nur, wo `tests/` es belegt); ◐ = teilweise oder anders gelöst; ⬜ = offen.
 Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/bilder/`.
 
 ## DATEI
@@ -199,7 +199,7 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 - ⬜ Vorige Änderung — Band: Überprüfen ▸ Änderungen
 - ⬜ Alle annehmen — Band: Überprüfen ▸ Änderungen
 - ⬜ Alle verwerfen — Band: Überprüfen ▸ Änderungen
-- ⬜ Bearbeitung sperren — Band: Überprüfen ▸ Schützen
+- ✅ Bearbeitung sperren — Band: Überprüfen ▸ Schützen
 
 ## SCHREIBHILFE (Lunivo)
 
@@ -362,244 +362,244 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 
 ## OPTIONEN > Ansicht > Anzeigen
 
-- ⬜ Lineal — Band: Ansicht ▸ Anzeigen
-- ⬜ Vertikales Lineal — Band: Ansicht ▸ Anzeigen
-- ✅ Navigationsbereich — Band: Ansicht ▸ Anzeigen
-- ✅ Textbegrenzungen — Band: Ansicht ▸ Anzeigen
-- ⬜ Gitternetzlinien — Band: Ansicht ▸ Anzeigen
-- ⬜ Statusleiste — (noch nicht zugeordnet)
-- ⬜ Seitenleiste beim Start — (noch nicht zugeordnet)
-- ⬜ QuickInfo — (noch nicht zugeordnet)
-- ⬜ Live-Vorschau — (noch nicht zugeordnet)
-- ⬜ Minisymbolleiste bei Auswahl — (noch nicht zugeordnet)
-- ⬜ Minisymbolleiste bei Rechtsklick — (noch nicht zugeordnet)
-- ⬜ Tipp für Kopf- bzw. Fußzeile — (noch nicht zugeordnet)
+- ⬜ Lineal — Task B (Lineal/Gitternetz)
+- ⬜ Vertikales Lineal — Task B (Lineal/Gitternetz)
+- ✅ Navigationsbereich — Optionen ▸ Wie im WPS Writer ▸ Ansicht
+- ✅ Textbegrenzungen — Optionen ▸ Wie im WPS Writer ▸ Ansicht
+- ⬜ Gitternetzlinien — Task B (Lineal/Gitternetz)
+- ✅ Statusleiste — Optionen ▸ Wie im WPS Writer ▸ Ansicht (ui/statusleiste → ansicht_optionen_anwenden)
+- ✅ Seitenleiste beim Start — Optionen ▸ Wie im WPS Writer ▸ Ansicht (ui/seitenleiste, main_window)
+- ◐ QuickInfo — Qt zeigt Kurzinfos immer; kein Schalter
+- ⬜ Live-Vorschau — nicht übertragen (in den Optionen als gesperrte Zeile sichtbar)
+- ⬜ Minisymbolleiste bei Auswahl — nicht übertragen (in den Optionen als gesperrte Zeile sichtbar)
+- ⬜ Minisymbolleiste bei Rechtsklick — nicht übertragen (in den Optionen als gesperrte Zeile sichtbar)
+- ⬜ Tipp für Kopf- bzw. Fußzeile — nicht übertragen (in den Optionen als gesperrte Zeile sichtbar)
 
 ## OPTIONEN > Ansicht > Druckoptionen
 
-- ⬜ Hervorhebungen drucken — (noch nicht zugeordnet)
-- ⬜ Textbegrenzungen drucken — (noch nicht zugeordnet)
-- ⬜ Zuschnittsmarken anzeigen — (noch nicht zugeordnet)
-- ⬜ Feldfunktionen drucken — (noch nicht zugeordnet)
-- ⬜ Textmarken drucken — (noch nicht zugeordnet)
-- ⬜ Feldschattierung — (noch nicht zugeordnet)
+- ⬜ Hervorhebungen drucken — nicht übertragen
+- ⬜ Textbegrenzungen drucken — nicht übertragen
+- ⬜ Zuschnittsmarken anzeigen — nicht übertragen
+- ⬜ Feldfunktionen drucken — nicht übertragen
+- ⬜ Textmarken drucken — nicht übertragen
+- ⬜ Feldschattierung — nicht übertragen
 
 ## OPTIONEN > Ansicht > Formatierungszeichen
 
-- ⬜ Alle anzeigen — (noch nicht zugeordnet)
-- ⬜ Absatzmarken — (noch nicht zugeordnet)
-- ⬜ Leerzeichen — (noch nicht zugeordnet)
-- ⬜ Tabstoppzeichen — (noch nicht zugeordnet)
-- ⬜ Objektanker — (noch nicht zugeordnet)
-- ⬜ Ausgeblendeter Text — (noch nicht zugeordnet)
+- ✅ Alle anzeigen — ui/steuerzeichen, toggle_marks (¶)
+- ◐ Absatzmarken — Qt schaltet Absatzmarken, Leerzeichen und Tabs nur gemeinsam
+- ◐ Leerzeichen — Qt schaltet Absatzmarken, Leerzeichen und Tabs nur gemeinsam
+- ◐ Tabstoppzeichen — Qt schaltet Absatzmarken, Leerzeichen und Tabs nur gemeinsam
+- ⬜ Objektanker — Qt kennt weder Objektanker noch ausgeblendeten Text
+- ⬜ Ausgeblendeter Text — Qt kennt weder Objektanker noch ausgeblendeten Text
 
 ## OPTIONEN > Ansicht > Menübandoptionen
 
-- ⬜ Doppelklick blendet das Band aus — (noch nicht zugeordnet)
-- ⬜ Strg+Klick folgt einem Verweis — (noch nicht zugeordnet)
+- ✅ Doppelklick blendet das Band aus — RegisterBand.einklappen_umschalten (test_main_window)
+- ✅ Strg+Klick folgt einem Verweis — editor_widget.mouseReleaseEvent, ui/strg_klick_link
 
 ## OPTIONEN > Ansicht > Darstellung
 
-- ⬜ Schrift und Helligkeit — (noch nicht zugeordnet)
-- ⬜ Größe der Symbole — (noch nicht zugeordnet)
-- ⬜ Schrift der Bedienung — (noch nicht zugeordnet)
-- ⬜ Benutzeroberfläche — Band: Ansicht ▸ Oberfläche
+- ✅ Schrift und Helligkeit — Optionen ▸ Wie im WPS Writer ▸ Ansicht (theme, ui/icongroesse, icons.FAKTOR)
+- ✅ Größe der Symbole — Optionen ▸ Wie im WPS Writer ▸ Ansicht (theme, ui/icongroesse, icons.FAKTOR)
+- ◐ Schrift der Bedienung — nur die Schriftgröße (ui/bedienschrift_groesse); Schriftart folgt dem System
+- ⬜ Benutzeroberfläche — Task F (Symbolleisten-Oberfläche)
 
 ## OPTIONEN > Bearbeiten > Bearbeitungsoptionen
 
-- ⬜ Wortweise markieren — (noch nicht zugeordnet)
-- ⬜ Text mit der Maus verschieben — (noch nicht zugeordnet)
-- ⬜ Tippen ersetzt die Auswahl — (noch nicht zugeordnet)
-- ⬜ Maximale Rückgängig-Schritte — (noch nicht zugeordnet)
+- ⬜ Wortweise markieren — nicht übertragen
+- ◐ Text mit der Maus verschieben — Qt-Standard (Ziehen und Ablegen), nicht abschaltbar
+- ✅ Tippen ersetzt die Auswahl — bearbeiten/tippen_ersetzt (editor_widget.keyPressEvent)
+- ⬜ Maximale Rückgängig-Schritte — Qt bietet keine Begrenzung des Rückgängig-Stapels pro Dokument
 
 ## OPTIONEN > Bearbeiten > AutoFormat
 
-- ⬜ Automatisch nummerierte Listen — (noch nicht zugeordnet)
-- ⬜ Aufzählungen erkennen — (noch nicht zugeordnet)
-- ⬜ Zahl automatisch im Kreis — (noch nicht zugeordnet)
+- ✅ Automatisch nummerierte Listen — autoformat/liste, autoformat/punkte (test_editor)
+- ✅ Aufzählungen erkennen — autoformat/liste, autoformat/punkte (test_editor)
+- ⬜ Zahl automatisch im Kreis — nicht übertragen
 
 ## OPTIONEN > Bearbeiten > AutoKorrektur
 
 - ✅ AutoKorrektur — Band: Seitenleiste ▸ Beim Schreiben
-- ⬜ Typografische Anführungszeichen — (noch nicht zugeordnet)
-- ⬜ Gedankenstriche — (noch nicht zugeordnet)
-- ⬜ Auslassungspunkte — (noch nicht zugeordnet)
-- ⬜ Jeden Satz mit einem Großbuchstaben beginnen — (noch nicht zugeordnet)
-- ⬜ Wochentage immer großschreiben — (noch nicht zugeordnet)
-- ⬜ Englische Ordnungszahlen hochstellen — (noch nicht zugeordnet)
-- ⬜ Feststelltaste korrigieren — (noch nicht zugeordnet)
-- ⬜ Internet- und Netzwerkpfade durch Hyperlinks ersetzen — (noch nicht zugeordnet)
-- ⬜ Leerzeichen am Absatzanfang mit Erstzeileneinzug — (noch nicht zugeordnet)
-- ⬜ Leerzeichenformat am Ende rechtsbündiger Zeilen anpassen — (noch nicht zugeordnet)
-- ⬜ Bei zentriertem Ausrichten Erstzeileneinzug löschen — (noch nicht zugeordnet)
-- ⬜ Tabulator und Rücktaste setzen den Einzug — (noch nicht zugeordnet)
+- ✅ Typografische Anführungszeichen — services/autokorrektur.py, Optionen ▸ Bearbeiten (test_schreibhilfe)
+- ✅ Gedankenstriche — services/autokorrektur.py, Optionen ▸ Bearbeiten (test_schreibhilfe)
+- ✅ Auslassungspunkte — services/autokorrektur.py, Optionen ▸ Bearbeiten (test_schreibhilfe)
+- ✅ Jeden Satz mit einem Großbuchstaben beginnen — services/autokorrektur.py, Optionen ▸ Bearbeiten (test_schreibhilfe)
+- ✅ Wochentage immer großschreiben — services/autokorrektur.py, Optionen ▸ Bearbeiten (test_schreibhilfe)
+- ✅ Englische Ordnungszahlen hochstellen — services/autokorrektur.py, Optionen ▸ Bearbeiten (test_schreibhilfe)
+- ✅ Feststelltaste korrigieren — services/autokorrektur.py, Optionen ▸ Bearbeiten (test_schreibhilfe)
+- ◐ Internet- und Netzwerkpfade durch Hyperlinks ersetzen — editor_widget._autokorr_extras/keyPressEvent — verdrahtet, noch ohne eigenen Test
+- ◐ Leerzeichen am Absatzanfang mit Erstzeileneinzug — editor_widget._autokorr_extras/keyPressEvent — verdrahtet, noch ohne eigenen Test
+- ⬜ Leerzeichenformat am Ende rechtsbündiger Zeilen anpassen — nicht übertragen
+- ◐ Bei zentriertem Ausrichten Erstzeileneinzug löschen — editor_widget._autokorr_extras/keyPressEvent — verdrahtet, noch ohne eigenen Test
+- ◐ Tabulator und Rücktaste setzen den Einzug — editor_widget._autokorr_extras/keyPressEvent — verdrahtet, noch ohne eigenen Test
 - ✅ Wortvorhersage — Band: Seitenleiste ▸ Beim Schreiben
 
 ## OPTIONEN > Bearbeiten > Ausschneiden und Einfügen
 
-- ⬜ Schaltfläche nach dem Einfügen — (noch nicht zugeordnet)
-- ⬜ Mittlere Maustaste fügt ein — (noch nicht zugeordnet)
-- ⬜ Standardeinfügeformat — (noch nicht zugeordnet)
-- ⬜ Ohne Formatierung einfügen — (noch nicht zugeordnet)
+- ⬜ Schaltfläche nach dem Einfügen — nicht übertragen
+- ◐ Mittlere Maustaste fügt ein — unter Linux/X11 durch Qt (Primärauswahl), nicht schaltbar
+- ⬜ Standardeinfügeformat — nicht übertragen
+- ✅ Ohne Formatierung einfügen — Befehle.einfuegenOhne
 
 ## OPTIONEN > Allgemein und Speichern > Speichern
 
-- ⬜ Dateien als Standard speichern — (noch nicht zugeordnet)
+- ✅ Dateien als Standard speichern — speichern/standard (DOCX/TXT), _ask_path
 
 ## OPTIONEN > Allgemein und Speichern > Schrift für neuen Text
 
-- ⬜ Schrift — (noch nicht zugeordnet)
-- ✅ Größe — Band: Seitenlayout ▸ Seite einrichten
+- ✅ Schrift — standard/schrift, standard/groesse (new_document)
+- ✅ Größe — standard/schrift, standard/groesse (new_document)
 
 ## OPTIONEN > Allgemein und Speichern > Allgemeine Optionen
 
-- ⬜ Maßeinheit — (noch nicht zugeordnet)
-- ⬜ Bilder in der Datei nicht komprimieren — (noch nicht zugeordnet)
-- ⬜ Standard-Ausgabeziel — (noch nicht zugeordnet)
+- ⬜ Maßeinheit — nicht übertragen
+- ◐ Bilder in der Datei nicht komprimieren — Bilder werden nie komprimiert; kein Schalter
+- ⬜ Standard-Ausgabeziel — nicht übertragen
 
 ## OPTIONEN > Allgemein und Speichern > Webseite
 
-- ⬜ Webseitencodierung — (noch nicht zugeordnet)
+- ✅ Webseitencodierung — speichern/codierung, formats.save(.html) (test_formats)
 
 ## OPTIONEN > Allgemein und Speichern > Kompatibilitätsoptionen
 
-- ⬜ Seitenumbruch und Absatzmarke aufteilen — (noch nicht zugeordnet)
-- ⬜ Hängenden Einzug nicht als Tabstopp verwenden — (noch nicht zugeordnet)
-- ⬜ Nachstehende Leerstellen unterstreichen — (noch nicht zugeordnet)
-- ⬜ Layout von Fußnoten wie Word 6/95/97 — (noch nicht zugeordnet)
-- ⬜ Zeilenhöhe in Tabellen auf Rasterhöhe anpassen — (noch nicht zugeordnet)
+- ⬜ Seitenumbruch und Absatzmarke aufteilen — WPS-/Word-Altlayout; Qt hat keine Entsprechung
+- ⬜ Hängenden Einzug nicht als Tabstopp verwenden — WPS-/Word-Altlayout; Qt hat keine Entsprechung
+- ⬜ Nachstehende Leerstellen unterstreichen — WPS-/Word-Altlayout; Qt hat keine Entsprechung
+- ⬜ Layout von Fußnoten wie Word 6/95/97 — WPS-/Word-Altlayout; Qt hat keine Entsprechung
+- ⬜ Zeilenhöhe in Tabellen auf Rasterhöhe anpassen — WPS-/Word-Altlayout; Qt hat keine Entsprechung
 
 ## OPTIONEN > Sicherungseinstellungen > Sicherung
 
-- ⬜ Wann gesichert wird — (noch nicht zugeordnet)
-- ⬜ Abstand (Minuten) — (noch nicht zugeordnet)
-- ⬜ Wo die Einstellungen liegen — (noch nicht zugeordnet)
+- ✅ Wann gesichert wird — sicherung/aktiv, autosave_seconds, Pfadanzeige
+- ✅ Abstand (Minuten) — sicherung/aktiv, autosave_seconds, Pfadanzeige
+- ✅ Wo die Einstellungen liegen — sicherung/aktiv, autosave_seconds, Pfadanzeige
 
 ## OPTIONEN > Sicherungseinstellungen > Zwischenstände aufheben
 
-- ⬜ Wie lange (Tage) — (noch nicht zugeordnet)
-- ⬜ Zwischenstände löschen — (noch nicht zugeordnet)
+- ◐ Wie lange (Tage) — sicherung/staende + sicherung/tage, recovery.zwischenstand — noch ohne eigenen Test
+- ◐ Zwischenstände löschen — alte Stände werden automatisch gelöscht; kein Knopf
 
 ## OPTIONEN > Sicherungseinstellungen > Was im Speicher steht
 
-- ⬜ Sichern und zurückholen — (noch nicht zugeordnet)
+- ◐ Sichern und zurückholen — ZIP mit Gedächtnis (ohne API-Schlüssel) — noch ohne eigenen Test
 
 ## OPTIONEN > Speicherort für Dateien > Speicherort für Dateien
 
-- ⬜ Ordner zum Speichern — (noch nicht zugeordnet)
-- ⬜ Eigene Vorlagen — (noch nicht zugeordnet)
+- ✅ Ordner zum Speichern — speichern/ordner
+- ⬜ Eigene Vorlagen — Task F (Vorlagen)
 
 ## OPTIONEN > Änderungen verfolgen > Änderungen verfolgen
 
-- ⬜ Änderungen verfolgen — Band: Überprüfen ▸ Änderungen
-- ⬜ Markup anzeigen — Band: Überprüfen ▸ Änderungen
+- ⬜ Änderungen verfolgen — Task E
+- ⬜ Markup anzeigen — Task E
 
 ## OPTIONEN > Änderungen verfolgen > Markup
 
-- ⬜ Einfügungen — (noch nicht zugeordnet)
-- ⬜ Löschvorgänge — (noch nicht zugeordnet)
-- ⬜ Geänderte Zeilen — (noch nicht zugeordnet)
-- ⬜ Farbe — (noch nicht zugeordnet)
+- ⬜ Einfügungen — Task E
+- ⬜ Löschvorgänge — Task E
+- ⬜ Geänderte Zeilen — Task E
+- ⬜ Farbe — Task E
 
 ## OPTIONEN > Änderungen verfolgen > Sprechblasen
 
-- ⬜ Sprechblasen verwenden — (noch nicht zugeordnet)
-- ⬜ Empfohlene Breite verwenden — (noch nicht zugeordnet)
-- ⬜ Bevorzugte Breite (mm) — (noch nicht zugeordnet)
-- ⬜ Seitenrand — (noch nicht zugeordnet)
-- ⬜ Verbindungslinien zum Text anzeigen — (noch nicht zugeordnet)
+- ⬜ Sprechblasen verwenden — Task E
+- ⬜ Empfohlene Breite verwenden — Task E
+- ⬜ Bevorzugte Breite (mm) — Task E
+- ⬜ Seitenrand — Task E
+- ⬜ Verbindungslinien zum Text anzeigen — Task E
 
 ## OPTIONEN > Änderungen verfolgen > Drucken (mit Sprechblasen)
 
-- ⬜ Papierausrichtung — (noch nicht zugeordnet)
+- ⬜ Papierausrichtung — Task E
 
 ## OPTIONEN > In PDF exportieren > Exportoptionen
 
-- ⬜ Hyperlinks — (noch nicht zugeordnet)
-- ⬜ Überschriften als Lesezeichen — (noch nicht zugeordnet)
-- ⬜ Kommentare mitnehmen — (noch nicht zugeordnet)
-- ⬜ Dokumenteigenschaften mitnehmen — (noch nicht zugeordnet)
-- ⬜ Verknüpfung von Fuß- und Endnoten — (noch nicht zugeordnet)
-- ⬜ Textmarken übernehmen — (noch nicht zugeordnet)
-- ⬜ Andere Formatvorlagen in Lesezeichen umwandeln — (noch nicht zugeordnet)
-- ⬜ Eigene Formatvorlagen in Lesezeichen umwandeln — (noch nicht zugeordnet)
-- ⬜ PDF nach dem Export öffnen — (noch nicht zugeordnet)
+- ✅ Hyperlinks — Qt schreibt Link-Annotationen (geprüft mit pypdf)
+- ⬜ Überschriften als Lesezeichen — QPdfWriter kann keine PDF-Gliederung (Lesezeichen) schreiben
+- ⬜ Kommentare mitnehmen — Task E (Kommentare/Fußnoten)
+- ✅ Dokumenteigenschaften mitnehmen — pdf/eigenschaften, pdf/oeffnen (export_pdf author)
+- ⬜ Verknüpfung von Fuß- und Endnoten — Task E (Kommentare/Fußnoten)
+- ⬜ Textmarken übernehmen — QPdfWriter kann keine PDF-Gliederung (Lesezeichen) schreiben
+- ⬜ Andere Formatvorlagen in Lesezeichen umwandeln — QPdfWriter kann keine PDF-Gliederung (Lesezeichen) schreiben
+- ⬜ Eigene Formatvorlagen in Lesezeichen umwandeln — QPdfWriter kann keine PDF-Gliederung (Lesezeichen) schreiben
+- ✅ PDF nach dem Export öffnen — pdf/eigenschaften, pdf/oeffnen (export_pdf author)
 
 ## OPTIONEN > Benutzerinformationen > Benutzerdaten
 
-- ⬜ Wer schreibt — (noch nicht zugeordnet)
-- ⬜ Initialen — (noch nicht zugeordnet)
-- ⬜ Diese Benutzerinformationen verwenden — (noch nicht zugeordnet)
+- ✅ Wer schreibt — benutzer/name, benutzer/verwenden (_meta_fuer_speichern)
+- ⬜ Initialen — nicht übertragen
+- ✅ Diese Benutzerinformationen verwenden — benutzer/name, benutzer/verwenden (_meta_fuer_speichern)
 
 ## OPTIONEN > Drucken > Druckoptionen
 
-- ⬜ Womit das Druckfenster aufgeht — (noch nicht zugeordnet)
-- ⬜ Hohe Qualität — (noch nicht zugeordnet)
-- ⬜ Umgekehrte Reihenfolge — (noch nicht zugeordnet)
-- ⬜ Zeichnungsobjekte drucken — (noch nicht zugeordnet)
-- ⬜ Hintergrundfarben und -bilder drucken — (noch nicht zugeordnet)
-- ⬜ Leere Seiten mitdrucken — (noch nicht zugeordnet)
-- ⬜ Felder vor dem Drucken aktualisieren — (noch nicht zugeordnet)
-- ⬜ Feldfunktionen drucken — (noch nicht zugeordnet)
-- ⬜ Ausgeblendeter Text — (noch nicht zugeordnet)
-- ⬜ Autor der Kommentare und Überarbeitungen — (noch nicht zugeordnet)
+- ⬜ Womit das Druckfenster aufgeht — nicht übertragen
+- ◐ Hohe Qualität — pagination.render/print_document, main_window.druckoptionen — seiten_liste getestet, übrige nur verdrahtet
+- ◐ Umgekehrte Reihenfolge — pagination.render/print_document, main_window.druckoptionen — seiten_liste getestet, übrige nur verdrahtet
+- ⬜ Zeichnungsobjekte drucken — nicht übertragen
+- ◐ Hintergrundfarben und -bilder drucken — pagination.render/print_document, main_window.druckoptionen — seiten_liste getestet, übrige nur verdrahtet
+- ◐ Leere Seiten mitdrucken — pagination.render/print_document, main_window.druckoptionen — seiten_liste getestet, übrige nur verdrahtet
+- ◐ Felder vor dem Drucken aktualisieren — pagination.render/print_document, main_window.druckoptionen — seiten_liste getestet, übrige nur verdrahtet
+- ⬜ Feldfunktionen drucken — nicht übertragen
+- ⬜ Ausgeblendeter Text — nicht übertragen
+- ⬜ Autor der Kommentare und Überarbeitungen — nicht übertragen
 
 ## OPTIONEN > Drucken > Nur für das aktuelle Dokument
 
-- ⬜ Nur Formulardaten drucken — (noch nicht zugeordnet)
+- ⬜ Nur Formulardaten drucken — Formulare nicht übertragen
 
 ## OPTIONEN > Drucken > Duplexdruck
 
-- ⬜ Blattvorderseite — (noch nicht zugeordnet)
-- ⬜ Blattrückseite — (noch nicht zugeordnet)
+- ✅ Blattvorderseite — drucken/duplex → seiten_liste (test_editor)
+- ✅ Blattrückseite — drucken/duplex → seiten_liste (test_editor)
 
 ## OPTIONEN > Rechtschreibprüfung > Rechtschreibprüfung
 
-- ⬜ Sprache für die Prüfung — (noch nicht zugeordnet)
-- ⬜ Rechtschreibung während der Eingabe prüfen — (noch nicht zugeordnet)
-- ⬜ Immer Korrekturvorschläge unterbreiten — (noch nicht zugeordnet)
-- ⬜ Grammatik mitprüfen — (noch nicht zugeordnet)
-- ⬜ Wörter in GROSSBUCHSTABEN ignorieren — (noch nicht zugeordnet)
-- ⬜ Wörter mit Zahlen ignorieren — (noch nicht zugeordnet)
-- ⬜ Internet- und Netzwerkpfade ignorieren — (noch nicht zugeordnet)
-- ⬜ Weggewinkte Funde wieder anzeigen — (noch nicht zugeordnet)
+- ◐ Sprache für die Prüfung — nur Deutsch
+- ✅ Rechtschreibung während der Eingabe prüfen — Optionen ▸ Rechtschreibprüfung (test_schreibhilfe, test_pruefung_paritaet)
+- ⬜ Immer Korrekturvorschläge unterbreiten — Vorschläge kommen immer; kein Schalter
+- ◐ Grammatik mitprüfen — nur über „Gründlich prüfen“ mit LanguageTool (optional)
+- ✅ Wörter in GROSSBUCHSTABEN ignorieren — Optionen ▸ Rechtschreibprüfung (test_schreibhilfe, test_pruefung_paritaet)
+- ✅ Wörter mit Zahlen ignorieren — Optionen ▸ Rechtschreibprüfung (test_schreibhilfe, test_pruefung_paritaet)
+- ✅ Internet- und Netzwerkpfade ignorieren — Optionen ▸ Rechtschreibprüfung (test_schreibhilfe, test_pruefung_paritaet)
+- ✅ Weggewinkte Funde wieder anzeigen — Optionen ▸ Rechtschreibprüfung (test_schreibhilfe, test_pruefung_paritaet)
 
 ## OPTIONEN > Rechtschreibprüfung > Benutzerwörterbuch
 
-- ⬜ Was das Programm gelernt hat — (noch nicht zugeordnet)
+- ✅ Was das Programm gelernt hat — Optionen ▸ Gedächtnis, storage/gelernt.py
 
 ## OPTIONEN > Sicherheit > Kennwortschutz
 
-- ⬜ Dokumentkennwort — (noch nicht zugeordnet)
-- ⬜ Bearbeitung sperren — Band: Überprüfen ▸ Schützen
+- ✅ Dokumentkennwort — formats.load/save mit msoffcrypto-tool (test_formats: Kennwort-Roundtrip)
+- ◐ Bearbeitung sperren — nur für die Sitzung (main_window.toggle_sperre, test_main_window); kein Kennwort für die Freigabe
 
 ## OPTIONEN > Sicherheit > Datenschutz
 
-- ⬜ Ausgeblendete Markups beim Öffnen anzeigen — (noch nicht zugeordnet)
-- ⬜ Beim Speichern persönliche Daten entfernen — (noch nicht zugeordnet)
+- ⬜ Ausgeblendete Markups beim Öffnen anzeigen — Task E
+- ✅ Beim Speichern persönliche Daten entfernen — sicherheit/personendaten_weg (_meta_fuer_speichern)
 
 ## OPTIONEN > Schreibhilfe und KI > Prüfung und KI
 
-- ⬜ API-Schlüssel — (noch nicht zugeordnet)
-- ⬜ KI-Modell — (noch nicht zugeordnet)
-- ⬜ Für wen der Text ist — (noch nicht zugeordnet)
-- ⬜ Verbrauch — (noch nicht zugeordnet)
+- ✅ API-Schlüssel — Optionen ▸ Schreibhilfe und KI (test_ki; nur mit Attrappen gegen die echten Dienste getestet)
+- ✅ KI-Modell — Optionen ▸ Schreibhilfe und KI (test_ki; nur mit Attrappen gegen die echten Dienste getestet)
+- ✅ Für wen der Text ist — Optionen ▸ Schreibhilfe und KI (test_ki; nur mit Attrappen gegen die echten Dienste getestet)
+- ✅ Verbrauch — Optionen ▸ Schreibhilfe und KI (test_ki; nur mit Attrappen gegen die echten Dienste getestet)
 - ✅ Übersetzen — Band: Seitenleiste ▸ Sprache
 
 ## OPTIONEN > Gedächtnis > Gedächtnis
 
-- ⬜ Gelernte Schreibweisen — (noch nicht zugeordnet)
+- ✅ Gelernte Schreibweisen — Optionen ▸ Gedächtnis: Liste, Eintrag entfernen, alles vergessen
 
 ## OPTIONEN > Menüband anpassen
 
-- ⬜ Befehle auswählen — (noch nicht zugeordnet)
-- ⬜ Menüband anpassen — (noch nicht zugeordnet)
+- ⬜ Befehle auswählen — Task F (Register anpassen)
+- ⬜ Menüband anpassen — Task F (Register anpassen)
 
 ## OPTIONEN > Symbolleiste für den Schnellzugriff
 
-- ⬜ Befehle auswählen — (noch nicht zugeordnet)
-- ⬜ Derzeit angezeigte Optionen — (noch nicht zugeordnet)
+- ⬜ Befehle auswählen — Task F
+- ⬜ Derzeit angezeigte Optionen — Task F
 
 ## OPTIONEN > Erweitert > Erweitert
 
-- ⬜ Was zusätzlich geholt wurde — (noch nicht zugeordnet)
+- ✅ Was zusätzlich geholt wurde — Optionen ▸ Erweitert (LibreOffice, LanguageTool, Sprachausgabe)

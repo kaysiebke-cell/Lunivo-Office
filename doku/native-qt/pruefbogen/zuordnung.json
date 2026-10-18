@@ -482,5 +482,537 @@
  "DOKUMENTMODELL (Callbacks)|Callbacks triggern Language Bridge Update": {
   "status": "✅",
   "wo": "Qt-Signal contentsChanged → WritingAssistant.dokument_geaendert"
+ },
+ "OPTIONEN > Ansicht > Anzeigen|Navigationsbereich": {
+  "status": "✅",
+  "wo": "Optionen ▸ Wie im WPS Writer ▸ Ansicht"
+ },
+ "OPTIONEN > Ansicht > Anzeigen|Textbegrenzungen": {
+  "status": "✅",
+  "wo": "Optionen ▸ Wie im WPS Writer ▸ Ansicht"
+ },
+ "OPTIONEN > Ansicht > Anzeigen|Statusleiste": {
+  "status": "✅",
+  "wo": "Optionen ▸ Wie im WPS Writer ▸ Ansicht (ui/statusleiste → ansicht_optionen_anwenden)"
+ },
+ "OPTIONEN > Ansicht > Anzeigen|Seitenleiste beim Start": {
+  "status": "✅",
+  "wo": "Optionen ▸ Wie im WPS Writer ▸ Ansicht (ui/seitenleiste, main_window)"
+ },
+ "OPTIONEN > Ansicht > Anzeigen|QuickInfo": {
+  "status": "◐",
+  "wo": "Qt zeigt Kurzinfos immer; kein Schalter"
+ },
+ "OPTIONEN > Ansicht > Anzeigen|Lineal": {
+  "status": "⬜",
+  "wo": "Task B (Lineal/Gitternetz)"
+ },
+ "OPTIONEN > Ansicht > Anzeigen|Vertikales Lineal": {
+  "status": "⬜",
+  "wo": "Task B (Lineal/Gitternetz)"
+ },
+ "OPTIONEN > Ansicht > Anzeigen|Gitternetzlinien": {
+  "status": "⬜",
+  "wo": "Task B (Lineal/Gitternetz)"
+ },
+ "OPTIONEN > Ansicht > Anzeigen|Live-Vorschau": {
+  "status": "⬜",
+  "wo": "nicht übertragen (in den Optionen als gesperrte Zeile sichtbar)"
+ },
+ "OPTIONEN > Ansicht > Anzeigen|Minisymbolleiste bei Auswahl": {
+  "status": "⬜",
+  "wo": "nicht übertragen (in den Optionen als gesperrte Zeile sichtbar)"
+ },
+ "OPTIONEN > Ansicht > Anzeigen|Minisymbolleiste bei Rechtsklick": {
+  "status": "⬜",
+  "wo": "nicht übertragen (in den Optionen als gesperrte Zeile sichtbar)"
+ },
+ "OPTIONEN > Ansicht > Anzeigen|Tipp für Kopf- bzw. Fußzeile": {
+  "status": "⬜",
+  "wo": "nicht übertragen (in den Optionen als gesperrte Zeile sichtbar)"
+ },
+ "OPTIONEN > Ansicht > Druckoptionen|Hervorhebungen drucken": {
+  "status": "⬜",
+  "wo": "nicht übertragen"
+ },
+ "OPTIONEN > Ansicht > Druckoptionen|Textbegrenzungen drucken": {
+  "status": "⬜",
+  "wo": "nicht übertragen"
+ },
+ "OPTIONEN > Ansicht > Druckoptionen|Zuschnittsmarken anzeigen": {
+  "status": "⬜",
+  "wo": "nicht übertragen"
+ },
+ "OPTIONEN > Ansicht > Druckoptionen|Feldfunktionen drucken": {
+  "status": "⬜",
+  "wo": "nicht übertragen"
+ },
+ "OPTIONEN > Ansicht > Druckoptionen|Textmarken drucken": {
+  "status": "⬜",
+  "wo": "nicht übertragen"
+ },
+ "OPTIONEN > Ansicht > Druckoptionen|Feldschattierung": {
+  "status": "⬜",
+  "wo": "nicht übertragen"
+ },
+ "OPTIONEN > Ansicht > Formatierungszeichen|Alle anzeigen": {
+  "status": "✅",
+  "wo": "ui/steuerzeichen, toggle_marks (¶)"
+ },
+ "OPTIONEN > Ansicht > Formatierungszeichen|Absatzmarken": {
+  "status": "◐",
+  "wo": "Qt schaltet Absatzmarken, Leerzeichen und Tabs nur gemeinsam"
+ },
+ "OPTIONEN > Ansicht > Formatierungszeichen|Leerzeichen": {
+  "status": "◐",
+  "wo": "Qt schaltet Absatzmarken, Leerzeichen und Tabs nur gemeinsam"
+ },
+ "OPTIONEN > Ansicht > Formatierungszeichen|Tabstoppzeichen": {
+  "status": "◐",
+  "wo": "Qt schaltet Absatzmarken, Leerzeichen und Tabs nur gemeinsam"
+ },
+ "OPTIONEN > Ansicht > Formatierungszeichen|Objektanker": {
+  "status": "⬜",
+  "wo": "Qt kennt weder Objektanker noch ausgeblendeten Text"
+ },
+ "OPTIONEN > Ansicht > Formatierungszeichen|Ausgeblendeter Text": {
+  "status": "⬜",
+  "wo": "Qt kennt weder Objektanker noch ausgeblendeten Text"
+ },
+ "OPTIONEN > Ansicht > Menübandoptionen|Doppelklick blendet das Band aus": {
+  "status": "✅",
+  "wo": "RegisterBand.einklappen_umschalten (test_main_window)"
+ },
+ "OPTIONEN > Ansicht > Menübandoptionen|Strg+Klick folgt einem Verweis": {
+  "status": "✅",
+  "wo": "editor_widget.mouseReleaseEvent, ui/strg_klick_link"
+ },
+ "OPTIONEN > Ansicht > Darstellung|Schrift und Helligkeit": {
+  "status": "✅",
+  "wo": "Optionen ▸ Wie im WPS Writer ▸ Ansicht (theme, ui/icongroesse, icons.FAKTOR)"
+ },
+ "OPTIONEN > Ansicht > Darstellung|Größe der Symbole": {
+  "status": "✅",
+  "wo": "Optionen ▸ Wie im WPS Writer ▸ Ansicht (theme, ui/icongroesse, icons.FAKTOR)"
+ },
+ "OPTIONEN > Ansicht > Darstellung|Schrift der Bedienung": {
+  "status": "◐",
+  "wo": "nur die Schriftgröße (ui/bedienschrift_groesse); Schriftart folgt dem System"
+ },
+ "OPTIONEN > Ansicht > Darstellung|Benutzeroberfläche": {
+  "status": "⬜",
+  "wo": "Task F (Symbolleisten-Oberfläche)"
+ },
+ "OPTIONEN > Bearbeiten > Bearbeitungsoptionen|Tippen ersetzt die Auswahl": {
+  "status": "✅",
+  "wo": "bearbeiten/tippen_ersetzt (editor_widget.keyPressEvent)"
+ },
+ "OPTIONEN > Bearbeiten > Bearbeitungsoptionen|Text mit der Maus verschieben": {
+  "status": "◐",
+  "wo": "Qt-Standard (Ziehen und Ablegen), nicht abschaltbar"
+ },
+ "OPTIONEN > Bearbeiten > Bearbeitungsoptionen|Wortweise markieren": {
+  "status": "⬜",
+  "wo": "nicht übertragen"
+ },
+ "OPTIONEN > Bearbeiten > Bearbeitungsoptionen|Maximale Rückgängig-Schritte": {
+  "status": "⬜",
+  "wo": "Qt bietet keine Begrenzung des Rückgängig-Stapels pro Dokument"
+ },
+ "OPTIONEN > Bearbeiten > AutoFormat|Automatisch nummerierte Listen": {
+  "status": "✅",
+  "wo": "autoformat/liste, autoformat/punkte (test_editor)"
+ },
+ "OPTIONEN > Bearbeiten > AutoFormat|Aufzählungen erkennen": {
+  "status": "✅",
+  "wo": "autoformat/liste, autoformat/punkte (test_editor)"
+ },
+ "OPTIONEN > Bearbeiten > AutoFormat|Zahl automatisch im Kreis": {
+  "status": "⬜",
+  "wo": "nicht übertragen"
+ },
+ "OPTIONEN > Bearbeiten > AutoKorrektur|Typografische Anführungszeichen": {
+  "status": "✅",
+  "wo": "services/autokorrektur.py, Optionen ▸ Bearbeiten (test_schreibhilfe)"
+ },
+ "OPTIONEN > Bearbeiten > AutoKorrektur|Gedankenstriche": {
+  "status": "✅",
+  "wo": "services/autokorrektur.py, Optionen ▸ Bearbeiten (test_schreibhilfe)"
+ },
+ "OPTIONEN > Bearbeiten > AutoKorrektur|Auslassungspunkte": {
+  "status": "✅",
+  "wo": "services/autokorrektur.py, Optionen ▸ Bearbeiten (test_schreibhilfe)"
+ },
+ "OPTIONEN > Bearbeiten > AutoKorrektur|Jeden Satz mit einem Großbuchstaben beginnen": {
+  "status": "✅",
+  "wo": "services/autokorrektur.py, Optionen ▸ Bearbeiten (test_schreibhilfe)"
+ },
+ "OPTIONEN > Bearbeiten > AutoKorrektur|Wochentage immer großschreiben": {
+  "status": "✅",
+  "wo": "services/autokorrektur.py, Optionen ▸ Bearbeiten (test_schreibhilfe)"
+ },
+ "OPTIONEN > Bearbeiten > AutoKorrektur|Englische Ordnungszahlen hochstellen": {
+  "status": "✅",
+  "wo": "services/autokorrektur.py, Optionen ▸ Bearbeiten (test_schreibhilfe)"
+ },
+ "OPTIONEN > Bearbeiten > AutoKorrektur|Feststelltaste korrigieren": {
+  "status": "✅",
+  "wo": "services/autokorrektur.py, Optionen ▸ Bearbeiten (test_schreibhilfe)"
+ },
+ "OPTIONEN > Bearbeiten > AutoKorrektur|Internet- und Netzwerkpfade durch Hyperlinks ersetzen": {
+  "status": "◐",
+  "wo": "editor_widget._autokorr_extras/keyPressEvent — verdrahtet, noch ohne eigenen Test"
+ },
+ "OPTIONEN > Bearbeiten > AutoKorrektur|Leerzeichen am Absatzanfang mit Erstzeileneinzug": {
+  "status": "◐",
+  "wo": "editor_widget._autokorr_extras/keyPressEvent — verdrahtet, noch ohne eigenen Test"
+ },
+ "OPTIONEN > Bearbeiten > AutoKorrektur|Bei zentriertem Ausrichten Erstzeileneinzug löschen": {
+  "status": "◐",
+  "wo": "editor_widget._autokorr_extras/keyPressEvent — verdrahtet, noch ohne eigenen Test"
+ },
+ "OPTIONEN > Bearbeiten > AutoKorrektur|Tabulator und Rücktaste setzen den Einzug": {
+  "status": "◐",
+  "wo": "editor_widget._autokorr_extras/keyPressEvent — verdrahtet, noch ohne eigenen Test"
+ },
+ "OPTIONEN > Bearbeiten > AutoKorrektur|Leerzeichenformat am Ende rechtsbündiger Zeilen anpassen": {
+  "status": "⬜",
+  "wo": "nicht übertragen"
+ },
+ "OPTIONEN > Bearbeiten > Ausschneiden und Einfügen|Ohne Formatierung einfügen": {
+  "status": "✅",
+  "wo": "Befehle.einfuegenOhne"
+ },
+ "OPTIONEN > Bearbeiten > Ausschneiden und Einfügen|Mittlere Maustaste fügt ein": {
+  "status": "◐",
+  "wo": "unter Linux/X11 durch Qt (Primärauswahl), nicht schaltbar"
+ },
+ "OPTIONEN > Bearbeiten > Ausschneiden und Einfügen|Schaltfläche nach dem Einfügen": {
+  "status": "⬜",
+  "wo": "nicht übertragen"
+ },
+ "OPTIONEN > Bearbeiten > Ausschneiden und Einfügen|Standardeinfügeformat": {
+  "status": "⬜",
+  "wo": "nicht übertragen"
+ },
+ "OPTIONEN > Allgemein und Speichern > Speichern|Dateien als Standard speichern": {
+  "status": "✅",
+  "wo": "speichern/standard (DOCX/TXT), _ask_path"
+ },
+ "OPTIONEN > Allgemein und Speichern > Schrift für neuen Text|Schrift": {
+  "status": "✅",
+  "wo": "standard/schrift, standard/groesse (new_document)"
+ },
+ "OPTIONEN > Allgemein und Speichern > Schrift für neuen Text|Größe": {
+  "status": "✅",
+  "wo": "standard/schrift, standard/groesse (new_document)"
+ },
+ "OPTIONEN > Allgemein und Speichern > Allgemeine Optionen|Bilder in der Datei nicht komprimieren": {
+  "status": "◐",
+  "wo": "Bilder werden nie komprimiert; kein Schalter"
+ },
+ "OPTIONEN > Allgemein und Speichern > Allgemeine Optionen|Maßeinheit": {
+  "status": "⬜",
+  "wo": "nicht übertragen"
+ },
+ "OPTIONEN > Allgemein und Speichern > Allgemeine Optionen|Standard-Ausgabeziel": {
+  "status": "⬜",
+  "wo": "nicht übertragen"
+ },
+ "OPTIONEN > Allgemein und Speichern > Webseite|Webseitencodierung": {
+  "status": "✅",
+  "wo": "speichern/codierung, formats.save(.html) (test_formats)"
+ },
+ "OPTIONEN > Allgemein und Speichern > Kompatibilitätsoptionen|Seitenumbruch und Absatzmarke aufteilen": {
+  "status": "⬜",
+  "wo": "WPS-/Word-Altlayout; Qt hat keine Entsprechung"
+ },
+ "OPTIONEN > Allgemein und Speichern > Kompatibilitätsoptionen|Hängenden Einzug nicht als Tabstopp verwenden": {
+  "status": "⬜",
+  "wo": "WPS-/Word-Altlayout; Qt hat keine Entsprechung"
+ },
+ "OPTIONEN > Allgemein und Speichern > Kompatibilitätsoptionen|Nachstehende Leerstellen unterstreichen": {
+  "status": "⬜",
+  "wo": "WPS-/Word-Altlayout; Qt hat keine Entsprechung"
+ },
+ "OPTIONEN > Allgemein und Speichern > Kompatibilitätsoptionen|Layout von Fußnoten wie Word 6/95/97": {
+  "status": "⬜",
+  "wo": "WPS-/Word-Altlayout; Qt hat keine Entsprechung"
+ },
+ "OPTIONEN > Allgemein und Speichern > Kompatibilitätsoptionen|Zeilenhöhe in Tabellen auf Rasterhöhe anpassen": {
+  "status": "⬜",
+  "wo": "WPS-/Word-Altlayout; Qt hat keine Entsprechung"
+ },
+ "OPTIONEN > Sicherungseinstellungen > Sicherung|Wann gesichert wird": {
+  "status": "✅",
+  "wo": "sicherung/aktiv, autosave_seconds, Pfadanzeige"
+ },
+ "OPTIONEN > Sicherungseinstellungen > Sicherung|Abstand (Minuten)": {
+  "status": "✅",
+  "wo": "sicherung/aktiv, autosave_seconds, Pfadanzeige"
+ },
+ "OPTIONEN > Sicherungseinstellungen > Sicherung|Wo die Einstellungen liegen": {
+  "status": "✅",
+  "wo": "sicherung/aktiv, autosave_seconds, Pfadanzeige"
+ },
+ "OPTIONEN > Sicherungseinstellungen > Zwischenstände aufheben|Wie lange (Tage)": {
+  "status": "◐",
+  "wo": "sicherung/staende + sicherung/tage, recovery.zwischenstand — noch ohne eigenen Test"
+ },
+ "OPTIONEN > Sicherungseinstellungen > Zwischenstände aufheben|Zwischenstände löschen": {
+  "status": "◐",
+  "wo": "alte Stände werden automatisch gelöscht; kein Knopf"
+ },
+ "OPTIONEN > Sicherungseinstellungen > Was im Speicher steht|Sichern und zurückholen": {
+  "status": "◐",
+  "wo": "ZIP mit Gedächtnis (ohne API-Schlüssel) — noch ohne eigenen Test"
+ },
+ "OPTIONEN > Speicherort für Dateien > Speicherort für Dateien|Ordner zum Speichern": {
+  "status": "✅",
+  "wo": "speichern/ordner"
+ },
+ "OPTIONEN > Speicherort für Dateien > Speicherort für Dateien|Eigene Vorlagen": {
+  "status": "⬜",
+  "wo": "Task F (Vorlagen)"
+ },
+ "OPTIONEN > Änderungen verfolgen > Änderungen verfolgen|Änderungen verfolgen": {
+  "status": "⬜",
+  "wo": "Task E"
+ },
+ "OPTIONEN > Änderungen verfolgen > Änderungen verfolgen|Markup anzeigen": {
+  "status": "⬜",
+  "wo": "Task E"
+ },
+ "OPTIONEN > Änderungen verfolgen > Markup|Einfügungen": {
+  "status": "⬜",
+  "wo": "Task E"
+ },
+ "OPTIONEN > Änderungen verfolgen > Markup|Löschvorgänge": {
+  "status": "⬜",
+  "wo": "Task E"
+ },
+ "OPTIONEN > Änderungen verfolgen > Markup|Geänderte Zeilen": {
+  "status": "⬜",
+  "wo": "Task E"
+ },
+ "OPTIONEN > Änderungen verfolgen > Markup|Farbe": {
+  "status": "⬜",
+  "wo": "Task E"
+ },
+ "OPTIONEN > Änderungen verfolgen > Sprechblasen|Sprechblasen verwenden": {
+  "status": "⬜",
+  "wo": "Task E"
+ },
+ "OPTIONEN > Änderungen verfolgen > Sprechblasen|Empfohlene Breite verwenden": {
+  "status": "⬜",
+  "wo": "Task E"
+ },
+ "OPTIONEN > Änderungen verfolgen > Sprechblasen|Bevorzugte Breite (mm)": {
+  "status": "⬜",
+  "wo": "Task E"
+ },
+ "OPTIONEN > Änderungen verfolgen > Sprechblasen|Seitenrand": {
+  "status": "⬜",
+  "wo": "Task E"
+ },
+ "OPTIONEN > Änderungen verfolgen > Sprechblasen|Verbindungslinien zum Text anzeigen": {
+  "status": "⬜",
+  "wo": "Task E"
+ },
+ "OPTIONEN > Änderungen verfolgen > Drucken (mit Sprechblasen)|Papierausrichtung": {
+  "status": "⬜",
+  "wo": "Task E"
+ },
+ "OPTIONEN > In PDF exportieren > Exportoptionen|Hyperlinks": {
+  "status": "✅",
+  "wo": "Qt schreibt Link-Annotationen (geprüft mit pypdf)"
+ },
+ "OPTIONEN > In PDF exportieren > Exportoptionen|Dokumenteigenschaften mitnehmen": {
+  "status": "✅",
+  "wo": "pdf/eigenschaften, pdf/oeffnen (export_pdf author)"
+ },
+ "OPTIONEN > In PDF exportieren > Exportoptionen|PDF nach dem Export öffnen": {
+  "status": "✅",
+  "wo": "pdf/eigenschaften, pdf/oeffnen (export_pdf author)"
+ },
+ "OPTIONEN > In PDF exportieren > Exportoptionen|Überschriften als Lesezeichen": {
+  "status": "⬜",
+  "wo": "QPdfWriter kann keine PDF-Gliederung (Lesezeichen) schreiben"
+ },
+ "OPTIONEN > In PDF exportieren > Exportoptionen|Andere Formatvorlagen in Lesezeichen umwandeln": {
+  "status": "⬜",
+  "wo": "QPdfWriter kann keine PDF-Gliederung (Lesezeichen) schreiben"
+ },
+ "OPTIONEN > In PDF exportieren > Exportoptionen|Eigene Formatvorlagen in Lesezeichen umwandeln": {
+  "status": "⬜",
+  "wo": "QPdfWriter kann keine PDF-Gliederung (Lesezeichen) schreiben"
+ },
+ "OPTIONEN > In PDF exportieren > Exportoptionen|Textmarken übernehmen": {
+  "status": "⬜",
+  "wo": "QPdfWriter kann keine PDF-Gliederung (Lesezeichen) schreiben"
+ },
+ "OPTIONEN > In PDF exportieren > Exportoptionen|Kommentare mitnehmen": {
+  "status": "⬜",
+  "wo": "Task E (Kommentare/Fußnoten)"
+ },
+ "OPTIONEN > In PDF exportieren > Exportoptionen|Verknüpfung von Fuß- und Endnoten": {
+  "status": "⬜",
+  "wo": "Task E (Kommentare/Fußnoten)"
+ },
+ "OPTIONEN > Benutzerinformationen > Benutzerdaten|Wer schreibt": {
+  "status": "✅",
+  "wo": "benutzer/name, benutzer/verwenden (_meta_fuer_speichern)"
+ },
+ "OPTIONEN > Benutzerinformationen > Benutzerdaten|Diese Benutzerinformationen verwenden": {
+  "status": "✅",
+  "wo": "benutzer/name, benutzer/verwenden (_meta_fuer_speichern)"
+ },
+ "OPTIONEN > Benutzerinformationen > Benutzerdaten|Initialen": {
+  "status": "⬜",
+  "wo": "nicht übertragen"
+ },
+ "OPTIONEN > Drucken > Druckoptionen|Hohe Qualität": {
+  "status": "◐",
+  "wo": "pagination.render/print_document, main_window.druckoptionen — seiten_liste getestet, übrige nur verdrahtet"
+ },
+ "OPTIONEN > Drucken > Druckoptionen|Umgekehrte Reihenfolge": {
+  "status": "◐",
+  "wo": "pagination.render/print_document, main_window.druckoptionen — seiten_liste getestet, übrige nur verdrahtet"
+ },
+ "OPTIONEN > Drucken > Druckoptionen|Hintergrundfarben und -bilder drucken": {
+  "status": "◐",
+  "wo": "pagination.render/print_document, main_window.druckoptionen — seiten_liste getestet, übrige nur verdrahtet"
+ },
+ "OPTIONEN > Drucken > Druckoptionen|Leere Seiten mitdrucken": {
+  "status": "◐",
+  "wo": "pagination.render/print_document, main_window.druckoptionen — seiten_liste getestet, übrige nur verdrahtet"
+ },
+ "OPTIONEN > Drucken > Druckoptionen|Felder vor dem Drucken aktualisieren": {
+  "status": "◐",
+  "wo": "pagination.render/print_document, main_window.druckoptionen — seiten_liste getestet, übrige nur verdrahtet"
+ },
+ "OPTIONEN > Drucken > Druckoptionen|Womit das Druckfenster aufgeht": {
+  "status": "⬜",
+  "wo": "nicht übertragen"
+ },
+ "OPTIONEN > Drucken > Druckoptionen|Zeichnungsobjekte drucken": {
+  "status": "⬜",
+  "wo": "nicht übertragen"
+ },
+ "OPTIONEN > Drucken > Druckoptionen|Feldfunktionen drucken": {
+  "status": "⬜",
+  "wo": "nicht übertragen"
+ },
+ "OPTIONEN > Drucken > Druckoptionen|Ausgeblendeter Text": {
+  "status": "⬜",
+  "wo": "nicht übertragen"
+ },
+ "OPTIONEN > Drucken > Druckoptionen|Autor der Kommentare und Überarbeitungen": {
+  "status": "⬜",
+  "wo": "nicht übertragen"
+ },
+ "OPTIONEN > Drucken > Nur für das aktuelle Dokument|Nur Formulardaten drucken": {
+  "status": "⬜",
+  "wo": "Formulare nicht übertragen"
+ },
+ "OPTIONEN > Drucken > Duplexdruck|Blattvorderseite": {
+  "status": "✅",
+  "wo": "drucken/duplex → seiten_liste (test_editor)"
+ },
+ "OPTIONEN > Drucken > Duplexdruck|Blattrückseite": {
+  "status": "✅",
+  "wo": "drucken/duplex → seiten_liste (test_editor)"
+ },
+ "OPTIONEN > Rechtschreibprüfung > Rechtschreibprüfung|Rechtschreibung während der Eingabe prüfen": {
+  "status": "✅",
+  "wo": "Optionen ▸ Rechtschreibprüfung (test_schreibhilfe, test_pruefung_paritaet)"
+ },
+ "OPTIONEN > Rechtschreibprüfung > Rechtschreibprüfung|Wörter in GROSSBUCHSTABEN ignorieren": {
+  "status": "✅",
+  "wo": "Optionen ▸ Rechtschreibprüfung (test_schreibhilfe, test_pruefung_paritaet)"
+ },
+ "OPTIONEN > Rechtschreibprüfung > Rechtschreibprüfung|Wörter mit Zahlen ignorieren": {
+  "status": "✅",
+  "wo": "Optionen ▸ Rechtschreibprüfung (test_schreibhilfe, test_pruefung_paritaet)"
+ },
+ "OPTIONEN > Rechtschreibprüfung > Rechtschreibprüfung|Internet- und Netzwerkpfade ignorieren": {
+  "status": "✅",
+  "wo": "Optionen ▸ Rechtschreibprüfung (test_schreibhilfe, test_pruefung_paritaet)"
+ },
+ "OPTIONEN > Rechtschreibprüfung > Rechtschreibprüfung|Weggewinkte Funde wieder anzeigen": {
+  "status": "✅",
+  "wo": "Optionen ▸ Rechtschreibprüfung (test_schreibhilfe, test_pruefung_paritaet)"
+ },
+ "OPTIONEN > Rechtschreibprüfung > Rechtschreibprüfung|Sprache für die Prüfung": {
+  "status": "◐",
+  "wo": "nur Deutsch"
+ },
+ "OPTIONEN > Rechtschreibprüfung > Rechtschreibprüfung|Immer Korrekturvorschläge unterbreiten": {
+  "status": "⬜",
+  "wo": "Vorschläge kommen immer; kein Schalter"
+ },
+ "OPTIONEN > Rechtschreibprüfung > Rechtschreibprüfung|Grammatik mitprüfen": {
+  "status": "◐",
+  "wo": "nur über „Gründlich prüfen“ mit LanguageTool (optional)"
+ },
+ "OPTIONEN > Rechtschreibprüfung > Benutzerwörterbuch|Was das Programm gelernt hat": {
+  "status": "✅",
+  "wo": "Optionen ▸ Gedächtnis, storage/gelernt.py"
+ },
+ "OPTIONEN > Sicherheit > Kennwortschutz|Dokumentkennwort": {
+  "status": "✅",
+  "wo": "formats.load/save mit msoffcrypto-tool (test_formats: Kennwort-Roundtrip)"
+ },
+ "OPTIONEN > Sicherheit > Kennwortschutz|Bearbeitung sperren": {
+  "status": "◐",
+  "wo": "nur für die Sitzung (main_window.toggle_sperre, test_main_window); kein Kennwort für die Freigabe"
+ },
+ "OPTIONEN > Sicherheit > Datenschutz|Beim Speichern persönliche Daten entfernen": {
+  "status": "✅",
+  "wo": "sicherheit/personendaten_weg (_meta_fuer_speichern)"
+ },
+ "OPTIONEN > Sicherheit > Datenschutz|Ausgeblendete Markups beim Öffnen anzeigen": {
+  "status": "⬜",
+  "wo": "Task E"
+ },
+ "OPTIONEN > Schreibhilfe und KI > Prüfung und KI|API-Schlüssel": {
+  "status": "✅",
+  "wo": "Optionen ▸ Schreibhilfe und KI (test_ki; nur mit Attrappen gegen die echten Dienste getestet)"
+ },
+ "OPTIONEN > Schreibhilfe und KI > Prüfung und KI|KI-Modell": {
+  "status": "✅",
+  "wo": "Optionen ▸ Schreibhilfe und KI (test_ki; nur mit Attrappen gegen die echten Dienste getestet)"
+ },
+ "OPTIONEN > Schreibhilfe und KI > Prüfung und KI|Für wen der Text ist": {
+  "status": "✅",
+  "wo": "Optionen ▸ Schreibhilfe und KI (test_ki; nur mit Attrappen gegen die echten Dienste getestet)"
+ },
+ "OPTIONEN > Schreibhilfe und KI > Prüfung und KI|Verbrauch": {
+  "status": "✅",
+  "wo": "Optionen ▸ Schreibhilfe und KI (test_ki; nur mit Attrappen gegen die echten Dienste getestet)"
+ },
+ "OPTIONEN > Gedächtnis > Gedächtnis|Gelernte Schreibweisen": {
+  "status": "✅",
+  "wo": "Optionen ▸ Gedächtnis: Liste, Eintrag entfernen, alles vergessen"
+ },
+ "OPTIONEN > Menüband anpassen|Befehle auswählen": {
+  "status": "⬜",
+  "wo": "Task F (Register anpassen)"
+ },
+ "OPTIONEN > Menüband anpassen|Menüband anpassen": {
+  "status": "⬜",
+  "wo": "Task F (Register anpassen)"
+ },
+ "OPTIONEN > Symbolleiste für den Schnellzugriff|Befehle auswählen": {
+  "status": "⬜",
+  "wo": "Task F"
+ },
+ "OPTIONEN > Symbolleiste für den Schnellzugriff|Derzeit angezeigte Optionen": {
+  "status": "⬜",
+  "wo": "Task F"
+ },
+ "OPTIONEN > Erweitert > Erweitert|Was zusätzlich geholt wurde": {
+  "status": "✅",
+  "wo": "Optionen ▸ Erweitert (LibreOffice, LanguageTool, Sprachausgabe)"
  }
 }
