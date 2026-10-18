@@ -355,3 +355,27 @@ def test_silben_farbig(app, tmp_path, monkeypatch):
     from native_qt.editor.page import PageSettings
     from native_qt.editor.pagination import render
     assert render(ed.document(), PageSettings(), QPdfWriter(str(tmp_path / "f.pdf")), opt={"silbenfarben": dict(k, an=True)}) == 1
+
+
+def test_pdf_kommentare_und_formatvorlagen(app, tmp_path):
+    """Kommentare als PDF-Notizen auf der richtigen Seite; Titel/Zitat als Lesezeichen."""
+    from PySide6.QtGui import QTextBlockFormat
+    from pypdf import PdfReader
+    from native_qt.document_io.docx_reader import STYLE_PROP
+    from native_qt.editor.editor_widget import DocumentEditor
+    from native_qt.editor.page import PageSettings
+    from native_qt.editor.pagination import export_pdf
+    ed = DocumentEditor()
+    c = ed.textCursor()
+    bf = QTextBlockFormat(); bf.setProperty(STYLE_PROP, "title")
+    c.insertBlock(bf); c.insertText("Mein Titel")
+    c.insertBlock(QTextBlockFormat()); c.insertText("Zeile\\n" * 3)
+    pos = c.position()
+    c.insertText("Hier steht der kommentierte Text")
+    c.insertText("\\n" * 80 + "Ende")
+    pdf = tmp_path / "k.pdf"
+    export_pdf(str(pdf), ed.document(), PageSettings(), "t", "", None, {"andere": True}, None, [(pos, "Autor: Bitte prüfen")])
+    r = PdfReader(str(pdf))
+    assert [o.title for o in r.outline if not isinstance(o, list)] == ["Mein Titel"]
+    notizen = [a.get_object() for a in (r.pages[0].get("/Annots") or [])]
+    assert any(n.get("/Contents") == "Autor: Bitte prüfen" and n.get("/Subtype") == "/Text" for n in notizen)

@@ -12,6 +12,7 @@ from PySide6.QtGui import (
 )
 from PySide6.QtPrintSupport import QPrinter
 
+from ..document_io.docx_reader import STYLE_PROP
 from .page import PX_PER_MM, PageSettings, mm_to_px
 
 _DEV = None
@@ -315,7 +316,24 @@ def render(qdoc: QTextDocument, page: PageSettings, device, first: int = 1, last
     p.end()
     if opt.get("lesezeichen") is not None:
         opt["lesezeichen_ergebnis"] = lesezeichen_sammeln(d, ch, liste, opt["lesezeichen"])
+    if opt.get("kommentare"):
+        opt["kommentare_ergebnis"] = kommentarstellen(d, ch, liste, opt["kommentare"])
     return total
+
+
+def kommentarstellen(d: QTextDocument, ch: float, liste: list[int], kommentare: list[tuple[int, str]]) -> list[tuple[int, float, str]]:
+    """[(Seitenindex, y in px auf der Textfläche, Text)] für Kommentare — Position der Zeile, in der der Kommentar beginnt."""
+    out = []
+    for von, text in kommentare:
+        b = d.findBlock(von)
+        if not b.isValid() or b.layout() is None:
+            continue
+        zeile = b.layout().lineForTextPosition(von - b.position())
+        y = d.documentLayout().blockBoundingRect(b).top() + (zeile.y() if zeile.isValid() else 0)
+        seite = int(y // ch) + 1 if ch else 1
+        if seite in liste:
+            out.append((liste.index(seite), y - (seite - 1) * ch, text))
+    return out
 
 
 def lesezeichen_sammeln(d: QTextDocument, ch: float, liste: list[int], was: dict) -> list[tuple[int, str, int]]:
@@ -329,6 +347,9 @@ def lesezeichen_sammeln(d: QTextDocument, ch: float, liste: list[int], was: dict
             lv = b.blockFormat().headingLevel()
             if was.get("ueberschriften", True) and lv and b.text().strip():
                 out.append((lv, b.text().strip(), liste.index(seite), b.position()))
+            if was.get("andere") and b.text().strip() and b.blockFormat().hasProperty(STYLE_PROP) \
+                    and b.blockFormat().property(STYLE_PROP) in ("title", "subtitle", "quote", "Title", "Subtitle", "Quote"):
+                out.append((1, b.text().strip()[:120], liste.index(seite), b.position()))
             if was.get("textmarken"):
                 it = b.begin()
                 while not it.atEnd():
@@ -343,10 +364,19 @@ def lesezeichen_sammeln(d: QTextDocument, ch: float, liste: list[int], was: dict
     return [(lv, t, i) for lv, t, i, _p in out]
 
 
-def gliederung_schreiben(pfad: str, eintraege: list[tuple[int, str, int]]) -> None:
-    """Schreibt die Lesezeichen in die fertige PDF (QPdfWriter kann das nicht selbst) — mit pypdf."""
+def gliederung_schreiben(pfad: str, eintraege: list[tuple[int, str, int]], kommentare=None, page: PageSettings | None = None) -> None:
+    """Schreibt Lesezeichen und Kommentare in die fertige PDF (QPdfWriter kann das nicht selbst) — mit pypdf."""
     from pypdf import PdfReader, PdfWriter
     w = PdfWriter(clone_from=PdfReader(pfad))
+    if kommentare and page is not None:
+        from pypdf.annotations import Text
+        ml, mt = mm_to_px(page.margin_left_mm) * 0.75, mm_to_px(page.margin_top_mm) * 0.75
+        for seite, y, text in kommentare:
+            if seite >= len(w.pages):
+                continue
+            hoehe = float(w.pages[seite].mediabox.height)
+            oben = hoehe - mt - y * 0.75
+            w.add_annotation(page_number=seite, annotation=Text(text=text, rect=(max(0, ml - 24), oben - 18, ml - 6, oben), open=False))
     eltern: dict[int, object] = {}
     for lv, titel, seite in eintraege:
         stufe = max(1, lv)                    # Textmarken (Ebene 0) stehen auf oberster Ebene
@@ -499,7 +529,7 @@ def _page_layout(page: PageSettings) -> QPageLayout:
 
 
 def export_pdf(path: str, qdoc: QTextDocument, page: PageSettings, title: str = "", author: str = "", noten: dict | None = None,
-               lesezeichen: dict | None = None, silben: dict | None = None) -> int:
+               lesezeichen: dict | None = None, silben: dict | None = None, kommentare: list | None = None) -> int:
     from PySide6.QtCore import QByteArray
     w = QPdfWriter(path)
     w.setResolution(300)
@@ -517,10 +547,12 @@ def export_pdf(path: str, qdoc: QTextDocument, page: PageSettings, title: str = 
         opt["lesezeichen"] = lesezeichen
     if silben:
         opt["silbenfarben"] = silben
+    if kommentare:
+        opt["kommentare"] = kommentare
     n = render(qdoc, page, w, opt=opt or None)
-    if lesezeichen and opt.get("lesezeichen_ergebnis"):
+    if opt.get("lesezeichen_ergebnis") or opt.get("kommentare_ergebnis"):
         del w                                  # Datei schließen, bevor sie noch einmal geöffnet wird
-        gliederung_schreiben(path, opt["lesezeichen_ergebnis"])
+        gliederung_schreiben(path, opt.get("lesezeichen_ergebnis") or [], opt.get("kommentare_ergebnis"), page)
     return n
 
 

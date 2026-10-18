@@ -197,3 +197,35 @@ def test_wortweise_markieren(app):
     c = ed.textCursor(); c.setPosition(6); c.setPosition(9, QTextCursor.KeepAnchor); ed.setTextCursor(c)   # „tte“ mitten im Wort
     ed._wortweise()
     assert ed.textCursor().selectedText().strip() == "Wetter"
+
+
+def test_einfuegen_modi_und_schaltflaeche(app):
+    from PySide6.QtCore import QMimeData
+    from native_qt.editor.editor_widget import DocumentEditor
+    ed = DocumentEditor()
+    ed.setPlainText("Vorher: ")
+    c = ed.textCursor(); c.movePosition(QTextCursor.End); ed.setTextCursor(c)
+    mime = QMimeData()
+    mime.setHtml('<p><b style="font-size:30pt;color:#ff0000;font-family:Courier">Fett</b> und normal</p>')
+    mime.setText("Fett und normal")
+
+    def zeichen_format(nr):
+        c = QTextCursor(ed.document()); c.setPosition(nr + 1)
+        return c.charFormat()
+    ed.insertFromMimeData(mime)                                                   # Quellformatierung: fett, rot, groß
+    f = zeichen_format(len("Vorher: "))
+    assert ed.toPlainText() == "Vorher: Fett und normal" and f.fontWeight() >= 600 and f.foreground().color().name() == "#ff0000"
+    assert ed._paste_btn.isHidden() is False
+    ed._einfuegen_neu(mime, len("Vorher: "), "Zielformatierung verwenden")           # fett bleibt, Farbe/Größe/Schrift vom Ziel
+    f = zeichen_format(len("Vorher: "))
+    assert ed.toPlainText() == "Vorher: Fett und normal" and f.fontWeight() >= 600 and f.foreground().style() == Qt.NoBrush
+    ed._einfuegen_neu(mime, len("Vorher: "), "Nur Text")
+    f = zeichen_format(len("Vorher: "))
+    assert ed.toPlainText() == "Vorher: Fett und normal" and f.fontWeight() < 600
+    ed.setPlainText("Vorher: ")                                                    # Standard aus den Optionen: „Nur Text“
+    ed.opt_text = lambda n, s="": "Nur Text"
+    c = ed.textCursor(); c.movePosition(QTextCursor.End); ed.setTextCursor(c)
+    ed.insertFromMimeData(mime)
+    assert zeichen_format(len("Vorher: ")).fontWeight() < 600
+    ed.document().undo()                                                           # ein einziger Rückgängig-Schritt
+    assert ed.toPlainText() == "Vorher: "

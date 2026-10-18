@@ -1,11 +1,11 @@
 """Der Editor: QTextEdit mit Seitenbreite, Formatierungsbefehlen und Seitenzählung."""
 from __future__ import annotations
 
-from PySide6.QtCore import QPoint, QRect, QRectF, QTimer, Qt, Signal, QUrl
+from PySide6.QtCore import QMimeData, QPoint, QRect, QRectF, QTimer, Qt, Signal, QUrl
 from PySide6.QtGui import (
     QBrush, QColor, QFont, QImage, QPainter, QPen, QTextBlockFormat, QTextCharFormat, QTextCursor,
     QTextDocument, QTextFormat, QTextFrameFormat, QTextImageFormat, QTextListFormat,
-    QTextTableFormat, QTextLength,
+    QTextTableFormat, QTextLength, QTextDocumentFragment,
 )
 from PySide6.QtWidgets import QListWidget, QListWidgetItem, QScrollArea, QTextEdit
 
@@ -17,6 +17,33 @@ from . import stile
 from .zusatz_editor import ZusatzMixin
 
 STYLES = dict.fromkeys(stile.NAMEN)            # Namen der Formatvorlagen (Definitionen: editor/stile.py)
+
+
+EINFUEGE_MODI = ["Quellformatierung beibehalten", "Zielformatierung verwenden", "Nur Text"]
+
+
+def _ziel_fragment(html: str, standard: QFont):
+    """HTML einfügen, aber Schriftart, -größe, Farben und Hintergründe des Ziels behalten (Fett, Kursiv, Verweise bleiben)."""
+    from PySide6.QtGui import QBrush
+    d = QTextDocument()
+    d.setHtml(html)
+    c = QTextCursor(d)
+    c.select(QTextCursor.Document)
+    b = d.firstBlock()
+    while b.isValid():
+        it = b.begin()
+        while not it.atEnd():
+            fr = it.fragment()
+            if fr.isValid() and not fr.charFormat().isImageFormat():
+                f = QTextCharFormat(fr.charFormat())
+                f.clearProperty(QTextFormat.FontFamilies); f.clearProperty(QTextFormat.FontFamily)
+                f.clearProperty(QTextFormat.FontPointSize); f.clearProperty(QTextFormat.FontPixelSize)
+                f.clearForeground(); f.clearBackground()
+                k = QTextCursor(d); k.setPosition(fr.position()); k.setPosition(fr.position() + fr.length(), QTextCursor.KeepAnchor)
+                k.setCharFormat(f)
+            it += 1
+        b = b.next()
+    return QTextDocumentFragment(d)
 
 
 class DocumentEditor(ZusatzMixin, QTextEdit):
@@ -42,8 +69,10 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         self.marken = True                 # Textbegrenzungen (Eckmarken am Textrand)
         self.vorhersage = None            # Rückruf: Wortanfang → Liste von Vorschlägen
         self.autokorr = None              # Rückruf: Text vor dem Zeiger → korrigierter Text
+        self.mini_hook = None             # Rückruf(editor, globalePosition, rechtsklick): Minisymbolleiste zeigen/verbergen
         self.kontext_hook = None          # Rückruf(menü, position): ergänzt das Rechtsklick-Menü
         self.opt = lambda name, std=True: std      # Rückruf: Schalter aus den Optionen
+        self.opt_text = lambda name, std="": std   # Rückruf: Textwerte aus den Optionen
         self._wellen: list[dict] = []
         self._popup = QListWidget(None)
         self._popup.setWindowFlags(Qt.ToolTip)
@@ -741,8 +770,13 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         if ki is not None and self.textCursor().hasSelection() and not self.isReadOnly():
             m.addSeparator()
             m.addAction("KI: Text in Bild", ki.bild_aus_text)
+        mini = self.mini_hook is not None and self.opt("ui/mini_rechtsklick", True) and not self.isReadOnly()
+        if mini:
+            self.mini_hook(self, e.globalPos(), True)
         m.exec(e.globalPos())
         m.deleteLater()
+        if mini:
+            self.mini_hook(None, None, True)
 
     def _wortweise(self) -> None:
         """Wortweise markieren: eine mit der Maus gezogene Auswahl wird an Wortgrenzen erweitert."""
@@ -769,6 +803,11 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         super().mouseReleaseEvent(e)
         if e.button() == Qt.LeftButton and self.opt("bearbeiten/wortweise", True) and self.textCursor().hasSelection():
             self._wortweise()
+        if (e.button() == Qt.LeftButton and self.mini_hook is not None and self.textCursor().hasSelection()
+                and not self.isReadOnly() and self.opt("ui/mini_auswahl", True) and not self._bild_cursor()):
+            c = QTextCursor(self.textCursor())
+            c.setPosition(c.selectionStart())
+            self.mini_hook(self, self.viewport().mapToGlobal(self.cursorRect(c).topLeft()), False)
         if (e.modifiers() & Qt.ControlModifier) and self.opt("ui/strg_klick_link", True):
             href = self.anchorAt(e.pos())
             if href and href.startswith("#"):
@@ -1062,4 +1101,67 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
                     img.height() * min(1.0, self.page.content_width_px / max(1, img.width())))
                 self.textCursor().insertImage(f)
                 return
-        super().insertFromMimeData(source)
+        modus = self.opt_text("bearbeiten/einfuegen_standard", EINFUEGE_MODI[0])
+        if not isinstance(modus, str) or modus not in EINFUEGE_MODI:
+            modus = EINFUEGE_MODI[0]
+        self._einfuegen_mit(source, modus, neu=True)
+
+    def _einfuegen_mit(self, source, modus: str, neu: bool) -> None:
+        """Einfügen als EIN Rückgängig-Schritt; danach bietet die kleine Schaltfläche die anderen Formen an (Optionen ▸ Bearbeiten)."""
+        c = self.textCursor()
+        c.beginEditBlock()
+        start = c.selectionStart()
+        c.removeSelectedText()
+        if modus == "Nur Text" or not source.hasHtml():
+            c.insertText(source.text() if source.hasText() else "")
+        elif modus == "Zielformatierung verwenden":
+            c.insertFragment(_ziel_fragment(source.html(), self.document().defaultFont()))
+        else:
+            c.insertFragment(QTextDocumentFragment.fromHtml(source.html()))
+        ende = c.position()
+        c.endEditBlock()
+        self.setTextCursor(c)
+        if neu and self.opt("bearbeiten/einfuegen_schaltflaeche", True) and ende > start and not self.isReadOnly():
+            kopie = QMimeData()
+            for f in source.formats():
+                kopie.setData(f, source.data(f))
+            self._einfuegen_schaltflaeche(kopie, start, ende, modus)
+
+    def _einfuegen_schaltflaeche(self, quelle, start: int, ende: int, modus: str) -> None:
+        from PySide6.QtWidgets import QMenu, QToolButton
+        b = getattr(self, "_paste_btn", None)
+        if b is None:
+            b = self._paste_btn = QToolButton(self.viewport())
+            b.setText("Einfügen ▾")
+            b.setCursor(Qt.ArrowCursor)
+            b.setPopupMode(QToolButton.InstantPopup)
+            b.setStyleSheet("QToolButton { border: 1px solid palette(mid); border-radius: 4px; padding: 2px 6px; "
+                            "background: palette(window); font-size: 8pt; }")
+            self.cursorPositionChanged.connect(self._paste_btn_pruefen)
+        self._paste_ende = ende
+        m = QMenu(b)
+        for name in EINFUEGE_MODI:
+            a = m.addAction(name)
+            a.setCheckable(True)
+            a.setChecked(name == modus)
+            a.triggered.connect(lambda _=False, name=name: self._einfuegen_neu(quelle, start, name))
+        b.setMenu(m)
+        c = QTextCursor(self.document()); c.setPosition(ende)
+        r = self.cursorRect(c)
+        b.move(max(0, r.left()), r.bottom() + 2)
+        b.adjustSize()
+        b.show()
+
+    def _einfuegen_neu(self, quelle, start: int, modus: str) -> None:
+        c = QTextCursor(self.document())
+        c.setPosition(start)
+        c.setPosition(self._paste_ende, QTextCursor.KeepAnchor)
+        self.setTextCursor(c)
+        self._paste_btn.hide()
+        self._einfuegen_mit(quelle, modus, neu=False)
+        self._einfuegen_schaltflaeche(quelle, start, self.textCursor().position(), modus)
+
+    def _paste_btn_pruefen(self) -> None:
+        b = getattr(self, "_paste_btn", None)
+        if b is not None and b.isVisible() and self.textCursor().position() != getattr(self, "_paste_ende", -1):
+            b.hide()

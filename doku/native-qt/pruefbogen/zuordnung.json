@@ -515,15 +515,15 @@
   "status": "✅",
   "wo": "befehle.netzlinien, editor._gitter_zeichnen"
  },
- "OPTIONEN > Ansicht > Anzeigen|Live-Vorschau": {
-  "status": "⬜",
-  "wo": "nicht übertragen (in den Optionen als gesperrte Zeile sichtbar)"
- },
  "OPTIONEN > Ansicht > Anzeigen|Minisymbolleiste bei Auswahl": {
-  "status": "⬜",
-  "wo": "nicht übertragen (in den Optionen als gesperrte Zeile sichtbar)"
+  "status": "✅",
+  "wo": "widgets/mini_leiste.py; ui/mini_auswahl, ui/mini_rechtsklick (test_schreibhilfe)"
  },
  "OPTIONEN > Ansicht > Anzeigen|Minisymbolleiste bei Rechtsklick": {
+  "status": "✅",
+  "wo": "widgets/mini_leiste.py; ui/mini_auswahl, ui/mini_rechtsklick (test_schreibhilfe)"
+ },
+ "OPTIONEN > Ansicht > Anzeigen|Live-Vorschau": {
   "status": "⬜",
   "wo": "nicht übertragen (in den Optionen als gesperrte Zeile sichtbar)"
  },
@@ -688,12 +688,12 @@
   "wo": "unter Linux/X11 durch Qt (Primärauswahl), nicht schaltbar"
  },
  "OPTIONEN > Bearbeiten > Ausschneiden und Einfügen|Schaltfläche nach dem Einfügen": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "✅",
+  "wo": "editor._einfuegen_mit/_einfuegen_schaltflaeche, bearbeiten/einfuegen_standard (test_editor)"
  },
  "OPTIONEN > Bearbeiten > Ausschneiden und Einfügen|Standardeinfügeformat": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "✅",
+  "wo": "editor._einfuegen_mit/_einfuegen_schaltflaeche, bearbeiten/einfuegen_standard (test_editor)"
  },
  "OPTIONEN > Allgemein und Speichern > Speichern|Dateien als Standard speichern": {
   "status": "✅",
@@ -844,12 +844,12 @@
   "wo": "pagination.lesezeichen_sammeln + gliederung_schreiben (pypdf nach QPdfWriter; test_werkzeuge)"
  },
  "OPTIONEN > In PDF exportieren > Exportoptionen|Andere Formatvorlagen in Lesezeichen umwandeln": {
-  "status": "⬜",
-  "wo": "nur Überschriften und Textmarken werden Lesezeichen; Formatvorlagen-Auswahl fehlt"
+  "status": "✅",
+  "wo": "pdf/lz_andere: Titel, Untertitel, Zitat (test_werkzeuge)"
  },
  "OPTIONEN > In PDF exportieren > Exportoptionen|Eigene Formatvorlagen in Lesezeichen umwandeln": {
   "status": "⬜",
-  "wo": "nur Überschriften und Textmarken werden Lesezeichen; Formatvorlagen-Auswahl fehlt"
+  "wo": "es gibt keine selbst angelegten Formatvorlagen, nur das Ändern der vorhandenen"
  },
  "OPTIONEN > In PDF exportieren > Exportoptionen|Kommentare mitnehmen": {
   "status": "⬜",
@@ -948,8 +948,8 @@
   "wo": "nur Deutsch"
  },
  "OPTIONEN > Rechtschreibprüfung > Rechtschreibprüfung|Immer Korrekturvorschläge unterbreiten": {
-  "status": "⬜",
-  "wo": "Vorschläge kommen immer; kein Schalter"
+  "status": "✅",
+  "wo": "schreibhilfe/vorschlaege → writing_assistant.erweitere_menue"
  },
  "OPTIONEN > Rechtschreibprüfung > Rechtschreibprüfung|Grammatik mitprüfen": {
   "status": "◐",

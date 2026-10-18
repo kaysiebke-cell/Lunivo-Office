@@ -345,7 +345,9 @@ class MainWindow(QMainWindow):
         e.document().contentsChanged.connect(self.assistant.dokument_geaendert)
         e.document().contentsChanged.connect(self.navigation.spaeter)
         e.opt = lambda name, std=True: self.settings.get_bool(name, std)
+        e.opt_text = lambda name, std="": self.settings.get(name, std)
         e.autor = self.autor_angaben
+        e.mini_hook = self.mini_zeigen
         e.zusatzGeaendert.connect(self.navigation.spaeter)
         e.set_marken(self.settings.get_bool("ui/marken", True))
         self.formatzeichen_anwenden(e)
@@ -553,10 +555,18 @@ class MainWindow(QMainWindow):
         try:
             autor = self._meta_fuer_speichern(t).get("author", "") if self.settings.get_bool("pdf/eigenschaften", True) else ""
             lz = None
-            if self.settings.get_bool("pdf/lz_ueberschriften", False) or self.settings.get_bool("pdf/lz_textmarken", False):
-                lz = {"ueberschriften": self.settings.get_bool("pdf/lz_ueberschriften", False),
-                      "textmarken": self.settings.get_bool("pdf/lz_textmarken", False)}
-            n = export_pdf(path, t.editor.document(), t.page, os.path.splitext(t.title)[0], autor, t.editor.noten, lz, self._silben_fuer_druck())
+            sg = self.settings.get_bool
+            if sg("pdf/lz_ueberschriften", False) or sg("pdf/lz_textmarken", False) or sg("pdf/lz_andere", False):
+                lz = {"ueberschriften": sg("pdf/lz_ueberschriften", False), "textmarken": sg("pdf/lz_textmarken", False),
+                      "andere": sg("pdf/lz_andere", False)}
+            komm = None
+            if sg("pdf/kommentare", False):
+                komm = []
+                for b in t.editor.kommentar_bereiche():
+                    k = t.editor.kommentare.get(int(b["wert"]), {})
+                    komm.append((b["von"], f'{k.get("autor", "")}: {k.get("text", "")}'.strip(": ")))
+            n = export_pdf(path, t.editor.document(), t.page, os.path.splitext(t.title)[0], autor, t.editor.noten, lz,
+                           self._silben_fuer_druck(), komm)
         except Exception as e:  # PDF-Ausgabe darf das Programm nicht beenden
             QMessageBox.critical(self, "PDF-Export fehlgeschlagen", str(e)); return
         self.statusBar().showMessage(f"PDF gespeichert ({n} Seiten): {path}", 5000)
@@ -840,6 +850,15 @@ class MainWindow(QMainWindow):
         e.set_lesehilfe(PAPIERTOENE.get(s.get("lesehilfe/papier", "Weiß"), "#ffffff"),
                         float(s.get("lesehilfe/buchstaben", 0)), float(s.get("lesehilfe/wort", 0)))
         self.silbenfarben_anwenden(e)
+
+    def mini_zeigen(self, ed, pos, rechtsklick: bool = False):
+        from ..widgets.mini_leiste import MiniLeiste
+        if getattr(self, "_mini", None) is None:
+            self._mini = MiniLeiste(self)
+        if ed is None:
+            self._mini.hide()
+        else:
+            self._mini.zeigen(ed, pos, rechtsklick)
 
     def silbenfarben_anwenden(self, e=None):
         from ..editor import silbenfarben as S

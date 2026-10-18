@@ -274,3 +274,22 @@ def test_silbenfarben_befehl_und_dialog(app, tmp_path, monkeypatch):
     w.new_document()
     w.current_editor().setPlainText("Wanderung")
     assert w.current_editor().document().firstBlock().layout().formats()
+
+
+def test_minisymbolleiste(app, tmp_path, monkeypatch):
+    from PySide6.QtCore import QPoint
+    w = win(tmp_path, monkeypatch)
+    e = w.current_editor()
+    e.setPlainText("Ein Text zum Markieren")
+    c = e.textCursor(); c.setPosition(3); c.setPosition(7, QTextCursor.KeepAnchor); e.setTextCursor(c)
+    w.mini_zeigen(e, QPoint(200, 200))
+    assert w._mini.isVisible()
+    w._mini.knoepfe["fett"].click()
+    assert e.textCursor().charFormat().fontWeight() >= 600 and w._mini.knoepfe["fett"].isChecked()
+    w._mini.knoepfe["kursiv"].click(); assert e.textCursor().charFormat().fontItalic()
+    c = e.textCursor(); c.clearSelection(); e.setTextCursor(c)                  # Auswahl weg → Leiste verschwindet
+    assert not w._mini.isVisible()
+    w.mini_zeigen(e, QPoint(200, 200), True)
+    assert w._mini.isVisible()                                                     # Rechtsklick: bleibt ohne Auswahl
+    w.mini_zeigen(None, None)
+    assert not w._mini.isVisible()

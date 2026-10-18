@@ -1,6 +1,6 @@
 # Prüfbogen ↔ native Fassung
 
-Erzeugt von `werkzeug/pruefbogen-abgleich.py` aus dem Prüfkatalog (415 Punkte). **✅ 295 · ◐ 71 · ⬜ 49**. ✅ = Befehl/Funktion vorhanden (einzeln getestet nur, wo `tests/` es belegt); ◐ = teilweise oder anders gelöst; ⬜ = offen.
+Erzeugt von `werkzeug/pruefbogen-abgleich.py` aus dem Prüfkatalog (415 Punkte). **✅ 301 · ◐ 71 · ⬜ 43**. ✅ = Befehl/Funktion vorhanden (einzeln getestet nur, wo `tests/` es belegt); ◐ = teilweise oder anders gelöst; ⬜ = offen.
 Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/bilder/`.
 
 ## DATEI
@@ -371,8 +371,8 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 - ✅ Seitenleiste beim Start — Optionen ▸ Wie im WPS Writer ▸ Ansicht (ui/seitenleiste, main_window)
 - ◐ QuickInfo — Qt zeigt Kurzinfos immer; kein Schalter
 - ⬜ Live-Vorschau — nicht übertragen (in den Optionen als gesperrte Zeile sichtbar)
-- ⬜ Minisymbolleiste bei Auswahl — nicht übertragen (in den Optionen als gesperrte Zeile sichtbar)
-- ⬜ Minisymbolleiste bei Rechtsklick — nicht übertragen (in den Optionen als gesperrte Zeile sichtbar)
+- ✅ Minisymbolleiste bei Auswahl — widgets/mini_leiste.py; ui/mini_auswahl, ui/mini_rechtsklick (test_schreibhilfe)
+- ✅ Minisymbolleiste bei Rechtsklick — widgets/mini_leiste.py; ui/mini_auswahl, ui/mini_rechtsklick (test_schreibhilfe)
 - ⬜ Tipp für Kopf- bzw. Fußzeile — nicht übertragen (in den Optionen als gesperrte Zeile sichtbar)
 
 ## OPTIONEN > Ansicht > Druckoptionen
@@ -437,9 +437,9 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 
 ## OPTIONEN > Bearbeiten > Ausschneiden und Einfügen
 
-- ⬜ Schaltfläche nach dem Einfügen — nicht übertragen
+- ✅ Schaltfläche nach dem Einfügen — editor._einfuegen_mit/_einfuegen_schaltflaeche, bearbeiten/einfuegen_standard (test_editor)
 - ◐ Mittlere Maustaste fügt ein — unter Linux/X11 durch Qt (Primärauswahl), nicht schaltbar
-- ⬜ Standardeinfügeformat — nicht übertragen
+- ✅ Standardeinfügeformat — editor._einfuegen_mit/_einfuegen_schaltflaeche, bearbeiten/einfuegen_standard (test_editor)
 - ✅ Ohne Formatierung einfügen — Befehle.einfuegenOhne
 
 ## OPTIONEN > Allgemein und Speichern > Speichern
@@ -521,8 +521,8 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 - ✅ Dokumenteigenschaften mitnehmen — pdf/eigenschaften, pdf/oeffnen (export_pdf author)
 - ⬜ Verknüpfung von Fuß- und Endnoten — nicht in QPdfWriter möglich; Noten stehen gesammelt am Textende
 - ✅ Textmarken übernehmen — pagination.lesezeichen_sammeln + gliederung_schreiben (pypdf nach QPdfWriter; test_werkzeuge)
-- ⬜ Andere Formatvorlagen in Lesezeichen umwandeln — nur Überschriften und Textmarken werden Lesezeichen; Formatvorlagen-Auswahl fehlt
-- ⬜ Eigene Formatvorlagen in Lesezeichen umwandeln — nur Überschriften und Textmarken werden Lesezeichen; Formatvorlagen-Auswahl fehlt
+- ✅ Andere Formatvorlagen in Lesezeichen umwandeln — pdf/lz_andere: Titel, Untertitel, Zitat (test_werkzeuge)
+- ⬜ Eigene Formatvorlagen in Lesezeichen umwandeln — es gibt keine selbst angelegten Formatvorlagen, nur das Ändern der vorhandenen
 - ✅ PDF nach dem Export öffnen — pdf/eigenschaften, pdf/oeffnen (export_pdf author)
 
 ## OPTIONEN > Benutzerinformationen > Benutzerdaten
@@ -557,7 +557,7 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 
 - ◐ Sprache für die Prüfung — nur Deutsch
 - ✅ Rechtschreibung während der Eingabe prüfen — Optionen ▸ Rechtschreibprüfung (test_schreibhilfe, test_pruefung_paritaet)
-- ⬜ Immer Korrekturvorschläge unterbreiten — Vorschläge kommen immer; kein Schalter
+- ✅ Immer Korrekturvorschläge unterbreiten — schreibhilfe/vorschlaege → writing_assistant.erweitere_menue
 - ◐ Grammatik mitprüfen — nur über „Gründlich prüfen“ mit LanguageTool (optional)
 - ✅ Wörter in GROSSBUCHSTABEN ignorieren — Optionen ▸ Rechtschreibprüfung (test_schreibhilfe, test_pruefung_paritaet)
 - ✅ Wörter mit Zahlen ignorieren — Optionen ▸ Rechtschreibprüfung (test_schreibhilfe, test_pruefung_paritaet)

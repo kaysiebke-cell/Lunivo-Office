@@ -240,13 +240,16 @@ class OptionenDialog(QDialog):
     # ================= Wie im WPS Writer =================
     def _ansicht(self, titel):
         p = _Seite(self.w, titel, ["Lineal", "Vertikales Lineal", "Gitternetzlinien",
-                                   "Live-Vorschau", "Minisymbolleiste", "Tipp für Kopf-/Fußzeile",
+                                   "Live-Vorschau", "Tipp für Kopf-/Fußzeile",
                                    "Feldfunktionen drucken, Feldschattierung",
                                    "Ausgeblendeter Text, Objektanker"])
         f = p.gruppe("Anzeigen")
         p.haken(f, "ui/marken", "Textbegrenzungen (Eckmarken)", True, self.w.set_marken)
         p.haken(f, "ui/seitenleiste", "Seitenleiste beim Start", True)
         p.haken(f, "ui/navigation", "Navigationsbereich beim Start", False)
+        f = p.gruppe("Minisymbolleiste")
+        p.haken(f, "ui/mini_auswahl", "Minisymbolleiste beim Markieren von Text zeigen", True)
+        p.haken(f, "ui/mini_rechtsklick", "Minisymbolleiste beim Rechtsklick zeigen", True)
         f = p.gruppe("Druckoptionen der Ansicht")
         p.haken(f, "drucken/hervorhebungen", "Hervorhebungen drucken (Textmarker)", True)
         p.haken(f, "drucken/textgrenzen", "Textbegrenzungen drucken (gestrichelter Rahmen um die Textfläche)", False)
@@ -269,13 +272,17 @@ class OptionenDialog(QDialog):
 
     def _bearbeiten(self, titel):
         p = _Seite(self.w, titel, ["Text mit der Maus verschieben", "Maximale Rückgängig-Schritte",
-                                   "Ausschneiden und Einfügen"])
+                                   ])
         f = p.gruppe("AutoKorrektur")
         p.haken(f, "schreibhilfe/autokorr", "AutoKorrektur (Hauptschalter)", True, lambda on: self.w.assistant.setze("autokorr", on))
         for name, (std, text) in autokorrektur.SCHALTER.items():
             p.haken(f, "schreibhilfe/" + name, text, std)
         f = p.gruppe("Eingabe")
         p.haken(f, "bearbeiten/tippen_ersetzt", "Eingabe ersetzt die Markierung", True)
+        from ..editor.editor_widget import EINFUEGE_MODI
+        p.auswahl(f, "bearbeiten/einfuegen_standard", "Standardeinfügeformat (Strg+V)", EINFUEGE_MODI, EINFUEGE_MODI[0])
+        p.haken(f, "bearbeiten/einfuegen_schaltflaeche", "Schaltfläche mit Einfügeoptionen nach dem Einfügen zeigen", True)
+        p.haken(f, "schreibhilfe/vorschlaege", "Im Rechtsklickmenü immer Korrekturvorschläge anbieten", True)
         p.haken(f, "bearbeiten/wortweise", "Wortweise markieren (Ziehen mit der Maus erweitert auf ganze Wörter)", True)
         p.haken(f, "autoformat/liste", "Listen beim Tippen erkennen (1.  a)  -  *)", True)
         p.haken(f, "autoformat/punkte", "„- “ und „* “ am Zeilenanfang werden zur Aufzählung", True)
@@ -308,6 +315,8 @@ class OptionenDialog(QDialog):
         p.haken(f, "pdf/eigenschaften", "Dokumenteigenschaften (Autor) in das PDF übernehmen", True)
         p.haken(f, "pdf/lz_ueberschriften", "Überschriften als Lesezeichen", False)
         p.haken(f, "pdf/lz_textmarken", "Textmarken übernehmen", False)
+        p.haken(f, "pdf/lz_andere", "Titel, Untertitel und Zitat als Lesezeichen (andere Formatvorlagen)", False)
+        p.haken(f, "pdf/kommentare", "Kommentare als PDF-Notizen mitnehmen", False)
         f3 = p.gruppe("Vorlagen")
         ve = QLineEdit(p.s.get("vorlagen/ordner", "")); ve.setPlaceholderText("leer = ~/Vorlagen")
         ve.textChanged.connect(lambda t: p.s.set("vorlagen/ordner", t)); f3.addRow("Vorlagenordner", ve)
