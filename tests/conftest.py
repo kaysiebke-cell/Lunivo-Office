@@ -16,4 +16,11 @@ def app():
     a = QApplication.instance() or QApplication([])
     a.setApplicationName("lunivo-writer-test")
     a.setOrganizationName("lunivo-test")
-    return a
+    yield a
+    # Aufräumen vor dem Beenden: sonst räumt PySide beim Interpreter-Ende Widgets in falscher Reihenfolge ab
+    # und glibc meldet gelegentlich „malloc_consolidate(): unaligned fastbin chunk“.
+    from PySide6.QtCore import QEvent
+    for w in a.topLevelWidgets():
+        w.deleteLater()
+    a.sendPostedEvents(None, QEvent.DeferredDelete)
+    a.processEvents()
