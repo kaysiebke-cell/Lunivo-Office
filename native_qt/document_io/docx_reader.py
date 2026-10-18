@@ -36,6 +36,7 @@ from .report import DocumentIOError, IOReport
 LH_PROPORTIONAL, LH_FIXED = 1, 2                # QTextBlockFormat.LineHeightTypes
 STYLE_PROP = QTextFormat.UserProperty + 1       # Name der Formatvorlage am Block
 from ..editor.zusatz import B_SPALTE, P_OBJEKT, P_VERSTECKT  # noqa: E402
+from ..editor.formular import P_FORM  # noqa: E402
 from ..editor.zusatz import (  # noqa: E402
     B_ART, B_CAP, B_RAHMEN, B_TOC, BESCHRIFTUNGEN, P_AENDERUNG, P_AUTOR, P_DATUM, P_FELD, P_INDEX, P_KOMMENTAR, P_NOTE, P_ZITAT, leere_meta,
 )
@@ -60,7 +61,6 @@ _QT_ALIGN = {
 # Was beim Lesen nicht übernommen wird → Hinweis
 _UNSUPPORTED = [
     ("//w:txbxContent", "Textfelder werden nicht dargestellt und gehen beim Speichern verloren."),
-    ("//w:sdt[.//w:sdtPr/w:text or .//w:sdtPr/w:dropDownList or .//w:sdtPr/w:date or .//w:sdtPr/w:comboBox]", "Formularfelder (Inhaltssteuerelemente) werden als einfacher Text übernommen."),
     ("//m:oMath", "Formeln werden nicht dargestellt und gehen beim Speichern verloren."),
     ("//w:pict | //wps:wsp | //wpg:wgp", "Formen und gezeichnete Objekte werden nicht dargestellt."),
     ("//w:drawing[.//wp:anchor][not(.//wp:wrapSquare or .//wp:wrapTight or .//wp:wrapThrough)]",
@@ -132,6 +132,7 @@ class _Reader:
         self._lz_pos: dict[str, int] = {}
         self._lz_wartend: list[str] = []
         self._aend = None                 # (art, autor, datum) innerhalb w:ins / w:del
+        self._form = None                 # JSON-Text des Formularfelds innerhalb w:sdt
         self._note_n = {"f": 0, "e": 0}
         self._feld = None                 # {"instr", "phase": "i"|"r"} innerhalb eines Feldes
         self._letzter = None              # (von, bis) des zuletzt eingefügten Textstücks (für XE-Felder)
@@ -567,7 +568,9 @@ class _Reader:
             elif tag in (qn("w:sdt"),):
                 inhalt = el.find(qn("w:sdtContent"))
                 if inhalt is not None:
+                    alt_form, self._form = self._form, self._form_meta(el) or self._form
                     had |= self._laufe(inhalt, para, cursor, href=href)
+                    self._form = alt_form
             elif tag == qn("w:fldSimple"):
                 self._feld = {"instr": el.get(qn("w:instr")) or "", "phase": "r"}
                 had |= self._laufe(el, para, cursor, href=href)
@@ -590,6 +593,39 @@ class _Reader:
             nf = QTextCharFormat(); nf.setProperty(P_INDEX, term)
             c.mergeCharFormat(nf)
 
+    def _form_meta(self, sdt) -> str:
+        """Inhaltssteuerelement → Formularfeld-Daten (JSON); eigene Felder tragen sie im Tag, fremde (Word) werden aus der Art abgeleitet."""
+        from ..editor import formular as FO
+        pr = sdt.find(qn("w:sdtPr"))
+        if pr is None:
+            return ""
+        tag = pr.find(qn("w:tag"))
+        t = tag.get(qn("w:val")) if tag is not None else ""
+        if t and t.startswith("lunivo:"):
+            m = FO.meta_lesen(t[len("lunivo:"):])
+            if m:
+                return FO.meta_text(m)
+        al = pr.find(qn("w:alias"))
+        name = al.get(qn("w:val")) if al is not None else ""
+        leer = pr.find(qn("w:showingPlcHdr")) is not None
+        if pr.find(qn("w:dropDownList")) is not None or pr.find(qn("w:comboBox")) is not None:
+            liste = pr.find(qn("w:dropDownList"))
+            if liste is None:
+                liste = pr.find(qn("w:comboBox"))
+            opt = [li.get(qn("w:displayText")) or li.get(qn("w:value")) or "" for li in liste.findall(qn("w:listItem"))]
+            m = FO.meta("auswahl", name, optionen=[o for o in opt if o])
+        elif pr.find(qn("w:date")) is not None:
+            m = FO.meta("datum", name)
+        elif any(el.tag.endswith("}checkbox") for el in pr):
+            m = FO.meta("kasten", name)
+        elif pr.find(qn("w:text")) is not None:
+            m = FO.meta("text", name)
+        else:
+            return ""
+        if leer:
+            m["leer"] = True
+        return FO.meta_text(m)
+
     def _zusatz_formate(self, cfmt: QTextCharFormat) -> None:
         if self._feld and self._feld["phase"] == "r":
             teile = self._feld["instr"].split()
@@ -599,6 +635,8 @@ class _Reader:
                     cfmt.setProperty(P_ZITAT, teile[1])
         if self._komm_offen:
             cfmt.setProperty(P_KOMMENTAR, self._komm_offen[-1])
+        if self._form:
+            cfmt.setProperty(P_FORM, self._form)
         if self._aend:
             cfmt.setProperty(P_AENDERUNG, self._aend[0])
             cfmt.setProperty(P_AUTOR, self._aend[1])

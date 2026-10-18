@@ -209,10 +209,14 @@ class Befehle:
             m.addAction(t, lambda _=False, md=mode: self.ed and self.ed.change_case(md))
         return m
 
-    def _farbmenue(self, setzen, ohne_text):
+    def _farbmenue(self, setzen, ohne_text, vorschau=None):
         m = QMenu()
         for c in PALETTE:
-            m.addAction(_farbfeld(c), c, lambda _=False, c=c: self.ed and setzen(QColor(c)))
+            a = m.addAction(_farbfeld(c), c, lambda _=False, c=c: self.ed and setzen(QColor(c)))
+            a.setData(c)
+        if vorschau is not None:                              # Live-Vorschau beim Überfahren der Farben
+            m.hovered.connect(lambda a: self.w.vorschau.zeigen(lambda e: vorschau(QColor(a.data()))) if a.data() else self.w.vorschau.ende())
+            m.aboutToHide.connect(self.w.vorschau.ende)
         m.addSeparator()
         m.addAction(ohne_text, lambda: self.ed and setzen(None))
         m.addAction("Weitere Farben …", lambda: self._farbe_waehlen(setzen))
@@ -230,7 +234,7 @@ class Befehle:
         def setze(c):
             self._schriftfarbe = c.name() if c else "#000000"
             self.ed.set_text_color(c)
-        return self._farbmenue(setze, "Automatisch")
+        return self._farbmenue(setze, "Automatisch", lambda c: self.ed.set_text_color(c))
 
     def hervorhebenJetzt(self, k=None):
         if self.ed: self.ed.set_highlight(QColor(getattr(self, "_marker", "#ffec99")))
@@ -239,7 +243,7 @@ class Befehle:
         def setze(c):
             self._marker = c.name() if c else "#ffec99"
             self.ed.set_highlight(c)
-        return self._farbmenue(setze, "Keine Hervorhebung")
+        return self._farbmenue(setze, "Keine Hervorhebung", lambda c: self.ed.set_highlight(c))
 
     # ---- Absatz ---------------------------------------------------------------------------------------
     def punkte(self, k=None):
@@ -1286,22 +1290,29 @@ class Befehle:
             d = S.brief_fuer(self.ed.document(), tab[1][namen.index(n)])
             QMessageBox.information(self.w, "Vorschau: " + n, d.toPlainText().strip()[:1200])
 
-    def formTextfeld(self, k=None):
-        if self.ed:
-            from ..editor import sendungen as S
-            S.form_textfeld(self.ed)
+    def _form_dialog(self, art: str):
+        if not self.ed:
+            return
+        from ..editor import formular as FO
+        from ..widgets.formular_dialog import FormFeldDialog
+        d = FormFeldDialog(self.w, art)
+        if d.exec():
+            m = d.meta()
+            FO.einfuegen(self.ed, m)
+            if art == "kasten" and m.get("beschriftung"):
+                self.ed.textCursor().insertText(" " + m["beschriftung"])
 
-    def formKasten(self, k=None):
-        if self.ed:
-            from ..editor import sendungen as S
-            S.form_kasten(self.ed)
+    def formTextfeld(self, k=None): self._form_dialog("text")
+    def formAuswahl(self, k=None): self._form_dialog("auswahl")
+    def formDatum(self, k=None): self._form_dialog("datum")
+    def formKasten(self, k=None): self._form_dialog("kasten")
+    def formKnopf(self, k=None): self._form_dialog("knopf")
 
-    def formKnopf(self, k=None):
+    def formLeeren(self, k=None):
         if self.ed:
-            from ..editor import sendungen as S
-            t, ok = QInputDialog.getText(self.w, "Schaltfläche", "Aufschrift:", text="Absenden")
-            if ok:
-                S.form_knopf(self.ed, t.strip())
+            from ..editor import formular as FO
+            n = FO.alle_zuruecksetzen(self.ed)
+            self.w.statusBar().showMessage(f"{n} Formularfeld{'er' if n != 1 else ''} zurückgesetzt.", 4000)
 
     # ---- Überprüfen: Thesaurus, Barrierefreiheit, Korrektursprache ------------------------------------------
     def thesaurus(self, k=None):

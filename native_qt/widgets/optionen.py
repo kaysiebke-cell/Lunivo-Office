@@ -240,12 +240,12 @@ class OptionenDialog(QDialog):
     # ================= Wie im WPS Writer =================
     def _ansicht(self, titel):
         p = _Seite(self.w, titel, ["Lineal", "Vertikales Lineal", "Gitternetzlinien",
-                                   "Live-Vorschau", "Tipp für Kopf-/Fußzeile",
                                    ])
         f = p.gruppe("Anzeigen")
         p.haken(f, "ui/marken", "Textbegrenzungen (Eckmarken)", True, self.w.set_marken)
         p.haken(f, "ui/seitenleiste", "Seitenleiste beim Start", True)
         p.haken(f, "ui/navigation", "Navigationsbereich beim Start", False)
+        p.haken(f, "ui/live_vorschau", "Live-Vorschau: Formate beim Überfahren schon im Dokument zeigen", True, lambda _: self.w.vorschau.ende())
         f = p.gruppe("Minisymbolleiste")
         p.haken(f, "ui/mini_auswahl", "Minisymbolleiste beim Markieren von Text zeigen", True)
         p.haken(f, "ui/mini_rechtsklick", "Minisymbolleiste beim Rechtsklick zeigen", True)
@@ -393,6 +393,7 @@ class OptionenDialog(QDialog):
         p.haken(f, "drucken/umgekehrt", "Seiten in umgekehrter Reihenfolge drucken", False)
         p.haken(f, "drucken/hintergrund", "Hintergrundfarben und Bilder drucken", True)
         p.haken(f, "drucken/leere", "Leere Seiten drucken", True)
+        p.haken(f, "drucken/nur_formular", "Nur Formulardaten drucken (für vorgedruckte Formulare)", False)
         p.haken(f, "drucken/felder", "Felder (Verzeichnisse) vor dem Drucken aktualisieren", True)
         p.auswahl(f, "drucken/duplex", "Beidseitig von Hand", ["alle", "vorder", "rueck"], "alle")
         p.hinweis("Gedruckt wird über das Druckfenster des Systems (Datei ▸ Drucken). Kopf-/Fußzeile und Seitenzahlen werden mitgedruckt.")

@@ -416,8 +416,17 @@ def render(qdoc: QTextDocument, page: PageSettings, device, first: int = 1, last
            dpi: int | None = None, opt: dict | None = None) -> int:
     """Zeichnet die Seiten first..last auf device (QPdfWriter/QPrinter). → Anzahl Seiten."""
     opt = opt or {}
+    if opt.get("nur_formular"):                          # nur die Feldinhalte (für vorgedruckte Formulare): kein Seitenschmuck, keine Kopf-/Fußzeile
+        from .page import HeaderFooter
+        page = page.copy()
+        page.border = None; page.watermark = None; page.color = ""
+        page.header = HeaderFooter(); page.footer = HeaderFooter(); page.first_header = HeaderFooter(); page.first_footer = HeaderFooter()
+        opt = dict(opt, hintergrund=False, textgrenzen=False, zuschnitt=False, balken=None, blasen=None)
     d = paginated_copy(qdoc, page, opt.get("noten"), versteckt=bool(opt.get("versteckt")), fussnoten="spaeter")
     from . import anzeige_extra as AX
+    if opt.get("nur_formular"):
+        from .formular import nur_formulardaten
+        nur_formulardaten(d)
     if opt.get("felder_code"):
         AX.feldcodes_einsetzen(d)
     if opt.get("zeichnungen") is False:

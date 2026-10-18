@@ -234,12 +234,20 @@ class RegisterBand(QWidget):
         if g.get("felder"):
             spalte = QVBoxLayout()
             spalte.setSpacing(2)
-            stil = QComboBox()
+            from .live_vorschau import VorschauCombo, VorschauFontCombo
+            vs = self.b.w.vorschau
+
+            def _zu_pt(t):
+                try:
+                    return float(t.replace(",", "."))
+                except ValueError:
+                    return None
+            stil = VorschauCombo(lambda n: vs.zeigen(lambda e: e.apply_style("Standard" if n == "Fließtext" else n)), vs.ende)
             stil.setFixedWidth(150)
             stil.addItems(["Fließtext"] + [n for n in STYLES if n != "Standard"])
-            font = QFontComboBox()
+            font = VorschauFontCombo(lambda n: vs.zeigen(lambda e: e.set_font_family(n)), vs.ende)
             font.setFixedWidth(150)
-            groesse = QComboBox()
+            groesse = VorschauCombo(lambda t: (pt := _zu_pt(t)) is not None and vs.zeigen(lambda e: e.set_font_size(pt)), vs.ende)
             groesse.setEditable(True)
             groesse.setFixedWidth(60)
             groesse.addItems([str(x) for x in (8, 9, 10, 10.5, 11, 12, 14, 16, 18, 20, 24, 28, 36, 48, 72)])
@@ -294,6 +302,10 @@ class RegisterBand(QWidget):
             k.setFont(f)
             k.setFixedWidth(84)
             k.clicked.connect(lambda _=False, n=name: self.b.w.stil_anwenden(n))
+            from .live_vorschau import Ueberfahren
+            fl = Ueberfahren(self.b.w.vorschau, lambda e, n=name: e.apply_style("Standard" if n == "Fließtext" else n))
+            k.installEventFilter(fl)
+            k._ueberfahren = fl                                  # am Knopf festhalten, sonst räumt Python den Filter ab
             g.addWidget(k, i % 2, i // 2)
             self.knoepfe.append((k, None, True))
         # wie im WPS: drei Spalten sichtbar, der Rest wird durchgescrollt

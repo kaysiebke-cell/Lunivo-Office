@@ -293,3 +293,45 @@ def test_minisymbolleiste(app, tmp_path, monkeypatch):
     assert w._mini.isVisible()                                                     # Rechtsklick: bleibt ohne Auswahl
     w.mini_zeigen(None, None)
     assert not w._mini.isVisible()
+
+
+def test_live_vorschau(app, tmp_path, monkeypatch):
+    from PySide6.QtCore import QEvent
+    from PySide6.QtGui import QColor
+    from PySide6.QtWidgets import QApplication, QToolButton
+    w = win(tmp_path, monkeypatch)
+    e = w.current_editor()
+    e.setPlainText("Ein Text zum Probieren")
+    e.document().setModified(False)
+    c = e.textCursor(); c.setPosition(3); c.setPosition(7, QTextCursor.KeepAnchor); e.setTextCursor(c)
+    d = e.document()
+    schritte = d.availableUndoSteps()
+
+    def fett(): return QTextCursor(d).charFormat().fontWeight()
+    # 1) Formatvorlage über der Galerie überfahren: sichtbar, dann restlos weg (kein Rückgängig-/Wiederholen-Rest, nicht „geändert“)
+    knopf = next(b for b in w.band.findChildren(QToolButton) if b.text().endswith("Überschrift 1"))
+    QApplication.sendEvent(knopf, QEvent(QEvent.Enter))
+    assert d.firstBlock().blockFormat().headingLevel() == 1 and w.vorschau.aktiv
+    QApplication.sendEvent(knopf, QEvent(QEvent.Leave))
+    assert d.firstBlock().blockFormat().headingLevel() == 0 and not w.vorschau.aktiv
+    assert d.availableUndoSteps() == schritte and not d.isModified() and not d.isRedoAvailable()
+    # 2) Schriftgröße im Auswahlfeld
+    gr = w.band.felder["groesse"]
+    idx = gr.findText("24")
+    gr.highlighted.emit(idx)
+    assert abs(QTextCursor(e.textCursor()).charFormat().fontPointSize() - 24) < 0.1
+    gr.hidePopup()
+    assert abs(e.textCursor().charFormat().fontPointSize() - 24) > 1 and d.availableUndoSteps() == schritte
+    # 3) Farbmenü: Überfahren zeigt, Schließen nimmt zurück, Klick übernimmt wirklich
+    m = w.befehle.menue_schriftfarbeKlappe()
+    a = next(x for x in m.actions() if x.data() == "#c92a2a")
+    m.hovered.emit(a)
+    assert e.textCursor().charFormat().foreground().color().name() == "#c92a2a"
+    m.aboutToHide.emit()
+    assert e.textCursor().charFormat().foreground().color().name() != "#c92a2a"
+    a.trigger()
+    assert e.textCursor().charFormat().foreground().color().name() == "#c92a2a" and d.isModified()
+    # 4) ausgeschaltet: keine Vorschau
+    w.settings.set("ui/live_vorschau", False)
+    w.vorschau.zeigen(lambda ed: ed.toggle_bold(True))
+    assert not w.vorschau.aktiv

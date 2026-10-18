@@ -130,6 +130,12 @@ def plan(register: dict) -> list[dict]:
     anz = next(g for g in ans["gruppen"] if g["name"] == "Anzeigen")
     if not any(k.get("tun") == "versteckteZeigen" for k in anz["knoepfe"]):
         anz["knoepfe"] = anz["knoepfe"] + [_k("vorschau", "Ausgeblendeter Text", "versteckteZeigen", haken=True)]
+    sen = nach["Sendungen"] = dict(nach["Sendungen"])
+    sen["gruppen"] = [dict(g) for g in sen["gruppen"]]
+    form = next(g for g in sen["gruppen"] if g["name"] == "Formular")
+    if not any(k.get("tun") == "formAuswahl" for k in form["knoepfe"]):
+        form["knoepfe"] = form["knoepfe"] + [_k("punkte", "Auswahlliste", "formAuswahl"), _k("datum", "Datumsfeld", "formDatum"),
+                                              _k("schliessen", "Felder zurücksetzen", "formLeeren")]
     verweise = dict(nach["Referenzen"], name="Verweise")
     reiter = [DATEI, nach["Start"], nach["Einfügen"], nach["Seitenlayout"], verweise, nach["Überprüfen"],
               nach["Schreibhilfe"], KI, nach["Ansicht"], nach["Sendungen"]]

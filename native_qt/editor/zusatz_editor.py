@@ -387,6 +387,14 @@ class ZusatzMixin:
                     fmt = QTextCharFormat(); fmt.setBackground(QColor(150, 160, 175, 70))
                     e = QTextEdit.ExtraSelection(); e.cursor = c; e.format = fmt
                     sel.append(e)
+        if self.opt("ui/formular_schattierung", True):
+            from .formular import bereiche as form_bereiche
+            for von, bis, _m in form_bereiche(doc):
+                c = QTextCursor(doc)
+                c.setPosition(von); c.setPosition(bis, QTextCursor.KeepAnchor)
+                fmt = QTextCharFormat(); fmt.setBackground(QColor(76, 110, 245, 38))
+                e = QTextEdit.ExtraSelection(); e.cursor = c; e.format = fmt
+                sel.append(e)
         if self.markup and (self._hat_zusatz or self.verfolgen):
             for b in self.kommentar_bereiche():
                 c = QTextCursor(doc)

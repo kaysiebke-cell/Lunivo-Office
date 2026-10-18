@@ -69,6 +69,8 @@ class MainWindow(QMainWindow):
         self.ki.status.connect(lambda t: self.lbl_msg.setText(t))
         from ..widgets import dialogs as _dlg
         _dlg.set_einheit(self.settings.get("ui/masseinheit", "Millimeter"))
+        from ..widgets.live_vorschau import LiveVorschau
+        self.vorschau = LiveVorschau(self)
         self.befehle = Befehle(self)
         self._build_actions()
         self._zusatz_kuerzel()
@@ -280,6 +282,7 @@ class MainWindow(QMainWindow):
         return t.editor if t else None
 
     def _ed(self, fn):
+        self.vorschau.ende()
         e = self.current_editor()
         if e is not None:
             fn(e)
@@ -566,7 +569,7 @@ class MainWindow(QMainWindow):
                            self._silben_fuer_druck(), komm,
                            {k: v for k, v in self.druckoptionen().items()
                             if k in ("versteckt", "felder_code", "zeichnungen", "balken", "hervorhebungen", "textmarken", "textgrenzen", "zuschnitt",
-                                     "notenlinks", "blasen")})
+                                     "notenlinks", "blasen", "nur_formular")})
         except Exception as e:  # PDF-Ausgabe darf das Programm nicht beenden
             QMessageBox.critical(self, "PDF-Export fehlgeschlagen", str(e)); return
         self.statusBar().showMessage(f"PDF gespeichert ({n} Seiten): {path}", 5000)
@@ -613,7 +616,8 @@ class MainWindow(QMainWindow):
                 "zeichnungen": self.settings.get_bool("drucken/zeichnungen", True),
                 "balken": self.settings.get("aenderungen/balken", "links"),
                 "notenlinks": self.settings.get_bool("pdf/notenlinks", True),
-                "blasen": self._blasen_fuer_druck()}
+                "blasen": self._blasen_fuer_druck(),
+                "nur_formular": self.settings.get_bool("drucken/nur_formular", False)}
 
     def _blasen_fuer_druck(self):
         from ..editor import sprechblasen as SB

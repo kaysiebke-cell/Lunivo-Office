@@ -1182,7 +1182,9 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
                 return
         if e.button() == Qt.LeftButton and not self.textCursor().hasSelection() and not self.isReadOnly():
             from .sendungen import kasten_umschalten
-            if kasten_umschalten(self, self.cursorForPosition(e.pos()).position()):
+            from . import formular as FO
+            pos = self.cursorForPosition(e.pos()).position()
+            if FO.klick(self, pos, self.window()) or kasten_umschalten(self, pos):
                 return
         c = self.cursorForPosition(e.pos())
         c2 = QTextCursor(c)
