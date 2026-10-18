@@ -59,3 +59,17 @@ def test_font_size_in_pdf_matches(app, tmp_path):
             sizes.append(fs * abs(tm[3]) * abs(cm[3]) if cm else fs)
     pypdf.PdfReader(out).pages[0].extract_text(visitor_text=visitor)
     assert sizes and abs(sizes[0] - 12) < 0.8, sizes
+
+
+def test_pdf_mit_seitenfarbe_und_wasserzeichen(app, tmp_path):
+    from PySide6.QtGui import QTextDocument
+    from native_qt.editor.page import PageSettings
+    from native_qt.editor.pagination import export_pdf
+    d = QTextDocument(); d.setPlainText("Inhalt")
+    pg = PageSettings(color="#ffeecc", watermark={"text": "ENTWURF", "farbe": "#c0c0c0", "winkel": -45, "groesse_pt": 80},
+                      border={"art": "einfach", "farbe": "#000000", "breite_pt": 1.0, "abstand_mm": 8.0})
+    out = str(tmp_path / "w.pdf")
+    export_pdf(out, d, pg, "t")
+    import pypdf
+    txt = pypdf.PdfReader(out).pages[0].extract_text()
+    assert "Inhalt" in txt and "ENTWURF" in " ".join(txt.split())

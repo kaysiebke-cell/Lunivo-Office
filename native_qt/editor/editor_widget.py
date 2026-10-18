@@ -1,7 +1,7 @@
 """Der Editor: QTextEdit mit Seitenbreite, Formatierungsbefehlen und Seitenzählung."""
 from __future__ import annotations
 
-from PySide6.QtCore import QPoint, QRect, QTimer, Qt, Signal, QUrl
+from PySide6.QtCore import QPoint, QRect, QRectF, QTimer, Qt, Signal, QUrl
 from PySide6.QtGui import (
     QBrush, QColor, QFont, QImage, QPainter, QPen, QTextBlockFormat, QTextCharFormat, QTextCursor,
     QTextDocument, QTextFormat, QTextFrameFormat, QTextImageFormat, QTextListFormat,
@@ -41,6 +41,7 @@ class DocumentEditor(QTextEdit):
         self.setLineWrapMode(QTextEdit.WidgetWidth)
         self.show_marks = False
         self.zoom = 1.0
+        self.gitter = False
         self.zeilenfokus = False
         self.marken = True                 # Textbegrenzungen (Eckmarken am Textrand)
         self.vorhersage = None            # Rückruf: Wortanfang → Liste von Vorschlägen
@@ -104,6 +105,7 @@ class DocumentEditor(QTextEdit):
     def apply_page(self, page: PageSettings) -> None:
         self.page = page
         doc = self.document()
+        self.seitenfarbe_anwenden()
         bind_layout(doc, self.zoom)
         doc.setDocumentMargin(0)
         root = doc.rootFrame()
@@ -116,6 +118,53 @@ class DocumentEditor(QTextEdit):
         self.setFixedWidth(int(mm_to_px(page.width_mm) * self.zoom) + 2)
         self._passe_hoehe_an()
         self._timer.start()
+
+    def set_gitter(self, an: bool) -> None:
+        self.gitter = an
+        self.viewport().update()
+
+    def seitenspannen(self) -> list[tuple[int, int]]:
+        """Senkrechte Bereiche (von, bis) jeder Seite im Editor, aus den Seitenwechseln."""
+        h = self.viewport().height() + self.verticalScrollBar().value()
+        h = max(h, int(self.document().size().height()))
+        starts = [0]
+        n = self.document().characterCount()
+        for pos in self._breaks:
+            if pos < n:
+                starts.append(self.cursorRect(self._cursor_at(pos)).top() - 3)
+        return [(a, starts[i + 1] if i + 1 < len(starts) else h) for i, a in enumerate(starts)]
+
+    def _schmuck_zeichnen(self, p: QPainter) -> None:
+        pg, z = self.page, self.zoom
+        if not (pg.border or pg.watermark):
+            return
+        from .pagination import seitenschmuck
+        vp = self.viewport()
+        for a, b in self.seitenspannen():
+            if b < 0 or a > vp.height():
+                continue
+            p.save()
+            p.scale(z, z)
+            seitenschmuck(p, pg, False, QRectF(0, a / z, vp.width() / z, (b - a) / z))
+            p.restore()
+
+    def _gitter_zeichnen(self, p: QPainter) -> None:
+        vp = self.viewport()
+        schritt = mm_to_px(10) * self.zoom
+        if schritt < 6:
+            return
+        c = QColor("#868e96"); c.setAlpha(70)
+        p.setPen(QPen(c, 1))
+        x = schritt
+        while x < vp.width():
+            p.drawLine(int(x), 0, int(x), vp.height()); x += schritt
+        y = schritt
+        while y < vp.height():
+            p.drawLine(0, int(y), vp.width(), int(y)); y += schritt
+
+    def seitenfarbe_anwenden(self) -> None:
+        c = self.page.color or "white"
+        self.setStyleSheet(f"QTextEdit {{ background: {c}; color: black; border: 1px solid #5c6166; }}")
 
     ZOOM_MIN, ZOOM_MAX = 0.1, 5.0
 
@@ -532,6 +581,9 @@ class DocumentEditor(QTextEdit):
         super().paintEvent(e)
         vp = self.viewport()
         p = QPainter(vp)
+        self._schmuck_zeichnen(p)
+        if self.gitter:
+            self._gitter_zeichnen(p)
         if self.marken:
             z = self.zoom
             ml, mt = int(mm_to_px(self.page.margin_left_mm) * z), int(mm_to_px(self.page.margin_top_mm) * z)

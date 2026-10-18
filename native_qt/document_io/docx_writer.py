@@ -71,6 +71,7 @@ class _Writer:
         s.orientation = WD_ORIENT.LANDSCAPE if p.landscape else WD_ORIENT.PORTRAIT
         s.top_margin, s.bottom_margin = Mm(p.margin_top_mm), Mm(p.margin_bottom_mm)
         s.left_margin, s.right_margin = Mm(p.margin_left_mm), Mm(p.margin_right_mm)
+        self._seitenschmuck(s)
         for part, hf in ((s.header, p.header), (s.footer, p.footer)):
             if hf.is_empty():
                 continue
@@ -81,6 +82,38 @@ class _Writer:
                 para.alignment = {"center": WD_ALIGN_PARAGRAPH.CENTER,
                                   "right": WD_ALIGN_PARAGRAPH.RIGHT}.get(hf.align, WD_ALIGN_PARAGRAPH.LEFT)
                 self._text_with_fields(para, line)
+
+    def _seitenschmuck(self, sect) -> None:
+        from docx.oxml import OxmlElement
+        p = self.page
+        doc_el = self.d.element
+        for alt in doc_el.findall(qn("w:background")):
+            doc_el.remove(alt)
+        if p.color:
+            bg = OxmlElement("w:background")
+            bg.set(qn("w:color"), p.color.lstrip("#").upper())
+            doc_el.insert(0, bg)
+            st = self.d.settings.element
+            if st.find(qn("w:displayBackgroundShape")) is None:
+                st.insert(0, OxmlElement("w:displayBackgroundShape"))
+        sp = sect._sectPr
+        for alt in sp.findall(qn("w:pgBorders")):
+            sp.remove(alt)
+        if p.border:
+            b = p.border
+            pb = OxmlElement("w:pgBorders")
+            pb.set(qn("w:offsetFrom"), "page")
+            for seite in ("top", "left", "bottom", "right"):
+                e = OxmlElement(f"w:{seite}")
+                e.set(qn("w:val"), "double" if b.get("art") == "doppelt" else "single")
+                e.set(qn("w:sz"), str(max(2, int(round(b.get("breite_pt", 1.0) * 8)))))
+                e.set(qn("w:space"), str(int(round(b.get("abstand_mm", 8.0) / 25.4 * 72))))
+                e.set(qn("w:color"), b.get("farbe", "#000000").lstrip("#").upper())
+                pb.append(e)
+            pg_mar = sp.find(qn("w:pgMar"))
+            (pg_mar.addnext(pb) if pg_mar is not None else sp.append(pb))
+        if p.watermark and p.watermark.get("text"):
+            self.report.warn("Das Wasserzeichen wird in der DOCX-Datei nicht gespeichert (nur Anzeige, PDF und Druck).")
 
     def _text_with_fields(self, para, text: str):
         import re

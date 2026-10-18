@@ -101,6 +101,42 @@ def _bf_ohne(bf):
     return bf
 
 
+def seitenschmuck(p: QPainter, page: PageSettings, hintergrund: bool = True, flaeche=None) -> None:
+    """Seitenfarbe, Seitenrahmen und Wasserzeichen. Koordinaten: Seite in 96-dpi-Bildpunkten, Ursprung links oben.
+    `flaeche` (QRectF) überschreibt das Seitenrechteck — der Editor zeichnet damit jede Seite einzeln."""
+    from PySide6.QtCore import QRectF as _R
+    from PySide6.QtGui import QColor, QPen
+    pw, ph = mm_to_px(page.width_mm), mm_to_px(page.height_mm)
+    r = flaeche or _R(0, 0, pw, ph)
+    p.save()
+    if hintergrund and page.color:
+        p.fillRect(r, QColor(page.color))
+    b = page.border
+    if b:
+        a = mm_to_px(b.get("abstand_mm", 8.0))
+        pen = QPen(QColor(b.get("farbe", "#000000")))
+        pen.setWidthF(max(0.5, b.get("breite_pt", 1.0) * 96 / 72))
+        p.setPen(pen)
+        p.setBrush(Qt.NoBrush)
+        p.drawRect(r.adjusted(a, a, -a, -a))
+        if b.get("art") == "doppelt":
+            g = a + pen.widthF() * 3
+            p.drawRect(r.adjusted(g, g, -g, -g))
+    w = page.watermark
+    if w and w.get("text"):
+        f = QFont("Liberation Sans")
+        f.setPixelSize(max(8, int(w.get("groesse_pt", 80) * 96 / 72)))
+        f.setBold(True)
+        p.setFont(f)
+        c = QColor(w.get("farbe", "#c0c0c0"))
+        c.setAlpha(110)
+        p.setPen(c)
+        p.translate(r.center())
+        p.rotate(w.get("winkel", -45))
+        p.drawText(_R(-r.width(), -r.height() / 2, 2 * r.width(), r.height()), Qt.AlignCenter, w["text"])
+    p.restore()
+
+
 def seiten_liste(total: int, first: int, last: int, opt: dict | None) -> list[int]:
     """Welche Seiten in welcher Reihenfolge gedruckt werden (Duplex, umgekehrte Reihenfolge)."""
     seiten = list(range(first, last + 1))
@@ -141,6 +177,7 @@ def render(qdoc: QTextDocument, page: PageSettings, device, first: int = 1, last
         first_page = False
         p.save()
         p.scale(s, s)
+        seitenschmuck(p, page, opt.get("hintergrund") is not False)
         _draw_hf(p, page.header, QRectF(ml, mm_to_px(8), cw, mm_to_px(10)), n, total, base)
         _draw_hf(p, page.footer, QRectF(ml, ph - mm_to_px(18), cw, mm_to_px(10)), n, total, base)
         p.translate(ml, mt)

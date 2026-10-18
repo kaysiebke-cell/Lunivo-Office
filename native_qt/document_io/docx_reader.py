@@ -500,11 +500,30 @@ class _Reader:
             ps.margin_right_mm = s.right_margin.mm
         except Exception:
             self.report.warn("Seitengröße oder Ränder fehlen; es gilt A4 mit 2,5 cm Rand.")
+        self._seitenschmuck(ps, s)
         ps.header = self._hf(s.header)
         ps.footer = self._hf(s.footer)
         if s.different_first_page_header_footer:
             self.report.warn("„Erste Seite anders“ bei Kopf-/Fußzeile wird nicht unterstützt.")
         return ps
+
+    def _seitenschmuck(self, ps: PageSettings, sect) -> None:
+        bg = self.d.element.find(qn("w:background"))
+        if bg is not None:
+            c = bg.get(qn("w:color"))
+            if c and c.lower() not in ("auto", "ffffff"):
+                ps.color = "#" + c.lower()
+        pb = sect._sectPr.find(qn("w:pgBorders"))
+        if pb is not None:
+            e = pb.find(qn("w:top"))
+            if e is not None and e.get(qn("w:val"), "none") not in ("none", "nil"):
+                col = (e.get(qn("w:color")) or "000000")
+                ps.border = {"farbe": "#" + (col if col.lower() != "auto" else "000000").lower(),
+                             "breite_pt": int(e.get(qn("w:sz")) or 8) / 8.0,
+                             "art": "doppelt" if e.get(qn("w:val")) == "double" else "einfach",
+                             "abstand_mm": int(e.get(qn("w:space")) or 24) / 72 * 25.4}
+                if pb.find(qn("w:left")) is None or pb.find(qn("w:bottom")) is None:
+                    self.report.warn("Der Seitenrahmen hat nicht auf allen Seiten eine Linie; er wird als vollständiger Rahmen gezeigt.")
 
     def _hf(self, part) -> HeaderFooter:
         if part.is_linked_to_previous or not part.paragraphs:

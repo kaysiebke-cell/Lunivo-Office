@@ -125,3 +125,20 @@ def test_unsupported_content_is_reported(app, tmp_path):
     f = tmp_path / "f.docx"; d.save(f)
     _, _, _, rep = read_docx(str(f))
     assert any("Fußnoten" in w for w in rep.warnings)
+
+
+def test_seitenfarbe_und_rahmen_roundtrip(tmp_path):
+    from PySide6.QtGui import QTextDocument
+    from native_qt.document_io import docx_reader, docx_writer
+    from native_qt.editor.page import PageSettings
+    d = QTextDocument(); d.setPlainText("Seite")
+    pg = PageSettings(color="#ffeecc", border={"art": "doppelt", "farbe": "#336699", "breite_pt": 1.5, "abstand_mm": 10.0},
+                      watermark={"text": "ENTWURF", "farbe": "#c0c0c0", "winkel": -45, "groesse_pt": 80})
+    out = str(tmp_path / "s.docx")
+    rep = docx_writer.write_docx(out, d, pg, {})
+    assert any("Wasserzeichen" in w for w in rep.warnings)          # wird gemeldet, nicht still verworfen
+    _, p2, _, _ = docx_reader.read_docx(out)
+    assert p2.color == "#ffeecc"
+    assert p2.border["art"] == "doppelt" and p2.border["farbe"] == "#336699"
+    assert abs(p2.border["breite_pt"] - 1.5) < 0.2 and abs(p2.border["abstand_mm"] - 10) < 0.6
+    assert p2.watermark is None

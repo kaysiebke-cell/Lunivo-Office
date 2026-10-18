@@ -24,7 +24,6 @@ class DocumentTab(QScrollArea):
         lay = QHBoxLayout(holder)
         lay.setContentsMargins(12, 12, 12, 12)
         self.editor = DocumentEditor()
-        self.editor.setStyleSheet("QTextEdit { background: white; color: black; border: 1px solid #5c6166; }")
         lay.addStretch(1)
         lay.addWidget(self.editor)
         lay.addStretch(1)

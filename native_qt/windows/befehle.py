@@ -15,7 +15,7 @@ import os
 from datetime import datetime
 
 from PySide6.QtCore import Qt, QUrl
-from PySide6.QtGui import QBrush, QColor, QIcon, QPixmap, QTextBlockFormat, QTextCharFormat, QTextCursor, QTextListFormat
+from PySide6.QtGui import QBrush, QColor, QCursor, QIcon, QPixmap, QTextBlockFormat, QTextCharFormat, QTextCursor, QTextListFormat
 from PySide6.QtWidgets import QApplication, QColorDialog, QInputDialog, QMenu, QMessageBox
 
 PALETTE = ["#000000", "#c92a2a", "#e8590c", "#f08c00", "#2f9e44", "#1098ad", "#1971c2", "#6741d9",
@@ -513,6 +513,47 @@ class Befehle:
         self.w.toggle_lesemodus()
 
     def an_lesemodus(self): return self.w.lesemodus
+
+    # ---- Seitenhintergrund -------------------------------------------------------------------
+    def _seite_aendern(self, **felder):
+        e = self.ed
+        if not e:
+            return
+        pg = e.page.copy()
+        for k, v in felder.items():
+            setattr(pg, k, v)
+        e.page_settings_changed(pg)
+
+    def menue_seitenfarbe(self):
+        from PySide6.QtGui import QColor
+        m = self._farbmenue(lambda c: self._seite_aendern(color=c.name() if c else ""), "Keine Farbe")
+        return m
+
+    def seitenfarbe(self, k=None):
+        m = self.menue_seitenfarbe()
+        m.exec(QCursor.pos())
+
+    def wasserzeichen(self, k=None):
+        if not self.ed:
+            return
+        from ..widgets.dialogs import WasserzeichenDialog
+        d = WasserzeichenDialog(self.w, self.ed.page.watermark)
+        if d.exec():
+            self._seite_aendern(watermark=d.ergebnis())
+
+    def seitenrahmen(self, k=None):
+        if not self.ed:
+            return
+        from ..widgets.dialogs import SeitenrahmenDialog
+        d = SeitenrahmenDialog(self.w, self.ed.page.border)
+        if d.exec():
+            self._seite_aendern(border=d.ergebnis())
+
+    def netzlinien(self, k=None):
+        if self.ed:
+            self.ed.set_gitter(not self.ed.gitter)
+
+    def an_netzlinien(self): return bool(self.ed and self.ed.gitter)
 
     # ---- Zoom ---------------------------------------------------------------------------
     def _zoom_um(self, faktor):

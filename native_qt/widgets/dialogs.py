@@ -233,3 +233,73 @@ class ZoomDialog(QDialog):
         if i == 100 or i not in self._art:
             return "wert", self.spin.value() / 100
         return self._art[i]
+
+
+class WasserzeichenDialog(QDialog):
+    def __init__(self, parent, aktuell: dict | None):
+        super().__init__(parent)
+        from PySide6.QtWidgets import QColorDialog, QSpinBox
+        self.setWindowTitle("Wasserzeichen")
+        a = aktuell or {}
+        f = QFormLayout(self)
+        self.text = QLineEdit(a.get("text", "ENTWURF"))
+        self.farbe = a.get("farbe", "#c0c0c0")
+        self.knopf = QPushButton(self.farbe)
+        self.knopf.clicked.connect(self._waehle)
+        self.winkel = QSpinBox(); self.winkel.setRange(-90, 90); self.winkel.setValue(int(a.get("winkel", -45)))
+        self.groesse = QSpinBox(); self.groesse.setRange(10, 300); self.groesse.setSuffix(" pt"); self.groesse.setValue(int(a.get("groesse_pt", 80)))
+        f.addRow("Text", self.text); f.addRow("Farbe", self.knopf); f.addRow("Drehung (Grad)", self.winkel); f.addRow("Größe", self.groesse)
+        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        self.weg = bb.addButton("Entfernen", QDialogButtonBox.DestructiveRole)
+        self.entfernt = False
+        self.weg.clicked.connect(lambda: (setattr(self, "entfernt", True), self.accept()))
+        bb.accepted.connect(self.accept); bb.rejected.connect(self.reject)
+        f.addRow(bb)
+
+    def _waehle(self):
+        from PySide6.QtGui import QColor
+        from PySide6.QtWidgets import QColorDialog
+        c = QColorDialog.getColor(QColor(self.farbe), self, "Farbe")
+        if c.isValid():
+            self.farbe = c.name(); self.knopf.setText(self.farbe)
+
+    def ergebnis(self) -> dict | None:
+        if self.entfernt or not self.text.text().strip():
+            return None
+        return {"text": self.text.text().strip(), "farbe": self.farbe, "winkel": self.winkel.value(), "groesse_pt": self.groesse.value()}
+
+
+class SeitenrahmenDialog(QDialog):
+    def __init__(self, parent, aktuell: dict | None):
+        super().__init__(parent)
+        from PySide6.QtWidgets import QSpinBox
+        self.setWindowTitle("Seitenrahmen")
+        a = aktuell or {}
+        f = QFormLayout(self)
+        self.art = QComboBox(); self.art.addItems(["Einfach", "Doppelt"])
+        self.art.setCurrentIndex(1 if a.get("art") == "doppelt" else 0)
+        self.farbe = a.get("farbe", "#000000")
+        self.knopf = QPushButton(self.farbe); self.knopf.clicked.connect(self._waehle)
+        self.breite = QDoubleSpinBox(); self.breite.setRange(0.25, 6); self.breite.setSingleStep(0.25); self.breite.setSuffix(" pt")
+        self.breite.setValue(float(a.get("breite_pt", 1.0)))
+        self.abstand = QDoubleSpinBox(); self.abstand.setRange(2, 30); self.abstand.setSuffix(" mm"); self.abstand.setValue(float(a.get("abstand_mm", 8.0)))
+        f.addRow("Art", self.art); f.addRow("Farbe", self.knopf); f.addRow("Breite", self.breite); f.addRow("Abstand vom Seitenrand", self.abstand)
+        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        self.weg = bb.addButton("Kein Rahmen", QDialogButtonBox.DestructiveRole)
+        self.entfernt = False
+        self.weg.clicked.connect(lambda: (setattr(self, "entfernt", True), self.accept()))
+        bb.accepted.connect(self.accept); bb.rejected.connect(self.reject)
+        f.addRow(bb)
+
+    def _waehle(self):
+        from PySide6.QtGui import QColor
+        from PySide6.QtWidgets import QColorDialog
+        c = QColorDialog.getColor(QColor(self.farbe), self, "Farbe")
+        if c.isValid():
+            self.farbe = c.name(); self.knopf.setText(self.farbe)
+
+    def ergebnis(self) -> dict | None:
+        if self.entfernt:
+            return None
+        return {"art": "doppelt" if self.art.currentIndex() else "einfach", "farbe": self.farbe,
+                "breite_pt": self.breite.value(), "abstand_mm": self.abstand.value()}
