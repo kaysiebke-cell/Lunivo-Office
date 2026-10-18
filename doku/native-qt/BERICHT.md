@@ -4,7 +4,7 @@ Alle Angaben stammen aus tatsächlichen Läufen in der Entwicklungsumgebung (Lin
 echten Linux-Mint-Desktop mit Bildschirm getestet — das ist offen (siehe 6).
 
 ## 1. Dateien
-`native_qt/` (≈ 8300 Zeilen Python), `tests/` (15 Dateien), `werkzeug/register-exportieren.js`, `werkzeug/abgleich-native.py`,
+`native_qt/` (≈ 8300 Zeilen Python), `tests/` (13 Testdateien), `werkzeug/register-exportieren.js`, `werkzeug/abgleich-native.py`,
 `starten-qt.sh`, `requirements*.txt`, `doku/native-qt/*`. Die alte Web-Oberfläche ist unverändert; auf `main` wurde nichts geändert.
 
 ## 2. Tatsächlich umgesetzt
