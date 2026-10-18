@@ -251,3 +251,26 @@ def test_ki_dialoge(app, tmp_path, monkeypatch):
     kd.felder["bildgenerierung"].setCurrentIndex(1); kd._ok()
     assert k["aufgaben"]["bildgenerierung"].startswith("eigen:")
     ModellListeDialog(w, k)._fuellen()
+
+
+def test_silbenfarben_befehl_und_dialog(app, tmp_path, monkeypatch):
+    from native_qt.widgets.silben_dialog import SilbenDialog
+    w = win(tmp_path, monkeypatch)
+    e = w.current_editor()
+    e.setPlainText("Wanderung und Schmetterling")
+    assert w.befehle.hat("silbenfarben") and w.befehle.hat("silbenEinstellen") and not w.befehle.zustand("silbenfarben")
+    w.befehle.tun("silbenfarben")
+    assert w.befehle.zustand("silbenfarben") and e.document().firstBlock().layout().formats()
+    d = SilbenDialog(w)
+    d.palette.setCurrentText("Blau / Orange"); d.mindestens.setValue(9); d.absatz.setChecked(False)
+    assert w.settings.get("lesehilfe/silben/palette") == "Blau / Orange"
+    assert {r.format.foreground().color().name() for r in e.document().firstBlock().layout().formats()} <= {"#1f5fbf", "#d9480f"}
+    d.reject()                                                         # Abbrechen stellt den alten Stand wieder her
+    assert w.settings.get("lesehilfe/silben/palette") == "Blau / Rot"
+    w.befehle.tun("silbenfarben")
+    assert not e.document().firstBlock().layout().formats()
+    # neue Dokumente übernehmen die Einstellung
+    w.settings.set("lesehilfe/silben/an", True)
+    w.new_document()
+    w.current_editor().setPlainText("Wanderung")
+    assert w.current_editor().document().firstBlock().layout().formats()

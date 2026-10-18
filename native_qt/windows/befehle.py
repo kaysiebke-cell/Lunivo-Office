@@ -1594,6 +1594,24 @@ class Befehle:
         d.show()
         self._lh = d
 
+    def silbenfarben(self, k=None):
+        from ..editor import silbenfarben as S
+        k = S.konfig_lesen(self.w.settings)
+        if not k["an"] and not S.verfuegbar(k["sprache"]):
+            self.w.statusBar().showMessage("Silben farbig braucht das Paket „pyphen“ (pip install pyphen).", 6000)
+            return
+        self.w.settings.set("lesehilfe/silben/an", not k["an"])
+        self.w.silbenfarben_anwenden()
+        self.w.statusBar().showMessage("Silben werden farbig angezeigt." if not k["an"] else "Silbenfarben aus.", 4000)
+
+    def an_silbenfarben(self):
+        from ..editor import silbenfarben as S
+        return S.konfig_lesen(self.w.settings)["an"]
+
+    def silbenEinstellen(self, k=None):
+        from ..widgets.silben_dialog import SilbenDialog
+        SilbenDialog(self.w).exec()
+
     # ==== Ansicht ==========================================================================================================================
     def markenZeigen(self, k=None):
         if self.ed:

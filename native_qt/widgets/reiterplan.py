@@ -119,6 +119,12 @@ KOPFFUSS = {"name": "Kopf- und Fußzeilentools", "kontext": "kopffuss", "gruppen
 def plan(register: dict) -> list[dict]:
     """Die Reiter in der Reihenfolge der Struktur; Kontext-Register stehen am Ende (zunächst verborgen)."""
     nach = {t["name"]: t for t in register["register"]}
+    sh = nach["Schreibhilfe"] = dict(nach["Schreibhilfe"])
+    sh["gruppen"] = [dict(g) for g in sh["gruppen"]]
+    lesen = next(g for g in sh["gruppen"] if g["name"] == "Lesen")
+    if not any(k.get("tun") == "silbenfarben" for k in lesen["knoepfe"]):          # Lesehilfe für Legasthenie (nicht im alten Register)
+        lesen["knoepfe"] = lesen["knoepfe"] + [_k("farbe", "Silben farbig", "silbenfarben", haken=True),
+                                               _k("zahnrad", "Silben einstellen …", "silbenEinstellen")]
     verweise = dict(nach["Referenzen"], name="Verweise")
     reiter = [DATEI, nach["Start"], nach["Einfügen"], nach["Seitenlayout"], verweise, nach["Überprüfen"],
               nach["Schreibhilfe"], KI, nach["Ansicht"], nach["Sendungen"]]

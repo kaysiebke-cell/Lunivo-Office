@@ -183,6 +183,11 @@ class OptionenDialog(QDialog):
         p.zahl(f, "vorlesen/tempo", "Tempo (−100 bis 100)", -100, 100, 0)
         if not vorlesen.verfuegbar():
             p.hinweis("Es ist keine Sprachausgabe eingerichtet (speech-dispatcher oder Piper).")
+        f = p.gruppe("Silben farbig (Lesehilfe für Legasthenie)")
+        p.haken(f, "lesehilfe/silben/an", "Silben farbig anzeigen", False, lambda _: self.w.silbenfarben_anwenden())
+        b = QPushButton("Farben, Darstellung und Mindestlänge einstellen …")
+        b.clicked.connect(lambda: self.w.befehle.silbenEinstellen())
+        f.addRow(b)
         f = p.gruppe("Silbentrennung")
         p.auswahl(f, "silben/sprache", "Sprache der Silbentrennung", ["de_DE", "de_AT", "de_CH", "en_US", "en_GB", "fr", "es", "it", "nl_NL", "pl_PL", "tr_TR"], "de_DE")
         p.zeile(f, "Ein/Aus: Reiter Schreibhilfe ▸ Sprache ▸ Silbentrennung. Wirkt in Seitenansicht, Druck und PDF; in DOCX wird der Schalter „automatische Silbentrennung“ gespeichert.")

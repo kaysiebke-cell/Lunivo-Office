@@ -556,7 +556,7 @@ class MainWindow(QMainWindow):
             if self.settings.get_bool("pdf/lz_ueberschriften", False) or self.settings.get_bool("pdf/lz_textmarken", False):
                 lz = {"ueberschriften": self.settings.get_bool("pdf/lz_ueberschriften", False),
                       "textmarken": self.settings.get_bool("pdf/lz_textmarken", False)}
-            n = export_pdf(path, t.editor.document(), t.page, os.path.splitext(t.title)[0], autor, t.editor.noten, lz)
+            n = export_pdf(path, t.editor.document(), t.page, os.path.splitext(t.title)[0], autor, t.editor.noten, lz, self._silben_fuer_druck())
         except Exception as e:  # PDF-Ausgabe darf das Programm nicht beenden
             QMessageBox.critical(self, "PDF-Export fehlgeschlagen", str(e)); return
         self.statusBar().showMessage(f"PDF gespeichert ({n} Seiten): {path}", 5000)
@@ -596,7 +596,13 @@ class MainWindow(QMainWindow):
                 "hervorhebungen": self.settings.get_bool("drucken/hervorhebungen", True),
                 "textmarken": self.settings.get_bool("drucken/textmarken", False),
                 "textgrenzen": self.settings.get_bool("drucken/textgrenzen", False),
-                "zuschnitt": self.settings.get_bool("drucken/zuschnitt", False)}
+                "zuschnitt": self.settings.get_bool("drucken/zuschnitt", False),
+                "silbenfarben": self._silben_fuer_druck()}
+
+    def _silben_fuer_druck(self):
+        from ..editor import silbenfarben as S
+        k = S.konfig_lesen(self.settings)
+        return dict(k, nur_absatz=False) if k["an"] and k["drucken"] else None
 
     def _neuer_drucker(self):
         return QPrinter(QPrinter.HighResolution if self.settings.get_bool("drucken/hoch", True) else QPrinter.ScreenResolution)
@@ -833,6 +839,13 @@ class MainWindow(QMainWindow):
         s = self.settings
         e.set_lesehilfe(PAPIERTOENE.get(s.get("lesehilfe/papier", "Weiß"), "#ffffff"),
                         float(s.get("lesehilfe/buchstaben", 0)), float(s.get("lesehilfe/wort", 0)))
+        self.silbenfarben_anwenden(e)
+
+    def silbenfarben_anwenden(self, e=None):
+        from ..editor import silbenfarben as S
+        k = S.konfig_lesen(self.settings)
+        for ed in ([e] if e is not None else [t.editor for t in self._doc_tabs()]):
+            ed.set_silbenfarben(k)
 
     def lineale_anwenden(self, tab=None):
         h = self.settings.get_bool("ansicht/lineal", False)

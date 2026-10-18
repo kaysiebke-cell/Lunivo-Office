@@ -286,6 +286,9 @@ def render(qdoc: QTextDocument, page: PageSettings, device, first: int = 1, last
         _ohne_hervorhebungen(d)
     if opt.get("textmarken"):
         _textmarken_klammern(d)
+    if opt.get("silbenfarben"):
+        from .silbenfarben import SilbenFarben
+        _hl = SilbenFarben(d, opt["silbenfarben"])             # bleibt bis zum Zeichnen am Leben (lokale Variable)
     total = max(1, d.pageCount())
     last = total if last is None else min(last, total)
     p = QPainter(device)
@@ -496,7 +499,7 @@ def _page_layout(page: PageSettings) -> QPageLayout:
 
 
 def export_pdf(path: str, qdoc: QTextDocument, page: PageSettings, title: str = "", author: str = "", noten: dict | None = None,
-               lesezeichen: dict | None = None) -> int:
+               lesezeichen: dict | None = None, silben: dict | None = None) -> int:
     from PySide6.QtCore import QByteArray
     w = QPdfWriter(path)
     w.setResolution(300)
@@ -512,6 +515,8 @@ def export_pdf(path: str, qdoc: QTextDocument, page: PageSettings, title: str = 
     opt = {"noten": noten} if noten else {}
     if lesezeichen:
         opt["lesezeichen"] = lesezeichen
+    if silben:
+        opt["silbenfarben"] = silben
     n = render(qdoc, page, w, opt=opt or None)
     if lesezeichen and opt.get("lesezeichen_ergebnis"):
         del w                                  # Datei schließen, bevor sie noch einmal geöffnet wird

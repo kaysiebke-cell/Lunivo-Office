@@ -346,6 +346,30 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
     def _cursor_moved(self) -> None:
         self.pageInfoChanged.emit(self.current_page(), self._pages)
         self.formatChanged.emit()
+        hl = getattr(self, "_silben", None)
+        if hl is not None and hl.k["nur_absatz"]:
+            neu = self.textCursor().blockNumber()
+            if neu != getattr(self, "_silben_block", -1):
+                for n in (getattr(self, "_silben_block", -1), neu):
+                    b = self.document().findBlockByNumber(n)
+                    if b.isValid():
+                        hl.rehighlightBlock(b)
+                self._silben_block = neu
+
+    def set_silbenfarben(self, konfig: dict | None) -> None:
+        """Silben farbig (reine Anzeige, ändert das Dokument nicht); konfig None oder an=False schaltet ab."""
+        from .silbenfarben import SilbenFarben
+        hl = getattr(self, "_silben", None)
+        if not konfig or not konfig["an"]:
+            if hl is not None:
+                hl.setDocument(None)
+                self._silben = None
+            return
+        if hl is None:
+            self._silben_block = self.textCursor().blockNumber()
+            self._silben = SilbenFarben(self.document(), konfig, lambda: self.textCursor().blockNumber())
+        else:
+            hl.neu_konfigurieren(konfig)
 
     def word_count(self) -> int:
         return len(self.document().toPlainText().split())

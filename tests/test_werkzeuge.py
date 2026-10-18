@@ -315,3 +315,43 @@ def test_textumbruch_um_bilder(app, tmp_path):
     # zurück in die Zeile
     assert U.umbruch_setzen(ed, "zeile")
     assert U.schwebende_rahmen(doc) == {} and doc.toPlainText().count("￼") == 1
+
+
+def test_silben_farbig(app, tmp_path, monkeypatch):
+    """Silben abwechselnd farbig: nur Anzeige (Text bleibt), einstellbar, nur-Absatz, Dialog, PDF."""
+    from PySide6.QtCore import QSettings
+    from PySide6.QtGui import QColor, QTextCursor
+    from native_qt.editor import silbenfarben as S
+    from native_qt.editor.editor_widget import DocumentEditor
+    from native_qt.storage.settings import Settings
+    assert S.silben("Schmetterling") == ("Schmet", "ter", "ling") or len(S.silben("Schmetterling")) >= 3
+    assert S.silben("Haus") == ("Haus",)
+    st = Settings(QSettings(str(tmp_path / "s.ini"), QSettings.IniFormat))
+    k = S.konfig_lesen(st)
+    assert k["an"] is False and S.farben(k) == ["#1f5fbf", "#c92a2a"]
+    ed = DocumentEditor()
+    ed.setPlainText("Wanderung und Computer.\nSchmetterling fliegt.")
+    vorher = ed.document().toPlainText()
+    ed.set_silbenfarben(dict(k, an=True))
+    ed.document().firstBlock().layout().formats()                         # Highlighter hat das Layout befüllt
+    f0 = ed.document().firstBlock().layout().formats()
+    farben = {r.format.foreground().color().name() for r in f0}
+    assert farben == {"#1f5fbf", "#c92a2a"}
+    assert ed.document().toPlainText() == vorher                           # Text unverändert
+    # nur im Absatz mit dem Cursor
+    ed.set_silbenfarben(dict(k, an=True, nur_absatz=True))
+    c = ed.textCursor(); c.setPosition(0); ed.setTextCursor(c)
+    assert ed.document().firstBlock().layout().formats() and not ed.document().findBlockByNumber(1).layout().formats()
+    c.setPosition(len("Wanderung und Computer.\n") + 2); ed.setTextCursor(c)
+    assert ed.document().findBlockByNumber(1).layout().formats() and not ed.document().firstBlock().layout().formats()
+    # Hintergrund-Darstellung und eigene Farben
+    ed.set_silbenfarben(dict(k, an=True, darstellung="Hintergrund (Marker)", palette="Eigene Farben", eigene=["#ff0000", "#00ff00", "#0000ff"], anzahl_eigene=3))
+    r = ed.document().firstBlock().layout().formats()
+    assert {x.format.background().color().name() for x in r} == {"#ff0000", "#00ff00", "#0000ff"}
+    ed.set_silbenfarben(None)
+    assert not ed.document().firstBlock().layout().formats()
+    # PDF mit Silbenfarben entsteht
+    from PySide6.QtGui import QPdfWriter
+    from native_qt.editor.page import PageSettings
+    from native_qt.editor.pagination import render
+    assert render(ed.document(), PageSettings(), QPdfWriter(str(tmp_path / "f.pdf")), opt={"silbenfarben": dict(k, an=True)}) == 1
