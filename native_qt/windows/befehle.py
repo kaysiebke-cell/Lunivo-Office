@@ -555,6 +555,15 @@ class Befehle:
 
     def an_netzlinien(self): return bool(self.ed and self.ed.gitter)
 
+    # ---- Fenster ---------------------------------------------------------------------------
+    def neuesFenster(self, k=None): self.w.neues_fenster()
+    def fensterNebeneinander(self, k=None): self.w.fenster_anordnen("nebeneinander")
+    def fensterUntereinander(self, k=None): self.w.fenster_anordnen("untereinander")
+    def fensterKacheln(self, k=None): self.w.fenster_anordnen("kacheln")
+
+    def fensterListe(self, k=None):
+        self.w.fensterliste_menue().exec(QCursor.pos())
+
     # ---- Dokumentansichten ----------------------------------------------------------------
     def w_setzeLayout(self, k=None, art="blatt"):
         t = self.w.current_tab()

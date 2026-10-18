@@ -214,3 +214,23 @@ def _bloecke(doc):
     while b.isValid():
         yield b
         b = b.next()
+
+
+def test_neues_fenster_und_anordnen(app, tmp_path):
+    w = win(tmp_path)
+    w.new_document()
+    w.current_editor().insertPlainText("Inhalt")
+    ziel = str(tmp_path / "f.docx")
+    w.show()
+    assert w._write(w.current_tab(), ziel)
+    w.current_tab().set_path(ziel)
+    w2 = w.neues_fenster()
+    assert w2 is not None and w2.current_tab().editor.toPlainText() == "Inhalt"
+    assert len(MainWindow.alle_fenster()) >= 2
+    w.fenster_anordnen("nebeneinander")
+    assert abs(w.width() - w2.width()) <= 2
+    menue = w.fensterliste_menue()
+    titel = [a.text() for a in menue.actions()]
+    assert any("f.docx" in t for t in titel)
+    for f in (w2, w):
+        f.current_editor().document().setModified(False); f.close()
