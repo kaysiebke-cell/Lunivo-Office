@@ -12,7 +12,7 @@ from .flow_layout import FlowLayout
 
 CHIP = ("QPushButton { border: 1px solid palette(mid); border-radius: 11px; padding: 3px 12px; color: palette(window-text); }"
         "QPushButton:checked { background: #2f6fb5; color: white; border-color: #2f6fb5; }")
-CHIP_GRUEN = ("QPushButton { border: 1px solid palette(mid); border-radius: 11px; padding: 3px 12px; font-weight: bold; color: palette(window-text); }"
+CHIP_GRUEN = ("QPushButton { border: 1px solid palette(mid); border-radius: 11px; padding: 0px; font-weight: bold; color: palette(window-text); }"
               "QPushButton:checked { background: #2f9e75; color: white; border-color: #2f9e75; }")
 FARBE = {"fehler": "#e8590c", "tipp": "#1c7ed6", "hinweis": "#868e96"}
 LEER = ("Nichts gefunden. Das heißt nicht, dass alles richtig ist — die Schreibhilfe sucht nur die Fehler, "
@@ -137,54 +137,54 @@ class SchreibhilfePanel(QWidget):
         aussen = QVBoxLayout(self)
         aussen.setContentsMargins(0, 0, 0, 0)
         aussen.setSpacing(0)
-        kopf = QHBoxLayout()
-        kopf.setContentsMargins(10, 8, 10, 0)
-        kopf.setSpacing(4)
-        self.bereiche = QButtonGroup(self)
         self.stapel = QStackedWidget()
-        for i, name in enumerate(("Überprüfen", "Schreibhilfe", "KI")):
-            b = QPushButton(name)
-            b.setCheckable(True)
-            b.setStyleSheet(CHIP)
-            b.setChecked(i == 0)
-            b.clicked.connect(lambda _=False, i=i: self.zeige_bereich(i))
-            self.bereiche.addButton(b, i)
-            kopf.addWidget(b)
-        kopf.addStretch(1)
-        aussen.addLayout(kopf)
         aussen.addWidget(self.stapel, 1)
         seite0 = QWidget()
         self.stapel.addWidget(seite0)
         v = QVBoxLayout(seite0)
         v.setContentsMargins(14, 12, 14, 10)
         v.setSpacing(8)
+        # Kopf wie im alten Lunivo: Titel, die drei Schalter der Schreibbrücke (We/Vo/Ko), rechts „Prüfen“
+        kopf = QHBoxLayout()
+        kopf.setSpacing(6)
         t = QLabel("<b style='font-size:12pt'>Schreib <span style='color:#2f6fb5'>|</span> hilfe</b>")
         t.setTextFormat(Qt.RichText)
-        s = QLabel("Sucht die Fehler, die ein Rechtschreibprüfer nicht finden kann.")
-        s.setWordWrap(True)
-        s.setStyleSheet("color: palette(mid);")
-        v.addWidget(t)
-        v.addWidget(s)
-        self.pruefen = QPushButton("Prüfen")
-        self.pruefen.setMinimumHeight(32)
-        self.pruefen.clicked.connect(lambda: self.a.pruefen(True))
-        v.addWidget(self.pruefen)
-        z = QHBoxLayout()
+        kopf.addWidget(t)
         self.chips = {}
-        for key, text in (("wellen", "Wellen"), ("vorhersage", "Vorhersage"), ("autokorr", "AutoKorr")):
-            b = QPushButton(text)
+        for key, kurz, tip in (
+                ("wellen", "We", "Wellen — Fundstellen beim Schreiben unterschlängeln (orange: sicher falsch, blau: Zusammenhang, grau: Nachdenken)."),
+                ("vorhersage", "Vo", "Vorhersage — nach drei Buchstaben passende Wörter anbieten; Tab übernimmt."),
+                ("autokorr", "Ko", "AutoKorr — Offensichtliches sofort bessern („ “, Gedankenstrich, Auslassungszeichen, Satzanfang).")):
+            b = QPushButton(kurz)
             b.setCheckable(True)
             b.setChecked(self.a.an(key))
+            b.setToolTip(tip)
+            b.setFixedSize(40, 26)
             b.setStyleSheet(CHIP_GRUEN)
             b.toggled.connect(lambda on, k=key: self.a.setze(k, on))
             self.chips[key] = b
-            z.addWidget(b)
+            kopf.addWidget(b)
+        kopf.addStretch(1)
+        self.pruefen = QPushButton("Prüfen")
+        self.pruefen.clicked.connect(lambda: self.a.pruefen(True))
+        kopf.addWidget(self.pruefen)
+        v.addLayout(kopf)
+        s = QLabel("Sucht die Fehler, die ein Rechtschreibprüfer nicht finden kann.")
+        s.setWordWrap(True)
+        s.setStyleSheet("color: palette(mid);")
+        v.addWidget(s)
+        zl = QHBoxLayout()
+        mehr = QPushButton("Mehr Hilfen …")
+        mehr.setFlat(True)
+        mehr.setCursor(Qt.PointingHandCursor)
+        mehr.clicked.connect(lambda: self.zeige_bereich(1))
+        zl.addWidget(mehr)
         l = QLabel("<a href='#' style='color:#6ea8e0'>Welche Hilfe wann?</a>")
         l.setTextFormat(Qt.RichText)
         l.linkActivated.connect(lambda _: self.welche_hilfe())
-        z.addWidget(l)
-        z.addStretch(1)
-        v.addLayout(z)
+        zl.addStretch(1)
+        zl.addWidget(l)
+        v.addLayout(zl)
         self.liste = QVBoxLayout()
         self.liste.setSpacing(6)
         host = QWidget()
@@ -333,8 +333,8 @@ class SchreibhilfePanel(QWidget):
         self.liste.insertWidget(0, m)
 
     def zeige_bereich(self, i: int) -> None:
+        """0 = Schreibhilfe, 1 = weitere Hilfen (Lesen, Vorlesen, Sprache, …), 2 = KI-Chat."""
         self.stapel.setCurrentIndex(i)
-        self.bereiche.button(i).setChecked(True)
 
     def setze_bereiche(self, band, sh_gruppen: list, ki_gruppen: list) -> None:
         """Bereich „Schreibhilfe“ und „KI“ aus den Gruppen des alten Registers bauen."""
@@ -343,6 +343,9 @@ class SchreibhilfePanel(QWidget):
             lay = QVBoxLayout(host)
             lay.setContentsMargins(12, 10, 12, 10)
             lay.setSpacing(8)
+            zurueck = QPushButton("Zur Schreibhilfe")
+            zurueck.clicked.connect(lambda: self.zeige_bereich(0))
+            lay.addWidget(zurueck)
             if titel == "KI":
                 from .chat_panel import ChatPanel
                 self.chat = ChatPanel(self.ki, self.fenster)

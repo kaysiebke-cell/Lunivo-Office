@@ -115,7 +115,9 @@ def test_tabellentools_wirken(app, tmp_path, monkeypatch):
 
 def test_seitenleiste_bereiche(app, tmp_path, monkeypatch):
     w = win(tmp_path, monkeypatch)
-    assert [b.text() for b in w.sidebar.bereiche.buttons()] == ["Überprüfen", "Schreibhilfe", "KI"]
+    assert not hasattr(w.sidebar, "bereiche")          # keine Reiterknöpfe über der Schreibhilfe
+    assert [b.text() for b in w.sidebar.chips.values()] == ["We", "Vo", "Ko"]
+    assert all(b.toolTip() for b in w.sidebar.chips.values())
     w.sidebar.zeige_bereich(1)
     assert w.sidebar.stapel.currentIndex() == 1 and w.sidebar._seite_sh.widget() is not None
 
