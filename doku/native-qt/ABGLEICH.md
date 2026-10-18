@@ -1,6 +1,6 @@
 # Abgleich: altes Register ↔ native Qt-Fassung
 
-Erzeugt von `werkzeug/abgleich-native.py`. **236 Knöpfe umgesetzt, 16 offen.** Offene Knöpfe stehen im Programm sichtbar, aber ausgegraut da.
+Erzeugt von `werkzeug/abgleich-native.py`. **241 Knöpfe umgesetzt, 16 offen.** Offene Knöpfe stehen im Programm sichtbar, aber ausgegraut da.
 
 ## Datei
 
@@ -284,6 +284,52 @@ Erzeugt von `werkzeug/abgleich-native.py`. **236 Knöpfe umgesetzt, 16 offen.** 
 - ✅ Bearbeitung sperren
 
 
+## Schreibhilfe
+
+**Lesen**
+
+- ✅ Lesehilfe
+- ✅ Zeilenfokus
+- ✅ Lesemodus
+- ✅ Schrift zum Lesen
+
+**Prüfen**
+
+- ✅ Dokumentprüfung
+
+**Beim Schreiben**
+
+- ✅ Rechtschreibprüfung
+- ✅ Wortvorhersage
+- ✅ AutoKorrektur
+
+**Vorlesen**
+
+- ✅ Vorlesen
+
+**Sprache**
+
+- ⬜ Silbentrennung  (`silbentrennung`)
+- ✅ Übersetzen
+- ✅ Thesaurus
+- ✅ Sprache und Prüfung
+
+**Bausteine**
+
+- ✅ Textbausteine
+
+**KI**
+
+- ✅ KI-Chat
+- ✅ Eigenen Assistenten erstellen
+- ✅ Eigenen Anbieter hinzufügen
+- ✅ KI-Konfiguration
+
+**Anzeigen**
+
+- ✅ Seitenleiste Schreibhilfe
+
+
 ## KI
 
 **KI-Schreibwerkzeuge**
@@ -292,6 +338,7 @@ Erzeugt von `werkzeug/abgleich-native.py`. **236 Knöpfe umgesetzt, 16 offen.** 
 - ✅ Text umformulieren
 - ✅ Text zusammenfassen
 - ✅ Text übersetzen
+- ✅ Text in Bild
 
 **Korrektur**
 
@@ -458,43 +505,4 @@ Erzeugt von `werkzeug/abgleich-native.py`. **236 Knöpfe umgesetzt, 16 offen.** 
 - ✅ Erste Seite anders
 - ⬜ Gerade/ungerade Seiten unterschiedlich  (`geradeUngerade`)
 - ✅ Kopf- und Fußzeile schließen
-
-
-## Seitenleiste: Schreibhilfe
-
-**Lesen**
-
-- ✅ Lesehilfe
-- ✅ Zeilenfokus
-- ✅ Lesemodus
-- ✅ Schrift zum Lesen
-
-**Prüfen**
-
-- ✅ Dokumentprüfung
-
-**Beim Schreiben**
-
-- ✅ Rechtschreibprüfung
-- ✅ Wortvorhersage
-- ✅ AutoKorrektur
-
-**Vorlesen**
-
-- ✅ Vorlesen
-
-**Sprache**
-
-- ⬜ Silbentrennung  (`silbentrennung`)
-- ✅ Übersetzen
-- ✅ Thesaurus
-- ✅ Sprache und Prüfung
-
-**Bausteine**
-
-- ✅ Textbausteine
-
-**Anzeigen**
-
-- ✅ Seitenleiste Schreibhilfe
 

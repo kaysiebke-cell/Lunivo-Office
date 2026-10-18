@@ -152,17 +152,17 @@ class SchreibhilfePanel(QWidget):
         t.setTextFormat(Qt.RichText)
         kopf.addWidget(t)
         self.chips = {}
-        for key, kurz, tip in (
-                ("wellen", "We", "Wellen — Fundstellen beim Schreiben unterschlängeln (orange: sicher falsch, blau: Zusammenhang, grau: Nachdenken)."),
-                ("vorhersage", "Vo", "Vorhersage — nach drei Buchstaben passende Wörter anbieten; Tab übernimmt."),
-                ("autokorr", "Ko", "AutoKorr — Offensichtliches sofort bessern („ “, Gedankenstrich, Auslassungszeichen, Satzanfang).")):
+        for key, kurz, name, lang in (
+                ("wellen", "We", "Wellen", "Rote Wellenlinien unter unbekannten Wörtern"),
+                ("vorhersage", "Vo", "Vorhersage", "Wortvorhersage ab drei Buchstaben"),
+                ("autokorr", "Ko", "AutoKorr", "AutoKorrektur beim Tippen")):
             b = QPushButton(kurz)
             b.setCheckable(True)
             b.setChecked(self.a.an(key))
-            b.setToolTip(tip)
+            b.setToolTip(f"{name} — {lang} — {'an' if b.isChecked() else 'aus'}")
             b.setFixedSize(40, 26)
             b.setStyleSheet(CHIP_GRUEN)
-            b.toggled.connect(lambda on, k=key: self.a.setze(k, on))
+            b.toggled.connect(lambda on, k=key, b=b, n=name, l=lang: (self.a.setze(k, on), b.setToolTip(f"{n} — {l} — {'an' if on else 'aus'}")))
             self.chips[key] = b
             kopf.addWidget(b)
         kopf.addStretch(1)

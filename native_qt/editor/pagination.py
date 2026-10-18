@@ -214,7 +214,52 @@ def render(qdoc: QTextDocument, page: PageSettings, device, first: int = 1, last
         zeichne_seite(p, d, page, n, total, base, opt.get("hintergrund") is not False)
         p.restore()
     p.end()
+    if opt.get("lesezeichen") is not None:
+        opt["lesezeichen_ergebnis"] = lesezeichen_sammeln(d, ch, liste, opt["lesezeichen"])
     return total
+
+
+def lesezeichen_sammeln(d: QTextDocument, ch: float, liste: list[int], was: dict) -> list[tuple[int, str, int]]:
+    """[(Ebene, Titel, Seitenindex 0-basiert)] für die PDF-Gliederung: Überschriften und/oder Textmarken."""
+    lay = d.documentLayout()
+    out = []
+    b = d.firstBlock()
+    while b.isValid():
+        seite = int(lay.blockBoundingRect(b).top() // ch) + 1 if ch else 1
+        if seite in liste and b.isVisible():
+            lv = b.blockFormat().headingLevel()
+            if was.get("ueberschriften", True) and lv and b.text().strip():
+                out.append((lv, b.text().strip(), liste.index(seite), b.position()))
+            if was.get("textmarken"):
+                it = b.begin()
+                while not it.atEnd():
+                    f = it.fragment()
+                    if f.isValid() and f.charFormat().isAnchor() and not f.charFormat().anchorHref():
+                        for n in f.charFormat().anchorNames():
+                            if not any(o[1] == n and o[0] == 0 for o in out):
+                                out.append((0, n, liste.index(seite), f.position()))
+                    it += 1
+        b = b.next()
+    out.sort(key=lambda o: o[3])
+    return [(lv, t, i) for lv, t, i, _p in out]
+
+
+def gliederung_schreiben(pfad: str, eintraege: list[tuple[int, str, int]]) -> None:
+    """Schreibt die Lesezeichen in die fertige PDF (QPdfWriter kann das nicht selbst) — mit pypdf."""
+    from pypdf import PdfReader, PdfWriter
+    w = PdfWriter(clone_from=PdfReader(pfad))
+    eltern: dict[int, object] = {}
+    for lv, titel, seite in eintraege:
+        stufe = max(1, lv)                    # Textmarken (Ebene 0) stehen auf oberster Ebene
+        vater = next((eltern[k] for k in range(stufe - 1, 0, -1) if k in eltern), None)
+        eltern[stufe] = w.add_outline_item(titel, min(seite, len(w.pages) - 1), parent=vater)
+        for k in [k for k in eltern if k > stufe]:
+            del eltern[k]
+    tmp = pfad + ".tmp"
+    with open(tmp, "wb") as fh:
+        w.write(fh)
+    import os
+    os.replace(tmp, pfad)
 
 
 def zeichne_seite(p: QPainter, d: QTextDocument, page: PageSettings, n: int, total: int, base: QFont,
@@ -331,7 +376,8 @@ def _page_layout(page: PageSettings) -> QPageLayout:
     return QPageLayout(size, orient, QMarginsF(0, 0, 0, 0), QPageLayout.Millimeter)
 
 
-def export_pdf(path: str, qdoc: QTextDocument, page: PageSettings, title: str = "", author: str = "", noten: dict | None = None) -> int:
+def export_pdf(path: str, qdoc: QTextDocument, page: PageSettings, title: str = "", author: str = "", noten: dict | None = None,
+               lesezeichen: dict | None = None) -> int:
     from PySide6.QtCore import QByteArray
     w = QPdfWriter(path)
     w.setResolution(300)
@@ -344,7 +390,14 @@ def export_pdf(path: str, qdoc: QTextDocument, page: PageSettings, title: str = 
         w.setDocumentXmpMetadata(QByteArray(("<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\">"
                                              "<rdf:Description xmlns:dc=\"http://purl.org/dc/elements/1.1/\"><dc:creator><rdf:Seq><rdf:li>"
                                              + esc + "</rdf:li></rdf:Seq></dc:creator></rdf:Description></rdf:RDF></x:xmpmeta>").encode("utf-8")))
-    return render(qdoc, page, w, opt={"noten": noten} if noten else None)
+    opt = {"noten": noten} if noten else {}
+    if lesezeichen:
+        opt["lesezeichen"] = lesezeichen
+    n = render(qdoc, page, w, opt=opt or None)
+    if lesezeichen and opt.get("lesezeichen_ergebnis"):
+        del w                                  # Datei schließen, bevor sie noch einmal geöffnet wird
+        gliederung_schreiben(path, opt["lesezeichen_ergebnis"])
+    return n
 
 
 def print_document(printer: QPrinter, qdoc: QTextDocument, page: PageSettings, opt: dict | None = None) -> int:

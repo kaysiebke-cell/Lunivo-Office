@@ -256,7 +256,7 @@ class OptionenDialog(QDialog):
         return p
 
     def _bearbeiten(self, titel):
-        p = _Seite(self.w, titel, ["Wortweise markieren, Text mit der Maus verschieben", "Maximale Rückgängig-Schritte",
+        p = _Seite(self.w, titel, ["Text mit der Maus verschieben", "Maximale Rückgängig-Schritte",
                                    "Ausschneiden und Einfügen"])
         f = p.gruppe("AutoKorrektur")
         p.haken(f, "schreibhilfe/autokorr", "AutoKorrektur (Hauptschalter)", True, lambda on: self.w.assistant.setze("autokorr", on))
@@ -264,6 +264,7 @@ class OptionenDialog(QDialog):
             p.haken(f, "schreibhilfe/" + name, text, std)
         f = p.gruppe("Eingabe")
         p.haken(f, "bearbeiten/tippen_ersetzt", "Eingabe ersetzt die Markierung", True)
+        p.haken(f, "bearbeiten/wortweise", "Wortweise markieren (Ziehen mit der Maus erweitert auf ganze Wörter)", True)
         p.haken(f, "autoformat/liste", "Listen beim Tippen erkennen (1.  a)  -  *)", True)
         p.haken(f, "autoformat/punkte", "„- “ und „* “ am Zeilenanfang werden zur Aufzählung", True)
         p.haken(f, "schreibhilfe/akPfade", "Internet- und Netzwerkpfade durch Hyperlinks ersetzen", True)
@@ -276,7 +277,10 @@ class OptionenDialog(QDialog):
         return p
 
     def _speichern(self, titel):
-        p = _Seite(self.w, titel, ["Maßeinheit", "Bilder nicht komprimieren", "Webseitencodierung", "Kompatibilitätsoptionen"])
+        p = _Seite(self.w, titel, ["Bilder nicht komprimieren", "Kompatibilitätsoptionen"])
+        f = p.gruppe("Maßeinheit")
+        from . import dialogs as _d
+        p.auswahl(f, "ui/masseinheit", "Maßeinheit in Dialogen (Seitenränder, Einzüge …)", list(_d.EINHEITEN), "Millimeter", _d.set_einheit)
         f = p.gruppe("Speichern")
         p.auswahl(f, "speichern/standard", "Dateien standardmäßig speichern als", [".docx", ".txt"], ".docx")
         p.zeile(f, "Standardordner (leer = zuletzt benutzter)")
@@ -290,6 +294,8 @@ class OptionenDialog(QDialog):
         f = p.gruppe("PDF")
         p.haken(f, "pdf/oeffnen", "PDF nach dem Export öffnen", False)
         p.haken(f, "pdf/eigenschaften", "Dokumenteigenschaften (Autor) in das PDF übernehmen", True)
+        p.haken(f, "pdf/lz_ueberschriften", "Überschriften als Lesezeichen", False)
+        p.haken(f, "pdf/lz_textmarken", "Textmarken übernehmen", False)
         f3 = p.gruppe("Vorlagen")
         ve = QLineEdit(p.s.get("vorlagen/ordner", "")); ve.setPlaceholderText("leer = ~/Vorlagen")
         ve.textChanged.connect(lambda t: p.s.set("vorlagen/ordner", t)); f3.addRow("Vorlagenordner", ve)

@@ -710,6 +710,22 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         m.exec(e.globalPos())
         m.deleteLater()
 
+    def _wortweise(self) -> None:
+        """Wortweise markieren: eine mit der Maus gezogene Auswahl wird an Wortgrenzen erweitert."""
+        c = self.textCursor()
+        von, bis = c.selectionStart(), c.selectionEnd()
+        if bis - von < 2 or c.selectedText() in ("\u2029",):
+            return
+        a = QTextCursor(self.document()); a.setPosition(von); a.movePosition(QTextCursor.StartOfWord)
+        b = QTextCursor(self.document()); b.setPosition(bis)
+        if not b.atBlockEnd() and b.positionInBlock() > 0 and self.document().characterAt(bis - 1).isalnum():
+            b.movePosition(QTextCursor.EndOfWord)
+        neu = QTextCursor(self.document())
+        rueckwaerts = c.position() < c.anchor()
+        neu.setPosition(b.position() if rueckwaerts else a.position())
+        neu.setPosition(a.position() if rueckwaerts else b.position(), QTextCursor.KeepAnchor)
+        self.setTextCursor(neu)
+
     def _cursor_at(self, pos: int) -> QTextCursor:
         c = QTextCursor(self.document())
         c.setPosition(pos)
@@ -717,6 +733,8 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
 
     def mouseReleaseEvent(self, e) -> None:
         super().mouseReleaseEvent(e)
+        if e.button() == Qt.LeftButton and self.opt("bearbeiten/wortweise", True) and self.textCursor().hasSelection():
+            self._wortweise()
         if (e.modifiers() & Qt.ControlModifier) and self.opt("ui/strg_klick_link", True):
             href = self.anchorAt(e.pos())
             if href and href.startswith("#"):

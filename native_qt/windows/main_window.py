@@ -67,6 +67,8 @@ class MainWindow(QMainWindow):
         self.assistant.status.connect(lambda t: self.lbl_msg.setText(t))
         self.ki = KIDienst(self.assistant, self)
         self.ki.status.connect(lambda t: self.lbl_msg.setText(t))
+        from ..widgets import dialogs as _dlg
+        _dlg.set_einheit(self.settings.get("ui/masseinheit", "Millimeter"))
         self.befehle = Befehle(self)
         self._build_actions()
         self._zusatz_kuerzel()
@@ -550,7 +552,11 @@ class MainWindow(QMainWindow):
             path += ".pdf"
         try:
             autor = self._meta_fuer_speichern(t).get("author", "") if self.settings.get_bool("pdf/eigenschaften", True) else ""
-            n = export_pdf(path, t.editor.document(), t.page, os.path.splitext(t.title)[0], autor, t.editor.noten)
+            lz = None
+            if self.settings.get_bool("pdf/lz_ueberschriften", False) or self.settings.get_bool("pdf/lz_textmarken", False):
+                lz = {"ueberschriften": self.settings.get_bool("pdf/lz_ueberschriften", False),
+                      "textmarken": self.settings.get_bool("pdf/lz_textmarken", False)}
+            n = export_pdf(path, t.editor.document(), t.page, os.path.splitext(t.title)[0], autor, t.editor.noten, lz)
         except Exception as e:  # PDF-Ausgabe darf das Programm nicht beenden
             QMessageBox.critical(self, "PDF-Export fehlgeschlagen", str(e)); return
         self.statusBar().showMessage(f"PDF gespeichert ({n} Seiten): {path}", 5000)

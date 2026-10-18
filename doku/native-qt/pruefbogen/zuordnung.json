@@ -612,8 +612,8 @@
   "wo": "Qt-Standard (Ziehen und Ablegen), nicht abschaltbar"
  },
  "OPTIONEN > Bearbeiten > Bearbeitungsoptionen|Wortweise markieren": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "✅",
+  "wo": "bearbeiten/wortweise, editor_widget._wortweise (test_editor)"
  },
  "OPTIONEN > Bearbeiten > Bearbeitungsoptionen|Maximale Rückgängig-Schritte": {
   "status": "⬜",
@@ -712,8 +712,8 @@
   "wo": "Bilder werden nie komprimiert; kein Schalter"
  },
  "OPTIONEN > Allgemein und Speichern > Allgemeine Optionen|Maßeinheit": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "✅",
+  "wo": "ui/masseinheit → dialogs._MassSpin (Seitenränder, Einzüge; intern mm)"
  },
  "OPTIONEN > Allgemein und Speichern > Allgemeine Optionen|Standard-Ausgabeziel": {
   "status": "⬜",
@@ -836,20 +836,20 @@
   "wo": "pdf/eigenschaften, pdf/oeffnen (export_pdf author)"
  },
  "OPTIONEN > In PDF exportieren > Exportoptionen|Überschriften als Lesezeichen": {
-  "status": "⬜",
-  "wo": "QPdfWriter kann keine PDF-Gliederung (Lesezeichen) schreiben"
+  "status": "✅",
+  "wo": "pagination.lesezeichen_sammeln + gliederung_schreiben (pypdf nach QPdfWriter; test_werkzeuge)"
+ },
+ "OPTIONEN > In PDF exportieren > Exportoptionen|Textmarken übernehmen": {
+  "status": "✅",
+  "wo": "pagination.lesezeichen_sammeln + gliederung_schreiben (pypdf nach QPdfWriter; test_werkzeuge)"
  },
  "OPTIONEN > In PDF exportieren > Exportoptionen|Andere Formatvorlagen in Lesezeichen umwandeln": {
   "status": "⬜",
-  "wo": "QPdfWriter kann keine PDF-Gliederung (Lesezeichen) schreiben"
+  "wo": "nur Überschriften und Textmarken werden Lesezeichen; Formatvorlagen-Auswahl fehlt"
  },
  "OPTIONEN > In PDF exportieren > Exportoptionen|Eigene Formatvorlagen in Lesezeichen umwandeln": {
   "status": "⬜",
-  "wo": "QPdfWriter kann keine PDF-Gliederung (Lesezeichen) schreiben"
- },
- "OPTIONEN > In PDF exportieren > Exportoptionen|Textmarken übernehmen": {
-  "status": "⬜",
-  "wo": "QPdfWriter kann keine PDF-Gliederung (Lesezeichen) schreiben"
+  "wo": "nur Überschriften und Textmarken werden Lesezeichen; Formatvorlagen-Auswahl fehlt"
  },
  "OPTIONEN > In PDF exportieren > Exportoptionen|Kommentare mitnehmen": {
   "status": "⬜",

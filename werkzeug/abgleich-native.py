@@ -33,8 +33,8 @@ def namen(e):
     return r
 
 
-from native_qt.widgets.reiterplan import plan, schreibhilfe_gruppen  # noqa: E402
-reiter = plan(reg) + [{'name': 'Seitenleiste: Schreibhilfe', 'gruppen': schreibhilfe_gruppen(reg)}]
+from native_qt.widgets.reiterplan import plan  # noqa: E402
+reiter = plan(reg)
 for t in reiter:
     zeilen.append(f"\n## {t['name']}" + (" (Kontext-Register)" if t.get('kontext') else "") + "\n")
     for g in t["gruppen"]:

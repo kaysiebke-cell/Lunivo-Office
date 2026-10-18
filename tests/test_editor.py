@@ -185,3 +185,15 @@ def _blk(doc):
     while b.isValid():
         yield b
         b = b.next()
+
+
+def test_wortweise_markieren(app):
+    from PySide6.QtCore import QPoint, Qt
+    from PySide6.QtGui import QTextCursor
+    from PySide6.QtTest import QTest
+    from native_qt.editor.editor_widget import DocumentEditor
+    ed = DocumentEditor()
+    ed.setPlainText("Das Wetter heute ist schön")
+    c = ed.textCursor(); c.setPosition(6); c.setPosition(9, QTextCursor.KeepAnchor); ed.setTextCursor(c)   # „tte“ mitten im Wort
+    ed._wortweise()
+    assert ed.textCursor().selectedText().strip() == "Wetter"

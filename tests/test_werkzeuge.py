@@ -199,3 +199,28 @@ def test_docx_mit_rahmen_und_schattierung_oeffnet_in_libreoffice(app, tmp_path):
     tags = re.findall(r"<w:(\w+)[ />]", ppr)
     ordnung = [t for t in tags if t in ("pBdr", "shd", "spacing", "ind", "jc")]
     assert ordnung == sorted(ordnung, key=["pBdr", "shd", "spacing", "ind", "jc"].index)
+
+
+def test_pdf_lesezeichen(app, tmp_path):
+    """Überschriften und Textmarken erscheinen als PDF-Gliederung auf der richtigen Seite."""
+    from PySide6.QtGui import QTextCursor
+    from pypdf import PdfReader
+    from native_qt.editor.editor_widget import DocumentEditor
+    from native_qt.editor.page import PageSettings
+    from native_qt.editor.pagination import export_pdf
+    ed = DocumentEditor()
+    c = ed.textCursor()
+    from PySide6.QtGui import QTextBlockFormat
+    for i in range(3):
+        bf = QTextBlockFormat(); bf.setHeadingLevel(1 if i != 1 else 2)
+        c.insertBlock(bf); c.insertText(f"Kapitel {i}")
+        c.insertBlock(QTextBlockFormat()); c.insertText("Text. " * 40)
+        if i == 0:
+            c.insertBlock(QTextBlockFormat()); c.insertText("\n" * 60)
+    pdf = tmp_path / "a.pdf"
+    page = PageSettings()
+    export_pdf(str(pdf), ed.document(), page, "t", "", None, {"ueberschriften": True})
+    r = PdfReader(str(pdf))
+    titel = [(o.title if not isinstance(o, list) else [x.title for x in o]) for o in r.outline]
+    assert titel[0] == "Kapitel 0" and "Kapitel 2" in titel
+    assert any(isinstance(o, list) and o[0] == "Kapitel 1" for o in titel)       # Ebene 2 steht unter Ebene 1

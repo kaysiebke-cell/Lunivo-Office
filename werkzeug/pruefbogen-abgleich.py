@@ -18,7 +18,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 from PySide6.QtWidgets import QApplication  # noqa: E402
 
 app = QApplication([])
-from native_qt.widgets.reiterplan import plan, schreibhilfe_gruppen  # noqa: E402
+from native_qt.widgets.reiterplan import plan  # noqa: E402
 from native_qt.windows.befehle import Befehle  # noqa: E402
 
 B = Befehle(None)
@@ -50,7 +50,7 @@ def namen(e):
 
 # Name im Band → fertig?
 band = {}
-alle = plan(reg) + [{"name": "Seitenleiste", "gruppen": schreibhilfe_gruppen(reg)}]
+alle = plan(reg)
 for t in alle:
     for g in t["gruppen"]:
         for e in g.get("knoepfe", []):
