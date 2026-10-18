@@ -324,7 +324,7 @@ def test_silben_farbig(app, tmp_path, monkeypatch):
     from native_qt.editor import silbenfarben as S
     from native_qt.editor.editor_widget import DocumentEditor
     from native_qt.storage.settings import Settings
-    assert S.silben("Schmetterling") == ("Schmet", "ter", "ling") or len(S.silben("Schmetterling")) >= 3
+    assert S.silben("Schmetterling") == ("Schmet", "ter", "ling")
     assert S.silben("Haus") == ("Haus",)
     st = Settings(QSettings(str(tmp_path / "s.ini"), QSettings.IniFormat))
     k = S.konfig_lesen(st)
