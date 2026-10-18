@@ -193,7 +193,7 @@
  },
  "SEITENLAYOUT|Textumbruch": {
   "status": "◐",
-  "wo": "Bild links/rechts vom Text umflossen (editor/umbruch.py, DOCX wp:anchor wrapSquare, test_werkzeuge); „Oben und unten“, „Hinter/vor dem Text“ und freie Position fehlen"
+  "wo": "Bild links/rechts vom Text umflossen oder in eigener Zeile (editor/umbruch.py, DOCX wp:anchor wrapSquare, test_werkzeuge); „Hinter/vor dem Text“ und freie Position fehlen"
  },
  "SEITENLAYOUT|Bild/Objekt anordnen": {
   "status": "◐",

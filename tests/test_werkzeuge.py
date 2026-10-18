@@ -417,3 +417,22 @@ def test_spalten_in_ausgabe_und_docx(app, tmp_path):
     while b.isValid():
         blocks.append((b.text(), b.blockFormat().hasProperty(B_SPALTE))); b = b.next()
     assert ("Rechts", True) in blocks
+
+
+def test_textumbruch_oben_unten(app):
+    from PySide6.QtCore import Qt
+    from PySide6.QtGui import QColor, QImage, QTextCursor
+    from native_qt.editor import einfuegen as E, umbruch as U
+    from native_qt.editor.editor_widget import DocumentEditor
+    ed = DocumentEditor()
+    ed.setPlainText("Davor Danach")
+    c = ed.textCursor(); c.setPosition(6); ed.setTextCursor(c)
+    img = QImage(40, 30, QImage.Format_RGB32); img.fill(QColor("green")); E.qimage_einfuegen(ed, img, "x")
+    c = ed.textCursor(); c.setPosition(6); ed.setTextCursor(c)
+    assert U.umbruch_setzen(ed, "oben_unten")
+    doc = ed.document()
+    bloecke = []
+    b = doc.firstBlock()
+    while b.isValid():
+        bloecke.append((b.text().replace("￼", "[Bild]"), bool(b.blockFormat().alignment() & Qt.AlignHCenter))); b = b.next()
+    assert [t for t, _z in bloecke] == ["Davor ", "[Bild]", "Danach"] and bloecke[1][1] is True

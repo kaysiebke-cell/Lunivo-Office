@@ -1779,7 +1779,8 @@ class Befehle:
         from ..editor import umbruch as U
         aktuell = U.schwebend(e.document(), e._bild_cursor().selectionStart()) or "zeile"
         m = QMenu()
-        for modus, text in (("zeile", "Mit Text in Zeile"), ("links", "Links, Text umfließt"), ("rechts", "Rechts, Text umfließt")):
+        for modus, text in (("zeile", "Mit Text in Zeile"), ("links", "Links, Text umfließt"), ("rechts", "Rechts, Text umfließt"),
+                             ("oben_unten", "Oben und unten (eigene Zeile)")):
             a = m.addAction(text, lambda _=False, modus=modus: U.umbruch_setzen(e, modus))
             a.setCheckable(True)
             a.setChecked(modus == aktuell)

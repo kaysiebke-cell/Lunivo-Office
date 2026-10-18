@@ -183,7 +183,7 @@ s("START > Stile & Bearbeiten", "Objekte auswählen", OK, "befehle.objekteWaehle
 s("SEITENLAYOUT", "Spalten; Umbruch > Spaltenumbruch", TEIL, "Spalten in Seitenansicht, Druck, PDF und DOCX (w:cols, Spaltenumbruch; mit LibreOffice geprüft, test_werkzeuge). Die Bearbeitungsansicht bleibt einspaltig; ein Seitenumbruch wirkt bei mehreren Spalten wie ein Spaltenumbruch")
 s("SEITENLAYOUT", "Umbruch > Abschnittsumbruch", TEIL, "nur „Nächste Seite“ (Seitenumbruch); Abschnitte kennt Qt nicht")
 s("SEITENLAYOUT", "Silbentrennung", TEIL, "pyphen setzt weiche Trennstellen in Seitenansicht, Druck, PDF; DOCX autoHyphenation (test_werkzeuge). Die Bearbeitungsansicht zeigt keine Trennstriche")
-s("SEITENLAYOUT", "Textumbruch", TEIL, "Bild links/rechts vom Text umflossen (editor/umbruch.py, DOCX wp:anchor wrapSquare, test_werkzeuge); „Oben und unten“, „Hinter/vor dem Text“ und freie Position fehlen")
+s("SEITENLAYOUT", "Textumbruch", TEIL, "Bild links/rechts vom Text umflossen oder in eigener Zeile (editor/umbruch.py, DOCX wp:anchor wrapSquare, test_werkzeuge); „Hinter/vor dem Text“ und freie Position fehlen")
 s("SEITENLAYOUT", "Bild/Objekt anordnen", TEIL, "nur Ausrichten und Drehen/Spiegeln (Bildtools); kein Gruppieren, keine Ebenen")
 s("SENDUNGEN (Lunivo)", "Umschlag; Etiketten; Seriendruck-Assistent; Seriendruckfeld; Adressblock; Regeln; Ergebnisse anzeigen; Formular > Kontrollkästchen", OK, "editor/sendungen.py + widgets/sendungen_dialoge.py (test_sendungen); Reiter „Sendungen“ ist nach Register anpassen sichtbar, sonst über die Menüleiste")
 s("SENDUNGEN (Lunivo)", "Formular > Schaltfläche; Formular > Textfeld", TEIL, "als formatierter Text ohne Funktion (Qt kennt keine Formularsteuerelemente)")

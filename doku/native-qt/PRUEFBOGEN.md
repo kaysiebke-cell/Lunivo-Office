@@ -150,7 +150,7 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 - ✅ Absatzabstand — Band: Seitenlayout ▸ Absatz
 - ✅ Zeilennummern — Band: Seitenlayout ▸ Seite einrichten
 - ◐ Silbentrennung — pyphen setzt weiche Trennstellen in Seitenansicht, Druck, PDF; DOCX autoHyphenation (test_werkzeuge). Die Bearbeitungsansicht zeigt keine Trennstriche  _(Web-Fassung: teil)_
-- ◐ Textumbruch — Bild links/rechts vom Text umflossen (editor/umbruch.py, DOCX wp:anchor wrapSquare, test_werkzeuge); „Oben und unten“, „Hinter/vor dem Text“ und freie Position fehlen
+- ◐ Textumbruch — Bild links/rechts vom Text umflossen oder in eigener Zeile (editor/umbruch.py, DOCX wp:anchor wrapSquare, test_werkzeuge); „Hinter/vor dem Text“ und freie Position fehlen
 - ✅ Seitenfarbe — Band: Seitenlayout ▸ Seitenhintergrund  _(Web-Fassung: fertig)_
 - ✅ Wasserzeichen — Band: Seitenlayout ▸ Seitenhintergrund
 - ✅ Seitenrahmen — befehle.seitenrahmen, pagination.seitenschmuck, DOCX pgBorders (test_docx_roundtrip, test_pdf)  _(Web-Fassung: fertig)_

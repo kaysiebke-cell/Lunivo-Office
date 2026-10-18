@@ -768,7 +768,8 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
             c = self._bild_cursor()
             aktuell = U.schwebend(self.document(), c.selectionStart()) or "zeile"
             for modus, text in (("zeile", "Bild: mit Text in Zeile"), ("links", "Bild: links, Text umfließt"),
-                                ("rechts", "Bild: rechts, Text umfließt")):
+                                ("rechts", "Bild: rechts, Text umfließt"),
+                                ("oben_unten", "Bild: oben und unten (eigene Zeile)")):
                 a = m.addAction(text, lambda _=False, modus=modus: U.umbruch_setzen(self, modus))
                 a.setCheckable(True)
                 a.setChecked(modus == aktuell)
