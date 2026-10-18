@@ -1,6 +1,54 @@
 # Abgleich: altes Register ↔ native Qt-Fassung
 
-Erzeugt von `werkzeug/abgleich-native.py`. **53 Knöpfe umgesetzt, 131 offen.** Offene Knöpfe stehen im Programm sichtbar, aber ausgegraut da.
+Erzeugt von `werkzeug/abgleich-native.py`. **116 Knöpfe umgesetzt, 122 offen.** Offene Knöpfe stehen im Programm sichtbar, aber ausgegraut da.
+
+## Datei
+
+**Neu**
+
+- ✅ Leeres Dokument
+- ⬜ Aus Vorlage erstellen  (`neuAusVorlage`)
+- ⬜ Vorlagen durchsuchen  (`vorlagenDurchsuchen`)
+
+**Öffnen**
+
+- ✅ Öffnen
+- ✅ Zuletzt verwendete Dokumente
+
+**Speichern**
+
+- ✅ Speichern
+- ✅ Speichern unter
+- ✅ Kopie speichern
+
+**Exportieren**
+
+- ✅ Als PDF exportieren
+- ✅ Als DOCX exportieren
+- ✅ Als DOC exportieren (optional)
+- ✅ Als RTF exportieren
+- ✅ Als TXT exportieren
+- ✅ Als ODT exportieren
+
+**Drucken**
+
+- ✅ Drucken
+- ✅ Druckvorschau
+- ✅ Drucker auswählen
+- ✅ Seitenbereich
+- ✅ Druckeinstellungen
+
+**Dokument**
+
+- ✅ Dokumentinformationen
+- ⬜ Dokument schützen  (`dokumentSchuetzen`)
+- ⬜ Dokument teilen (optional)  (`dokumentTeilen`)
+
+**Programm**
+
+- ✅ Optionen / Einstellungen
+- ✅ Schließen
+
 
 ## Start
 
@@ -10,7 +58,7 @@ Erzeugt von `werkzeug/abgleich-native.py`. **53 Knöpfe umgesetzt, 131 offen.** 
 - ✅ Einfügen ohne Formatierung
 - ✅ Ausschneiden
 - ✅ Kopieren
-- ⬜ Format übertragen  (`formatUebertragen`)
+- ✅ Format übertragen
 - ⬜ Wort-Extras  (`wortExtras`)
 
 **Schriftart**
@@ -35,15 +83,15 @@ Erzeugt von `werkzeug/abgleich-native.py`. **53 Knöpfe umgesetzt, 131 offen.** 
 - ✅ Aufzählung
 - ✅ Nummerierung
 - ✅ Einzug & Listenebene
-- ⬜ Sortieren  (`sortieren`)
+- ✅ Sortieren
 - ✅ Steuerzeichen
 - ✅ Linksbündig
 - ✅ Zentriert
 - ✅ Rechtsbündig
 - ✅ Blocksatz
-- ⬜ Verteilt  (`verteilt`)
+- ✅ Verteilt
 - ✅ Zeilenabstand
-- ⬜ Absatzschattierung  (`absatzSchattierung`)
+- ✅ Absatzschattierung
 - ⬜ Absatzrahmen  (`absatzRahmen`)
 
 **Stile**
@@ -105,7 +153,7 @@ Erzeugt von `werkzeug/abgleich-native.py`. **53 Knöpfe umgesetzt, 131 offen.** 
 
 **Symbole**
 
-- ⬜ Sonderzeichen  (`sonderzeichen`)
+- ✅ Sonderzeichen
 - ⬜ Formel  (`formel`)
 
 
@@ -120,7 +168,7 @@ Erzeugt von `werkzeug/abgleich-native.py`. **53 Knöpfe umgesetzt, 131 offen.** 
 
 **Ränder**
 
-- ⬜ Ränder  (`—`)
+- ✅ Ränder
 
 **Seitenränder**
 
@@ -128,11 +176,11 @@ Erzeugt von `werkzeug/abgleich-native.py`. **53 Knöpfe umgesetzt, 131 offen.** 
 
 **Seite einrichten**
 
-- ⬜ Ausrichtung  (`—`)
-- ⬜ Größe  (`—`)
-- ⬜ Spalten  (`—`)
+- ✅ Ausrichtung
+- ✅ Größe
+- ⬜ Spalten  (`spaltenSetzen:[1], spaltenSetzen:[2], spaltenSetzen:[3], spalten`)
 - ⬜ Textrichtung  (`textrichtung`)
-- ⬜ Umbrüche  (`—`)
+- ✅ Umbrüche
 - ⬜ Zeilennummern  (`zeilennummern`)
 
 **Absatz**
@@ -155,12 +203,12 @@ Erzeugt von `werkzeug/abgleich-native.py`. **53 Knöpfe umgesetzt, 131 offen.** 
 - ⬜ Drehen  (`objektDrehen`)
 
 
-## Referenzen
+## Verweise
 
 **Inhaltsverzeichnis**
 
-- ⬜ Inhaltsverzeichnis  (`inhaltsverzeichnis`)
-- ⬜ Verzeichnisse aktualisieren  (`verzeichnisseAktualisieren`)
+- ✅ Inhaltsverzeichnis
+- ✅ Verzeichnisse aktualisieren
 
 **Fußnoten**
 
@@ -233,85 +281,40 @@ Erzeugt von `werkzeug/abgleich-native.py`. **53 Knöpfe umgesetzt, 131 offen.** 
 - ⬜ Bearbeitung sperren  (`bearbeitungSperren`)
 
 
-## Schreibhilfe
+## KI
 
-**Lesen**
+**KI-Schreibwerkzeuge**
 
-- ⬜ Lesehilfe  (`lesehilfe`)
-- ⬜ Zeilenfokus  (`zeilenfokus`)
-- ⬜ Lesemodus  (`lesemodus`)
-- ✅ Schrift zum Lesen
+- ⬜ Text entwerfen  (`kiEntwerfen`)
+- ⬜ Text umformulieren  (`kiUmformulieren`)
+- ⬜ Text zusammenfassen  (`kiZusammenfassen`)
+- ⬜ Text übersetzen  (`w.kiUebersetzen`)
 
-**Prüfen**
+**Korrektur**
 
-- ✅ Dokumentprüfung
+- ⬜ KI-Korrektur  (`kiKorrektur`)
+- ⬜ Verbesserungsvorschläge  (`kiVorschlaege`)
 
-**Beim Schreiben**
+**Seitenleiste**
 
-- ✅ Rechtschreibprüfung
-- ✅ Wortvorhersage
-- ✅ AutoKorrektur
-
-**Vorlesen**
-
-- ⬜ Vorlesen  (`vorlesen, vorlesenAbSatz, vorlesenStopp, stimmeWaehlen`)
-
-**Sprache**
-
-- ⬜ Silbentrennung  (`silbentrennung`)
-- ⬜ Übersetzen  (`w.kiUebersetzen`)
-- ⬜ Thesaurus  (`thesaurus`)
-- ✅ Sprache und Prüfung
-
-**Bausteine**
-
-- ⬜ Textbausteine  (`textbausteine, schnellbaustein`)
-
-**KI**
-
+- ✅ Schreibhilfe-Seitenleiste
 - ⬜ KI-Chat  (`w.chatUmschalten`)
+
+**Einrichten**
+
 - ⬜ Eigenen Assistenten erstellen  (`w.assistentErstellen`)
 - ⬜ Eigenen Anbieter hinzufügen  (`w.eigenenAnbieterHinzufuegen`)
 - ⬜ KI-Konfiguration  (`w.kiKonfiguration`)
-
-**Anzeigen**
-
-- ✅ Seitenleiste Schreibhilfe
-
-
-## Sendungen
-
-**Erstellen**
-
-- ⬜ Umschlag  (`umschlag`)
-- ⬜ Etiketten  (`etiketten`)
-
-**Seriendruck**
-
-- ⬜ Seriendruck-Assistent  (`seriendruck`)
-- ⬜ Seriendruckfeld  (`seriendruckfeld`)
-- ⬜ Adressblock  (`adressblock`)
-- ⬜ Regeln  (`seriendruckregel`)
-
-**Vorschau**
-
-- ⬜ Ergebnisse anzeigen  (`serienVorschau`)
-
-**Formular**
-
-- ⬜ Textfeld  (`formTextfeld`)
-- ⬜ Kontrollkästchen  (`formKasten`)
-- ⬜ Schaltfläche  (`formKnopf`)
 
 
 ## Ansicht
 
 **Dokumentansichten**
 
-- ⬜ Drucklayout  (`w.setzeLayout`)
-- ⬜ Lesemodus  (`lesemodus`)
-- ⬜ Zwei Seiten  (`w.setzeLayout`)
-- ⬜ Weblayout  (`w.setzeLayout`)
+- ⬜ Drucklayout  (`w.setzeLayout:["blatt"]`)
+- ✅ Lesemodus
+- ⬜ Zwei Seiten  (`w.setzeLayout:["doppelt"]`)
+- ⬜ Weblayout  (`w.setzeLayout:["web"]`)
 - ⬜ Gliederung  (`gliederung`)
 
 **Anzeigen**
@@ -319,8 +322,8 @@ Erzeugt von `werkzeug/abgleich-native.py`. **53 Knöpfe umgesetzt, 131 offen.** 
 - ⬜ Lineal  (`linealZeigen`)
 - ⬜ Vertikales Lineal  (`linealHochZeigen`)
 - ⬜ Gitternetzlinien  (`netzlinien`)
-- ⬜ Navigationsbereich  (`navigation`)
-- ⬜ Textbegrenzungen  (`markenZeigen`)
+- ✅ Navigationsbereich
+- ✅ Textbegrenzungen
 
 **Zoom**
 
@@ -342,9 +345,9 @@ Erzeugt von `werkzeug/abgleich-native.py`. **53 Knöpfe umgesetzt, 131 offen.** 
 
 **Helligkeit**
 
-- ⬜ Wie das System  (`w.setzeThema`)
-- ⬜ Immer hell  (`w.setzeThema`)
-- ⬜ Immer dunkel  (`w.setzeThema`)
+- ✅ Wie das System
+- ✅ Immer hell
+- ✅ Immer dunkel
 
 **Oberfläche**
 
@@ -354,4 +357,115 @@ Erzeugt von `werkzeug/abgleich-native.py`. **53 Knöpfe umgesetzt, 131 offen.** 
 - ✅ Menüleiste
 - ⬜ Symbolleisten  (`leistenZeigen`)
 - ⬜ Vorlagen zurücksetzen  (`vorlagenZurueck`)
+
+
+## Tabellentools (Kontext-Register)
+
+**Entwurf: Rahmen und Farbe**
+
+- ✅ Rahmenlinien ein/aus
+- ✅ Zellenschattierung
+
+**Layout: Zeilen und Spalten**
+
+- ✅ Zeile oberhalb einfügen
+- ✅ Zeile unterhalb einfügen
+- ✅ Spalte links einfügen
+- ✅ Spalte rechts einfügen
+- ✅ Zeile löschen
+- ✅ Spalte löschen
+- ✅ Tabelle löschen
+
+**Zellen**
+
+- ✅ Zellen verbinden
+- ✅ Zelle teilen
+- ⬜ Tabelle sortieren  (`tabelleSortieren`)
+
+**Ausrichtung**
+
+- ✅ Oben ausrichten
+- ✅ Mittig ausrichten
+- ✅ Unten ausrichten
+
+
+## Bildtools (Kontext-Register)
+
+**Format: Größe**
+
+- ✅ Größe und Seitenverhältnis …
+- ✅ Auf Seitenbreite
+- ✅ Originalgröße
+
+**Beschreibung**
+
+- ✅ Alternativtext …
+
+**Bearbeiten**
+
+- ✅ Bild entfernen
+- ⬜ Zuschneiden  (`bildZuschneiden`)
+- ⬜ Helligkeit / Kontrast / Farbe  (`bildFarbe`)
+- ⬜ Textumbruch / Position  (`anordnen`)
+
+
+## Form- und WordArt-Tools (Kontext-Register)
+
+**Format**
+
+- ⬜ Formvorlagen  (`formVorlagen`)
+- ⬜ Formfüllung  (`formFuellung`)
+- ⬜ Formkontur  (`formKontur`)
+- ⬜ Anordnen / Gruppieren  (`gruppieren`)
+
+
+## Kopf- und Fußzeilentools (Kontext-Register)
+
+**Entwurf**
+
+- ✅ Kopfzeile bearbeiten
+- ⬜ Fußzeile bearbeiten  (`fusszeileBearbeiten`)
+- ✅ Seitenzahl einfügen
+- ⬜ Erste Seite anders  (`ersteSeiteAnders`)
+- ⬜ Gerade/ungerade Seiten unterschiedlich  (`geradeUngerade`)
+- ⬜ Kopf- und Fußzeile schließen  (`kopfFussSchliessen`)
+
+
+## Seitenleiste: Schreibhilfe
+
+**Lesen**
+
+- ✅ Lesehilfe
+- ✅ Zeilenfokus
+- ✅ Lesemodus
+- ✅ Schrift zum Lesen
+
+**Prüfen**
+
+- ✅ Dokumentprüfung
+
+**Beim Schreiben**
+
+- ✅ Rechtschreibprüfung
+- ✅ Wortvorhersage
+- ✅ AutoKorrektur
+
+**Vorlesen**
+
+- ✅ Vorlesen
+
+**Sprache**
+
+- ⬜ Silbentrennung  (`silbentrennung`)
+- ⬜ Übersetzen  (`w.kiUebersetzen`)
+- ⬜ Thesaurus  (`thesaurus`)
+- ✅ Sprache und Prüfung
+
+**Bausteine**
+
+- ⬜ Textbausteine  (`textbausteine, schnellbaustein`)
+
+**Anzeigen**
+
+- ✅ Seitenleiste Schreibhilfe
 

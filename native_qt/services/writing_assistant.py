@@ -146,6 +146,49 @@ class WritingAssistant(QObject):
             self.editor.set_wellen(funde if self.an("wellen") else [])
         self.fundeGeaendert.emit(funde)
 
+    # ---- Gründlich prüfen (eigene Regeln + LanguageTool, wenn eingerichtet) -------------------
+    def gruendlich(self) -> None:
+        from ..integrations import languagetool
+        self.pruefen()
+        if not languagetool.verfuegbar():
+            self.status.emit("Gründlich: LanguageTool ist nicht eingerichtet — es gelten die eigenen Regeln. "
+                             "Hinweise dazu: doku/native-qt/INSTALLATION.md")
+            return
+        ed = self.editor
+        if ed is None:
+            return
+        text = ed.document().toPlainText()
+        pool = QThreadPool.globalInstance()
+
+        class _LT(QRunnable):
+            def __init__(self, sig, rev):
+                super().__init__(); self.sig, self.rev = sig, rev
+
+            def run(self):
+                try:
+                    funde = languagetool.pruefe(text)
+                except languagetool.LanguageToolFehler as e:
+                    self.sig.fertig.emit(-1, [str(e)])
+                    return
+                self.sig.fertig.emit(self.rev, funde)
+
+        self._lt_sig = _Signale()
+        self._lt_sig.fertig.connect(self._lt_fertig)
+        self.status.emit("LanguageTool prüft …")
+        pool.start(_LT(self._lt_sig, ed.document().revision()))
+
+    def _lt_fertig(self, rev: int, funde: list) -> None:
+        if rev == -1:
+            self.status.emit(str(funde[0]) if funde else "LanguageTool-Fehler.")
+            return
+        ed = self.editor
+        if ed is None or rev != ed.document().revision():
+            return
+        belegt = [(f["von"], f["bis"]) for f in self._roh]
+        neu = [f for f in funde if not any(f["von"] < b and a < f["bis"] for a, b in belegt)]
+        self._roh = self._roh + neu
+        self._zeigen(f"Gründlich geprüft: {len(neu)} zusätzliche Hinweise von LanguageTool.")
+
     # ---- Annehmen / weglassen ----------------------------------------------------------
     def aendern(self, fund: dict) -> bool:
         ed = self.editor

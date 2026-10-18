@@ -76,10 +76,33 @@ def test_autosave_and_recovery(app, tmp_path, monkeypatch):
 
 
 def test_no_web_modules_loaded(app):
-    import sys
-    bad = [m for m in sys.modules if m.startswith(("PySide6.QtWebEngine", "PySide6.QtWebKit", "PySide6.QtWebChannel",
-                                                     "http.server", "flask", "PySide6.QtWebView"))]
-    assert bad == []
+    """Frischer Prozess: der neue Startpfad lädt weder WebEngine noch WebKit noch einen Webserver."""
+    import subprocess, sys, textwrap
+    code = textwrap.dedent("""
+        import os, sys
+        os.environ["QT_QPA_PLATFORM"] = "offscreen"
+        from PySide6.QtWidgets import QApplication
+        app = QApplication([])
+        import native_qt.main
+        from native_qt.windows.main_window import MainWindow
+        w = MainWindow(); w.new_document()
+        bad = [m for m in sys.modules if m.startswith(("PySide6.QtWebEngine", "PySide6.QtWebKit", "PySide6.QtWebChannel",
+               "PySide6.QtWebView", "http.server", "socketserver", "flask", "gi.repository.WebKit"))]
+        print("BAD", bad)
+    """)
+    r = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, timeout=60,
+                       cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    assert "BAD []" in r.stdout, r.stdout + r.stderr
+
+
+def test_quelltext_ohne_web_oberflaeche():
+    """Im neuen Programm kommt keine HTML/JS-Oberfläche vor."""
+    import pathlib, re
+    wurzel = pathlib.Path(__file__).resolve().parent.parent / "native_qt"
+    muster = re.compile(r"QtWebEngine|QtWebKit|QWebEngineView|WebKit2|http\.server|SimpleHTTPRequestHandler")
+    treffer = [str(p) for p in wurzel.rglob("*.py") if muster.search(p.read_text(encoding="utf-8"))]
+    assert treffer == []
+    assert not list(wurzel.rglob("*.html")) and not list(wurzel.rglob("*.js"))
 
 
 def test_tastenkuerzel_fett(app, tmp_path):

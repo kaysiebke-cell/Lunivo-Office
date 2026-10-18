@@ -45,7 +45,7 @@ for t in reiter:
             if e.get("hinweis") or e.get("zeilenumbruch") or e.get("symbol") == "//":
                 continue
             ns = namen(e)
-            fertig = bool(ns) and all(b.hat(n) or b.klappe(n) is not None for n in ns if not n.endswith("Klappe")) \
+            fertig = bool(ns) and all(b.hat(n) or callable(getattr(b, 'menue_' + n.replace('.', '_').split(':')[0], None)) for n in ns if not n.endswith("Klappe")) \
                 if ns else False
             if e.get("menue"):
                 fertig = any(b.hat(n) for n in ns)

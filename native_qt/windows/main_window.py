@@ -616,6 +616,36 @@ class MainWindow(QMainWindow):
         for t in self._doc_tabs():
             t.editor.set_marken(an)
 
+    def vorlesen(self, ab_hier: bool):
+        from ..services import vorlesen as v
+        e = self.current_editor()
+        if e is None:
+            return
+        c = e.textCursor()
+        if c.hasSelection():
+            text = c.selectedText().replace("\u2029", "\n")
+        elif ab_hier:
+            text = e.document().toPlainText()[c.position():]
+        else:
+            text = e.document().toPlainText()
+        try:
+            ok = v.lies_vor(text, self.settings.get("vorlesen/stimme", ""), self.settings.get_int("vorlesen/tempo", 0))
+        except v.VorlesenFehler as ex:
+            QMessageBox.information(self, "Vorlesen", str(ex))
+            return
+        self.lbl_msg.setText("Vorlesen …" if ok else "Nichts zum Vorlesen.")
+
+    def stimme_waehlen(self):
+        from ..services import vorlesen as v
+        liste = v.stimmen()
+        if not liste:
+            QMessageBox.information(self, "Stimme", "Es ist keine Stimme eingerichtet. Siehe doku/native-qt/INSTALLATION.md.")
+            return
+        namen = [s["name"] for s in liste]
+        n, ok = QInputDialog.getItem(self, "Stimme wählen", "Stimme:", namen, 0, False)
+        if ok:
+            self.settings.set("vorlesen/stimme", liste[namen.index(n)]["kennung"])
+
     def toggle_navigation(self):
         self.navigation.setVisible(not self.navigation.isVisible())
         self.navigation.aktualisieren()

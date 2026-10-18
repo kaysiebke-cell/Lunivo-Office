@@ -11,11 +11,15 @@ from ..editor.page import PageSettings
 from . import docx_reader, docx_writer
 from .report import DocumentIOError, IOReport
 
-OPEN_FILTER = "Dokumente (*.docx *.txt);;Word-Dokument (*.docx);;Textdatei (*.txt);;Alle Dateien (*)"
+OPEN_FILTER = ("Dokumente (*.docx *.odt *.doc *.rtf *.txt);;Word-Dokument (*.docx);;OpenDocument-Text (*.odt);;"
+               "Word 97–2003 (*.doc);;Rich Text (*.rtf);;Textdatei (*.txt);;Alle Dateien (*)")
+LIBREOFFICE_FORMATE = (".odt", ".doc", ".rtf", ".dot", ".dotx", ".docm", ".wps", ".fodt")
 SAVE_FILTERS = {
     ".docx": "Word-Dokument (*.docx)",
     ".txt": "Textdatei (*.txt)",
-    ".odt": "OpenDocument-Text (*.odt) — nur Export",
+    ".odt": "OpenDocument-Text (*.odt)",
+    ".doc": "Word 97–2003 (*.doc)",
+    ".rtf": "Rich Text (*.rtf)",
 }
 
 
@@ -60,9 +64,37 @@ def load(path: str) -> Loaded:
         QTextCursor(doc).insertText(text.replace("\r\n", "\n"))
         doc.setModified(False)
         return Loaded(doc, PageSettings(), {}, IOReport())
+    if e in LIBREOFFICE_FORMATE:
+        _kopf_pruefen(path, e)
+        from ..integrations import libreoffice
+        docx_pfad, tmp = libreoffice.in_docx(path)
+        try:
+            doc, page, meta, rep = docx_reader.read_docx(docx_pfad)
+        finally:
+            tmp.cleanup()
+        rep.warn(f"„{os.path.basename(path)}“ wurde über LibreOffice nach DOCX umgewandelt und dann gelesen; "
+                 "beim Speichern als DOCX gilt das umgewandelte Format.")
+        return Loaded(doc, page, meta, rep)
     raise DocumentIOError(
-        f"Das Format „{e or 'ohne Endung'}“ kann noch nicht geöffnet werden. "
-        "Unterstützt: DOCX, TXT.")
+        f"Das Format „{e or 'ohne Endung'}“ kann nicht geöffnet werden. Unterstützt: DOCX, ODT, DOC, RTF, TXT.")
+
+
+_MAGIC = {".odt": b"PK", ".dotx": b"PK", ".docm": b"PK", ".fodt": b"<?xml", ".doc": b"\xd0\xcf\x11\xe0",
+          ".dot": b"\xd0\xcf\x11\xe0", ".rtf": b"{\\rtf"}
+
+
+def _kopf_pruefen(path: str, e: str) -> None:
+    """LibreOffice öffnet notfalls alles als Text — ein kaputtes Dokument soll aber als kaputt gemeldet werden."""
+    soll = _MAGIC.get(e)
+    if not soll:
+        return
+    try:
+        with open(path, "rb") as fh:
+            kopf = fh.read(len(soll))
+    except OSError as ex:
+        raise DocumentIOError(f"Datei nicht lesbar: {ex.strerror or ex}") from ex
+    if kopf != soll:
+        raise DocumentIOError(f"Die Datei ist kein gültiges {e[1:].upper()}-Dokument oder beschädigt.")
 
 
 def _has_rich_content(doc: QTextDocument) -> bool:
@@ -92,9 +124,20 @@ def save(path: str, doc: QTextDocument, page: PageSettings, meta: dict | None = 
             rep.warn("Kopf- und Fußzeile werden in der Textdatei nicht gespeichert.")
         _atomic_write(path, doc.toPlainText().replace(" ", "\n").encode("utf-8"))
         return rep
-    if e == ".odt":
-        rep.warn("ODT wird exportiert (Text, Formatierung, Tabellen, Bilder). "
-                 "Seitenrand, Kopf- und Fußzeile sind darin noch nicht enthalten.")
+    if e in (".odt", ".doc", ".rtf"):
+        from ..integrations import libreoffice
+        if libreoffice.verfuegbar():
+            with tempfile.TemporaryDirectory(prefix="lunivo-") as tmp:
+                zwischen = os.path.join(tmp, "dokument.docx")
+                docx_writer.write_docx(zwischen, doc, page, meta)
+                libreoffice.aus_docx(zwischen, path)
+            rep.warn(f"{e[1:].upper()} wurde über LibreOffice aus der DOCX-Fassung erzeugt. "
+                     "Die Treue zum Original hängt von LibreOffice ab.")
+            return rep
+        if e != ".odt":
+            raise DocumentIOError(f"{e[1:].upper()} braucht LibreOffice zum Umwandeln; es ist nicht installiert.")
+        rep.warn("ODT wurde ohne LibreOffice über Qt geschrieben (Text, Formatierung, Tabellen, Bilder). "
+                 "Seitenrand, Kopf- und Fußzeile sind darin nicht enthalten.")
         w = QTextDocumentWriter(path, b"ODF")
         if not w.write(doc):
             raise DocumentIOError("Die ODT-Datei konnte nicht geschrieben werden.")

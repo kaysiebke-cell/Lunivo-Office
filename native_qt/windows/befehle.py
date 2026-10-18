@@ -314,7 +314,8 @@ class Befehle:
     def w_pruefen(self, k=None):
         self.w.assistant.pruefen()
 
-    gruendlichPruefen = w_pruefen
+    def gruendlichPruefen(self, k=None):
+        self.w.assistant.gruendlich()
 
     def vorhersage(self, k=None):
         self.w.assistant.setze("vorhersage", not self.w.assistant.an("vorhersage"))
@@ -674,3 +675,21 @@ class Befehle:
         e, f = self._bild()
         if f is not None:
             e.textCursor().removeSelectedText()
+
+    def exportierenRtf(self, k=None): self.w.export_as(".rtf")
+    def exportierenDoc(self, k=None): self.w.export_as(".doc")
+
+    # ==== Vorlesen ==================================================================================================
+    def vorlesen(self, k=None):
+        self.w.vorlesen(ab_hier=False)
+
+    def vorlesenAbSatz(self, k=None):
+        self.w.vorlesen(ab_hier=True)
+
+    def vorlesenStopp(self, k=None):
+        from ..services import vorlesen as v
+        v.beenden()
+        self.w.lbl_msg.setText("Vorlesen angehalten.")
+
+    def stimmeWaehlen(self, k=None):
+        self.w.stimme_waehlen()
