@@ -507,7 +507,7 @@ class _Writer:
             for a in ("w:hAnsi", "w:cs", "w:eastAsia"):
                 rf.set(qn(a), fam)
         elif _has(cf, QTextFormat.FontFamily):
-            f.name = cf.fontFamily()
+            f.name = cf.stringProperty(QTextFormat.FontFamily)
         if _has(cf, QTextFormat.FontPointSize) and cf.fontPointSize() > 0:
             f.size = Pt(cf.fontPointSize())
         if _has(cf, QTextFormat.FontWeight):

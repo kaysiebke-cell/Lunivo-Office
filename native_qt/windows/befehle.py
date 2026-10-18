@@ -77,6 +77,10 @@ class Befehle:
         f = getattr(self, "menue_" + name.replace(".", "_"), None)
         return f() if callable(f) else None
 
+    def _popup(self, menue) -> None:
+        """Menü an der Mausposition zeigen (eigene Stelle, damit Tests es abfangen können)."""
+        menue.exec(QCursor.pos())
+
     def fehlende(self, namen) -> list[str]:
         return sorted(n for n in namen if not self.hat(n))
 
@@ -179,7 +183,7 @@ class Befehle:
         for t, px in (("Zeichenabstand: eng", -1.0), ("Zeichenabstand: normal", 0.0), ("Zeichenabstand: weit", 2.0),
                       ("Zeichenabstand: sehr weit", 4.0)):
             m.addAction(t, lambda _=False, px=px: self.ed.set_letter_spacing(px))
-        m.exec(QCursor.pos())
+        self._popup(m)
 
     def durch(self, k=None):
         if self.ed: self.ed.toggle_strike(not self.an_durch())
@@ -315,7 +319,7 @@ class Befehle:
     def an_steuerzeichenZeigen(self): return self.w.marks_on
 
     # ---- Bearbeiten -----------------------------------------------------------------------------------------
-    def suchen(self, k=None):
+    def suchen(self, k=None, *_):
         self.w.find_dialog_show()
 
     ersetzen = suchen
@@ -350,7 +354,7 @@ class Befehle:
 
 
     # ---- Seitenlayout --------------------------------------------------------------------------------------------------
-    def seitenraenderRahmen(self, k=None):
+    def seitenraenderRahmen(self, k=None, *_):
         self.w.page_setup()
 
     # ---- Überprüfen / Schreibhilfe --------------------------------------------------------------------------------------------
@@ -382,8 +386,8 @@ class Befehle:
     def welcheHilfe(self, k=None):
         self.w.sidebar.welche_hilfe()
 
-    def w_optionenOeffnen(self, k=None):
-        self.w.show_options()
+    def w_optionenOeffnen(self, k=None, seite=None):
+        self.w.show_options(seite) if seite else self.w.show_options()
 
     # ---- Ansicht ---------------------------------------------------------------------------------------------------------------
     def handbuch(self, k=None):
@@ -492,7 +496,7 @@ class Befehle:
                 return art
         return ""
 
-    def seitenraender(self, k=None): self.w.page_setup()
+    def seitenraender(self, k=None, *_): self.w.page_setup()
     seitenraenderRahmen = seitenraender
 
     def w_setzePapier(self, k, art):
@@ -676,7 +680,7 @@ class Befehle:
 
     def seitenfarbe(self, k=None):
         m = self.menue_seitenfarbe()
-        m.exec(QCursor.pos())
+        self._popup(m)
 
     def wasserzeichen(self, k=None):
         if not self.ed:
@@ -710,7 +714,7 @@ class Befehle:
         m = QMenu()
         for text, vor, nach in self.ABSATZABSTAND:
             m.addAction(text, lambda _=False, v=vor, n=nach: self._abstand_setzen(v, n))
-        m.exec(QCursor.pos())
+        self._popup(m)
 
     def _abstand_setzen(self, vor, nach):
         e = self.ed
@@ -777,7 +781,7 @@ class Befehle:
             m.addAction(f, lambda _=False, f=f: self._bild_einfuegen(E.form_bild(f), f"Form: {f}"))
         m.addSeparator()
         m.addAction("Weitere Formen und Farben …", self.zeichnen)
-        m.exec(QCursor.pos())
+        self._popup(m)
 
     def zeichnen(self, k=None):
         if self.ed:
@@ -886,7 +890,7 @@ class Befehle:
         m = QMenu()
         for n in E.SCHNELLTABELLEN:
             m.addAction(n, lambda _=False, n=n: E.schnelltabelle(self.ed, n))
-        m.exec(QCursor.pos())
+        self._popup(m)
 
     def deckblatt(self, k=None):
         if not self.ed:
@@ -922,7 +926,7 @@ class Befehle:
             m.addAction("Noch keine Bausteine — Einfügen ▸ Textbaustein").setEnabled(False)
         m.addSeparator()
         m.addAction("Textbausteine verwalten …", self.textbaustein)
-        m.exec(QCursor.pos())
+        self._popup(m)
 
     # ---- Bild, Tabelle, Schrift, Seite: der Rest der Werkzeug-Reiter ----------------------------------------------
     def bildFarbe(self, k=None):
@@ -986,7 +990,7 @@ class Befehle:
             return
         from PySide6.QtWidgets import QFontDialog
         cf = self._fmt()
-        start = cf.font() if cf.fontFamilies() or cf.fontFamily() else self.ed.document().defaultFont()
+        start = cf.font() if cf.fontFamilies() else self.ed.document().defaultFont()      # (cf.fontFamily() stürzt in PySide ab)
         ok, font = QFontDialog.getFont(start, self.w, "Schriftart")
         if ok:
             f = QTextCharFormat()
@@ -1489,7 +1493,7 @@ class Befehle:
     def fensterKacheln(self, k=None): self.w.fenster_anordnen("kacheln")
 
     def fensterListe(self, k=None):
-        self.w.fensterliste_menue().exec(QCursor.pos())
+        self._popup(self.w.fensterliste_menue())
 
     # ---- Dokumentansichten ----------------------------------------------------------------
     def w_setzeLayout(self, k=None, art="blatt"):

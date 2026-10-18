@@ -180,7 +180,7 @@ class PiktogrammDialog(QDialog):
         for n in self.namen:
             if q and q not in n.lower():
                 continue
-            if len(self.liste) >= 240:
+            if self.liste.count() >= 240:
                 break
             from PySide6.QtGui import QIcon
             it = QListWidgetItem(QIcon(QPixmap.fromImage(icons.katalog_bild(n, 40, self.farbe.farbe))), n)
