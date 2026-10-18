@@ -47,7 +47,8 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.settings = settings or Settings()
         self.setWindowTitle("Lunivo Writer")
-        self.resize(1280, 860)
+        scr = QApplication.primaryScreen().availableGeometry() if QApplication.primaryScreen() else None
+        self.resize(min(1380, scr.width()) if scr else 1380, min(860, scr.height()) if scr else 860)
         self.marks_on = False
         self.lesemodus = False
         self.docs = DocTabs()

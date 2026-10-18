@@ -28,7 +28,7 @@ FARBEN = {
 }
 
 QSS = """
-QToolButton { border: none; border-radius: 5px; padding: 3px; background: transparent; }
+QToolButton { border: none; border-radius: 5px; padding: 2px; background: transparent; }
 QToolButton:hover { background: %(hover)s; }
 QToolButton:pressed, QToolButton:checked { background: %(weich)s; }
 QToolButton:disabled { color: %(grau)s; }

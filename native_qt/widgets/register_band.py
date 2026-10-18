@@ -163,7 +163,7 @@ class RegisterBand(QWidget):
     def _gruppe(self, g: dict) -> QWidget:
         rahmen = QWidget()
         v = QVBoxLayout(rahmen)
-        v.setContentsMargins(8, 2, 8, 0)
+        v.setContentsMargins(5, 2, 5, 0)
         v.setSpacing(0)
         inhalt = QHBoxLayout()
         inhalt.setSpacing(4)
@@ -265,7 +265,36 @@ class RegisterBand(QWidget):
             k.clicked.connect(lambda _=False, n=name: self.b.w.stil_anwenden(n))
             g.addWidget(k, i % 2, i // 2)
             self.knoepfe.append((k, None, True))
-        return host
+        # wie im WPS: drei Spalten sichtbar, der Rest wird durchgescrollt
+        sa = QScrollArea()
+        sa.setObjectName("stileGalerie")
+        sa.setWidget(host)
+        sa.setWidgetResizable(False)
+        sa.setFrameShape(QFrame.NoFrame)
+        sa.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        sa.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        host.adjustSize()
+        sa.setFixedWidth(3 * 85 + 4)
+        sa.setFixedHeight(host.sizeHint().height() + 2)
+        sa.setStyleSheet("QScrollArea#stileGalerie, QScrollArea#stileGalerie > QWidget > QWidget { background: transparent; }")
+        pfeil = QToolButton(); pfeil.setText("›"); pfeil.setAutoRaise(True); pfeil.setFixedWidth(16)
+        pfeil.setToolTip("Weitere Formatvorlagen")
+        pfeil.clicked.connect(lambda: sa.horizontalScrollBar().setValue(
+            (sa.horizontalScrollBar().value() + 85) if sa.horizontalScrollBar().value() < sa.horizontalScrollBar().maximum() else 0))
+        sa.viewport().installEventFilter(self)
+        self._stile_scroll = sa
+        aussen = QWidget()
+        h = QHBoxLayout(aussen); h.setContentsMargins(0, 0, 0, 0); h.setSpacing(0)
+        h.addWidget(sa); h.addWidget(pfeil, 0, Qt.AlignVCenter)
+        return aussen
+
+    def eventFilter(self, obj, ev):
+        from PySide6.QtCore import QEvent
+        sa = getattr(self, "_stile_scroll", None)
+        if sa is not None and obj is sa.viewport() and ev.type() == QEvent.Wheel:
+            sa.horizontalScrollBar().setValue(sa.horizontalScrollBar().value() - ev.angleDelta().y() // 2)
+            return True
+        return super().eventFilter(obj, ev)
 
     def _raender(self) -> QWidget:
         host = QWidget()
