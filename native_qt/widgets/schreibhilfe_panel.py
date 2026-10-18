@@ -167,7 +167,7 @@ class SchreibhilfePanel(QWidget):
         v.addWidget(s)
         self.pruefen = QPushButton("Prüfen")
         self.pruefen.setMinimumHeight(32)
-        self.pruefen.clicked.connect(self.a.pruefen)
+        self.pruefen.clicked.connect(lambda: self.a.pruefen(True))
         v.addWidget(self.pruefen)
         z = QHBoxLayout()
         self.chips = {}

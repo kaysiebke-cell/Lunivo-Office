@@ -107,7 +107,12 @@ class WritingAssistant(QObject):
             self._timer.start()
 
     # ---- Prüfen --------------------------------------------------------------------
-    def pruefen(self) -> None:
+    def pruefen(self, zaehlen: bool = False) -> None:
+        """zaehlen=True nur bei ausdrücklichem Prüfen (Knopf): dann zählt das Gedächtnis mit."""
+        if zaehlen is not True:
+            zaehlen = False
+        if zaehlen:
+            self._zaehlen = True
         ed = self.editor
         if ed is None:
             return
@@ -129,6 +134,9 @@ class WritingAssistant(QObject):
             return
         self._geprueft_rev = rev
         self._roh = roh
+        if getattr(self, "_zaehlen", False):
+            self._zaehlen = False
+            self.gelernt.merke_gezeigt([f for f in roh if self._key(f) not in self._weg and f["alt"].lower() not in self._alle_weg])
         n = ed.document().characterCount() - 1
         self._zeigen(f"{n} Zeichen geprüft, {len([f for f in roh if self._key(f) not in self._weg])} Funde.")
 
@@ -290,7 +298,6 @@ class WritingAssistant(QObject):
 
     def lassen(self, fund: dict) -> None:
         self._weg.add(self._key(fund))
-        self.gelernt.stehen_gelassen(fund)
         self._zeigen()
 
     def alle_aendern(self) -> int:

@@ -309,10 +309,10 @@ class Befehle:
         self.w.word_count()
 
     def rechtschreibung(self, k=None):
-        self.w.assistant.pruefen()
+        self.w.assistant.pruefen(True)
 
     def w_pruefen(self, k=None):
-        self.w.assistant.pruefen()
+        self.w.assistant.pruefen(True)
 
     def gruendlichPruefen(self, k=None):
         self.w.assistant.gruendlich()
