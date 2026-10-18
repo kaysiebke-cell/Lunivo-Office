@@ -83,7 +83,11 @@ class _Writer:
         s.top_margin, s.bottom_margin = Mm(p.margin_top_mm), Mm(p.margin_bottom_mm)
         s.left_margin, s.right_margin = Mm(p.margin_left_mm), Mm(p.margin_right_mm)
         self._seitenschmuck(s)
-        for part, hf in ((s.header, p.header), (s.footer, p.footer)):
+        paare = [(s.header, p.header), (s.footer, p.footer)]
+        if p.diff_first:
+            s.different_first_page_header_footer = True
+            paare += [(s.first_page_header, p.first_header), (s.first_page_footer, p.first_footer)]
+        for part, hf in paare:
             if hf.is_empty():
                 continue
             part.is_linked_to_previous = False

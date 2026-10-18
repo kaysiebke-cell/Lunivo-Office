@@ -38,6 +38,11 @@ def _zweizeilig(text: str) -> str:
     return text[:i] + "\n" + text[i + 1:]
 
 
+# „Sendungen“ gehört nicht zur neuen Struktur (Datei … Ansicht): vorhanden, aber erst nach Register anpassen sichtbar —
+# bis dahin über die Menüleiste (Ansicht ▸ Oberfläche ▸ Menüleiste) erreichbar.
+STANDARD_VERSTECKT = ("Sendungen",)
+
+
 class _ReiterLeiste(QTabBar):
     doppelt = Signal()
 
@@ -136,7 +141,7 @@ class RegisterBand(QWidget):
         haupt = [r for r in alle if not r.get("kontext")]
         kontext = [r for r in alle if r.get("kontext")]
         ordnung = self.cfg.get("reihenfolge") or []
-        versteckt = set(self.cfg.get("versteckt") or []) - {"Datei"}
+        versteckt = set(self.cfg["versteckt"] if "versteckt" in self.cfg else STANDARD_VERSTECKT) - {"Datei"}
         haupt.sort(key=lambda r: ordnung.index(r["name"]) if r["name"] in ordnung else 999)
         return [r for r in haupt if r["name"] not in versteckt] + kontext
 

@@ -16,7 +16,8 @@ from datetime import datetime
 
 from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QBrush, QColor, QCursor, QFont, QIcon, QPixmap, QTextBlockFormat, QTextCharFormat, QTextCursor, QTextListFormat
-from PySide6.QtWidgets import QApplication, QColorDialog, QFileDialog, QInputDialog, QMenu, QMessageBox
+from ..editor.page import HeaderFooter
+from PySide6.QtWidgets import QApplication, QColorDialog, QFileDialog, QInputDialog, QLineEdit, QMenu, QMessageBox
 
 PALETTE = ["#000000", "#c92a2a", "#e8590c", "#f08c00", "#2f9e44", "#1098ad", "#1971c2", "#6741d9",
            "#c2255c", "#868e96", "#ffec99", "#b2f2bb", "#a5d8ff", "#eebefa", "#ffffff"]
@@ -891,6 +892,240 @@ class Befehle:
         m.addSeparator()
         m.addAction("Textbausteine verwalten …", self.textbaustein)
         m.exec(QCursor.pos())
+
+    # ---- Bild, Tabelle, Schrift, Seite: der Rest der Werkzeug-Reiter ----------------------------------------------
+    def bildFarbe(self, k=None):
+        e, f = self._bild()
+        if f is None:
+            return
+        from ..editor import einfuegen as E
+        modi = ["Original", "Graustufen", "Schwarzweiß", "Sepia", "Heller", "Dunkler"]
+        n, ok = QInputDialog.getItem(self.w, "Bildfarbe", "Darstellung:", modi, 0, False)
+        if ok:
+            if n == "Original":
+                E.bild_original(e)
+            else:
+                E.bild_ersetzen(e, lambda img, n=n: E.farbe_anwenden(img, n))
+
+    def bildZuschneiden(self, k=None):
+        e, f = self._bild()
+        if f is None:
+            return
+        from ..editor import einfuegen as E
+        from PySide6.QtWidgets import QDialog, QDialogButtonBox, QFormLayout, QSpinBox
+        d = QDialog(self.w); d.setWindowTitle("Bild zuschneiden")
+        form = QFormLayout(d)
+        sp = {}
+        for name in ("Links", "Oben", "Rechts", "Unten"):
+            w = QSpinBox(); w.setRange(0, 5000); w.setSuffix(" px"); sp[name] = w; form.addRow(name + " abschneiden", w)
+        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel); bb.accepted.connect(d.accept); bb.rejected.connect(d.reject)
+        form.addRow(bb)
+        if d.exec():
+            E.bild_ersetzen(e, lambda img: E.zuschneiden(img, sp["Links"].value(), sp["Oben"].value(), sp["Rechts"].value(), sp["Unten"].value()))
+
+    def objektDrehen(self, k=None):
+        e, f = self._bild()
+        if f is None:
+            return
+        from ..editor import einfuegen as E
+        namen = {"90° nach rechts": "rechts", "90° nach links": "links", "Horizontal spiegeln": "horizontal", "Vertikal spiegeln": "vertikal"}
+        n, ok = QInputDialog.getItem(self.w, "Drehen", "Bild:", list(namen), 0, False)
+        if ok:
+            E.bild_ersetzen(e, lambda img: E.drehen(img, namen[n]))
+
+    def objektAusrichten(self, k=None):
+        e, f = self._bild()
+        if f is None:
+            return
+        namen = {"Links": Qt.AlignLeft, "Zentriert": Qt.AlignHCenter, "Rechts": Qt.AlignRight}
+        n, ok = QInputDialog.getItem(self.w, "Ausrichten", "Bild im Text:", list(namen), 0, False)
+        if ok:
+            e.set_alignment(namen[n])
+
+    def abschnittsumbruch(self, k=None, art="NextPage"):
+        if not self.ed:
+            return
+        if art == "NextPage":
+            self.ed.insert_page_break()
+        else:
+            self.w.statusBar().showMessage("Abschnitte kennt die native Fassung nicht — nur „Nächste Seite“ (Seitenumbruch) ist möglich.", 6000)
+
+    def schriftartMehr(self, k=None):
+        if not self.ed:
+            return
+        from PySide6.QtWidgets import QFontDialog
+        cf = self._fmt()
+        start = cf.font() if cf.fontFamilies() or cf.fontFamily() else self.ed.document().defaultFont()
+        ok, font = QFontDialog.getFont(start, self.w, "Schriftart")
+        if ok:
+            f = QTextCharFormat()
+            f.setFontFamilies([font.family()]); f.setFontPointSize(font.pointSizeF())
+            f.setFontWeight(font.weight()); f.setFontItalic(font.italic())
+            f.setFontStrikeOut(font.strikeOut())
+            f.setUnderlineStyle(QTextCharFormat.SingleUnderline if font.underline() else QTextCharFormat.NoUnderline)
+            self.ed._merge(f)
+
+    def papierformatFenster(self, k=None): self.w.page_setup()
+    def fusszeileBearbeiten(self, k=None): self.w.edit_header_footer(False)
+
+    def kopfFussSchliessen(self, k=None):
+        self.w.statusBar().showMessage("Kopf- und Fußzeile werden über Dialoge bearbeitet — es gibt nichts zu schließen.", 4000)
+
+    def ersteSeiteAnders(self, k=None):
+        t = self.w.current_tab()
+        if not t:
+            return
+        pg = t.page.copy()
+        pg.diff_first = not pg.diff_first
+        if pg.diff_first and pg.first_header.is_empty() and pg.first_footer.is_empty():
+            pg.first_header = HeaderFooter(); pg.first_footer = HeaderFooter()
+        t.editor.page_settings_changed(pg)
+
+    def an_ersteSeiteAnders(self):
+        t = self.w.current_tab()
+        return bool(t and t.page.diff_first)
+
+    def tabelleEigenschaften(self, k=None):
+        t = self.ed.textCursor().currentTable() if self.ed else None
+        if t is None:
+            return
+        from PySide6.QtWidgets import QCheckBox, QComboBox, QDialog, QDialogButtonBox, QDoubleSpinBox, QFormLayout, QSpinBox
+        from PySide6.QtGui import QTextLength
+        fm = t.format()
+        d = QDialog(self.w); d.setWindowTitle("Tabelleneigenschaften")
+        form = QFormLayout(d)
+        breite = QSpinBox(); breite.setRange(10, 100); breite.setSuffix(" % der Textbreite"); breite.setValue(int(fm.width().rawValue()) if fm.width().type() == QTextLength.PercentageLength else 100)
+        ausr = QComboBox(); ausr.addItems(["Links", "Zentriert", "Rechts"])
+        ausr.setCurrentIndex(1 if fm.alignment() & Qt.AlignHCenter else 2 if fm.alignment() & Qt.AlignRight else 0)
+        rand = QDoubleSpinBox(); rand.setRange(0, 10); rand.setSingleStep(0.25); rand.setValue(fm.border()); rand.setSuffix(" pt")
+        pad = QDoubleSpinBox(); pad.setRange(0, 30); pad.setValue(fm.cellPadding()); pad.setSuffix(" px")
+        kopf = QCheckBox("Erste Zeile ist Kopfzeile (wiederholt sich auf jeder Seite)"); kopf.setChecked(fm.headerRowCount() > 0)
+        for lab, w in (("Breite", breite), ("Ausrichtung", ausr), ("Rahmenstärke", rand), ("Zellenabstand innen", pad)):
+            form.addRow(lab, w)
+        form.addRow(kopf)
+        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel); bb.accepted.connect(d.accept); bb.rejected.connect(d.reject)
+        form.addRow(bb)
+        if d.exec():
+            fm.setWidth(QTextLength(QTextLength.PercentageLength, breite.value()))
+            fm.setAlignment([Qt.AlignLeft, Qt.AlignHCenter, Qt.AlignRight][ausr.currentIndex()])
+            fm.setBorder(rand.value()); fm.setCellPadding(pad.value()); fm.setHeaderRowCount(1 if kopf.isChecked() else 0)
+            t.setFormat(fm)
+            self.ed.document().setModified(True)
+
+    def tabelleSortieren(self, k=None):
+        c = self.ed.textCursor() if self.ed else None
+        t = c.currentTable() if c else None
+        if t is None:
+            return
+        cell = t.cellAt(c)
+        namen = [f"Spalte {i + 1}" for i in range(t.columns())]
+        n, ok = QInputDialog.getItem(self.w, "Tabelle sortieren", "Nach welcher Spalte?", namen, cell.column(), False)
+        if not ok:
+            return
+        auf, ok = QInputDialog.getItem(self.w, "Tabelle sortieren", "Reihenfolge:", ["Aufsteigend", "Absteigend"], 0, False)
+        if not ok:
+            return
+        spalte = namen.index(n)
+        start = t.format().headerRowCount()
+        zeilen = []
+        for r in range(start, t.rows()):
+            zeilen.append([t.cellAt(r, k_).firstCursorPosition().block().text() for k_ in range(t.columns())])
+
+        def schluessel(z):
+            v = z[spalte].strip().replace(",", ".")
+            try:
+                return (0, float(v), "")
+            except ValueError:
+                return (1, 0.0, v.casefold())
+        zeilen.sort(key=schluessel, reverse=(auf == "Absteigend"))
+        c.beginEditBlock()
+        for i, z in enumerate(zeilen):
+            for k_, text in enumerate(z):
+                cc = t.cellAt(start + i, k_).firstCursorPosition()
+                fmt = cc.charFormat()
+                cc.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
+                cc.insertText(text, fmt)
+        c.endEditBlock()
+        self.ed.document().setModified(True)
+
+    # ---- Datei: Vorlagen, Schutz, Bildexport ---------------------------------------------------------------------
+    def neuAusVorlage(self, k=None): self.w.neu_aus_vorlage()
+    def vorlagenDurchsuchen(self, k=None): self.w.neu_aus_vorlage()
+
+    def dokumentSchuetzen(self, k=None):
+        t = self.w.current_tab()
+        if not t:
+            return
+        wahl = ["Kennwort zum Öffnen setzen / ändern …", "Kennwort entfernen", "Bearbeitung sperren / freigeben"]
+        n, ok = QInputDialog.getItem(self.w, "Dokument schützen", "Was soll geschehen?", wahl, 0, False)
+        if not ok:
+            return
+        if n == wahl[2]:
+            self.w.toggle_sperre()
+        elif n == wahl[1]:
+            t.meta.pop("kennwort", None); t.editor.document().setModified(True)
+            self.w.statusBar().showMessage("Kennwort entfernt — gilt ab dem nächsten Speichern.", 5000)
+        else:
+            a, ok = QInputDialog.getText(self.w, "Kennwort", "Neues Kennwort:", QLineEdit.Password)
+            if ok and a:
+                b, ok = QInputDialog.getText(self.w, "Kennwort", "Zur Bestätigung noch einmal:", QLineEdit.Password)
+                if ok and a == b:
+                    t.meta["kennwort"] = a; t.editor.document().setModified(True)
+                    self.w.statusBar().showMessage("Das Dokument wird beim Speichern verschlüsselt (DOCX).", 5000)
+                elif ok:
+                    QMessageBox.information(self.w, "Kennwort", "Die Eingaben stimmen nicht überein.")
+
+    def exportierenPng(self, k=None):
+        t = self.w.current_tab()
+        if not t:
+            return
+        import os
+        from ..editor.pagination import paginated_copy, seite_als_bild
+        pfad, _ = QFileDialog.getSaveFileName(self.w, "Als Bild exportieren", os.path.splitext(t.title)[0] + ".png", "PNG-Bild (*.png)")
+        if not pfad:
+            return
+        basis, _e = os.path.splitext(pfad)
+        d = paginated_copy(t.editor.document(), t.page, t.editor.noten)
+        n = max(1, d.pageCount())
+        for i in range(1, n + 1):
+            img = seite_als_bild(t.editor.document(), t.page, i, 1.5, d)
+            img.save(basis + (f"-{i}" if n > 1 else "") + ".png", "PNG")
+        self.w.statusBar().showMessage(f"{n} Seite{'n' if n != 1 else ''} als PNG gespeichert: {basis}…", 6000)
+
+    # ---- KI: eigene Assistenten ----------------------------------------------------------------------------------------
+    def w_assistentErstellen(self, k=None):
+        from PySide6.QtWidgets import QComboBox, QDialog, QDialogButtonBox, QFormLayout, QLineEdit as _LE, QPlainTextEdit
+        d = QDialog(self.w); d.setWindowTitle("Eigenen Assistenten erstellen")
+        form = QFormLayout(d)
+        name = _LE(); prompt = QPlainTextEdit(); prompt.setPlaceholderText("Was soll die KI mit dem Text tun? z. B. „Prüfe die genannten Fakten und nenne Zweifel.“")
+        modus = QComboBox(); modus.addItems(["Ergebnis als Karte zeigen (hinweis)", "Text ersetzen (ersetzen)"])
+        for lab, w in (("Name", name), ("Anweisung", prompt), ("Wirkung", modus)):
+            form.addRow(lab, w)
+        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel); bb.accepted.connect(d.accept); bb.rejected.connect(d.reject)
+        form.addRow(bb)
+        if d.exec() and name.text().strip() and prompt.toPlainText().strip():
+            self.w.ki.konfig.assistent_hinzufuegen(name.text(), prompt.toPlainText(), "ersetzen" if modus.currentIndex() == 1 else "hinweis")
+            self.w.statusBar().showMessage(f"Assistent „{name.text().strip()}“ angelegt (KI ▸ Eigene Assistenten).", 5000)
+
+    def menue_assistenten(self):
+        m = QMenu()
+
+        def fuellen():
+            m.clear()
+            liste = self.w.ki.konfig["assistenten"]
+            for a in liste:
+                m.addAction(a["name"], lambda _=False, a=a: self.w.ki.assistent(a))
+            if not liste:
+                m.addAction("Noch keine eigenen Assistenten").setEnabled(False)
+            m.addSeparator()
+            m.addAction("Neuen Assistenten erstellen …", self.w_assistentErstellen)
+            if liste:
+                entf = m.addMenu("Assistenten entfernen")
+                for a in liste:
+                    entf.addAction(a["name"], lambda _=False, a=a: self.w.ki.konfig.assistent_entfernen(a["id"]))
+        m.aboutToShow.connect(fuellen)
+        fuellen()
+        return m
 
     # ---- Sendungen --------------------------------------------------------------------------------------------
     def _neues_blatt(self, titel: str):

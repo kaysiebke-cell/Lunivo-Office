@@ -74,6 +74,11 @@ def test_sendungen_reiter_im_band(app, tmp_path):
     from native_qt.storage.settings import Settings
     from native_qt.windows.main_window import MainWindow
     w = MainWindow(Settings(QSettings(str(tmp_path / "s.ini"), QSettings.IniFormat)))
+    standard = [w.band.reiter.tabText(i) for i in range(w.band.reiter.count()) if w.band.reiter.isTabVisible(i)]
+    assert "Sendungen" not in standard                           # neue Struktur: acht Reiter
+    import json
+    w.settings.set("ui/register_plan", json.dumps({"reihenfolge": [], "versteckt": []}))
+    w.neu_bauen_band()
     namen = [w.band.reiter.tabText(i) for i in range(w.band.reiter.count())]
     assert namen[:9] == ["Datei", "Start", "Einfügen", "Seitenlayout", "Verweise", "Überprüfen", "KI", "Ansicht", "Sendungen"]
     assert not w.band.bandfehler or "umschlag" not in w.band.bandfehler

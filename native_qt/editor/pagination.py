@@ -224,8 +224,9 @@ def zeichne_seite(p: QPainter, d: QTextDocument, page: PageSettings, n: int, tot
     ml, mt = mm_to_px(page.margin_left_mm), mm_to_px(page.margin_top_mm)
     ph = mm_to_px(page.height_mm)
     seitenschmuck(p, page, hintergrund)
-    _draw_hf(p, page.header, QRectF(ml, mm_to_px(8), cw, mm_to_px(10)), n, total, base)
-    _draw_hf(p, page.footer, QRectF(ml, ph - mm_to_px(18), cw, mm_to_px(10)), n, total, base)
+    kopf, fuss = (page.first_header, page.first_footer) if (n == 1 and page.diff_first) else (page.header, page.footer)
+    _draw_hf(p, kopf, QRectF(ml, mm_to_px(8), cw, mm_to_px(10)), n, total, base)
+    _draw_hf(p, fuss, QRectF(ml, ph - mm_to_px(18), cw, mm_to_px(10)), n, total, base)
     if page.zeilennummern:
         p.save()
         p.translate(ml, mt)

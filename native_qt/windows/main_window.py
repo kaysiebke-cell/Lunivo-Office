@@ -1086,10 +1086,25 @@ class MainWindow(QMainWindow):
         if not t:
             return
         page = t.page.copy()
-        hf = page.header if header else page.footer
-        d = HeaderFooterDialog("Kopfzeile" if header else "Fußzeile", hf, self)
+        erste = False
+        if page.diff_first:
+            from PySide6.QtWidgets import QInputDialog
+            w, ok = QInputDialog.getItem(self, "Kopf- und Fußzeile", "Welche Seiten?", ["Erste Seite", "Übrige Seiten"], 0, False)
+            if not ok:
+                return
+            erste = w == "Erste Seite"
+        if erste:
+            hf = page.first_header if header else page.first_footer
+        else:
+            hf = page.header if header else page.footer
+        d = HeaderFooterDialog(("Kopfzeile" if header else "Fußzeile") + (" (erste Seite)" if erste else ""), hf, self)
         if d.exec():
-            if header:
+            if erste:
+                if header:
+                    page.first_header = d.value()
+                else:
+                    page.first_footer = d.value()
+            elif header:
                 page.header = d.value()
             else:
                 page.footer = d.value()

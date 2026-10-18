@@ -380,3 +380,98 @@ def textfeld(ed, text: str = "Text hier eingeben") -> None:
     t.cellAt(0, 0).firstCursorPosition().insertText(text)
     ed.setTextCursor(t.cellAt(0, 0).firstCursorPosition())
     ed.document().setModified(True)
+
+
+# ---- Bild bearbeiten (Farbe, Zuschneiden, Drehen) -----------------------------------------------------------------------
+ORIGINAL_PROP = STYLE_PROP + 3            # Name der unveränderten Bild-Ressource
+
+
+def _bild_cursor(ed):
+    c = ed._bild_cursor()
+    return c
+
+
+def bild_ersetzen(ed, wandle) -> bool:
+    """wandle(QImage) → QImage; das Bild im Text wird durch das Ergebnis ersetzt (Anzeigebreite bleibt, Seitenverhältnis folgt)."""
+    c = ed._bild_cursor()
+    if c is None:
+        return False
+    f = c.charFormat().toImageFormat()
+    alt_name = f.name()
+    img = ed.document().resource(QTextDocument.ImageResource, QUrl(alt_name))
+    img = QImage(img) if img is not None else QImage(alt_name)
+    if img.isNull():
+        return False
+    neu = wandle(img)
+    if neu is None or neu.isNull():
+        return False
+    orig = f.property(ORIGINAL_PROP) if f.hasProperty(ORIGINAL_PROP) else alt_name
+    name = f"bild-{id(neu)}-{ed.document().revision()}"
+    ed.document().addResource(QTextDocument.ImageResource, QUrl(name), neu)
+    faktor = (f.width() / img.width()) if f.width() and img.width() else 1.0
+    f.setName(name)
+    f.setWidth(neu.width() * faktor); f.setHeight(neu.height() * faktor)
+    f.setProperty(ORIGINAL_PROP, orig)
+    c.setCharFormat(f)
+    ed.document().setModified(True)
+    return True
+
+
+def bild_original(ed) -> bool:
+    c = ed._bild_cursor()
+    if c is None:
+        return False
+    f = c.charFormat().toImageFormat()
+    if not f.hasProperty(ORIGINAL_PROP):
+        return False
+    orig = f.property(ORIGINAL_PROP)
+    img = ed.document().resource(QTextDocument.ImageResource, QUrl(orig))
+    if img is None:
+        return False
+    img = QImage(img)
+    faktor = (f.width() / QImage(ed.document().resource(QTextDocument.ImageResource, QUrl(f.name()))).width()) if f.width() else 1.0
+    f.setName(orig); f.setWidth(img.width() * faktor); f.setHeight(img.height() * faktor)
+    c.setCharFormat(f)
+    ed.document().setModified(True)
+    return True
+
+
+def farbe_anwenden(img: QImage, modus: str) -> QImage:
+    if modus in ("Graustufen", "Sepia", "Schwarzweiß"):
+        g = img.convertToFormat(QImage.Format_Grayscale8).convertToFormat(QImage.Format_ARGB32)
+        if modus == "Sepia":
+            p = QPainter(g)
+            p.setCompositionMode(QPainter.CompositionMode_Multiply)
+            p.fillRect(g.rect(), QColor("#d9b98a"))
+            p.end()
+            return g
+        if modus == "Schwarzweiß":
+            return img.convertToFormat(QImage.Format_Mono, Qt.ThresholdDither).convertToFormat(QImage.Format_ARGB32)
+        return g
+    if modus in ("Heller", "Dunkler"):
+        out = img.convertToFormat(QImage.Format_ARGB32)
+        p = QPainter(out)
+        farbe = QColor(255, 255, 255, 70) if modus == "Heller" else QColor(0, 0, 0, 70)
+        p.setCompositionMode(QPainter.CompositionMode_SourceAtop)
+        p.fillRect(out.rect(), farbe)
+        p.end()
+        return out
+    return img
+
+
+def zuschneiden(img: QImage, links: int, oben: int, rechts: int, unten: int) -> QImage:
+    r = QRectF(links, oben, img.width() - links - rechts, img.height() - oben - unten).toRect()
+    return img.copy(r) if r.width() > 0 and r.height() > 0 else img
+
+
+def drehen(img: QImage, art: str) -> QImage:
+    from PySide6.QtGui import QTransform
+    if art == "rechts":
+        return img.transformed(QTransform().rotate(90))
+    if art == "links":
+        return img.transformed(QTransform().rotate(-90))
+    if art == "horizontal":
+        return img.mirrored(True, False)
+    if art == "vertikal":
+        return img.mirrored(False, True)
+    return img

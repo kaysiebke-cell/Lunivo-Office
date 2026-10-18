@@ -167,6 +167,14 @@ class KIDienst(QObject):
         self.starte(f"„{n}“ …", lambda t: self.ki.text_aktion(t, aktion),
                     lambda r, e: self._einsetzen(r, e, n + ".", "Markierung: " + n + "."))
 
+    def assistent(self, a: dict) -> None:
+        """Eigener Assistent: ein Name und ein Prompt. Wirkung „ersetzen“ wie Korrigieren, „hinweis“ wie Zusammenfassen."""
+        arbeit = lambda t: self.ki.eigener_assistent(t, a["prompt"])           # noqa: E731
+        if a["modus"] == "ersetzen":
+            self.starte(f"„{a['name']}“ …", arbeit, lambda r, e: self._einsetzen(r, e, a["name"] + ".", "Markierung: " + a["name"] + "."))
+        else:
+            self.starte(f"„{a['name']}“ …", arbeit, lambda r, e: self.hinweis.emit(a["name"], r["text"], r.get("cent")))
+
     def zusammenfassen(self) -> None:
         self.starte("Die KI fasst zusammen …", self.ki.zusammenfassen,
                     lambda r, e: self.hinweis.emit("Zusammenfassung", r["text"], r.get("cent")))

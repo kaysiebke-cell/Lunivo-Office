@@ -39,7 +39,8 @@ class RegisterAnpassenDialog(QDialog):
         namen = [r["name"] for r in plan(daten) if not r.get("kontext")]
         cfg = lade_json(settings, "ui/register_plan", {})
         reihenfolge = [n for n in cfg.get("reihenfolge", []) if n in namen] + [n for n in namen if n not in cfg.get("reihenfolge", [])]
-        versteckt = set(cfg.get("versteckt", []))
+        from .register_band import STANDARD_VERSTECKT
+        versteckt = set(cfg["versteckt"] if "versteckt" in cfg else STANDARD_VERSTECKT)
         for n in reihenfolge:
             it = QListWidgetItem(n)
             it.setFlags(it.flags() | Qt.ItemIsUserCheckable)

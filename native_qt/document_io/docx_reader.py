@@ -712,7 +712,9 @@ class _Reader:
         ps.header = self._hf(s.header)
         ps.footer = self._hf(s.footer)
         if s.different_first_page_header_footer:
-            self.report.warn("„Erste Seite anders“ bei Kopf-/Fußzeile wird nicht unterstützt.")
+            ps.diff_first = True
+            ps.first_header = self._hf(s.first_page_header)
+            ps.first_footer = self._hf(s.first_page_footer)
         return ps
 
     def _seitenschmuck(self, ps: PageSettings, sect) -> None:
