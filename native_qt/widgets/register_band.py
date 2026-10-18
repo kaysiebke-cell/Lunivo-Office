@@ -229,7 +229,81 @@ class RegisterBand(QWidget):
         v.addLayout(fuss)
         return rahmen
 
+    def _knoepfe_geordnet(self, g: dict, inhalt: QHBoxLayout):
+        """Knöpfe in der Reihenfolge der Liste: große stehen allein, aufeinanderfolgende kleine bilden eine Spalte aus zwei Zeilen."""
+        lauf: list[dict] = []
+
+        def spalte():
+            if lauf:
+                host = QWidget()
+                v = QVBoxLayout(host)
+                v.setContentsMargins(0, 0, 0, 0)
+                v.setSpacing(1)
+                for e in lauf:
+                    v.addWidget(self._knopf(e, False))
+                v.addStretch(1)
+                inhalt.addWidget(host, 0, Qt.AlignTop)
+                lauf.clear()
+        for e in g["knoepfe"]:
+            if e.get("gross"):
+                spalte()
+                inhalt.addWidget(self._knopf(e, True))
+            else:
+                lauf.append(e)
+        spalte()
+
+    def _knoepfe_schrift(self, g: dict, inhalt: QHBoxLayout):
+        """Wie WPS: oben Schriftname und -größe, daneben die Größen-/Löschknöpfe; darunter die Zeichenformate."""
+        from .live_vorschau import VorschauCombo, VorschauFontCombo
+        vs = self.b.w.vorschau
+
+        def _zu_pt(t):
+            try:
+                return float(t.replace(",", "."))
+            except ValueError:
+                return None
+        font = VorschauFontCombo(lambda n: vs.zeigen(lambda e: e.set_font_family(n)), vs.ende)
+        font.setFixedWidth(150)
+        groesse = VorschauCombo(lambda t: (pt := _zu_pt(t)) is not None and vs.zeigen(lambda e: e.set_font_size(pt)), vs.ende)
+        groesse.setEditable(True)
+        groesse.setFixedWidth(62)
+        groesse.addItems([str(x) for x in (8, 9, 10, 10.5, 11, 12, 14, 16, 18, 20, 24, 28, 36, 48, 72)])
+        stil = VorschauCombo(lambda n: vs.zeigen(lambda e: e.apply_style("Standard" if n == "Fließtext" else n)), vs.ende)
+        stil.addItems(["Fließtext"] + [n for n in STYLES if n != "Standard"])
+        stil.setParent(self)                                   # die Stile stehen in der Galerie; die Auswahl bleibt nur für den Abgleich
+        stil.hide()
+        self.felder.update(stil=stil, font=font, groesse=groesse)
+        zeilen, aktuell = [], []
+        for e in g["knoepfe"]:
+            if e.get("zeilenumbruch"):
+                zeilen.append(aktuell)
+                aktuell = []
+            else:
+                aktuell.append(e)
+        zeilen.append(aktuell)
+        v = QVBoxLayout()
+        v.setSpacing(2)
+        v.setContentsMargins(0, 0, 0, 0)
+        for i, zeile in enumerate(zeilen):
+            h = QHBoxLayout()
+            h.setSpacing(1)
+            h.setContentsMargins(0, 0, 0, 0)
+            if i == 0:
+                h.addWidget(font)
+                h.addWidget(groesse)
+                h.addSpacing(3)
+            for e in zeile:
+                h.addWidget(self._knopf(e, False))
+            h.addStretch(1)
+            v.addLayout(h)
+        v.addStretch(1)
+        inhalt.addLayout(v)
+
     def _knoepfe(self, g: dict, inhalt: QHBoxLayout):
+        if g.get("felder") == "zeile":
+            return self._knoepfe_schrift(g, inhalt)
+        if g.get("reihenfolge"):
+            return self._knoepfe_geordnet(g, inhalt)
         eintraege = g["knoepfe"]
         if g.get("felder"):
             spalte = QVBoxLayout()
@@ -381,9 +455,13 @@ class RegisterBand(QWidget):
         if gross:
             k.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
             k.setText(_zweizeilig(name))
+            akt.setText(_zweizeilig(name))                      # der Knopf übernimmt später den Text der Aktion
             breit = max(k.fontMetrics().horizontalAdvance(z) for z in _zweizeilig(name).split("\n"))
             k.setMinimumWidth(max(48, breit + 10))
             k.setFixedHeight(68)
+        elif icons.hat(sym) and e.get("text"):
+            k.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+            k.setText(name)
         elif icons.hat(sym):
             k.setToolButtonStyle(Qt.ToolButtonIconOnly)
         else:

@@ -116,6 +116,30 @@ KOPFFUSS = {"name": "Kopf- und Fußzeilentools", "kontext": "kopffuss", "gruppen
                                     _k("schliessen", "Kopf- und Fußzeile schließen", "kopfFussSchliessen")]}]}
 
 
+def _start_wie_wps(start: dict) -> dict:
+    """Reiter Start in der Anordnung von WPS Office: Zwischenablage (Einfügen, Ausschneiden/Kopieren, Format übertragen), Schriftart mit
+    Name und Größe in einer Zeile, Absatz, Stile, dann Wort-Extras, Suchen oder ersetzen, Auswählen und Einstellungen als große Knöpfe."""
+    alt = {g["name"]: g for g in start["gruppen"]}
+    ablage = {"name": "Zwischenablage", "reihenfolge": True, "knoepfe": [
+        _k("kleben", "Einfügen", "einfuegen", True, klappe="einfuegenKlappe"),
+        _k("schere", "Ausschneiden", "ausschneiden", text=True),
+        _k("kopie", "Kopieren", "kopieren", text=True),
+        _k("pinsel", "Format übertragen", "formatUebertragen", True)]}
+    schrift = dict(alt["Schriftart"], felder="zeile")
+    absatz = dict(alt["Absatz"])
+    extras = {"name": "Extras", "reihenfolge": True, "knoepfe": [
+        _k("wortextras", "Wort-Extras", "wortExtras", True)]}
+    suchen = {"name": "Suchen", "reihenfolge": True, "knoepfe": [
+        _k("lupe", "Suchen oder ersetzen", gross=True, menue=[{"name": "Suchen …", "tun": "suchen"},
+                                                              {"name": "Ersetzen …", "tun": "ersetzen"}])]}
+    waehlen = {"name": "Auswählen", "reihenfolge": True, "knoepfe": [
+        _k("objekte", "Auswählen", gross=True, menue=[{"name": "Alles auswählen", "tun": "allesMarkieren"},
+                                                      {"name": "Objekte auswählen", "tun": "objekteWaehlen"}])]}
+    einst = {"name": "Einstellungen", "reihenfolge": True, "knoepfe": [
+        _k("zahnrad", "Einstellungen", gross=True, menue=[{"name": "Optionen …", "tun": "w.optionenOeffnen"}])]}
+    return dict(start, gruppen=[ablage, schrift, absatz, alt["Stile"], extras, suchen, waehlen, einst])
+
+
 def plan(register: dict) -> list[dict]:
     """Die Reiter in der Reihenfolge der Struktur; Kontext-Register stehen am Ende (zunächst verborgen)."""
     nach = {t["name"]: t for t in register["register"]}
@@ -136,6 +160,7 @@ def plan(register: dict) -> list[dict]:
         elif neu:
             ki_pos = sh["gruppen"].index(ki_gruppe) if ki_gruppe else len(sh["gruppen"])
             sh["gruppen"].insert(ki_pos, dict(g, knoepfe=neu))
+    nach["Start"] = _start_wie_wps(nach["Start"])
     ans = nach["Ansicht"] = dict(nach["Ansicht"])
     ans["gruppen"] = [dict(g) for g in ans["gruppen"]]
     anz = next(g for g in ans["gruppen"] if g["name"] == "Anzeigen")
