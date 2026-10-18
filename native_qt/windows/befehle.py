@@ -501,8 +501,7 @@ class Befehle:
     # ---- Spalten (Seitenansicht, Druck, PDF; die Bearbeitungsansicht bleibt einspaltig) ----------------------------------------------
     def spaltenSetzen(self, k=None, n=1):
         self.w._page_change(lambda p: setattr(p, "spalten", int(n)))
-        self.w.statusBar().showMessage(
-            "Eine Spalte." if int(n) == 1 else f"{int(n)} Spalten — sichtbar in Seitenansicht, Druck und PDF; beim Schreiben bleibt der Text einspaltig.", 7000)
+        self.w.statusBar().showMessage("Eine Spalte." if int(n) == 1 else f"{int(n)} Spalten.", 4000)
 
     def w_spaltenJetzt(self):
         t = self.w.current_tab()

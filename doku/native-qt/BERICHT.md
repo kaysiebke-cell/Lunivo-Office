@@ -2,11 +2,11 @@
 
 Alle Angaben stammen aus tatsächlichen Läufen in der Entwicklungsumgebung (Linux, Qt „offscreen“, LibreOffice 25.x vorhanden).
 **Nicht** auf einem echten Linux-Mint-Desktop mit Bildschirm, Drucker, Ollama/Claude, LanguageTool, Piper oder WPS getestet —
-das ist offen (siehe 6). Der Prüfbogen ([PRUEFBOGEN.md](PRUEFBOGEN.md)) ist der Maßstab: **415 Punkte, ✅ 301 · ◐ 73 · ⬜ 41**;
+das ist offen (siehe 6). Der Prüfbogen ([PRUEFBOGEN.md](PRUEFBOGEN.md)) ist der Maßstab: **415 Punkte, ✅ 303 · ◐ 71 · ⬜ 41**;
 „✅“ heißt „Befehl/Funktion vorhanden“, einzeln durch `tests/` belegt nur dort, wo im Eintrag ein Test genannt ist.
 
 ## 1. Dateien
-`native_qt/` (≈ 15 700 Zeilen Python in 7 Paketen), `tests/` (22 Testdateien, 143 Tests), `werkzeug/` (Exportskripte für Register,
+`native_qt/` (≈ 15 700 Zeilen Python in 7 Paketen), `tests/` (22 Testdateien, 152 Tests), `werkzeug/` (Exportskripte für Register,
 Symbolkatalog, Vorlagen, Handbuch; Abgleich-Skripte), `starten-qt.sh`, `requirements*.txt`, `doku/native-qt/*`. Die alte
 Web-Oberfläche (`oberflaeche/`, `start.py`) ist unverändert; auf `main` wurde nichts geändert.
 
@@ -66,7 +66,7 @@ Hinweise: JSAPI-Erweiterungen laut Entwicklerdokumentation auf open.wps.cn (chin
 Steuerung ≠ Bibliothek: Das Programm benutzt **keine** WPS-Interna.
 
 ## 5. Tests (tatsächlich ausgeführt)
-`pytest tests`: **143 bestanden, 0 fehlgeschlagen** (≈ 45 s). Neben den Grundlagen (DOCX-Roundtrip, PDF, Einstellungen, Editor,
+`pytest tests`: **152 bestanden, 0 fehlgeschlagen** (≈ 45 s). Neben den Grundlagen (DOCX-Roundtrip, PDF, Einstellungen, Editor,
 Fenster, KI mit Fake-Servern) jetzt auch: Zoom, Lineale, Weblayout/Zwei Seiten/Gliederung, Seitenfarbe/-rahmen/Wasserzeichen,
 Kommentare/Noten/Änderungen (Editor und DOCX), Verweise und Verzeichnisse (mit LibreOffice-Öffnung), Einfügen, Sendungen,
 Vorlagen und Lücken, Hilfe/Funktionstasten, Oberfläche wechseln, Werkzeug-Reiter, Gedächtnis, Kennwort, HTML-Codierung, eine
@@ -112,9 +112,13 @@ Anbieters mit „Bilder“. Getestet gegen einen gefälschten OpenAI-Server; **n
 * **Textumbruch um Bilder**: links/rechts, Text umfließt; DOCX `wp:anchor` mit `wrapSquare` (gelesen und geschrieben, mit LibreOffice geprüft).
 
 ### Nachtrag: Spalten, Minisymbolleiste, Einfügeoptionen
-* **Spalten** (Seitenlayout ▸ Spalten, Seite einrichten): 1–4 Spalten mit Abstand und Trennlinie in Seitenansicht, Druck, PDF; DOCX `w:cols`
-  (mit LibreOffice geprüft) und `Spaltenumbruch`. **Grenze:** Die Bearbeitungsansicht bleibt einspaltig (Qt kann das nicht), die Seitenzahl
-  der Statusleiste zählt einspaltig, und bei mehreren Spalten wirkt ein Seitenumbruch wie ein Spaltenumbruch. Verschiedene Spaltenzahlen
-  je Abschnitt gibt es nicht.
+* **Spalten** (Seitenlayout ▸ Spalten, Seite einrichten): 1–4 Spalten mit Abstand und Trennlinie, **auch beim Schreiben**: Der Text fließt auf der
+  A4-Seite von Spalte zu Spalte, Klicken, Markieren über Spalten hinweg, Pfeiltasten, Zoom und Rechtschreibwellen arbeiten darauf. Technik:
+  Das Dokument wird in Spaltenbreite und -höhe in „Spaltenseiten“ geteilt, `paintEvent` setzt sie nebeneinander, Mausereignisse und
+  `cursorRect`/`cursorForPosition` werden abgebildet (`editor_widget._sp_*`). Ebenso in Seitenansicht, Druck, PDF und DOCX (`w:cols`,
+  Spaltenumbruch; mit LibreOffice geprüft). **Grenzen:** gilt für das ganze Dokument (keine Abschnitte mit verschiedener Spaltenzahl); bei
+  mehreren Spalten wirkt ein Seitenumbruch wie ein Spaltenumbruch; Ziehen und Ablegen von Text ist in Spalten abgeschaltet; Zeilennummern
+  fehlen bei mehreren Spalten; die Spaltenumbrüche der Ansicht stammen aus Qts Seitenaufteilung und können in Randfällen (Tabellen,
+  hohe Bilder) vom Druck um eine Zeile abweichen.
 * **Minisymbolleiste** bei Auswahl und Rechtsklick; **Einfügeoptionen** (Standardformat, Schaltfläche nach dem Einfügen); **PDF**: Kommentare als
   Notizen, Lesezeichen aus Titel/Untertitel/Zitat; Schalter „Immer Korrekturvorschläge“.

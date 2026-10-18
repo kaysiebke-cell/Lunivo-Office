@@ -1,6 +1,6 @@
 # Prüfbogen ↔ native Fassung
 
-Erzeugt von `werkzeug/pruefbogen-abgleich.py` aus dem Prüfkatalog (415 Punkte). **✅ 301 · ◐ 73 · ⬜ 41**. ✅ = Befehl/Funktion vorhanden (einzeln getestet nur, wo `tests/` es belegt); ◐ = teilweise oder anders gelöst; ⬜ = offen.
+Erzeugt von `werkzeug/pruefbogen-abgleich.py` aus dem Prüfkatalog (415 Punkte). **✅ 303 · ◐ 71 · ⬜ 41**. ✅ = Befehl/Funktion vorhanden (einzeln getestet nur, wo `tests/` es belegt); ◐ = teilweise oder anders gelöst; ⬜ = offen.
 Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/bilder/`.
 
 ## DATEI
@@ -142,9 +142,9 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 - ✅ Seitenränder — Band: Seitenlayout ▸ Seitenhintergrund  _(Web-Fassung: fertig)_
 - ✅ Ausrichtung — Band: Seitenlayout ▸ Seite einrichten
 - ✅ Papierformat — Reiter Seitenlayout ▸ Größe (Befehle.w_setzePapier)  _(Web-Fassung: fertig)_
-- ◐ Spalten — Spalten in Seitenansicht, Druck, PDF und DOCX (w:cols, Spaltenumbruch; mit LibreOffice geprüft, test_werkzeuge). Die Bearbeitungsansicht bleibt einspaltig; ein Seitenumbruch wirkt bei mehreren Spalten wie ein Spaltenumbruch
+- ✅ Spalten — 1–4 Spalten live im Editor (editor_widget._sp_*), Seitenansicht, Druck, PDF, DOCX w:cols/Spaltenumbruch (test_spalten_editor, test_werkzeuge; mit LibreOffice geprüft). Gilt für das ganze Dokument; bei mehreren Spalten wirkt ein Seitenumbruch wie ein Spaltenumbruch
 - ✅ Umbruch > Seitenumbruch — Band: Einfügen ▸ Seiten, Seitenlayout ▸ Seite einrichten ▸ Umbrüche  _(Web-Fassung: fertig)_
-- ◐ Umbruch > Spaltenumbruch — Spalten in Seitenansicht, Druck, PDF und DOCX (w:cols, Spaltenumbruch; mit LibreOffice geprüft, test_werkzeuge). Die Bearbeitungsansicht bleibt einspaltig; ein Seitenumbruch wirkt bei mehreren Spalten wie ein Spaltenumbruch
+- ✅ Umbruch > Spaltenumbruch — 1–4 Spalten live im Editor (editor_widget._sp_*), Seitenansicht, Druck, PDF, DOCX w:cols/Spaltenumbruch (test_spalten_editor, test_werkzeuge; mit LibreOffice geprüft). Gilt für das ganze Dokument; bei mehreren Spalten wirkt ein Seitenumbruch wie ein Spaltenumbruch
 - ◐ Umbruch > Abschnittsumbruch — nur „Nächste Seite“ (Seitenumbruch); Abschnitte kennt Qt nicht
 - ✅ Einzug — Band: Seitenlayout ▸ Absatz
 - ✅ Absatzabstand — Band: Seitenlayout ▸ Absatz
