@@ -71,6 +71,8 @@ class MainWindow(QMainWindow):
         self._build_actions()
         self._zusatz_kuerzel()
         self._build_status()
+        from ..editor import stile
+        stile.laden(self.settings.get("stile/aenderungen", ""))
         self.menubar_wanted = self.settings.get_bool("ui/menueleiste", False)
         self._symbole_anwenden()
         self.band = self._band_erzeugen()
@@ -388,7 +390,7 @@ class MainWindow(QMainWindow):
         f["stil"].activated.connect(lambda _: self.stil_anwenden(f["stil"].currentText()))
 
     def stil_anwenden(self, name: str):
-        name = "Standard" if name in ("Fließtext", "Kein Abstand") else name
+        name = "Standard" if name == "Fließtext" else name
         self._ed(lambda e: e.apply_style(name))
 
     def _size_chosen(self, *_):

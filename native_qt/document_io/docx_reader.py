@@ -355,7 +355,7 @@ class _Reader:
         lvl = self._heading_level(para)
         if lvl:
             b.setHeadingLevel(lvl)
-        if st is not None and st.name in ("Title", "Subtitle", "Quote"):
+        if st is not None and st.name in ("Title", "Subtitle", "Quote", "No Spacing"):
             b.setProperty(STYLE_PROP, st.name)
         return b
 

@@ -13,19 +13,10 @@ from ..document_io.docx_reader import LH_PROPORTIONAL, STYLE_PROP
 from .page import PageSettings, mm_to_px
 from ..services.autokorrektur import kleinste_aenderung
 from .pagination import bind_layout, paginated_copy
+from . import stile
 from .zusatz_editor import ZusatzMixin
 
-# Formatvorlagen: Name → (Überschriftsebene, Punktgröße, fett, kursiv)
-STYLES = {
-    "Standard": (0, None, False, False),
-    "Überschrift 1": (1, 20, True, False),
-    "Überschrift 2": (2, 16, True, False),
-    "Überschrift 3": (3, 14, True, False),
-    "Titel": (0, 26, False, False),
-    "Untertitel": (0, 15, False, True),
-    "Zitat": (0, None, False, True),
-}
-STYLE_KEY = {"Titel": "Title", "Untertitel": "Subtitle", "Zitat": "Quote"}
+STYLES = dict.fromkeys(stile.NAMEN)            # Namen der Formatvorlagen (Definitionen: editor/stile.py)
 
 
 class DocumentEditor(ZusatzMixin, QTextEdit):
@@ -520,39 +511,72 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         lst.setFormat(fmt)
 
     def apply_style(self, name: str) -> None:
-        level, size, bold, italic = STYLES[name]
+        """Formatvorlage auf alle Absätze der Markierung (oder den Absatz am Zeiger) anwenden."""
         cur = self.textCursor()
         cur.beginEditBlock()
-        bf = cur.blockFormat()
-        bf.setHeadingLevel(level)
-        if name in STYLE_KEY:
-            bf.setProperty(STYLE_PROP, STYLE_KEY[name])
-        else:
-            bf.clearProperty(STYLE_PROP)
-        bf.setTopMargin(12 if level == 1 else 8 if level else 0)
-        bf.setBottomMargin(6 if level else 0)
-        cur.setBlockFormat(bf)
-        sel = QTextCursor(cur.block())
-        sel.movePosition(QTextCursor.StartOfBlock)
-        sel.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
-        f = QTextCharFormat()
-        f.setFontWeight(QFont.Bold if bold else QFont.Normal)
-        f.setFontItalic(italic)
-        f.setFontPointSize(size or self.document().defaultFont().pointSizeF() or 11)
-        sel.mergeCharFormat(f)
+        von, bis = sorted((cur.anchor(), cur.position()))
+        c = QTextCursor(self.document()); c.setPosition(von)
+        blk = c.block()
+        while blk.isValid() and blk.position() <= bis:
+            self._stil_auf_block(blk, name)
+            blk = blk.next()
         cur.endEditBlock()
         self.setFocus()
 
-    def current_style(self) -> str:
-        bf = self.textCursor().blockFormat()
+    def _stil_auf_block(self, blk, name: str) -> None:
+        d = stile.definition(name)
+        cc = QTextCursor(blk)
+        bf = cc.blockFormat()
+        level = d["ebene"]
+        bf.setHeadingLevel(level)
+        key = d.get("key")
+        if key:
+            bf.setProperty(STYLE_PROP, key)
+        else:
+            bf.clearProperty(STYLE_PROP)
+        bf.setTopMargin(d["vor"] / 0.75); bf.setBottomMargin(d["nach"] / 0.75)
+        if d["ausr"]:
+            bf.setAlignment({"links": Qt.AlignLeft, "mitte": Qt.AlignHCenter, "rechts": Qt.AlignRight, "block": Qt.AlignJustify}[d["ausr"]])
+        cc.setBlockFormat(bf)
+        sel = QTextCursor(blk)
+        sel.movePosition(QTextCursor.StartOfBlock)
+        sel.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
+        f = QTextCharFormat()
+        f.setFontWeight(QFont.Bold if d["fett"] else QFont.Normal)
+        f.setFontItalic(d["kursiv"])
+        f.setFontPointSize(d["groesse"] or self.document().defaultFont().pointSizeF() or 11)
+        if d["schrift"]:
+            f.setFontFamilies([d["schrift"]])
+        if d["farbe"]:
+            f.setForeground(QColor(d["farbe"]))
+        sel.mergeCharFormat(f)
+
+    def stil_neu_anwenden(self, name: str) -> int:
+        """Nach „Formatvorlagen verwalten“: alle Absätze dieser Vorlage im Dokument neu formatieren."""
+        n = 0
+        cur = QTextCursor(self.document())
+        cur.beginEditBlock()
+        blk = self.document().firstBlock()
+        while blk.isValid():
+            if self._stil_name(blk.blockFormat()) == name:
+                self._stil_auf_block(blk, name); n += 1
+            blk = blk.next()
+        cur.endEditBlock()
+        return n
+
+    @staticmethod
+    def _stil_name(bf) -> str:
         lvl = bf.headingLevel()
         if lvl in (1, 2, 3):
             return f"Überschrift {lvl}"
         key = bf.property(STYLE_PROP) if bf.hasProperty(STYLE_PROP) else None
-        for k, v in STYLE_KEY.items():
-            if v == key:
-                return k
+        for pfad in ("Title", "Subtitle", "Quote", "No Spacing"):
+            if key == pfad:
+                return stile.key_zu_name(pfad)
         return "Standard"
+
+    def current_style(self) -> str:
+        return self._stil_name(self.textCursor().blockFormat())
 
     # ---- Einfügen ----------------------------------------------------------------
     def insert_page_break(self) -> None:

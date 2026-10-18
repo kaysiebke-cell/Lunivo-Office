@@ -1,14 +1,14 @@
 # Abgleich: altes Register ↔ native Qt-Fassung
 
-Erzeugt von `werkzeug/abgleich-native.py`. **205 Knöpfe umgesetzt, 35 offen.** Offene Knöpfe stehen im Programm sichtbar, aber ausgegraut da.
+Erzeugt von `werkzeug/abgleich-native.py`. **236 Knöpfe umgesetzt, 16 offen.** Offene Knöpfe stehen im Programm sichtbar, aber ausgegraut da.
 
 ## Datei
 
 **Neu**
 
 - ✅ Leeres Dokument
-- ⬜ Aus Vorlage erstellen  (`neuAusVorlage`)
-- ⬜ Vorlagen durchsuchen  (`vorlagenDurchsuchen`)
+- ✅ Aus Vorlage erstellen
+- ✅ Vorlagen durchsuchen
 
 **Öffnen**
 
@@ -29,6 +29,7 @@ Erzeugt von `werkzeug/abgleich-native.py`. **205 Knöpfe umgesetzt, 35 offen.** 
 - ✅ Als RTF exportieren
 - ✅ Als TXT exportieren
 - ✅ Als ODT exportieren
+- ✅ Als Bild exportieren (PNG)
 
 **Drucken**
 
@@ -41,7 +42,7 @@ Erzeugt von `werkzeug/abgleich-native.py`. **205 Knöpfe umgesetzt, 35 offen.** 
 **Dokument**
 
 - ✅ Dokumentinformationen
-- ⬜ Dokument schützen  (`dokumentSchuetzen`)
+- ✅ Dokument schützen
 - ⬜ Dokument teilen (optional)  (`dokumentTeilen`)
 - ✅ Mit WPS Writer öffnen
 - ✅ Mit LibreOffice öffnen
@@ -94,7 +95,7 @@ Erzeugt von `werkzeug/abgleich-native.py`. **205 Knöpfe umgesetzt, 35 offen.** 
 - ✅ Verteilt
 - ✅ Zeilenabstand
 - ✅ Absatzschattierung
-- ⬜ Absatzrahmen  (`absatzRahmen`)
+- ✅ Absatzrahmen
 
 **Stile**
 
@@ -122,7 +123,7 @@ Erzeugt von `werkzeug/abgleich-native.py`. **205 Knöpfe umgesetzt, 35 offen.** 
 - ✅ Tabelle einfügen
 - ✅ Schnelltabelle
 - ⬜ Tabellenblatt  (`tabellenblatt`)
-- ⬜ Eigenschaften  (`tabelleEigenschaften`)
+- ✅ Eigenschaften
 
 **Illustrationen**
 
@@ -200,9 +201,9 @@ Erzeugt von `werkzeug/abgleich-native.py`. **205 Knöpfe umgesetzt, 35 offen.** 
 **Anordnen**
 
 - ⬜ Textfluss  (`anordnen`)
-- ⬜ Ausrichten  (`objektAusrichten`)
+- ✅ Ausrichten
 - ⬜ Gruppieren  (`gruppieren`)
-- ⬜ Drehen  (`objektDrehen`)
+- ✅ Drehen
 
 
 ## Verweise
@@ -304,7 +305,8 @@ Erzeugt von `werkzeug/abgleich-native.py`. **205 Knöpfe umgesetzt, 35 offen.** 
 
 **Einrichten**
 
-- ⬜ Eigenen Assistenten erstellen  (`w.assistentErstellen`)
+- ✅ Eigene Assistenten
+- ✅ Eigenen Assistenten erstellen
 - ✅ Eigenen Anbieter hinzufügen
 - ✅ KI-Konfiguration
 
@@ -353,12 +355,37 @@ Erzeugt von `werkzeug/abgleich-native.py`. **205 Knöpfe umgesetzt, 35 offen.** 
 
 **Oberfläche**
 
-- ⬜ Register anpassen  (`registerAnpassen`)
-- ⬜ Symbol austauschen  (`symbolTauschen`)
-- ⬜ Benutzeroberfläche  (`benutzeroberflaeche`)
+- ✅ Register anpassen
+- ✅ Symbol austauschen
+- ✅ Benutzeroberfläche
 - ✅ Menüleiste
-- ⬜ Symbolleisten  (`leistenZeigen`)
-- ⬜ Vorlagen zurücksetzen  (`vorlagenZurueck`)
+- ✅ Symbolleisten
+- ✅ Vorlagen zurücksetzen
+
+
+## Sendungen
+
+**Erstellen**
+
+- ✅ Umschlag
+- ✅ Etiketten
+
+**Seriendruck**
+
+- ✅ Seriendruck-Assistent
+- ✅ Seriendruckfeld
+- ✅ Adressblock
+- ✅ Regeln
+
+**Vorschau**
+
+- ✅ Ergebnisse anzeigen
+
+**Formular**
+
+- ✅ Textfeld
+- ✅ Kontrollkästchen
+- ✅ Schaltfläche
 
 
 ## Tabellentools (Kontext-Register)
@@ -382,7 +409,7 @@ Erzeugt von `werkzeug/abgleich-native.py`. **205 Knöpfe umgesetzt, 35 offen.** 
 
 - ✅ Zellen verbinden
 - ✅ Zelle teilen
-- ⬜ Tabelle sortieren  (`tabelleSortieren`)
+- ✅ Tabelle sortieren
 
 **Ausrichtung**
 
@@ -406,8 +433,8 @@ Erzeugt von `werkzeug/abgleich-native.py`. **205 Knöpfe umgesetzt, 35 offen.** 
 **Bearbeiten**
 
 - ✅ Bild entfernen
-- ⬜ Zuschneiden  (`bildZuschneiden`)
-- ⬜ Helligkeit / Kontrast / Farbe  (`bildFarbe`)
+- ✅ Zuschneiden
+- ✅ Helligkeit / Kontrast / Farbe
 - ⬜ Textumbruch / Position  (`anordnen`)
 
 
@@ -426,11 +453,11 @@ Erzeugt von `werkzeug/abgleich-native.py`. **205 Knöpfe umgesetzt, 35 offen.** 
 **Entwurf**
 
 - ✅ Kopfzeile bearbeiten
-- ⬜ Fußzeile bearbeiten  (`fusszeileBearbeiten`)
+- ✅ Fußzeile bearbeiten
 - ✅ Seitenzahl einfügen
-- ⬜ Erste Seite anders  (`ersteSeiteAnders`)
+- ✅ Erste Seite anders
 - ⬜ Gerade/ungerade Seiten unterschiedlich  (`geradeUngerade`)
-- ⬜ Kopf- und Fußzeile schließen  (`kopfFussSchliessen`)
+- ✅ Kopf- und Fußzeile schließen
 
 
 ## Seitenleiste: Schreibhilfe

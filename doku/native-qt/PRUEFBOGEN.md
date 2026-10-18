@@ -1,6 +1,6 @@
 # Prüfbogen ↔ native Fassung
 
-Erzeugt von `werkzeug/pruefbogen-abgleich.py` aus dem Prüfkatalog (415 Punkte). **✅ 256 · ◐ 62 · ⬜ 97**. ✅ = Befehl/Funktion vorhanden (einzeln getestet nur, wo `tests/` es belegt); ◐ = teilweise oder anders gelöst; ⬜ = offen.
+Erzeugt von `werkzeug/pruefbogen-abgleich.py` aus dem Prüfkatalog (415 Punkte). **✅ 287 · ◐ 69 · ⬜ 59**. ✅ = Befehl/Funktion vorhanden (einzeln getestet nur, wo `tests/` es belegt); ◐ = teilweise oder anders gelöst; ⬜ = offen.
 Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/bilder/`.
 
 ## DATEI
@@ -8,8 +8,8 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 - ✅ Neu — Datei-Reiter, ☰-Menü, Schnellzugriff; windows/main_window.py (test_main_window)
 - ✅ Öffnen — Datei-Reiter, ☰-Menü, Schnellzugriff; windows/main_window.py (test_main_window)
 - ✅ Zuletzt geöffnet — ☰-Menü (widgets/menue_tafel.py), Optionen F9
-- ⬜ Neu aus Vorlage — nicht übertragen
-- ⬜ Vorlagenordner — nicht übertragen
+- ✅ Neu aus Vorlage — editor/vorlagen.py + widgets/vorlagen_dialog.py: 10 mitgelieferte Gerüste mit Lücken, eigene Vorlagen aus dem Ordner (test_vorlagen)
+- ✅ Vorlagenordner — editor/vorlagen.py + widgets/vorlagen_dialog.py: 10 mitgelieferte Gerüste mit Lücken, eigene Vorlagen aus dem Ordner (test_vorlagen)
 - ✅ Speichern — Datei-Reiter, ☰-Menü, Schnellzugriff; windows/main_window.py (test_main_window)
 - ✅ Speichern unter — Datei-Reiter, ☰-Menü, Schnellzugriff; windows/main_window.py (test_main_window)
 - ✅ Drucken — Datei-Reiter, ☰-Menü, Schnellzugriff; windows/main_window.py (test_main_window)  _(Web-Fassung: fertig)_
@@ -21,23 +21,23 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 - ✅ Optionen (F9) — ☰-Menü (widgets/menue_tafel.py), Optionen F9
 - ✅ Schließen — Datei-Reiter, ☰-Menü, Schnellzugriff; windows/main_window.py (test_main_window)
 - ✅ Beenden — ☰-Menü (widgets/menue_tafel.py), Optionen F9
-- ⬜ Hilfe > Handbuch — nicht übertragen
-- ⬜ Hilfe > Tastenkürzel — nicht übertragen
-- ⬜ Hilfe > Erweiterungen — nicht übertragen
+- ◐ Hilfe > Handbuch — das Handbuch der Web-Fassung (als Markdown) im Hilfefenster; beschreibt zum Teil die Web-Oberfläche
+- ✅ Hilfe > Tastenkürzel — widgets/hilfe_dialoge.py (test_vorlagen: Hilfe-Dialoge und Funktionstasten)
+- ✅ Hilfe > Erweiterungen — widgets/hilfe_dialoge.py (test_vorlagen: Hilfe-Dialoge und Funktionstasten)
 - ✅ Hilfe > Über Lunivo Office — ☰-Menü ▸ Hilfe ▸ Über
 
 ## MENÜ UND SCHNELLZUGRIFF
 
 - ◐ Kein Datei-Reiter mehr — Widerspruch: die neue Struktur („1. DATEI“) hat einen Datei-Reiter — beides ist vorhanden
 - ✅ ☰ Menü links vor den Reitern — widgets/menue_tafel.py, widgets/register_band.py
-- ◐ ☰ Menü auch am Anfang der Symbolleiste — widgets/symbolleisten.py gebaut, noch nicht als Oberfläche wählbar
+- ✅ ☰ Menü auch am Anfang der Symbolleiste — Ansicht ▸ Oberfläche ▸ Benutzeroberfläche: Symbolleisten (widgets/symbolleisten.py, test_main_window)
 - ✅ Tafel mit zwei Spalten — widgets/menue_tafel.py, widgets/register_band.py
 - ✅ Untermenü füllt die rechte Spalte, kein eigenes Fenster — widgets/menue_tafel.py, widgets/register_band.py
 - ✅ Liste zuletzt verwendeter Dateien rechts — widgets/menue_tafel.py, widgets/register_band.py
 - ✅ × nimmt einen Eintrag aus der Liste — widgets/menue_tafel.py, widgets/register_band.py
 - ✅ ↻ holt die Liste neu — widgets/menue_tafel.py, widgets/register_band.py
-- ⬜ Als Bild exportieren (PNG) — nicht übertragen  _(Web-Fassung: teil)_
-- ⬜ Dokumentverschlüsselung — nicht übertragen  _(Web-Fassung: fertig)_
+- ✅ Als Bild exportieren (PNG) — befehle.exportierenPng: eine PNG je Seite (test_werkzeuge)  _(Web-Fassung: teil)_
+- ✅ Dokumentverschlüsselung — Datei ▸ Dokument schützen: DOCX-Verschlüsselung mit msoffcrypto-tool (test_formats, test_werkzeuge)  _(Web-Fassung: fertig)_
 - ✅ Schnellzugriff in der Reiterzeile — widgets/menue_tafel.py, widgets/register_band.py
 
 ## START > Zwischenablage
@@ -88,8 +88,8 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 ## START > Absatzlayout
 
 - ✅ Zeilenabstand — Band: Start ▸ Absatz  _(Web-Fassung: fertig)_
-- ◐ Einzug genau — Absatz-Dialog (widgets/dialogs.py) — einfacher als das Vorlagenbild (zwei Karteireiter, Vorschau)  _(Web-Fassung: fertig)_
-- ⬜ Absatzrahmen — Band: Start ▸ Absatz  _(Web-Fassung: fertig)_
+- ✅ Einzug genau — Absatz-Dialog mit zwei Karteireitern und Vorschau; „Absatz nicht trennen“ u. ä. sind Qt-bedingt gesperrt  _(Web-Fassung: fertig)_
+- ✅ Absatzrahmen — B_RAHMEN: Editor, PDF/Druck und DOCX pBdr (test_werkzeuge, mit LibreOffice geprüft)  _(Web-Fassung: fertig)_
 - ✅ Absatzschattierung — Band: Start ▸ Absatz  _(Web-Fassung: fertig)_
 
 ## START > Einstellungen
@@ -99,12 +99,12 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 ## START > Stile & Bearbeiten
 
 - ✅ Formatvorlage auswählen — Stilkatalog + Feld im Band
-- ⬜ Formatvorlagen verwalten — nicht übertragen
+- ✅ Formatvorlagen verwalten — editor/stile.py + StileVerwaltenDialog; wirkt auf alle Absätze der Vorlage (test_editor)
 - ✅ Suchen — Band: Start ▸ Bearbeiten  _(Web-Fassung: fertig)_
 - ✅ Ersetzen — Band: Start ▸ Bearbeiten  _(Web-Fassung: fertig)_
 - ✅ Suchen und Ersetzen — Band: Start ▸ Bearbeiten  _(Web-Fassung: fertig)_
 - ✅ Alles auswählen — Band: Start ▸ Bearbeiten
-- ✅ Objekte auswählen — Band: Start ▸ Bearbeiten
+- ✅ Objekte auswählen — befehle.objekteWaehlen (test_main_window)
 
 ## EINFÜGEN
 
@@ -142,19 +142,19 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 - ✅ Seitenränder — Band: Seitenlayout ▸ Seitenhintergrund  _(Web-Fassung: fertig)_
 - ✅ Ausrichtung — Band: Seitenlayout ▸ Seite einrichten
 - ✅ Papierformat — Reiter Seitenlayout ▸ Größe (Befehle.w_setzePapier)  _(Web-Fassung: fertig)_
-- ⬜ Spalten — Band: Seitenlayout ▸ Seite einrichten
+- ⬜ Spalten — Das Textmodul von Qt kennt keine Spalten
 - ✅ Umbruch > Seitenumbruch — Band: Einfügen ▸ Seiten, Seitenlayout ▸ Seite einrichten ▸ Umbrüche  _(Web-Fassung: fertig)_
-- ⬜ Umbruch > Spaltenumbruch — Band: Seitenlayout ▸ Seite einrichten ▸ Umbrüche
-- ⬜ Umbruch > Abschnittsumbruch — Band: Seitenlayout ▸ Seite einrichten ▸ Umbrüche
+- ⬜ Umbruch > Spaltenumbruch — Das Textmodul von Qt kennt keine Spalten
+- ◐ Umbruch > Abschnittsumbruch — nur „Nächste Seite“ (Seitenumbruch); Abschnitte kennt Qt nicht
 - ✅ Einzug — Band: Seitenlayout ▸ Absatz
 - ✅ Absatzabstand — Band: Seitenlayout ▸ Absatz
 - ✅ Zeilennummern — Band: Seitenlayout ▸ Seite einrichten
-- ⬜ Silbentrennung — Band: Seitenlayout ▸ Absatz, Seitenleiste ▸ Sprache  _(Web-Fassung: teil)_
-- ⬜ Textumbruch — nicht übertragen (Task D: Objekte)
+- ⬜ Silbentrennung — Qt hat keine automatische Silbentrennung  _(Web-Fassung: teil)_
+- ⬜ Textumbruch — Bilder stehen im Text; frei schwebende Objekte kennt Qt nicht
 - ✅ Seitenfarbe — Band: Seitenlayout ▸ Seitenhintergrund  _(Web-Fassung: fertig)_
 - ✅ Wasserzeichen — Band: Seitenlayout ▸ Seitenhintergrund
 - ✅ Seitenrahmen — befehle.seitenrahmen, pagination.seitenschmuck, DOCX pgBorders (test_docx_roundtrip, test_pdf)  _(Web-Fassung: fertig)_
-- ⬜ Bild/Objekt anordnen — nicht übertragen (Task D: Objekte)  _(Web-Fassung: fertig)_
+- ◐ Bild/Objekt anordnen — nur Ausrichten und Drehen/Spiegeln (Bildtools); kein Gruppieren, keine Ebenen  _(Web-Fassung: fertig)_
 
 ## REFERENZEN
 
@@ -220,16 +220,16 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 
 ## SENDUNGEN (Lunivo)
 
-- ⬜ Umschlag — Reiter „Sendungen“ nicht in der neuen Struktur; Daten in register.json erhalten
-- ⬜ Etiketten — Reiter „Sendungen“ nicht in der neuen Struktur; Daten in register.json erhalten
-- ⬜ Seriendruck-Assistent — Reiter „Sendungen“ nicht in der neuen Struktur; Daten in register.json erhalten
-- ⬜ Seriendruckfeld — Reiter „Sendungen“ nicht in der neuen Struktur; Daten in register.json erhalten
-- ⬜ Adressblock — Reiter „Sendungen“ nicht in der neuen Struktur; Daten in register.json erhalten
-- ⬜ Regeln — Reiter „Sendungen“ nicht in der neuen Struktur; Daten in register.json erhalten
-- ⬜ Ergebnisse anzeigen — Reiter „Sendungen“ nicht in der neuen Struktur; Daten in register.json erhalten
-- ✅ Formular > Textfeld — Band: Einfügen ▸ Text
-- ⬜ Formular > Kontrollkästchen — Reiter „Sendungen“ nicht in der neuen Struktur; Daten in register.json erhalten
-- ⬜ Formular > Schaltfläche — Reiter „Sendungen“ nicht in der neuen Struktur; Daten in register.json erhalten  _(Web-Fassung: fertig)_
+- ✅ Umschlag — editor/sendungen.py + widgets/sendungen_dialoge.py (test_sendungen); Reiter „Sendungen“ ist nach Register anpassen sichtbar, sonst über die Menüleiste
+- ✅ Etiketten — editor/sendungen.py + widgets/sendungen_dialoge.py (test_sendungen); Reiter „Sendungen“ ist nach Register anpassen sichtbar, sonst über die Menüleiste
+- ✅ Seriendruck-Assistent — editor/sendungen.py + widgets/sendungen_dialoge.py (test_sendungen); Reiter „Sendungen“ ist nach Register anpassen sichtbar, sonst über die Menüleiste
+- ✅ Seriendruckfeld — editor/sendungen.py + widgets/sendungen_dialoge.py (test_sendungen); Reiter „Sendungen“ ist nach Register anpassen sichtbar, sonst über die Menüleiste
+- ✅ Adressblock — editor/sendungen.py + widgets/sendungen_dialoge.py (test_sendungen); Reiter „Sendungen“ ist nach Register anpassen sichtbar, sonst über die Menüleiste
+- ✅ Regeln — editor/sendungen.py + widgets/sendungen_dialoge.py (test_sendungen); Reiter „Sendungen“ ist nach Register anpassen sichtbar, sonst über die Menüleiste
+- ✅ Ergebnisse anzeigen — editor/sendungen.py + widgets/sendungen_dialoge.py (test_sendungen); Reiter „Sendungen“ ist nach Register anpassen sichtbar, sonst über die Menüleiste
+- ◐ Formular > Textfeld — als formatierter Text ohne Funktion (Qt kennt keine Formularsteuerelemente)
+- ✅ Formular > Kontrollkästchen — editor/sendungen.py + widgets/sendungen_dialoge.py (test_sendungen); Reiter „Sendungen“ ist nach Register anpassen sichtbar, sonst über die Menüleiste
+- ◐ Formular > Schaltfläche — als formatierter Text ohne Funktion (Qt kennt keine Formularsteuerelemente)  _(Web-Fassung: fertig)_
 
 ## ANSICHT
 
@@ -261,12 +261,12 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 - ✅ Helligkeit > Wie das System — Band: Ansicht ▸ Helligkeit
 - ✅ Helligkeit > Immer hell — Band: Ansicht ▸ Helligkeit
 - ✅ Helligkeit > Immer dunkel — Band: Ansicht ▸ Helligkeit
-- ⬜ Oberfläche > Register anpassen — Band: Ansicht ▸ Oberfläche
-- ⬜ Oberfläche > Symbol austauschen — Band: Ansicht ▸ Oberfläche
-- ⬜ Oberfläche > Benutzeroberfläche — Band: Ansicht ▸ Oberfläche
+- ✅ Oberfläche > Register anpassen — widgets/oberflaeche_dialoge.py, Ansicht ▸ Oberfläche (test_main_window)
+- ✅ Oberfläche > Symbol austauschen — widgets/oberflaeche_dialoge.py, Ansicht ▸ Oberfläche (test_main_window)
+- ✅ Oberfläche > Benutzeroberfläche — widgets/oberflaeche_dialoge.py, Ansicht ▸ Oberfläche (test_main_window)
 - ✅ Oberfläche > Menüleiste — Band: Ansicht ▸ Oberfläche
-- ⬜ Oberfläche > Symbolleisten — Band: Ansicht ▸ Oberfläche  _(Web-Fassung: fertig)_
-- ⬜ Oberfläche > Vorlagen zurücksetzen — Band: Ansicht ▸ Oberfläche
+- ✅ Oberfläche > Symbolleisten — widgets/oberflaeche_dialoge.py, Ansicht ▸ Oberfläche (test_main_window)  _(Web-Fassung: fertig)_
+- ✅ Oberfläche > Vorlagen zurücksetzen — widgets/oberflaeche_dialoge.py, Ansicht ▸ Oberfläche (test_main_window)
 
 ## KONTEXTTABELLEN
 
@@ -275,7 +275,7 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 - ⬜ Diagrammtools — nicht übertragen
 - ⬜ SmartArt-Tools — nicht übertragen
 - ⬜ Gleichungswerkzeuge — nicht übertragen  _(Web-Fassung: fertig)_
-- ◐ Kopf- und Fußzeilenwerkzeuge — Reiter vorhanden, Kopf/Fuß über Dialog statt am Blatt  _(Web-Fassung: teil)_
+- ◐ Kopf- und Fußzeilenwerkzeuge — Reiter mit „Erste Seite anders“ (PDF und DOCX); „Gerade/ungerade“ fehlt  _(Web-Fassung: teil)_
 
 ## LANGUAGE BRIDGE (Architektur)
 
@@ -403,7 +403,7 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 - ✅ Schrift und Helligkeit — Optionen ▸ Wie im WPS Writer ▸ Ansicht (theme, ui/icongroesse, icons.FAKTOR)
 - ✅ Größe der Symbole — Optionen ▸ Wie im WPS Writer ▸ Ansicht (theme, ui/icongroesse, icons.FAKTOR)
 - ◐ Schrift der Bedienung — nur die Schriftgröße (ui/bedienschrift_groesse); Schriftart folgt dem System
-- ⬜ Benutzeroberfläche — Task F (Symbolleisten-Oberfläche)
+- ✅ Benutzeroberfläche — Optionen ▸ Menüband anpassen ▸ Benutzeroberfläche wählen
 
 ## OPTIONEN > Bearbeiten > Bearbeitungsoptionen
 
@@ -487,39 +487,39 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 ## OPTIONEN > Speicherort für Dateien > Speicherort für Dateien
 
 - ✅ Ordner zum Speichern — speichern/ordner
-- ⬜ Eigene Vorlagen — Task F (Vorlagen)
+- ✅ Eigene Vorlagen — vorlagen/ordner (Optionen ▸ Allgemein und Speichern)
 
 ## OPTIONEN > Änderungen verfolgen > Änderungen verfolgen
 
-- ⬜ Änderungen verfolgen — Task E
-- ⬜ Markup anzeigen — Task E
+- ✅ Änderungen verfolgen — Optionen ▸ Änderungen verfolgen; editor/zusatz_editor.py (test_zusatz_editor)
+- ✅ Markup anzeigen — Optionen ▸ Änderungen verfolgen; editor/zusatz_editor.py (test_zusatz_editor)
 
 ## OPTIONEN > Änderungen verfolgen > Markup
 
-- ⬜ Einfügungen — Task E
-- ⬜ Löschvorgänge — Task E
-- ⬜ Geänderte Zeilen — Task E
-- ⬜ Farbe — Task E
+- ◐ Einfügungen — unterstrichen/durchgestrichen in einer Farbe je Autor; nicht einstellbar
+- ◐ Löschvorgänge — unterstrichen/durchgestrichen in einer Farbe je Autor; nicht einstellbar
+- ⬜ Geänderte Zeilen — nicht übertragen
+- ◐ Farbe — unterstrichen/durchgestrichen in einer Farbe je Autor; nicht einstellbar
 
 ## OPTIONEN > Änderungen verfolgen > Sprechblasen
 
-- ⬜ Sprechblasen verwenden — Task E
-- ⬜ Empfohlene Breite verwenden — Task E
-- ⬜ Bevorzugte Breite (mm) — Task E
-- ⬜ Seitenrand — Task E
-- ⬜ Verbindungslinien zum Text anzeigen — Task E
+- ⬜ Sprechblasen verwenden — keine Sprechblasen; Kommentare stehen im Navigationsbereich
+- ⬜ Empfohlene Breite verwenden — keine Sprechblasen; Kommentare stehen im Navigationsbereich
+- ⬜ Bevorzugte Breite (mm) — keine Sprechblasen; Kommentare stehen im Navigationsbereich
+- ⬜ Seitenrand — keine Sprechblasen; Kommentare stehen im Navigationsbereich
+- ⬜ Verbindungslinien zum Text anzeigen — keine Sprechblasen; Kommentare stehen im Navigationsbereich
 
 ## OPTIONEN > Änderungen verfolgen > Drucken (mit Sprechblasen)
 
-- ⬜ Papierausrichtung — Task E
+- ⬜ Papierausrichtung — keine Sprechblasen
 
 ## OPTIONEN > In PDF exportieren > Exportoptionen
 
 - ✅ Hyperlinks — Qt schreibt Link-Annotationen (geprüft mit pypdf)
 - ⬜ Überschriften als Lesezeichen — QPdfWriter kann keine PDF-Gliederung (Lesezeichen) schreiben
-- ⬜ Kommentare mitnehmen — Task E (Kommentare/Fußnoten)
+- ⬜ Kommentare mitnehmen — nicht in QPdfWriter möglich; Noten stehen gesammelt am Textende
 - ✅ Dokumenteigenschaften mitnehmen — pdf/eigenschaften, pdf/oeffnen (export_pdf author)
-- ⬜ Verknüpfung von Fuß- und Endnoten — Task E (Kommentare/Fußnoten)
+- ⬜ Verknüpfung von Fuß- und Endnoten — nicht in QPdfWriter möglich; Noten stehen gesammelt am Textende
 - ⬜ Textmarken übernehmen — QPdfWriter kann keine PDF-Gliederung (Lesezeichen) schreiben
 - ⬜ Andere Formatvorlagen in Lesezeichen umwandeln — QPdfWriter kann keine PDF-Gliederung (Lesezeichen) schreiben
 - ⬜ Eigene Formatvorlagen in Lesezeichen umwandeln — QPdfWriter kann keine PDF-Gliederung (Lesezeichen) schreiben
@@ -528,7 +528,7 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 ## OPTIONEN > Benutzerinformationen > Benutzerdaten
 
 - ✅ Wer schreibt — benutzer/name, benutzer/verwenden (_meta_fuer_speichern)
-- ⬜ Initialen — nicht übertragen
+- ✅ Initialen — benutzer/initialen → Kommentare (main_window.autor_angaben)
 - ✅ Diese Benutzerinformationen verwenden — benutzer/name, benutzer/verwenden (_meta_fuer_speichern)
 
 ## OPTIONEN > Drucken > Druckoptionen
@@ -575,7 +575,7 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 
 ## OPTIONEN > Sicherheit > Datenschutz
 
-- ⬜ Ausgeblendete Markups beim Öffnen anzeigen — Task E
+- ◐ Ausgeblendete Markups beim Öffnen anzeigen — Markup ist beim Öffnen immer sichtbar (umschaltbar)
 - ✅ Beim Speichern persönliche Daten entfernen — sicherheit/personendaten_weg (_meta_fuer_speichern)
 
 ## OPTIONEN > Schreibhilfe und KI > Prüfung und KI
@@ -592,13 +592,13 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 
 ## OPTIONEN > Menüband anpassen
 
-- ⬜ Befehle auswählen — Task F (Register anpassen)
-- ⬜ Menüband anpassen — Task F (Register anpassen)
+- ✅ Befehle auswählen — Register anpassen (ein-/ausblenden, ordnen)
+- ✅ Menüband anpassen — Register anpassen (ein-/ausblenden, ordnen)
 
 ## OPTIONEN > Symbolleiste für den Schnellzugriff
 
-- ⬜ Befehle auswählen — Task F
-- ⬜ Derzeit angezeigte Optionen — Task F
+- ✅ Befehle auswählen — Schnellzugriff anpassen (Haken je Befehl)
+- ✅ Derzeit angezeigte Optionen — Schnellzugriff anpassen (Haken je Befehl)
 
 ## OPTIONEN > Erweitert > Erweitert
 

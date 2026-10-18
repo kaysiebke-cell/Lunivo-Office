@@ -189,3 +189,94 @@ class OberflaecheDialog(QDialog):
 
     def wahl(self) -> str:
         return "symbolleisten" if self.sym.isChecked() else "register"
+
+
+class StileVerwaltenDialog(QDialog):
+    """Start ▸ Stile ▸ Formatvorlagen verwalten: ändern, wie eine Vorlage aussieht — wirkt auf jeden Absatz, der sie trägt."""
+
+    def __init__(self, parent, speichern, anwenden):
+        super().__init__(parent)
+        from PySide6.QtWidgets import QCheckBox, QColorDialog, QDoubleSpinBox, QFontComboBox, QFormLayout
+        from ..editor import stile
+        self.stile = stile
+        self._speichern = speichern
+        self._anwenden = anwenden
+        self._farbe = ""
+        self.setWindowTitle("Formatvorlagen verwalten")
+        self.resize(640, 420)
+        h = QHBoxLayout(self)
+        self.liste = QListWidget(); self.liste.setFixedWidth(170)
+        for n in stile.NAMEN:
+            self.liste.addItem(n)
+        h.addWidget(self.liste)
+        rechts = QVBoxLayout(); h.addLayout(rechts, 1)
+        f = QFormLayout(); rechts.addLayout(f)
+        self.groesse = QDoubleSpinBox(); self.groesse.setRange(0, 200); self.groesse.setSpecialValueText("wie das Dokument"); self.groesse.setSuffix(" pt")
+        self.fett = QCheckBox("Fett"); self.kursiv = QCheckBox("Kursiv")
+        self.schrift = QFontComboBox(); self.schrift.setEditable(False)
+        self.eigene_schrift = QCheckBox("Eigene Schriftart:")
+        self.farbe = QPushButton("Automatisch"); self.farbe.clicked.connect(self._farbe_waehlen)
+        self.vor = QDoubleSpinBox(); self.vor.setRange(0, 100); self.vor.setSuffix(" pt")
+        self.nach = QDoubleSpinBox(); self.nach.setRange(0, 100); self.nach.setSuffix(" pt")
+        self.ausr = QComboBox(); self.ausr.addItems(["wie bisher", "Links", "Zentriert", "Rechts", "Blocksatz"])
+        f.addRow("Größe", self.groesse); f.addRow(self.fett); f.addRow(self.kursiv)
+        f.addRow(self.eigene_schrift, self.schrift); f.addRow("Schriftfarbe", self.farbe)
+        f.addRow("Abstand davor", self.vor); f.addRow("Abstand danach", self.nach); f.addRow("Ausrichtung", self.ausr)
+        self.vorschau = QLabel("AaBbCc Beispieltext"); self.vorschau.setMinimumHeight(60)
+        self.vorschau.setStyleSheet("background: white; color: black; border: 1px solid #adb5bd; padding: 6px;")
+        rechts.addWidget(self.vorschau)
+        z = QHBoxLayout()
+        for text, fn in (("Übernehmen", self._uebernehmen), ("Diese Vorlage zurücksetzen", self._zurueck), ("Alle zurücksetzen", self._alle_zurueck)):
+            b = QPushButton(text); b.clicked.connect(fn); z.addWidget(b)
+        rechts.addLayout(z)
+        bb = QDialogButtonBox(QDialogButtonBox.Close); bb.rejected.connect(self.accept); rechts.addWidget(bb)
+        self.liste.currentTextChanged.connect(self._lade)
+        self.liste.setCurrentRow(0)
+        for w in (self.groesse, self.vor, self.nach):
+            w.valueChanged.connect(self._zeige)
+        for w in (self.fett, self.kursiv, self.eigene_schrift):
+            w.toggled.connect(self._zeige)
+        self.schrift.currentFontChanged.connect(self._zeige)
+
+    def _lade(self, name):
+        d = self.stile.definition(name)
+        self.groesse.setValue(d["groesse"]); self.fett.setChecked(d["fett"]); self.kursiv.setChecked(d["kursiv"])
+        self.eigene_schrift.setChecked(bool(d["schrift"]))
+        if d["schrift"]:
+            self.schrift.setCurrentFont(__import__("PySide6.QtGui", fromlist=["QFont"]).QFont(d["schrift"]))
+        self._farbe = d["farbe"]
+        self.farbe.setText(self._farbe or "Automatisch")
+        self.vor.setValue(d["vor"]); self.nach.setValue(d["nach"])
+        self.ausr.setCurrentIndex({"": 0, "links": 1, "mitte": 2, "rechts": 3, "block": 4}[d["ausr"]])
+        self._zeige()
+
+    def _farbe_waehlen(self):
+        c = QColorDialog.getColor(Qt.black, self, "Schriftfarbe")
+        if c.isValid():
+            self._farbe = c.name(); self.farbe.setText(self._farbe); self._zeige()
+
+    def _zeige(self, *_):
+        from PySide6.QtGui import QFont
+        f = QFont(self.schrift.currentFont().family() if self.eigene_schrift.isChecked() else self.font().family())
+        f.setPointSizeF(self.groesse.value() or 11); f.setBold(self.fett.isChecked()); f.setItalic(self.kursiv.isChecked())
+        self.vorschau.setFont(f)
+        self.vorschau.setStyleSheet(f"background: white; color: {self._farbe or 'black'}; border: 1px solid #adb5bd; padding: 6px;")
+
+    def _uebernehmen(self):
+        n = self.liste.currentItem().text()
+        self.stile.aendern(n, groesse=self.groesse.value(), fett=self.fett.isChecked(), kursiv=self.kursiv.isChecked(),
+                           schrift=self.schrift.currentFont().family() if self.eigene_schrift.isChecked() else "",
+                           farbe=self._farbe, vor=self.vor.value(), nach=self.nach.value(),
+                           ausr=["", "links", "mitte", "rechts", "block"][self.ausr.currentIndex()])
+        self._speichern()
+        self._anwenden(n)
+
+    def _zurueck(self):
+        n = self.liste.currentItem().text()
+        self.stile.zuruecksetzen(n); self._speichern(); self._lade(n); self._anwenden(n)
+
+    def _alle_zurueck(self):
+        self.stile.zuruecksetzen(); self._speichern()
+        for n in self.stile.NAMEN:
+            self._anwenden(n)
+        self._lade(self.liste.currentItem().text())

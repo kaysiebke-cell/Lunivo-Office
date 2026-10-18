@@ -602,6 +602,18 @@ class Befehle:
         if c.isValid():
             self.ed.set_absatzrahmen(f"{c.name()}|1.5|einfach")
 
+    def stileVerwalten(self, k=None):
+        from ..editor import stile
+        from ..widgets.oberflaeche_dialoge import StileVerwaltenDialog
+
+        def speichern():
+            self.w.settings.set("stile/aenderungen", stile.als_json())
+
+        def anwenden(name):
+            for t in self.w._doc_tabs():
+                t.editor.stil_neu_anwenden(name)
+        StileVerwaltenDialog(self.w, speichern, anwenden).exec()
+
     # ==== Einfügen ===========================================================================================================
     def leereSeite(self, k=None, quer=False):
         if self.ed:

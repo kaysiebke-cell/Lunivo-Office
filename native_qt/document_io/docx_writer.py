@@ -235,7 +235,7 @@ class _Writer:
             para.style = self.d.styles["Caption"]
         elif lvl:
             para.style = self.d.styles[f"Heading {lvl}"]
-        elif style_name in ("Title", "Subtitle", "Quote"):
+        elif style_name in ("Title", "Subtitle", "Quote", "No Spacing"):
             para.style = self.d.styles[style_name]
         elif lst is not None:
             self._apply_list(para, lst)

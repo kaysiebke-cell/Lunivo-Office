@@ -60,24 +60,24 @@
   "wo": "Drucken öffnet den Systemdialog; Dokumentinformationen nur lesend"
  },
  "DATEI|Neu aus Vorlage": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "✅",
+  "wo": "editor/vorlagen.py + widgets/vorlagen_dialog.py: 10 mitgelieferte Gerüste mit Lücken, eigene Vorlagen aus dem Ordner (test_vorlagen)"
  },
  "DATEI|Vorlagenordner": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "✅",
+  "wo": "editor/vorlagen.py + widgets/vorlagen_dialog.py: 10 mitgelieferte Gerüste mit Lücken, eigene Vorlagen aus dem Ordner (test_vorlagen)"
  },
  "DATEI|Hilfe > Handbuch": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "◐",
+  "wo": "das Handbuch der Web-Fassung (als Markdown) im Hilfefenster; beschreibt zum Teil die Web-Oberfläche"
  },
  "DATEI|Hilfe > Tastenkürzel": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "✅",
+  "wo": "widgets/hilfe_dialoge.py (test_vorlagen: Hilfe-Dialoge und Funktionstasten)"
  },
  "DATEI|Hilfe > Erweiterungen": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "✅",
+  "wo": "widgets/hilfe_dialoge.py (test_vorlagen: Hilfe-Dialoge und Funktionstasten)"
  },
  "MENÜ UND SCHNELLZUGRIFF|☰ Menü links vor den Reitern": {
   "status": "✅",
@@ -112,16 +112,16 @@
   "wo": "Widerspruch: die neue Struktur („1. DATEI“) hat einen Datei-Reiter — beides ist vorhanden"
  },
  "MENÜ UND SCHNELLZUGRIFF|☰ Menü auch am Anfang der Symbolleiste": {
-  "status": "◐",
-  "wo": "widgets/symbolleisten.py gebaut, noch nicht als Oberfläche wählbar"
+  "status": "✅",
+  "wo": "Ansicht ▸ Oberfläche ▸ Benutzeroberfläche: Symbolleisten (widgets/symbolleisten.py, test_main_window)"
  },
  "MENÜ UND SCHNELLZUGRIFF|Als Bild exportieren (PNG)": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "✅",
+  "wo": "befehle.exportierenPng: eine PNG je Seite (test_werkzeuge)"
  },
  "MENÜ UND SCHNELLZUGRIFF|Dokumentverschlüsselung": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "✅",
+  "wo": "Datei ▸ Dokument schützen: DOCX-Verschlüsselung mit msoffcrypto-tool (test_formats, test_werkzeuge)"
  },
  "START > Zwischenablage|Verlauf > Rückgängig": {
   "status": "✅",
@@ -144,8 +144,8 @@
   "wo": "befehle.menue_unterstrichKlappe (Einfach, gestrichelt, gepunktet, Strich-Punkt, Wellenlinie); DOCX-Roundtrip getestet (test_docx_roundtrip)"
  },
  "START > Absatzlayout|Einzug genau": {
-  "status": "◐",
-  "wo": "Absatz-Dialog (widgets/dialogs.py) — einfacher als das Vorlagenbild (zwei Karteireiter, Vorschau)"
+  "status": "✅",
+  "wo": "Absatz-Dialog mit zwei Karteireitern und Vorschau; „Absatz nicht trennen“ u. ä. sind Qt-bedingt gesperrt"
  },
  "START > Einstellungen|Optionen": {
   "status": "✅",
@@ -156,8 +156,8 @@
   "wo": "Stilkatalog + Feld im Band"
  },
  "START > Stile & Bearbeiten|Formatvorlagen verwalten": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "✅",
+  "wo": "editor/stile.py + StileVerwaltenDialog; wirkt auf alle Absätze der Vorlage (test_editor)"
  },
  "EINFÜGEN|Kopfzeile": {
   "status": "✅",
@@ -193,11 +193,11 @@
  },
  "SEITENLAYOUT|Textumbruch": {
   "status": "⬜",
-  "wo": "nicht übertragen (Task D: Objekte)"
+  "wo": "Bilder stehen im Text; frei schwebende Objekte kennt Qt nicht"
  },
  "SEITENLAYOUT|Bild/Objekt anordnen": {
-  "status": "⬜",
-  "wo": "nicht übertragen (Task D: Objekte)"
+  "status": "◐",
+  "wo": "nur Ausrichten und Drehen/Spiegeln (Bildtools); kein Gruppieren, keine Ebenen"
  },
  "SEITENLAYOUT|Seitenrahmen": {
   "status": "✅",
@@ -212,40 +212,40 @@
   "wo": "Seitenleiste / KI-Reiter (test_schreibhilfe)"
  },
  "SENDUNGEN (Lunivo)|Umschlag": {
-  "status": "⬜",
-  "wo": "Reiter „Sendungen“ nicht in der neuen Struktur; Daten in register.json erhalten"
+  "status": "✅",
+  "wo": "editor/sendungen.py + widgets/sendungen_dialoge.py (test_sendungen); Reiter „Sendungen“ ist nach Register anpassen sichtbar, sonst über die Menüleiste"
  },
  "SENDUNGEN (Lunivo)|Etiketten": {
-  "status": "⬜",
-  "wo": "Reiter „Sendungen“ nicht in der neuen Struktur; Daten in register.json erhalten"
+  "status": "✅",
+  "wo": "editor/sendungen.py + widgets/sendungen_dialoge.py (test_sendungen); Reiter „Sendungen“ ist nach Register anpassen sichtbar, sonst über die Menüleiste"
  },
  "SENDUNGEN (Lunivo)|Seriendruck-Assistent": {
-  "status": "⬜",
-  "wo": "Reiter „Sendungen“ nicht in der neuen Struktur; Daten in register.json erhalten"
+  "status": "✅",
+  "wo": "editor/sendungen.py + widgets/sendungen_dialoge.py (test_sendungen); Reiter „Sendungen“ ist nach Register anpassen sichtbar, sonst über die Menüleiste"
  },
  "SENDUNGEN (Lunivo)|Seriendruckfeld": {
-  "status": "⬜",
-  "wo": "Reiter „Sendungen“ nicht in der neuen Struktur; Daten in register.json erhalten"
+  "status": "✅",
+  "wo": "editor/sendungen.py + widgets/sendungen_dialoge.py (test_sendungen); Reiter „Sendungen“ ist nach Register anpassen sichtbar, sonst über die Menüleiste"
  },
  "SENDUNGEN (Lunivo)|Adressblock": {
-  "status": "⬜",
-  "wo": "Reiter „Sendungen“ nicht in der neuen Struktur; Daten in register.json erhalten"
+  "status": "✅",
+  "wo": "editor/sendungen.py + widgets/sendungen_dialoge.py (test_sendungen); Reiter „Sendungen“ ist nach Register anpassen sichtbar, sonst über die Menüleiste"
  },
  "SENDUNGEN (Lunivo)|Regeln": {
-  "status": "⬜",
-  "wo": "Reiter „Sendungen“ nicht in der neuen Struktur; Daten in register.json erhalten"
+  "status": "✅",
+  "wo": "editor/sendungen.py + widgets/sendungen_dialoge.py (test_sendungen); Reiter „Sendungen“ ist nach Register anpassen sichtbar, sonst über die Menüleiste"
  },
  "SENDUNGEN (Lunivo)|Ergebnisse anzeigen": {
-  "status": "⬜",
-  "wo": "Reiter „Sendungen“ nicht in der neuen Struktur; Daten in register.json erhalten"
+  "status": "✅",
+  "wo": "editor/sendungen.py + widgets/sendungen_dialoge.py (test_sendungen); Reiter „Sendungen“ ist nach Register anpassen sichtbar, sonst über die Menüleiste"
  },
  "SENDUNGEN (Lunivo)|Formular > Kontrollkästchen": {
-  "status": "⬜",
-  "wo": "Reiter „Sendungen“ nicht in der neuen Struktur; Daten in register.json erhalten"
+  "status": "✅",
+  "wo": "editor/sendungen.py + widgets/sendungen_dialoge.py (test_sendungen); Reiter „Sendungen“ ist nach Register anpassen sichtbar, sonst über die Menüleiste"
  },
  "SENDUNGEN (Lunivo)|Formular > Schaltfläche": {
-  "status": "⬜",
-  "wo": "Reiter „Sendungen“ nicht in der neuen Struktur; Daten in register.json erhalten"
+  "status": "◐",
+  "wo": "als formatierter Text ohne Funktion (Qt kennt keine Formularsteuerelemente)"
  },
  "KONTEXTTABELLEN|Tabellenwerkzeuge": {
   "status": "◐",
@@ -253,7 +253,7 @@
  },
  "KONTEXTTABELLEN|Kopf- und Fußzeilenwerkzeuge": {
   "status": "◐",
-  "wo": "Reiter vorhanden, Kopf/Fuß über Dialog statt am Blatt"
+  "wo": "Reiter mit „Erste Seite anders“ (PDF und DOCX); „Gerade/ungerade“ fehlt"
  },
  "KONTEXTTABELLEN|Zeichentools": {
   "status": "⬜",
@@ -600,8 +600,8 @@
   "wo": "nur die Schriftgröße (ui/bedienschrift_groesse); Schriftart folgt dem System"
  },
  "OPTIONEN > Ansicht > Darstellung|Benutzeroberfläche": {
-  "status": "⬜",
-  "wo": "Task F (Symbolleisten-Oberfläche)"
+  "status": "✅",
+  "wo": "Optionen ▸ Menüband anpassen ▸ Benutzeroberfläche wählen"
  },
  "OPTIONEN > Bearbeiten > Bearbeitungsoptionen|Tippen ersetzt die Auswahl": {
   "status": "✅",
@@ -772,56 +772,56 @@
   "wo": "speichern/ordner"
  },
  "OPTIONEN > Speicherort für Dateien > Speicherort für Dateien|Eigene Vorlagen": {
-  "status": "⬜",
-  "wo": "Task F (Vorlagen)"
+  "status": "✅",
+  "wo": "vorlagen/ordner (Optionen ▸ Allgemein und Speichern)"
  },
  "OPTIONEN > Änderungen verfolgen > Änderungen verfolgen|Änderungen verfolgen": {
-  "status": "⬜",
-  "wo": "Task E"
+  "status": "✅",
+  "wo": "Optionen ▸ Änderungen verfolgen; editor/zusatz_editor.py (test_zusatz_editor)"
  },
  "OPTIONEN > Änderungen verfolgen > Änderungen verfolgen|Markup anzeigen": {
-  "status": "⬜",
-  "wo": "Task E"
+  "status": "✅",
+  "wo": "Optionen ▸ Änderungen verfolgen; editor/zusatz_editor.py (test_zusatz_editor)"
  },
  "OPTIONEN > Änderungen verfolgen > Markup|Einfügungen": {
-  "status": "⬜",
-  "wo": "Task E"
+  "status": "◐",
+  "wo": "unterstrichen/durchgestrichen in einer Farbe je Autor; nicht einstellbar"
  },
  "OPTIONEN > Änderungen verfolgen > Markup|Löschvorgänge": {
-  "status": "⬜",
-  "wo": "Task E"
+  "status": "◐",
+  "wo": "unterstrichen/durchgestrichen in einer Farbe je Autor; nicht einstellbar"
  },
  "OPTIONEN > Änderungen verfolgen > Markup|Geänderte Zeilen": {
   "status": "⬜",
-  "wo": "Task E"
+  "wo": "nicht übertragen"
  },
  "OPTIONEN > Änderungen verfolgen > Markup|Farbe": {
-  "status": "⬜",
-  "wo": "Task E"
+  "status": "◐",
+  "wo": "unterstrichen/durchgestrichen in einer Farbe je Autor; nicht einstellbar"
  },
  "OPTIONEN > Änderungen verfolgen > Sprechblasen|Sprechblasen verwenden": {
   "status": "⬜",
-  "wo": "Task E"
+  "wo": "keine Sprechblasen; Kommentare stehen im Navigationsbereich"
  },
  "OPTIONEN > Änderungen verfolgen > Sprechblasen|Empfohlene Breite verwenden": {
   "status": "⬜",
-  "wo": "Task E"
+  "wo": "keine Sprechblasen; Kommentare stehen im Navigationsbereich"
  },
  "OPTIONEN > Änderungen verfolgen > Sprechblasen|Bevorzugte Breite (mm)": {
   "status": "⬜",
-  "wo": "Task E"
+  "wo": "keine Sprechblasen; Kommentare stehen im Navigationsbereich"
  },
  "OPTIONEN > Änderungen verfolgen > Sprechblasen|Seitenrand": {
   "status": "⬜",
-  "wo": "Task E"
+  "wo": "keine Sprechblasen; Kommentare stehen im Navigationsbereich"
  },
  "OPTIONEN > Änderungen verfolgen > Sprechblasen|Verbindungslinien zum Text anzeigen": {
   "status": "⬜",
-  "wo": "Task E"
+  "wo": "keine Sprechblasen; Kommentare stehen im Navigationsbereich"
  },
  "OPTIONEN > Änderungen verfolgen > Drucken (mit Sprechblasen)|Papierausrichtung": {
   "status": "⬜",
-  "wo": "Task E"
+  "wo": "keine Sprechblasen"
  },
  "OPTIONEN > In PDF exportieren > Exportoptionen|Hyperlinks": {
   "status": "✅",
@@ -853,11 +853,11 @@
  },
  "OPTIONEN > In PDF exportieren > Exportoptionen|Kommentare mitnehmen": {
   "status": "⬜",
-  "wo": "Task E (Kommentare/Fußnoten)"
+  "wo": "nicht in QPdfWriter möglich; Noten stehen gesammelt am Textende"
  },
  "OPTIONEN > In PDF exportieren > Exportoptionen|Verknüpfung von Fuß- und Endnoten": {
   "status": "⬜",
-  "wo": "Task E (Kommentare/Fußnoten)"
+  "wo": "nicht in QPdfWriter möglich; Noten stehen gesammelt am Textende"
  },
  "OPTIONEN > Benutzerinformationen > Benutzerdaten|Wer schreibt": {
   "status": "✅",
@@ -868,8 +868,8 @@
   "wo": "benutzer/name, benutzer/verwenden (_meta_fuer_speichern)"
  },
  "OPTIONEN > Benutzerinformationen > Benutzerdaten|Initialen": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "✅",
+  "wo": "benutzer/initialen → Kommentare (main_window.autor_angaben)"
  },
  "OPTIONEN > Drucken > Druckoptionen|Hohe Qualität": {
   "status": "◐",
@@ -972,8 +972,8 @@
   "wo": "sicherheit/personendaten_weg (_meta_fuer_speichern)"
  },
  "OPTIONEN > Sicherheit > Datenschutz|Ausgeblendete Markups beim Öffnen anzeigen": {
-  "status": "⬜",
-  "wo": "Task E"
+  "status": "◐",
+  "wo": "Markup ist beim Öffnen immer sichtbar (umschaltbar)"
  },
  "OPTIONEN > Schreibhilfe und KI > Prüfung und KI|API-Schlüssel": {
   "status": "✅",
@@ -996,20 +996,20 @@
   "wo": "Optionen ▸ Gedächtnis: Liste, Eintrag entfernen, alles vergessen"
  },
  "OPTIONEN > Menüband anpassen|Befehle auswählen": {
-  "status": "⬜",
-  "wo": "Task F (Register anpassen)"
+  "status": "✅",
+  "wo": "Register anpassen (ein-/ausblenden, ordnen)"
  },
  "OPTIONEN > Menüband anpassen|Menüband anpassen": {
-  "status": "⬜",
-  "wo": "Task F (Register anpassen)"
+  "status": "✅",
+  "wo": "Register anpassen (ein-/ausblenden, ordnen)"
  },
  "OPTIONEN > Symbolleiste für den Schnellzugriff|Befehle auswählen": {
-  "status": "⬜",
-  "wo": "Task F"
+  "status": "✅",
+  "wo": "Schnellzugriff anpassen (Haken je Befehl)"
  },
  "OPTIONEN > Symbolleiste für den Schnellzugriff|Derzeit angezeigte Optionen": {
-  "status": "⬜",
-  "wo": "Task F"
+  "status": "✅",
+  "wo": "Schnellzugriff anpassen (Haken je Befehl)"
  },
  "OPTIONEN > Erweitert > Erweitert|Was zusätzlich geholt wurde": {
   "status": "✅",
@@ -1070,5 +1070,53 @@
  "REFERENZEN|Endnote": {
   "status": "◐",
   "wo": "echte DOCX-Fuß-/Endnoten (gelesen und geschrieben, mit LibreOffice geprüft); im PDF/Druck gesammelt am Textende statt am Seitenfuß"
+ },
+ "START > Absatzlayout|Absatzrahmen": {
+  "status": "✅",
+  "wo": "B_RAHMEN: Editor, PDF/Druck und DOCX pBdr (test_werkzeuge, mit LibreOffice geprüft)"
+ },
+ "START > Stile & Bearbeiten|Objekte auswählen": {
+  "status": "✅",
+  "wo": "befehle.objekteWaehlen (test_main_window)"
+ },
+ "SEITENLAYOUT|Spalten": {
+  "status": "⬜",
+  "wo": "Das Textmodul von Qt kennt keine Spalten"
+ },
+ "SEITENLAYOUT|Umbruch > Spaltenumbruch": {
+  "status": "⬜",
+  "wo": "Das Textmodul von Qt kennt keine Spalten"
+ },
+ "SEITENLAYOUT|Umbruch > Abschnittsumbruch": {
+  "status": "◐",
+  "wo": "nur „Nächste Seite“ (Seitenumbruch); Abschnitte kennt Qt nicht"
+ },
+ "SEITENLAYOUT|Silbentrennung": {
+  "status": "⬜",
+  "wo": "Qt hat keine automatische Silbentrennung"
+ },
+ "SENDUNGEN (Lunivo)|Formular > Textfeld": {
+  "status": "◐",
+  "wo": "als formatierter Text ohne Funktion (Qt kennt keine Formularsteuerelemente)"
+ },
+ "ANSICHT|Oberfläche > Register anpassen": {
+  "status": "✅",
+  "wo": "widgets/oberflaeche_dialoge.py, Ansicht ▸ Oberfläche (test_main_window)"
+ },
+ "ANSICHT|Oberfläche > Symbol austauschen": {
+  "status": "✅",
+  "wo": "widgets/oberflaeche_dialoge.py, Ansicht ▸ Oberfläche (test_main_window)"
+ },
+ "ANSICHT|Oberfläche > Benutzeroberfläche": {
+  "status": "✅",
+  "wo": "widgets/oberflaeche_dialoge.py, Ansicht ▸ Oberfläche (test_main_window)"
+ },
+ "ANSICHT|Oberfläche > Symbolleisten": {
+  "status": "✅",
+  "wo": "widgets/oberflaeche_dialoge.py, Ansicht ▸ Oberfläche (test_main_window)"
+ },
+ "ANSICHT|Oberfläche > Vorlagen zurücksetzen": {
+  "status": "✅",
+  "wo": "widgets/oberflaeche_dialoge.py, Ansicht ▸ Oberfläche (test_main_window)"
  }
 }

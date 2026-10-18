@@ -27,7 +27,13 @@ TEXTSYMBOLE = {"F": QFont.Bold, "K": None, "U": None}
 
 def lade_register() -> dict:
     with open(os.path.join(_HIER, "..", "resources", "register.json"), encoding="utf-8") as fh:
-        return json.load(fh)
+        d = json.load(fh)
+    # Start ▸ Stile: Startknopf für „Formatvorlagen verwalten“ (alt: Dialog unter „Neue Formatvorlage“)
+    for t in d["register"]:
+        for g in t.get("gruppen", []):
+            if t["name"] == "Start" and g["name"] == "Stile":
+                g.setdefault("pfeil", "stileVerwalten")
+    return d
 
 
 def _zweizeilig(text: str) -> str:

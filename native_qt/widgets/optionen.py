@@ -290,6 +290,9 @@ class OptionenDialog(QDialog):
         f = p.gruppe("PDF")
         p.haken(f, "pdf/oeffnen", "PDF nach dem Export öffnen", False)
         p.haken(f, "pdf/eigenschaften", "Dokumenteigenschaften (Autor) in das PDF übernehmen", True)
+        f3 = p.gruppe("Vorlagen")
+        ve = QLineEdit(p.s.get("vorlagen/ordner", "")); ve.setPlaceholderText("leer = ~/Vorlagen")
+        ve.textChanged.connect(lambda t: p.s.set("vorlagen/ordner", t)); f3.addRow("Vorlagenordner", ve)
         p.hinweis("DOCX ist das Austauschformat mit der höchsten Treue. ODT, DOC und RTF gehen über LibreOffice (Datei ▸ Exportieren).")
         p.abschluss()
         return p
@@ -433,9 +436,20 @@ class OptionenDialog(QDialog):
         return p
 
     def _verfolgen(self, titel):
-        p = _Seite(self.w, titel, ["Änderungen verfolgen", "Markup", "Sprechblasen", "Drucken mit Sprechblasen"])
-        p.hinweis("Das Verfolgen von Änderungen und Kommentare sind in der nativen Fassung noch nicht umgesetzt. "
-                  "Beim Öffnen von DOCX-Dateien mit nachverfolgten Änderungen oder Kommentaren warnt das Programm.")
+        p = _Seite(self.w, titel, ["Sprechblasen (Breite, Seitenrand, Verbindungslinien, Drucken mit Sprechblasen)",
+                                   "Farbe und Darstellung je Änderungsart einstellen"])
+        f = p.gruppe("Änderungen verfolgen")
+        b = QCheckBox("Änderungen im aktuellen Dokument verfolgen")
+        e = self.w.current_editor()
+        b.setChecked(bool(e and e.verfolgen)); b.setEnabled(e is not None)
+        b.toggled.connect(lambda on: self.w.current_editor() and self.w.current_editor().set_verfolgen(on))
+        f.addRow(b)
+        m = QCheckBox("Markup anzeigen (Kommentare, Einfügungen, Löschungen)")
+        m.setChecked(bool(e.markup) if e else True); m.setEnabled(e is not None)
+        m.toggled.connect(lambda on: self.w.current_editor() and self.w.current_editor().set_markup(on))
+        f.addRow(m)
+        p.hinweis("Einfügungen stehen unterstrichen, Löschungen durchgestrichen, in einer Farbe je Autor. Der Autor kommt aus "
+                  "Optionen ▸ Benutzerinformationen. Änderungen und Kommentare werden in DOCX als echte Überarbeitungen gespeichert.")
         p.abschluss()
         return p
 
