@@ -5,7 +5,7 @@
 sudo apt install python3 python3-venv libxcb-cursor0 libegl1 libxkbcommon-x11-0 libxcb-icccm4 libxcb-keysyms1 libxcb-shape0
 ./starten-qt.sh
 ```
-Das Skript legt `.venv` im Projektordner an und installiert `PySide6` und `python-docx` aus `requirements.txt`.
+Das Skript legt `.venv` im Projektordner an und installiert `PySide6`, `python-docx` und `msoffcrypto-tool` (Kennwortschutz) aus `requirements.txt`.
 Das System-Python bleibt unberührt. Fehlt `python3-venv`, nennt das Skript den passenden `apt`-Befehl.
 
 ## Optional
