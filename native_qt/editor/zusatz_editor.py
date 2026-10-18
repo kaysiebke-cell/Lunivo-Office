@@ -24,6 +24,9 @@ class ZusatzMixin:
     def _zusatz_init(self) -> None:
         self.kommentare: dict = {}
         self.noten: dict = {"f": {}, "e": {}}
+        self.quellen: list = []
+        self.zitierweise = "APA"
+        self._meta: dict = {}
         self.verfolgen = False
         self.markup = True
         self.autor = lambda: ("Unbekannt", "")
@@ -40,6 +43,9 @@ class ZusatzMixin:
         self.kommentare = meta.setdefault("kommentare", {})
         self.noten = meta.setdefault("noten", {"f": {}, "e": {}})
         self.noten.setdefault("f", {}); self.noten.setdefault("e", {})
+        self.quellen = meta.setdefault("quellen", [])
+        self.zitierweise = meta.setdefault("zitierweise", "APA")
+        self._meta = meta
         self._hat_zusatz = bool(self.kommentare or self.noten["f"] or self.noten["e"]) or bool(self.aenderungen())
         self._overlays_neu()
 

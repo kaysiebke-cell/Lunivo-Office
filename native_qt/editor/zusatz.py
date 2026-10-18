@@ -33,4 +33,15 @@ def neue_id(vorhanden) -> int:
 
 
 def leere_meta() -> dict:
-    return {"kommentare": {}, "noten": {"f": {}, "e": {}}}
+    return {"kommentare": {}, "noten": {"f": {}, "e": {}}, "quellen": [], "zitierweise": "APA"}
+
+P_FELD = QTextFormat.UserProperty + 26           # Feldanweisung, z. B. "SEQ Abbildung \* ARABIC"; der Text ist das Feldergebnis
+P_INDEX = QTextFormat.UserProperty + 27          # Stichwort für das Stichwortverzeichnis
+P_ZITAT = QTextFormat.UserProperty + 28          # Tag der zitierten Quelle
+
+# Absatz-Eigenschaften (QTextBlockFormat); STYLE_PROP = UserProperty + 1 gehört den Formatvorlagen
+B_TOC = QTextFormat.UserProperty + 2             # "kopf" | "zeile1".."zeile3" — Teil eines Verzeichnisses
+B_ART = QTextFormat.UserProperty + 3             # "toc" | "abb" | "tab" | "index" | "lit"
+B_CAP = QTextFormat.UserProperty + 4             # Beschriftung: Bezeichnung ("Abbildung", "Tabelle", …)
+
+BESCHRIFTUNGEN = ("Abbildung", "Tabelle", "Gleichung")

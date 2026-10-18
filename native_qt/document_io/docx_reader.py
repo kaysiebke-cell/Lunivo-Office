@@ -34,7 +34,9 @@ from .report import DocumentIOError, IOReport
 
 LH_PROPORTIONAL, LH_FIXED = 1, 2                # QTextBlockFormat.LineHeightTypes
 STYLE_PROP = QTextFormat.UserProperty + 1       # Name der Formatvorlage am Block
-from ..editor.zusatz import P_AENDERUNG, P_AUTOR, P_DATUM, P_KOMMENTAR, P_NOTE, leere_meta  # noqa: E402
+from ..editor.zusatz import (  # noqa: E402
+    B_ART, B_CAP, B_TOC, BESCHRIFTUNGEN, P_AENDERUNG, P_AUTOR, P_DATUM, P_FELD, P_INDEX, P_KOMMENTAR, P_NOTE, P_ZITAT, leere_meta,
+)
 EMU_PER_PX = 9525
 PT_PER_PX = 0.75
 
@@ -56,7 +58,7 @@ _QT_ALIGN = {
 # Was beim Lesen nicht übernommen wird → Hinweis
 _UNSUPPORTED = [
     ("//w:txbxContent", "Textfelder werden nicht dargestellt und gehen beim Speichern verloren."),
-    ("//w:sdt", "Inhaltssteuerelemente (z. B. Inhaltsverzeichnis) werden nicht dargestellt."),
+    ("//w:sdt[.//w:sdtPr/w:text or .//w:sdtPr/w:dropDownList or .//w:sdtPr/w:date or .//w:sdtPr/w:comboBox]", "Formularfelder (Inhaltssteuerelemente) werden als einfacher Text übernommen."),
     ("//m:oMath", "Formeln werden nicht dargestellt und gehen beim Speichern verloren."),
     ("//w:pict | //wps:wsp | //wpg:wgp", "Formen und gezeichnete Objekte werden nicht dargestellt."),
     ("//w:drawing[.//wp:anchor]", "Frei positionierte Bilder werden als Bild im Text eingefügt."),
@@ -117,6 +119,8 @@ class _Reader:
         self._lz_offen: dict[str, str] = {}
         self._aend = None                 # (art, autor, datum) innerhalb w:ins / w:del
         self._note_n = {"f": 0, "e": 0}
+        self._feld = None                 # {"instr", "phase": "i"|"r"} innerhalb eines Feldes
+        self._letzter = None              # (von, bis) des zuletzt eingefügten Textstücks (für XE-Felder)
         self._laden_zusatz()
         self.def_font, self.def_size = _doc_defaults(self.d)
         normal = self.d.styles["Normal"] if "Normal" in [s.name for s in self.d.styles] else None
@@ -132,6 +136,7 @@ class _Reader:
                     "text": "\n".join(p.text for p in c.paragraphs)}
         except Exception:
             self.report.warn("Kommentare konnten nicht gelesen werden.")
+        self._quellen_lesen()
         for art, rel in (("f", "footnotes"), ("e", "endnotes")):
             for r in self.d.part.rels.values():
                 if r.reltype.endswith("/" + rel) and not r.is_external:
@@ -145,6 +150,35 @@ class _Reader:
                         for p in n.iterchildren(qn("w:p")):
                             zeilen.append("".join(t.text or "" for t in p.iter(qn("w:t"))).strip())
                         self.zus["noten"][art][int(n.get(qn("w:id")))] = "\n".join(zeilen)
+
+    def _quellen_lesen(self) -> None:
+        """Literaturquellen aus dem Word-Bibliografieteil (customXml, Namensraum …/bibliography)."""
+        from lxml import etree
+        B = "{http://schemas.openxmlformats.org/officeDocument/2006/bibliography}"
+        for r in self.d.part.rels.values():
+            if r.is_external or not r.reltype.endswith("/customXml"):
+                continue
+            try:
+                w = etree.fromstring(r.target_part.blob)
+            except Exception:
+                continue
+            if w.tag != B + "Sources":
+                continue
+            self.zus["zitierweise"] = (w.get("StyleName") or "APA")
+            for q in w.iterchildren(B + "Source"):
+                def t(n):
+                    e = q.find(B + n)
+                    return (e.text or "") if e is not None else ""
+                personen = []
+                for pe in q.iter(B + "Person"):
+                    last = (pe.findtext(B + "Last") or "").strip(); first = (pe.findtext(B + "First") or "").strip()
+                    personen.append(f"{last}, {first}" if first else last)
+                corp = q.find(f"{B}Author/{B}Author/{B}Corporate")
+                if corp is not None and corp.text:
+                    personen.append(corp.text)
+                typ = {"Book": "Buch", "JournalArticle": "Aufsatz", "InternetSite": "Webseite", "Report": "Bericht"}.get(t("SourceType"), "Sonstiges")
+                self.zus["quellen"].append({"tag": t("Tag"), "typ": typ, "autor": "; ".join(personen), "titel": t("Title"),
+                                            "jahr": t("Year"), "verlag": t("Publisher"), "ort": t("City"), "url": t("URL")})
 
     # ---- Auflösung der Vererbung -------------------------------------
     def _style_attr(self, style, getter):
@@ -380,6 +414,7 @@ class _Reader:
 
     def add_paragraph(self, para: Paragraph, cursor: QTextCursor, reuse: bool, in_table=False):
         bfmt = self._block_format(para)
+        self._block_zusatz(bfmt, para)
         base_cfmt = QTextCharFormat()
         base_cfmt.setFontFamilies([self._font_name(_NoRun(), para)])
         base_cfmt.setFontPointSize(self._font_size_pt(_NoRun(), para))
@@ -441,11 +476,35 @@ class _Reader:
                 inhalt = el.find(qn("w:sdtContent"))
                 if inhalt is not None:
                     had |= self._laufe(inhalt, para, cursor, href=href)
+            elif tag == qn("w:fldSimple"):
+                self._feld = {"instr": el.get(qn("w:instr")) or "", "phase": "r"}
+                had |= self._laufe(el, para, cursor, href=href)
+                self._feld_ende()
             elif tag == qn("w:smartTag"):
                 had |= self._laufe(el, para, cursor, href=href)
         return had
 
+    FELDER_BEHALTEN = ("SEQ", "CITATION")
+
+    def _feld_ende(self) -> None:
+        f, self._feld = self._feld, None
+        if not f:
+            return
+        teile = f["instr"].split()
+        if teile and teile[0].upper() == "XE" and self._letzter:
+            term = f["instr"].split('"')[1] if '"' in f["instr"] else " ".join(teile[1:])
+            c = QTextCursor(self.doc)
+            c.setPosition(self._letzter[0]); c.setPosition(self._letzter[1], QTextCursor.KeepAnchor)
+            nf = QTextCharFormat(); nf.setProperty(P_INDEX, term)
+            c.mergeCharFormat(nf)
+
     def _zusatz_formate(self, cfmt: QTextCharFormat) -> None:
+        if self._feld and self._feld["phase"] == "r":
+            teile = self._feld["instr"].split()
+            if teile and teile[0].upper() in self.FELDER_BEHALTEN:
+                cfmt.setProperty(P_FELD, self._feld["instr"].strip())
+                if teile[0].upper() == "CITATION" and len(teile) > 1:
+                    cfmt.setProperty(P_ZITAT, teile[1])
         if self._komm_offen:
             cfmt.setProperty(P_KOMMENTAR, self._komm_offen[-1])
         if self._aend:
@@ -455,6 +514,33 @@ class _Reader:
         if self._lz_offen and not cfmt.isAnchor():
             cfmt.setAnchor(True)
             cfmt.setAnchorNames(list(self._lz_offen.values()))
+
+    _TOC_STILE = {"TOC Heading": "kopf", "TOC 1": "zeile1", "TOC 2": "zeile2", "TOC 3": "zeile3", "Table of Figures": "zeile1",
+                  "Index 1": "zeile1", "Bibliography": "zeile1"}
+
+    def _block_zusatz(self, bfmt: QTextBlockFormat, para: Paragraph) -> None:
+        """Verzeichnis- und Beschriftungsabsätze an ihrer Formatvorlage wiedererkennen."""
+        try:
+            name = para.style.name
+        except Exception:
+            return
+        if name in self._TOC_STILE:
+            art = {"TOC 1": "toc", "TOC 2": "toc", "TOC 3": "toc", "Index 1": "index", "Bibliography": "lit"}.get(name)
+            if name == "Table of Figures":
+                art = "tab" if para.text.strip().lower().startswith(("tabelle", "table")) else "abb"
+            elif name == "TOC Heading":
+                nxt = para._p.getnext()
+                art = "toc"
+                if nxt is not None and nxt.tag == qn("w:p"):
+                    nn = Paragraph(nxt, para._parent).style.name
+                    art = {"Table of Figures": "abb", "Index 1": "index", "Bibliography": "lit"}.get(nn, "toc")
+                    if nn == "Table of Figures" and Paragraph(nxt, para._parent).text.strip().lower().startswith(("tabelle", "table")):
+                        art = "tab"
+            bfmt.setProperty(B_TOC, self._TOC_STILE[name])
+            bfmt.setProperty(B_ART, art or "toc")
+        elif name == "Caption":
+            erstes = para.text.strip().split(" ")[0] if para.text.strip() else ""
+            bfmt.setProperty(B_CAP, erstes if erstes in BESCHRIFTUNGEN else (erstes or "Abbildung"))
 
     def _flush_break(self, cursor: QTextCursor):
         if self.deferred_break:
@@ -476,10 +562,29 @@ class _Reader:
             cfmt.setFontUnderline(True)
         for child in run._r:
             tag = child.tag
+            if tag == qn("w:fldChar"):
+                typ = child.get(qn("w:fldCharType"))
+                if typ == "begin":
+                    self._feld = {"instr": "", "phase": "i"}
+                elif typ == "separate" and self._feld:
+                    self._feld["phase"] = "r"
+                    cfmt = self._char_format(run, para)
+                    self._zusatz_formate(cfmt)
+                elif typ == "end":
+                    self._feld_ende()
+                continue
+            if tag == qn("w:instrText"):
+                if self._feld and self._feld["phase"] == "i":
+                    self._feld["instr"] += child.text or ""
+                continue
+            if self._feld and self._feld["phase"] == "i":
+                continue
             if tag == qn("w:t") or tag == qn("w:delText"):
                 if child.text:
                     self._flush_break(cursor)
+                    von = cursor.position()
                     cursor.insertText(child.text, cfmt)
+                    self._letzter = (von, cursor.position())
                     added = True
             elif tag == qn("w:tab"):
                 self._flush_break(cursor)
@@ -666,7 +771,15 @@ class _Reader:
                     self.report.warn(msg)
             except Exception:
                 pass
-        for child in body.iterchildren():
+        def kinder(eltern):
+            for c in eltern.iterchildren():
+                if c.tag == qn("w:sdt"):
+                    inhalt = c.find(qn("w:sdtContent"))
+                    if inhalt is not None:
+                        yield from kinder(inhalt)
+                else:
+                    yield c
+        for child in kinder(body):
             if child.tag == qn("w:p"):
                 self.fresh = self.add_paragraph(Paragraph(child, self.d._body), self.cur, reuse=self.fresh)
             elif child.tag == qn("w:tbl"):

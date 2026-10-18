@@ -671,6 +671,10 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         super().mouseReleaseEvent(e)
         if (e.modifiers() & Qt.ControlModifier) and self.opt("ui/strg_klick_link", True):
             href = self.anchorAt(e.pos())
+            if href and href.startswith("#"):
+                from .verweise import intern_springen
+                intern_springen(self, href)
+                return
             if href:
                 from PySide6.QtCore import QUrl as _U
                 from PySide6.QtGui import QDesktopServices

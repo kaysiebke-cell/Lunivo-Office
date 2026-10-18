@@ -45,7 +45,9 @@ def _has(fmt, prop) -> bool:
     return fmt.hasProperty(prop)
 
 
-from ..editor.zusatz import P_AENDERUNG, P_AUTOR, P_DATUM, P_KOMMENTAR, P_NOTE  # noqa: E402
+from ..editor.zusatz import (  # noqa: E402
+    B_ART, B_CAP, B_TOC, P_AENDERUNG, P_AUTOR, P_DATUM, P_FELD, P_INDEX, P_KOMMENTAR, P_NOTE,
+)
 
 
 class _Writer:
@@ -205,7 +207,16 @@ class _Writer:
         style_name = bf.property(STYLE_PROP) if _has(bf, STYLE_PROP) else None
         lvl = bf.headingLevel()
         lst = blk.textList()
-        if lvl:
+        if bf.hasProperty(B_TOC):
+            kind = bf.property(B_TOC)
+            art = bf.property(B_ART) if bf.hasProperty(B_ART) else "toc"
+            name = ("TOC Heading" if kind == "kopf" else
+                    {"toc": f"TOC {kind[-1]}", "abb": "Table of Figures", "tab": "Table of Figures",
+                     "index": "Index 1", "lit": "Bibliography"}.get(art, "TOC 1"))
+            para.style = self._stil(name)
+        elif bf.hasProperty(B_CAP):
+            para.style = self.d.styles["Caption"]
+        elif lvl:
             para.style = self.d.styles[f"Heading {lvl}"]
         elif style_name in ("Title", "Subtitle", "Quote"):
             para.style = self.d.styles[style_name]
@@ -258,12 +269,50 @@ class _Writer:
         # Läufe
         it = blk.begin()
         in_head = bool(lvl) or style_name in ("Title", "Subtitle")
+        frags = []
         while not it.atEnd():
-            frag = it.fragment()
-            if frag.isValid():
-                self.write_fragment(frag, para, in_head)
+            if it.fragment().isValid():
+                frags.append(it.fragment())
             it += 1
+        i = 0
+        while i < len(frags):
+            cf = frags[i].charFormat()
+            instr = cf.stringProperty(P_FELD) if cf.hasProperty(P_FELD) else ""
+            if instr:
+                j = i
+                while j < len(frags) and frags[j].charFormat().hasProperty(P_FELD) and frags[j].charFormat().stringProperty(P_FELD) == instr:
+                    j += 1
+                self._textmarken(para, [])
+                self._fldchar(para, "begin"); self._instr(para, instr); self._fldchar(para, "separate")
+                for k in range(i, j):
+                    self.write_fragment(frags[k], para, in_head)
+                self._fldchar(para, "end")
+                i = j
+            else:
+                self.write_fragment(frags[i], para, in_head)
+                i += 1
         self._textmarken(para, [])
+
+    def _stil(self, name: str):
+        from docx.enum.style import WD_STYLE_TYPE
+        if name not in [s.name for s in self.d.styles]:
+            st = self.d.styles.add_style(name, WD_STYLE_TYPE.PARAGRAPH)
+            st.base_style = self.d.styles["Normal"]
+        return self.d.styles[name]
+
+    @staticmethod
+    def _fldchar(para, typ: str):
+        r = OxmlElement("w:r")
+        fc = OxmlElement("w:fldChar"); fc.set(qn("w:fldCharType"), typ)
+        r.append(fc)
+        para._p.append(r)
+
+    @staticmethod
+    def _instr(para, text: str):
+        r = OxmlElement("w:r")
+        it = OxmlElement("w:instrText"); it.set("{http://www.w3.org/XML/1998/namespace}space", "preserve"); it.text = f" {text} "
+        r.append(it)
+        para._p.append(r)
 
     def _apply_list(self, para, lst):
         fmt = lst.format()
@@ -341,6 +390,10 @@ class _Writer:
                 continue
             self._format_run(run, cf, in_head, bool(href))
             self._zusatz_anwenden(run, cf)
+        if cf.hasProperty(P_INDEX) and cf.stringProperty(P_INDEX):
+            self._fldchar(para, "begin")
+            self._instr(para, 'XE "' + cf.stringProperty(P_INDEX).replace('"', "'") + '"')
+            self._fldchar(para, "end")
 
     def _textmarken(self, para, namen: list) -> None:
         """Offene Textmarken schließen, neue öffnen — je Name genau ein bookmarkStart/-End-Paar."""
@@ -529,6 +582,7 @@ class _Writer:
         self._trim_trailing_empty()
         self._noten_schreiben()
         self._kommentare_schreiben()
+        self._quellen_schreiben()
         cp = self.d.core_properties
         cp.title = self.meta.get("title", "") or ""
         cp.author = self.meta.get("author", "") or "Lunivo Writer"
@@ -548,6 +602,51 @@ class _Writer:
                     c._comment_elm.set(qn("w:date"), k["datum"])
             except Exception as ex:
                 self.report.warn(f"Ein Kommentar konnte nicht gespeichert werden: {ex}")
+
+    def _quellen_schreiben(self) -> None:
+        quellen = self.meta.get("quellen") or []
+        if not quellen:
+            return
+        import uuid
+        from docx.opc.packuri import PackURI
+        from docx.opc.part import Part
+        from lxml import etree
+        B = "http://schemas.openxmlformats.org/officeDocument/2006/bibliography"
+        w = etree.Element(f"{{{B}}}Sources", nsmap={"b": B, None: B},
+                          SelectedStyle="\\APA.XSL", StyleName=self.meta.get("zitierweise", "APA"), Version="6")
+        for q in quellen:
+            e = etree.SubElement(w, f"{{{B}}}Source")
+            def sub(n, v, parent=e):
+                x = etree.SubElement(parent, f"{{{B}}}{n}")
+                x.text = v or ""
+                return x
+            sub("Tag", q.get("tag", ""))
+            sub("SourceType", {"Buch": "Book", "Aufsatz": "JournalArticle", "Webseite": "InternetSite", "Bericht": "Report"}.get(q.get("typ"), "Misc"))
+            a1 = etree.SubElement(etree.SubElement(e, f"{{{B}}}Author"), f"{{{B}}}Author")
+            nl = etree.SubElement(a1, f"{{{B}}}NameList")
+            for person in [x.strip() for x in (q.get("autor") or "").split(";") if x.strip()]:
+                pe = etree.SubElement(nl, f"{{{B}}}Person")
+                last, _, first = person.partition(",")
+                sub("Last", last.strip(), pe)
+                if first.strip():
+                    sub("First", first.strip(), pe)
+            sub("Title", q.get("titel", "")); sub("Year", q.get("jahr", "")); sub("City", q.get("ort", ""))
+            sub("Publisher", q.get("verlag", "")); sub("URL", q.get("url", ""))
+        blob = etree.tostring(w, xml_declaration=True, encoding="UTF-8", standalone=True)
+        pkg = self.d.part.package
+        vorhanden = {str(x.partname) for x in pkg.iter_parts()}
+        n = 1
+        while f"/customXml/item{n}.xml" in vorhanden or f"/customXml/itemProps{n}.xml" in vorhanden:
+            n += 1
+        item = Part(PackURI(f"/customXml/item{n}.xml"), "application/xml", blob, pkg)
+        guid = "{" + str(uuid.uuid4()).upper() + "}"
+        props = ('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+                 f'<ds:datastoreItem ds:itemID="{guid}" xmlns:ds="http://schemas.openxmlformats.org/officeDocument/2006/customXml">'
+                 f'<ds:schemaRefs><ds:schemaRef ds:uri="{B}"/></ds:schemaRefs></ds:datastoreItem>').encode("utf-8")
+        pp = Part(PackURI(f"/customXml/itemProps{n}.xml"),
+                  "application/vnd.openxmlformats-officedocument.customXmlProperties+xml", props, pkg)
+        item.relate_to(pp, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXmlProps")
+        self.d.part.relate_to(item, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXml")
 
     def _noten_schreiben(self) -> None:
         from docx.enum.style import WD_STYLE_TYPE
