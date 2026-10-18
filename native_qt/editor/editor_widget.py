@@ -292,7 +292,8 @@ class DocumentEditor(QTextEdit):
         tf.setCellPadding(4); tf.setCellSpacing(0)
         tf.setBorder(0.5 if borders else 0); tf.setBorderCollapse(True)
         tf.setWidth(QTextLength(QTextLength.PercentageLength, 100))
-        self.textCursor().insertTable(rows, cols, tf)
+        t = self.textCursor().insertTable(rows, cols, tf)
+        self.setTextCursor(t.cellAt(0, 0).firstCursorPosition())
 
     def insert_image(self, path: str) -> bool:
         img = QImage(path)
@@ -370,6 +371,45 @@ class DocumentEditor(QTextEdit):
             n += 1
         cur.endEditBlock()
         return n
+
+    # ---- Bilder im Text (Bildtools) -------------------------------------------------------------------
+    def _bild_cursor(self):
+        c = self.textCursor()
+        if c.charFormat().isImageFormat() and c.hasSelection():
+            return c
+        # Zeiger direkt vor einem Bild?
+        c2 = QTextCursor(c)
+        c2.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor)
+        if c2.charFormat().isImageFormat():
+            return c2
+        return None
+
+    def bild_format(self):
+        c = self._bild_cursor()
+        return c.charFormat().toImageFormat() if c is not None else None
+
+    def bild_setzen(self, width=None, height=None, alt=None) -> None:
+        c = self._bild_cursor()
+        if c is None:
+            return
+        f = c.charFormat().toImageFormat()
+        if width is not None:
+            f.setWidth(width)
+        if height is not None:
+            f.setHeight(height)
+        if alt is not None:
+            f.setProperty(STYLE_PROP + 1, alt)
+        c.setCharFormat(f)
+
+    def mouseReleaseEvent(self, e) -> None:
+        super().mouseReleaseEvent(e)
+        c = self.cursorForPosition(e.pos())
+        c2 = QTextCursor(c)
+        c2.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor)
+        if c2.charFormat().isImageFormat() and not self.textCursor().hasSelection():
+            r = self.cursorRect(c)
+            if abs(e.pos().x() - r.x()) < c2.charFormat().toImageFormat().width() + 2:
+                self.setTextCursor(c2)
 
     # ---- Anzeige: Zeilenfokus, Eckmarken, Lesehilfe --------------------------------------------------
     def set_zeilenfokus(self, an: bool) -> None:

@@ -9,7 +9,7 @@ import json
 import os
 
 from PySide6.QtCore import QSize, Qt, Signal
-from PySide6.QtGui import QAction, QFont
+from PySide6.QtGui import QAction, QColor, QFont
 from PySide6.QtWidgets import (
     QComboBox, QFontComboBox, QFrame, QGridLayout, QHBoxLayout, QLabel, QMenu, QScrollArea,
     QSizePolicy, QStackedWidget, QTabBar, QToolButton, QVBoxLayout, QWidget,
@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
 
 from ..editor.editor_widget import STYLES
 from . import icons
+from .reiterplan import plan, schreibhilfe_gruppen
 
 _HIER = os.path.dirname(os.path.abspath(__file__))
 NICHT_DA = "{} — in der nativen Fassung noch nicht umgesetzt"
@@ -75,9 +76,11 @@ class RegisterBand(QWidget):
         linie.setFrameShadow(QFrame.Sunken)
         lay.addWidget(linie)
         self._schnellzugriff()
-        for r in self.daten["register"]:
+        self.kontext_index: dict[str, int] = {}
+        for r in plan(self.daten):
             self._reiter(r)
         self.reiter.currentChanged.connect(self.stapel.setCurrentIndex)
+        self.reiter.setCurrentIndex(1)          # Start
         self.bandfehler = sorted(set(self.fehlend))
 
     def _trenner(self):
@@ -124,7 +127,11 @@ class RegisterBand(QWidget):
         h.addStretch(1)
         scroll.setWidget(seite)
         self.stapel.addWidget(scroll)
-        self.reiter.addTab(r["name"])
+        i = self.reiter.addTab(r["name"])
+        if r.get("kontext"):
+            self.kontext_index[r["kontext"]] = i
+            self.reiter.setTabVisible(i, False)
+            self.reiter.setTabTextColor(i, QColor("#e8590c"))
 
     def _gruppe(self, g: dict) -> QWidget:
         rahmen = QWidget()
@@ -183,13 +190,13 @@ class RegisterBand(QWidget):
             inhalt.addLayout(spalte)
             self.felder.update(stil=stil, font=font, groesse=groesse)
         grosse = [e for e in eintraege if e.get("gross")]
-        kleine = [e for e in eintraege if not e.get("gross") and not e.get("hinweis")]
+        kleine = [e for e in eintraege if not e.get("gross") and not e.get("hinweis") and e.get("symbol") != "//"]
         for e in grosse:
             inhalt.addWidget(self._knopf(e, True))
         # Zeilen: '//' beginnt eine neue; sonst zwei Zeilen, spaltenweise gefüllt
         zeilen, aktuell, explizit = [], [], False
         for e in eintraege:
-            if e.get("zeilenumbruch"):
+            if e.get("zeilenumbruch") or e.get("symbol") == "//":
                 explizit = True
                 zeilen.append(aktuell)
                 aktuell = []
@@ -338,6 +345,19 @@ class RegisterBand(QWidget):
                     if t:
                         self.fehlend.append(t)
         return ok
+
+    def kontext(self, name: str, sichtbar: bool) -> None:
+        """Kontext-Register (Tabellentools, Bildtools …) ein- oder ausblenden."""
+        i = self.kontext_index.get(name)
+        if i is None or self.reiter.isTabVisible(i) == sichtbar:
+            return
+        self.reiter.setTabVisible(i, sichtbar)
+        if not sichtbar and self.reiter.currentIndex() == i:
+            self.reiter.setCurrentIndex(1)
+
+    def gruppe_widget(self, g: dict) -> QWidget:
+        """Eine Gruppe als eigenständiges Widget (für die Seitenleiste)."""
+        return self._gruppe(g)
 
     # ---- Zustand -----------------------------------------------------------------------------------------------
     def aktualisieren(self, hat_dokument: bool | None = None):

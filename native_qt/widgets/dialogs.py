@@ -165,3 +165,31 @@ class FindReplaceDialog(QDialog):
         if ed:
             n = ed.replace_all(self.find.text(), self.repl.text(), self.case.isChecked(), self.whole.isChecked())
             self.msg.setText(f"{n} Ersetzung(en).")
+
+
+class BildGroesseDialog(QDialog):
+    def __init__(self, breite_px: float, hoehe_px: float, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Bildgröße")
+        self.verh = (hoehe_px / breite_px) if breite_px else 1.0
+        self.b = _spin(breite_px * 25.4 / 96, 1, 2000)
+        self.h = _spin(hoehe_px * 25.4 / 96, 1, 2000)
+        self.fest = QCheckBox("Seitenverhältnis beibehalten"); self.fest.setChecked(True)
+        self._sperre = False
+        self.b.valueChanged.connect(self._b)
+        self.h.valueChanged.connect(self._h)
+        form = QFormLayout(); form.addRow("Breite", self.b); form.addRow("Höhe", self.h); form.addRow("", self.fest)
+        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        bb.accepted.connect(self.accept); bb.rejected.connect(self.reject)
+        lay = QVBoxLayout(self); lay.addLayout(form); lay.addWidget(bb)
+
+    def _b(self, v):
+        if self.fest.isChecked() and not self._sperre:
+            self._sperre = True; self.h.setValue(v * self.verh); self._sperre = False
+
+    def _h(self, v):
+        if self.fest.isChecked() and not self._sperre and self.verh:
+            self._sperre = True; self.b.setValue(v / self.verh); self._sperre = False
+
+    def breite_px(self): return self.b.value() * 96 / 25.4
+    def hoehe_px(self): return self.h.value() * 96 / 25.4

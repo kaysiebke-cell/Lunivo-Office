@@ -76,8 +76,12 @@ def test_vorhersage_mit_thema(app, tmp_path, monkeypatch):
 
 def test_band_ist_das_alte_register(app, tmp_path, monkeypatch):
     w = win(tmp_path, monkeypatch)
-    namen = [w.band.reiter.tabText(i) for i in range(w.band.reiter.count())]
-    assert namen == ["Start", "Einfügen", "Seitenlayout", "Referenzen", "Überprüfen", "Schreibhilfe", "Sendungen", "Ansicht"]
+    sichtbar = [w.band.reiter.tabText(i) for i in range(w.band.reiter.count()) if w.band.reiter.isTabVisible(i)]
+    assert sichtbar == ["Datei", "Start", "Einfügen", "Seitenlayout", "Verweise", "Überprüfen", "KI", "Ansicht"]
+    # Kontext-Register erscheinen nur bei Bedarf
+    assert not w.band.reiter.isTabVisible(w.band.kontext_index["tabelle"])
+    e0 = w.current_editor(); e0.insert_table(2, 2); w._sync_format()
+    assert w.band.reiter.isTabVisible(w.band.kontext_index["tabelle"])
     # Nicht Umgesetztes ist sichtbar, aber ausgegraut — keine Attrappen
     ausgegraut = [k for k, _n, _b in w.band.knoepfe if k.property("fehlt")]
     assert ausgegraut and all(not k.isEnabled() for k in ausgegraut)
@@ -93,3 +97,22 @@ def test_menue_tafel_listet_datei_punkte(app, tmp_path, monkeypatch):
     namen = [b.text() for b in w._tafel.findChildren(type(w.start.list.parent()) if False else __import__("PySide6.QtWidgets", fromlist=["x"]).QPushButton)]
     assert any(n.startswith("Neu") for n in namen) and any(n.startswith("Optionen") for n in namen)
     w._tafel.close()
+
+
+def test_tabellentools_wirken(app, tmp_path, monkeypatch):
+    w = win(tmp_path, monkeypatch)
+    e = w.current_editor(); e.insert_table(2, 2)
+    t = e.textCursor().currentTable()
+    assert (t.rows(), t.columns()) == (2, 2)
+    w.befehle.tabelleZeileUnten(); assert t.rows() == 3
+    w.befehle.tabelleSpalteRechts(); assert t.columns() == 3
+    w.befehle.tabelleZeileLoeschen(); assert t.rows() == 2
+    e.setTextCursor(t.cellAt(0, 0).firstCursorPosition())
+    w.befehle.tabelleRahmen(); assert t.format().border() == 0
+
+
+def test_seitenleiste_bereiche(app, tmp_path, monkeypatch):
+    w = win(tmp_path, monkeypatch)
+    assert [b.text() for b in w.sidebar.bereiche.buttons()] == ["Überprüfen", "Schreibhilfe", "KI"]
+    w.sidebar.zeige_bereich(1)
+    assert w.sidebar.stapel.currentIndex() == 1 and w.sidebar._seite_sh.widget() is not None

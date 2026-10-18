@@ -11,9 +11,10 @@ Klappe (Pfeilmenü): Methode `menue_name(self) -> QMenu`.
 from __future__ import annotations
 
 import json
+import os
 from datetime import datetime
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QBrush, QColor, QIcon, QPixmap, QTextBlockFormat, QTextCharFormat, QTextCursor, QTextListFormat
 from PySide6.QtWidgets import QApplication, QColorDialog, QInputDialog, QMenu, QMessageBox
 
@@ -522,3 +523,154 @@ class Befehle:
         self.w.toggle_navigation()
 
     def an_navigation(self): return self.w.navigation.isVisible()
+
+    # ==== Datei (Reiter) =======================================================================================================
+    def kopieSpeichern(self, k=None): self.w.save_copy()
+    def exportierenDocx(self, k=None): self.w.export_as(".docx")
+    def exportierenOdt(self, k=None): self.w.export_as(".odt")
+    def exportierenTxt(self, k=None): self.w.export_as(".txt")
+    def druckerWaehlen(self, k=None): self.w.print_dialog()
+
+    def menue_zuletzt(self):
+        m = QMenu()
+        items = self.w.settings.recent()
+        if not items:
+            m.addAction("(keine)").setEnabled(False)
+        for pfad in items:
+            m.addAction(os.path.basename(pfad), lambda _=False, p=pfad: self.w.open_path(p)).setToolTip(pfad)
+        return m
+
+    # ==== Tabellentools (Kontext) ===================================================================================================
+    def _tab(self):
+        e = self.ed
+        if not e:
+            return None, None, None
+        c = e.textCursor()
+        t = c.currentTable()
+        return (e, c, t) if t else (e, c, None)
+
+    def tabelleZeileOben(self, k=None):
+        e, c, t = self._tab()
+        if t: t.insertRows(t.cellAt(c).row(), 1)
+
+    def tabelleZeileUnten(self, k=None):
+        e, c, t = self._tab()
+        if t: t.insertRows(t.cellAt(c).row() + 1, 1)
+
+    def tabelleSpalteLinks(self, k=None):
+        e, c, t = self._tab()
+        if t: t.insertColumns(t.cellAt(c).column(), 1)
+
+    def tabelleSpalteRechts(self, k=None):
+        e, c, t = self._tab()
+        if t: t.insertColumns(t.cellAt(c).column() + 1, 1)
+
+    def tabelleZeileLoeschen(self, k=None):
+        e, c, t = self._tab()
+        if t and t.rows() > 1: t.removeRows(t.cellAt(c).row(), 1)
+        elif t: self.tabelleLoeschen()
+
+    def tabelleSpalteLoeschen(self, k=None):
+        e, c, t = self._tab()
+        if t and t.columns() > 1: t.removeColumns(t.cellAt(c).column(), 1)
+        elif t: self.tabelleLoeschen()
+
+    def tabelleLoeschen(self, k=None):
+        e, c, t = self._tab()
+        if t:
+            first = t.firstCursorPosition().position() - 1
+            last = t.lastCursorPosition().position() + 1
+            cc = QTextCursor(e.document())
+            cc.setPosition(max(0, first)); cc.setPosition(min(last, e.document().characterCount() - 1), QTextCursor.KeepAnchor)
+            cc.removeSelectedText()
+
+    def tabelleVerbinden(self, k=None):
+        e, c, t = self._tab()
+        if t and c.hasSelection(): t.mergeCells(c)
+
+    def tabelleTeilen(self, k=None):
+        e, c, t = self._tab()
+        if t:
+            cell = t.cellAt(c)
+            if cell.rowSpan() > 1 or cell.columnSpan() > 1:
+                t.splitCell(cell.row(), cell.column(), 1, 1)
+
+    def tabelleRahmen(self, k=None):
+        e, c, t = self._tab()
+        if t:
+            f = t.format(); f.setBorder(0 if f.border() > 0 else 0.5); t.setFormat(f)
+
+    def an_tabelleRahmen(self):
+        e, c, t = self._tab()
+        return bool(t) and t.format().border() > 0
+
+    def menue_tabelleSchattierung(self):
+        m = QMenu()
+        def setze(col):
+            e, c, t = self._tab()
+            if t:
+                cell = t.cellAt(c)
+                f = cell.format()
+                f.setBackground(QBrush(col)) if col else f.clearBackground()
+                cell.setFormat(f)
+        for col in ("#fff3bf", "#d3f9d8", "#d0ebff", "#ffe3e3", "#e9ecef"):
+            m.addAction(_farbfeld(col), col, lambda _=False, col=col: setze(QColor(col)))
+        m.addAction("Keine Schattierung", lambda: setze(None))
+        return m
+
+    def _zelle_ausrichten(self, wo):
+        e, c, t = self._tab()
+        if t:
+            cell = t.cellAt(c)
+            f = cell.format().toTableCellFormat()
+            f.setVerticalAlignment(wo)
+            cell.setFormat(f)
+
+    def zelleOben(self, k=None): self._zelle_ausrichten(QTextCharFormat.AlignTop)
+    def zelleMitte(self, k=None): self._zelle_ausrichten(QTextCharFormat.AlignMiddle)
+    def zelleUnten(self, k=None): self._zelle_ausrichten(QTextCharFormat.AlignBottom)
+
+    # ==== Bildtools (Kontext) =========================================================================================================
+    def _bild(self):
+        e = self.ed
+        if not e:
+            return None, None
+        f = e.bild_format()
+        return (e, f) if f is not None else (e, None)
+
+    def bildGroesse(self, k=None):
+        e, f = self._bild()
+        if f is None:
+            return
+        from ..widgets.dialogs import BildGroesseDialog
+        d = BildGroesseDialog(f.width(), f.height(), self.w)
+        if d.exec():
+            e.bild_setzen(width=d.breite_px(), height=d.hoehe_px())
+
+    def bildBreite(self, k=None):
+        e, f = self._bild()
+        if f is not None and f.width():
+            r = f.height() / f.width()
+            b = e.page.content_width_px
+            e.bild_setzen(width=b, height=b * r)
+
+    def bildOriginal(self, k=None):
+        e, f = self._bild()
+        if f is not None:
+            img = e.document().resource(2, QUrl(f.name()))
+            if img is not None and not img.isNull():
+                e.bild_setzen(width=img.width(), height=img.height())
+
+    def bildAltText(self, k=None):
+        e, f = self._bild()
+        if f is None:
+            return
+        akt = f.property(0x100000 + 0x101 + 1) if f.hasProperty(0x100000 + 0x101 + 1) else ""
+        t, ok = QInputDialog.getText(self.w, "Alternativtext", "Beschreibung des Bildes:", text=akt or "")
+        if ok:
+            e.bild_setzen(alt=t)
+
+    def bildEntfernen(self, k=None):
+        e, f = self._bild()
+        if f is not None:
+            e.textCursor().removeSelectedText()

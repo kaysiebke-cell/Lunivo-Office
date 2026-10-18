@@ -4,7 +4,7 @@ from __future__ import annotations
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QButtonGroup, QFrame, QHBoxLayout, QLabel, QLineEdit, QMessageBox, QPushButton, QScrollArea,
-    QVBoxLayout, QWidget,
+    QStackedWidget, QVBoxLayout, QWidget,
 )
 
 from ..services.vorhersage import EMPFAENGER
@@ -74,7 +74,28 @@ class SchreibhilfePanel(QWidget):
         self.a = assistent
         self.setMinimumWidth(300)
         self.setMaximumWidth(420)
-        v = QVBoxLayout(self)
+        aussen = QVBoxLayout(self)
+        aussen.setContentsMargins(0, 0, 0, 0)
+        aussen.setSpacing(0)
+        kopf = QHBoxLayout()
+        kopf.setContentsMargins(10, 8, 10, 0)
+        kopf.setSpacing(4)
+        self.bereiche = QButtonGroup(self)
+        self.stapel = QStackedWidget()
+        for i, name in enumerate(("Überprüfen", "Schreibhilfe", "KI")):
+            b = QPushButton(name)
+            b.setCheckable(True)
+            b.setStyleSheet(CHIP)
+            b.setChecked(i == 0)
+            b.clicked.connect(lambda _=False, i=i: self.zeige_bereich(i))
+            self.bereiche.addButton(b, i)
+            kopf.addWidget(b)
+        kopf.addStretch(1)
+        aussen.addLayout(kopf)
+        aussen.addWidget(self.stapel, 1)
+        seite0 = QWidget()
+        self.stapel.addWidget(seite0)
+        v = QVBoxLayout(seite0)
         v.setContentsMargins(14, 12, 14, 10)
         v.setSpacing(8)
         t = QLabel("<b style='font-size:12pt'>Schreib <span style='color:#2f6fb5'>|</span> hilfe</b>")
@@ -159,6 +180,28 @@ class SchreibhilfePanel(QWidget):
         info.setStyleSheet("color: palette(mid); font-size: 9pt;")
         v.addWidget(info)
         self.a.fundeGeaendert.connect(self.zeige)
+        self._seite_sh = QScrollArea()
+        self._seite_ki = QScrollArea()
+        for sc in (self._seite_sh, self._seite_ki):
+            sc.setWidgetResizable(True)
+            sc.setFrameShape(QFrame.NoFrame)
+            self.stapel.addWidget(sc)
+
+    def zeige_bereich(self, i: int) -> None:
+        self.stapel.setCurrentIndex(i)
+        self.bereiche.button(i).setChecked(True)
+
+    def setze_bereiche(self, band, sh_gruppen: list, ki_gruppen: list) -> None:
+        """Bereich „Schreibhilfe“ und „KI“ aus den Gruppen des alten Registers bauen."""
+        for sc, gruppen, titel in ((self._seite_sh, sh_gruppen, "Schreibhilfe"), (self._seite_ki, ki_gruppen, "KI")):
+            host = QWidget()
+            lay = QVBoxLayout(host)
+            lay.setContentsMargins(12, 10, 12, 10)
+            lay.setSpacing(8)
+            for g in gruppen:
+                lay.addWidget(band.gruppe_widget(g))
+            lay.addStretch(1)
+            sc.setWidget(host)
 
     def zeige(self, funde: list) -> None:
         while self.liste.count() > 1:

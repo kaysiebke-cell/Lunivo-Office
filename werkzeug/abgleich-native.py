@@ -33,14 +33,16 @@ def namen(e):
     return r
 
 
-for t in reg["register"]:
-    zeilen.append(f"\n## {t['name']}\n")
+from native_qt.widgets.reiterplan import plan, schreibhilfe_gruppen  # noqa: E402
+reiter = plan(reg) + [{'name': 'Seitenleiste: Schreibhilfe', 'gruppen': schreibhilfe_gruppen(reg)}]
+for t in reiter:
+    zeilen.append(f"\n## {t['name']}" + (" (Kontext-Register)" if t.get('kontext') else "") + "\n")
     for g in t["gruppen"]:
         zeilen.append(f"**{g['name']}**\n")
         if g.get("katalog"):
             zeilen.append("- ✅ Stilkatalog (Standard, Überschrift 1–3, Titel, Untertitel, Zitat, Kein Abstand)")
         for e in g.get("knoepfe", []):
-            if e.get("hinweis") or e.get("zeilenumbruch"):
+            if e.get("hinweis") or e.get("zeilenumbruch") or e.get("symbol") == "//":
                 continue
             ns = namen(e)
             fertig = bool(ns) and all(b.hat(n) or b.klappe(n) is not None for n in ns if not n.endswith("Klappe")) \

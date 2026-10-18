@@ -72,6 +72,7 @@ class MainWindow(QMainWindow):
         self._build_menu()
         self.menuBar().setVisible(self.menubar_wanted)
         self.sidebar = SchreibhilfePanel(self.assistant)
+        self._bereiche_bauen()
         self.sidebar.setVisible(self.settings.get_bool("ui/seitenleiste", True))
         central = QWidget()
         from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout
@@ -314,6 +315,8 @@ class MainWindow(QMainWindow):
     def _sync_format(self):
         e = self.current_editor()
         self.band.aktualisieren(e is not None)
+        self.band.kontext("tabelle", bool(e) and e.textCursor().currentTable() is not None)
+        self.band.kontext("bild", bool(e) and e.bild_format() is not None)
         f = self.band.felder
         if e is None or not f:
             return
@@ -634,6 +637,10 @@ class MainWindow(QMainWindow):
         icons.leeren()
         self.neu_bauen_band()
 
+    def _bereiche_bauen(self):
+        from ..widgets.reiterplan import KI, schreibhilfe_gruppen
+        self.sidebar.setze_bereiche(self.band, schreibhilfe_gruppen(self.band.daten), KI["gruppen"])
+
     def neu_bauen_band(self):
         alt = self.band
         idx = self.band_lay.indexOf(alt)
@@ -642,6 +649,7 @@ class MainWindow(QMainWindow):
         self.band_lay.insertWidget(idx, self.band)
         alt.setParent(None); alt.deleteLater()
         self._verbinde_felder()
+        self._bereiche_bauen()
         self._refresh_ui()
 
     def show_main_menu(self):
