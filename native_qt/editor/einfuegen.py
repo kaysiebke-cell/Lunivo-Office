@@ -19,7 +19,9 @@ from ..document_io.docx_reader import STYLE_PROP
 FORMEN = ["Rechteck", "Abgerundetes Rechteck", "Ellipse", "Dreieck", "Raute", "Pfeil nach rechts", "Stern", "Sprechblase", "Linie"]
 
 
-def qimage_einfuegen(ed, img: QImage, alt: str = "") -> None:
+def qimage_einfuegen(ed, img: QImage, alt: str = "", art: str | None = None, daten: dict | None = None) -> None:
+    """Bild an der Schreibmarke einfügen. art/daten (Form, WordArt, Diagramm, …) bleiben am Bild, damit es sich wieder bearbeiten
+    lässt; „Zeichnungsobjekte drucken“ kann solche Bilder weglassen."""
     name = f"obj-{id(img)}-{ed.document().revision()}"
     ed.document().addResource(QTextDocument.ImageResource, QUrl(name), img)
     w = float(img.width())
@@ -29,6 +31,10 @@ def qimage_einfuegen(ed, img: QImage, alt: str = "") -> None:
     f.setName(name); f.setWidth(img.width() * scale); f.setHeight(img.height() * scale)
     if alt:
         f.setProperty(STYLE_PROP + 1, alt)
+    if art:
+        import json as _json
+        from .zusatz import P_OBJEKT
+        f.setProperty(P_OBJEKT, _json.dumps({"art": art, "daten": daten or {}}, ensure_ascii=False, separators=(",", ":")))
     ed.textCursor().insertImage(f)
     ed.document().setModified(True)
 

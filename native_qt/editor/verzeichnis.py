@@ -60,7 +60,7 @@ def _seiten(editor, positionen):
     for pos in positionen:
         blk = kopie.findBlock(pos)
         r = kopie.documentLayout().blockBoundingRect(blk)
-        out.append(int(r.top() // ch) + 1)
+        out.append(int((r.top() + 0.5) // ch) // max(1, int(editor.page.spalten)) + 1)
     return out
 
 

@@ -194,10 +194,10 @@ class RegisterBand(QWidget):
     def _gruppe(self, g: dict) -> QWidget:
         rahmen = QWidget()
         v = QVBoxLayout(rahmen)
-        v.setContentsMargins(5, 2, 5, 0)
+        v.setContentsMargins(3, 2, 3, 0)
         v.setSpacing(0)
         inhalt = QHBoxLayout()
-        inhalt.setSpacing(4)
+        inhalt.setSpacing(1)
         inhalt.setAlignment(Qt.AlignLeft | Qt.AlignTop)
         v.addLayout(inhalt, 1)
         if g.get("katalog") == "raender":
@@ -229,17 +229,99 @@ class RegisterBand(QWidget):
         v.addLayout(fuss)
         return rahmen
 
+    def _knoepfe_geordnet(self, g: dict, inhalt: QHBoxLayout):
+        """Knöpfe in der Reihenfolge der Liste: große stehen allein, aufeinanderfolgende kleine bilden eine Spalte aus zwei Zeilen."""
+        lauf: list[dict] = []
+
+        def spalte():
+            if lauf:
+                host = QWidget()
+                v = QVBoxLayout(host)
+                v.setContentsMargins(0, 0, 0, 0)
+                v.setSpacing(1)
+                for e in lauf:
+                    v.addWidget(self._knopf(e, False))
+                v.addStretch(1)
+                inhalt.addWidget(host, 0, Qt.AlignTop)
+                lauf.clear()
+        for e in g["knoepfe"]:
+            if e.get("gross"):
+                spalte()
+                inhalt.addWidget(self._knopf(e, True))
+            else:
+                lauf.append(e)
+        spalte()
+
+    def _knoepfe_schrift(self, g: dict, inhalt: QHBoxLayout):
+        """Wie WPS: oben Schriftname und -größe, daneben die Größen-/Löschknöpfe; darunter die Zeichenformate."""
+        from .live_vorschau import VorschauCombo, VorschauFontCombo
+        vs = self.b.w.vorschau
+
+        def _zu_pt(t):
+            try:
+                return float(t.replace(",", "."))
+            except ValueError:
+                return None
+        font = VorschauFontCombo(lambda n: vs.zeigen(lambda e: e.set_font_family(n)), vs.ende)
+        font.setFixedWidth(150)
+        groesse = VorschauCombo(lambda t: (pt := _zu_pt(t)) is not None and vs.zeigen(lambda e: e.set_font_size(pt)), vs.ende)
+        groesse.setEditable(True)
+        groesse.setFixedWidth(62)
+        groesse.addItems([str(x) for x in (8, 9, 10, 10.5, 11, 12, 14, 16, 18, 20, 24, 28, 36, 48, 72)])
+        stil = VorschauCombo(lambda n: vs.zeigen(lambda e: e.apply_style("Standard" if n == "Fließtext" else n)), vs.ende)
+        stil.addItems(["Fließtext"] + [n for n in STYLES if n != "Standard"])
+        stil.setParent(self)                                   # die Stile stehen in der Galerie; die Auswahl bleibt nur für den Abgleich
+        stil.hide()
+        self.felder.update(stil=stil, font=font, groesse=groesse)
+        zeilen, aktuell = [], []
+        for e in g["knoepfe"]:
+            if e.get("zeilenumbruch"):
+                zeilen.append(aktuell)
+                aktuell = []
+            else:
+                aktuell.append(e)
+        zeilen.append(aktuell)
+        v = QVBoxLayout()
+        v.setSpacing(2)
+        v.setContentsMargins(0, 0, 0, 0)
+        for i, zeile in enumerate(zeilen):
+            h = QHBoxLayout()
+            h.setSpacing(1)
+            h.setContentsMargins(0, 0, 0, 0)
+            if i == 0:
+                h.addWidget(font)
+                h.addWidget(groesse)
+                h.addSpacing(3)
+            for e in zeile:
+                h.addWidget(self._knopf(e, False))
+            h.addStretch(1)
+            v.addLayout(h)
+        v.addStretch(1)
+        inhalt.addLayout(v)
+
     def _knoepfe(self, g: dict, inhalt: QHBoxLayout):
+        if g.get("felder") == "zeile":
+            return self._knoepfe_schrift(g, inhalt)
+        if g.get("reihenfolge"):
+            return self._knoepfe_geordnet(g, inhalt)
         eintraege = g["knoepfe"]
         if g.get("felder"):
             spalte = QVBoxLayout()
             spalte.setSpacing(2)
-            stil = QComboBox()
+            from .live_vorschau import VorschauCombo, VorschauFontCombo
+            vs = self.b.w.vorschau
+
+            def _zu_pt(t):
+                try:
+                    return float(t.replace(",", "."))
+                except ValueError:
+                    return None
+            stil = VorschauCombo(lambda n: vs.zeigen(lambda e: e.apply_style("Standard" if n == "Fließtext" else n)), vs.ende)
             stil.setFixedWidth(150)
             stil.addItems(["Fließtext"] + [n for n in STYLES if n != "Standard"])
-            font = QFontComboBox()
+            font = VorschauFontCombo(lambda n: vs.zeigen(lambda e: e.set_font_family(n)), vs.ende)
             font.setFixedWidth(150)
-            groesse = QComboBox()
+            groesse = VorschauCombo(lambda t: (pt := _zu_pt(t)) is not None and vs.zeigen(lambda e: e.set_font_size(pt)), vs.ende)
             groesse.setEditable(True)
             groesse.setFixedWidth(60)
             groesse.addItems([str(x) for x in (8, 9, 10, 10.5, 11, 12, 14, 16, 18, 20, 24, 28, 36, 48, 72)])
@@ -294,6 +376,10 @@ class RegisterBand(QWidget):
             k.setFont(f)
             k.setFixedWidth(84)
             k.clicked.connect(lambda _=False, n=name: self.b.w.stil_anwenden(n))
+            from .live_vorschau import Ueberfahren
+            fl = Ueberfahren(self.b.w.vorschau, lambda e, n=name: e.apply_style("Standard" if n == "Fließtext" else n))
+            k.installEventFilter(fl)
+            k._ueberfahren = fl                                  # am Knopf festhalten, sonst räumt Python den Filter ab
             g.addWidget(k, i % 2, i // 2)
             self.knoepfe.append((k, None, True))
         # wie im WPS: drei Spalten sichtbar, der Rest wird durchgescrollt
@@ -369,9 +455,13 @@ class RegisterBand(QWidget):
         if gross:
             k.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
             k.setText(_zweizeilig(name))
+            akt.setText(_zweizeilig(name))                      # der Knopf übernimmt später den Text der Aktion
             breit = max(k.fontMetrics().horizontalAdvance(z) for z in _zweizeilig(name).split("\n"))
-            k.setMinimumWidth(max(56, breit + 22))
+            k.setMinimumWidth(max(48, breit + 10))
             k.setFixedHeight(68)
+        elif icons.hat(sym) and e.get("text"):
+            k.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+            k.setText(name)
         elif icons.hat(sym):
             k.setToolButtonStyle(Qt.ToolButtonIconOnly)
         else:

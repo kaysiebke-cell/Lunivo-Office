@@ -5,12 +5,17 @@ import datetime
 import hashlib
 
 from PySide6.QtCore import QTimer, Qt, Signal
-from PySide6.QtGui import QColor, QTextCharFormat, QTextCursor
+from PySide6.QtGui import QColor, QFont, QTextCharFormat, QTextCursor, QTextFormat
 from PySide6.QtWidgets import QTextEdit
 
 from .zusatz import P_AENDERUNG, P_AUTOR, P_DATUM, P_KOMMENTAR, P_NOTE, neue_id, roemisch
 
 AUTOR_FARBEN = ["#c92a2a", "#1971c2", "#2f9e44", "#e8590c", "#7048a8", "#0b7285", "#a61e4d", "#5c940d"]
+
+
+FESTE_FARBEN = {"Rot": "#c92a2a", "Blau": "#1971c2", "Grün": "#2f9e44", "Schwarz": "#222222", "Violett": "#7048a8"}
+INS_STILE = ["Unterstrichen", "Doppelt unterstrichen", "Fett", "Kursiv", "Keine"]
+DEL_STILE = ["Durchgestrichen", "Fett", "Kursiv", "Keine"]
 
 
 def autor_farbe(autor: str) -> QColor:
@@ -347,6 +352,10 @@ class ZusatzMixin:
     def _zus_geaendert(self) -> None:
         self._overlays_neu()
         self.zusatzGeaendert.emit()
+        if hasattr(self, "_blasen_da") and self._blasen_da() != bool(getattr(self, "_blasen_extra", 0)):
+            self.apply_page(self.page)                  # die Blasenfläche erscheint mit dem ersten Kommentar
+        elif getattr(self, "_blasen_flaeche", None) is not None:
+            self._blasen_flaeche.update()
 
     def set_markup(self, an: bool) -> None:
         self.markup = an
@@ -367,6 +376,25 @@ class ZusatzMixin:
             fmt.setUnderlineColor(QColor(self.WELLE.get(f["art"], "#868e96")))
             e = QTextEdit.ExtraSelection(); e.cursor = c; e.format = fmt
             sel.append(e)
+        modus = self.opt_text("ui/feldschattierung", "Bei Auswahl") if hasattr(self, "opt_text") else "Nie"
+        if modus != "Nie":
+            from .anzeige_extra import feldbereiche
+            pos = self.textCursor().position()
+            for von, bis in feldbereiche(doc):
+                if modus == "Immer" or von <= pos <= bis:
+                    c = QTextCursor(doc)
+                    c.setPosition(von); c.setPosition(bis, QTextCursor.KeepAnchor)
+                    fmt = QTextCharFormat(); fmt.setBackground(QColor(150, 160, 175, 70))
+                    e = QTextEdit.ExtraSelection(); e.cursor = c; e.format = fmt
+                    sel.append(e)
+        if self.opt("ui/formular_schattierung", True):
+            from .formular import bereiche as form_bereiche
+            for von, bis, _m in form_bereiche(doc):
+                c = QTextCursor(doc)
+                c.setPosition(von); c.setPosition(bis, QTextCursor.KeepAnchor)
+                fmt = QTextCharFormat(); fmt.setBackground(QColor(76, 110, 245, 38))
+                e = QTextEdit.ExtraSelection(); e.cursor = c; e.format = fmt
+                sel.append(e)
         if self.markup and (self._hat_zusatz or self.verfolgen):
             for b in self.kommentar_bereiche():
                 c = QTextCursor(doc)
@@ -374,15 +402,34 @@ class ZusatzMixin:
                 fmt = QTextCharFormat(); fmt.setBackground(QColor(255, 236, 153, 140))
                 e = QTextEdit.ExtraSelection(); e.cursor = c; e.format = fmt
                 sel.append(e)
+            ins_stil = self.opt_text("aenderungen/ins_stil", "Unterstrichen")
+            del_stil = self.opt_text("aenderungen/del_stil", "Durchgestrichen")
+            farb_wahl = self.opt_text("aenderungen/farbe", "Nach Autor")
             for b in self.aenderungen():
                 c = QTextCursor(doc)
                 c.setPosition(b["von"]); c.setPosition(b["bis"], QTextCursor.KeepAnchor)
                 farbe = autor_farbe(b["cf"].stringProperty(P_AUTOR))
-                fmt = QTextCharFormat(); fmt.setForeground(farbe)
-                if b["wert"] == "del":
+                if farb_wahl in FESTE_FARBEN:
+                    farbe = QColor(FESTE_FARBEN[farb_wahl])
+                fmt = QTextCharFormat()
+                stil = del_stil if b["wert"] == "del" else ins_stil
+                if stil == "Keine":
+                    continue
+                fmt.setForeground(farbe)
+                if stil == "Durchgestrichen":
                     fmt.setFontStrikeOut(True)
-                else:
+                elif stil == "Unterstrichen":
                     fmt.setUnderlineStyle(QTextCharFormat.SingleUnderline); fmt.setUnderlineColor(farbe)
+                elif stil == "Doppelt unterstrichen":
+                    fmt.setUnderlineStyle(QTextCharFormat.SingleUnderline); fmt.setUnderlineColor(farbe)
+                    fmt.setFontOverline(True); fmt.setProperty(QTextFormat.TextUnderlineColor, farbe)
+                elif stil == "Fett":
+                    fmt.setFontWeight(QFont.Bold)
+                elif stil == "Kursiv":
+                    fmt.setFontItalic(True)
                 e = QTextEdit.ExtraSelection(); e.cursor = c; e.format = fmt
                 sel.append(e)
         self.setExtraSelections(sel)
+        fl = getattr(self, "_blasen_flaeche", None)
+        if fl is not None and fl.isVisible():
+            fl.update()

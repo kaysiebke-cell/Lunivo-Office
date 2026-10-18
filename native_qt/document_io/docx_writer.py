@@ -45,6 +45,8 @@ def _has(fmt, prop) -> bool:
     return fmt.hasProperty(prop)
 
 
+from ..editor.zusatz import B_SPALTE, P_OBJEKT, P_VERSTECKT  # noqa: E402
+from ..editor.formular import P_FORM  # noqa: E402
 from ..editor.zusatz import (  # noqa: E402
     B_ART, B_CAP, B_RAHMEN, B_TOC, P_AENDERUNG, P_AUTOR, P_DATUM, P_FELD, P_INDEX, P_KOMMENTAR, P_NOTE,
 )
@@ -134,6 +136,16 @@ class _Writer:
                 pb.append(e)
             pg_mar = sp.find(qn("w:pgMar"))
             (pg_mar.addnext(pb) if pg_mar is not None else sp.append(pb))
+        for alt in sp.findall(qn("w:cols")):
+            sp.remove(alt)
+        if p.spalten > 1:
+            co = OxmlElement("w:cols")
+            co.set(qn("w:num"), str(int(p.spalten)))
+            co.set(qn("w:space"), str(int(round(p.spalten_abstand_mm / 25.4 * 1440))))
+            if p.spalten_linie:
+                co.set(qn("w:sep"), "1")
+            anker = sp.find(qn("w:pgMar"))
+            (anker.addnext(co) if anker is not None else sp.append(co))
         for alt in sp.findall(qn("w:lnNumType")):
             sp.remove(alt)
         if p.zeilennummern:
@@ -276,7 +288,11 @@ class _Writer:
         elif int(lht) == LH_FIXED and lh:
             pf.line_spacing = Pt(lh * PX_TO_PT)
         if bf.pageBreakPolicy() & QTextFormat.PageBreak_AlwaysBefore:
-            pf.page_break_before = True
+            if bf.hasProperty(B_SPALTE):                              # Spaltenumbruch: <w:br w:type="column"/> am Absatzanfang
+                from docx.enum.text import WD_BREAK
+                para.add_run().add_break(WD_BREAK.COLUMN)
+            else:
+                pf.page_break_before = True
         tabs = bf.tabPositions()
         if tabs:
             from docx.enum.text import WD_TAB_ALIGNMENT
@@ -317,6 +333,21 @@ class _Writer:
         i = 0
         while i < len(frags):
             cf = frags[i].charFormat()
+            form = cf.stringProperty(P_FORM) if cf.hasProperty(P_FORM) else ""
+            if form:                                                   # Formularfeld → Inhaltssteuerelement (w:sdt)
+                j = i
+                while j < len(frags) and frags[j].charFormat().hasProperty(P_FORM) and frags[j].charFormat().stringProperty(P_FORM) == form:
+                    j += 1
+                sdt, inhalt = self._steuerelement(form, "".join(f.text() for f in frags[i:j]))
+                para._p.append(sdt)
+                self._ziel = inhalt
+                try:
+                    for k in range(i, j):
+                        self.write_fragment(frags[k], para, in_head)
+                finally:
+                    self._ziel = None
+                i = j
+                continue
             instr = cf.stringProperty(P_FELD) if cf.hasProperty(P_FELD) else ""
             if instr:
                 j = i
@@ -410,7 +441,7 @@ class _Writer:
                                    for pos, r in umbruch.schwebende_rahmen(self.q).items()}
             self._image(cf.toImageFormat(), para, self._schwebend.get(frag.position()))
             return
-        parent = para
+        parent = getattr(self, "_ziel", None) if getattr(self, "_ziel", None) is not None else para
         href = cf.anchorHref() if cf.isAnchor() else ""
         self._textmarken(para, [] if href else (list(cf.anchorNames()) if cf.isAnchor() else []))
         if href:
@@ -490,6 +521,41 @@ class _Writer:
                     for t in run._r.findall(qn("w:t")):
                         t.tag = qn("w:delText")
 
+    def _steuerelement(self, form: str, wert: str):
+        """w:sdt für ein Formularfeld: Art (Text, Liste, Datum, Kontrollkästchen), Name als Titel, unsere Daten im Tag."""
+        from ..editor import formular as FO
+        m = FO.meta_lesen(form) or {"art": "text", "name": ""}
+        W14 = "http://schemas.microsoft.com/office/word/2010/wordml"
+        sdt = OxmlElement("w:sdt")
+        pr = OxmlElement("w:sdtPr")
+        sdt.append(pr)
+        if m.get("name"):
+            al = OxmlElement("w:alias"); al.set(qn("w:val"), str(m["name"])); pr.append(al)
+        tag = OxmlElement("w:tag"); tag.set(qn("w:val"), "lunivo:" + form); pr.append(tag)
+        if m.get("leer"):
+            pr.append(OxmlElement("w:showingPlcHdr"))
+        art = m["art"]
+        if art == "text":
+            pr.append(OxmlElement("w:text"))
+        elif art == "auswahl":
+            dd = OxmlElement("w:dropDownList")
+            for o in m.get("optionen") or []:
+                li = OxmlElement("w:listItem"); li.set(qn("w:displayText"), str(o)); li.set(qn("w:value"), str(o)); dd.append(li)
+            pr.append(dd)
+        elif art == "datum":
+            da = OxmlElement("w:date")
+            fm = OxmlElement("w:dateFormat"); fm.set(qn("w:val"), FO.DATUMSFORMAT); da.append(fm)
+            lid = OxmlElement("w:lid"); lid.set(qn("w:val"), "de-DE"); da.append(lid)
+            pr.append(da)
+        elif art == "kasten":
+            from lxml import etree
+            cb = etree.SubElement(pr, "{%s}checkbox" % W14)
+            for nm, val in (("checked", "1" if wert.strip() == FO.KASTEN_VOLL else "0"), ("checkedState", "2612"), ("uncheckedState", "2610")):
+                el = etree.SubElement(cb, "{%s}%s" % (W14, nm)); el.set("{%s}val" % W14, val)
+        inhalt = OxmlElement("w:sdtContent")
+        sdt.append(inhalt)
+        return sdt, inhalt
+
     def _make_run(self, parent, para):
         if parent is para:
             return para.add_run()
@@ -554,6 +620,8 @@ class _Writer:
                 run._r.get_or_add_rPr().append(shd)
         if cf.textOutline().style() != Qt.NoPen:
             f.outline = True
+        if cf.hasProperty(P_VERSTECKT):
+            f.hidden = True
         ls = cf.fontLetterSpacing()
         if ls and cf.fontLetterSpacingType() == QFont.AbsoluteSpacing:
             sp = OxmlElement("w:spacing")
@@ -589,6 +657,9 @@ class _Writer:
         if alt:
             for dp in run._r.xpath(".//wp:docPr"):
                 dp.set("descr", str(alt))
+        if imf.hasProperty(P_OBJEKT):                       # Daten zum Wiederbearbeiten (Form, Diagramm, SmartArt …) im Titel des Bildes
+            for dp in run._r.xpath(".//wp:docPr"):
+                dp.set("title", "lunivo:" + str(imf.property(P_OBJEKT)))
         if seite:
             self._verankern(run, "right" if seite == "rechts" else "left")
 

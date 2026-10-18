@@ -7,7 +7,8 @@ am Absatzanfang (wie der Anker in Word).
 """
 from __future__ import annotations
 
-from PySide6.QtGui import QTextCursor, QTextDocument, QTextFrame, QTextFrameFormat, QTextImageFormat
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QTextBlockFormat, QTextCursor, QTextDocument, QTextFrame, QTextFrameFormat, QTextImageFormat
 
 from ..document_io.docx_reader import STYLE_PROP
 
@@ -66,6 +67,31 @@ def umbruch_setzen(ed, modus: str) -> bool:
     doc = ed.document()
     pos = c.selectionStart()
     aktuell = schwebend(doc, pos) or "zeile"
+    if modus == "oben_unten":                                     # eigene, zentrierte Zeile: Text davor und danach, nichts daneben
+        if aktuell != "zeile":
+            umbruch_setzen(ed, "zeile")
+            c = ed._bild_cursor()
+            pos = c.selectionStart()
+        c = QTextCursor(doc)
+        c.beginEditBlock()
+        c.setPosition(pos)
+        b = doc.findBlock(pos)
+        if pos > b.position():
+            c.insertBlock()                                        # Text davor bleibt im alten Absatz
+            pos += 1
+        c.setPosition(pos + 1)
+        if c.position() < doc.findBlock(pos).position() + doc.findBlock(pos).length() - 1:
+            c.insertBlock()                                        # Text danach beginnt einen neuen Absatz
+        bf = QTextBlockFormat(doc.findBlock(pos).blockFormat())
+        bf.setAlignment(Qt.AlignHCenter)
+        QTextCursor(doc.findBlock(pos)).setBlockFormat(bf)
+        c.endEditBlock()
+        sel = QTextCursor(doc)
+        sel.setPosition(pos)
+        sel.setPosition(pos + 1, QTextCursor.KeepAnchor)
+        ed.setTextCursor(sel)
+        doc.setModified(True)
+        return True
     if aktuell == modus:
         return True
     f = c.charFormat().toImageFormat()

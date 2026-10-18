@@ -193,7 +193,7 @@
  },
  "SEITENLAYOUT|Textumbruch": {
   "status": "◐",
-  "wo": "Bild links/rechts vom Text umflossen (editor/umbruch.py, DOCX wp:anchor wrapSquare, test_werkzeuge); „Oben und unten“, „Hinter/vor dem Text“ und freie Position fehlen"
+  "wo": "Bild links/rechts vom Text umflossen oder in eigener Zeile (editor/umbruch.py, DOCX wp:anchor wrapSquare, test_werkzeuge); „Hinter/vor dem Text“ und freie Position fehlen"
  },
  "SEITENLAYOUT|Bild/Objekt anordnen": {
   "status": "◐",
@@ -515,19 +515,19 @@
   "status": "✅",
   "wo": "befehle.netzlinien, editor._gitter_zeichnen"
  },
- "OPTIONEN > Ansicht > Anzeigen|Live-Vorschau": {
-  "status": "⬜",
-  "wo": "nicht übertragen (in den Optionen als gesperrte Zeile sichtbar)"
- },
  "OPTIONEN > Ansicht > Anzeigen|Minisymbolleiste bei Auswahl": {
-  "status": "⬜",
-  "wo": "nicht übertragen (in den Optionen als gesperrte Zeile sichtbar)"
+  "status": "✅",
+  "wo": "widgets/mini_leiste.py; ui/mini_auswahl, ui/mini_rechtsklick (test_schreibhilfe)"
  },
  "OPTIONEN > Ansicht > Anzeigen|Minisymbolleiste bei Rechtsklick": {
-  "status": "⬜",
-  "wo": "nicht übertragen (in den Optionen als gesperrte Zeile sichtbar)"
+  "status": "✅",
+  "wo": "widgets/mini_leiste.py; ui/mini_auswahl, ui/mini_rechtsklick (test_schreibhilfe)"
  },
  "OPTIONEN > Ansicht > Anzeigen|Tipp für Kopf- bzw. Fußzeile": {
+  "status": "✅",
+  "wo": "ui/kopffuss_tipp, ui/kopffuss_anzeigen: Kopf-/Fußzeile im Rand, Tipp und Doppelklick (editor_widget; test_anzeige_extra)"
+ },
+ "OPTIONEN > Ansicht > Anzeigen|Live-Vorschau": {
   "status": "⬜",
   "wo": "nicht übertragen (in den Optionen als gesperrte Zeile sichtbar)"
  },
@@ -548,12 +548,12 @@
   "wo": "drucken/hervorhebungen, textgrenzen, zuschnitt, textmarken → pagination.render (test_werkzeuge)"
  },
  "OPTIONEN > Ansicht > Druckoptionen|Feldfunktionen drucken": {
-  "status": "⬜",
-  "wo": "Felder erscheinen nur mit ihrem Ergebnis; keine Feldcodes und keine Schattierung"
+  "status": "✅",
+  "wo": "drucken/felder_code (anzeige_extra.feldcodes_einsetzen), ui/feldschattierung (zusatz_editor._overlays_neu; test_anzeige_extra)"
  },
  "OPTIONEN > Ansicht > Druckoptionen|Feldschattierung": {
-  "status": "⬜",
-  "wo": "Felder erscheinen nur mit ihrem Ergebnis; keine Feldcodes und keine Schattierung"
+  "status": "✅",
+  "wo": "drucken/felder_code (anzeige_extra.feldcodes_einsetzen), ui/feldschattierung (zusatz_editor._overlays_neu; test_anzeige_extra)"
  },
  "OPTIONEN > Ansicht > Formatierungszeichen|Alle anzeigen": {
   "status": "✅",
@@ -572,12 +572,12 @@
   "wo": "Qt schaltet Absatzmarken, Leerzeichen und Tabs nur gemeinsam"
  },
  "OPTIONEN > Ansicht > Formatierungszeichen|Objektanker": {
-  "status": "⬜",
-  "wo": "Qt kennt weder Objektanker noch ausgeblendeten Text"
+  "status": "✅",
+  "wo": "ui/objektanker (⚓ neben umflossenen Bildern), P_VERSTECKT + VersteckterText, DOCX w:vanish (test_anzeige_extra)"
  },
  "OPTIONEN > Ansicht > Formatierungszeichen|Ausgeblendeter Text": {
-  "status": "⬜",
-  "wo": "Qt kennt weder Objektanker noch ausgeblendeten Text"
+  "status": "✅",
+  "wo": "ui/objektanker (⚓ neben umflossenen Bildern), P_VERSTECKT + VersteckterText, DOCX w:vanish (test_anzeige_extra)"
  },
  "OPTIONEN > Ansicht > Menübandoptionen|Doppelklick blendet das Band aus": {
   "status": "✅",
@@ -628,8 +628,8 @@
   "wo": "autoformat/liste, autoformat/punkte (test_editor)"
  },
  "OPTIONEN > Bearbeiten > AutoFormat|Zahl automatisch im Kreis": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "✅",
+  "wo": "schreibhilfe/akKreiszahl: (1) → ① bis (20) → ⑳ (editor._kreiszahl; test_anzeige_extra)"
  },
  "OPTIONEN > Bearbeiten > AutoKorrektur|Typografische Anführungszeichen": {
   "status": "✅",
@@ -676,8 +676,8 @@
   "wo": "editor_widget._autokorr_extras/keyPressEvent — verdrahtet, noch ohne eigenen Test"
  },
  "OPTIONEN > Bearbeiten > AutoKorrektur|Leerzeichenformat am Ende rechtsbündiger Zeilen anpassen": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "✅",
+  "wo": "schreibhilfe/akRechtsLeer: Leerzeichen am Zeilenende rechtsbündiger Absätze fallen beim Umbruch weg (editor._rechts_leerzeichen_weg)"
  },
  "OPTIONEN > Bearbeiten > Ausschneiden und Einfügen|Ohne Formatierung einfügen": {
   "status": "✅",
@@ -688,12 +688,12 @@
   "wo": "unter Linux/X11 durch Qt (Primärauswahl), nicht schaltbar"
  },
  "OPTIONEN > Bearbeiten > Ausschneiden und Einfügen|Schaltfläche nach dem Einfügen": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "✅",
+  "wo": "editor._einfuegen_mit/_einfuegen_schaltflaeche, bearbeiten/einfuegen_standard (test_editor)"
  },
  "OPTIONEN > Bearbeiten > Ausschneiden und Einfügen|Standardeinfügeformat": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "✅",
+  "wo": "editor._einfuegen_mit/_einfuegen_schaltflaeche, bearbeiten/einfuegen_standard (test_editor)"
  },
  "OPTIONEN > Allgemein und Speichern > Speichern|Dateien als Standard speichern": {
   "status": "✅",
@@ -784,44 +784,44 @@
   "wo": "Optionen ▸ Änderungen verfolgen; editor/zusatz_editor.py (test_zusatz_editor)"
  },
  "OPTIONEN > Änderungen verfolgen > Markup|Einfügungen": {
-  "status": "◐",
-  "wo": "unterstrichen/durchgestrichen in einer Farbe je Autor; nicht einstellbar"
+  "status": "✅",
+  "wo": "aenderungen/ins_stil, del_stil, farbe (zusatz_editor._overlays_neu)"
  },
  "OPTIONEN > Änderungen verfolgen > Markup|Löschvorgänge": {
-  "status": "◐",
-  "wo": "unterstrichen/durchgestrichen in einer Farbe je Autor; nicht einstellbar"
+  "status": "✅",
+  "wo": "aenderungen/ins_stil, del_stil, farbe (zusatz_editor._overlays_neu)"
  },
  "OPTIONEN > Änderungen verfolgen > Markup|Geänderte Zeilen": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "✅",
+  "wo": "aenderungen/balken: Balken am Rand der Zeilen mit Änderungen (Anzeige und Druck)"
  },
  "OPTIONEN > Änderungen verfolgen > Markup|Farbe": {
-  "status": "◐",
-  "wo": "unterstrichen/durchgestrichen in einer Farbe je Autor; nicht einstellbar"
+  "status": "✅",
+  "wo": "aenderungen/ins_stil, del_stil, farbe (zusatz_editor._overlays_neu)"
  },
  "OPTIONEN > Änderungen verfolgen > Sprechblasen|Sprechblasen verwenden": {
-  "status": "⬜",
-  "wo": "keine Sprechblasen; Kommentare stehen im Navigationsbereich"
+  "status": "✅",
+  "wo": "editor/sprechblasen.py + widgets/blasen_flaeche.py: Blasen im Seitenrand mit Autor, Datum, Text und Linien; Optionen ▸ Änderungen verfolgen ▸ Sprechblasen (test_sprechblasen)"
  },
  "OPTIONEN > Änderungen verfolgen > Sprechblasen|Empfohlene Breite verwenden": {
-  "status": "⬜",
-  "wo": "keine Sprechblasen; Kommentare stehen im Navigationsbereich"
+  "status": "✅",
+  "wo": "editor/sprechblasen.py + widgets/blasen_flaeche.py: Blasen im Seitenrand mit Autor, Datum, Text und Linien; Optionen ▸ Änderungen verfolgen ▸ Sprechblasen (test_sprechblasen)"
  },
  "OPTIONEN > Änderungen verfolgen > Sprechblasen|Bevorzugte Breite (mm)": {
-  "status": "⬜",
-  "wo": "keine Sprechblasen; Kommentare stehen im Navigationsbereich"
+  "status": "✅",
+  "wo": "editor/sprechblasen.py + widgets/blasen_flaeche.py: Blasen im Seitenrand mit Autor, Datum, Text und Linien; Optionen ▸ Änderungen verfolgen ▸ Sprechblasen (test_sprechblasen)"
  },
  "OPTIONEN > Änderungen verfolgen > Sprechblasen|Seitenrand": {
-  "status": "⬜",
-  "wo": "keine Sprechblasen; Kommentare stehen im Navigationsbereich"
+  "status": "✅",
+  "wo": "editor/sprechblasen.py + widgets/blasen_flaeche.py: Blasen im Seitenrand mit Autor, Datum, Text und Linien; Optionen ▸ Änderungen verfolgen ▸ Sprechblasen (test_sprechblasen)"
  },
  "OPTIONEN > Änderungen verfolgen > Sprechblasen|Verbindungslinien zum Text anzeigen": {
-  "status": "⬜",
-  "wo": "keine Sprechblasen; Kommentare stehen im Navigationsbereich"
+  "status": "✅",
+  "wo": "editor/sprechblasen.py + widgets/blasen_flaeche.py: Blasen im Seitenrand mit Autor, Datum, Text und Linien; Optionen ▸ Änderungen verfolgen ▸ Sprechblasen (test_sprechblasen)"
  },
  "OPTIONEN > Änderungen verfolgen > Drucken (mit Sprechblasen)|Papierausrichtung": {
-  "status": "⬜",
-  "wo": "keine Sprechblasen"
+  "status": "✅",
+  "wo": "sprechblasen/ausrichtung: Automatisch, Beibehalten, Querformat; die Seite wird verkleinert neben die Blasen gesetzt (pagination.blasen_geometrie; Druck und PDF)"
  },
  "OPTIONEN > In PDF exportieren > Exportoptionen|Hyperlinks": {
   "status": "✅",
@@ -844,20 +844,20 @@
   "wo": "pagination.lesezeichen_sammeln + gliederung_schreiben (pypdf nach QPdfWriter; test_werkzeuge)"
  },
  "OPTIONEN > In PDF exportieren > Exportoptionen|Andere Formatvorlagen in Lesezeichen umwandeln": {
-  "status": "⬜",
-  "wo": "nur Überschriften und Textmarken werden Lesezeichen; Formatvorlagen-Auswahl fehlt"
+  "status": "✅",
+  "wo": "pdf/lz_andere: Titel, Untertitel, Zitat (test_werkzeuge)"
  },
  "OPTIONEN > In PDF exportieren > Exportoptionen|Eigene Formatvorlagen in Lesezeichen umwandeln": {
   "status": "⬜",
-  "wo": "nur Überschriften und Textmarken werden Lesezeichen; Formatvorlagen-Auswahl fehlt"
+  "wo": "es gibt keine selbst angelegten Formatvorlagen, nur das Ändern der vorhandenen"
  },
  "OPTIONEN > In PDF exportieren > Exportoptionen|Kommentare mitnehmen": {
-  "status": "⬜",
-  "wo": "nicht in QPdfWriter möglich; Noten stehen gesammelt am Textende"
+  "status": "✅",
+  "wo": "pdf/kommentare → PDF-Notizen; pdf/notenlinks → Sprungverweise Marke ↔ Note (pypdf; test_werkzeuge, test_fussnoten)"
  },
  "OPTIONEN > In PDF exportieren > Exportoptionen|Verknüpfung von Fuß- und Endnoten": {
-  "status": "⬜",
-  "wo": "nicht in QPdfWriter möglich; Noten stehen gesammelt am Textende"
+  "status": "✅",
+  "wo": "pdf/kommentare → PDF-Notizen; pdf/notenlinks → Sprungverweise Marke ↔ Note (pypdf; test_werkzeuge, test_fussnoten)"
  },
  "OPTIONEN > Benutzerinformationen > Benutzerdaten|Wer schreibt": {
   "status": "✅",
@@ -891,23 +891,23 @@
   "status": "◐",
   "wo": "pagination.render/print_document, main_window.druckoptionen — seiten_liste getestet, übrige nur verdrahtet"
  },
- "OPTIONEN > Drucken > Druckoptionen|Womit das Druckfenster aufgeht": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
- },
  "OPTIONEN > Drucken > Druckoptionen|Zeichnungsobjekte drucken": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "✅",
+  "wo": "drucken/zeichnungen, drucken/felder_code, drucken/versteckt → pagination.render (test_anzeige_extra)"
  },
  "OPTIONEN > Drucken > Druckoptionen|Feldfunktionen drucken": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "✅",
+  "wo": "drucken/zeichnungen, drucken/felder_code, drucken/versteckt → pagination.render (test_anzeige_extra)"
  },
  "OPTIONEN > Drucken > Druckoptionen|Ausgeblendeter Text": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "✅",
+  "wo": "drucken/zeichnungen, drucken/felder_code, drucken/versteckt → pagination.render (test_anzeige_extra)"
  },
  "OPTIONEN > Drucken > Druckoptionen|Autor der Kommentare und Überarbeitungen": {
+  "status": "✅",
+  "wo": "sprechblasen/drucken: Blasen mit Autor und Datum im Ausdruck/PDF"
+ },
+ "OPTIONEN > Drucken > Druckoptionen|Womit das Druckfenster aufgeht": {
   "status": "⬜",
   "wo": "nicht übertragen"
  },
@@ -948,8 +948,8 @@
   "wo": "nur Deutsch"
  },
  "OPTIONEN > Rechtschreibprüfung > Rechtschreibprüfung|Immer Korrekturvorschläge unterbreiten": {
-  "status": "⬜",
-  "wo": "Vorschläge kommen immer; kein Schalter"
+  "status": "✅",
+  "wo": "schreibhilfe/vorschlaege → writing_assistant.erweitere_menue"
  },
  "OPTIONEN > Rechtschreibprüfung > Rechtschreibprüfung|Grammatik mitprüfen": {
   "status": "◐",
@@ -1064,12 +1064,12 @@
   "wo": "nicht übertragen (Grafik-Vorlagen; keine Entsprechung in Qt)"
  },
  "REFERENZEN|Fußnote": {
-  "status": "◐",
-  "wo": "echte DOCX-Fuß-/Endnoten (gelesen und geschrieben, mit LibreOffice geprüft); im PDF/Druck gesammelt am Textende statt am Seitenfuß"
+  "status": "✅",
+  "wo": "echte DOCX-Fuß-/Endnoten (gelesen und geschrieben, mit LibreOffice geprüft); Fußnoten am Seitenfuß in Seitenansicht, Druck und PDF (bei mehreren Spalten gesammelt am Ende)"
  },
  "REFERENZEN|Endnote": {
-  "status": "◐",
-  "wo": "echte DOCX-Fuß-/Endnoten (gelesen und geschrieben, mit LibreOffice geprüft); im PDF/Druck gesammelt am Textende statt am Seitenfuß"
+  "status": "✅",
+  "wo": "echte DOCX-Fuß-/Endnoten (gelesen und geschrieben, mit LibreOffice geprüft); Fußnoten am Seitenfuß in Seitenansicht, Druck und PDF (bei mehreren Spalten gesammelt am Ende)"
  },
  "START > Absatzlayout|Absatzrahmen": {
   "status": "✅",
@@ -1080,12 +1080,12 @@
   "wo": "befehle.objekteWaehlen (test_main_window)"
  },
  "SEITENLAYOUT|Spalten": {
-  "status": "⬜",
-  "wo": "Das Textmodul von Qt kennt keine Spalten"
+  "status": "✅",
+  "wo": "1–4 Spalten live im Editor (editor_widget._sp_*), Seitenansicht, Druck, PDF, DOCX w:cols/Spaltenumbruch (test_spalten_editor, test_werkzeuge; mit LibreOffice geprüft). Gilt für das ganze Dokument; bei mehreren Spalten wirkt ein Seitenumbruch wie ein Spaltenumbruch"
  },
  "SEITENLAYOUT|Umbruch > Spaltenumbruch": {
-  "status": "⬜",
-  "wo": "Das Textmodul von Qt kennt keine Spalten"
+  "status": "✅",
+  "wo": "1–4 Spalten live im Editor (editor_widget._sp_*), Seitenansicht, Druck, PDF, DOCX w:cols/Spaltenumbruch (test_spalten_editor, test_werkzeuge; mit LibreOffice geprüft). Gilt für das ganze Dokument; bei mehreren Spalten wirkt ein Seitenumbruch wie ein Spaltenumbruch"
  },
  "SEITENLAYOUT|Umbruch > Abschnittsumbruch": {
   "status": "◐",

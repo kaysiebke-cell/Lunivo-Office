@@ -240,14 +240,25 @@ class OptionenDialog(QDialog):
     # ================= Wie im WPS Writer =================
     def _ansicht(self, titel):
         p = _Seite(self.w, titel, ["Lineal", "Vertikales Lineal", "Gitternetzlinien",
-                                   "Live-Vorschau", "Minisymbolleiste", "Tipp für Kopf-/Fußzeile",
-                                   "Feldfunktionen drucken, Feldschattierung",
-                                   "Ausgeblendeter Text, Objektanker"])
+                                   ])
         f = p.gruppe("Anzeigen")
         p.haken(f, "ui/marken", "Textbegrenzungen (Eckmarken)", True, self.w.set_marken)
         p.haken(f, "ui/seitenleiste", "Seitenleiste beim Start", True)
         p.haken(f, "ui/navigation", "Navigationsbereich beim Start", False)
+        p.haken(f, "ui/live_vorschau", "Live-Vorschau: Formate beim Überfahren schon im Dokument zeigen", True, lambda _: self.w.vorschau.ende())
+        f = p.gruppe("Minisymbolleiste")
+        p.haken(f, "ui/mini_auswahl", "Minisymbolleiste beim Markieren von Text zeigen", True)
+        p.haken(f, "ui/mini_rechtsklick", "Minisymbolleiste beim Rechtsklick zeigen", True)
+        f = p.gruppe("Weitere Anzeige")
+        p.haken(f, "ui/versteckt_zeigen", "Ausgeblendeten Text anzeigen (grau, gepunktet)", False, lambda _: self.w.versteckt_anwenden())
+        p.haken(f, "ui/objektanker", "Objektanker anzeigen (bei sichtbaren Formatierungszeichen)", True)
+        p.haken(f, "ui/kopffuss_anzeigen", "Kopf- und Fußzeile im Seitenrand zeigen", True)
+        p.haken(f, "ui/kopffuss_tipp", "Tipp „Doppelklick bearbeitet Kopf-/Fußzeile“ zeigen", True)
+        p.auswahl(f, "ui/feldschattierung", "Feldschattierung", ["Nie", "Bei Auswahl", "Immer"], "Bei Auswahl", lambda _: [t.editor._overlays_neu() for t in self.w._doc_tabs()])
         f = p.gruppe("Druckoptionen der Ansicht")
+        p.haken(f, "drucken/versteckt", "Ausgeblendeten Text drucken", False)
+        p.haken(f, "drucken/felder_code", "Feldfunktionen statt Ergebnissen drucken", False)
+        p.haken(f, "drucken/zeichnungen", "Zeichnungsobjekte drucken (Formen, WordArt, Diagramme)", True)
         p.haken(f, "drucken/hervorhebungen", "Hervorhebungen drucken (Textmarker)", True)
         p.haken(f, "drucken/textgrenzen", "Textbegrenzungen drucken (gestrichelter Rahmen um die Textfläche)", False)
         p.haken(f, "drucken/zuschnitt", "Zuschnittsmarken drucken (Ecken der Textfläche)", False)
@@ -269,13 +280,17 @@ class OptionenDialog(QDialog):
 
     def _bearbeiten(self, titel):
         p = _Seite(self.w, titel, ["Text mit der Maus verschieben", "Maximale Rückgängig-Schritte",
-                                   "Ausschneiden und Einfügen"])
+                                   ])
         f = p.gruppe("AutoKorrektur")
         p.haken(f, "schreibhilfe/autokorr", "AutoKorrektur (Hauptschalter)", True, lambda on: self.w.assistant.setze("autokorr", on))
         for name, (std, text) in autokorrektur.SCHALTER.items():
             p.haken(f, "schreibhilfe/" + name, text, std)
         f = p.gruppe("Eingabe")
         p.haken(f, "bearbeiten/tippen_ersetzt", "Eingabe ersetzt die Markierung", True)
+        from ..editor.editor_widget import EINFUEGE_MODI
+        p.auswahl(f, "bearbeiten/einfuegen_standard", "Standardeinfügeformat (Strg+V)", EINFUEGE_MODI, EINFUEGE_MODI[0])
+        p.haken(f, "bearbeiten/einfuegen_schaltflaeche", "Schaltfläche mit Einfügeoptionen nach dem Einfügen zeigen", True)
+        p.haken(f, "schreibhilfe/vorschlaege", "Im Rechtsklickmenü immer Korrekturvorschläge anbieten", True)
         p.haken(f, "bearbeiten/wortweise", "Wortweise markieren (Ziehen mit der Maus erweitert auf ganze Wörter)", True)
         p.haken(f, "autoformat/liste", "Listen beim Tippen erkennen (1.  a)  -  *)", True)
         p.haken(f, "autoformat/punkte", "„- “ und „* “ am Zeilenanfang werden zur Aufzählung", True)
@@ -283,6 +298,8 @@ class OptionenDialog(QDialog):
         p.haken(f, "schreibhilfe/akTabEinzug", "Tab / Rücktaste am Absatzanfang ändert den Einzug", True)
         p.haken(f, "schreibhilfe/akErstzeile", "Leerzeichen am Absatzanfang werden Erstzeileneinzug", False)
         p.haken(f, "schreibhilfe/akZentriert", "Zentrieren hebt den Erstzeileneinzug auf", True)
+        p.haken(f, "schreibhilfe/akKreiszahl", "Zahl in Klammern automatisch in den Kreis setzen: (1) → ①", False)
+        p.haken(f, "schreibhilfe/akRechtsLeer", "Leerzeichen am Ende rechtsbündiger Zeilen entfernen", False)
         f = p.gruppe("Wortvorhersage")
         p.haken(f, "schreibhilfe/vorhersage", "Wortvorhersage", True, lambda on: self.w.assistant.setze("vorhersage", on))
         p.abschluss()
@@ -308,6 +325,9 @@ class OptionenDialog(QDialog):
         p.haken(f, "pdf/eigenschaften", "Dokumenteigenschaften (Autor) in das PDF übernehmen", True)
         p.haken(f, "pdf/lz_ueberschriften", "Überschriften als Lesezeichen", False)
         p.haken(f, "pdf/lz_textmarken", "Textmarken übernehmen", False)
+        p.haken(f, "pdf/lz_andere", "Titel, Untertitel und Zitat als Lesezeichen (andere Formatvorlagen)", False)
+        p.haken(f, "pdf/kommentare", "Kommentare als PDF-Notizen mitnehmen", False)
+        p.haken(f, "pdf/notenlinks", "Fuß- und Endnoten mit ihrer Marke verknüpfen (Sprungverweise)", True)
         f3 = p.gruppe("Vorlagen")
         ve = QLineEdit(p.s.get("vorlagen/ordner", "")); ve.setPlaceholderText("leer = ~/Vorlagen")
         ve.textChanged.connect(lambda t: p.s.set("vorlagen/ordner", t)); f3.addRow("Vorlagenordner", ve)
@@ -373,6 +393,7 @@ class OptionenDialog(QDialog):
         p.haken(f, "drucken/umgekehrt", "Seiten in umgekehrter Reihenfolge drucken", False)
         p.haken(f, "drucken/hintergrund", "Hintergrundfarben und Bilder drucken", True)
         p.haken(f, "drucken/leere", "Leere Seiten drucken", True)
+        p.haken(f, "drucken/nur_formular", "Nur Formulardaten drucken (für vorgedruckte Formulare)", False)
         p.haken(f, "drucken/felder", "Felder (Verzeichnisse) vor dem Drucken aktualisieren", True)
         p.auswahl(f, "drucken/duplex", "Beidseitig von Hand", ["alle", "vorder", "rueck"], "alle")
         p.hinweis("Gedruckt wird über das Druckfenster des Systems (Datei ▸ Drucken). Kopf-/Fußzeile und Seitenzahlen werden mitgedruckt.")
@@ -454,8 +475,7 @@ class OptionenDialog(QDialog):
         return p
 
     def _verfolgen(self, titel):
-        p = _Seite(self.w, titel, ["Sprechblasen (Breite, Seitenrand, Verbindungslinien, Drucken mit Sprechblasen)",
-                                   "Farbe und Darstellung je Änderungsart einstellen"])
+        p = _Seite(self.w, titel)
         f = p.gruppe("Änderungen verfolgen")
         b = QCheckBox("Änderungen im aktuellen Dokument verfolgen")
         e = self.w.current_editor()
@@ -466,8 +486,26 @@ class OptionenDialog(QDialog):
         m.setChecked(bool(e.markup) if e else True); m.setEnabled(e is not None)
         m.toggled.connect(lambda on: self.w.current_editor() and self.w.current_editor().set_markup(on))
         f.addRow(m)
-        p.hinweis("Einfügungen stehen unterstrichen, Löschungen durchgestrichen, in einer Farbe je Autor. Der Autor kommt aus "
-                  "Optionen ▸ Benutzerinformationen. Änderungen und Kommentare werden in DOCX als echte Überarbeitungen gespeichert.")
+        from ..editor import sprechblasen as SB
+        from ..editor.zusatz_editor import DEL_STILE, FESTE_FARBEN, INS_STILE
+        neu = lambda _=None: self.w.markup_neu()                                               # noqa: E731
+        f = p.gruppe("Markup")
+        p.auswahl(f, "aenderungen/ins_stil", "Einfügungen", INS_STILE, "Unterstrichen", neu)
+        p.auswahl(f, "aenderungen/del_stil", "Löschvorgänge", DEL_STILE, "Durchgestrichen", neu)
+        p.auswahl(f, "aenderungen/balken", "Geänderte Zeilen (Balken im Rand)", ["links", "rechts", "außen", "keine"], "links", neu)
+        p.auswahl(f, "aenderungen/farbe", "Farbe", ["Nach Autor"] + list(FESTE_FARBEN), "Nach Autor", neu)
+        f = p.gruppe("Sprechblasen")
+        p.auswahl(f, "sprechblasen/verwenden", "Sprechblasen verwenden", SB.VERWENDEN, SB.STANDARD["verwenden"], neu)
+        p.haken(f, "sprechblasen/empfohlen", "Empfohlene Breite verwenden (60 mm)", True, neu)
+        p.zahl(f, "sprechblasen/breite_mm", "Bevorzugte Breite", 30, 120, 60, " mm", 1, neu)
+        p.auswahl(f, "sprechblasen/rand", "Seitenrand", SB.RAND, "Rechts", neu)
+        p.haken(f, "sprechblasen/linien", "Verbindungslinien zum Text anzeigen", True, neu)
+        f = p.gruppe("Drucken (mit Sprechblasen)")
+        p.haken(f, "sprechblasen/drucken", "Sprechblasen mitdrucken und exportieren", False)
+        p.auswahl(f, "sprechblasen/ausrichtung", "Papierausrichtung", SB.AUSRICHTUNG, "Automatisch")
+        p.hinweis("Einfügungen und Löschungen stehen in einer Farbe je Autor (oder in einer festen Farbe). Der Autor kommt aus "
+                  "Optionen ▸ Benutzerinformationen. Änderungen und Kommentare werden in DOCX als echte Überarbeitungen gespeichert. "
+                  "Beim Drucken mit Sprechblasen wird die Seite verkleinert, damit rechts oder links Platz für die Blasen bleibt.")
         p.abschluss()
         return p
 

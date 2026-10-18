@@ -1,15 +1,18 @@
 """Der Editor: QTextEdit mit Seitenbreite, Formatierungsbefehlen und Seitenzählung."""
 from __future__ import annotations
 
-from PySide6.QtCore import QPoint, QRect, QRectF, QTimer, Qt, Signal, QUrl
+from PySide6.QtCore import QMimeData, QPoint, QPointF, QRect, QRectF, QSizeF, QTimer, Qt, Signal, QUrl
 from PySide6.QtGui import (
-    QBrush, QColor, QFont, QImage, QPainter, QPen, QTextBlockFormat, QTextCharFormat, QTextCursor,
+    QAbstractTextDocumentLayout, QBrush, QColor, QFont, QImage, QMouseEvent, QPainter, QPalette, QPen, QTextBlockFormat, QTextCharFormat, QTextCursor,
     QTextDocument, QTextFormat, QTextFrameFormat, QTextImageFormat, QTextListFormat,
-    QTextTableFormat, QTextLength,
+    QTextTableFormat, QTextLength, QTextDocumentFragment, QTextOption,
 )
 from PySide6.QtWidgets import QListWidget, QListWidgetItem, QScrollArea, QTextEdit
 
 from ..document_io.docx_reader import LH_PROPORTIONAL, STYLE_PROP
+from . import sprechblasen as SB
+from .anzeige_extra import VersteckterText, aenderungszeilen, feldbereiche
+from .zusatz import P_VERSTECKT
 from .page import PageSettings, mm_to_px
 from ..services.autokorrektur import kleinste_aenderung
 from .pagination import bind_layout, paginated_copy
@@ -17,6 +20,33 @@ from . import stile
 from .zusatz_editor import ZusatzMixin
 
 STYLES = dict.fromkeys(stile.NAMEN)            # Namen der Formatvorlagen (Definitionen: editor/stile.py)
+
+
+EINFUEGE_MODI = ["Quellformatierung beibehalten", "Zielformatierung verwenden", "Nur Text"]
+
+
+def _ziel_fragment(html: str, standard: QFont):
+    """HTML einfügen, aber Schriftart, -größe, Farben und Hintergründe des Ziels behalten (Fett, Kursiv, Verweise bleiben)."""
+    from PySide6.QtGui import QBrush
+    d = QTextDocument()
+    d.setHtml(html)
+    c = QTextCursor(d)
+    c.select(QTextCursor.Document)
+    b = d.firstBlock()
+    while b.isValid():
+        it = b.begin()
+        while not it.atEnd():
+            fr = it.fragment()
+            if fr.isValid() and not fr.charFormat().isImageFormat():
+                f = QTextCharFormat(fr.charFormat())
+                f.clearProperty(QTextFormat.FontFamilies); f.clearProperty(QTextFormat.FontFamily)
+                f.clearProperty(QTextFormat.FontPointSize); f.clearProperty(QTextFormat.FontPixelSize)
+                f.clearForeground(); f.clearBackground()
+                k = QTextCursor(d); k.setPosition(fr.position()); k.setPosition(fr.position() + fr.length(), QTextCursor.KeepAnchor)
+                k.setCharFormat(f)
+            it += 1
+        b = b.next()
+    return QTextDocumentFragment(d)
 
 
 class DocumentEditor(ZusatzMixin, QTextEdit):
@@ -42,8 +72,10 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         self.marken = True                 # Textbegrenzungen (Eckmarken am Textrand)
         self.vorhersage = None            # Rückruf: Wortanfang → Liste von Vorschlägen
         self.autokorr = None              # Rückruf: Text vor dem Zeiger → korrigierter Text
+        self.mini_hook = None             # Rückruf(editor, globalePosition, rechtsklick): Minisymbolleiste zeigen/verbergen
         self.kontext_hook = None          # Rückruf(menü, position): ergänzt das Rechtsklick-Menü
         self.opt = lambda name, std=True: std      # Rückruf: Schalter aus den Optionen
+        self.opt_text = lambda name, std="": std   # Rückruf: Textwerte aus den Optionen
         self._wellen: list[dict] = []
         self._popup = QListWidget(None)
         self._popup.setWindowFlags(Qt.ToolTip)
@@ -65,6 +97,19 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         self.cursorPositionChanged.connect(self._scroll_outer)
         self._verbinde_groesse()
         self._zusatz_init()
+        self.versteckt_zeigen = False
+        self._blasen_flaeche = None
+        self._blasen_cache = (None, [])
+        self._blasen_extra = 0
+        self._versteckt_hl = VersteckterText(self.document())
+        self._zeilen_cache = (-1, [])
+        self._sp_caret = True
+        self._sp_timer = QTimer(self)                  # Schreibmarke blinkt selbst, solange Spalten gezeichnet werden
+        self._sp_timer.setInterval(530)
+        self._sp_timer.timeout.connect(self._sp_blinken)
+        self.cursorPositionChanged.connect(self._sp_neu_zeichnen)
+        self.selectionChanged.connect(self._sp_neu_zeichnen)
+        self.document().contentsChanged.connect(self._sp_neu_zeichnen)
         self.apply_page(self.page)
 
     # ---- Dokument und Seite ---------------------------------------------
@@ -73,6 +118,10 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
 
     def _passe_hoehe_an(self, *_):
         h = int(self.document().size().height()) + 4
+        if self._spalten_aktiv():
+            g = self._sp_geo()
+            blaetter = max(1, -(-max(1, self.document().pageCount()) // g["n"]))
+            h = int(g["mt"] + blaetter * g["ch"] + g["mb"]) + 4
         mind = 0 if self.web else int(mm_to_px(self.page.height_mm) * self.zoom)
         self.setFixedHeight(max(h, mind))
         self.pageApplied.emit()
@@ -93,6 +142,7 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
 
     def set_document_and_page(self, doc: QTextDocument, page: PageSettings) -> None:
         self.setDocument(doc)
+        self._versteckt_hl = VersteckterText(doc, self.versteckt_zeigen)
         self._verbinde_groesse()
         doc.setDocumentMargin(0)
         doc.contentsChanged.connect(self._timer.start)
@@ -114,6 +164,14 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
                 setze(mm_to_px(8))
             root.setFrameFormat(ff)
             self.setFixedWidth(max(300, int(self._web_breite)))
+        elif int(page.spalten) > 1:
+            # Spalten: Text fließt in Spaltenbreite und wird auf Spaltenhöhe in „Spaltenseiten“ geteilt; paintEvent und die
+            # Mausabbildung stellen sie nebeneinander auf das Blatt (siehe _sp_*).
+            for setze in (ff.setTopMargin, ff.setBottomMargin, ff.setLeftMargin, ff.setRightMargin):
+                setze(0)
+            root.setFrameFormat(ff)
+            self.setFixedWidth(int(mm_to_px(page.width_mm) * self.zoom) + 2)
+            self._sp_einrichten()
         else:
             ff.setTopMargin(mm_to_px(page.margin_top_mm))
             ff.setBottomMargin(mm_to_px(page.margin_bottom_mm))
@@ -121,9 +179,307 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
             ff.setRightMargin(mm_to_px(page.margin_right_mm))
             root.setFrameFormat(ff)
             self.setFixedWidth(int(mm_to_px(page.width_mm) * self.zoom) + 2)
+        self._blasen_einrichten()
+        if not self._spalten_aktiv() and self.lineWrapMode() != QTextEdit.WidgetWidth:
+            self.setLineWrapMode(QTextEdit.WidgetWidth)
+            doc.setPageSize(QSizeF(self.viewport().width(), -1))
+            self._sp_timer.stop()
+            self.setAcceptDrops(True)
         self._passe_hoehe_an()
         self._timer.start()
         self.pageApplied.emit()
+
+    # ---- Sprechblasen ------------------------------------------------------------------------------------------------
+    class _OptAdapter:
+        """Gibt `sprechblasen.konfig_lesen` die Rückrufe des Editors statt einer Settings-Klasse."""
+        def __init__(self, ed):
+            self.ed = ed
+
+        def get(self, name, std=None):
+            return self.ed.opt_text(name, std if isinstance(std, str) else str(std if std is not None else ""))
+
+        def get_bool(self, name, std=False):
+            return self.ed.opt(name, std)
+
+    def blasen_konfig(self) -> dict:
+        return SB.konfig_lesen(self._OptAdapter(self))
+
+    def blasen_rand(self) -> str:
+        return self.blasen_konfig()["rand"]
+
+    def blasen_linien(self) -> bool:
+        return self.blasen_konfig()["linien"]
+
+    def _blasen_da(self) -> bool:
+        k = self.blasen_konfig()
+        if self.web or not SB.aktiv(k):
+            return False
+        if self.kommentare:
+            return True
+        return k["verwenden"] == "Immer" and bool(self.aenderungen())
+
+    def _blasen_einrichten(self) -> None:
+        """Seitenrand für die Blasen: Fläche neben der Seite (setViewportMargins), nur wenn es Blasen gibt."""
+        k = self.blasen_konfig()
+        extra = int((SB.breite_mm(k) + SB.LUECKE_MM) * mm_to_px(1) * self.zoom) if self._blasen_da() else 0
+        self._blasen_extra = extra
+        links = k["rand"] == "Links"
+        self.setViewportMargins(extra if links else 0, 0, 0 if links else extra, 0)
+        if not self.web:
+            self.setFixedWidth(int(mm_to_px(self.page.width_mm) * self.zoom) + 2 + extra)
+        if extra and self._blasen_flaeche is None:
+            from ..widgets.blasen_flaeche import BlasenFlaeche
+            self._blasen_flaeche = BlasenFlaeche(self)
+        if self._blasen_flaeche is not None:
+            self._blasen_flaeche.setVisible(bool(extra))
+        self._blasen_geometrie()
+
+    def _blasen_geometrie(self) -> None:
+        f = self._blasen_flaeche
+        if f is None or not self._blasen_extra:
+            return
+        vp = self.viewport().geometry()
+        if self.blasen_rand() == "Links":
+            f.setGeometry(0, vp.top(), self._blasen_extra, vp.height())
+        else:
+            f.setGeometry(vp.right() + 1, vp.top(), self._blasen_extra, vp.height())
+        f.update()
+
+    def blasen_layout(self, breite: float) -> list:
+        """[(Blase, Rechteck in der Blasenfläche, y der Textzeile)] — gestapelt, ohne sich zu überlappen."""
+        rev = (self.document().revision(), id(self.kommentare), len(self.kommentare), round(breite), self.zoom)
+        if self._blasen_cache[0] == rev:
+            return self._blasen_cache[1]
+        k = self.blasen_konfig()
+        blasen = SB.sammeln(self.document(), self.kommentare, k["verwenden"])
+        font = QFont(self.font()); font.setPixelSize(max(7, int(11 * self.zoom)))
+        w = max(60.0, breite - 12)
+        anker, hoehen = [], []
+        for bl in blasen:
+            r = self.cursorRect(self._cursor_at(min(bl.von, self.document().characterCount() - 1)))
+            anker.append(float(r.y()))
+            hoehen.append(SB.messen(bl, w, font))
+        unten = float(self.height())
+        ys = SB.stapeln(anker, hoehen, unten)
+        x = 6.0
+        out = [(bl, QRectF(x, y, w, h), a + 8) for bl, y, h, a in zip(blasen, ys, hoehen, anker)]
+        self._blasen_cache = (rev, out)
+        return out
+
+    def kommentar_bearbeiten(self, kid: int) -> None:
+        fenster = self.window()
+        alt = self.kommentare.get(kid, {}).get("text", "")
+        if hasattr(fenster, "befehle") and (t := fenster.befehle._text_abfragen("Kommentar bearbeiten", "Kommentar:", alt)) is not None:
+            self.kommentare[kid]["text"] = t
+            self.document().setModified(True)
+            self._zus_geaendert()
+
+    # ---- Ausgeblendeter Text -------------------------------------------------------------------------------------------
+    def set_versteckt_zeigen(self, an: bool) -> None:
+        self.versteckt_zeigen = an
+        self._versteckt_hl.setze_zeigen(an)
+        self._timer.start()
+
+    def ist_versteckt(self) -> bool:
+        c = self.textCursor()
+        if not c.hasSelection():
+            return c.charFormat().hasProperty(P_VERSTECKT)
+        return all(f.charFormat().hasProperty(P_VERSTECKT) for f in self._fragmente_in(c.selectionStart(), c.selectionEnd()))
+
+    def _fragmente_in(self, von: int, bis: int):
+        b = self.document().findBlock(von)
+        while b.isValid() and b.position() < bis:
+            it = b.begin()
+            while not it.atEnd():
+                f = it.fragment()
+                if f.isValid() and f.position() < bis and f.position() + f.length() > von:
+                    yield f
+                it += 1
+            b = b.next()
+
+    def set_versteckt(self, an: bool) -> None:
+        """Markierung (oder Wort am Zeiger) als ausgeblendeten Text formatieren / zurücknehmen."""
+        c = self.textCursor()
+        if not c.hasSelection():
+            c.select(QTextCursor.WordUnderCursor)
+        if not c.hasSelection():
+            return
+        von, bis = c.selectionStart(), c.selectionEnd()
+        c.beginEditBlock()
+        for f in list(self._fragmente_in(von, bis)):
+            a, e = max(von, f.position()), min(bis, f.position() + f.length())
+            k = QTextCursor(self.document()); k.setPosition(a); k.setPosition(e, QTextCursor.KeepAnchor)
+            fm = QTextCharFormat(f.charFormat())
+            fm.setProperty(P_VERSTECKT, 1) if an else fm.clearProperty(P_VERSTECKT)
+            k.setCharFormat(fm)
+        c.endEditBlock()
+        self._versteckt_hl.rehighlight()
+        self.document().setModified(True)
+
+    # ---- Spalten im Editor -----------------------------------------------------------------------------------------
+    def _spalten_aktiv(self) -> bool:
+        return (not self.web) and int(self.page.spalten) > 1
+
+    def _sp_geo(self) -> dict:
+        z, pg = self.zoom, self.page
+        n = max(1, int(pg.spalten))
+        return {"n": n, "cb": round(pg.spalten_breite_px * z), "g": mm_to_px(pg.spalten_abstand_mm) * z,
+                "ch": pg.content_height_px * z, "ml": mm_to_px(pg.margin_left_mm) * z, "mt": mm_to_px(pg.margin_top_mm) * z,
+                "mb": mm_to_px(pg.margin_bottom_mm) * z}
+
+    def _sp_einrichten(self) -> None:
+        """Dokument in Spaltenbreite und -höhe legen: feste Zeilenbreite, damit QTextEdit die Seitenhöhe nicht wieder auf „endlos“ setzt."""
+        g = self._sp_geo()
+        self.setLineWrapMode(QTextEdit.FixedPixelWidth)
+        self.setLineWrapColumnOrWidth(int(g["cb"]))
+        self.document().setPageSize(QSizeF(g["cb"], g["ch"]))
+        self.setAcceptDrops(False)                      # Ziehen und Ablegen kennt die Spaltenabbildung nicht
+        if self.hasFocus():
+            self._sp_timer.start()
+
+    def _sp_view(self, dx: float, dy: float) -> tuple[float, float]:
+        """Dokumentkoordinate (fortlaufender Fluss der Spaltenseiten) → Punkt auf dem Blatt."""
+        g = self._sp_geo()
+        lp = max(0, int((dy + 1.0) // g["ch"]))        # +1: Qt gibt Rechtecke ganzzahlig, die Seitengrenze liegt meist knapp darüber
+        s, j = divmod(lp, g["n"])
+        return g["ml"] + j * (g["cb"] + g["g"]) + dx, g["mt"] + s * g["ch"] + max(0.0, dy - lp * g["ch"])
+
+    def _sp_doc(self, vx: float, vy: float) -> tuple[float, float]:
+        """Punkt auf dem Blatt → Dokumentkoordinate; Punkte in Rändern und Lücken landen in der nächsten Spalte."""
+        g = self._sp_geo()
+        s = max(0, int((vy - g["mt"]) // g["ch"]))
+        y_in = min(max(vy - g["mt"] - s * g["ch"], 0.0), g["ch"] - 1)
+        j = min(g["n"] - 1, max(0, int((vx - g["ml"] + g["g"] / 2) // (g["cb"] + g["g"]))))
+        dx = min(max(vx - (g["ml"] + j * (g["cb"] + g["g"])), 0.0), g["cb"])
+        lp = s * g["n"] + j
+        letzte = max(0, self.document().pageCount() - 1)
+        if lp > letzte:
+            return dx, self.document().size().height() - 1
+        return dx, lp * g["ch"] + y_in
+
+    def _sp_neu_zeichnen(self, *_) -> None:
+        try:
+            if self._spalten_aktiv():
+                self._sp_caret = True
+                self.viewport().update()
+        except RuntimeError:                           # beim Abbau ist das Widget schon weg
+            pass
+
+    def _sp_blinken(self) -> None:
+        if self._spalten_aktiv() and self.hasFocus():
+            self._sp_caret = not self._sp_caret
+            self.viewport().update()
+
+    def focusInEvent(self, e) -> None:
+        super().focusInEvent(e)
+        if self._spalten_aktiv():
+            self._sp_timer.start()
+
+    def cursorRect(self, *args) -> QRect:
+        r = super().cursorRect(*args)
+        if self._spalten_aktiv():
+            x, y = self._sp_view(r.x(), r.y())
+            return QRect(int(x), int(y), r.width(), r.height())
+        return r
+
+    def cursorForPosition(self, pos: QPoint) -> QTextCursor:
+        if self._spalten_aktiv():
+            x, y = self._sp_doc(pos.x(), pos.y())
+            pos = QPoint(int(x), int(y))
+        return super().cursorForPosition(pos)
+
+    def anchorAt(self, pos: QPoint) -> str:
+        if self._spalten_aktiv():
+            x, y = self._sp_doc(pos.x(), pos.y())
+            pos = QPoint(int(x), int(y))
+        return super().anchorAt(pos)
+
+    def _maus_abgebildet(self, e):
+        """Mausereignis mit Dokumentkoordinaten (nur bei Spalten); QTextEdit selbst rechnet in Dokumentkoordinaten."""
+        if not self._spalten_aktiv():
+            return e
+        x, y = self._sp_doc(e.position().x(), e.position().y())
+        return QMouseEvent(e.type(), QPointF(x, y), e.globalPosition(), e.button(), e.buttons(), e.modifiers())
+
+    def mousePressEvent(self, e) -> None:
+        super().mousePressEvent(self._maus_abgebildet(e))
+
+    def _kopffuss_zone(self, y: float) -> str:
+        """„kopf“ im oberen, „fuss“ im unteren Rand der Seite (nur Seitenansicht, nicht im Weblayout)."""
+        if self.web:
+            return ""
+        z = self.zoom
+        if y < mm_to_px(self.page.margin_top_mm) * z - 4:
+            return "kopf"
+        if y > self.viewport().height() - mm_to_px(self.page.margin_bottom_mm) * z + 4:
+            return "fuss"
+        return ""
+
+    def mouseMoveEvent(self, e) -> None:
+        zone = self._kopffuss_zone(e.position().y())
+        if zone and not e.buttons() and self.opt("ui/kopffuss_tipp", True):
+            from PySide6.QtWidgets import QToolTip
+            QToolTip.showText(e.globalPosition().toPoint(), "Doppelklick bearbeitet die " + ("Kopfzeile" if zone == "kopf" else "Fußzeile"), self)
+        super().mouseMoveEvent(self._maus_abgebildet(e))
+
+    def mouseDoubleClickEvent(self, e) -> None:
+        zone = self._kopffuss_zone(e.position().y())
+        fenster = self.window()
+        if zone and hasattr(fenster, "edit_header_footer"):
+            fenster.edit_header_footer(zone == "kopf")
+            return
+        super().mouseDoubleClickEvent(self._maus_abgebildet(e))
+
+    def resizeEvent(self, e) -> None:
+        super().resizeEvent(e)
+        self._blasen_geometrie()
+        if self._spalten_aktiv():
+            g = self._sp_geo()
+            ps = self.document().pageSize()
+            if abs(ps.height() - g["ch"]) > 0.5 or abs(ps.width() - g["cb"]) > 0.5:
+                self.document().setPageSize(QSizeF(g["cb"], g["ch"]))
+
+    def _sp_zeichnen(self, e) -> None:
+        """Text, Auswahl, Schreibmarke und Wellenlinien: jede Spaltenseite in ihre Spalte auf dem Blatt."""
+        vp = self.viewport()
+        p = QPainter(vp)
+        p.fillRect(e.rect(), QColor(self.page.color or "white"))
+        doc = self.document()
+        lay = doc.documentLayout()
+        g = self._sp_geo()
+        ctx = QAbstractTextDocumentLayout.PaintContext()
+        pal = QPalette(self.palette())
+        pal.setColor(QPalette.Text, QColor("black"))
+        ctx.palette = pal
+        auswahl = []
+        for es in self.extraSelections():
+            a = QAbstractTextDocumentLayout.Selection()
+            a.cursor, a.format = es.cursor, es.format
+            auswahl.append(a)
+        c = self.textCursor()
+        if c.hasSelection():
+            a = QAbstractTextDocumentLayout.Selection()
+            a.cursor = c
+            a.format.setBackground(self.palette().highlight())
+            a.format.setForeground(self.palette().highlightedText())
+            auswahl.append(a)
+        ctx.selections = auswahl
+        ctx.cursorPosition = c.position() if (self._sp_caret and self.hasFocus() and not c.hasSelection()
+                                              and not self.isReadOnly()) else -1
+        sicht = QRectF(e.rect())
+        for lp in range(max(1, doc.pageCount())):
+            s, j = divmod(lp, g["n"])
+            x0, y0 = g["ml"] + j * (g["cb"] + g["g"]), g["mt"] + s * g["ch"]
+            feld = QRectF(x0 - 6, y0, g["cb"] + 12, g["ch"])
+            if not feld.intersects(sicht):
+                continue
+            p.save()
+            p.setClipRect(feld)
+            p.translate(x0, y0 - lp * g["ch"])
+            ctx.clip = QRectF(-6, lp * g["ch"], g["cb"] + 12, g["ch"])
+            lay.draw(p, ctx)
+            p.restore()
+        p.end()
 
     def set_web(self, an: bool) -> None:
         if an != self.web:
@@ -233,6 +589,11 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
 
     def seitenspannen(self) -> list[tuple[int, int]]:
         """Senkrechte Bereiche (von, bis) jeder Seite im Editor, aus den Seitenwechseln."""
+        if self._spalten_aktiv():
+            g = self._sp_geo()
+            blaetter = max(1, -(-max(1, self.document().pageCount()) // g["n"]))
+            return [(0 if k == 0 else int(g["mt"] + k * g["ch"]),
+                     int(g["mt"] + (k + 1) * g["ch"] + (g["mb"] if k == blaetter - 1 else 0))) for k in range(blaetter)]
         h = self.viewport().height() + self.verticalScrollBar().value()
         h = max(h, int(self.document().size().height()))
         starts = [0]
@@ -299,7 +660,15 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
 
     # ---- Seitenzählung -----------------------------------------------------
     def _recount(self) -> None:
-        self._paged = paginated_copy(self.document(), self.page, self.noten, silben=False)   # wie die Bearbeitungsansicht umbricht: ohne Trennstriche
+        if self._spalten_aktiv():                      # die Spaltenseiten stammen aus dem Editor-Dokument selbst
+            g = self._sp_geo()
+            self._paged = None
+            self._breaks = []
+            self._pages = max(1, -(-max(1, self.document().pageCount()) // g["n"]))
+            self.viewport().update()
+            self._cursor_moved()
+            return
+        self._paged = paginated_copy(self.document(), self.page, self.noten, silben=False, einspaltig=True, versteckt=self.versteckt_zeigen)   # wie die Bearbeitungsansicht umbricht: ohne Trennstriche
         self._pages = max(1, self._paged.pageCount())
         self._breaks = self._seitenwechsel(self._paged)
         self.viewport().update()
@@ -333,6 +702,10 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         return self._pages
 
     def current_page(self) -> int:
+        if self._spalten_aktiv():
+            g = self._sp_geo()
+            r = QTextEdit.cursorRect(self)
+            return max(1, min(self._pages, int((r.y() + 1.0) // g["ch"]) // g["n"] + 1))
         if self._paged is None:
             return 1
         pos = min(self.textCursor().position(), max(0, self._paged.characterCount() - 1))
@@ -341,11 +714,16 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
             return 1
         rect = self._paged.documentLayout().blockBoundingRect(blk)
         ch = self.page.content_height_px
-        return max(1, min(self._pages, int(rect.top() // ch) + 1))
+        return max(1, min(self._pages, int((rect.top() + 0.5) // ch) + 1))
 
     def _cursor_moved(self) -> None:
-        self.pageInfoChanged.emit(self.current_page(), self._pages)
-        self.formatChanged.emit()
+        try:
+            self.pageInfoChanged.emit(self.current_page(), self._pages)
+            self.formatChanged.emit()
+        except RuntimeError:                           # beim Abbau ist das Widget schon weg
+            return
+        if self.opt_text("ui/feldschattierung", "Bei Auswahl") == "Bei Auswahl":
+            self._zus_timer.start()
         hl = getattr(self, "_silben", None)
         if hl is not None and hl.k["nur_absatz"]:
             neu = self.textCursor().blockNumber()
@@ -608,6 +986,12 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         bf = QTextBlockFormat(); bf.setPageBreakPolicy(QTextFormat.PageBreak_AlwaysBefore)
         cur.insertBlock(bf)
 
+    def insert_column_break(self) -> None:
+        from .zusatz import B_SPALTE
+        cur = self.textCursor()
+        bf = QTextBlockFormat(); bf.setPageBreakPolicy(QTextFormat.PageBreak_AlwaysBefore); bf.setProperty(B_SPALTE, 1)
+        cur.insertBlock(bf)
+
     def insert_table(self, rows: int, cols: int, borders: bool = True) -> None:
         tf = QTextTableFormat()
         tf.setCellPadding(4); tf.setCellSpacing(0)
@@ -733,16 +1117,27 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
             c = self._bild_cursor()
             aktuell = U.schwebend(self.document(), c.selectionStart()) or "zeile"
             for modus, text in (("zeile", "Bild: mit Text in Zeile"), ("links", "Bild: links, Text umfließt"),
-                                ("rechts", "Bild: rechts, Text umfließt")):
+                                ("rechts", "Bild: rechts, Text umfließt"),
+                                ("oben_unten", "Bild: oben und unten (eigene Zeile)")):
                 a = m.addAction(text, lambda _=False, modus=modus: U.umbruch_setzen(self, modus))
                 a.setCheckable(True)
                 a.setChecked(modus == aktuell)
+        if self.textCursor().hasSelection() and not self.isReadOnly():
+            m.addSeparator()
+            a = m.addAction("Ausgeblendeter Text", lambda: self.set_versteckt(not self.ist_versteckt()))
+            a.setCheckable(True)
+            a.setChecked(self.ist_versteckt())
         ki = getattr(self.window(), "ki", None)
         if ki is not None and self.textCursor().hasSelection() and not self.isReadOnly():
             m.addSeparator()
             m.addAction("KI: Text in Bild", ki.bild_aus_text)
+        mini = self.mini_hook is not None and self.opt("ui/mini_rechtsklick", True) and not self.isReadOnly()
+        if mini:
+            self.mini_hook(self, e.globalPos(), True)
         m.exec(e.globalPos())
         m.deleteLater()
+        if mini:
+            self.mini_hook(None, None, True)
 
     def _wortweise(self) -> None:
         """Wortweise markieren: eine mit der Maus gezogene Auswahl wird an Wortgrenzen erweitert."""
@@ -766,9 +1161,14 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         return c
 
     def mouseReleaseEvent(self, e) -> None:
-        super().mouseReleaseEvent(e)
+        super().mouseReleaseEvent(self._maus_abgebildet(e))
         if e.button() == Qt.LeftButton and self.opt("bearbeiten/wortweise", True) and self.textCursor().hasSelection():
             self._wortweise()
+        if (e.button() == Qt.LeftButton and self.mini_hook is not None and self.textCursor().hasSelection()
+                and not self.isReadOnly() and self.opt("ui/mini_auswahl", True) and not self._bild_cursor()):
+            c = QTextCursor(self.textCursor())
+            c.setPosition(c.selectionStart())
+            self.mini_hook(self, self.viewport().mapToGlobal(self.cursorRect(c).topLeft()), False)
         if (e.modifiers() & Qt.ControlModifier) and self.opt("ui/strg_klick_link", True):
             href = self.anchorAt(e.pos())
             if href and href.startswith("#"):
@@ -782,7 +1182,9 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
                 return
         if e.button() == Qt.LeftButton and not self.textCursor().hasSelection() and not self.isReadOnly():
             from .sendungen import kasten_umschalten
-            if kasten_umschalten(self, self.cursorForPosition(e.pos()).position()):
+            from . import formular as FO
+            pos = self.cursorForPosition(e.pos()).position()
+            if FO.klick(self, pos, self.window()) or kasten_umschalten(self, pos):
                 return
         c = self.cursorForPosition(e.pos())
         c2 = QTextCursor(c)
@@ -809,7 +1211,11 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         self.document().setDefaultFont(f)
 
     def paintEvent(self, e) -> None:
-        super().paintEvent(e)
+        sp = self._spalten_aktiv()
+        if sp:
+            self._sp_zeichnen(e)
+        else:
+            super().paintEvent(e)
         vp = self.viewport()
         p = QPainter(vp)
         self._schmuck_zeichnen(p)
@@ -817,11 +1223,22 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
             self._gitter_zeichnen(p)
         if not self.web and self._hat_rahmen():
             from .pagination import absatzrahmen_zeichnen
-            p.save()
-            p.translate(0, -self.verticalScrollBar().value())
-            absatzrahmen_zeichnen(p, self.document(), self.zoom)
-            p.restore()
-        if self.page.zeilennummern and not self.web:
+            if sp:
+                g = self._sp_geo()
+                for lp in range(max(1, self.document().pageCount())):
+                    k, j = divmod(lp, g["n"])
+                    x0, y0 = g["ml"] + j * (g["cb"] + g["g"]), g["mt"] + k * g["ch"]
+                    p.save()
+                    p.setClipRect(QRectF(x0 - 6, y0, g["cb"] + 12, g["ch"]))
+                    p.translate(x0, y0 - lp * g["ch"])
+                    absatzrahmen_zeichnen(p, self.document(), self.zoom)
+                    p.restore()
+            else:
+                p.save()
+                p.translate(0, -self.verticalScrollBar().value())
+                absatzrahmen_zeichnen(p, self.document(), self.zoom)
+                p.restore()
+        if self.page.zeilennummern and not self.web and not sp:
             self._zeilennummern_zeichnen(p)
         if self.marken and not self.web:
             z = self.zoom
@@ -833,7 +1250,23 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
             for x, dx in ((ml, 1), (x2, -1)):
                 p.drawLine(x, y - 1, x + dx * L, y - 1)
                 p.drawLine(x - dx, y - L, x - dx, y - 1)
-        if self._breaks and not self.web:
+        self._extras_zeichnen(p, sp)
+        if sp:
+            g = self._sp_geo()
+            blaetter = max(1, -(-max(1, self.document().pageCount()) // g["n"]))
+            if self.page.spalten_linie:
+                p.setPen(QPen(QColor("#868e96"), 1))
+                for k in range(blaetter):
+                    for j in range(1, g["n"]):
+                        x = int(g["ml"] + j * (g["cb"] + g["g"]) - g["g"] / 2)
+                        p.drawLine(x, int(g["mt"] + k * g["ch"]), x, int(g["mt"] + (k + 1) * g["ch"]))
+            p.setPen(QPen(QColor("#868e96"), 1, Qt.DashLine))
+            f = p.font(); f.setPointSizeF(8); p.setFont(f)
+            for k in range(1, blaetter):
+                y = int(g["mt"] + k * g["ch"]) - 3
+                p.drawLine(0, y, vp.width(), y)
+                p.drawText(6, y - 2, f"Seite {k + 1}")
+        elif self._breaks and not self.web:
             p.setPen(QPen(QColor("#868e96"), 1, Qt.DashLine))
             f = p.font(); f.setPointSizeF(8); p.setFont(f)
             n = self.document().characterCount()
@@ -855,6 +1288,75 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
             p.drawRect(QRect(0, 0, vp.width(), zeile.top()))
             p.drawRect(QRect(0, zeile.bottom() + 1, vp.width(), vp.height()))
         p.end()
+
+    def _aenderungszeilen_gecacht(self) -> list:
+        rev = self.document().revision()
+        if self._zeilen_cache[0] != rev:
+            self._zeilen_cache = (rev, aenderungszeilen(self.document()) if (self._hat_zusatz or self.verfolgen) else [])
+        return self._zeilen_cache[1]
+
+    def _extras_zeichnen(self, p: QPainter, sp: bool) -> None:
+        """Objektanker, Änderungsbalken, Kopf- und Fußzeile im Rand der Seite."""
+        if self.web:
+            return
+        vp, z, pg = self.viewport(), self.zoom, self.page
+        # Objektanker neben Bildern, die vom Text umflossen werden (bei sichtbaren Formatierungszeichen)
+        marks = bool(self.document().defaultTextOption().flags() & QTextOption.ShowTabsAndSpaces)
+        if marks and self.opt("ui/objektanker", True):
+            from .umbruch import schwebende_rahmen
+            ankern = schwebende_rahmen(self.document())
+            if ankern:
+                f = QFont(p.font()); f.setPointSizeF(max(7.0, 10 * z)); p.setFont(f)
+                p.setPen(QColor("#4c6ef5"))
+                for pos in ankern:
+                    r = self.cursorRect(self._cursor_at(pos))
+                    p.drawText(max(0, r.x() - int(18 * z)), r.y() + r.height() // 2, "⚓")
+        # Geänderte Zeilen
+        seite = self.opt_text("aenderungen/balken", "links")
+        if seite in ("links", "rechts", "außen"):
+            zeilen = self._aenderungszeilen_gecacht()
+            if zeilen:
+                p.setPen(QPen(QColor("#c92a2a"), 1.6))
+                for t, u in zeilen:
+                    if sp:
+                        g = self._sp_geo()
+                        vx, vy = self._sp_view(0, t)
+                        x = vx + (g["cb"] + 8 * z if seite == "rechts" else -8 * z)
+                        y0, y1 = vy, vy + (u - t)
+                    else:
+                        x = (vp.width() - mm_to_px(pg.margin_right_mm) * z + 8 * z) if seite == "rechts" else mm_to_px(pg.margin_left_mm) * z - 8 * z
+                        y0, y1 = t, u
+                    p.drawLine(int(x), int(y0), int(x), int(y1))
+        # Linien von den Sprechblasen zum Text: Textende bis zum Seitenrand (der Rest steht in der Blasenfläche)
+        if self._blasen_extra and self.blasen_linien():
+            rechts = self.blasen_rand() == "Rechts"
+            for bl, r, y_text in self.blasen_layout(self._blasen_extra):
+                pos = min(bl.bis, self.document().characterCount() - 1)
+                blk = self.document().findBlock(pos)
+                if blk.isValid() and blk.layout() is not None and blk.layout().lineCount():
+                    ln = blk.layout().lineForTextPosition(max(0, pos - blk.position()))
+                    pos = blk.position() + ln.textStart() + max(0, ln.textLength() - 1)       # Ende der Zeile, in der der Text endet
+                rc = self.cursorRect(self._cursor_at(pos))
+                p.setPen(QPen(QColor(bl.farbe), 1, Qt.DotLine))
+                y = int(rc.y() + rc.height() / 2)
+                p.drawLine(rc.x() + 4 if rechts else 0, y, vp.width() if rechts else rc.x(), y)
+        # Kopf- und Fußzeile (erste Seite oben, letzte unten)
+        if self.opt("ui/kopffuss_anzeigen", True):
+            kopf = pg.first_header if pg.diff_first else pg.header
+            fuss = pg.footer
+            f = QFont(p.font()); f.setPixelSize(max(6, int(11 * z))); p.setFont(f)
+            p.setPen(QColor("#868e96"))
+            ml, mr = mm_to_px(pg.margin_left_mm) * z, mm_to_px(pg.margin_right_mm) * z
+            breite = vp.width() - ml - mr
+
+            def zeile(hf, y):
+                if hf.is_empty():
+                    return
+                text = hf.text.replace("{PAGE}", str(max(1, self.current_page()))).replace("{PAGES}", str(self._pages))
+                fl = {"center": Qt.AlignHCenter, "right": Qt.AlignRight}.get(hf.align, Qt.AlignLeft)
+                p.drawText(QRectF(ml, y, breite, 18 * z), int(fl | Qt.AlignVCenter), text)
+            zeile(kopf, mm_to_px(8) * z)
+            zeile(fuss, vp.height() - mm_to_px(8) * z - 18 * z)
 
     # ---- Schreibhilfe: Wellenlinien, Ersetzen, Vorhersage, AutoKorrektur -------------------
     WELLE = {"fehler": "#e8590c", "tipp": "#1c7ed6", "hinweis": "#868e96"}
@@ -984,8 +1486,13 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         if c0.hasSelection() and e.text() and e.text().isprintable() and not (e.modifiers() & (Qt.ControlModifier | Qt.AltModifier)) \
                 and not self.opt("bearbeiten/tippen_ersetzt", True):
             c0.setPosition(max(c0.anchor(), c0.position())); self.setTextCursor(c0)
+        if k in (Qt.Key_Return, Qt.Key_Enter) and self.opt("schreibhilfe/akRechtsLeer", False) and not c0.hasSelection() \
+                and (c0.blockFormat().alignment() & Qt.AlignRight):
+            self._rechts_leerzeichen_weg(c0)
         super().keyPressEvent(e)
         t = e.text()
+        if t == ")" and self.opt("schreibhilfe/akKreiszahl", False):
+            self._kreiszahl()
         if t == " " and self.opt("autoformat/liste", True):
             self._autoformat_liste()
         if t and t in " .,;:!?\n\r":
@@ -997,6 +1504,27 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
             self._vorschlaege_zeigen()
         else:
             self._popup.hide()
+
+    def _rechts_leerzeichen_weg(self, c: QTextCursor) -> None:
+        """AutoKorrektur: Leerzeichen am Ende einer rechtsbündigen Zeile würden den Text nach links schieben — sie werden entfernt."""
+        b = c.block()
+        roh = b.text()
+        ohne = roh.rstrip(" \t")
+        if ohne != roh:
+            k = QTextCursor(self.document())
+            k.setPosition(b.position() + len(ohne)); k.setPosition(b.position() + len(roh), QTextCursor.KeepAnchor)
+            k.removeSelectedText()
+
+    def _kreiszahl(self) -> None:
+        """AutoKorrektur: „(1)“ … „(20)“ werden zu ① … ⑳ (Optionen ▸ Bearbeiten ▸ AutoKorrektur)."""
+        c = self.textCursor()
+        vor = c.block().text()[:c.positionInBlock()]
+        import re as _re
+        m = _re.search(r"\((\d{1,2})\)$", vor)
+        if m and 1 <= int(m.group(1)) <= 20:
+            k = QTextCursor(self.document())
+            k.setPosition(c.block().position() + m.start()); k.setPosition(c.block().position() + m.end(), QTextCursor.KeepAnchor)
+            k.insertText(chr(0x2460 + int(m.group(1)) - 1))
 
     def _autoformat_liste(self) -> None:
         """„1. “ / „1) “ am Absatzanfang → Nummerierung, „* “ / „- “ / „• “ → Aufzählung."""
@@ -1062,4 +1590,67 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
                     img.height() * min(1.0, self.page.content_width_px / max(1, img.width())))
                 self.textCursor().insertImage(f)
                 return
-        super().insertFromMimeData(source)
+        modus = self.opt_text("bearbeiten/einfuegen_standard", EINFUEGE_MODI[0])
+        if not isinstance(modus, str) or modus not in EINFUEGE_MODI:
+            modus = EINFUEGE_MODI[0]
+        self._einfuegen_mit(source, modus, neu=True)
+
+    def _einfuegen_mit(self, source, modus: str, neu: bool) -> None:
+        """Einfügen als EIN Rückgängig-Schritt; danach bietet die kleine Schaltfläche die anderen Formen an (Optionen ▸ Bearbeiten)."""
+        c = self.textCursor()
+        c.beginEditBlock()
+        start = c.selectionStart()
+        c.removeSelectedText()
+        if modus == "Nur Text" or not source.hasHtml():
+            c.insertText(source.text() if source.hasText() else "")
+        elif modus == "Zielformatierung verwenden":
+            c.insertFragment(_ziel_fragment(source.html(), self.document().defaultFont()))
+        else:
+            c.insertFragment(QTextDocumentFragment.fromHtml(source.html()))
+        ende = c.position()
+        c.endEditBlock()
+        self.setTextCursor(c)
+        if neu and self.opt("bearbeiten/einfuegen_schaltflaeche", True) and ende > start and not self.isReadOnly():
+            kopie = QMimeData()
+            for f in source.formats():
+                kopie.setData(f, source.data(f))
+            self._einfuegen_schaltflaeche(kopie, start, ende, modus)
+
+    def _einfuegen_schaltflaeche(self, quelle, start: int, ende: int, modus: str) -> None:
+        from PySide6.QtWidgets import QMenu, QToolButton
+        b = getattr(self, "_paste_btn", None)
+        if b is None:
+            b = self._paste_btn = QToolButton(self.viewport())
+            b.setText("Einfügen ▾")
+            b.setCursor(Qt.ArrowCursor)
+            b.setPopupMode(QToolButton.InstantPopup)
+            b.setStyleSheet("QToolButton { border: 1px solid palette(mid); border-radius: 4px; padding: 2px 6px; "
+                            "background: palette(window); font-size: 8pt; }")
+            self.cursorPositionChanged.connect(self._paste_btn_pruefen)
+        self._paste_ende = ende
+        m = QMenu(b)
+        for name in EINFUEGE_MODI:
+            a = m.addAction(name)
+            a.setCheckable(True)
+            a.setChecked(name == modus)
+            a.triggered.connect(lambda _=False, name=name: self._einfuegen_neu(quelle, start, name))
+        b.setMenu(m)
+        c = QTextCursor(self.document()); c.setPosition(ende)
+        r = self.cursorRect(c)
+        b.move(max(0, r.left()), r.bottom() + 2)
+        b.adjustSize()
+        b.show()
+
+    def _einfuegen_neu(self, quelle, start: int, modus: str) -> None:
+        c = QTextCursor(self.document())
+        c.setPosition(start)
+        c.setPosition(self._paste_ende, QTextCursor.KeepAnchor)
+        self.setTextCursor(c)
+        self._paste_btn.hide()
+        self._einfuegen_mit(quelle, modus, neu=False)
+        self._einfuegen_schaltflaeche(quelle, start, self.textCursor().position(), modus)
+
+    def _paste_btn_pruefen(self) -> None:
+        b = getattr(self, "_paste_btn", None)
+        if b is not None and b.isVisible() and self.textCursor().position() != getattr(self, "_paste_ende", -1):
+            b.hide()

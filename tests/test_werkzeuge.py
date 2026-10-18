@@ -324,7 +324,7 @@ def test_silben_farbig(app, tmp_path, monkeypatch):
     from native_qt.editor import silbenfarben as S
     from native_qt.editor.editor_widget import DocumentEditor
     from native_qt.storage.settings import Settings
-    assert S.silben("Schmetterling") == ("Schmet", "ter", "ling") or len(S.silben("Schmetterling")) >= 3
+    assert S.silben("Schmetterling") == ("Schmet", "ter", "ling")
     assert S.silben("Haus") == ("Haus",)
     st = Settings(QSettings(str(tmp_path / "s.ini"), QSettings.IniFormat))
     k = S.konfig_lesen(st)
@@ -355,3 +355,86 @@ def test_silben_farbig(app, tmp_path, monkeypatch):
     from native_qt.editor.page import PageSettings
     from native_qt.editor.pagination import render
     assert render(ed.document(), PageSettings(), QPdfWriter(str(tmp_path / "f.pdf")), opt={"silbenfarben": dict(k, an=True)}) == 1
+
+
+def test_pdf_kommentare_und_formatvorlagen(app, tmp_path):
+    """Kommentare als PDF-Notizen auf der richtigen Seite; Titel/Zitat als Lesezeichen."""
+    from PySide6.QtGui import QTextBlockFormat, QTextCharFormat
+    from pypdf import PdfReader
+    from native_qt.document_io.docx_reader import STYLE_PROP
+    from native_qt.editor.editor_widget import DocumentEditor
+    from native_qt.editor.page import PageSettings
+    from native_qt.editor.pagination import export_pdf
+    ed = DocumentEditor()
+    c = ed.textCursor()
+    bf = QTextBlockFormat(); bf.setProperty(STYLE_PROP, "title")
+    c.insertBlock(bf); c.insertText("Mein Titel")
+    c.insertBlock(QTextBlockFormat()); c.insertText("Zeile\\n" * 3)
+    pos = c.position()
+    from native_qt.editor.zusatz import P_KOMMENTAR
+    kf = QTextCharFormat(); kf.setProperty(P_KOMMENTAR, 1)
+    c.insertText("Hier steht der kommentierte Text", kf)
+    c.insertText("\\n" * 80 + "Ende")
+    pdf = tmp_path / "k.pdf"
+    export_pdf(str(pdf), ed.document(), PageSettings(), "t", "", None, {"andere": True}, None, {1: "Autor: Bitte prüfen"})
+    r = PdfReader(str(pdf))
+    assert [o.title for o in r.outline if not isinstance(o, list)] == ["Mein Titel"]
+    notizen = [a.get_object() for a in (r.pages[0].get("/Annots") or [])]
+    assert any(n.get("/Contents") == "Autor: Bitte prüfen" and n.get("/Subtype") == "/Text" for n in notizen)
+
+
+def test_spalten_in_ausgabe_und_docx(app, tmp_path):
+    """Zwei Spalten: halb so viele Seiten, Text steht nebeneinander (PDF), DOCX merkt Spalten und Spaltenumbruch."""
+    import zipfile
+    from pypdf import PdfReader
+    from native_qt.document_io import formats
+    from native_qt.editor.editor_widget import DocumentEditor
+    from native_qt.editor.page import PageSettings
+    from native_qt.editor.pagination import ausgabe_seiten, export_pdf, page_count, paginated_copy
+    ed = DocumentEditor()
+    ed.setPlainText("\n".join(f"Zeile {i} mit etwas Text darin" for i in range(240)))
+    eins = PageSettings()
+    zwei = PageSettings(); zwei.spalten = 2; zwei.spalten_linie = True
+    n1, n2 = page_count(ed.document(), eins), page_count(ed.document(), zwei)
+    assert n1 >= 3 and n2 == -(-n1 // 2)
+    assert zwei.spalten_breite_px < eins.spalten_breite_px / 1.8
+    export_pdf(str(tmp_path / "s.pdf"), ed.document(), zwei, "t")
+    r = PdfReader(str(tmp_path / "s.pdf"))
+    assert len(r.pages) == n2
+    text = " ".join(r.pages[0].extract_text().split())
+    assert "Zeile 0 mit" in text and "Zeile 100 mit" in text       # einspaltig stünden auf Seite 1 nur etwa 50 Zeilen
+    # DOCX-Rundreise mit Spaltenumbruch
+    from native_qt.editor.zusatz import B_SPALTE
+    ed2 = DocumentEditor(); ed2.setPlainText("Links")
+    c = ed2.textCursor(); c.movePosition(c.MoveOperation.End); ed2.setTextCursor(c)
+    ed2.insert_column_break(); ed2.textCursor().insertText("Rechts")
+    pfad = str(tmp_path / "sp.docx")
+    formats.save(pfad, ed2.document(), zwei)
+    xml = zipfile.ZipFile(pfad).read("word/document.xml").decode()
+    assert 'w:num="2"' in xml and 'w:sep="1"' in xml and 'w:type="column"' in xml
+    neu = formats.load(pfad)
+    assert neu.page.spalten == 2 and neu.page.spalten_linie is True
+    blocks = []
+    b = neu.doc.firstBlock()
+    while b.isValid():
+        blocks.append((b.text(), b.blockFormat().hasProperty(B_SPALTE))); b = b.next()
+    assert ("Rechts", True) in blocks
+
+
+def test_textumbruch_oben_unten(app):
+    from PySide6.QtCore import Qt
+    from PySide6.QtGui import QColor, QImage, QTextCursor
+    from native_qt.editor import einfuegen as E, umbruch as U
+    from native_qt.editor.editor_widget import DocumentEditor
+    ed = DocumentEditor()
+    ed.setPlainText("Davor Danach")
+    c = ed.textCursor(); c.setPosition(6); ed.setTextCursor(c)
+    img = QImage(40, 30, QImage.Format_RGB32); img.fill(QColor("green")); E.qimage_einfuegen(ed, img, "x")
+    c = ed.textCursor(); c.setPosition(6); ed.setTextCursor(c)
+    assert U.umbruch_setzen(ed, "oben_unten")
+    doc = ed.document()
+    bloecke = []
+    b = doc.firstBlock()
+    while b.isValid():
+        bloecke.append((b.text().replace("￼", "[Bild]"), bool(b.blockFormat().alignment() & Qt.AlignHCenter))); b = b.next()
+    assert [t for t, _z in bloecke] == ["Davor ", "[Bild]", "Danach"] and bloecke[1][1] is True

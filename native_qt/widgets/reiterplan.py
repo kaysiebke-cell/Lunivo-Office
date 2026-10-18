@@ -116,6 +116,30 @@ KOPFFUSS = {"name": "Kopf- und Fußzeilentools", "kontext": "kopffuss", "gruppen
                                     _k("schliessen", "Kopf- und Fußzeile schließen", "kopfFussSchliessen")]}]}
 
 
+def _start_wie_wps(start: dict) -> dict:
+    """Reiter Start in der Anordnung von WPS Office: Zwischenablage (Einfügen, Ausschneiden/Kopieren, Format übertragen), Schriftart mit
+    Name und Größe in einer Zeile, Absatz, Stile, dann Wort-Extras, Suchen oder ersetzen, Auswählen und Einstellungen als große Knöpfe."""
+    alt = {g["name"]: g for g in start["gruppen"]}
+    ablage = {"name": "Zwischenablage", "reihenfolge": True, "knoepfe": [
+        _k("kleben", "Einfügen", "einfuegen", True, klappe="einfuegenKlappe"),
+        _k("schere", "Ausschneiden", "ausschneiden", text=True),
+        _k("kopie", "Kopieren", "kopieren", text=True),
+        _k("pinsel", "Format übertragen", "formatUebertragen", True)]}
+    schrift = dict(alt["Schriftart"], felder="zeile")
+    absatz = dict(alt["Absatz"])
+    extras = {"name": "Extras", "reihenfolge": True, "knoepfe": [
+        _k("wortextras", "Wort-Extras", "wortExtras", True)]}
+    suchen = {"name": "Suchen", "reihenfolge": True, "knoepfe": [
+        _k("lupe", "Suchen oder ersetzen", gross=True, menue=[{"name": "Suchen …", "tun": "suchen"},
+                                                              {"name": "Ersetzen …", "tun": "ersetzen"}])]}
+    waehlen = {"name": "Auswählen", "reihenfolge": True, "knoepfe": [
+        _k("objekte", "Auswählen", gross=True, menue=[{"name": "Alles auswählen", "tun": "allesMarkieren"},
+                                                      {"name": "Objekte auswählen", "tun": "objekteWaehlen"}])]}
+    einst = {"name": "Einstellungen", "reihenfolge": True, "knoepfe": [
+        _k("zahnrad", "Einstellungen", gross=True, menue=[{"name": "Optionen …", "tun": "w.optionenOeffnen"}])]}
+    return dict(start, gruppen=[ablage, schrift, absatz, alt["Stile"], extras, suchen, waehlen, einst])
+
+
 def plan(register: dict) -> list[dict]:
     """Die Reiter in der Reihenfolge der Struktur; Kontext-Register stehen am Ende (zunächst verborgen)."""
     nach = {t["name"]: t for t in register["register"]}
@@ -125,7 +149,30 @@ def plan(register: dict) -> list[dict]:
     if not any(k.get("tun") == "silbenfarben" for k in lesen["knoepfe"]):          # Lesehilfe für Legasthenie (nicht im alten Register)
         lesen["knoepfe"] = lesen["knoepfe"] + [_k("farbe", "Silben farbig", "silbenfarben", haken=True),
                                                _k("zahnrad", "Silben einstellen …", "silbenEinstellen")]
+    vorhanden = {k.get("tun") for g in sh["gruppen"] for k in g["knoepfe"]}
+    ki_gruppe = next((g for g in sh["gruppen"] if g["name"] == "KI"), None)
+    for g in KI["gruppen"]:                                  # KI-Funktionen gehören in den Reiter Schreibhilfe (kein eigener KI-Reiter)
+        if g["name"] in ("Seitenleiste", "Korrektur"):           # beides steht schon in der Seitenleiste
+            continue
+        neu = [k for k in g["knoepfe"] if k.get("tun") not in vorhanden or not k.get("tun")]
+        if g["name"] == "Einrichten" and ki_gruppe is not None:
+            sh["gruppen"][sh["gruppen"].index(ki_gruppe)] = dict(ki_gruppe, knoepfe=ki_gruppe["knoepfe"] + neu)
+        elif neu:
+            ki_pos = sh["gruppen"].index(ki_gruppe) if ki_gruppe else len(sh["gruppen"])
+            sh["gruppen"].insert(ki_pos, dict(g, knoepfe=neu))
+    nach["Start"] = _start_wie_wps(nach["Start"])
+    ans = nach["Ansicht"] = dict(nach["Ansicht"])
+    ans["gruppen"] = [dict(g) for g in ans["gruppen"]]
+    anz = next(g for g in ans["gruppen"] if g["name"] == "Anzeigen")
+    if not any(k.get("tun") == "versteckteZeigen" for k in anz["knoepfe"]):
+        anz["knoepfe"] = anz["knoepfe"] + [_k("vorschau", "Ausgeblendeter Text", "versteckteZeigen", haken=True)]
+    sen = nach["Sendungen"] = dict(nach["Sendungen"])
+    sen["gruppen"] = [dict(g) for g in sen["gruppen"]]
+    form = next(g for g in sen["gruppen"] if g["name"] == "Formular")
+    if not any(k.get("tun") == "formAuswahl" for k in form["knoepfe"]):
+        form["knoepfe"] = form["knoepfe"] + [_k("punkte", "Auswahlliste", "formAuswahl"), _k("datum", "Datumsfeld", "formDatum"),
+                                              _k("schliessen", "Felder zurücksetzen", "formLeeren")]
     verweise = dict(nach["Referenzen"], name="Verweise")
     reiter = [DATEI, nach["Start"], nach["Einfügen"], nach["Seitenlayout"], verweise, nach["Überprüfen"],
-              nach["Schreibhilfe"], KI, nach["Ansicht"], nach["Sendungen"]]
+              nach["Schreibhilfe"], nach["Ansicht"], nach["Sendungen"]]
     return reiter + [TABELLENTOOLS, BILDTOOLS, FORMTOOLS, KOPFFUSS]

@@ -1,6 +1,6 @@
 # Prüfbogen ↔ native Fassung
 
-Erzeugt von `werkzeug/pruefbogen-abgleich.py` aus dem Prüfkatalog (415 Punkte). **✅ 295 · ◐ 71 · ⬜ 49**. ✅ = Befehl/Funktion vorhanden (einzeln getestet nur, wo `tests/` es belegt); ◐ = teilweise oder anders gelöst; ⬜ = offen.
+Erzeugt von `werkzeug/pruefbogen-abgleich.py` aus dem Prüfkatalog (415 Punkte). **✅ 328 · ◐ 66 · ⬜ 21**. ✅ = Befehl/Funktion vorhanden (einzeln getestet nur, wo `tests/` es belegt); ◐ = teilweise oder anders gelöst; ⬜ = offen.
 Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/bilder/`.
 
 ## DATEI
@@ -142,15 +142,15 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 - ✅ Seitenränder — Band: Seitenlayout ▸ Seitenhintergrund  _(Web-Fassung: fertig)_
 - ✅ Ausrichtung — Band: Seitenlayout ▸ Seite einrichten
 - ✅ Papierformat — Reiter Seitenlayout ▸ Größe (Befehle.w_setzePapier)  _(Web-Fassung: fertig)_
-- ⬜ Spalten — Das Textmodul von Qt kennt keine Spalten
+- ✅ Spalten — 1–4 Spalten live im Editor (editor_widget._sp_*), Seitenansicht, Druck, PDF, DOCX w:cols/Spaltenumbruch (test_spalten_editor, test_werkzeuge; mit LibreOffice geprüft). Gilt für das ganze Dokument; bei mehreren Spalten wirkt ein Seitenumbruch wie ein Spaltenumbruch
 - ✅ Umbruch > Seitenumbruch — Band: Einfügen ▸ Seiten, Seitenlayout ▸ Seite einrichten ▸ Umbrüche  _(Web-Fassung: fertig)_
-- ⬜ Umbruch > Spaltenumbruch — Das Textmodul von Qt kennt keine Spalten
+- ✅ Umbruch > Spaltenumbruch — 1–4 Spalten live im Editor (editor_widget._sp_*), Seitenansicht, Druck, PDF, DOCX w:cols/Spaltenumbruch (test_spalten_editor, test_werkzeuge; mit LibreOffice geprüft). Gilt für das ganze Dokument; bei mehreren Spalten wirkt ein Seitenumbruch wie ein Spaltenumbruch
 - ◐ Umbruch > Abschnittsumbruch — nur „Nächste Seite“ (Seitenumbruch); Abschnitte kennt Qt nicht
 - ✅ Einzug — Band: Seitenlayout ▸ Absatz
 - ✅ Absatzabstand — Band: Seitenlayout ▸ Absatz
 - ✅ Zeilennummern — Band: Seitenlayout ▸ Seite einrichten
 - ◐ Silbentrennung — pyphen setzt weiche Trennstellen in Seitenansicht, Druck, PDF; DOCX autoHyphenation (test_werkzeuge). Die Bearbeitungsansicht zeigt keine Trennstriche  _(Web-Fassung: teil)_
-- ◐ Textumbruch — Bild links/rechts vom Text umflossen (editor/umbruch.py, DOCX wp:anchor wrapSquare, test_werkzeuge); „Oben und unten“, „Hinter/vor dem Text“ und freie Position fehlen
+- ◐ Textumbruch — Bild links/rechts vom Text umflossen oder in eigener Zeile (editor/umbruch.py, DOCX wp:anchor wrapSquare, test_werkzeuge); „Hinter/vor dem Text“ und freie Position fehlen
 - ✅ Seitenfarbe — Band: Seitenlayout ▸ Seitenhintergrund  _(Web-Fassung: fertig)_
 - ✅ Wasserzeichen — Band: Seitenlayout ▸ Seitenhintergrund
 - ✅ Seitenrahmen — befehle.seitenrahmen, pagination.seitenschmuck, DOCX pgBorders (test_docx_roundtrip, test_pdf)  _(Web-Fassung: fertig)_
@@ -160,8 +160,8 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 
 - ✅ Inhaltsverzeichnis — Band: Verweise ▸ Inhaltsverzeichnis
 - ✅ Verzeichnisse aktualisieren — Band: Verweise ▸ Inhaltsverzeichnis
-- ◐ Fußnote — echte DOCX-Fuß-/Endnoten (gelesen und geschrieben, mit LibreOffice geprüft); im PDF/Druck gesammelt am Textende statt am Seitenfuß
-- ◐ Endnote — echte DOCX-Fuß-/Endnoten (gelesen und geschrieben, mit LibreOffice geprüft); im PDF/Druck gesammelt am Textende statt am Seitenfuß
+- ✅ Fußnote — echte DOCX-Fuß-/Endnoten (gelesen und geschrieben, mit LibreOffice geprüft); Fußnoten am Seitenfuß in Seitenansicht, Druck und PDF (bei mehreren Spalten gesammelt am Ende)
+- ✅ Endnote — echte DOCX-Fuß-/Endnoten (gelesen und geschrieben, mit LibreOffice geprüft); Fußnoten am Seitenfuß in Seitenansicht, Druck und PDF (bei mehreren Spalten gesammelt am Ende)
 - ✅ Nächste Note — Band: Verweise ▸ Fußnoten
 - ✅ Vorige Note — Band: Verweise ▸ Fußnoten
 - ✅ Notenbereich — Band: Verweise ▸ Fußnoten
@@ -371,18 +371,18 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 - ✅ Seitenleiste beim Start — Optionen ▸ Wie im WPS Writer ▸ Ansicht (ui/seitenleiste, main_window)
 - ◐ QuickInfo — Qt zeigt Kurzinfos immer; kein Schalter
 - ⬜ Live-Vorschau — nicht übertragen (in den Optionen als gesperrte Zeile sichtbar)
-- ⬜ Minisymbolleiste bei Auswahl — nicht übertragen (in den Optionen als gesperrte Zeile sichtbar)
-- ⬜ Minisymbolleiste bei Rechtsklick — nicht übertragen (in den Optionen als gesperrte Zeile sichtbar)
-- ⬜ Tipp für Kopf- bzw. Fußzeile — nicht übertragen (in den Optionen als gesperrte Zeile sichtbar)
+- ✅ Minisymbolleiste bei Auswahl — widgets/mini_leiste.py; ui/mini_auswahl, ui/mini_rechtsklick (test_schreibhilfe)
+- ✅ Minisymbolleiste bei Rechtsklick — widgets/mini_leiste.py; ui/mini_auswahl, ui/mini_rechtsklick (test_schreibhilfe)
+- ✅ Tipp für Kopf- bzw. Fußzeile — ui/kopffuss_tipp, ui/kopffuss_anzeigen: Kopf-/Fußzeile im Rand, Tipp und Doppelklick (editor_widget; test_anzeige_extra)
 
 ## OPTIONEN > Ansicht > Druckoptionen
 
 - ✅ Hervorhebungen drucken — drucken/hervorhebungen, textgrenzen, zuschnitt, textmarken → pagination.render (test_werkzeuge)
 - ✅ Textbegrenzungen drucken — drucken/hervorhebungen, textgrenzen, zuschnitt, textmarken → pagination.render (test_werkzeuge)
 - ✅ Zuschnittsmarken anzeigen — drucken/hervorhebungen, textgrenzen, zuschnitt, textmarken → pagination.render (test_werkzeuge)
-- ⬜ Feldfunktionen drucken — Felder erscheinen nur mit ihrem Ergebnis; keine Feldcodes und keine Schattierung
+- ✅ Feldfunktionen drucken — drucken/felder_code (anzeige_extra.feldcodes_einsetzen), ui/feldschattierung (zusatz_editor._overlays_neu; test_anzeige_extra)
 - ✅ Textmarken drucken — drucken/hervorhebungen, textgrenzen, zuschnitt, textmarken → pagination.render (test_werkzeuge)
-- ⬜ Feldschattierung — Felder erscheinen nur mit ihrem Ergebnis; keine Feldcodes und keine Schattierung
+- ✅ Feldschattierung — drucken/felder_code (anzeige_extra.feldcodes_einsetzen), ui/feldschattierung (zusatz_editor._overlays_neu; test_anzeige_extra)
 
 ## OPTIONEN > Ansicht > Formatierungszeichen
 
@@ -390,8 +390,8 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 - ◐ Absatzmarken — Qt schaltet Absatzmarken, Leerzeichen und Tabs nur gemeinsam
 - ◐ Leerzeichen — Qt schaltet Absatzmarken, Leerzeichen und Tabs nur gemeinsam
 - ◐ Tabstoppzeichen — Qt schaltet Absatzmarken, Leerzeichen und Tabs nur gemeinsam
-- ⬜ Objektanker — Qt kennt weder Objektanker noch ausgeblendeten Text
-- ⬜ Ausgeblendeter Text — Qt kennt weder Objektanker noch ausgeblendeten Text
+- ✅ Objektanker — ui/objektanker (⚓ neben umflossenen Bildern), P_VERSTECKT + VersteckterText, DOCX w:vanish (test_anzeige_extra)
+- ✅ Ausgeblendeter Text — ui/objektanker (⚓ neben umflossenen Bildern), P_VERSTECKT + VersteckterText, DOCX w:vanish (test_anzeige_extra)
 
 ## OPTIONEN > Ansicht > Menübandoptionen
 
@@ -416,7 +416,7 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 
 - ✅ Automatisch nummerierte Listen — autoformat/liste, autoformat/punkte (test_editor)
 - ✅ Aufzählungen erkennen — autoformat/liste, autoformat/punkte (test_editor)
-- ⬜ Zahl automatisch im Kreis — nicht übertragen
+- ✅ Zahl automatisch im Kreis — schreibhilfe/akKreiszahl: (1) → ① bis (20) → ⑳ (editor._kreiszahl; test_anzeige_extra)
 
 ## OPTIONEN > Bearbeiten > AutoKorrektur
 
@@ -430,16 +430,16 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 - ✅ Feststelltaste korrigieren — services/autokorrektur.py, Optionen ▸ Bearbeiten (test_schreibhilfe)
 - ◐ Internet- und Netzwerkpfade durch Hyperlinks ersetzen — editor_widget._autokorr_extras/keyPressEvent — verdrahtet, noch ohne eigenen Test
 - ◐ Leerzeichen am Absatzanfang mit Erstzeileneinzug — editor_widget._autokorr_extras/keyPressEvent — verdrahtet, noch ohne eigenen Test
-- ⬜ Leerzeichenformat am Ende rechtsbündiger Zeilen anpassen — nicht übertragen
+- ✅ Leerzeichenformat am Ende rechtsbündiger Zeilen anpassen — schreibhilfe/akRechtsLeer: Leerzeichen am Zeilenende rechtsbündiger Absätze fallen beim Umbruch weg (editor._rechts_leerzeichen_weg)
 - ◐ Bei zentriertem Ausrichten Erstzeileneinzug löschen — editor_widget._autokorr_extras/keyPressEvent — verdrahtet, noch ohne eigenen Test
 - ◐ Tabulator und Rücktaste setzen den Einzug — editor_widget._autokorr_extras/keyPressEvent — verdrahtet, noch ohne eigenen Test
 - ✅ Wortvorhersage — Band: Schreibhilfe ▸ Beim Schreiben
 
 ## OPTIONEN > Bearbeiten > Ausschneiden und Einfügen
 
-- ⬜ Schaltfläche nach dem Einfügen — nicht übertragen
+- ✅ Schaltfläche nach dem Einfügen — editor._einfuegen_mit/_einfuegen_schaltflaeche, bearbeiten/einfuegen_standard (test_editor)
 - ◐ Mittlere Maustaste fügt ein — unter Linux/X11 durch Qt (Primärauswahl), nicht schaltbar
-- ⬜ Standardeinfügeformat — nicht übertragen
+- ✅ Standardeinfügeformat — editor._einfuegen_mit/_einfuegen_schaltflaeche, bearbeiten/einfuegen_standard (test_editor)
 - ✅ Ohne Formatierung einfügen — Befehle.einfuegenOhne
 
 ## OPTIONEN > Allgemein und Speichern > Speichern
@@ -496,33 +496,33 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 
 ## OPTIONEN > Änderungen verfolgen > Markup
 
-- ◐ Einfügungen — unterstrichen/durchgestrichen in einer Farbe je Autor; nicht einstellbar
-- ◐ Löschvorgänge — unterstrichen/durchgestrichen in einer Farbe je Autor; nicht einstellbar
-- ⬜ Geänderte Zeilen — nicht übertragen
-- ◐ Farbe — unterstrichen/durchgestrichen in einer Farbe je Autor; nicht einstellbar
+- ✅ Einfügungen — aenderungen/ins_stil, del_stil, farbe (zusatz_editor._overlays_neu)
+- ✅ Löschvorgänge — aenderungen/ins_stil, del_stil, farbe (zusatz_editor._overlays_neu)
+- ✅ Geänderte Zeilen — aenderungen/balken: Balken am Rand der Zeilen mit Änderungen (Anzeige und Druck)
+- ✅ Farbe — aenderungen/ins_stil, del_stil, farbe (zusatz_editor._overlays_neu)
 
 ## OPTIONEN > Änderungen verfolgen > Sprechblasen
 
-- ⬜ Sprechblasen verwenden — keine Sprechblasen; Kommentare stehen im Navigationsbereich
-- ⬜ Empfohlene Breite verwenden — keine Sprechblasen; Kommentare stehen im Navigationsbereich
-- ⬜ Bevorzugte Breite (mm) — keine Sprechblasen; Kommentare stehen im Navigationsbereich
-- ⬜ Seitenrand — keine Sprechblasen; Kommentare stehen im Navigationsbereich
-- ⬜ Verbindungslinien zum Text anzeigen — keine Sprechblasen; Kommentare stehen im Navigationsbereich
+- ✅ Sprechblasen verwenden — editor/sprechblasen.py + widgets/blasen_flaeche.py: Blasen im Seitenrand mit Autor, Datum, Text und Linien; Optionen ▸ Änderungen verfolgen ▸ Sprechblasen (test_sprechblasen)
+- ✅ Empfohlene Breite verwenden — editor/sprechblasen.py + widgets/blasen_flaeche.py: Blasen im Seitenrand mit Autor, Datum, Text und Linien; Optionen ▸ Änderungen verfolgen ▸ Sprechblasen (test_sprechblasen)
+- ✅ Bevorzugte Breite (mm) — editor/sprechblasen.py + widgets/blasen_flaeche.py: Blasen im Seitenrand mit Autor, Datum, Text und Linien; Optionen ▸ Änderungen verfolgen ▸ Sprechblasen (test_sprechblasen)
+- ✅ Seitenrand — editor/sprechblasen.py + widgets/blasen_flaeche.py: Blasen im Seitenrand mit Autor, Datum, Text und Linien; Optionen ▸ Änderungen verfolgen ▸ Sprechblasen (test_sprechblasen)
+- ✅ Verbindungslinien zum Text anzeigen — editor/sprechblasen.py + widgets/blasen_flaeche.py: Blasen im Seitenrand mit Autor, Datum, Text und Linien; Optionen ▸ Änderungen verfolgen ▸ Sprechblasen (test_sprechblasen)
 
 ## OPTIONEN > Änderungen verfolgen > Drucken (mit Sprechblasen)
 
-- ⬜ Papierausrichtung — keine Sprechblasen
+- ✅ Papierausrichtung — sprechblasen/ausrichtung: Automatisch, Beibehalten, Querformat; die Seite wird verkleinert neben die Blasen gesetzt (pagination.blasen_geometrie; Druck und PDF)
 
 ## OPTIONEN > In PDF exportieren > Exportoptionen
 
 - ✅ Hyperlinks — Qt schreibt Link-Annotationen (geprüft mit pypdf)
 - ✅ Überschriften als Lesezeichen — pagination.lesezeichen_sammeln + gliederung_schreiben (pypdf nach QPdfWriter; test_werkzeuge)
-- ⬜ Kommentare mitnehmen — nicht in QPdfWriter möglich; Noten stehen gesammelt am Textende
+- ✅ Kommentare mitnehmen — pdf/kommentare → PDF-Notizen; pdf/notenlinks → Sprungverweise Marke ↔ Note (pypdf; test_werkzeuge, test_fussnoten)
 - ✅ Dokumenteigenschaften mitnehmen — pdf/eigenschaften, pdf/oeffnen (export_pdf author)
-- ⬜ Verknüpfung von Fuß- und Endnoten — nicht in QPdfWriter möglich; Noten stehen gesammelt am Textende
+- ✅ Verknüpfung von Fuß- und Endnoten — pdf/kommentare → PDF-Notizen; pdf/notenlinks → Sprungverweise Marke ↔ Note (pypdf; test_werkzeuge, test_fussnoten)
 - ✅ Textmarken übernehmen — pagination.lesezeichen_sammeln + gliederung_schreiben (pypdf nach QPdfWriter; test_werkzeuge)
-- ⬜ Andere Formatvorlagen in Lesezeichen umwandeln — nur Überschriften und Textmarken werden Lesezeichen; Formatvorlagen-Auswahl fehlt
-- ⬜ Eigene Formatvorlagen in Lesezeichen umwandeln — nur Überschriften und Textmarken werden Lesezeichen; Formatvorlagen-Auswahl fehlt
+- ✅ Andere Formatvorlagen in Lesezeichen umwandeln — pdf/lz_andere: Titel, Untertitel, Zitat (test_werkzeuge)
+- ⬜ Eigene Formatvorlagen in Lesezeichen umwandeln — es gibt keine selbst angelegten Formatvorlagen, nur das Ändern der vorhandenen
 - ✅ PDF nach dem Export öffnen — pdf/eigenschaften, pdf/oeffnen (export_pdf author)
 
 ## OPTIONEN > Benutzerinformationen > Benutzerdaten
@@ -536,13 +536,13 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 - ⬜ Womit das Druckfenster aufgeht — nicht übertragen
 - ◐ Hohe Qualität — pagination.render/print_document, main_window.druckoptionen — seiten_liste getestet, übrige nur verdrahtet
 - ◐ Umgekehrte Reihenfolge — pagination.render/print_document, main_window.druckoptionen — seiten_liste getestet, übrige nur verdrahtet
-- ⬜ Zeichnungsobjekte drucken — nicht übertragen
+- ✅ Zeichnungsobjekte drucken — drucken/zeichnungen, drucken/felder_code, drucken/versteckt → pagination.render (test_anzeige_extra)
 - ◐ Hintergrundfarben und -bilder drucken — pagination.render/print_document, main_window.druckoptionen — seiten_liste getestet, übrige nur verdrahtet
 - ◐ Leere Seiten mitdrucken — pagination.render/print_document, main_window.druckoptionen — seiten_liste getestet, übrige nur verdrahtet
 - ◐ Felder vor dem Drucken aktualisieren — pagination.render/print_document, main_window.druckoptionen — seiten_liste getestet, übrige nur verdrahtet
-- ⬜ Feldfunktionen drucken — nicht übertragen
-- ⬜ Ausgeblendeter Text — nicht übertragen
-- ⬜ Autor der Kommentare und Überarbeitungen — nicht übertragen
+- ✅ Feldfunktionen drucken — drucken/zeichnungen, drucken/felder_code, drucken/versteckt → pagination.render (test_anzeige_extra)
+- ✅ Ausgeblendeter Text — drucken/zeichnungen, drucken/felder_code, drucken/versteckt → pagination.render (test_anzeige_extra)
+- ✅ Autor der Kommentare und Überarbeitungen — sprechblasen/drucken: Blasen mit Autor und Datum im Ausdruck/PDF
 
 ## OPTIONEN > Drucken > Nur für das aktuelle Dokument
 
@@ -557,7 +557,7 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 
 - ◐ Sprache für die Prüfung — nur Deutsch
 - ✅ Rechtschreibung während der Eingabe prüfen — Optionen ▸ Rechtschreibprüfung (test_schreibhilfe, test_pruefung_paritaet)
-- ⬜ Immer Korrekturvorschläge unterbreiten — Vorschläge kommen immer; kein Schalter
+- ✅ Immer Korrekturvorschläge unterbreiten — schreibhilfe/vorschlaege → writing_assistant.erweitere_menue
 - ◐ Grammatik mitprüfen — nur über „Gründlich prüfen“ mit LanguageTool (optional)
 - ✅ Wörter in GROSSBUCHSTABEN ignorieren — Optionen ▸ Rechtschreibprüfung (test_schreibhilfe, test_pruefung_paritaet)
 - ✅ Wörter mit Zahlen ignorieren — Optionen ▸ Rechtschreibprüfung (test_schreibhilfe, test_pruefung_paritaet)

@@ -73,6 +73,11 @@ class PageSetupDialog(QDialog):
         form.addRow("Papierformat", self.paper); form.addRow("Ausrichtung", self.orient)
         form.addRow("Rand oben", self.top); form.addRow("Rand unten", self.bottom)
         form.addRow("Rand links", self.left); form.addRow("Rand rechts", self.right)
+        self.spalten = QSpinBox(); self.spalten.setRange(1, 4); self.spalten.setValue(max(1, int(page.spalten)))
+        self.spalten_abstand = _spin(page.spalten_abstand_mm, 2, 40)
+        self.spalten_linie = QCheckBox("Linie zwischen den Spalten"); self.spalten_linie.setChecked(page.spalten_linie)
+        form.addRow("Spalten", self.spalten); form.addRow("Abstand der Spalten", self.spalten_abstand)
+        form.addRow("", self.spalten_linie)
         bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         bb.accepted.connect(self.accept); bb.rejected.connect(self.reject)
         lay = QVBoxLayout(self); lay.addLayout(form); lay.addWidget(bb)
@@ -86,6 +91,7 @@ class PageSetupDialog(QDialog):
         p.set_orientation(self.orient.currentIndex() == 1)
         p.margin_top_mm, p.margin_bottom_mm = self.top.value(), self.bottom.value()
         p.margin_left_mm, p.margin_right_mm = self.left.value(), self.right.value()
+        p.spalten, p.spalten_abstand_mm, p.spalten_linie = self.spalten.value(), self.spalten_abstand.value(), self.spalten_linie.isChecked()
         return p
 
     def accept(self) -> None:

@@ -35,6 +35,8 @@ from .report import DocumentIOError, IOReport
 
 LH_PROPORTIONAL, LH_FIXED = 1, 2                # QTextBlockFormat.LineHeightTypes
 STYLE_PROP = QTextFormat.UserProperty + 1       # Name der Formatvorlage am Block
+from ..editor.zusatz import B_SPALTE, P_OBJEKT, P_VERSTECKT  # noqa: E402
+from ..editor.formular import P_FORM  # noqa: E402
 from ..editor.zusatz import (  # noqa: E402
     B_ART, B_CAP, B_RAHMEN, B_TOC, BESCHRIFTUNGEN, P_AENDERUNG, P_AUTOR, P_DATUM, P_FELD, P_INDEX, P_KOMMENTAR, P_NOTE, P_ZITAT, leere_meta,
 )
@@ -59,7 +61,6 @@ _QT_ALIGN = {
 # Was beim Lesen nicht übernommen wird → Hinweis
 _UNSUPPORTED = [
     ("//w:txbxContent", "Textfelder werden nicht dargestellt und gehen beim Speichern verloren."),
-    ("//w:sdt[.//w:sdtPr/w:text or .//w:sdtPr/w:dropDownList or .//w:sdtPr/w:date or .//w:sdtPr/w:comboBox]", "Formularfelder (Inhaltssteuerelemente) werden als einfacher Text übernommen."),
     ("//m:oMath", "Formeln werden nicht dargestellt und gehen beim Speichern verloren."),
     ("//w:pict | //wps:wsp | //wpg:wgp", "Formen und gezeichnete Objekte werden nicht dargestellt."),
     ("//w:drawing[.//wp:anchor][not(.//wp:wrapSquare or .//wp:wrapTight or .//wp:wrapThrough)]",
@@ -131,6 +132,7 @@ class _Reader:
         self._lz_pos: dict[str, int] = {}
         self._lz_wartend: list[str] = []
         self._aend = None                 # (art, autor, datum) innerhalb w:ins / w:del
+        self._form = None                 # JSON-Text des Formularfelds innerhalb w:sdt
         self._note_n = {"f": 0, "e": 0}
         self._feld = None                 # {"instr", "phase": "i"|"r"} innerhalb eines Feldes
         self._letzter = None              # (von, bis) des zuletzt eingefügten Textstücks (für XE-Felder)
@@ -318,6 +320,8 @@ class _Reader:
         if run.font.outline:
             from PySide6.QtGui import QPen
             f.setTextOutline(QPen(QColor("#000000")))
+        if run.font.hidden:
+            f.setProperty(P_VERSTECKT, 1)
         rpr = run._r.rPr
         sp = rpr.find(qn("w:spacing")) if rpr is not None else None
         if sp is not None and sp.get(qn("w:val")):
@@ -421,7 +425,10 @@ class _Reader:
                 b.setLineHeight(pt / PT_PER_PX, LH_FIXED)
         if eff(lambda p: p.page_break_before) or self.pending_break:
             b.setPageBreakPolicy(QTextFormat.PageBreak_AlwaysBefore)
+            if self.pending_break and getattr(self, "pending_col", False):
+                b.setProperty(B_SPALTE, 1)
             self.pending_break = False
+            self.pending_col = False
         shd = para._p.xpath("w:pPr/w:shd")
         if shd and shd[0].get(qn("w:fill")) not in (None, "auto"):
             b.setBackground(QBrush(QColor("#" + shd[0].get(qn("w:fill")))))
@@ -522,6 +529,7 @@ class _Reader:
             # Umbruch am Absatzende: er gilt für den nächsten Absatz
             self.deferred_break = False
             self.pending_break = True
+            self.pending_col = getattr(self, "deferred_col", False)
             return not had_content        # leerer Absatz → Block wiederverwenden
         return False
 
@@ -560,7 +568,9 @@ class _Reader:
             elif tag in (qn("w:sdt"),):
                 inhalt = el.find(qn("w:sdtContent"))
                 if inhalt is not None:
+                    alt_form, self._form = self._form, self._form_meta(el) or self._form
                     had |= self._laufe(inhalt, para, cursor, href=href)
+                    self._form = alt_form
             elif tag == qn("w:fldSimple"):
                 self._feld = {"instr": el.get(qn("w:instr")) or "", "phase": "r"}
                 had |= self._laufe(el, para, cursor, href=href)
@@ -583,6 +593,39 @@ class _Reader:
             nf = QTextCharFormat(); nf.setProperty(P_INDEX, term)
             c.mergeCharFormat(nf)
 
+    def _form_meta(self, sdt) -> str:
+        """Inhaltssteuerelement → Formularfeld-Daten (JSON); eigene Felder tragen sie im Tag, fremde (Word) werden aus der Art abgeleitet."""
+        from ..editor import formular as FO
+        pr = sdt.find(qn("w:sdtPr"))
+        if pr is None:
+            return ""
+        tag = pr.find(qn("w:tag"))
+        t = tag.get(qn("w:val")) if tag is not None else ""
+        if t and t.startswith("lunivo:"):
+            m = FO.meta_lesen(t[len("lunivo:"):])
+            if m:
+                return FO.meta_text(m)
+        al = pr.find(qn("w:alias"))
+        name = al.get(qn("w:val")) if al is not None else ""
+        leer = pr.find(qn("w:showingPlcHdr")) is not None
+        if pr.find(qn("w:dropDownList")) is not None or pr.find(qn("w:comboBox")) is not None:
+            liste = pr.find(qn("w:dropDownList"))
+            if liste is None:
+                liste = pr.find(qn("w:comboBox"))
+            opt = [li.get(qn("w:displayText")) or li.get(qn("w:value")) or "" for li in liste.findall(qn("w:listItem"))]
+            m = FO.meta("auswahl", name, optionen=[o for o in opt if o])
+        elif pr.find(qn("w:date")) is not None:
+            m = FO.meta("datum", name)
+        elif any(el.tag.endswith("}checkbox") for el in pr):
+            m = FO.meta("kasten", name)
+        elif pr.find(qn("w:text")) is not None:
+            m = FO.meta("text", name)
+        else:
+            return ""
+        if leer:
+            m["leer"] = True
+        return FO.meta_text(m)
+
     def _zusatz_formate(self, cfmt: QTextCharFormat) -> None:
         if self._feld and self._feld["phase"] == "r":
             teile = self._feld["instr"].split()
@@ -592,6 +635,8 @@ class _Reader:
                     cfmt.setProperty(P_ZITAT, teile[1])
         if self._komm_offen:
             cfmt.setProperty(P_KOMMENTAR, self._komm_offen[-1])
+        if self._form:
+            cfmt.setProperty(P_FORM, self._form)
         if self._aend:
             cfmt.setProperty(P_AENDERUNG, self._aend[0])
             cfmt.setProperty(P_AUTOR, self._aend[1])
@@ -642,6 +687,9 @@ class _Reader:
             cursor.insertBlock()
             bf = cursor.blockFormat()
             bf.setPageBreakPolicy(QTextFormat.PageBreak_AlwaysBefore)
+            if getattr(self, "deferred_col", False):
+                bf.setProperty(B_SPALTE, 1)
+                self.deferred_col = False
             cursor.setBlockFormat(bf)
 
     def _add_run(self, run, para, cursor: QTextCursor, href: Optional[str] = None) -> bool:
@@ -686,8 +734,9 @@ class _Reader:
                 cursor.insertText("\t", cfmt)
                 added = True
             elif tag in (qn("w:br"), qn("w:cr")):
-                if child.get(qn("w:type")) == "page":
+                if child.get(qn("w:type")) in ("page", "column"):
                     self.deferred_break = True
+                    self.deferred_col = child.get(qn("w:type")) == "column"
                 else:
                     self._flush_break(cursor)
                     cursor.insertText("\u2028", cfmt)
@@ -745,6 +794,9 @@ class _Reader:
         alt = drawing.xpath(".//wp:docPr/@descr")
         if alt:
             imf.setProperty(STYLE_PROP + 1, alt[0])
+        titel = drawing.xpath(".//wp:docPr/@title")
+        if titel and titel[0].startswith("lunivo:"):
+            imf.setProperty(P_OBJEKT, titel[0][len("lunivo:"):])
         seite = self._umbruch_seite(drawing, w)
         if seite:
             from ..editor.umbruch import schwebend_einfuegen
@@ -845,6 +897,16 @@ class _Reader:
                 ps.color = "#" + c.lower()
         if sect._sectPr.find(qn("w:lnNumType")) is not None:
             ps.zeilennummern = True
+        co = sect._sectPr.find(qn("w:cols"))
+        if co is not None:
+            try:
+                n = int(co.get(qn("w:num"), "1"))
+            except ValueError:
+                n = 1
+            if n > 1:
+                ps.spalten = min(n, 4)
+                ps.spalten_abstand_mm = int(co.get(qn("w:space"), "720")) / 1440 * 25.4
+                ps.spalten_linie = co.get(qn("w:sep"), "0").lower() in ("1", "true", "on")
         ah = self.d.settings.element.find(qn("w:autoHyphenation"))
         if ah is not None and ah.get(qn("w:val"), "true").lower() not in ("false", "0", "off"):
             ps.silbentrennung = True
@@ -929,7 +991,7 @@ class _NoRun:
         name = None
         size = None
         bold = italic = underline = strike = superscript = subscript = None
-        all_caps = small_caps = outline = None
+        all_caps = small_caps = outline = hidden = None
         color = None
     font = _F()
     style = None

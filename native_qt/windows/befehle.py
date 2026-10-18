@@ -209,10 +209,14 @@ class Befehle:
             m.addAction(t, lambda _=False, md=mode: self.ed and self.ed.change_case(md))
         return m
 
-    def _farbmenue(self, setzen, ohne_text):
+    def _farbmenue(self, setzen, ohne_text, vorschau=None):
         m = QMenu()
         for c in PALETTE:
-            m.addAction(_farbfeld(c), c, lambda _=False, c=c: self.ed and setzen(QColor(c)))
+            a = m.addAction(_farbfeld(c), c, lambda _=False, c=c: self.ed and setzen(QColor(c)))
+            a.setData(c)
+        if vorschau is not None:                              # Live-Vorschau beim Überfahren der Farben
+            m.hovered.connect(lambda a: self.w.vorschau.zeigen(lambda e: vorschau(QColor(a.data()))) if a.data() else self.w.vorschau.ende())
+            m.aboutToHide.connect(self.w.vorschau.ende)
         m.addSeparator()
         m.addAction(ohne_text, lambda: self.ed and setzen(None))
         m.addAction("Weitere Farben …", lambda: self._farbe_waehlen(setzen))
@@ -230,7 +234,7 @@ class Befehle:
         def setze(c):
             self._schriftfarbe = c.name() if c else "#000000"
             self.ed.set_text_color(c)
-        return self._farbmenue(setze, "Automatisch")
+        return self._farbmenue(setze, "Automatisch", lambda c: self.ed.set_text_color(c))
 
     def hervorhebenJetzt(self, k=None):
         if self.ed: self.ed.set_highlight(QColor(getattr(self, "_marker", "#ffec99")))
@@ -239,7 +243,7 @@ class Befehle:
         def setze(c):
             self._marker = c.name() if c else "#ffec99"
             self.ed.set_highlight(c)
-        return self._farbmenue(setze, "Keine Hervorhebung")
+        return self._farbmenue(setze, "Keine Hervorhebung", lambda c: self.ed.set_highlight(c))
 
     # ---- Absatz ---------------------------------------------------------------------------------------
     def punkte(self, k=None):
@@ -497,6 +501,23 @@ class Befehle:
         return ""
 
     def seitenraender(self, k=None, *_): self.w.page_setup()
+
+    # ---- Spalten (Seitenansicht, Druck, PDF; die Bearbeitungsansicht bleibt einspaltig) ----------------------------------------------
+    def spaltenSetzen(self, k=None, n=1):
+        self.w._page_change(lambda p: setattr(p, "spalten", int(n)))
+        self.w.statusBar().showMessage("Eine Spalte." if int(n) == 1 else f"{int(n)} Spalten.", 4000)
+
+    def w_spaltenJetzt(self):
+        t = self.w.current_tab()
+        return t.page.spalten if t else 1
+
+    def spalten(self, k=None):
+        self.w.page_setup()
+
+    def spaltenumbruch(self, k=None):
+        """Der Text danach beginnt in der nächsten Spalte (bei einer Spalte: auf der nächsten Seite)."""
+        if self.ed:
+            self.ed.insert_column_break()
     seitenraenderRahmen = seitenraender
 
     def w_setzePapier(self, k, art):
@@ -786,9 +807,9 @@ class Befehle:
             self.ed.apply_design(f, h, None)
 
     # ---- Einfügen: Illustrationen, Text, Symbole, Tabellen, Seiten ----------------------------------------------------
-    def _bild_einfuegen(self, img, alt):
+    def _bild_einfuegen(self, img, alt, art=None, daten=None):
         from ..editor import einfuegen as E
-        E.qimage_einfuegen(self.ed, img, alt)
+        E.qimage_einfuegen(self.ed, img, alt, art, daten)
 
     def formenGalerie(self, k=None):
         if not self.ed:
@@ -796,7 +817,7 @@ class Befehle:
         from ..editor import einfuegen as E
         m = QMenu()
         for f in E.FORMEN:
-            m.addAction(f, lambda _=False, f=f: self._bild_einfuegen(E.form_bild(f), f"Form: {f}"))
+            m.addAction(f, lambda _=False, f=f: self._bild_einfuegen(E.form_bild(f), f"Form: {f}", "form", {"form": f}))
         m.addSeparator()
         m.addAction("Weitere Formen und Farben …", self.zeichnen)
         self._popup(m)
@@ -806,21 +827,21 @@ class Befehle:
             from ..widgets.einfuegen_dialoge import FormDialog
             d = FormDialog(self.w)
             if d.exec():
-                self._bild_einfuegen(d.bild(), f"Form: {d.art.currentText()}")
+                self._bild_einfuegen(d.bild(), f"Form: {d.art.currentText()}", "form", {"form": d.art.currentText()})
 
     def wordart(self, k=None):
         if self.ed:
             from ..widgets.einfuegen_dialoge import WordArtDialog
             d = WordArtDialog(self.w)
             if d.exec():
-                self._bild_einfuegen(d.bild(), "WordArt: " + d.text.text())
+                self._bild_einfuegen(d.bild(), "WordArt: " + d.text.text(), "wordart", {"text": d.text.text()})
 
     def diagramm(self, k=None):
         if self.ed:
             from ..widgets.einfuegen_dialoge import DiagrammDialog
             d = DiagrammDialog(self.w)
             if d.exec():
-                self._bild_einfuegen(d.bild(), f"{d.art.currentText()}diagramm: {d.titel.text()}")
+                self._bild_einfuegen(d.bild(), f"{d.art.currentText()}diagramm: {d.titel.text()}", "diagramm", {"art": d.art.currentText(), "titel": d.titel.text()})
 
     def piktogramm(self, k=None):
         if self.ed:
@@ -830,7 +851,7 @@ class Befehle:
             if d.exec():
                 n, farbe = d.ergebnis()
                 if n:
-                    self._bild_einfuegen(E.piktogramm_bild(n, 96, farbe), f"Piktogramm: {n}")
+                    self._bild_einfuegen(E.piktogramm_bild(n, 96, farbe), f"Piktogramm: {n}", "piktogramm", {"name": n, "farbe": farbe})
 
     def screenshot(self, k=None):
         if not self.ed:
@@ -1139,7 +1160,8 @@ class Befehle:
             return
         basis, _e = os.path.splitext(pfad)
         d = paginated_copy(t.editor.document(), t.page, t.editor.noten)
-        n = max(1, d.pageCount())
+        from ..editor.pagination import ausgabe_seiten
+        n = ausgabe_seiten(d.pageCount(), t.page)
         for i in range(1, n + 1):
             img = seite_als_bild(t.editor.document(), t.page, i, 1.5, d)
             img.save(basis + (f"-{i}" if n > 1 else "") + ".png", "PNG")
@@ -1268,22 +1290,29 @@ class Befehle:
             d = S.brief_fuer(self.ed.document(), tab[1][namen.index(n)])
             QMessageBox.information(self.w, "Vorschau: " + n, d.toPlainText().strip()[:1200])
 
-    def formTextfeld(self, k=None):
-        if self.ed:
-            from ..editor import sendungen as S
-            S.form_textfeld(self.ed)
+    def _form_dialog(self, art: str):
+        if not self.ed:
+            return
+        from ..editor import formular as FO
+        from ..widgets.formular_dialog import FormFeldDialog
+        d = FormFeldDialog(self.w, art)
+        if d.exec():
+            m = d.meta()
+            FO.einfuegen(self.ed, m)
+            if art == "kasten" and m.get("beschriftung"):
+                self.ed.textCursor().insertText(" " + m["beschriftung"])
 
-    def formKasten(self, k=None):
-        if self.ed:
-            from ..editor import sendungen as S
-            S.form_kasten(self.ed)
+    def formTextfeld(self, k=None): self._form_dialog("text")
+    def formAuswahl(self, k=None): self._form_dialog("auswahl")
+    def formDatum(self, k=None): self._form_dialog("datum")
+    def formKasten(self, k=None): self._form_dialog("kasten")
+    def formKnopf(self, k=None): self._form_dialog("knopf")
 
-    def formKnopf(self, k=None):
+    def formLeeren(self, k=None):
         if self.ed:
-            from ..editor import sendungen as S
-            t, ok = QInputDialog.getText(self.w, "Schaltfläche", "Aufschrift:", text="Absenden")
-            if ok:
-                S.form_knopf(self.ed, t.strip())
+            from ..editor import formular as FO
+            n = FO.alle_zuruecksetzen(self.ed)
+            self.w.statusBar().showMessage(f"{n} Formularfeld{'er' if n != 1 else ''} zurückgesetzt.", 4000)
 
     # ---- Überprüfen: Thesaurus, Barrierefreiheit, Korrektursprache ------------------------------------------
     def thesaurus(self, k=None):
@@ -1594,12 +1623,22 @@ class Befehle:
         d.show()
         self._lh = d
 
+    def ausblenden(self, k=None):
+        """Markierten Text als „ausgeblendet“ formatieren (Strg+Umschalt+H)."""
+        if self.ed:
+            self.ed.set_versteckt(not self.ed.ist_versteckt())
+
+    def an_ausblenden(self): return bool(self.ed) and self.ed.ist_versteckt()
+
+    def versteckteZeigen(self, k=None):
+        self.w.settings.set("ui/versteckt_zeigen", not self.w.settings.get_bool("ui/versteckt_zeigen", False))
+        self.w.versteckt_anwenden()
+
+    def an_versteckteZeigen(self): return self.w.settings.get_bool("ui/versteckt_zeigen", False)
+
     def silbenfarben(self, k=None):
         from ..editor import silbenfarben as S
         k = S.konfig_lesen(self.w.settings)
-        if not k["an"] and not S.verfuegbar(k["sprache"]):
-            self.w.statusBar().showMessage("Silben farbig braucht das Paket „pyphen“ (pip install pyphen).", 6000)
-            return
         self.w.settings.set("lesehilfe/silben/an", not k["an"])
         self.w.silbenfarben_anwenden()
         self.w.statusBar().showMessage("Silben werden farbig angezeigt." if not k["an"] else "Silbenfarben aus.", 4000)
@@ -1763,7 +1802,8 @@ class Befehle:
         from ..editor import umbruch as U
         aktuell = U.schwebend(e.document(), e._bild_cursor().selectionStart()) or "zeile"
         m = QMenu()
-        for modus, text in (("zeile", "Mit Text in Zeile"), ("links", "Links, Text umfließt"), ("rechts", "Rechts, Text umfließt")):
+        for modus, text in (("zeile", "Mit Text in Zeile"), ("links", "Links, Text umfließt"), ("rechts", "Rechts, Text umfließt"),
+                             ("oben_unten", "Oben und unten (eigene Zeile)")):
             a = m.addAction(text, lambda _=False, modus=modus: U.umbruch_setzen(e, modus))
             a.setCheckable(True)
             a.setChecked(modus == aktuell)

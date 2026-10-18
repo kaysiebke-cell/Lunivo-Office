@@ -79,7 +79,7 @@ def test_vorhersage_mit_thema(app, tmp_path, monkeypatch):
 def test_band_ist_das_alte_register(app, tmp_path, monkeypatch):
     w = win(tmp_path, monkeypatch)
     sichtbar = [w.band.reiter.tabText(i) for i in range(w.band.reiter.count()) if w.band.reiter.isTabVisible(i)]
-    assert sichtbar == ["Datei", "Start", "Einfügen", "Seitenlayout", "Verweise", "Überprüfen", "Schreibhilfe", "KI", "Ansicht"]
+    assert sichtbar == ["Datei", "Start", "Einfügen", "Seitenlayout", "Verweise", "Überprüfen", "Schreibhilfe", "Ansicht"]
     # Kontext-Register erscheinen nur bei Bedarf
     assert not w.band.reiter.isTabVisible(w.band.kontext_index["tabelle"])
     e0 = w.current_editor(); e0.insert_table(2, 2); w._sync_format()
@@ -274,3 +274,64 @@ def test_silbenfarben_befehl_und_dialog(app, tmp_path, monkeypatch):
     w.new_document()
     w.current_editor().setPlainText("Wanderung")
     assert w.current_editor().document().firstBlock().layout().formats()
+
+
+def test_minisymbolleiste(app, tmp_path, monkeypatch):
+    from PySide6.QtCore import QPoint
+    w = win(tmp_path, monkeypatch)
+    e = w.current_editor()
+    e.setPlainText("Ein Text zum Markieren")
+    c = e.textCursor(); c.setPosition(3); c.setPosition(7, QTextCursor.KeepAnchor); e.setTextCursor(c)
+    w.mini_zeigen(e, QPoint(200, 200))
+    assert w._mini.isVisible()
+    w._mini.knoepfe["fett"].click()
+    assert e.textCursor().charFormat().fontWeight() >= 600 and w._mini.knoepfe["fett"].isChecked()
+    w._mini.knoepfe["kursiv"].click(); assert e.textCursor().charFormat().fontItalic()
+    c = e.textCursor(); c.clearSelection(); e.setTextCursor(c)                  # Auswahl weg → Leiste verschwindet
+    assert not w._mini.isVisible()
+    w.mini_zeigen(e, QPoint(200, 200), True)
+    assert w._mini.isVisible()                                                     # Rechtsklick: bleibt ohne Auswahl
+    w.mini_zeigen(None, None)
+    assert not w._mini.isVisible()
+
+
+def test_live_vorschau(app, tmp_path, monkeypatch):
+    from PySide6.QtCore import QEvent
+    from PySide6.QtGui import QColor
+    from PySide6.QtWidgets import QApplication, QToolButton
+    w = win(tmp_path, monkeypatch)
+    e = w.current_editor()
+    e.setPlainText("Ein Text zum Probieren")
+    e.document().setModified(False)
+    c = e.textCursor(); c.setPosition(3); c.setPosition(7, QTextCursor.KeepAnchor); e.setTextCursor(c)
+    d = e.document()
+    schritte = d.availableUndoSteps()
+
+    def fett(): return QTextCursor(d).charFormat().fontWeight()
+    # 1) Formatvorlage über der Galerie überfahren: sichtbar, dann restlos weg (kein Rückgängig-/Wiederholen-Rest, nicht „geändert“)
+    knopf = next(b for b in w.band.findChildren(QToolButton) if b.text().endswith("Überschrift 1"))
+    QApplication.sendEvent(knopf, QEvent(QEvent.Enter))
+    assert d.firstBlock().blockFormat().headingLevel() == 1 and w.vorschau.aktiv
+    QApplication.sendEvent(knopf, QEvent(QEvent.Leave))
+    assert d.firstBlock().blockFormat().headingLevel() == 0 and not w.vorschau.aktiv
+    assert d.availableUndoSteps() == schritte and not d.isModified() and not d.isRedoAvailable()
+    # 2) Schriftgröße im Auswahlfeld
+    gr = w.band.felder["groesse"]
+    idx = gr.findText("24")
+    gr.highlighted.emit(idx)
+    assert abs(QTextCursor(e.textCursor()).charFormat().fontPointSize() - 24) < 0.1
+    gr.hidePopup()
+    assert abs(e.textCursor().charFormat().fontPointSize() - 24) > 1 and d.availableUndoSteps() == schritte
+    # 3) Farbmenü: Überfahren zeigt, Schließen nimmt zurück, Klick übernimmt wirklich
+    m = w.befehle.menue_schriftfarbeKlappe()
+    a = next(x for x in m.actions() if x.data() == "#c92a2a")
+    m.hovered.emit(a)
+    assert e.textCursor().charFormat().foreground().color().name() == "#c92a2a"
+    m.aboutToHide.emit()
+    assert e.textCursor().charFormat().foreground().color().name() != "#c92a2a"
+    a.trigger()
+    assert e.textCursor().charFormat().foreground().color().name() == "#c92a2a" and d.isModified()
+    # 4) ausgeschaltet: keine Vorschau
+    w.settings.set("ui/live_vorschau", False)
+    w.vorschau.zeigen(lambda ed: ed.toggle_bold(True))
+    assert not w.vorschau.aktiv

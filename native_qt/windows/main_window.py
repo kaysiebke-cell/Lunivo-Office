@@ -69,6 +69,8 @@ class MainWindow(QMainWindow):
         self.ki.status.connect(lambda t: self.lbl_msg.setText(t))
         from ..widgets import dialogs as _dlg
         _dlg.set_einheit(self.settings.get("ui/masseinheit", "Millimeter"))
+        from ..widgets.live_vorschau import LiveVorschau
+        self.vorschau = LiveVorschau(self)
         self.befehle = Befehle(self)
         self._build_actions()
         self._zusatz_kuerzel()
@@ -280,6 +282,7 @@ class MainWindow(QMainWindow):
         return t.editor if t else None
 
     def _ed(self, fn):
+        self.vorschau.ende()
         e = self.current_editor()
         if e is not None:
             fn(e)
@@ -345,7 +348,9 @@ class MainWindow(QMainWindow):
         e.document().contentsChanged.connect(self.assistant.dokument_geaendert)
         e.document().contentsChanged.connect(self.navigation.spaeter)
         e.opt = lambda name, std=True: self.settings.get_bool(name, std)
+        e.opt_text = lambda name, std="": self.settings.get(name, std)
         e.autor = self.autor_angaben
+        e.mini_hook = self.mini_zeigen
         e.zusatzGeaendert.connect(self.navigation.spaeter)
         e.set_marken(self.settings.get_bool("ui/marken", True))
         self.formatzeichen_anwenden(e)
@@ -553,10 +558,18 @@ class MainWindow(QMainWindow):
         try:
             autor = self._meta_fuer_speichern(t).get("author", "") if self.settings.get_bool("pdf/eigenschaften", True) else ""
             lz = None
-            if self.settings.get_bool("pdf/lz_ueberschriften", False) or self.settings.get_bool("pdf/lz_textmarken", False):
-                lz = {"ueberschriften": self.settings.get_bool("pdf/lz_ueberschriften", False),
-                      "textmarken": self.settings.get_bool("pdf/lz_textmarken", False)}
-            n = export_pdf(path, t.editor.document(), t.page, os.path.splitext(t.title)[0], autor, t.editor.noten, lz, self._silben_fuer_druck())
+            sg = self.settings.get_bool
+            if sg("pdf/lz_ueberschriften", False) or sg("pdf/lz_textmarken", False) or sg("pdf/lz_andere", False):
+                lz = {"ueberschriften": sg("pdf/lz_ueberschriften", False), "textmarken": sg("pdf/lz_textmarken", False),
+                      "andere": sg("pdf/lz_andere", False)}
+            komm = None
+            if sg("pdf/kommentare", False):
+                komm = {kid: f'{k.get("autor", "")}: {k.get("text", "")}'.strip(": ") for kid, k in t.editor.kommentare.items()}
+            n = export_pdf(path, t.editor.document(), t.page, os.path.splitext(t.title)[0], autor, t.editor.noten, lz,
+                           self._silben_fuer_druck(), komm,
+                           {k: v for k, v in self.druckoptionen().items()
+                            if k in ("versteckt", "felder_code", "zeichnungen", "balken", "hervorhebungen", "textmarken", "textgrenzen", "zuschnitt",
+                                     "notenlinks", "blasen", "nur_formular")})
         except Exception as e:  # PDF-Ausgabe darf das Programm nicht beenden
             QMessageBox.critical(self, "PDF-Export fehlgeschlagen", str(e)); return
         self.statusBar().showMessage(f"PDF gespeichert ({n} Seiten): {path}", 5000)
@@ -597,7 +610,24 @@ class MainWindow(QMainWindow):
                 "textmarken": self.settings.get_bool("drucken/textmarken", False),
                 "textgrenzen": self.settings.get_bool("drucken/textgrenzen", False),
                 "zuschnitt": self.settings.get_bool("drucken/zuschnitt", False),
-                "silbenfarben": self._silben_fuer_druck()}
+                "silbenfarben": self._silben_fuer_druck(),
+                "versteckt": self.settings.get_bool("drucken/versteckt", False),
+                "felder_code": self.settings.get_bool("drucken/felder_code", False),
+                "zeichnungen": self.settings.get_bool("drucken/zeichnungen", True),
+                "balken": self.settings.get("aenderungen/balken", "links"),
+                "notenlinks": self.settings.get_bool("pdf/notenlinks", True),
+                "blasen": self._blasen_fuer_druck(),
+                "nur_formular": self.settings.get_bool("drucken/nur_formular", False)}
+
+    def _blasen_fuer_druck(self):
+        from ..editor import sprechblasen as SB
+        e = self.current_editor()
+        k = SB.konfig_lesen(self.settings)
+        if e is None or not self.settings.get_bool("sprechblasen/drucken", False) or not SB.aktiv(k):
+            return None
+        if not e.kommentare and not (k["verwenden"] == "Immer" and e.aenderungen()):
+            return None
+        return {"konfig": k, "kommentare": dict(e.kommentare)}
 
     def _silben_fuer_druck(self):
         from ..editor import silbenfarben as S
@@ -643,7 +673,7 @@ class MainWindow(QMainWindow):
         tabelle = [("F3", b.schnellbaustein), ("F4", b.vorlesen), ("F5", self.toggle_sidebar), ("F6", b.welcheHilfe),
                    ("F7", lambda: self.assistant.pruefen(True)), ("F8", b.kiKorrektur),
                    ("Ctrl++", b.groesser), ("Ctrl+-", b.kleiner), ("Ctrl+0", b.normal),
-                   ("Ctrl+Tab", lambda: self._tab_weiter(1)), ("Ctrl+Shift+Tab", lambda: self._tab_weiter(-1))]
+                   ("Ctrl+Shift+H", b.ausblenden), ("Ctrl+Tab", lambda: self._tab_weiter(1)), ("Ctrl+Shift+Tab", lambda: self._tab_weiter(-1))]
         self._kuerzel = []
         for taste, fn in tabelle:
             sc = QShortcut(QKeySequence(taste), self)
@@ -840,6 +870,28 @@ class MainWindow(QMainWindow):
         e.set_lesehilfe(PAPIERTOENE.get(s.get("lesehilfe/papier", "Weiß"), "#ffffff"),
                         float(s.get("lesehilfe/buchstaben", 0)), float(s.get("lesehilfe/wort", 0)))
         self.silbenfarben_anwenden(e)
+        self.versteckt_anwenden(e)
+
+    def mini_zeigen(self, ed, pos, rechtsklick: bool = False):
+        from ..widgets.mini_leiste import MiniLeiste
+        if getattr(self, "_mini", None) is None:
+            self._mini = MiniLeiste(self)
+        if ed is None:
+            self._mini.hide()
+        else:
+            self._mini.zeigen(ed, pos, rechtsklick)
+
+    def markup_neu(self) -> None:
+        """Markup- und Sprechblasen-Einstellungen haben sich geändert: Seitenrand für Blasen und Auszeichnung neu aufbauen."""
+        for t in self._doc_tabs():
+            t.editor.apply_page(t.editor.page)
+            t.editor._overlays_neu()
+            t.editor.viewport().update()
+
+    def versteckt_anwenden(self, e=None):
+        an = self.settings.get_bool("ui/versteckt_zeigen", False)
+        for ed in ([e] if e is not None else [t.editor for t in self._doc_tabs()]):
+            ed.set_versteckt_zeigen(an)
 
     def silbenfarben_anwenden(self, e=None):
         from ..editor import silbenfarben as S

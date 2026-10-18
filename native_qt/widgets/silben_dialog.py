@@ -21,7 +21,7 @@ class SilbenDialog(QDialog):
         k = dict(self._alt)
         v = QVBoxLayout(self)
         info = QLabel("Jede Silbe eines Wortes bekommt abwechselnd eine andere Farbe. Das ändert nur die Anzeige — nicht den Text, "
-                      "nicht die Datei. Die Silbengrenzen sind Trennmuster (pyphen) und bei zusammengesetzten Wörtern nicht immer perfekt.")
+                      "nicht die Datei. Die Silben sind deutsche Sprechsilben (Wan-de-rung); bei Fremdwörtern, Namen und seltenen Zusammensetzungen kann eine Grenze falsch liegen.")
         info.setWordWrap(True)
         info.setStyleSheet("color: palette(mid);")
         v.addWidget(info)
@@ -75,10 +75,6 @@ class SilbenDialog(QDialog):
         self.drucken = QCheckBox("Auch beim Drucken und im PDF")
         self.drucken.setChecked(k["drucken"])
         f.addRow("", self.drucken)
-        self.sprache = QComboBox()
-        self.sprache.addItems(S.SPRACHEN)
-        self.sprache.setCurrentText(k["sprache"])
-        f.addRow("Sprache der Silbenmuster", self.sprache)
         v.addLayout(f)
         v.addWidget(QLabel("Vorschau"))
         self.vorschau = QTextEdit()
@@ -99,14 +95,12 @@ class SilbenDialog(QDialog):
         v.addWidget(bb)
         for c in (self.an, self.fett, self.einsilbig, self.neu, self.absatz, self.drucken):
             c.toggled.connect(lambda *_: self.anwenden())
-        for c in (self.palette, self.darstellung, self.sprache):
+        for c in (self.palette, self.darstellung):
             c.currentTextChanged.connect(lambda *_: self.anwenden())
         for c in (self.mindestens, self.anzahl):
             c.valueChanged.connect(lambda *_: self.anwenden())
         self._knoepfe_faerben()
         self._zustand()
-        if not S.verfuegbar(k["sprache"]):
-            self.hinweis.setText("Das Paket „pyphen“ fehlt (pip install pyphen) — ohne es lassen sich Wörter nicht in Silben teilen.")
 
     def _farbe_waehlen(self, i: int) -> None:
         c = QColorDialog.getColor(QColor(self.eigene[i]), self, "Farbe für Silbe " + str(i + 1))
@@ -128,7 +122,7 @@ class SilbenDialog(QDialog):
         return {"an": self.an.isChecked(), "palette": self.palette.currentText(), "eigene": list(self.eigene),
                 "anzahl_eigene": self.anzahl.value(), "darstellung": self.darstellung.currentText(), "fett": self.fett.isChecked(),
                 "einsilbig": self.einsilbig.isChecked(), "neu_pro_wort": self.neu.isChecked(), "mindestens": self.mindestens.value(),
-                "nur_absatz": self.absatz.isChecked(), "drucken": self.drucken.isChecked(), "sprache": self.sprache.currentText()}
+                "nur_absatz": self.absatz.isChecked(), "drucken": self.drucken.isChecked(), "sprache": "de_DE"}
 
     def anwenden(self) -> None:
         """Wirkt sofort auf Vorschau und alle offenen Dokumente (Abbrechen stellt den alten Stand wieder her)."""
@@ -143,7 +137,7 @@ class SilbenDialog(QDialog):
         self.palette.setCurrentText(d["palette"]); self.eigene = list(d["eigene"]); self.anzahl.setValue(d["anzahl_eigene"])
         self.darstellung.setCurrentText(d["darstellung"]); self.fett.setChecked(d["fett"]); self.mindestens.setValue(d["mindestens"])
         self.einsilbig.setChecked(d["einsilbig"]); self.neu.setChecked(d["neu_pro_wort"]); self.absatz.setChecked(d["nur_absatz"])
-        self.drucken.setChecked(d["drucken"]); self.sprache.setCurrentText(d["sprache"])
+        self.drucken.setChecked(d["drucken"])
         self._knoepfe_faerben()
         self.anwenden()
 

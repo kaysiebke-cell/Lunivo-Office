@@ -2,11 +2,11 @@
 
 Alle Angaben stammen aus tatsächlichen Läufen in der Entwicklungsumgebung (Linux, Qt „offscreen“, LibreOffice 25.x vorhanden).
 **Nicht** auf einem echten Linux-Mint-Desktop mit Bildschirm, Drucker, Ollama/Claude, LanguageTool, Piper oder WPS getestet —
-das ist offen (siehe 6). Der Prüfbogen ([PRUEFBOGEN.md](PRUEFBOGEN.md)) ist der Maßstab: **415 Punkte, ✅ 295 · ◐ 71 · ⬜ 49**;
+das ist offen (siehe 6). Der Prüfbogen ([PRUEFBOGEN.md](PRUEFBOGEN.md)) ist der Maßstab: **415 Punkte, ✅ 328 · ◐ 66 · ⬜ 21**;
 „✅“ heißt „Befehl/Funktion vorhanden“, einzeln durch `tests/` belegt nur dort, wo im Eintrag ein Test genannt ist.
 
 ## 1. Dateien
-`native_qt/` (≈ 15 700 Zeilen Python in 7 Paketen), `tests/` (22 Testdateien, 136 Tests), `werkzeug/` (Exportskripte für Register,
+`native_qt/` (≈ 15 700 Zeilen Python in 7 Paketen), `tests/` (22 Testdateien, 171 Tests), `werkzeug/` (Exportskripte für Register,
 Symbolkatalog, Vorlagen, Handbuch; Abgleich-Skripte), `starten-qt.sh`, `requirements*.txt`, `doku/native-qt/*`. Die alte
 Web-Oberfläche (`oberflaeche/`, `start.py`) ist unverändert; auf `main` wurde nichts geändert.
 
@@ -66,7 +66,7 @@ Hinweise: JSAPI-Erweiterungen laut Entwicklerdokumentation auf open.wps.cn (chin
 Steuerung ≠ Bibliothek: Das Programm benutzt **keine** WPS-Interna.
 
 ## 5. Tests (tatsächlich ausgeführt)
-`pytest tests`: **136 bestanden, 0 fehlgeschlagen** (≈ 45 s). Neben den Grundlagen (DOCX-Roundtrip, PDF, Einstellungen, Editor,
+`pytest tests`: **171 bestanden, 0 fehlgeschlagen** (≈ 45 s). Neben den Grundlagen (DOCX-Roundtrip, PDF, Einstellungen, Editor,
 Fenster, KI mit Fake-Servern) jetzt auch: Zoom, Lineale, Weblayout/Zwei Seiten/Gliederung, Seitenfarbe/-rahmen/Wasserzeichen,
 Kommentare/Noten/Änderungen (Editor und DOCX), Verweise und Verzeichnisse (mit LibreOffice-Öffnung), Einfügen, Sendungen,
 Vorlagen und Lücken, Hilfe/Funktionstasten, Oberfläche wechseln, Werkzeug-Reiter, Gedächtnis, Kennwort, HTML-Codierung, eine
@@ -83,7 +83,7 @@ Druckoptionen am Drucker, Zwischenstände, Sichern/Zurückholen, Gitternetz, Dun
 * **Nicht übertragen:** Tabellenblatt/Diagramm-Tools/SmartArt/Gleichungswerkzeuge/Zeichentools (Tabellenkalkulation und
   Präsentation sind ausgeschlossen), Sprechblasen bei Änderungen, „Gerade/ungerade Seiten“, „Dokument teilen“, Maßeinheit,
   Zuschnittsmarken drucken, Live-Vorschau/Minisymbolleiste, Wort-Extras.
-* **Optionen** (Rest): siehe `PRUEFBOGEN.md` (Abschnitt OPTIONEN) — 49 Punkte insgesamt offen.
+* **Optionen** (Rest): siehe `PRUEFBOGEN.md` (Abschnitt OPTIONEN) — 21 Punkte insgesamt offen.
 * Das **Handbuch** ist das der Web-Fassung (als Markdown); es beschreibt teils die Web-Oberfläche.
 * Keine Behauptung vollständiger Word- oder WPS-Kompatibilität; Word selbst stand nicht zum Gegenprüfen zur Verfügung
   (geprüft mit LibreOffice und python-docx).
@@ -100,9 +100,38 @@ Anbieters mit „Bilder“. Getestet gegen einen gefälschten OpenAI-Server; **n
 ### Nachtrag: Silben farbig (Lesehilfe für Legasthenie), Silbentrennung, Textumbruch
 * **Silben farbig** (Reiter Schreibhilfe ▸ Lesen, Optionen ▸ Leichter lesen): jede Silbe abwechselnd in einer anderen Farbe, nur als Anzeige
   (`QSyntaxHighlighter`) — Text und Datei bleiben unverändert. Einstellbar: Farbpaare, eigene Farben (2 oder 3), Schriftfarbe/Marker/beides,
-  fett, Mindestlänge, einsilbige Wörter, Farbwechsel je Wort, nur Absatz mit dem Cursor, auch beim Drucken/PDF, Sprache. Die Silben kommen
-  aus den Trennmustern von pyphen; das sind Trennstellen, keine Silbengrenzen nach Duden — bei zusammengesetzten Wörtern kann eine
-  Grenze danebenliegen. Nicht von Menschen mit Legasthenie erprobt: die Voreinstellungen sind meine Annahme.
+  fett, Mindestlänge, einsilbige Wörter, Farbwechsel je Wort, nur Absatz mit dem Cursor, auch beim Drucken/PDF.
+  Die Silben sind **deutsche Sprechsilben** (`services/silben_de.py`, eigene Regeln: Vokalkerne, Konsonantenhäufungen, ch/sch/ck/qu/ß,
+  Mitlaut+l/r, getrennt gesprochene Vokale; Wortbausteine in Zusammensetzungen aus den pyphen-Mustern, gefiltert). Trefferquote:
+  **228 von 228** in der Soll-Liste (von mir von Hand aufgestellt und beim Entwickeln benutzt — also nicht unabhängig) und
+  **49 von 52** in einer harten, vorher nicht gesehenen Liste (Fremdwörter, seltene Zusammensetzungen). Bekannte Fehler: Zusammensetzungen
+  mit vokalischem zweiten Teil, die pyphen nicht kennt (Zusammenarbeit → Zu-sam-me-nar-beit), einzelne Fremdwörter (Chirurg, Restaurant),
+  Namen. Gilt nur für Deutsch. Nicht von Menschen mit Legasthenie erprobt; die Voreinstellungen (Blau/Rot, ab 4 Buchstaben) sind eine Annahme.
 * **Silbentrennung** (wie im alten Lunivo: Zeilenumbruch mit Trennstrichen): pyphen, wirkt in Seitenansicht, Druck, PDF; DOCX `autoHyphenation`.
   Die Bearbeitungsansicht zeigt keine Trennstriche.
 * **Textumbruch um Bilder**: links/rechts, Text umfließt; DOCX `wp:anchor` mit `wrapSquare` (gelesen und geschrieben, mit LibreOffice geprüft).
+
+### Nachtrag: Spalten, Minisymbolleiste, Einfügeoptionen
+* **Spalten** (Seitenlayout ▸ Spalten, Seite einrichten): 1–4 Spalten mit Abstand und Trennlinie, **auch beim Schreiben**: Der Text fließt auf der
+  A4-Seite von Spalte zu Spalte, Klicken, Markieren über Spalten hinweg, Pfeiltasten, Zoom und Rechtschreibwellen arbeiten darauf. Technik:
+  Das Dokument wird in Spaltenbreite und -höhe in „Spaltenseiten“ geteilt, `paintEvent` setzt sie nebeneinander, Mausereignisse und
+  `cursorRect`/`cursorForPosition` werden abgebildet (`editor_widget._sp_*`). Ebenso in Seitenansicht, Druck, PDF und DOCX (`w:cols`,
+  Spaltenumbruch; mit LibreOffice geprüft). **Grenzen:** gilt für das ganze Dokument (keine Abschnitte mit verschiedener Spaltenzahl); bei
+  mehreren Spalten wirkt ein Seitenumbruch wie ein Spaltenumbruch; Ziehen und Ablegen von Text ist in Spalten abgeschaltet; Zeilennummern
+  fehlen bei mehreren Spalten; die Spaltenumbrüche der Ansicht stammen aus Qts Seitenaufteilung und können in Randfällen (Tabellen,
+  hohe Bilder) vom Druck um eine Zeile abweichen.
+* **Minisymbolleiste** bei Auswahl und Rechtsklick; **Einfügeoptionen** (Standardformat, Schaltfläche nach dem Einfügen); **PDF**: Kommentare als
+  Notizen, Lesezeichen aus Titel/Untertitel/Zitat; Schalter „Immer Korrekturvorschläge“.
+
+### Nachtrag: Fußnoten am Seitenfuß, Verknüpfungen, Anzeige- und Druckoptionen
+* **Fußnoten am Seitenfuß** (Seitenansicht, Druck, PDF, Seitenzählung): Die Kopie wird so umbrochen, dass die Fußnoten der Seite unter dem Text
+  Platz haben (Absätze werden dazu geteilt); mit Trennstrich. Endnoten stehen am Textende. **Grenzen:** bei mehreren Spalten stehen die Fußnoten
+  weiter gesammelt am Ende; eine Fußnote läuft nie auf die nächste Seite weiter; in der Bearbeitungsansicht stehen die Noten im Navigationsbereich.
+* **PDF-Sprungverweise** Marke ↔ Note (Fuß- und Endnoten), Kommentare als Notizen, Lesezeichen aus Überschriften/Textmarken/Titel.
+* Ausgeblendeter Text (DOCX `w:vanish`), Objektanker, Feldschattierung und -codes, Zahl im Kreis, Kopf-/Fußzeile im Seitenrand (Tipp, Doppelklick),
+  Zeichnungsobjekte drucken, Änderungsbalken, Spalten live im Editor.
+* **Sprechblasen**: Kommentare (und mit „Immer“ auch Einfügungen/Löschungen) als Blasen neben der Seite, mit Autor, Datum, Text, Verbindungslinien,
+  gestapelt ohne Überlappung; Klick markiert den Text, Doppelklick bearbeitet den Kommentar. Einstellbar: Breite, Seitenrand links/rechts, Linien.
+  Im Druck/PDF: Seite verkleinert neben den Blasen, Papierausrichtung automatisch/beibehalten/Querformat. Markup (Einfügungen, Löschungen,
+  Farbe, Änderungsbalken) einstellbar. **Grenzen:** Blasen für Formatänderungen gibt es nicht; mit mehreren Spalten stehen die Blasen neben der
+  ganzen Seite; im Druck ist die Anordnung eine Näherung an Word (Seite verkleinert statt Text umbrochen).

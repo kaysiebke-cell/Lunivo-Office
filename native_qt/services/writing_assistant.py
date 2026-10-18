@@ -179,7 +179,7 @@ class WritingAssistant(QObject):
         for f in gefunden:
             if f["neu"] and f["art"] != "hinweis":
                 vorschlaege.append((f["neu"], f))
-        if wort:
+        if wort and self.settings.get_bool("schreibhilfe/vorschlaege", True):
             from . import pruefung
             schon = {t for t, _f in vorschlaege}
             for k in pruefung.vorschlaege_fuer(wort[0], 6, self.gelernt.daten):

@@ -6,7 +6,7 @@ from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QApplication, QGridLayout, QLabel, QWidget
 
 from ..editor.page import mm_to_px
-from ..editor.pagination import paginated_copy, seite_als_bild
+from ..editor.pagination import ausgabe_seiten, paginated_copy, seite_als_bild
 
 
 class SeitenAnsicht(QWidget):
@@ -23,7 +23,7 @@ class SeitenAnsicht(QWidget):
         QApplication.setOverrideCursor(Qt.WaitCursor)
         try:
             d = paginated_copy(editor.document(), pg, editor.noten)
-            self.seiten = max(1, d.pageCount())
+            self.seiten = ausgabe_seiten(d.pageCount(), pg)
             for n in range(1, self.seiten + 1):
                 bild = seite_als_bild(editor.document(), pg, n, faktor, d)
                 lab = QLabel()

@@ -1,15 +1,13 @@
 """Silben farbig: Lesehilfe für Menschen mit Legasthenie.
 
 Jede Silbe eines Wortes wird abwechselnd in einer anderen Farbe gezeigt. Das ist reine Anzeige (ein QSyntaxHighlighter): der Text,
-die Formatierung und die gespeicherte Datei bleiben unverändert. Die Silben kommen aus den Trennmustern von pyphen — das sind
-Trennstellen, keine Silbengrenzen nach Duden; bei zusammengesetzten oder fremden Wörtern kann eine Grenze danebenliegen.
+die Formatierung und die gespeicherte Datei bleiben unverändert. Die Silben sind deutsche Sprechsilben (services/silben_de.py: Regeln für Vokalkerne und
+Konsonanten, Wortbausteine aus den pyphen-Mustern); die Lesehilfe gilt nur für deutschen Text.
 Einstellbar ist alles, was beim Lesen stört oder hilft: Farben, Darstellung, Mindestlänge, einsilbige Wörter, nur der aktuelle Absatz.
 """
 from __future__ import annotations
 
 import re
-from functools import lru_cache
-
 from PySide6.QtGui import QBrush, QColor, QFont, QSyntaxHighlighter, QTextCharFormat
 
 PALETTEN = {
@@ -21,7 +19,6 @@ PALETTEN = {
     "Eigene Farben": None,
 }
 DARSTELLUNGEN = ["Schriftfarbe", "Hintergrund (Marker)", "Schriftfarbe und Hintergrund"]
-SPRACHEN = ["de_DE", "de_AT", "de_CH", "en_US", "en_GB", "fr", "es", "it", "nl_NL", "pl_PL", "tr_TR"]
 BEISPIEL = ("Die Silbenfarben helfen beim Lesen: Wörter wie Schmetterling, Wanderung und Computertastatur "
             "werden in ihre Teile zerlegt.")
 STANDARD = {"an": False, "palette": "Blau / Rot", "eigene": ["#1f5fbf", "#c92a2a", "#2b8a3e"], "anzahl_eigene": 2,
@@ -61,31 +58,15 @@ def farben(k: dict) -> list[str]:
     return list(pal) if pal else list(k["eigene"][:k["anzahl_eigene"]])
 
 
-@lru_cache(maxsize=4)
-def _trenner(sprache: str):
-    try:
-        import pyphen
-        return pyphen.Pyphen(lang=sprache, left=1, right=1) if sprache in pyphen.LANGUAGES else None
-    except ImportError:
-        return None
-
-
 def verfuegbar(sprache: str = "de_DE") -> bool:
-    return _trenner(sprache) is not None
+    """Die Regeln brauchen nichts außer Python; pyphen verbessert nur die Wortgrenzen in Zusammensetzungen."""
+    return True
 
 
-@lru_cache(maxsize=20000)
 def silben(wort: str, sprache: str = "de_DE") -> tuple[str, ...]:
-    """Das Wort in Silben (ein Eintrag, wenn es sich nicht teilen lässt oder pyphen fehlt)."""
-    t = _trenner(sprache)
-    if t is None:
-        return (wort,)
-    teile, von = [], 0
-    for p in t.positions(wort):
-        teile.append(wort[von:p])
-        von = p
-    teile.append(wort[von:])
-    return tuple(x for x in teile if x)
+    """Das Wort in deutsche Sprechsilben (ein Eintrag, wenn es sich nicht teilen lässt)."""
+    from ..services.silben_de import silben as _silben
+    return _silben(wort)
 
 
 def _formate(k: dict) -> list[QTextCharFormat]:
