@@ -27,7 +27,7 @@ from PySide6.QtGui import (
 )
 
 from ..editor.page import PageSettings
-from .docx_reader import STYLE_PROP
+from .docx_reader import LH_FIXED, LH_PROPORTIONAL, STYLE_PROP
 from .report import DocumentIOError, IOReport
 
 PX_TO_PT = 0.75
@@ -179,9 +179,9 @@ class _Writer:
         pf.space_before = Pt(bf.topMargin() * PX_TO_PT)
         pf.space_after = Pt(bf.bottomMargin() * PX_TO_PT)
         lh, lht = bf.lineHeight(), bf.lineHeightType()
-        if lht == QTextBlockFormat_Proportional and lh and lh != 100:
+        if int(lht) == LH_PROPORTIONAL and lh and lh != 100:
             pf.line_spacing = lh / 100.0
-        elif lht == QTextBlockFormat_Fixed and lh:
+        elif int(lht) == LH_FIXED and lh:
             pf.line_spacing = Pt(lh * PX_TO_PT)
         if bf.pageBreakPolicy() & QTextFormat.PageBreak_AlwaysBefore:
             pf.page_break_before = True
@@ -401,8 +401,6 @@ class _Writer:
             kids.pop()
 
 
-QTextBlockFormat_Proportional = QTextBlockFormat.ProportionalHeight
-QTextBlockFormat_Fixed = QTextBlockFormat.FixedHeight
 
 
 def _split(text: str):

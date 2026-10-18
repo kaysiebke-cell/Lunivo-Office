@@ -31,6 +31,7 @@ from PySide6.QtGui import (
 from ..editor.page import HeaderFooter, PageSettings, px_to_mm
 from .report import DocumentIOError, IOReport
 
+LH_PROPORTIONAL, LH_FIXED = 1, 2                # QTextBlockFormat.LineHeightTypes
 STYLE_PROP = QTextFormat.UserProperty + 1       # Name der Formatvorlage am Block
 EMU_PER_PX = 9525
 PT_PER_PX = 0.75
@@ -253,10 +254,10 @@ class _Reader:
         ls = eff(lambda p: p.line_spacing)
         if ls is not None:
             if isinstance(ls, float) or (isinstance(ls, int) and ls < 100):
-                b.setLineHeight(float(ls) * 100, QTextBlockFormat.ProportionalHeight)
+                b.setLineHeight(float(ls) * 100, LH_PROPORTIONAL)
             else:  # Length in EMU → feste Höhe
                 pt = ls.pt
-                b.setLineHeight(pt / PT_PER_PX, QTextBlockFormat.FixedHeight)
+                b.setLineHeight(pt / PT_PER_PX, LH_FIXED)
         if eff(lambda p: p.page_break_before) or self.pending_break:
             b.setPageBreakPolicy(QTextFormat.PageBreak_AlwaysBefore)
             self.pending_break = False
