@@ -116,3 +116,52 @@ def test_seitenleiste_bereiche(app, tmp_path, monkeypatch):
     assert [b.text() for b in w.sidebar.bereiche.buttons()] == ["Überprüfen", "Schreibhilfe", "KI"]
     w.sidebar.zeige_bereich(1)
     assert w.sidebar.stapel.currentIndex() == 1 and w.sidebar._seite_sh.widget() is not None
+
+
+def test_ki_korrektur_ende_zu_ende(app, tmp_path, monkeypatch):
+    """Knopf → (gefälschter) Ollama-Server → Text korrigiert, Formatierung bleibt, Strg+Z macht es rückgängig."""
+    import json
+    import threading
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+    from PySide6.QtGui import QFont, QTextCharFormat
+    from native_qt.services import ki as K
+
+    class H(BaseHTTPRequestHandler):
+        def do_POST(self):
+            n = int(self.headers.get("Content-Length", 0)); self.rfile.read(n)
+            body = json.dumps({"message": {"content": "Wir haben keine Zahlung erhalten."}}).encode()
+            self.send_response(200); self.send_header("Content-Length", str(len(body))); self.end_headers(); self.wfile.write(body)
+        def log_message(self, *a): pass
+    srv = HTTPServer(("127.0.0.1", 0), H)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    monkeypatch.setattr(K, "OLLAMA_URL", f"http://127.0.0.1:{srv.server_address[1]}")
+    try:
+        w = win(tmp_path, monkeypatch)
+        w.ki.konfig.d["modell"] = "ollama:test"
+        e = w.current_editor()
+        e.setPlainText("Wir hat keine Zahlung erhalten.")
+        c = QTextCursor(e.document()); c.setPosition(len("Wir hat keine ")); c.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
+        f = QTextCharFormat(); f.setFontWeight(QFont.Bold); c.mergeCharFormat(f)
+        e.document().setModified(False)
+        w.ki.korrigieren()
+        warte(w.ki.laeuft, 8000); warte(w.ki.laeuft, 8000) if e.toPlainText().startswith("Wir hat") else None
+        assert e.toPlainText() == "Wir haben keine Zahlung erhalten."
+        # das fette „keine Zahlung erhalten." ist fett geblieben
+        c2 = QTextCursor(e.document()); c2.setPosition(len("Wir haben keine "))
+        c2.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor)
+        assert c2.charFormat().fontWeight() >= 600
+        e.undo()
+        assert e.toPlainText() == "Wir hat keine Zahlung erhalten."
+        e.document().setModified(False)
+    finally:
+        srv.shutdown()
+
+
+def test_ki_ohne_schluessel_oeffnet_nichts_nach_aussen(app, tmp_path, monkeypatch):
+    w = win(tmp_path, monkeypatch)
+    w.ki.konfig.d["modell"] = "claude-opus-5"; w.ki.konfig.d["apiKey"] = ""
+    aufgerufen = []
+    monkeypatch.setattr(w, "show_options", lambda seite=None: aufgerufen.append(seite))
+    w.current_editor().setPlainText("Text")
+    w.ki.korrigieren()
+    assert aufgerufen == ["ki"] and not w.sidebar.ki_knoepfe[0].isEnabled()

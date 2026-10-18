@@ -693,3 +693,17 @@ class Befehle:
 
     def stimmeWaehlen(self, k=None):
         self.w.stimme_waehlen()
+
+    # ==== KI ========================================================================================================
+    def kiKorrektur(self, k=None): self.w.ki.korrigieren()
+    def kiVorschlaege(self, k=None):
+        self.w.sidebar.zeige_bereich(0); self.w.ki.vorschlaege_holen()
+    def kiUmformulieren(self, k=None): self.w.ki.text_aktion("umformulieren")
+    def kiZusammenfassen(self, k=None):
+        self.w.sidebar.zeige_bereich(0); self.w.ki.zusammenfassen()
+    def w_kiUebersetzen(self, k=None): self.w.ki.uebersetzen()
+    def kiEntwerfen(self, k=None): self.w.chat_oeffnen("Entwirf einen Text zu folgendem Anliegen: ")
+    def w_chatUmschalten(self, k=None): self.w.chat_oeffnen("")
+    def w_kiKonfiguration(self, k=None): self.w.show_options("ki")
+    def w_eigenenAnbieterHinzufuegen(self, k=None): self.w.show_options("ki")
+    def kiTextAktion(self, k=None, aktion="verbessern"): self.w.ki.text_aktion(aktion)

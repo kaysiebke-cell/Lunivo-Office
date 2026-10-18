@@ -20,6 +20,7 @@ from ..editor.page import PAPER_MM, HeaderFooter, PageSettings, px_to_mm
 from ..editor.pagination import export_pdf, print_document
 from ..storage import recovery
 from ..storage.settings import Settings
+from ..services.ki_dienst import KIDienst
 from ..services.writing_assistant import WritingAssistant
 from ..widgets.dialogs import (
     FindReplaceDialog, HeaderFooterDialog, PageSetupDialog, ParagraphDialog, TableDialog,
@@ -63,6 +64,8 @@ class MainWindow(QMainWindow):
         self.find_dialog = FindReplaceDialog(self.current_editor, self)
         self.assistant = WritingAssistant(self.settings, parent=self)
         self.assistant.status.connect(lambda t: self.lbl_msg.setText(t))
+        self.ki = KIDienst(self.assistant, self)
+        self.ki.status.connect(lambda t: self.lbl_msg.setText(t))
         self.befehle = Befehle(self)
         self._build_actions()
         self._build_status()
@@ -72,6 +75,7 @@ class MainWindow(QMainWindow):
         self._build_menu()
         self.menuBar().setVisible(self.menubar_wanted)
         self.sidebar = SchreibhilfePanel(self.assistant)
+        self.sidebar.verbinde_ki(self.ki, self)
         self._bereiche_bauen()
         self.sidebar.setVisible(self.settings.get_bool("ui/seitenleiste", True))
         central = QWidget()
@@ -616,6 +620,14 @@ class MainWindow(QMainWindow):
         for t in self._doc_tabs():
             t.editor.set_marken(an)
 
+    def chat_oeffnen(self, vorlage: str):
+        if not self.sidebar.isVisible():
+            self.toggle_sidebar()
+        self.sidebar.zeige_bereich(2)
+        ch = getattr(self.sidebar, "chat", None)
+        if ch is not None:
+            ch.eingabe.setText(vorlage); ch.eingabe.setFocus()
+
     def vorlesen(self, ab_hier: bool):
         from ..services import vorlesen as v
         e = self.current_editor()
@@ -832,7 +844,7 @@ class MainWindow(QMainWindow):
                                 f"Papier: {t.page.paper_name()} {'quer' if t.page.landscape else 'hoch'}\n"
                                 f"Seiten: {t.editor.page_count}   Wörter: {t.editor.word_count()}")
 
-    def show_options(self):
+    def show_options(self, seite: str | None = None):
         from ..widgets.options_dialog import OptionsDialog
         d = OptionsDialog(self.settings, self)
         if d.exec():
