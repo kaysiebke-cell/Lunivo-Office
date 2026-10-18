@@ -46,7 +46,7 @@ def _has(fmt, prop) -> bool:
 
 
 from ..editor.zusatz import (  # noqa: E402
-    B_ART, B_CAP, B_TOC, P_AENDERUNG, P_AUTOR, P_DATUM, P_FELD, P_INDEX, P_KOMMENTAR, P_NOTE,
+    B_ART, B_CAP, B_RAHMEN, B_TOC, P_AENDERUNG, P_AUTOR, P_DATUM, P_FELD, P_INDEX, P_KOMMENTAR, P_NOTE,
 )
 
 
@@ -278,11 +278,27 @@ class _Writer:
                    QTextOption.DelimiterTab: WD_TAB_ALIGNMENT.DECIMAL}
             for t in tabs:
                 pf.tab_stops.add_tab_stop(Emu(int(t.position * EMU_PER_PX)), art.get(t.type, WD_TAB_ALIGNMENT.LEFT))
+        nach_shd = ("w:tabs", "w:suppressAutoHyphens", "w:kinsoku", "w:wordWrap", "w:overflowPunct", "w:topLinePunct", "w:autoSpaceDE",
+                    "w:autoSpaceDN", "w:bidi", "w:adjustRightInd", "w:snapToGrid", "w:spacing", "w:ind", "w:contextualSpacing",
+                    "w:mirrorIndents", "w:suppressOverlap", "w:jc", "w:textDirection", "w:textAlignment", "w:textboxTightWrap",
+                    "w:outlineLvl", "w:divId", "w:cnfStyle", "w:rPr", "w:sectPr", "w:pPrChange")
+        if bf.hasProperty(B_RAHMEN):
+            farbe, _, rest = bf.stringProperty(B_RAHMEN).partition("|")
+            pt, _, art = rest.partition("|")
+            bdr = OxmlElement("w:pBdr")
+            for seite in ("top", "left", "bottom", "right"):
+                e = OxmlElement(f"w:{seite}")
+                e.set(qn("w:val"), "double" if art == "doppelt" else "single")
+                e.set(qn("w:sz"), str(max(2, int(round(float(pt or 1) * 8)))))
+                e.set(qn("w:space"), "4")
+                e.set(qn("w:color"), (farbe or "#000000").lstrip("#").upper())
+                bdr.append(e)
+            para._p.get_or_add_pPr().insert_element_before(bdr, "w:shd", *nach_shd)
         bg = bf.background()
         if bg.style() != Qt.NoBrush and bg.color().isValid():
             shd = OxmlElement("w:shd")
             shd.set(qn("w:val"), "clear"); shd.set(qn("w:color"), "auto"); shd.set(qn("w:fill"), bg.color().name()[1:].upper())
-            para._p.get_or_add_pPr().append(shd)
+            para._p.get_or_add_pPr().insert_element_before(shd, *nach_shd)
         # Läufe
         it = blk.begin()
         in_head = bool(lvl) or style_name in ("Title", "Subtitle")

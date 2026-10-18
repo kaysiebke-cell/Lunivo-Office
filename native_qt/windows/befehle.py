@@ -583,6 +583,25 @@ class Befehle:
         m.addAction("Keine Schattierung", lambda: setze(None))
         return m
 
+    RAHMEN_STUFEN = [("Dünn (0,75 pt)", 0.75, "einfach"), ("Mittel (1,5 pt)", 1.5, "einfach"), ("Dick (3 pt)", 3.0, "einfach"),
+                     ("Doppelt", 1.0, "doppelt")]
+
+    def menue_absatzRahmen(self):
+        m = QMenu()
+        for text, pt, art in self.RAHMEN_STUFEN:
+            m.addAction(text, lambda _=False, pt=pt, art=art: self.ed and self.ed.set_absatzrahmen(f"#000000|{pt}|{art}"))
+        m.addAction("Farbe wählen …", self.absatzRahmen)
+        m.addSeparator()
+        m.addAction("Kein Rahmen", lambda: self.ed and self.ed.set_absatzrahmen(None))
+        return m
+
+    def absatzRahmen(self, k=None):
+        if not self.ed:
+            return
+        c = QColorDialog.getColor(Qt.black, self.w, "Rahmenfarbe")
+        if c.isValid():
+            self.ed.set_absatzrahmen(f"{c.name()}|1.5|einfach")
+
     # ==== Einfügen ===========================================================================================================
     def leereSeite(self, k=None, quer=False):
         if self.ed:

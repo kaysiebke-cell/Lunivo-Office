@@ -45,3 +45,5 @@ B_ART = QTextFormat.UserProperty + 3             # "toc" | "abb" | "tab" | "inde
 B_CAP = QTextFormat.UserProperty + 4             # Beschriftung: Bezeichnung ("Abbildung", "Tabelle", …)
 
 BESCHRIFTUNGEN = ("Abbildung", "Tabelle", "Gleichung")
+
+B_RAHMEN = QTextFormat.UserProperty + 5          # Absatzrahmen: "#farbe|breite_pt|einfach|doppelt"

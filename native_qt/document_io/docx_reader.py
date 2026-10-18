@@ -35,7 +35,7 @@ from .report import DocumentIOError, IOReport
 LH_PROPORTIONAL, LH_FIXED = 1, 2                # QTextBlockFormat.LineHeightTypes
 STYLE_PROP = QTextFormat.UserProperty + 1       # Name der Formatvorlage am Block
 from ..editor.zusatz import (  # noqa: E402
-    B_ART, B_CAP, B_TOC, BESCHRIFTUNGEN, P_AENDERUNG, P_AUTOR, P_DATUM, P_FELD, P_INDEX, P_KOMMENTAR, P_NOTE, P_ZITAT, leere_meta,
+    B_ART, B_CAP, B_RAHMEN, B_TOC, BESCHRIFTUNGEN, P_AENDERUNG, P_AUTOR, P_DATUM, P_FELD, P_INDEX, P_KOMMENTAR, P_NOTE, P_ZITAT, leere_meta,
 )
 EMU_PER_PX = 9525
 PT_PER_PX = 0.75
@@ -519,7 +519,15 @@ class _Reader:
                   "Index 1": "zeile1", "Bibliography": "zeile1"}
 
     def _block_zusatz(self, bfmt: QTextBlockFormat, para: Paragraph) -> None:
-        """Verzeichnis- und Beschriftungsabsätze an ihrer Formatvorlage wiedererkennen."""
+        """Verzeichnis- und Beschriftungsabsätze an ihrer Formatvorlage wiedererkennen; Absatzrahmen aus w:pBdr."""
+        ppr = para._p.pPr
+        bdr = ppr.find(qn("w:pBdr")) if ppr is not None else None
+        if bdr is not None:
+            e = next((bdr.find(qn(f"w:{x}")) for x in ("top", "left", "bottom", "right") if bdr.find(qn(f"w:{x}")) is not None), None)
+            if e is not None and e.get(qn("w:val"), "nil") not in ("nil", "none"):
+                col = e.get(qn("w:color")) or "000000"
+                bfmt.setProperty(B_RAHMEN, f"#{col.lower() if col.lower() != 'auto' else '000000'}|{int(e.get(qn('w:sz')) or 8) / 8:g}|"
+                                 + ("doppelt" if e.get(qn("w:val")) == "double" else "einfach"))
         try:
             name = para.style.name
         except Exception:

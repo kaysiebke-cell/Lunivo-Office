@@ -235,10 +235,42 @@ def zeichne_seite(p: QPainter, d: QTextDocument, page: PageSettings, n: int, tot
         p.restore()
     p.save()
     p.translate(ml, mt)
-    p.setClipRect(QRectF(0, 0, cw, ch))
+    p.setClipRect(QRectF(-10, 0, cw + 20, ch))
     p.translate(0, -(n - 1) * ch)
     d.drawContents(p, QRectF(0, (n - 1) * ch, cw, ch))
+    absatzrahmen_zeichnen(p, d)
     p.restore()
+
+
+def absatzrahmen_zeichnen(p: QPainter, d: QTextDocument, faktor: float = 1.0, polster: float = 4.0) -> None:
+    """Rahmen um zusammenhängende Absätze mit gleichem B_RAHMEN. Koordinaten: Dokument (Layoutgerät); faktor = Zoom."""
+    from PySide6.QtGui import QColor, QPen
+    from .zusatz import B_RAHMEN
+    lay = d.documentLayout()
+    gruppen: list[list] = []
+    b = d.firstBlock()
+    while b.isValid():
+        if b.blockFormat().hasProperty(B_RAHMEN) and b.isVisible():
+            w = b.blockFormat().stringProperty(B_RAHMEN)
+            if gruppen and gruppen[-1][0] == w and gruppen[-1][2] == b.blockNumber() - 1:
+                gruppen[-1][1].append(b); gruppen[-1][2] = b.blockNumber()
+            else:
+                gruppen.append([w, [b], b.blockNumber()])
+        b = b.next()
+    for w, bloecke, _n in gruppen:
+        farbe, _, rest = w.partition("|")
+        pt, _, art = rest.partition("|")
+        r = lay.blockBoundingRect(bloecke[0]).united(lay.blockBoundingRect(bloecke[-1]))
+        pen = QPen(QColor(farbe or "#000000"))
+        pen.setWidthF(max(0.6, float(pt or 1) * 96 / 72 * faktor))
+        p.setPen(pen)
+        p.setBrush(Qt.NoBrush)
+        pd = polster * faktor
+        rr = r.adjusted(-pd, -pd + 1, pd, pd - 1)
+        p.drawRect(rr)
+        if art == "doppelt":
+            g = pen.widthF() * 3
+            p.drawRect(rr.adjusted(g, g, -g, -g))
 
 
 def _zeilennummern(p: QPainter, d: QTextDocument, n: int, ch: float, base: QFont) -> None:

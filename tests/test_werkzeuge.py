@@ -141,3 +141,61 @@ def test_dokument_schuetzen_und_abschnittsumbruch(app, tmp_path, monkeypatch):
     w.befehle.abschnittsumbruch(None, "EvenPage")             # nicht möglich → nur Hinweis
     assert t.editor.document().blockCount() <= 3
     fertig(w)
+
+
+def test_absatzrahmen_pdf_docx(app, tmp_path):
+    from native_qt.editor.zusatz import B_RAHMEN
+    e = DocumentEditor(); e.setPlainText("Vor dem Rahmen\nIm Rahmen A\nIm Rahmen B\nNach dem Rahmen"); e.zusatz_binden({})
+    e.select_range(len("Vor dem Rahmen\n"), len("Vor dem Rahmen\nIm Rahmen A\nIm Rahmen B"))
+    e.set_absatzrahmen("#ff0000|1.5|doppelt")
+    gesetzt = [b.blockFormat().hasProperty(B_RAHMEN) for b in _bl(e.document())]
+    assert gesetzt == [False, True, True, False]
+    out = str(tmp_path / "r.docx")
+    docx_writer.write_docx(out, e.document(), e.page, {})
+    import zipfile
+    xml = zipfile.ZipFile(out).read("word/document.xml").decode()
+    assert xml.count("<w:pBdr>") == 2 and 'w:val="double"' in xml and 'w:color="FF0000"' in xml
+    d2, _, _, _ = docx_reader.read_docx(out)
+    erg = [b.blockFormat().stringProperty(B_RAHMEN) if b.blockFormat().hasProperty(B_RAHMEN) else "" for b in _bl(d2)]
+    assert erg[0] == "" and erg[1] == "#ff0000|1.5|doppelt" and erg[2] == "#ff0000|1.5|doppelt" and erg[3] == ""
+    # PDF zeigt den Text weiter; der Rahmen wird mitgezeichnet (Seite ist nicht mehr leer von Vektorgrafik)
+    pdf = str(tmp_path / "r.pdf")
+    export_pdf(pdf, e.document(), e.page, "t")
+    seite = pypdf.PdfReader(pdf).pages[0]
+    assert "Im Rahmen A" in " ".join(seite.extract_text().split())
+    ohne = DocumentEditor(); ohne.setPlainText(e.toPlainText())
+    pdf2 = str(tmp_path / "r2.pdf")
+    export_pdf(pdf2, ohne.document(), ohne.page, "t")
+    inhalt = lambda p: pypdf.PdfReader(p).pages[0].get_contents().get_data()          # noqa: E731
+    assert len(inhalt(pdf)) > len(inhalt(pdf2))
+
+
+def _bl(doc):
+    b = doc.firstBlock()
+    while b.isValid():
+        yield b
+        b = b.next()
+
+
+def test_docx_mit_rahmen_und_schattierung_oeffnet_in_libreoffice(app, tmp_path):
+    import subprocess
+    from PySide6.QtGui import QBrush
+    from native_qt.integrations import libreoffice
+    if not libreoffice.verfuegbar():
+        pytest.skip("LibreOffice nicht installiert")
+    e = DocumentEditor(); e.setPlainText("Rahmen und Schatten"); e.zusatz_binden({})
+    e.select_range(0, 5)
+    e.set_absatzrahmen("#0000ff|1.5|einfach")
+    e._block_merge(lambda bf: bf.setBackground(QBrush(QColor("#ffeeaa"))))
+    e.set_alignment(__import__("PySide6.QtCore", fromlist=["Qt"]).Qt.AlignHCenter)
+    out = str(tmp_path / "x.docx")
+    docx_writer.write_docx(out, e.document(), e.page, {})
+    subprocess.run([libreoffice.finde_soffice(), "--headless", "--convert-to", "pdf", "--outdir", str(tmp_path), out],
+                   capture_output=True, timeout=120)
+    assert "Rahmen und Schatten" in " ".join(pypdf.PdfReader(str(tmp_path / "x.pdf")).pages[0].extract_text().split())
+    # Reihenfolge der pPr-Kinder entspricht dem Schema (pBdr vor shd vor spacing/ind/jc)
+    import zipfile, re
+    ppr = re.search(r"<w:pPr>(.*?)</w:pPr>", zipfile.ZipFile(out).read("word/document.xml").decode(), re.S).group(1)
+    tags = re.findall(r"<w:(\w+)[ />]", ppr)
+    ordnung = [t for t in tags if t in ("pBdr", "shd", "spacing", "ind", "jc")]
+    assert ordnung == sorted(ordnung, key=["pBdr", "shd", "spacing", "ind", "jc"].index)

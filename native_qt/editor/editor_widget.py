@@ -212,9 +212,29 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
             b = b.next()
         cur.endEditBlock()
 
+    def set_absatzrahmen(self, wert: str | None) -> None:
+        from .zusatz import B_RAHMEN
+
+        def f(bf):
+            if wert:
+                bf.setProperty(B_RAHMEN, wert)
+            else:
+                bf.clearProperty(B_RAHMEN)
+        self._block_merge(f)
+        self.viewport().update()
+
     def toggle_rtl(self) -> None:
         rtl = self.textCursor().blockFormat().layoutDirection() == Qt.RightToLeft
         self._block_merge(lambda bf: bf.setLayoutDirection(Qt.LeftToRight if rtl else Qt.RightToLeft))
+
+    def _hat_rahmen(self) -> bool:
+        from .zusatz import B_RAHMEN
+        b = self.document().firstBlock()
+        while b.isValid():
+            if b.blockFormat().hasProperty(B_RAHMEN):
+                return True
+            b = b.next()
+        return False
 
     def set_gitter(self, an: bool) -> None:
         self.gitter = an
@@ -715,6 +735,12 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         self._schmuck_zeichnen(p)
         if self.gitter:
             self._gitter_zeichnen(p)
+        if not self.web and self._hat_rahmen():
+            from .pagination import absatzrahmen_zeichnen
+            p.save()
+            p.translate(0, -self.verticalScrollBar().value())
+            absatzrahmen_zeichnen(p, self.document(), self.zoom)
+            p.restore()
         if self.page.zeilennummern and not self.web:
             self._zeilennummern_zeichnen(p)
         if self.marken and not self.web:
