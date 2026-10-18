@@ -15,7 +15,7 @@ import os
 from datetime import datetime
 
 from PySide6.QtCore import Qt, QUrl
-from PySide6.QtGui import QBrush, QColor, QCursor, QIcon, QPixmap, QTextBlockFormat, QTextCharFormat, QTextCursor, QTextListFormat
+from PySide6.QtGui import QBrush, QColor, QCursor, QFont, QIcon, QPixmap, QTextBlockFormat, QTextCharFormat, QTextCursor, QTextListFormat
 from PySide6.QtWidgets import QApplication, QColorDialog, QInputDialog, QMenu, QMessageBox
 
 PALETTE = ["#000000", "#c92a2a", "#e8590c", "#f08c00", "#2f9e44", "#1098ad", "#1971c2", "#6741d9",
@@ -128,7 +128,57 @@ class Befehle:
     def unter(self, k=None):
         if self.ed: self.ed.toggle_underline(not self.an_unter())
 
-    def an_unter(self): return self._fmt().fontUnderline()
+    def an_unter(self): return self._fmt().underlineStyle() != QTextCharFormat.NoUnderline
+
+    def menue_unterstrichKlappe(self):
+        m = QMenu()
+        for t, st in (("Einfach", QTextCharFormat.SingleUnderline), ("Gestrichelt", QTextCharFormat.DashUnderline),
+                      ("Gepunktet", QTextCharFormat.DotLine), ("Strich-Punkt", QTextCharFormat.DashDotLine),
+                      ("Wellenlinie", QTextCharFormat.WaveUnderline)):
+            m.addAction(t, lambda _=False, st=st: self.ed and self.ed.set_underline_style(st))
+        m.addSeparator()
+        m.addAction("Keine Unterstreichung", lambda: self.ed and self.ed.set_underline_style(QTextCharFormat.NoUnderline))
+        return m
+
+    def objekteWaehlen(self, k=None):
+        """Springt zum nächsten Bild im Text und markiert es (dann erscheinen die Bildtools)."""
+        e = self.ed
+        if not e:
+            return
+        doc = e.document()
+        start = e.textCursor().selectionEnd()
+        for runde in (0, 1):
+            b = doc.findBlock(start) if runde == 0 else doc.firstBlock()
+            while b.isValid():
+                it = b.begin()
+                while not it.atEnd():
+                    fr = it.fragment()
+                    if fr.isValid() and fr.charFormat().isImageFormat() and (runde == 1 or fr.position() >= start):
+                        c = QTextCursor(doc); c.setPosition(fr.position()); c.setPosition(fr.position() + 1, QTextCursor.KeepAnchor)
+                        e.setTextCursor(c); e.setFocus()
+                        return
+                    it += 1
+                b = b.next()
+        self.w.statusBar().showMessage("Im Dokument gibt es keine Bilder.", 4000)
+
+    def zeichenumriss(self, k=None):
+        if self.ed:
+            self.ed.set_outline(not self.an_zeichenumriss())
+
+    def an_zeichenumriss(self): return self._fmt().textOutline().style() != Qt.NoPen
+
+    def effekt(self, k=None):
+        if not self.ed:
+            return
+        m = QMenu()
+        m.addAction("Kapitälchen", lambda: self.ed.set_capitalization(QFont.SmallCaps))
+        m.addAction("Großbuchstaben (Anzeige)", lambda: self.ed.set_capitalization(QFont.AllUppercase))
+        m.addAction("Normal", lambda: self.ed.set_capitalization(QFont.MixedCase))
+        m.addSeparator()
+        for t, px in (("Zeichenabstand: eng", -1.0), ("Zeichenabstand: normal", 0.0), ("Zeichenabstand: weit", 2.0),
+                      ("Zeichenabstand: sehr weit", 4.0)):
+            m.addAction(t, lambda _=False, px=px: self.ed.set_letter_spacing(px))
+        m.exec(QCursor.pos())
 
     def durch(self, k=None):
         if self.ed: self.ed.toggle_strike(not self.an_durch())

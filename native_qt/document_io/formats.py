@@ -140,7 +140,7 @@ def _has_rich_content(doc: QTextDocument) -> bool:
         it = b.begin()
         while not it.atEnd():
             cf = it.fragment().charFormat()
-            if cf.isImageFormat() or cf.fontWeight() > 400 or cf.fontItalic() or cf.fontUnderline():
+            if cf.isImageFormat() or cf.fontWeight() > 400 or cf.fontItalic() or cf.underlineStyle() != cf.UnderlineStyle.NoUnderline:
                 return True
             it += 1
         b = b.next()

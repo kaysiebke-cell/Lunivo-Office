@@ -5,7 +5,7 @@ import os
 from datetime import datetime
 
 from PySide6.QtCore import QSize, Qt, QTimer
-from PySide6.QtGui import QAction, QActionGroup, QColor, QFont, QKeySequence, QTextCursor
+from PySide6.QtGui import QAction, QActionGroup, QColor, QFont, QKeySequence, QTextCursor, QTextFormat
 from PySide6.QtPrintSupport import QPrintDialog, QPrintPreviewDialog, QPrinter
 from PySide6.QtWidgets import (
     QApplication, QColorDialog, QComboBox, QFileDialog, QFontComboBox, QInputDialog, QLabel, QLineEdit,
@@ -732,9 +732,14 @@ class MainWindow(QMainWindow):
             return
         bf = e.textCursor().blockFormat()
         lh = bf.lineHeight() / 100 if bf.lineHeightType() == 1 and bf.lineHeight() else 1.0
+        al = bf.alignment()
+        ai = 1 if al & Qt.AlignHCenter else 2 if al & Qt.AlignRight else 3 if al & Qt.AlignJustify else 0
         d = ParagraphDialog(px_to_mm(bf.leftMargin()), px_to_mm(bf.rightMargin()), px_to_mm(bf.textIndent()),
-                            bf.topMargin() * 0.75, bf.bottomMargin() * 0.75, lh, self)
+                            bf.topMargin() * 0.75, bf.bottomMargin() * 0.75, lh, self, ai,
+                            bool(bf.pageBreakPolicy() & QTextFormat.PageBreak_AlwaysBefore))
         if d.exec():
+            e.set_alignment([Qt.AlignLeft, Qt.AlignHCenter, Qt.AlignRight, Qt.AlignJustify][d.align.currentIndex()])
+            e.set_page_break_before(d.umbruch.isChecked())
             e.set_indents(d.left.value(), d.right.value(), d.first.value())
             e.set_paragraph_spacing(d.before.value(), d.after.value())
             e.set_line_spacing(d.line.value())

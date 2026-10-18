@@ -234,3 +234,25 @@ def test_neues_fenster_und_anordnen(app, tmp_path):
     assert any("f.docx" in t for t in titel)
     for f in (w2, w):
         f.current_editor().document().setModified(False); f.close()
+
+
+def test_absatzdialog_und_objekte_waehlen(app, tmp_path):
+    from native_qt.widgets.dialogs import ParagraphDialog
+    d = ParagraphDialog(5, 0, 8, 6, 12, 1.5, None, 1, True)
+    assert d.align.currentIndex() == 1 and d.umbruch.isChecked() and d.vorschau.w["first"] == 8
+    d.left.setValue(12)
+    assert d.vorschau.w["left"] == 12
+    w = win(tmp_path)
+    w.new_document()
+    e = w.current_editor()
+    e.insertPlainText("vorher ")
+    from PySide6.QtGui import QImage, QTextImageFormat
+    img = QImage(20, 20, QImage.Format_RGB32); img.fill(0xff0000)
+    e.document().addResource(3, "bild1", img)       # QTextDocument.ImageResource
+    f = QTextImageFormat(); f.setName("bild1"); f.setWidth(20); f.setHeight(20)
+    e.textCursor().insertImage(f)
+    e.insertPlainText(" nachher")
+    c = e.textCursor(); c.setPosition(0); e.setTextCursor(c)
+    w.befehle.objekteWaehlen()
+    assert e.textCursor().selectedText() == "￼"
+    e.document().setModified(False); w.close()

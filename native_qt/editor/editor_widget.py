@@ -351,6 +351,27 @@ class DocumentEditor(QTextEdit):
     def toggle_underline(self, on: bool) -> None:
         f = QTextCharFormat(); f.setFontUnderline(on); self._merge(f)
 
+    def set_underline_style(self, stil) -> None:
+        f = QTextCharFormat()
+        f.setUnderlineStyle(stil)
+        self._merge(f)
+
+    def set_outline(self, an: bool) -> None:
+        f = QTextCharFormat()
+        f.setTextOutline(QPen(QColor("#000000")) if an else QPen(Qt.NoPen))
+        self._merge(f)
+
+    def set_letter_spacing(self, px: float) -> None:
+        f = QTextCharFormat()
+        f.setFontLetterSpacingType(QFont.AbsoluteSpacing)
+        f.setFontLetterSpacing(px)
+        self._merge(f)
+
+    def set_capitalization(self, cap) -> None:
+        f = QTextCharFormat()
+        f.setFontCapitalization(cap)
+        self._merge(f)
+
     def toggle_strike(self, on: bool) -> None:
         f = QTextCharFormat(); f.setFontStrikeOut(on); self._merge(f)
 
@@ -431,6 +452,11 @@ class DocumentEditor(QTextEdit):
     def change_indent(self, delta_mm: float) -> None:
         d = mm_to_px(delta_mm)
         self._block_merge(lambda bf: bf.setLeftMargin(max(0.0, bf.leftMargin() + d)))
+
+    def set_page_break_before(self, an: bool) -> None:
+        def f(bf):
+            bf.setPageBreakPolicy(QTextFormat.PageBreak_AlwaysBefore if an else QTextFormat.PageBreak_Auto)
+        self._block_merge(f)
 
     def set_indents(self, left_mm: float, right_mm: float, first_mm: float) -> None:
         def f(bf):

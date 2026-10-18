@@ -157,3 +157,26 @@ def test_zeilennummern_und_textrichtung_roundtrip(tmp_path):
     assert p2.zeilennummern is True
     assert doc2.firstBlock().blockFormat().layoutDirection() == Qt.RightToLeft
     assert doc2.firstBlock().next().blockFormat().layoutDirection() != Qt.RightToLeft
+
+
+def test_unterstreichungsart_umriss_zeichenabstand_roundtrip(tmp_path):
+    from PySide6.QtGui import QColor, QFont, QPen, QTextCharFormat, QTextCursor, QTextDocument
+    from native_qt.document_io import docx_reader, docx_writer
+    from native_qt.editor.page import PageSettings
+    d = QTextDocument(); d.setPlainText("Welle Strich Umriss Weit")
+    def fmt(von, bis, f):
+        c = QTextCursor(d); c.setPosition(von); c.setPosition(bis, QTextCursor.KeepAnchor); c.mergeCharFormat(f)
+    f1 = QTextCharFormat(); f1.setUnderlineStyle(QTextCharFormat.WaveUnderline); fmt(0, 5, f1)
+    f2 = QTextCharFormat(); f2.setUnderlineStyle(QTextCharFormat.DashUnderline); fmt(6, 12, f2)
+    f3 = QTextCharFormat(); f3.setTextOutline(QPen(QColor("#000000"))); fmt(13, 19, f3)
+    f4 = QTextCharFormat(); f4.setFontLetterSpacingType(QFont.AbsoluteSpacing); f4.setFontLetterSpacing(4.0); fmt(20, 24, f4)
+    out = str(tmp_path / "u.docx")
+    docx_writer.write_docx(out, d, PageSettings(), {})
+    d2, _, _, _ = docx_reader.read_docx(out)
+    def at(pos):
+        c = QTextCursor(d2); c.setPosition(pos + 1); return c.charFormat()
+    assert at(0).underlineStyle() == QTextCharFormat.WaveUnderline
+    assert at(6).underlineStyle() == QTextCharFormat.DashUnderline
+    assert at(13).textOutline().style().value != 0
+    assert abs(at(20).fontLetterSpacing() - 4.0) < 0.2
+    assert at(14).underlineStyle() == QTextCharFormat.NoUnderline

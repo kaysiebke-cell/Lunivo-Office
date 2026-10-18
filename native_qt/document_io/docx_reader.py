@@ -187,6 +187,21 @@ class _Reader:
         f.setFontItalic(bool(ital))
         ul = self._flag(run, para, "underline")
         f.setFontUnderline(bool(ul))
+        raw = run.font.underline
+        if raw not in (None, True, False):
+            from docx.enum.text import WD_UNDERLINE as U
+            stil = {U.DASH: QTextCharFormat.DashUnderline, U.DOTTED: QTextCharFormat.DotLine,
+                    U.DOT_DASH: QTextCharFormat.DashDotLine, U.WAVY: QTextCharFormat.WaveUnderline}.get(raw)
+            if stil is not None:
+                f.setUnderlineStyle(stil)
+        if run.font.outline:
+            from PySide6.QtGui import QPen
+            f.setTextOutline(QPen(QColor("#000000")))
+        rpr = run._r.rPr
+        sp = rpr.find(qn("w:spacing")) if rpr is not None else None
+        if sp is not None and sp.get(qn("w:val")):
+            f.setFontLetterSpacingType(QFont.AbsoluteSpacing)
+            f.setFontLetterSpacing(int(sp.get(qn("w:val"))) / 20 / 0.75)
         f.setFontStrikeOut(bool(self._flag(run, para, "strike")))
         if self._flag(run, para, "superscript"):
             f.setVerticalAlignment(QTextCharFormat.AlignSuperScript)
@@ -588,7 +603,7 @@ class _NoRun:
         name = None
         size = None
         bold = italic = underline = strike = superscript = subscript = None
-        all_caps = small_caps = None
+        all_caps = small_caps = outline = None
         color = None
     font = _F()
     style = None

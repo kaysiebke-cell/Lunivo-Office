@@ -359,8 +359,12 @@ class _Writer:
             f.bold = cf.fontWeight() >= QFont.DemiBold
         if _has(cf, QTextFormat.FontItalic):
             f.italic = cf.fontItalic()
-        if cf.fontUnderline() and not is_link:
-            f.underline = True
+        ustil = cf.underlineStyle()
+        if ustil != QTextCharFormat.NoUnderline and not is_link:
+            from docx.enum.text import WD_UNDERLINE
+            f.underline = {QTextCharFormat.DashUnderline: WD_UNDERLINE.DASH, QTextCharFormat.DotLine: WD_UNDERLINE.DOTTED,
+                           QTextCharFormat.DashDotLine: WD_UNDERLINE.DOT_DASH,
+                           QTextCharFormat.WaveUnderline: WD_UNDERLINE.WAVY}.get(ustil, True)
         if cf.fontStrikeOut():
             f.strike = True
         va = cf.verticalAlignment()
@@ -382,6 +386,15 @@ class _Writer:
                 shd.set(qn("w:color"), "auto")
                 shd.set(qn("w:fill"), c.name()[1:].upper())
                 run._r.get_or_add_rPr().append(shd)
+        if cf.textOutline().style() != Qt.NoPen:
+            f.outline = True
+        ls = cf.fontLetterSpacing()
+        if ls and cf.fontLetterSpacingType() == QFont.AbsoluteSpacing:
+            sp = OxmlElement("w:spacing")
+            sp.set(qn("w:val"), str(int(round(ls * 0.75 * 20))))             # px → pt → Zwanzigstelpunkt
+            run._r.get_or_add_rPr().insert_element_before(
+                sp, "w:w", "w:kern", "w:position", "w:sz", "w:szCs", "w:highlight", "w:u", "w:effect", "w:bdr", "w:shd",
+                "w:fitText", "w:vertAlign", "w:rtl", "w:cs", "w:em", "w:lang", "w:eastAsianLayout", "w:specVanish", "w:oMath")
         cap = cf.fontCapitalization()
         if cap == QFont.AllUppercase:
             f.all_caps = True
