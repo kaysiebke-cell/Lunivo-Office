@@ -10,6 +10,7 @@ from PySide6.QtGui import (
 from PySide6.QtWidgets import QListWidget, QListWidgetItem, QScrollArea, QTextEdit
 
 from ..document_io.docx_reader import LH_PROPORTIONAL, STYLE_PROP
+from . import sprechblasen as SB
 from .anzeige_extra import VersteckterText, aenderungszeilen, feldbereiche
 from .zusatz import P_VERSTECKT
 from .page import PageSettings, mm_to_px
@@ -97,6 +98,9 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         self._verbinde_groesse()
         self._zusatz_init()
         self.versteckt_zeigen = False
+        self._blasen_flaeche = None
+        self._blasen_cache = (None, [])
+        self._blasen_extra = 0
         self._versteckt_hl = VersteckterText(self.document())
         self._zeilen_cache = (-1, [])
         self._sp_caret = True
@@ -175,6 +179,7 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
             ff.setRightMargin(mm_to_px(page.margin_right_mm))
             root.setFrameFormat(ff)
             self.setFixedWidth(int(mm_to_px(page.width_mm) * self.zoom) + 2)
+        self._blasen_einrichten()
         if not self._spalten_aktiv() and self.lineWrapMode() != QTextEdit.WidgetWidth:
             self.setLineWrapMode(QTextEdit.WidgetWidth)
             doc.setPageSize(QSizeF(self.viewport().width(), -1))
@@ -183,6 +188,91 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         self._passe_hoehe_an()
         self._timer.start()
         self.pageApplied.emit()
+
+    # ---- Sprechblasen ------------------------------------------------------------------------------------------------
+    class _OptAdapter:
+        """Gibt `sprechblasen.konfig_lesen` die Rückrufe des Editors statt einer Settings-Klasse."""
+        def __init__(self, ed):
+            self.ed = ed
+
+        def get(self, name, std=None):
+            return self.ed.opt_text(name, std if isinstance(std, str) else str(std if std is not None else ""))
+
+        def get_bool(self, name, std=False):
+            return self.ed.opt(name, std)
+
+    def blasen_konfig(self) -> dict:
+        return SB.konfig_lesen(self._OptAdapter(self))
+
+    def blasen_rand(self) -> str:
+        return self.blasen_konfig()["rand"]
+
+    def blasen_linien(self) -> bool:
+        return self.blasen_konfig()["linien"]
+
+    def _blasen_da(self) -> bool:
+        k = self.blasen_konfig()
+        if self.web or not SB.aktiv(k):
+            return False
+        if self.kommentare:
+            return True
+        return k["verwenden"] == "Immer" and bool(self.aenderungen())
+
+    def _blasen_einrichten(self) -> None:
+        """Seitenrand für die Blasen: Fläche neben der Seite (setViewportMargins), nur wenn es Blasen gibt."""
+        k = self.blasen_konfig()
+        extra = int((SB.breite_mm(k) + SB.LUECKE_MM) * mm_to_px(1) * self.zoom) if self._blasen_da() else 0
+        self._blasen_extra = extra
+        links = k["rand"] == "Links"
+        self.setViewportMargins(extra if links else 0, 0, 0 if links else extra, 0)
+        if not self.web:
+            self.setFixedWidth(int(mm_to_px(self.page.width_mm) * self.zoom) + 2 + extra)
+        if extra and self._blasen_flaeche is None:
+            from ..widgets.blasen_flaeche import BlasenFlaeche
+            self._blasen_flaeche = BlasenFlaeche(self)
+        if self._blasen_flaeche is not None:
+            self._blasen_flaeche.setVisible(bool(extra))
+        self._blasen_geometrie()
+
+    def _blasen_geometrie(self) -> None:
+        f = self._blasen_flaeche
+        if f is None or not self._blasen_extra:
+            return
+        vp = self.viewport().geometry()
+        if self.blasen_rand() == "Links":
+            f.setGeometry(0, vp.top(), self._blasen_extra, vp.height())
+        else:
+            f.setGeometry(vp.right() + 1, vp.top(), self._blasen_extra, vp.height())
+        f.update()
+
+    def blasen_layout(self, breite: float) -> list:
+        """[(Blase, Rechteck in der Blasenfläche, y der Textzeile)] — gestapelt, ohne sich zu überlappen."""
+        rev = (self.document().revision(), id(self.kommentare), len(self.kommentare), round(breite), self.zoom)
+        if self._blasen_cache[0] == rev:
+            return self._blasen_cache[1]
+        k = self.blasen_konfig()
+        blasen = SB.sammeln(self.document(), self.kommentare, k["verwenden"])
+        font = QFont(self.font()); font.setPixelSize(max(7, int(11 * self.zoom)))
+        w = max(60.0, breite - 12)
+        anker, hoehen = [], []
+        for bl in blasen:
+            r = self.cursorRect(self._cursor_at(min(bl.von, self.document().characterCount() - 1)))
+            anker.append(float(r.y()))
+            hoehen.append(SB.messen(bl, w, font))
+        unten = float(self.height())
+        ys = SB.stapeln(anker, hoehen, unten)
+        x = 6.0
+        out = [(bl, QRectF(x, y, w, h), a + 8) for bl, y, h, a in zip(blasen, ys, hoehen, anker)]
+        self._blasen_cache = (rev, out)
+        return out
+
+    def kommentar_bearbeiten(self, kid: int) -> None:
+        fenster = self.window()
+        alt = self.kommentare.get(kid, {}).get("text", "")
+        if hasattr(fenster, "befehle") and (t := fenster.befehle._text_abfragen("Kommentar bearbeiten", "Kommentar:", alt)) is not None:
+            self.kommentare[kid]["text"] = t
+            self.document().setModified(True)
+            self._zus_geaendert()
 
     # ---- Ausgeblendeter Text -------------------------------------------------------------------------------------------
     def set_versteckt_zeigen(self, an: bool) -> None:
@@ -342,6 +432,7 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
 
     def resizeEvent(self, e) -> None:
         super().resizeEvent(e)
+        self._blasen_geometrie()
         if self._spalten_aktiv():
             g = self._sp_geo()
             ps = self.document().pageSize()
@@ -1234,6 +1325,19 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
                         x = (vp.width() - mm_to_px(pg.margin_right_mm) * z + 8 * z) if seite == "rechts" else mm_to_px(pg.margin_left_mm) * z - 8 * z
                         y0, y1 = t, u
                     p.drawLine(int(x), int(y0), int(x), int(y1))
+        # Linien von den Sprechblasen zum Text: Textende bis zum Seitenrand (der Rest steht in der Blasenfläche)
+        if self._blasen_extra and self.blasen_linien():
+            rechts = self.blasen_rand() == "Rechts"
+            for bl, r, y_text in self.blasen_layout(self._blasen_extra):
+                pos = min(bl.bis, self.document().characterCount() - 1)
+                blk = self.document().findBlock(pos)
+                if blk.isValid() and blk.layout() is not None and blk.layout().lineCount():
+                    ln = blk.layout().lineForTextPosition(max(0, pos - blk.position()))
+                    pos = blk.position() + ln.textStart() + max(0, ln.textLength() - 1)       # Ende der Zeile, in der der Text endet
+                rc = self.cursorRect(self._cursor_at(pos))
+                p.setPen(QPen(QColor(bl.farbe), 1, Qt.DotLine))
+                y = int(rc.y() + rc.height() / 2)
+                p.drawLine(rc.x() + 4 if rechts else 0, y, vp.width() if rechts else rc.x(), y)
         # Kopf- und Fußzeile (erste Seite oben, letzte unten)
         if self.opt("ui/kopffuss_anzeigen", True):
             kopf = pg.first_header if pg.diff_first else pg.header

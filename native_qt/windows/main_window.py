@@ -561,15 +561,12 @@ class MainWindow(QMainWindow):
                       "andere": sg("pdf/lz_andere", False)}
             komm = None
             if sg("pdf/kommentare", False):
-                komm = []
-                for b in t.editor.kommentar_bereiche():
-                    k = t.editor.kommentare.get(int(b["wert"]), {})
-                    komm.append((b["von"], f'{k.get("autor", "")}: {k.get("text", "")}'.strip(": ")))
+                komm = {kid: f'{k.get("autor", "")}: {k.get("text", "")}'.strip(": ") for kid, k in t.editor.kommentare.items()}
             n = export_pdf(path, t.editor.document(), t.page, os.path.splitext(t.title)[0], autor, t.editor.noten, lz,
                            self._silben_fuer_druck(), komm,
                            {k: v for k, v in self.druckoptionen().items()
                             if k in ("versteckt", "felder_code", "zeichnungen", "balken", "hervorhebungen", "textmarken", "textgrenzen", "zuschnitt",
-                                     "notenlinks")})
+                                     "notenlinks", "blasen")})
         except Exception as e:  # PDF-Ausgabe darf das Programm nicht beenden
             QMessageBox.critical(self, "PDF-Export fehlgeschlagen", str(e)); return
         self.statusBar().showMessage(f"PDF gespeichert ({n} Seiten): {path}", 5000)
@@ -615,7 +612,18 @@ class MainWindow(QMainWindow):
                 "felder_code": self.settings.get_bool("drucken/felder_code", False),
                 "zeichnungen": self.settings.get_bool("drucken/zeichnungen", True),
                 "balken": self.settings.get("aenderungen/balken", "links"),
-                "notenlinks": self.settings.get_bool("pdf/notenlinks", True)}
+                "notenlinks": self.settings.get_bool("pdf/notenlinks", True),
+                "blasen": self._blasen_fuer_druck()}
+
+    def _blasen_fuer_druck(self):
+        from ..editor import sprechblasen as SB
+        e = self.current_editor()
+        k = SB.konfig_lesen(self.settings)
+        if e is None or not self.settings.get_bool("sprechblasen/drucken", False) or not SB.aktiv(k):
+            return None
+        if not e.kommentare and not (k["verwenden"] == "Immer" and e.aenderungen()):
+            return None
+        return {"konfig": k, "kommentare": dict(e.kommentare)}
 
     def _silben_fuer_druck(self):
         from ..editor import silbenfarben as S
@@ -868,6 +876,13 @@ class MainWindow(QMainWindow):
             self._mini.hide()
         else:
             self._mini.zeigen(ed, pos, rechtsklick)
+
+    def markup_neu(self) -> None:
+        """Markup- und Sprechblasen-Einstellungen haben sich geändert: Seitenrand für Blasen und Auszeichnung neu aufbauen."""
+        for t in self._doc_tabs():
+            t.editor.apply_page(t.editor.page)
+            t.editor._overlays_neu()
+            t.editor.viewport().update()
 
     def versteckt_anwenden(self, e=None):
         an = self.settings.get_bool("ui/versteckt_zeigen", False)

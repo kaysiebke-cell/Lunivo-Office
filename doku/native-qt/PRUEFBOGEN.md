@@ -1,6 +1,6 @@
 # Prüfbogen ↔ native Fassung
 
-Erzeugt von `werkzeug/pruefbogen-abgleich.py` aus dem Prüfkatalog (415 Punkte). **✅ 318 · ◐ 69 · ⬜ 28**. ✅ = Befehl/Funktion vorhanden (einzeln getestet nur, wo `tests/` es belegt); ◐ = teilweise oder anders gelöst; ⬜ = offen.
+Erzeugt von `werkzeug/pruefbogen-abgleich.py` aus dem Prüfkatalog (415 Punkte). **✅ 328 · ◐ 66 · ⬜ 21**. ✅ = Befehl/Funktion vorhanden (einzeln getestet nur, wo `tests/` es belegt); ◐ = teilweise oder anders gelöst; ⬜ = offen.
 Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/bilder/`.
 
 ## DATEI
@@ -496,22 +496,22 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 
 ## OPTIONEN > Änderungen verfolgen > Markup
 
-- ◐ Einfügungen — unterstrichen/durchgestrichen in einer Farbe je Autor; nicht einstellbar
-- ◐ Löschvorgänge — unterstrichen/durchgestrichen in einer Farbe je Autor; nicht einstellbar
+- ✅ Einfügungen — aenderungen/ins_stil, del_stil, farbe (zusatz_editor._overlays_neu)
+- ✅ Löschvorgänge — aenderungen/ins_stil, del_stil, farbe (zusatz_editor._overlays_neu)
 - ✅ Geänderte Zeilen — aenderungen/balken: Balken am Rand der Zeilen mit Änderungen (Anzeige und Druck)
-- ◐ Farbe — unterstrichen/durchgestrichen in einer Farbe je Autor; nicht einstellbar
+- ✅ Farbe — aenderungen/ins_stil, del_stil, farbe (zusatz_editor._overlays_neu)
 
 ## OPTIONEN > Änderungen verfolgen > Sprechblasen
 
-- ⬜ Sprechblasen verwenden — keine Sprechblasen; Kommentare stehen im Navigationsbereich
-- ⬜ Empfohlene Breite verwenden — keine Sprechblasen; Kommentare stehen im Navigationsbereich
-- ⬜ Bevorzugte Breite (mm) — keine Sprechblasen; Kommentare stehen im Navigationsbereich
-- ⬜ Seitenrand — keine Sprechblasen; Kommentare stehen im Navigationsbereich
-- ⬜ Verbindungslinien zum Text anzeigen — keine Sprechblasen; Kommentare stehen im Navigationsbereich
+- ✅ Sprechblasen verwenden — editor/sprechblasen.py + widgets/blasen_flaeche.py: Blasen im Seitenrand mit Autor, Datum, Text und Linien; Optionen ▸ Änderungen verfolgen ▸ Sprechblasen (test_sprechblasen)
+- ✅ Empfohlene Breite verwenden — editor/sprechblasen.py + widgets/blasen_flaeche.py: Blasen im Seitenrand mit Autor, Datum, Text und Linien; Optionen ▸ Änderungen verfolgen ▸ Sprechblasen (test_sprechblasen)
+- ✅ Bevorzugte Breite (mm) — editor/sprechblasen.py + widgets/blasen_flaeche.py: Blasen im Seitenrand mit Autor, Datum, Text und Linien; Optionen ▸ Änderungen verfolgen ▸ Sprechblasen (test_sprechblasen)
+- ✅ Seitenrand — editor/sprechblasen.py + widgets/blasen_flaeche.py: Blasen im Seitenrand mit Autor, Datum, Text und Linien; Optionen ▸ Änderungen verfolgen ▸ Sprechblasen (test_sprechblasen)
+- ✅ Verbindungslinien zum Text anzeigen — editor/sprechblasen.py + widgets/blasen_flaeche.py: Blasen im Seitenrand mit Autor, Datum, Text und Linien; Optionen ▸ Änderungen verfolgen ▸ Sprechblasen (test_sprechblasen)
 
 ## OPTIONEN > Änderungen verfolgen > Drucken (mit Sprechblasen)
 
-- ⬜ Papierausrichtung — keine Sprechblasen
+- ✅ Papierausrichtung — sprechblasen/ausrichtung: Automatisch, Beibehalten, Querformat; die Seite wird verkleinert neben die Blasen gesetzt (pagination.blasen_geometrie; Druck und PDF)
 
 ## OPTIONEN > In PDF exportieren > Exportoptionen
 
@@ -542,7 +542,7 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 - ◐ Felder vor dem Drucken aktualisieren — pagination.render/print_document, main_window.druckoptionen — seiten_liste getestet, übrige nur verdrahtet
 - ✅ Feldfunktionen drucken — drucken/zeichnungen, drucken/felder_code, drucken/versteckt → pagination.render (test_anzeige_extra)
 - ✅ Ausgeblendeter Text — drucken/zeichnungen, drucken/felder_code, drucken/versteckt → pagination.render (test_anzeige_extra)
-- ⬜ Autor der Kommentare und Überarbeitungen — nicht übertragen
+- ✅ Autor der Kommentare und Überarbeitungen — sprechblasen/drucken: Blasen mit Autor und Datum im Ausdruck/PDF
 
 ## OPTIONEN > Drucken > Nur für das aktuelle Dokument
 

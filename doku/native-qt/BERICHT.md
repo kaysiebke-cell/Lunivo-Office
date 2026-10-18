@@ -2,11 +2,11 @@
 
 Alle Angaben stammen aus tatsächlichen Läufen in der Entwicklungsumgebung (Linux, Qt „offscreen“, LibreOffice 25.x vorhanden).
 **Nicht** auf einem echten Linux-Mint-Desktop mit Bildschirm, Drucker, Ollama/Claude, LanguageTool, Piper oder WPS getestet —
-das ist offen (siehe 6). Der Prüfbogen ([PRUEFBOGEN.md](PRUEFBOGEN.md)) ist der Maßstab: **415 Punkte, ✅ 318 · ◐ 69 · ⬜ 28**;
+das ist offen (siehe 6). Der Prüfbogen ([PRUEFBOGEN.md](PRUEFBOGEN.md)) ist der Maßstab: **415 Punkte, ✅ 328 · ◐ 66 · ⬜ 21**;
 „✅“ heißt „Befehl/Funktion vorhanden“, einzeln durch `tests/` belegt nur dort, wo im Eintrag ein Test genannt ist.
 
 ## 1. Dateien
-`native_qt/` (≈ 15 700 Zeilen Python in 7 Paketen), `tests/` (22 Testdateien, 163 Tests), `werkzeug/` (Exportskripte für Register,
+`native_qt/` (≈ 15 700 Zeilen Python in 7 Paketen), `tests/` (22 Testdateien, 171 Tests), `werkzeug/` (Exportskripte für Register,
 Symbolkatalog, Vorlagen, Handbuch; Abgleich-Skripte), `starten-qt.sh`, `requirements*.txt`, `doku/native-qt/*`. Die alte
 Web-Oberfläche (`oberflaeche/`, `start.py`) ist unverändert; auf `main` wurde nichts geändert.
 
@@ -66,7 +66,7 @@ Hinweise: JSAPI-Erweiterungen laut Entwicklerdokumentation auf open.wps.cn (chin
 Steuerung ≠ Bibliothek: Das Programm benutzt **keine** WPS-Interna.
 
 ## 5. Tests (tatsächlich ausgeführt)
-`pytest tests`: **163 bestanden, 0 fehlgeschlagen** (≈ 45 s). Neben den Grundlagen (DOCX-Roundtrip, PDF, Einstellungen, Editor,
+`pytest tests`: **171 bestanden, 0 fehlgeschlagen** (≈ 45 s). Neben den Grundlagen (DOCX-Roundtrip, PDF, Einstellungen, Editor,
 Fenster, KI mit Fake-Servern) jetzt auch: Zoom, Lineale, Weblayout/Zwei Seiten/Gliederung, Seitenfarbe/-rahmen/Wasserzeichen,
 Kommentare/Noten/Änderungen (Editor und DOCX), Verweise und Verzeichnisse (mit LibreOffice-Öffnung), Einfügen, Sendungen,
 Vorlagen und Lücken, Hilfe/Funktionstasten, Oberfläche wechseln, Werkzeug-Reiter, Gedächtnis, Kennwort, HTML-Codierung, eine
@@ -83,7 +83,7 @@ Druckoptionen am Drucker, Zwischenstände, Sichern/Zurückholen, Gitternetz, Dun
 * **Nicht übertragen:** Tabellenblatt/Diagramm-Tools/SmartArt/Gleichungswerkzeuge/Zeichentools (Tabellenkalkulation und
   Präsentation sind ausgeschlossen), Sprechblasen bei Änderungen, „Gerade/ungerade Seiten“, „Dokument teilen“, Maßeinheit,
   Zuschnittsmarken drucken, Live-Vorschau/Minisymbolleiste, Wort-Extras.
-* **Optionen** (Rest): siehe `PRUEFBOGEN.md` (Abschnitt OPTIONEN) — 28 Punkte insgesamt offen.
+* **Optionen** (Rest): siehe `PRUEFBOGEN.md` (Abschnitt OPTIONEN) — 21 Punkte insgesamt offen.
 * Das **Handbuch** ist das der Web-Fassung (als Markdown); es beschreibt teils die Web-Oberfläche.
 * Keine Behauptung vollständiger Word- oder WPS-Kompatibilität; Word selbst stand nicht zum Gegenprüfen zur Verfügung
   (geprüft mit LibreOffice und python-docx).
@@ -130,3 +130,8 @@ Anbieters mit „Bilder“. Getestet gegen einen gefälschten OpenAI-Server; **n
 * **PDF-Sprungverweise** Marke ↔ Note (Fuß- und Endnoten), Kommentare als Notizen, Lesezeichen aus Überschriften/Textmarken/Titel.
 * Ausgeblendeter Text (DOCX `w:vanish`), Objektanker, Feldschattierung und -codes, Zahl im Kreis, Kopf-/Fußzeile im Seitenrand (Tipp, Doppelklick),
   Zeichnungsobjekte drucken, Änderungsbalken, Spalten live im Editor.
+* **Sprechblasen**: Kommentare (und mit „Immer“ auch Einfügungen/Löschungen) als Blasen neben der Seite, mit Autor, Datum, Text, Verbindungslinien,
+  gestapelt ohne Überlappung; Klick markiert den Text, Doppelklick bearbeitet den Kommentar. Einstellbar: Breite, Seitenrand links/rechts, Linien.
+  Im Druck/PDF: Seite verkleinert neben den Blasen, Papierausrichtung automatisch/beibehalten/Querformat. Markup (Einfügungen, Löschungen,
+  Farbe, Änderungsbalken) einstellbar. **Grenzen:** Blasen für Formatänderungen gibt es nicht; mit mehreren Spalten stehen die Blasen neben der
+  ganzen Seite; im Druck ist die Anordnung eine Näherung an Word (Seite verkleinert statt Text umbrochen).

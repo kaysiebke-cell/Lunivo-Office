@@ -474,8 +474,7 @@ class OptionenDialog(QDialog):
         return p
 
     def _verfolgen(self, titel):
-        p = _Seite(self.w, titel, ["Sprechblasen (Breite, Seitenrand, Verbindungslinien, Drucken mit Sprechblasen)",
-                                   "Farbe und Darstellung je Änderungsart einstellen"])
+        p = _Seite(self.w, titel)
         f = p.gruppe("Änderungen verfolgen")
         b = QCheckBox("Änderungen im aktuellen Dokument verfolgen")
         e = self.w.current_editor()
@@ -486,8 +485,26 @@ class OptionenDialog(QDialog):
         m.setChecked(bool(e.markup) if e else True); m.setEnabled(e is not None)
         m.toggled.connect(lambda on: self.w.current_editor() and self.w.current_editor().set_markup(on))
         f.addRow(m)
-        p.hinweis("Einfügungen stehen unterstrichen, Löschungen durchgestrichen, in einer Farbe je Autor. Der Autor kommt aus "
-                  "Optionen ▸ Benutzerinformationen. Änderungen und Kommentare werden in DOCX als echte Überarbeitungen gespeichert.")
+        from ..editor import sprechblasen as SB
+        from ..editor.zusatz_editor import DEL_STILE, FESTE_FARBEN, INS_STILE
+        neu = lambda _=None: self.w.markup_neu()                                               # noqa: E731
+        f = p.gruppe("Markup")
+        p.auswahl(f, "aenderungen/ins_stil", "Einfügungen", INS_STILE, "Unterstrichen", neu)
+        p.auswahl(f, "aenderungen/del_stil", "Löschvorgänge", DEL_STILE, "Durchgestrichen", neu)
+        p.auswahl(f, "aenderungen/balken", "Geänderte Zeilen (Balken im Rand)", ["links", "rechts", "außen", "keine"], "links", neu)
+        p.auswahl(f, "aenderungen/farbe", "Farbe", ["Nach Autor"] + list(FESTE_FARBEN), "Nach Autor", neu)
+        f = p.gruppe("Sprechblasen")
+        p.auswahl(f, "sprechblasen/verwenden", "Sprechblasen verwenden", SB.VERWENDEN, SB.STANDARD["verwenden"], neu)
+        p.haken(f, "sprechblasen/empfohlen", "Empfohlene Breite verwenden (60 mm)", True, neu)
+        p.zahl(f, "sprechblasen/breite_mm", "Bevorzugte Breite", 30, 120, 60, " mm", 1, neu)
+        p.auswahl(f, "sprechblasen/rand", "Seitenrand", SB.RAND, "Rechts", neu)
+        p.haken(f, "sprechblasen/linien", "Verbindungslinien zum Text anzeigen", True, neu)
+        f = p.gruppe("Drucken (mit Sprechblasen)")
+        p.haken(f, "sprechblasen/drucken", "Sprechblasen mitdrucken und exportieren", False)
+        p.auswahl(f, "sprechblasen/ausrichtung", "Papierausrichtung", SB.AUSRICHTUNG, "Automatisch")
+        p.hinweis("Einfügungen und Löschungen stehen in einer Farbe je Autor (oder in einer festen Farbe). Der Autor kommt aus "
+                  "Optionen ▸ Benutzerinformationen. Änderungen und Kommentare werden in DOCX als echte Überarbeitungen gespeichert. "
+                  "Beim Drucken mit Sprechblasen wird die Seite verkleinert, damit rechts oder links Platz für die Blasen bleibt.")
         p.abschluss()
         return p
 

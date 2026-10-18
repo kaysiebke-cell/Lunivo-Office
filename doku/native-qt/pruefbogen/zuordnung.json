@@ -784,44 +784,44 @@
   "wo": "Optionen ▸ Änderungen verfolgen; editor/zusatz_editor.py (test_zusatz_editor)"
  },
  "OPTIONEN > Änderungen verfolgen > Markup|Einfügungen": {
-  "status": "◐",
-  "wo": "unterstrichen/durchgestrichen in einer Farbe je Autor; nicht einstellbar"
+  "status": "✅",
+  "wo": "aenderungen/ins_stil, del_stil, farbe (zusatz_editor._overlays_neu)"
  },
  "OPTIONEN > Änderungen verfolgen > Markup|Löschvorgänge": {
-  "status": "◐",
-  "wo": "unterstrichen/durchgestrichen in einer Farbe je Autor; nicht einstellbar"
+  "status": "✅",
+  "wo": "aenderungen/ins_stil, del_stil, farbe (zusatz_editor._overlays_neu)"
  },
  "OPTIONEN > Änderungen verfolgen > Markup|Geänderte Zeilen": {
   "status": "✅",
   "wo": "aenderungen/balken: Balken am Rand der Zeilen mit Änderungen (Anzeige und Druck)"
  },
  "OPTIONEN > Änderungen verfolgen > Markup|Farbe": {
-  "status": "◐",
-  "wo": "unterstrichen/durchgestrichen in einer Farbe je Autor; nicht einstellbar"
+  "status": "✅",
+  "wo": "aenderungen/ins_stil, del_stil, farbe (zusatz_editor._overlays_neu)"
  },
  "OPTIONEN > Änderungen verfolgen > Sprechblasen|Sprechblasen verwenden": {
-  "status": "⬜",
-  "wo": "keine Sprechblasen; Kommentare stehen im Navigationsbereich"
+  "status": "✅",
+  "wo": "editor/sprechblasen.py + widgets/blasen_flaeche.py: Blasen im Seitenrand mit Autor, Datum, Text und Linien; Optionen ▸ Änderungen verfolgen ▸ Sprechblasen (test_sprechblasen)"
  },
  "OPTIONEN > Änderungen verfolgen > Sprechblasen|Empfohlene Breite verwenden": {
-  "status": "⬜",
-  "wo": "keine Sprechblasen; Kommentare stehen im Navigationsbereich"
+  "status": "✅",
+  "wo": "editor/sprechblasen.py + widgets/blasen_flaeche.py: Blasen im Seitenrand mit Autor, Datum, Text und Linien; Optionen ▸ Änderungen verfolgen ▸ Sprechblasen (test_sprechblasen)"
  },
  "OPTIONEN > Änderungen verfolgen > Sprechblasen|Bevorzugte Breite (mm)": {
-  "status": "⬜",
-  "wo": "keine Sprechblasen; Kommentare stehen im Navigationsbereich"
+  "status": "✅",
+  "wo": "editor/sprechblasen.py + widgets/blasen_flaeche.py: Blasen im Seitenrand mit Autor, Datum, Text und Linien; Optionen ▸ Änderungen verfolgen ▸ Sprechblasen (test_sprechblasen)"
  },
  "OPTIONEN > Änderungen verfolgen > Sprechblasen|Seitenrand": {
-  "status": "⬜",
-  "wo": "keine Sprechblasen; Kommentare stehen im Navigationsbereich"
+  "status": "✅",
+  "wo": "editor/sprechblasen.py + widgets/blasen_flaeche.py: Blasen im Seitenrand mit Autor, Datum, Text und Linien; Optionen ▸ Änderungen verfolgen ▸ Sprechblasen (test_sprechblasen)"
  },
  "OPTIONEN > Änderungen verfolgen > Sprechblasen|Verbindungslinien zum Text anzeigen": {
-  "status": "⬜",
-  "wo": "keine Sprechblasen; Kommentare stehen im Navigationsbereich"
+  "status": "✅",
+  "wo": "editor/sprechblasen.py + widgets/blasen_flaeche.py: Blasen im Seitenrand mit Autor, Datum, Text und Linien; Optionen ▸ Änderungen verfolgen ▸ Sprechblasen (test_sprechblasen)"
  },
  "OPTIONEN > Änderungen verfolgen > Drucken (mit Sprechblasen)|Papierausrichtung": {
-  "status": "⬜",
-  "wo": "keine Sprechblasen"
+  "status": "✅",
+  "wo": "sprechblasen/ausrichtung: Automatisch, Beibehalten, Querformat; die Seite wird verkleinert neben die Blasen gesetzt (pagination.blasen_geometrie; Druck und PDF)"
  },
  "OPTIONEN > In PDF exportieren > Exportoptionen|Hyperlinks": {
   "status": "✅",
@@ -903,11 +903,11 @@
   "status": "✅",
   "wo": "drucken/zeichnungen, drucken/felder_code, drucken/versteckt → pagination.render (test_anzeige_extra)"
  },
- "OPTIONEN > Drucken > Druckoptionen|Womit das Druckfenster aufgeht": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
- },
  "OPTIONEN > Drucken > Druckoptionen|Autor der Kommentare und Überarbeitungen": {
+  "status": "✅",
+  "wo": "sprechblasen/drucken: Blasen mit Autor und Datum im Ausdruck/PDF"
+ },
+ "OPTIONEN > Drucken > Druckoptionen|Womit das Druckfenster aufgeht": {
   "status": "⬜",
   "wo": "nicht übertragen"
  },

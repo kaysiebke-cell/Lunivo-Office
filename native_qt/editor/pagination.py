@@ -453,15 +453,24 @@ def render(qdoc: QTextDocument, page: PageSettings, device, first: int = 1, last
     if opt.get("leere") is False:
         leer = _leere_seiten(d, page, total)
         liste = [n for n in liste if n not in leer] or liste[:1]
+    geo = blasen_geometrie(page, opt)
+    pro_seite = _blasen_pro_seite(d, page, liste, opt["blasen"]) if geo else {}
     for n in liste:
         if not first_page:
             device.newPage()
         first_page = False
         p.save()
         p.scale(s, s)
+        if geo:                                              # Seite verkleinert neben die Blasen setzen
+            p.save()
+            p.translate(geo["x_page"], 0)
+            p.scale(geo["f"], geo["f"])
         zeichne_seite(p, d, page, n, total, base, opt.get("hintergrund") is not False, balken)
         if opt.get("textgrenzen") or opt.get("zuschnitt"):
             _druckmarken(p, page, bool(opt.get("textgrenzen")), bool(opt.get("zuschnitt")))
+        if geo:
+            p.restore()
+            _blasen_zeichnen(p, pro_seite.get(n, []), geo)
         p.restore()
     p.end()
     if opt.get("lesezeichen") is not None:
@@ -528,11 +537,25 @@ def notenlinks_sammeln(d: QTextDocument, page: PageSettings, liste: list[int]) -
     return out
 
 
-def kommentarstellen(d: QTextDocument, ch: float, liste: list[int], kommentare: list[tuple[int, str]],
-                     spalten: int = 1) -> list[tuple[int, float, str]]:
-    """[(Seitenindex, y in px auf der Textfläche, Text)] für Kommentare — Position der Zeile, in der der Kommentar beginnt."""
+def kommentarstellen(d: QTextDocument, ch: float, liste: list[int], kommentare: dict, spalten: int = 1) -> list[tuple[int, float, str]]:
+    """[(Seitenindex, y in px auf der Textfläche, Text)] für die PDF-Notizen. `kommentare` = {Kommentar-Id: Text}; die Stelle
+    wird über die Eigenschaft P_KOMMENTAR in der Kopie gefunden (Zeichenstellen des Originals passen dort nicht mehr)."""
+    from .zusatz import P_KOMMENTAR
+    erste: dict[int, int] = {}
+    b = d.firstBlock()
+    while b.isValid():
+        it = b.begin()
+        while not it.atEnd():
+            f = it.fragment()
+            if f.isValid() and f.charFormat().hasProperty(P_KOMMENTAR):
+                erste.setdefault(int(f.charFormat().property(P_KOMMENTAR)), f.position())
+            it += 1
+        b = b.next()
     out = []
-    for von, text in kommentare:
+    for kid, text in kommentare.items():
+        von = erste.get(int(kid))
+        if von is None:
+            continue
         b = d.findBlock(von)
         if not b.isValid() or b.layout() is None:
             continue
@@ -794,10 +817,70 @@ def _leere_seiten(d: QTextDocument, page: PageSettings, total: int) -> set[int]:
     return {n for n in range(1, total + 1) if n not in mit_text}
 
 
-def _page_layout(page: PageSettings) -> QPageLayout:
+def blasen_geometrie(page: PageSettings, opt: dict | None) -> dict | None:
+    """Platz für Sprechblasen beim Drucken: Die Seite wird verkleinert, daneben stehen die Blasen. → None ohne Blasen."""
+    bd = (opt or {}).get("blasen")
+    if not bd:
+        return None
+    from . import sprechblasen as SB
+    k = bd["konfig"]
+    pw, ph = mm_to_px(page.width_mm), mm_to_px(page.height_mm)
+    bw, gap = mm_to_px(SB.breite_mm(k)), mm_to_px(SB.LUECKE_MM)
+
+    def faktor(sw: float, sh: float) -> float:
+        return min((sw - bw - gap) / pw, sh / ph)
+    f_hoch = faktor(pw, ph)
+    f_quer = faktor(ph, pw) if not page.landscape else f_hoch
+    aus = k["ausrichtung"]
+    quer = (not page.landscape) and (aus == "Querformat" or (aus == "Automatisch" and f_quer > f_hoch + 0.02))
+    sw, sh = (ph, pw) if quer else (pw, ph)
+    f = min(1.0, faktor(sw, sh))
+    links = k["rand"] == "Links"
+    x_page = bw + gap if links else 0.0
+    return {"quer": quer, "f": f, "sw": sw, "sh": sh, "pw": pw, "x_page": x_page, "links": links,
+            "x_blasen": 0.0 if links else pw * f + gap, "bw": bw, "mt": mm_to_px(page.margin_top_mm), "k": k}
+
+
+def _blasen_pro_seite(d: QTextDocument, page: PageSettings, liste: list[int], bd: dict) -> dict[int, list]:
+    """{Blattseite (1-basiert): [(Blase, y in px auf der Textfläche)]} — die Blasen stammen aus der Kopie selbst."""
+    from . import sprechblasen as SB
+    ch = page.content_height_px
+    n_sp = max(1, int(page.spalten))
+    lay = d.documentLayout()
+    out: dict[int, list] = {}
+    for bl in SB.sammeln(d, bd.get("kommentare", {}), bd["konfig"]["verwenden"]):
+        b = d.findBlock(bl.von)
+        if not b.isValid() or b.layout() is None:
+            continue
+        ln = b.layout().lineForTextPosition(bl.von - b.position())
+        y = lay.blockBoundingRect(b).top() + (ln.y() if ln.isValid() else 0)
+        lp = int((y + 0.5) // ch)
+        out.setdefault(lp // n_sp + 1, []).append((bl, y - lp * ch))
+    return out
+
+
+def _blasen_zeichnen(p: QPainter, eintraege: list, geo: dict) -> None:
+    from . import sprechblasen as SB
+    if not eintraege:
+        return
+    font = QFont("Liberation Sans")
+    font.setPixelSize(11)
+    w, f = geo["bw"], geo["f"]
+    hoehen = [SB.messen(bl, w, font) for bl, _y in eintraege]
+    anker = [geo["mt"] * f + y * f for _bl, y in eintraege]
+    ys = SB.stapeln(anker, hoehen, geo["sh"] - 12)
+    kante = geo["x_page"] + (0 if geo["links"] else geo["pw"] * f)
+    for (bl, _y), yy, h, a in zip(eintraege, ys, hoehen, anker):
+        r = QRectF(geo["x_blasen"], yy, w, h)
+        if geo["k"]["linien"]:
+            SB.verbindung(p, bl, kante, a + 8, r, not geo["links"])
+        SB.zeichnen(p, bl, r, font)
+
+
+def _page_layout(page: PageSettings, quer: bool = False) -> QPageLayout:
     size = QPageSize(QSizeF(min(page.width_mm, page.height_mm), max(page.width_mm, page.height_mm)),
                      QPageSize.Millimeter)
-    orient = QPageLayout.Landscape if page.landscape else QPageLayout.Portrait
+    orient = QPageLayout.Landscape if (page.landscape or quer) else QPageLayout.Portrait
     return QPageLayout(size, orient, QMarginsF(0, 0, 0, 0), QPageLayout.Millimeter)
 
 
@@ -807,7 +890,8 @@ def export_pdf(path: str, qdoc: QTextDocument, page: PageSettings, title: str = 
     from PySide6.QtCore import QByteArray
     w = QPdfWriter(path)
     w.setResolution(300)
-    w.setPageLayout(_page_layout(page))
+    geo = blasen_geometrie(page, extra)
+    w.setPageLayout(_page_layout(page, bool(geo and geo["quer"])))
     if title:
         w.setTitle(title)
     w.setCreator("Lunivo Writer")
@@ -833,7 +917,8 @@ def export_pdf(path: str, qdoc: QTextDocument, page: PageSettings, title: str = 
 
 
 def print_document(printer: QPrinter, qdoc: QTextDocument, page: PageSettings, opt: dict | None = None) -> int:
-    printer.setPageLayout(_page_layout(page))
+    geo = blasen_geometrie(page, opt)
+    printer.setPageLayout(_page_layout(page, bool(geo and geo["quer"])))
     first, last = 1, None
     if printer.printRange() == QPrinter.PageRange and printer.fromPage():
         first, last = printer.fromPage(), printer.toPage() or None
