@@ -1,6 +1,6 @@
 # Prüfbogen ↔ native Fassung
 
-Erzeugt von `werkzeug/pruefbogen-abgleich.py` aus dem Prüfkatalog (415 Punkte). **✅ 303 · ◐ 71 · ⬜ 41**. ✅ = Befehl/Funktion vorhanden (einzeln getestet nur, wo `tests/` es belegt); ◐ = teilweise oder anders gelöst; ⬜ = offen.
+Erzeugt von `werkzeug/pruefbogen-abgleich.py` aus dem Prüfkatalog (415 Punkte). **✅ 314 · ◐ 71 · ⬜ 30**. ✅ = Befehl/Funktion vorhanden (einzeln getestet nur, wo `tests/` es belegt); ◐ = teilweise oder anders gelöst; ⬜ = offen.
 Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/bilder/`.
 
 ## DATEI
@@ -373,16 +373,16 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 - ⬜ Live-Vorschau — nicht übertragen (in den Optionen als gesperrte Zeile sichtbar)
 - ✅ Minisymbolleiste bei Auswahl — widgets/mini_leiste.py; ui/mini_auswahl, ui/mini_rechtsklick (test_schreibhilfe)
 - ✅ Minisymbolleiste bei Rechtsklick — widgets/mini_leiste.py; ui/mini_auswahl, ui/mini_rechtsklick (test_schreibhilfe)
-- ⬜ Tipp für Kopf- bzw. Fußzeile — nicht übertragen (in den Optionen als gesperrte Zeile sichtbar)
+- ✅ Tipp für Kopf- bzw. Fußzeile — ui/kopffuss_tipp, ui/kopffuss_anzeigen: Kopf-/Fußzeile im Rand, Tipp und Doppelklick (editor_widget; test_anzeige_extra)
 
 ## OPTIONEN > Ansicht > Druckoptionen
 
 - ✅ Hervorhebungen drucken — drucken/hervorhebungen, textgrenzen, zuschnitt, textmarken → pagination.render (test_werkzeuge)
 - ✅ Textbegrenzungen drucken — drucken/hervorhebungen, textgrenzen, zuschnitt, textmarken → pagination.render (test_werkzeuge)
 - ✅ Zuschnittsmarken anzeigen — drucken/hervorhebungen, textgrenzen, zuschnitt, textmarken → pagination.render (test_werkzeuge)
-- ⬜ Feldfunktionen drucken — Felder erscheinen nur mit ihrem Ergebnis; keine Feldcodes und keine Schattierung
+- ✅ Feldfunktionen drucken — drucken/felder_code (anzeige_extra.feldcodes_einsetzen), ui/feldschattierung (zusatz_editor._overlays_neu; test_anzeige_extra)
 - ✅ Textmarken drucken — drucken/hervorhebungen, textgrenzen, zuschnitt, textmarken → pagination.render (test_werkzeuge)
-- ⬜ Feldschattierung — Felder erscheinen nur mit ihrem Ergebnis; keine Feldcodes und keine Schattierung
+- ✅ Feldschattierung — drucken/felder_code (anzeige_extra.feldcodes_einsetzen), ui/feldschattierung (zusatz_editor._overlays_neu; test_anzeige_extra)
 
 ## OPTIONEN > Ansicht > Formatierungszeichen
 
@@ -390,8 +390,8 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 - ◐ Absatzmarken — Qt schaltet Absatzmarken, Leerzeichen und Tabs nur gemeinsam
 - ◐ Leerzeichen — Qt schaltet Absatzmarken, Leerzeichen und Tabs nur gemeinsam
 - ◐ Tabstoppzeichen — Qt schaltet Absatzmarken, Leerzeichen und Tabs nur gemeinsam
-- ⬜ Objektanker — Qt kennt weder Objektanker noch ausgeblendeten Text
-- ⬜ Ausgeblendeter Text — Qt kennt weder Objektanker noch ausgeblendeten Text
+- ✅ Objektanker — ui/objektanker (⚓ neben umflossenen Bildern), P_VERSTECKT + VersteckterText, DOCX w:vanish (test_anzeige_extra)
+- ✅ Ausgeblendeter Text — ui/objektanker (⚓ neben umflossenen Bildern), P_VERSTECKT + VersteckterText, DOCX w:vanish (test_anzeige_extra)
 
 ## OPTIONEN > Ansicht > Menübandoptionen
 
@@ -416,7 +416,7 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 
 - ✅ Automatisch nummerierte Listen — autoformat/liste, autoformat/punkte (test_editor)
 - ✅ Aufzählungen erkennen — autoformat/liste, autoformat/punkte (test_editor)
-- ⬜ Zahl automatisch im Kreis — nicht übertragen
+- ✅ Zahl automatisch im Kreis — schreibhilfe/akKreiszahl: (1) → ① bis (20) → ⑳ (editor._kreiszahl; test_anzeige_extra)
 
 ## OPTIONEN > Bearbeiten > AutoKorrektur
 
@@ -430,7 +430,7 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 - ✅ Feststelltaste korrigieren — services/autokorrektur.py, Optionen ▸ Bearbeiten (test_schreibhilfe)
 - ◐ Internet- und Netzwerkpfade durch Hyperlinks ersetzen — editor_widget._autokorr_extras/keyPressEvent — verdrahtet, noch ohne eigenen Test
 - ◐ Leerzeichen am Absatzanfang mit Erstzeileneinzug — editor_widget._autokorr_extras/keyPressEvent — verdrahtet, noch ohne eigenen Test
-- ⬜ Leerzeichenformat am Ende rechtsbündiger Zeilen anpassen — nicht übertragen
+- ✅ Leerzeichenformat am Ende rechtsbündiger Zeilen anpassen — schreibhilfe/akRechtsLeer: Leerzeichen am Zeilenende rechtsbündiger Absätze fallen beim Umbruch weg (editor._rechts_leerzeichen_weg)
 - ◐ Bei zentriertem Ausrichten Erstzeileneinzug löschen — editor_widget._autokorr_extras/keyPressEvent — verdrahtet, noch ohne eigenen Test
 - ◐ Tabulator und Rücktaste setzen den Einzug — editor_widget._autokorr_extras/keyPressEvent — verdrahtet, noch ohne eigenen Test
 - ✅ Wortvorhersage — Band: Schreibhilfe ▸ Beim Schreiben
@@ -498,7 +498,7 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 
 - ◐ Einfügungen — unterstrichen/durchgestrichen in einer Farbe je Autor; nicht einstellbar
 - ◐ Löschvorgänge — unterstrichen/durchgestrichen in einer Farbe je Autor; nicht einstellbar
-- ⬜ Geänderte Zeilen — nicht übertragen
+- ✅ Geänderte Zeilen — aenderungen/balken: Balken am Rand der Zeilen mit Änderungen (Anzeige und Druck)
 - ◐ Farbe — unterstrichen/durchgestrichen in einer Farbe je Autor; nicht einstellbar
 
 ## OPTIONEN > Änderungen verfolgen > Sprechblasen
@@ -536,12 +536,12 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 - ⬜ Womit das Druckfenster aufgeht — nicht übertragen
 - ◐ Hohe Qualität — pagination.render/print_document, main_window.druckoptionen — seiten_liste getestet, übrige nur verdrahtet
 - ◐ Umgekehrte Reihenfolge — pagination.render/print_document, main_window.druckoptionen — seiten_liste getestet, übrige nur verdrahtet
-- ⬜ Zeichnungsobjekte drucken — nicht übertragen
+- ✅ Zeichnungsobjekte drucken — drucken/zeichnungen, drucken/felder_code, drucken/versteckt → pagination.render (test_anzeige_extra)
 - ◐ Hintergrundfarben und -bilder drucken — pagination.render/print_document, main_window.druckoptionen — seiten_liste getestet, übrige nur verdrahtet
 - ◐ Leere Seiten mitdrucken — pagination.render/print_document, main_window.druckoptionen — seiten_liste getestet, übrige nur verdrahtet
 - ◐ Felder vor dem Drucken aktualisieren — pagination.render/print_document, main_window.druckoptionen — seiten_liste getestet, übrige nur verdrahtet
-- ⬜ Feldfunktionen drucken — nicht übertragen
-- ⬜ Ausgeblendeter Text — nicht übertragen
+- ✅ Feldfunktionen drucken — drucken/zeichnungen, drucken/felder_code, drucken/versteckt → pagination.render (test_anzeige_extra)
+- ✅ Ausgeblendeter Text — drucken/zeichnungen, drucken/felder_code, drucken/versteckt → pagination.render (test_anzeige_extra)
 - ⬜ Autor der Kommentare und Überarbeitungen — nicht übertragen
 
 ## OPTIONEN > Drucken > Nur für das aktuelle Dokument

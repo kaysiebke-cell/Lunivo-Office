@@ -367,6 +367,17 @@ class ZusatzMixin:
             fmt.setUnderlineColor(QColor(self.WELLE.get(f["art"], "#868e96")))
             e = QTextEdit.ExtraSelection(); e.cursor = c; e.format = fmt
             sel.append(e)
+        modus = self.opt_text("ui/feldschattierung", "Bei Auswahl") if hasattr(self, "opt_text") else "Nie"
+        if modus != "Nie":
+            from .anzeige_extra import feldbereiche
+            pos = self.textCursor().position()
+            for von, bis in feldbereiche(doc):
+                if modus == "Immer" or von <= pos <= bis:
+                    c = QTextCursor(doc)
+                    c.setPosition(von); c.setPosition(bis, QTextCursor.KeepAnchor)
+                    fmt = QTextCharFormat(); fmt.setBackground(QColor(150, 160, 175, 70))
+                    e = QTextEdit.ExtraSelection(); e.cursor = c; e.format = fmt
+                    sel.append(e)
         if self.markup and (self._hat_zusatz or self.verfolgen):
             for b in self.kommentar_bereiche():
                 c = QTextCursor(doc)

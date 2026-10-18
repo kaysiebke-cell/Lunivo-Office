@@ -803,9 +803,9 @@ class Befehle:
             self.ed.apply_design(f, h, None)
 
     # ---- Einfügen: Illustrationen, Text, Symbole, Tabellen, Seiten ----------------------------------------------------
-    def _bild_einfuegen(self, img, alt):
+    def _bild_einfuegen(self, img, alt, art=None, daten=None):
         from ..editor import einfuegen as E
-        E.qimage_einfuegen(self.ed, img, alt)
+        E.qimage_einfuegen(self.ed, img, alt, art, daten)
 
     def formenGalerie(self, k=None):
         if not self.ed:
@@ -813,7 +813,7 @@ class Befehle:
         from ..editor import einfuegen as E
         m = QMenu()
         for f in E.FORMEN:
-            m.addAction(f, lambda _=False, f=f: self._bild_einfuegen(E.form_bild(f), f"Form: {f}"))
+            m.addAction(f, lambda _=False, f=f: self._bild_einfuegen(E.form_bild(f), f"Form: {f}", "form", {"form": f}))
         m.addSeparator()
         m.addAction("Weitere Formen und Farben …", self.zeichnen)
         self._popup(m)
@@ -823,21 +823,21 @@ class Befehle:
             from ..widgets.einfuegen_dialoge import FormDialog
             d = FormDialog(self.w)
             if d.exec():
-                self._bild_einfuegen(d.bild(), f"Form: {d.art.currentText()}")
+                self._bild_einfuegen(d.bild(), f"Form: {d.art.currentText()}", "form", {"form": d.art.currentText()})
 
     def wordart(self, k=None):
         if self.ed:
             from ..widgets.einfuegen_dialoge import WordArtDialog
             d = WordArtDialog(self.w)
             if d.exec():
-                self._bild_einfuegen(d.bild(), "WordArt: " + d.text.text())
+                self._bild_einfuegen(d.bild(), "WordArt: " + d.text.text(), "wordart", {"text": d.text.text()})
 
     def diagramm(self, k=None):
         if self.ed:
             from ..widgets.einfuegen_dialoge import DiagrammDialog
             d = DiagrammDialog(self.w)
             if d.exec():
-                self._bild_einfuegen(d.bild(), f"{d.art.currentText()}diagramm: {d.titel.text()}")
+                self._bild_einfuegen(d.bild(), f"{d.art.currentText()}diagramm: {d.titel.text()}", "diagramm", {"art": d.art.currentText(), "titel": d.titel.text()})
 
     def piktogramm(self, k=None):
         if self.ed:
@@ -847,7 +847,7 @@ class Befehle:
             if d.exec():
                 n, farbe = d.ergebnis()
                 if n:
-                    self._bild_einfuegen(E.piktogramm_bild(n, 96, farbe), f"Piktogramm: {n}")
+                    self._bild_einfuegen(E.piktogramm_bild(n, 96, farbe), f"Piktogramm: {n}", "piktogramm", {"name": n, "farbe": farbe})
 
     def screenshot(self, k=None):
         if not self.ed:
@@ -1611,6 +1611,19 @@ class Befehle:
         d = LesehilfeDialog(self.w)
         d.show()
         self._lh = d
+
+    def ausblenden(self, k=None):
+        """Markierten Text als „ausgeblendet“ formatieren (Strg+Umschalt+H)."""
+        if self.ed:
+            self.ed.set_versteckt(not self.ed.ist_versteckt())
+
+    def an_ausblenden(self): return bool(self.ed) and self.ed.ist_versteckt()
+
+    def versteckteZeigen(self, k=None):
+        self.w.settings.set("ui/versteckt_zeigen", not self.w.settings.get_bool("ui/versteckt_zeigen", False))
+        self.w.versteckt_anwenden()
+
+    def an_versteckteZeigen(self): return self.w.settings.get_bool("ui/versteckt_zeigen", False)
 
     def silbenfarben(self, k=None):
         from ..editor import silbenfarben as S

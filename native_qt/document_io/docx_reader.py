@@ -35,7 +35,7 @@ from .report import DocumentIOError, IOReport
 
 LH_PROPORTIONAL, LH_FIXED = 1, 2                # QTextBlockFormat.LineHeightTypes
 STYLE_PROP = QTextFormat.UserProperty + 1       # Name der Formatvorlage am Block
-from ..editor.zusatz import B_SPALTE  # noqa: E402
+from ..editor.zusatz import B_SPALTE, P_OBJEKT, P_VERSTECKT  # noqa: E402
 from ..editor.zusatz import (  # noqa: E402
     B_ART, B_CAP, B_RAHMEN, B_TOC, BESCHRIFTUNGEN, P_AENDERUNG, P_AUTOR, P_DATUM, P_FELD, P_INDEX, P_KOMMENTAR, P_NOTE, P_ZITAT, leere_meta,
 )
@@ -319,6 +319,8 @@ class _Reader:
         if run.font.outline:
             from PySide6.QtGui import QPen
             f.setTextOutline(QPen(QColor("#000000")))
+        if run.font.hidden:
+            f.setProperty(P_VERSTECKT, 1)
         rpr = run._r.rPr
         sp = rpr.find(qn("w:spacing")) if rpr is not None else None
         if sp is not None and sp.get(qn("w:val")):
@@ -754,6 +756,9 @@ class _Reader:
         alt = drawing.xpath(".//wp:docPr/@descr")
         if alt:
             imf.setProperty(STYLE_PROP + 1, alt[0])
+        titel = drawing.xpath(".//wp:docPr/@title")
+        if titel and titel[0].startswith("lunivo:"):
+            imf.setProperty(P_OBJEKT, titel[0][len("lunivo:"):])
         seite = self._umbruch_seite(drawing, w)
         if seite:
             from ..editor.umbruch import schwebend_einfuegen
@@ -948,7 +953,7 @@ class _NoRun:
         name = None
         size = None
         bold = italic = underline = strike = superscript = subscript = None
-        all_caps = small_caps = outline = None
+        all_caps = small_caps = outline = hidden = None
         color = None
     font = _F()
     style = None

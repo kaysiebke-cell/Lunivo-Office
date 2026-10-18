@@ -45,7 +45,7 @@ def _has(fmt, prop) -> bool:
     return fmt.hasProperty(prop)
 
 
-from ..editor.zusatz import B_SPALTE  # noqa: E402
+from ..editor.zusatz import B_SPALTE, P_OBJEKT, P_VERSTECKT  # noqa: E402
 from ..editor.zusatz import (  # noqa: E402
     B_ART, B_CAP, B_RAHMEN, B_TOC, P_AENDERUNG, P_AUTOR, P_DATUM, P_FELD, P_INDEX, P_KOMMENTAR, P_NOTE,
 )
@@ -569,6 +569,8 @@ class _Writer:
                 run._r.get_or_add_rPr().append(shd)
         if cf.textOutline().style() != Qt.NoPen:
             f.outline = True
+        if cf.hasProperty(P_VERSTECKT):
+            f.hidden = True
         ls = cf.fontLetterSpacing()
         if ls and cf.fontLetterSpacingType() == QFont.AbsoluteSpacing:
             sp = OxmlElement("w:spacing")
@@ -604,6 +606,9 @@ class _Writer:
         if alt:
             for dp in run._r.xpath(".//wp:docPr"):
                 dp.set("descr", str(alt))
+        if imf.hasProperty(P_OBJEKT):                       # Daten zum Wiederbearbeiten (Form, Diagramm, SmartArt …) im Titel des Bildes
+            for dp in run._r.xpath(".//wp:docPr"):
+                dp.set("title", "lunivo:" + str(imf.property(P_OBJEKT)))
         if seite:
             self._verankern(run, "right" if seite == "rechts" else "left")
 

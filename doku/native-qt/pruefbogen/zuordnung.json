@@ -523,11 +523,11 @@
   "status": "✅",
   "wo": "widgets/mini_leiste.py; ui/mini_auswahl, ui/mini_rechtsklick (test_schreibhilfe)"
  },
- "OPTIONEN > Ansicht > Anzeigen|Live-Vorschau": {
-  "status": "⬜",
-  "wo": "nicht übertragen (in den Optionen als gesperrte Zeile sichtbar)"
- },
  "OPTIONEN > Ansicht > Anzeigen|Tipp für Kopf- bzw. Fußzeile": {
+  "status": "✅",
+  "wo": "ui/kopffuss_tipp, ui/kopffuss_anzeigen: Kopf-/Fußzeile im Rand, Tipp und Doppelklick (editor_widget; test_anzeige_extra)"
+ },
+ "OPTIONEN > Ansicht > Anzeigen|Live-Vorschau": {
   "status": "⬜",
   "wo": "nicht übertragen (in den Optionen als gesperrte Zeile sichtbar)"
  },
@@ -548,12 +548,12 @@
   "wo": "drucken/hervorhebungen, textgrenzen, zuschnitt, textmarken → pagination.render (test_werkzeuge)"
  },
  "OPTIONEN > Ansicht > Druckoptionen|Feldfunktionen drucken": {
-  "status": "⬜",
-  "wo": "Felder erscheinen nur mit ihrem Ergebnis; keine Feldcodes und keine Schattierung"
+  "status": "✅",
+  "wo": "drucken/felder_code (anzeige_extra.feldcodes_einsetzen), ui/feldschattierung (zusatz_editor._overlays_neu; test_anzeige_extra)"
  },
  "OPTIONEN > Ansicht > Druckoptionen|Feldschattierung": {
-  "status": "⬜",
-  "wo": "Felder erscheinen nur mit ihrem Ergebnis; keine Feldcodes und keine Schattierung"
+  "status": "✅",
+  "wo": "drucken/felder_code (anzeige_extra.feldcodes_einsetzen), ui/feldschattierung (zusatz_editor._overlays_neu; test_anzeige_extra)"
  },
  "OPTIONEN > Ansicht > Formatierungszeichen|Alle anzeigen": {
   "status": "✅",
@@ -572,12 +572,12 @@
   "wo": "Qt schaltet Absatzmarken, Leerzeichen und Tabs nur gemeinsam"
  },
  "OPTIONEN > Ansicht > Formatierungszeichen|Objektanker": {
-  "status": "⬜",
-  "wo": "Qt kennt weder Objektanker noch ausgeblendeten Text"
+  "status": "✅",
+  "wo": "ui/objektanker (⚓ neben umflossenen Bildern), P_VERSTECKT + VersteckterText, DOCX w:vanish (test_anzeige_extra)"
  },
  "OPTIONEN > Ansicht > Formatierungszeichen|Ausgeblendeter Text": {
-  "status": "⬜",
-  "wo": "Qt kennt weder Objektanker noch ausgeblendeten Text"
+  "status": "✅",
+  "wo": "ui/objektanker (⚓ neben umflossenen Bildern), P_VERSTECKT + VersteckterText, DOCX w:vanish (test_anzeige_extra)"
  },
  "OPTIONEN > Ansicht > Menübandoptionen|Doppelklick blendet das Band aus": {
   "status": "✅",
@@ -628,8 +628,8 @@
   "wo": "autoformat/liste, autoformat/punkte (test_editor)"
  },
  "OPTIONEN > Bearbeiten > AutoFormat|Zahl automatisch im Kreis": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "✅",
+  "wo": "schreibhilfe/akKreiszahl: (1) → ① bis (20) → ⑳ (editor._kreiszahl; test_anzeige_extra)"
  },
  "OPTIONEN > Bearbeiten > AutoKorrektur|Typografische Anführungszeichen": {
   "status": "✅",
@@ -676,8 +676,8 @@
   "wo": "editor_widget._autokorr_extras/keyPressEvent — verdrahtet, noch ohne eigenen Test"
  },
  "OPTIONEN > Bearbeiten > AutoKorrektur|Leerzeichenformat am Ende rechtsbündiger Zeilen anpassen": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "✅",
+  "wo": "schreibhilfe/akRechtsLeer: Leerzeichen am Zeilenende rechtsbündiger Absätze fallen beim Umbruch weg (editor._rechts_leerzeichen_weg)"
  },
  "OPTIONEN > Bearbeiten > Ausschneiden und Einfügen|Ohne Formatierung einfügen": {
   "status": "✅",
@@ -792,8 +792,8 @@
   "wo": "unterstrichen/durchgestrichen in einer Farbe je Autor; nicht einstellbar"
  },
  "OPTIONEN > Änderungen verfolgen > Markup|Geänderte Zeilen": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "✅",
+  "wo": "aenderungen/balken: Balken am Rand der Zeilen mit Änderungen (Anzeige und Druck)"
  },
  "OPTIONEN > Änderungen verfolgen > Markup|Farbe": {
   "status": "◐",
@@ -891,19 +891,19 @@
   "status": "◐",
   "wo": "pagination.render/print_document, main_window.druckoptionen — seiten_liste getestet, übrige nur verdrahtet"
  },
- "OPTIONEN > Drucken > Druckoptionen|Womit das Druckfenster aufgeht": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
- },
  "OPTIONEN > Drucken > Druckoptionen|Zeichnungsobjekte drucken": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "✅",
+  "wo": "drucken/zeichnungen, drucken/felder_code, drucken/versteckt → pagination.render (test_anzeige_extra)"
  },
  "OPTIONEN > Drucken > Druckoptionen|Feldfunktionen drucken": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "✅",
+  "wo": "drucken/zeichnungen, drucken/felder_code, drucken/versteckt → pagination.render (test_anzeige_extra)"
  },
  "OPTIONEN > Drucken > Druckoptionen|Ausgeblendeter Text": {
+  "status": "✅",
+  "wo": "drucken/zeichnungen, drucken/felder_code, drucken/versteckt → pagination.render (test_anzeige_extra)"
+ },
+ "OPTIONEN > Drucken > Druckoptionen|Womit das Druckfenster aufgeht": {
   "status": "⬜",
   "wo": "nicht übertragen"
  },

@@ -125,6 +125,11 @@ def plan(register: dict) -> list[dict]:
     if not any(k.get("tun") == "silbenfarben" for k in lesen["knoepfe"]):          # Lesehilfe für Legasthenie (nicht im alten Register)
         lesen["knoepfe"] = lesen["knoepfe"] + [_k("farbe", "Silben farbig", "silbenfarben", haken=True),
                                                _k("zahnrad", "Silben einstellen …", "silbenEinstellen")]
+    ans = nach["Ansicht"] = dict(nach["Ansicht"])
+    ans["gruppen"] = [dict(g) for g in ans["gruppen"]]
+    anz = next(g for g in ans["gruppen"] if g["name"] == "Anzeigen")
+    if not any(k.get("tun") == "versteckteZeigen" for k in anz["knoepfe"]):
+        anz["knoepfe"] = anz["knoepfe"] + [_k("vorschau", "Ausgeblendeter Text", "versteckteZeigen", haken=True)]
     verweise = dict(nach["Referenzen"], name="Verweise")
     reiter = [DATEI, nach["Start"], nach["Einfügen"], nach["Seitenlayout"], verweise, nach["Überprüfen"],
               nach["Schreibhilfe"], KI, nach["Ansicht"], nach["Sendungen"]]

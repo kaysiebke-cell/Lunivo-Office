@@ -136,9 +136,12 @@ def ausgabe_seiten(logisch: int, page: PageSettings) -> int:
 
 
 def paginated_copy(qdoc: QTextDocument, page: PageSettings, noten: dict | None = None, silben: bool | None = None,
-                   einspaltig: bool = False) -> QTextDocument:
+                   einspaltig: bool = False, versteckt: bool = False) -> QTextDocument:
     d = qdoc.clone()
     bind_layout(d)
+    if not versteckt:                                   # ausgeblendeter Text zählt weder für Seiten noch für den Druck
+        from .anzeige_extra import versteckte_entfernen
+        versteckte_entfernen(d)
     noten_anhaengen(d, noten)
     if (page.silbentrennung if silben is None else silben):
         silben_einfuegen(d, page.silben_sprache)
@@ -283,7 +286,12 @@ def render(qdoc: QTextDocument, page: PageSettings, device, first: int = 1, last
            dpi: int | None = None, opt: dict | None = None) -> int:
     """Zeichnet die Seiten first..last auf device (QPdfWriter/QPrinter). → Anzahl Seiten."""
     opt = opt or {}
-    d = paginated_copy(qdoc, page, opt.get("noten"))
+    d = paginated_copy(qdoc, page, opt.get("noten"), versteckt=bool(opt.get("versteckt")))
+    from . import anzeige_extra as AX
+    if opt.get("felder_code"):
+        AX.feldcodes_einsetzen(d)
+    if opt.get("zeichnungen") is False:
+        AX.zeichnungen_entfernen(d)
     if opt.get("luecken", True):
         from .vorlagen import luecken_entfernen
         luecken_entfernen(d)
@@ -306,6 +314,9 @@ def render(qdoc: QTextDocument, page: PageSettings, device, first: int = 1, last
     base = qdoc.defaultFont()
     spalten = max(1, int(page.spalten))
     first_page = True
+    balken = None
+    if opt.get("balken") in ("links", "rechts", "außen") and d.characterCount() < 400000:
+        balken = (opt["balken"], AX.aenderungszeilen(d))
     liste = seiten_liste(total, first, last, opt)
     if opt.get("leere") is False:
         leer = _leere_seiten(d, page, total)
@@ -316,7 +327,7 @@ def render(qdoc: QTextDocument, page: PageSettings, device, first: int = 1, last
         first_page = False
         p.save()
         p.scale(s, s)
-        zeichne_seite(p, d, page, n, total, base, opt.get("hintergrund") is not False)
+        zeichne_seite(p, d, page, n, total, base, opt.get("hintergrund") is not False, balken)
         if opt.get("textgrenzen") or opt.get("zuschnitt"):
             _druckmarken(p, page, bool(opt.get("textgrenzen")), bool(opt.get("zuschnitt")))
         p.restore()
@@ -424,7 +435,7 @@ def _druckmarken(p: QPainter, page: PageSettings, grenzen: bool, zuschnitt: bool
 
 
 def zeichne_seite(p: QPainter, d: QTextDocument, page: PageSettings, n: int, total: int, base: QFont,
-                  hintergrund: bool = True) -> None:
+                  hintergrund: bool = True, balken: tuple | None = None) -> None:
     """Eine Seite (Nummer n, 1-basiert) mit Seitenschmuck, Kopf-/Fußzeile und Text; Maßstab 96 dpi, Ursprung links oben."""
     cw, ch = page.content_width_px, page.content_height_px
     ml, mt = mm_to_px(page.margin_left_mm), mm_to_px(page.margin_top_mm)
@@ -453,6 +464,19 @@ def zeichne_seite(p: QPainter, d: QTextDocument, page: PageSettings, n: int, tot
         d.drawContents(p, QRectF(0, (lp - 1) * ch, cb, ch))
         absatzrahmen_zeichnen(p, d)
         p.restore()
+        if balken:                                          # Änderungsbalken neben den Zeilen mit verfolgten Änderungen
+            seite_b, zeilen = balken
+            rechts = seite_b == "rechts" or (seite_b == "außen" and n % 2 == 0)
+            x = ml + j * (cb + luecke) + (cb + 6 if rechts else -6)
+            from PySide6.QtGui import QColor, QPen
+            p.save()
+            pen = QPen(QColor("#c92a2a")); pen.setWidthF(1.4)
+            p.setPen(pen)
+            for t, u in zeilen:
+                if int(t // ch) == lp - 1:
+                    y0 = mt + t - (lp - 1) * ch
+                    p.drawLine(int(x), int(y0), int(x), int(mt + min(u, lp * ch) - (lp - 1) * ch))
+            p.restore()
     if n_sp > 1 and page.spalten_linie:
         from PySide6.QtGui import QColor, QPen
         p.save()
@@ -554,7 +578,8 @@ def _page_layout(page: PageSettings) -> QPageLayout:
 
 
 def export_pdf(path: str, qdoc: QTextDocument, page: PageSettings, title: str = "", author: str = "", noten: dict | None = None,
-               lesezeichen: dict | None = None, silben: dict | None = None, kommentare: list | None = None) -> int:
+               lesezeichen: dict | None = None, silben: dict | None = None, kommentare: list | None = None,
+               extra: dict | None = None) -> int:
     from PySide6.QtCore import QByteArray
     w = QPdfWriter(path)
     w.setResolution(300)
@@ -568,6 +593,7 @@ def export_pdf(path: str, qdoc: QTextDocument, page: PageSettings, title: str = 
                                              "<rdf:Description xmlns:dc=\"http://purl.org/dc/elements/1.1/\"><dc:creator><rdf:Seq><rdf:li>"
                                              + esc + "</rdf:li></rdf:Seq></dc:creator></rdf:Description></rdf:RDF></x:xmpmeta>").encode("utf-8")))
     opt = {"noten": noten} if noten else {}
+    opt.update(extra or {})
     if lesezeichen:
         opt["lesezeichen"] = lesezeichen
     if silben:

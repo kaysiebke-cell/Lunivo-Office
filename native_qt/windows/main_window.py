@@ -566,7 +566,9 @@ class MainWindow(QMainWindow):
                     k = t.editor.kommentare.get(int(b["wert"]), {})
                     komm.append((b["von"], f'{k.get("autor", "")}: {k.get("text", "")}'.strip(": ")))
             n = export_pdf(path, t.editor.document(), t.page, os.path.splitext(t.title)[0], autor, t.editor.noten, lz,
-                           self._silben_fuer_druck(), komm)
+                           self._silben_fuer_druck(), komm,
+                           {k: v for k, v in self.druckoptionen().items()
+                            if k in ("versteckt", "felder_code", "zeichnungen", "balken", "hervorhebungen", "textmarken", "textgrenzen", "zuschnitt")})
         except Exception as e:  # PDF-Ausgabe darf das Programm nicht beenden
             QMessageBox.critical(self, "PDF-Export fehlgeschlagen", str(e)); return
         self.statusBar().showMessage(f"PDF gespeichert ({n} Seiten): {path}", 5000)
@@ -607,7 +609,11 @@ class MainWindow(QMainWindow):
                 "textmarken": self.settings.get_bool("drucken/textmarken", False),
                 "textgrenzen": self.settings.get_bool("drucken/textgrenzen", False),
                 "zuschnitt": self.settings.get_bool("drucken/zuschnitt", False),
-                "silbenfarben": self._silben_fuer_druck()}
+                "silbenfarben": self._silben_fuer_druck(),
+                "versteckt": self.settings.get_bool("drucken/versteckt", False),
+                "felder_code": self.settings.get_bool("drucken/felder_code", False),
+                "zeichnungen": self.settings.get_bool("drucken/zeichnungen", True),
+                "balken": self.settings.get("aenderungen/balken", "links")}
 
     def _silben_fuer_druck(self):
         from ..editor import silbenfarben as S
@@ -653,7 +659,7 @@ class MainWindow(QMainWindow):
         tabelle = [("F3", b.schnellbaustein), ("F4", b.vorlesen), ("F5", self.toggle_sidebar), ("F6", b.welcheHilfe),
                    ("F7", lambda: self.assistant.pruefen(True)), ("F8", b.kiKorrektur),
                    ("Ctrl++", b.groesser), ("Ctrl+-", b.kleiner), ("Ctrl+0", b.normal),
-                   ("Ctrl+Tab", lambda: self._tab_weiter(1)), ("Ctrl+Shift+Tab", lambda: self._tab_weiter(-1))]
+                   ("Ctrl+Shift+H", b.ausblenden), ("Ctrl+Tab", lambda: self._tab_weiter(1)), ("Ctrl+Shift+Tab", lambda: self._tab_weiter(-1))]
         self._kuerzel = []
         for taste, fn in tabelle:
             sc = QShortcut(QKeySequence(taste), self)
@@ -850,6 +856,7 @@ class MainWindow(QMainWindow):
         e.set_lesehilfe(PAPIERTOENE.get(s.get("lesehilfe/papier", "Weiß"), "#ffffff"),
                         float(s.get("lesehilfe/buchstaben", 0)), float(s.get("lesehilfe/wort", 0)))
         self.silbenfarben_anwenden(e)
+        self.versteckt_anwenden(e)
 
     def mini_zeigen(self, ed, pos, rechtsklick: bool = False):
         from ..widgets.mini_leiste import MiniLeiste
@@ -859,6 +866,11 @@ class MainWindow(QMainWindow):
             self._mini.hide()
         else:
             self._mini.zeigen(ed, pos, rechtsklick)
+
+    def versteckt_anwenden(self, e=None):
+        an = self.settings.get_bool("ui/versteckt_zeigen", False)
+        for ed in ([e] if e is not None else [t.editor for t in self._doc_tabs()]):
+            ed.set_versteckt_zeigen(an)
 
     def silbenfarben_anwenden(self, e=None):
         from ..editor import silbenfarben as S

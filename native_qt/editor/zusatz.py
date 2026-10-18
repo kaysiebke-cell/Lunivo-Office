@@ -38,6 +38,8 @@ def leere_meta() -> dict:
 P_FELD = QTextFormat.UserProperty + 26           # Feldanweisung, z. B. "SEQ Abbildung \* ARABIC"; der Text ist das Feldergebnis
 P_INDEX = QTextFormat.UserProperty + 27          # Stichwort für das Stichwortverzeichnis
 P_ZITAT = QTextFormat.UserProperty + 28          # Tag der zitierten Quelle
+P_VERSTECKT = QTextFormat.UserProperty + 32      # 1: ausgeblendeter Text (DOCX w:vanish)
+P_OBJEKT = QTextFormat.UserProperty + 33         # am Bild: JSON {"art": "form|wordart|diagramm|smartart|formel|piktogramm", "daten": {…}}
 
 # Absatz-Eigenschaften (QTextBlockFormat); STYLE_PROP = UserProperty + 1 gehört den Formatvorlagen
 B_TOC = QTextFormat.UserProperty + 2             # "kopf" | "zeile1".."zeile3" — Teil eines Verzeichnisses

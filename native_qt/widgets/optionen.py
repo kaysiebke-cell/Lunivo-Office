@@ -241,8 +241,7 @@ class OptionenDialog(QDialog):
     def _ansicht(self, titel):
         p = _Seite(self.w, titel, ["Lineal", "Vertikales Lineal", "Gitternetzlinien",
                                    "Live-Vorschau", "Tipp für Kopf-/Fußzeile",
-                                   "Feldfunktionen drucken, Feldschattierung",
-                                   "Ausgeblendeter Text, Objektanker"])
+                                   ])
         f = p.gruppe("Anzeigen")
         p.haken(f, "ui/marken", "Textbegrenzungen (Eckmarken)", True, self.w.set_marken)
         p.haken(f, "ui/seitenleiste", "Seitenleiste beim Start", True)
@@ -250,7 +249,16 @@ class OptionenDialog(QDialog):
         f = p.gruppe("Minisymbolleiste")
         p.haken(f, "ui/mini_auswahl", "Minisymbolleiste beim Markieren von Text zeigen", True)
         p.haken(f, "ui/mini_rechtsklick", "Minisymbolleiste beim Rechtsklick zeigen", True)
+        f = p.gruppe("Weitere Anzeige")
+        p.haken(f, "ui/versteckt_zeigen", "Ausgeblendeten Text anzeigen (grau, gepunktet)", False, lambda _: self.w.versteckt_anwenden())
+        p.haken(f, "ui/objektanker", "Objektanker anzeigen (bei sichtbaren Formatierungszeichen)", True)
+        p.haken(f, "ui/kopffuss_anzeigen", "Kopf- und Fußzeile im Seitenrand zeigen", True)
+        p.haken(f, "ui/kopffuss_tipp", "Tipp „Doppelklick bearbeitet Kopf-/Fußzeile“ zeigen", True)
+        p.auswahl(f, "ui/feldschattierung", "Feldschattierung", ["Nie", "Bei Auswahl", "Immer"], "Bei Auswahl", lambda _: [t.editor._overlays_neu() for t in self.w._doc_tabs()])
         f = p.gruppe("Druckoptionen der Ansicht")
+        p.haken(f, "drucken/versteckt", "Ausgeblendeten Text drucken", False)
+        p.haken(f, "drucken/felder_code", "Feldfunktionen statt Ergebnissen drucken", False)
+        p.haken(f, "drucken/zeichnungen", "Zeichnungsobjekte drucken (Formen, WordArt, Diagramme)", True)
         p.haken(f, "drucken/hervorhebungen", "Hervorhebungen drucken (Textmarker)", True)
         p.haken(f, "drucken/textgrenzen", "Textbegrenzungen drucken (gestrichelter Rahmen um die Textfläche)", False)
         p.haken(f, "drucken/zuschnitt", "Zuschnittsmarken drucken (Ecken der Textfläche)", False)
@@ -290,6 +298,8 @@ class OptionenDialog(QDialog):
         p.haken(f, "schreibhilfe/akTabEinzug", "Tab / Rücktaste am Absatzanfang ändert den Einzug", True)
         p.haken(f, "schreibhilfe/akErstzeile", "Leerzeichen am Absatzanfang werden Erstzeileneinzug", False)
         p.haken(f, "schreibhilfe/akZentriert", "Zentrieren hebt den Erstzeileneinzug auf", True)
+        p.haken(f, "schreibhilfe/akKreiszahl", "Zahl in Klammern automatisch in den Kreis setzen: (1) → ①", False)
+        p.haken(f, "schreibhilfe/akRechtsLeer", "Leerzeichen am Ende rechtsbündiger Zeilen entfernen", False)
         f = p.gruppe("Wortvorhersage")
         p.haken(f, "schreibhilfe/vorhersage", "Wortvorhersage", True, lambda on: self.w.assistant.setze("vorhersage", on))
         p.abschluss()
