@@ -79,7 +79,7 @@ def test_vorhersage_mit_thema(app, tmp_path, monkeypatch):
 def test_band_ist_das_alte_register(app, tmp_path, monkeypatch):
     w = win(tmp_path, monkeypatch)
     sichtbar = [w.band.reiter.tabText(i) for i in range(w.band.reiter.count()) if w.band.reiter.isTabVisible(i)]
-    assert sichtbar == ["Datei", "Start", "Einfügen", "Seitenlayout", "Verweise", "Überprüfen", "Schreibhilfe", "KI", "Ansicht"]
+    assert sichtbar == ["Datei", "Start", "Einfügen", "Seitenlayout", "Verweise", "Überprüfen", "Schreibhilfe", "Ansicht"]
     # Kontext-Register erscheinen nur bei Bedarf
     assert not w.band.reiter.isTabVisible(w.band.kontext_index["tabelle"])
     e0 = w.current_editor(); e0.insert_table(2, 2); w._sync_format()

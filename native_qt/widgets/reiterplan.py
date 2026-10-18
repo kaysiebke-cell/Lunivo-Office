@@ -125,6 +125,17 @@ def plan(register: dict) -> list[dict]:
     if not any(k.get("tun") == "silbenfarben" for k in lesen["knoepfe"]):          # Lesehilfe für Legasthenie (nicht im alten Register)
         lesen["knoepfe"] = lesen["knoepfe"] + [_k("farbe", "Silben farbig", "silbenfarben", haken=True),
                                                _k("zahnrad", "Silben einstellen …", "silbenEinstellen")]
+    vorhanden = {k.get("tun") for g in sh["gruppen"] for k in g["knoepfe"]}
+    ki_gruppe = next((g for g in sh["gruppen"] if g["name"] == "KI"), None)
+    for g in KI["gruppen"]:                                  # KI-Funktionen gehören in den Reiter Schreibhilfe (kein eigener KI-Reiter)
+        if g["name"] in ("Seitenleiste", "Korrektur"):           # beides steht schon in der Seitenleiste
+            continue
+        neu = [k for k in g["knoepfe"] if k.get("tun") not in vorhanden or not k.get("tun")]
+        if g["name"] == "Einrichten" and ki_gruppe is not None:
+            sh["gruppen"][sh["gruppen"].index(ki_gruppe)] = dict(ki_gruppe, knoepfe=ki_gruppe["knoepfe"] + neu)
+        elif neu:
+            ki_pos = sh["gruppen"].index(ki_gruppe) if ki_gruppe else len(sh["gruppen"])
+            sh["gruppen"].insert(ki_pos, dict(g, knoepfe=neu))
     ans = nach["Ansicht"] = dict(nach["Ansicht"])
     ans["gruppen"] = [dict(g) for g in ans["gruppen"]]
     anz = next(g for g in ans["gruppen"] if g["name"] == "Anzeigen")
@@ -138,5 +149,5 @@ def plan(register: dict) -> list[dict]:
                                               _k("schliessen", "Felder zurücksetzen", "formLeeren")]
     verweise = dict(nach["Referenzen"], name="Verweise")
     reiter = [DATEI, nach["Start"], nach["Einfügen"], nach["Seitenlayout"], verweise, nach["Überprüfen"],
-              nach["Schreibhilfe"], KI, nach["Ansicht"], nach["Sendungen"]]
+              nach["Schreibhilfe"], nach["Ansicht"], nach["Sendungen"]]
     return reiter + [TABELLENTOOLS, BILDTOOLS, FORMTOOLS, KOPFFUSS]

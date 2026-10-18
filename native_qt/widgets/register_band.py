@@ -194,10 +194,10 @@ class RegisterBand(QWidget):
     def _gruppe(self, g: dict) -> QWidget:
         rahmen = QWidget()
         v = QVBoxLayout(rahmen)
-        v.setContentsMargins(5, 2, 5, 0)
+        v.setContentsMargins(3, 2, 3, 0)
         v.setSpacing(0)
         inhalt = QHBoxLayout()
-        inhalt.setSpacing(4)
+        inhalt.setSpacing(1)
         inhalt.setAlignment(Qt.AlignLeft | Qt.AlignTop)
         v.addLayout(inhalt, 1)
         if g.get("katalog") == "raender":
@@ -382,7 +382,7 @@ class RegisterBand(QWidget):
             k.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
             k.setText(_zweizeilig(name))
             breit = max(k.fontMetrics().horizontalAdvance(z) for z in _zweizeilig(name).split("\n"))
-            k.setMinimumWidth(max(56, breit + 22))
+            k.setMinimumWidth(max(48, breit + 10))
             k.setFixedHeight(68)
         elif icons.hat(sym):
             k.setToolButtonStyle(Qt.ToolButtonIconOnly)
