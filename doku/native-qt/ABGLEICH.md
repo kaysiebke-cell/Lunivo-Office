@@ -1,6 +1,6 @@
 # Abgleich: altes Register ↔ native Qt-Fassung
 
-Erzeugt von `werkzeug/abgleich-native.py`. **116 Knöpfe umgesetzt, 122 offen.** Offene Knöpfe stehen im Programm sichtbar, aber ausgegraut da.
+Erzeugt von `werkzeug/abgleich-native.py`. **128 Knöpfe umgesetzt, 112 offen.** Offene Knöpfe stehen im Programm sichtbar, aber ausgegraut da.
 
 ## Datei
 
@@ -43,6 +43,8 @@ Erzeugt von `werkzeug/abgleich-native.py`. **116 Knöpfe umgesetzt, 122 offen.**
 - ✅ Dokumentinformationen
 - ⬜ Dokument schützen  (`dokumentSchuetzen`)
 - ⬜ Dokument teilen (optional)  (`dokumentTeilen`)
+- ✅ Mit WPS Writer öffnen
+- ✅ Mit LibreOffice öffnen
 
 **Programm**
 
@@ -285,26 +287,26 @@ Erzeugt von `werkzeug/abgleich-native.py`. **116 Knöpfe umgesetzt, 122 offen.**
 
 **KI-Schreibwerkzeuge**
 
-- ⬜ Text entwerfen  (`kiEntwerfen`)
-- ⬜ Text umformulieren  (`kiUmformulieren`)
-- ⬜ Text zusammenfassen  (`kiZusammenfassen`)
-- ⬜ Text übersetzen  (`w.kiUebersetzen`)
+- ✅ Text entwerfen
+- ✅ Text umformulieren
+- ✅ Text zusammenfassen
+- ✅ Text übersetzen
 
 **Korrektur**
 
-- ⬜ KI-Korrektur  (`kiKorrektur`)
-- ⬜ Verbesserungsvorschläge  (`kiVorschlaege`)
+- ✅ KI-Korrektur
+- ✅ Verbesserungsvorschläge
 
 **Seitenleiste**
 
 - ✅ Schreibhilfe-Seitenleiste
-- ⬜ KI-Chat  (`w.chatUmschalten`)
+- ✅ KI-Chat
 
 **Einrichten**
 
 - ⬜ Eigenen Assistenten erstellen  (`w.assistentErstellen`)
-- ⬜ Eigenen Anbieter hinzufügen  (`w.eigenenAnbieterHinzufuegen`)
-- ⬜ KI-Konfiguration  (`w.kiKonfiguration`)
+- ✅ Eigenen Anbieter hinzufügen
+- ✅ KI-Konfiguration
 
 
 ## Ansicht
@@ -457,7 +459,7 @@ Erzeugt von `werkzeug/abgleich-native.py`. **116 Knöpfe umgesetzt, 122 offen.**
 **Sprache**
 
 - ⬜ Silbentrennung  (`silbentrennung`)
-- ⬜ Übersetzen  (`w.kiUebersetzen`)
+- ✅ Übersetzen
 - ⬜ Thesaurus  (`thesaurus`)
 - ✅ Sprache und Prüfung
 

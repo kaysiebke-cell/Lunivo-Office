@@ -1,3 +1,7 @@
+> **Native Fassung (Qt 6 / PySide6):** Auf dem Branch `native-qt6-port` entsteht Lunivo Writer als echte Linux-Anwendung ohne
+> Web-Oberfläche — Start mit `./starten-qt.sh`, Beschreibung in [doku/native-qt/README.md](doku/native-qt/README.md),
+> Stand in [BERICHT.md](doku/native-qt/BERICHT.md).
+
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="bilder/lunivo-office-dunkel.png">
