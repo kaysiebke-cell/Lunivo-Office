@@ -12,7 +12,7 @@ from .flow_layout import FlowLayout
 
 CHIP = ("QPushButton { border: 1px solid palette(mid); border-radius: 11px; padding: 3px 12px; color: palette(window-text); }"
         "QPushButton:checked { background: #2f6fb5; color: white; border-color: #2f6fb5; }")
-CHIP_GRUEN = ("QPushButton { border: 1px solid palette(mid); border-radius: 11px; padding: 3px 12px; font-weight: bold; color: palette(window-text); }"
+CHIP_GRUEN = ("QPushButton { border: 1px solid palette(mid); border-radius: 11px; padding: 0px; font-weight: bold; color: palette(window-text); }"
               "QPushButton:checked { background: #2f9e75; color: white; border-color: #2f9e75; }")
 FARBE = {"fehler": "#e8590c", "tipp": "#1c7ed6", "hinweis": "#868e96"}
 LEER = ("Nichts gefunden. Das heißt nicht, dass alles richtig ist — die Schreibhilfe sucht nur die Fehler, "
@@ -128,6 +128,7 @@ class HinweisKarte(QFrame):
 
 class SchreibhilfePanel(QWidget):
     _ollama_gefunden = Signal(list)
+    bereich_geaendert = Signal(int)
 
     def __init__(self, assistent, parent=None):
         super().__init__(parent)
@@ -137,54 +138,49 @@ class SchreibhilfePanel(QWidget):
         aussen = QVBoxLayout(self)
         aussen.setContentsMargins(0, 0, 0, 0)
         aussen.setSpacing(0)
-        kopf = QHBoxLayout()
-        kopf.setContentsMargins(10, 8, 10, 0)
-        kopf.setSpacing(4)
-        self.bereiche = QButtonGroup(self)
         self.stapel = QStackedWidget()
-        for i, name in enumerate(("Überprüfen", "Schreibhilfe", "KI")):
-            b = QPushButton(name)
-            b.setCheckable(True)
-            b.setStyleSheet(CHIP)
-            b.setChecked(i == 0)
-            b.clicked.connect(lambda _=False, i=i: self.zeige_bereich(i))
-            self.bereiche.addButton(b, i)
-            kopf.addWidget(b)
-        kopf.addStretch(1)
-        aussen.addLayout(kopf)
         aussen.addWidget(self.stapel, 1)
         seite0 = QWidget()
         self.stapel.addWidget(seite0)
         v = QVBoxLayout(seite0)
         v.setContentsMargins(14, 12, 14, 10)
         v.setSpacing(8)
+        # Kopf wie im alten Lunivo: Titel, die drei Schalter der Schreibbrücke (We/Vo/Ko), rechts „Prüfen“
+        kopf = QHBoxLayout()
+        kopf.setSpacing(6)
         t = QLabel("<b style='font-size:12pt'>Schreib <span style='color:#2f6fb5'>|</span> hilfe</b>")
         t.setTextFormat(Qt.RichText)
+        kopf.addWidget(t)
+        self.chips = {}
+        for key, kurz, name, lang in (
+                ("wellen", "We", "Wellen", "Rote Wellenlinien unter unbekannten Wörtern"),
+                ("vorhersage", "Vo", "Vorhersage", "Wortvorhersage ab drei Buchstaben"),
+                ("autokorr", "Ko", "AutoKorr", "AutoKorrektur beim Tippen")):
+            b = QPushButton(kurz)
+            b.setCheckable(True)
+            b.setChecked(self.a.an(key))
+            b.setToolTip(f"{name} — {lang} — {'an' if b.isChecked() else 'aus'}")
+            b.setFixedSize(40, 26)
+            b.setStyleSheet(CHIP_GRUEN)
+            b.toggled.connect(lambda on, k=key, b=b, n=name, l=lang: (self.a.setze(k, on), b.setToolTip(f"{n} — {l} — {'an' if on else 'aus'}")))
+            self.chips[key] = b
+            kopf.addWidget(b)
+        kopf.addStretch(1)
+        self.pruefen = QPushButton("Prüfen")
+        self.pruefen.clicked.connect(lambda: self.a.pruefen(True))
+        kopf.addWidget(self.pruefen)
+        v.addLayout(kopf)
         s = QLabel("Sucht die Fehler, die ein Rechtschreibprüfer nicht finden kann.")
         s.setWordWrap(True)
         s.setStyleSheet("color: palette(mid);")
-        v.addWidget(t)
         v.addWidget(s)
-        self.pruefen = QPushButton("Prüfen")
-        self.pruefen.setMinimumHeight(32)
-        self.pruefen.clicked.connect(lambda: self.a.pruefen(True))
-        v.addWidget(self.pruefen)
-        z = QHBoxLayout()
-        self.chips = {}
-        for key, text in (("wellen", "Wellen"), ("vorhersage", "Vorhersage"), ("autokorr", "AutoKorr")):
-            b = QPushButton(text)
-            b.setCheckable(True)
-            b.setChecked(self.a.an(key))
-            b.setStyleSheet(CHIP_GRUEN)
-            b.toggled.connect(lambda on, k=key: self.a.setze(k, on))
-            self.chips[key] = b
-            z.addWidget(b)
+        zl = QHBoxLayout()
         l = QLabel("<a href='#' style='color:#6ea8e0'>Welche Hilfe wann?</a>")
         l.setTextFormat(Qt.RichText)
         l.linkActivated.connect(lambda _: self.welche_hilfe())
-        z.addWidget(l)
-        z.addStretch(1)
-        v.addLayout(z)
+        zl.addWidget(l)
+        zl.addStretch(1)
+        v.addLayout(zl)
         self.liste = QVBoxLayout()
         self.liste.setSpacing(6)
         host = QWidget()
@@ -246,12 +242,10 @@ class SchreibhilfePanel(QWidget):
         v.addWidget(self.ki_aktion)
         self.a.fundeGeaendert.connect(self.zeige)
         self._ollama_gefunden.connect(self._ollama_da)
-        self._seite_sh = QScrollArea()
         self._seite_ki = QScrollArea()
-        for sc in (self._seite_sh, self._seite_ki):
-            sc.setWidgetResizable(True)
-            sc.setFrameShape(QFrame.NoFrame)
-            self.stapel.addWidget(sc)
+        self._seite_ki.setWidgetResizable(True)
+        self._seite_ki.setFrameShape(QFrame.NoFrame)
+        self.stapel.addWidget(self._seite_ki)
 
     # ---- KI ------------------------------------------------------------------------------------
     def verbinde_ki(self, dienst, fenster) -> None:
@@ -333,25 +327,25 @@ class SchreibhilfePanel(QWidget):
         self.liste.insertWidget(0, m)
 
     def zeige_bereich(self, i: int) -> None:
+        """0 = Schreibhilfe, 1 = KI-Chat."""
         self.stapel.setCurrentIndex(i)
-        self.bereiche.button(i).setChecked(True)
+        self.bereich_geaendert.emit(i)
 
-    def setze_bereiche(self, band, sh_gruppen: list, ki_gruppen: list) -> None:
-        """Bereich „Schreibhilfe“ und „KI“ aus den Gruppen des alten Registers bauen."""
-        for sc, gruppen, titel in ((self._seite_sh, sh_gruppen, "Schreibhilfe"), (self._seite_ki, ki_gruppen, "KI")):
-            host = QWidget()
-            lay = QVBoxLayout(host)
-            lay.setContentsMargins(12, 10, 12, 10)
-            lay.setSpacing(8)
-            if titel == "KI":
-                from .chat_panel import ChatPanel
-                self.chat = ChatPanel(self.ki, self.fenster)
-                lay.addWidget(self.chat, 1)
-            for g in gruppen:
-                lay.addWidget(band.gruppe_widget(g))
-            if titel != "KI":
-                lay.addStretch(1)
-            sc.setWidget(host)
+    def setze_bereiche(self, band, ki_gruppen: list) -> None:
+        """Den KI-Bereich aus den Gruppen des alten Registers bauen (Chat und KI-Gruppen)."""
+        host = QWidget()
+        lay = QVBoxLayout(host)
+        lay.setContentsMargins(12, 10, 12, 10)
+        lay.setSpacing(8)
+        zurueck = QPushButton("Zur Schreibhilfe")
+        zurueck.clicked.connect(lambda: self.zeige_bereich(0))
+        lay.addWidget(zurueck)
+        from .chat_panel import ChatPanel
+        self.chat = ChatPanel(self.ki, self.fenster)
+        lay.addWidget(self.chat, 1)
+        for g in ki_gruppen:
+            lay.addWidget(band.gruppe_widget(g))
+        self._seite_ki.setWidget(host)
 
     def zeige(self, funde: list) -> None:
         while self.liste.count() > 1:

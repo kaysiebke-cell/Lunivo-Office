@@ -74,7 +74,13 @@ class WritingAssistant(QObject):
                 self.pruefen()
             elif self.editor is not None:
                 self.editor.set_wellen([])
-        self.status.emit(f"{name.capitalize()} {'an' if wert else 'aus'}.")
+        an, aus = {
+            "wellen": ("Rote Wellenlinien an — von Lunivo, beim Schreiben.",
+                       "Rote Wellenlinien aus. Die Funde bleiben in der Seitenleiste."),
+            "vorhersage": ("Wortvorhersage an — ab drei Buchstaben. Strg+1 bis Strg+6 nimmt einen Vorschlag.", "Wortvorhersage aus."),
+            "autokorr": ("AutoKorrektur an.", "AutoKorrektur aus."),
+        }.get(name, (f"{name.capitalize()} an.", f"{name.capitalize()} aus."))
+        self.status.emit(an if wert else aus)
 
     def setze_thema(self, name: str) -> None:
         self.thema = name

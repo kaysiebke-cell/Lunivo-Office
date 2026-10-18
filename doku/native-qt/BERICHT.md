@@ -2,11 +2,11 @@
 
 Alle Angaben stammen aus tatsächlichen Läufen in der Entwicklungsumgebung (Linux, Qt „offscreen“, LibreOffice 25.x vorhanden).
 **Nicht** auf einem echten Linux-Mint-Desktop mit Bildschirm, Drucker, Ollama/Claude, LanguageTool, Piper oder WPS getestet —
-das ist offen (siehe 6). Der Prüfbogen ([PRUEFBOGEN.md](PRUEFBOGEN.md)) ist der Maßstab: **415 Punkte, ✅ 287 · ◐ 69 · ⬜ 59**;
+das ist offen (siehe 6). Der Prüfbogen ([PRUEFBOGEN.md](PRUEFBOGEN.md)) ist der Maßstab: **415 Punkte, ✅ 295 · ◐ 71 · ⬜ 49**;
 „✅“ heißt „Befehl/Funktion vorhanden“, einzeln durch `tests/` belegt nur dort, wo im Eintrag ein Test genannt ist.
 
 ## 1. Dateien
-`native_qt/` (≈ 15 700 Zeilen Python in 7 Paketen), `tests/` (22 Testdateien, 125 Tests), `werkzeug/` (Exportskripte für Register,
+`native_qt/` (≈ 15 700 Zeilen Python in 7 Paketen), `tests/` (22 Testdateien, 136 Tests), `werkzeug/` (Exportskripte für Register,
 Symbolkatalog, Vorlagen, Handbuch; Abgleich-Skripte), `starten-qt.sh`, `requirements*.txt`, `doku/native-qt/*`. Die alte
 Web-Oberfläche (`oberflaeche/`, `start.py`) ist unverändert; auf `main` wurde nichts geändert.
 
@@ -66,7 +66,7 @@ Hinweise: JSAPI-Erweiterungen laut Entwicklerdokumentation auf open.wps.cn (chin
 Steuerung ≠ Bibliothek: Das Programm benutzt **keine** WPS-Interna.
 
 ## 5. Tests (tatsächlich ausgeführt)
-`pytest tests`: **125 bestanden, 0 fehlgeschlagen** (≈ 45 s). Neben den Grundlagen (DOCX-Roundtrip, PDF, Einstellungen, Editor,
+`pytest tests`: **136 bestanden, 0 fehlgeschlagen** (≈ 45 s). Neben den Grundlagen (DOCX-Roundtrip, PDF, Einstellungen, Editor,
 Fenster, KI mit Fake-Servern) jetzt auch: Zoom, Lineale, Weblayout/Zwei Seiten/Gliederung, Seitenfarbe/-rahmen/Wasserzeichen,
 Kommentare/Noten/Änderungen (Editor und DOCX), Verweise und Verzeichnisse (mit LibreOffice-Öffnung), Einfügen, Sendungen,
 Vorlagen und Lücken, Hilfe/Funktionstasten, Oberfläche wechseln, Werkzeug-Reiter, Gedächtnis, Kennwort, HTML-Codierung, eine
@@ -83,10 +83,26 @@ Druckoptionen am Drucker, Zwischenstände, Sichern/Zurückholen, Gitternetz, Dun
 * **Nicht übertragen:** Tabellenblatt/Diagramm-Tools/SmartArt/Gleichungswerkzeuge/Zeichentools (Tabellenkalkulation und
   Präsentation sind ausgeschlossen), Sprechblasen bei Änderungen, „Gerade/ungerade Seiten“, „Dokument teilen“, Maßeinheit,
   Zuschnittsmarken drucken, Live-Vorschau/Minisymbolleiste, Wort-Extras.
-* **Optionen** (Rest): siehe `PRUEFBOGEN.md` (Abschnitt OPTIONEN) — 59 Punkte insgesamt offen.
+* **Optionen** (Rest): siehe `PRUEFBOGEN.md` (Abschnitt OPTIONEN) — 49 Punkte insgesamt offen.
 * Das **Handbuch** ist das der Web-Fassung (als Markdown); es beschreibt teils die Web-Oberfläche.
 * Keine Behauptung vollständiger Word- oder WPS-Kompatibilität; Word selbst stand nicht zum Gegenprüfen zur Verfügung
   (geprüft mit LibreOffice und python-docx).
 
 ## 7. Installation und Start
 Siehe [INSTALLATION.md](INSTALLATION.md): `./starten-qt.sh`.
+
+### Nachtrag: KI-Konfiguration und Bildgenerierung
+KI-Konfiguration (Aufgaben Chatbot, Zusammenfassen, Übersetzung, Textanalyse, Bildgenerierung), „Liste der KI-Modelle“ und
+„Eigenen Anbieter hinzufügen“ (Vorlagen, Modellliste per `GET <URL>/models`, Fähigkeiten-Marken) nach dem alten Lunivo. „Text in Bild“
+(KI-Reiter, Rechtsklick auf Markierung, Knopf „Bild“ im KI-Chat) schickt die Beschreibung an `POST <URL>/images/generations` des
+Anbieters mit „Bilder“. Getestet gegen einen gefälschten OpenAI-Server; **nicht** gegen einen echten Bilddienst.
+
+### Nachtrag: Silben farbig (Lesehilfe für Legasthenie), Silbentrennung, Textumbruch
+* **Silben farbig** (Reiter Schreibhilfe ▸ Lesen, Optionen ▸ Leichter lesen): jede Silbe abwechselnd in einer anderen Farbe, nur als Anzeige
+  (`QSyntaxHighlighter`) — Text und Datei bleiben unverändert. Einstellbar: Farbpaare, eigene Farben (2 oder 3), Schriftfarbe/Marker/beides,
+  fett, Mindestlänge, einsilbige Wörter, Farbwechsel je Wort, nur Absatz mit dem Cursor, auch beim Drucken/PDF, Sprache. Die Silben kommen
+  aus den Trennmustern von pyphen; das sind Trennstellen, keine Silbengrenzen nach Duden — bei zusammengesetzten Wörtern kann eine
+  Grenze danebenliegen. Nicht von Menschen mit Legasthenie erprobt: die Voreinstellungen sind meine Annahme.
+* **Silbentrennung** (wie im alten Lunivo: Zeilenumbruch mit Trennstrichen): pyphen, wirkt in Seitenansicht, Druck, PDF; DOCX `autoHyphenation`.
+  Die Bearbeitungsansicht zeigt keine Trennstriche.
+* **Textumbruch um Bilder**: links/rechts, Text umfließt; DOCX `wp:anchor` mit `wrapSquare` (gelesen und geschrieben, mit LibreOffice geprüft).

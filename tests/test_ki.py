@@ -128,3 +128,42 @@ def test_diff_ungleiche_zeilen_tauscht_ganz():
 def test_ollama_modelle(server, monkeypatch, tmp_path):
     monkeypatch.setattr(K, "OLLAMA_URL", server)
     assert K.KI(konfig(tmp_path)).ollama_modelle() == ["a:2", "b:1"]
+
+
+def test_bildgenerierung_und_anbieter(tmp_path):
+    """Anbieter mit „Bilder“, Aufgabe zuweisen, Bild von einem gefälschten OpenAI-Server holen."""
+    import base64, json, threading
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+    from PySide6.QtGui import QImage, QColor
+    from PySide6.QtCore import QBuffer, QIODevice
+    img = QImage(8, 8, QImage.Format_RGB32); img.fill(QColor("red"))
+    buf = QBuffer(); buf.open(QIODevice.WriteOnly); img.save(buf, "PNG")
+    png = base64.b64encode(bytes(buf.data())).decode()
+    gesehen = {}
+
+    class H(BaseHTTPRequestHandler):
+        def do_POST(self):
+            gesehen["pfad"] = self.path
+            gesehen["body"] = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+            body = json.dumps({"data": [{"b64_json": png}]}).encode()
+            self.send_response(200); self.send_header("Content-Length", str(len(body))); self.end_headers(); self.wfile.write(body)
+        def do_GET(self):
+            body = json.dumps({"data": [{"id": "bild-1"}, {"id": "text-1"}]}).encode()
+            self.send_response(200); self.send_header("Content-Length", str(len(body))); self.end_headers(); self.wfile.write(body)
+        def log_message(self, *a): pass
+    srv = HTTPServer(("127.0.0.1", 0), H)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    url = f"http://127.0.0.1:{srv.server_port}/v1"
+    k = K.KIKonfig(str(tmp_path / "ki.json"))
+    ki = K.KI(k)
+    assert "fehler" in ki.bild_erzeugen("ein Hund")                    # ohne Zuweisung
+    assert K.anbieter_modelle(url) == ["bild-1", "text-1"]
+    a = k.anbieter_hinzufuegen("Bilder", url, "tok", "bild-1", ["text", "bilder", "unsinn"])
+    assert a["verwendungFuer"] == ["text", "bilder"]
+    assert [m["id"] for m in k.alle_modelle() if "bilder" in m["verwendungFuer"]] == ["eigen:" + a["id"]]
+    k.aufgabe_setzen("bildgenerierung", "eigen:" + a["id"])
+    r = ki.bild_erzeugen("ein Hund")
+    assert QImage.fromData(r["bild"]).width() == 8
+    assert gesehen["pfad"] == "/v1/images/generations" and gesehen["body"]["prompt"] == "ein Hund"
+    k.anbieter_entfernen(a["id"])
+    assert "bildgenerierung" not in k["aufgaben"]

@@ -192,8 +192,8 @@
   "wo": "Reiter Seitenlayout ▸ Größe (Befehle.w_setzePapier)"
  },
  "SEITENLAYOUT|Textumbruch": {
-  "status": "⬜",
-  "wo": "Bilder stehen im Text; frei schwebende Objekte kennt Qt nicht"
+  "status": "◐",
+  "wo": "Bild links/rechts vom Text umflossen (editor/umbruch.py, DOCX wp:anchor wrapSquare, test_werkzeuge); „Oben und unten“, „Hinter/vor dem Text“ und freie Position fehlen"
  },
  "SEITENLAYOUT|Bild/Objekt anordnen": {
   "status": "◐",
@@ -532,28 +532,28 @@
   "wo": "nicht übertragen (in den Optionen als gesperrte Zeile sichtbar)"
  },
  "OPTIONEN > Ansicht > Druckoptionen|Hervorhebungen drucken": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "✅",
+  "wo": "drucken/hervorhebungen, textgrenzen, zuschnitt, textmarken → pagination.render (test_werkzeuge)"
  },
  "OPTIONEN > Ansicht > Druckoptionen|Textbegrenzungen drucken": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "✅",
+  "wo": "drucken/hervorhebungen, textgrenzen, zuschnitt, textmarken → pagination.render (test_werkzeuge)"
  },
  "OPTIONEN > Ansicht > Druckoptionen|Zuschnittsmarken anzeigen": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "✅",
+  "wo": "drucken/hervorhebungen, textgrenzen, zuschnitt, textmarken → pagination.render (test_werkzeuge)"
+ },
+ "OPTIONEN > Ansicht > Druckoptionen|Textmarken drucken": {
+  "status": "✅",
+  "wo": "drucken/hervorhebungen, textgrenzen, zuschnitt, textmarken → pagination.render (test_werkzeuge)"
  },
  "OPTIONEN > Ansicht > Druckoptionen|Feldfunktionen drucken": {
   "status": "⬜",
-  "wo": "nicht übertragen"
- },
- "OPTIONEN > Ansicht > Druckoptionen|Textmarken drucken": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "wo": "Felder erscheinen nur mit ihrem Ergebnis; keine Feldcodes und keine Schattierung"
  },
  "OPTIONEN > Ansicht > Druckoptionen|Feldschattierung": {
   "status": "⬜",
-  "wo": "nicht übertragen"
+  "wo": "Felder erscheinen nur mit ihrem Ergebnis; keine Feldcodes und keine Schattierung"
  },
  "OPTIONEN > Ansicht > Formatierungszeichen|Alle anzeigen": {
   "status": "✅",
@@ -612,8 +612,8 @@
   "wo": "Qt-Standard (Ziehen und Ablegen), nicht abschaltbar"
  },
  "OPTIONEN > Bearbeiten > Bearbeitungsoptionen|Wortweise markieren": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "✅",
+  "wo": "bearbeiten/wortweise, editor_widget._wortweise (test_editor)"
  },
  "OPTIONEN > Bearbeiten > Bearbeitungsoptionen|Maximale Rückgängig-Schritte": {
   "status": "⬜",
@@ -712,8 +712,8 @@
   "wo": "Bilder werden nie komprimiert; kein Schalter"
  },
  "OPTIONEN > Allgemein und Speichern > Allgemeine Optionen|Maßeinheit": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "✅",
+  "wo": "ui/masseinheit → dialogs._MassSpin (Seitenränder, Einzüge; intern mm)"
  },
  "OPTIONEN > Allgemein und Speichern > Allgemeine Optionen|Standard-Ausgabeziel": {
   "status": "⬜",
@@ -836,20 +836,20 @@
   "wo": "pdf/eigenschaften, pdf/oeffnen (export_pdf author)"
  },
  "OPTIONEN > In PDF exportieren > Exportoptionen|Überschriften als Lesezeichen": {
-  "status": "⬜",
-  "wo": "QPdfWriter kann keine PDF-Gliederung (Lesezeichen) schreiben"
+  "status": "✅",
+  "wo": "pagination.lesezeichen_sammeln + gliederung_schreiben (pypdf nach QPdfWriter; test_werkzeuge)"
+ },
+ "OPTIONEN > In PDF exportieren > Exportoptionen|Textmarken übernehmen": {
+  "status": "✅",
+  "wo": "pagination.lesezeichen_sammeln + gliederung_schreiben (pypdf nach QPdfWriter; test_werkzeuge)"
  },
  "OPTIONEN > In PDF exportieren > Exportoptionen|Andere Formatvorlagen in Lesezeichen umwandeln": {
   "status": "⬜",
-  "wo": "QPdfWriter kann keine PDF-Gliederung (Lesezeichen) schreiben"
+  "wo": "nur Überschriften und Textmarken werden Lesezeichen; Formatvorlagen-Auswahl fehlt"
  },
  "OPTIONEN > In PDF exportieren > Exportoptionen|Eigene Formatvorlagen in Lesezeichen umwandeln": {
   "status": "⬜",
-  "wo": "QPdfWriter kann keine PDF-Gliederung (Lesezeichen) schreiben"
- },
- "OPTIONEN > In PDF exportieren > Exportoptionen|Textmarken übernehmen": {
-  "status": "⬜",
-  "wo": "QPdfWriter kann keine PDF-Gliederung (Lesezeichen) schreiben"
+  "wo": "nur Überschriften und Textmarken werden Lesezeichen; Formatvorlagen-Auswahl fehlt"
  },
  "OPTIONEN > In PDF exportieren > Exportoptionen|Kommentare mitnehmen": {
   "status": "⬜",
@@ -1092,8 +1092,8 @@
   "wo": "nur „Nächste Seite“ (Seitenumbruch); Abschnitte kennt Qt nicht"
  },
  "SEITENLAYOUT|Silbentrennung": {
-  "status": "⬜",
-  "wo": "Qt hat keine automatische Silbentrennung"
+  "status": "◐",
+  "wo": "pyphen setzt weiche Trennstellen in Seitenansicht, Druck, PDF; DOCX autoHyphenation (test_werkzeuge). Die Bearbeitungsansicht zeigt keine Trennstriche"
  },
  "SENDUNGEN (Lunivo)|Formular > Textfeld": {
   "status": "◐",

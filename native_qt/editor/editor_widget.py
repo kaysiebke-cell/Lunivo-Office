@@ -299,7 +299,7 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
 
     # ---- Seitenzählung -----------------------------------------------------
     def _recount(self) -> None:
-        self._paged = paginated_copy(self.document(), self.page, self.noten)
+        self._paged = paginated_copy(self.document(), self.page, self.noten, silben=False)   # wie die Bearbeitungsansicht umbricht: ohne Trennstriche
         self._pages = max(1, self._paged.pageCount())
         self._breaks = self._seitenwechsel(self._paged)
         self.viewport().update()
@@ -346,6 +346,30 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
     def _cursor_moved(self) -> None:
         self.pageInfoChanged.emit(self.current_page(), self._pages)
         self.formatChanged.emit()
+        hl = getattr(self, "_silben", None)
+        if hl is not None and hl.k["nur_absatz"]:
+            neu = self.textCursor().blockNumber()
+            if neu != getattr(self, "_silben_block", -1):
+                for n in (getattr(self, "_silben_block", -1), neu):
+                    b = self.document().findBlockByNumber(n)
+                    if b.isValid():
+                        hl.rehighlightBlock(b)
+                self._silben_block = neu
+
+    def set_silbenfarben(self, konfig: dict | None) -> None:
+        """Silben farbig (reine Anzeige, ändert das Dokument nicht); konfig None oder an=False schaltet ab."""
+        from .silbenfarben import SilbenFarben
+        hl = getattr(self, "_silben", None)
+        if not konfig or not konfig["an"]:
+            if hl is not None:
+                hl.setDocument(None)
+                self._silben = None
+            return
+        if hl is None:
+            self._silben_block = self.textCursor().blockNumber()
+            self._silben = SilbenFarben(self.document(), konfig, lambda: self.textCursor().blockNumber())
+        else:
+            hl.neu_konfigurieren(konfig)
 
     def word_count(self) -> int:
         return len(self.document().toPlainText().split())
@@ -703,8 +727,38 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         if self.kontext_hook is not None:
             pos = self.cursorForPosition(e.pos()).position()
             self.kontext_hook(m, pos)
+        if self._bild_cursor() is not None and not self.isReadOnly():
+            from . import umbruch as U
+            m.addSeparator()
+            c = self._bild_cursor()
+            aktuell = U.schwebend(self.document(), c.selectionStart()) or "zeile"
+            for modus, text in (("zeile", "Bild: mit Text in Zeile"), ("links", "Bild: links, Text umfließt"),
+                                ("rechts", "Bild: rechts, Text umfließt")):
+                a = m.addAction(text, lambda _=False, modus=modus: U.umbruch_setzen(self, modus))
+                a.setCheckable(True)
+                a.setChecked(modus == aktuell)
+        ki = getattr(self.window(), "ki", None)
+        if ki is not None and self.textCursor().hasSelection() and not self.isReadOnly():
+            m.addSeparator()
+            m.addAction("KI: Text in Bild", ki.bild_aus_text)
         m.exec(e.globalPos())
         m.deleteLater()
+
+    def _wortweise(self) -> None:
+        """Wortweise markieren: eine mit der Maus gezogene Auswahl wird an Wortgrenzen erweitert."""
+        c = self.textCursor()
+        von, bis = c.selectionStart(), c.selectionEnd()
+        if bis - von < 2 or c.selectedText() in ("\u2029",):
+            return
+        a = QTextCursor(self.document()); a.setPosition(von); a.movePosition(QTextCursor.StartOfWord)
+        b = QTextCursor(self.document()); b.setPosition(bis)
+        if not b.atBlockEnd() and b.positionInBlock() > 0 and self.document().characterAt(bis - 1).isalnum():
+            b.movePosition(QTextCursor.EndOfWord)
+        neu = QTextCursor(self.document())
+        rueckwaerts = c.position() < c.anchor()
+        neu.setPosition(b.position() if rueckwaerts else a.position())
+        neu.setPosition(a.position() if rueckwaerts else b.position(), QTextCursor.KeepAnchor)
+        self.setTextCursor(neu)
 
     def _cursor_at(self, pos: int) -> QTextCursor:
         c = QTextCursor(self.document())
@@ -713,6 +767,8 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
 
     def mouseReleaseEvent(self, e) -> None:
         super().mouseReleaseEvent(e)
+        if e.button() == Qt.LeftButton and self.opt("bearbeiten/wortweise", True) and self.textCursor().hasSelection():
+            self._wortweise()
         if (e.modifiers() & Qt.ControlModifier) and self.opt("ui/strg_klick_link", True):
             href = self.anchorAt(e.pos())
             if href and href.startswith("#"):

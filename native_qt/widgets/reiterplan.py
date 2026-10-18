@@ -54,7 +54,8 @@ KI = {"name": "KI", "gruppen": [
     {"name": "KI-Schreibwerkzeuge", "knoepfe": [_k("ki", "Text entwerfen", "kiEntwerfen", True),
                                                 _k("zusammenfassen", "Text umformulieren", "kiUmformulieren"),
                                                 _k("zusammenfassen", "Text zusammenfassen", "kiZusammenfassen"),
-                                                _k("uebersetzen", "Text übersetzen", "w.kiUebersetzen")]},
+                                                _k("uebersetzen", "Text übersetzen", "w.kiUebersetzen"),
+                                                _k("bild", "Text in Bild", "kiTextInBild")]},
     {"name": "Korrektur", "knoepfe": [_k("assistent", "KI-Korrektur", "kiKorrektur", True),
                                       _k("vorschlag", "Verbesserungsvorschläge", "kiVorschlaege", True)]},
     {"name": "Seitenleiste", "knoepfe": [_k("tafel", "Schreibhilfe-Seitenleiste", "tafelZeigen", True),
@@ -118,13 +119,13 @@ KOPFFUSS = {"name": "Kopf- und Fußzeilentools", "kontext": "kopffuss", "gruppen
 def plan(register: dict) -> list[dict]:
     """Die Reiter in der Reihenfolge der Struktur; Kontext-Register stehen am Ende (zunächst verborgen)."""
     nach = {t["name"]: t for t in register["register"]}
+    sh = nach["Schreibhilfe"] = dict(nach["Schreibhilfe"])
+    sh["gruppen"] = [dict(g) for g in sh["gruppen"]]
+    lesen = next(g for g in sh["gruppen"] if g["name"] == "Lesen")
+    if not any(k.get("tun") == "silbenfarben" for k in lesen["knoepfe"]):          # Lesehilfe für Legasthenie (nicht im alten Register)
+        lesen["knoepfe"] = lesen["knoepfe"] + [_k("farbe", "Silben farbig", "silbenfarben", haken=True),
+                                               _k("zahnrad", "Silben einstellen …", "silbenEinstellen")]
     verweise = dict(nach["Referenzen"], name="Verweise")
-    reiter = [DATEI, nach["Start"], nach["Einfügen"], nach["Seitenlayout"], verweise, nach["Überprüfen"], KI,
-              nach["Ansicht"], nach["Sendungen"]]
+    reiter = [DATEI, nach["Start"], nach["Einfügen"], nach["Seitenlayout"], verweise, nach["Überprüfen"],
+              nach["Schreibhilfe"], KI, nach["Ansicht"], nach["Sendungen"]]
     return reiter + [TABELLENTOOLS, BILDTOOLS, FORMTOOLS, KOPFFUSS]
-
-
-def schreibhilfe_gruppen(register: dict) -> list[dict]:
-    """Die Gruppen des alten Reiters „Schreibhilfe“ ohne KI — sie stehen in der Seitenleiste."""
-    s = next(t for t in register["register"] if t["name"] == "Schreibhilfe")
-    return [g for g in s["gruppen"] if g["name"] != "KI"]

@@ -30,7 +30,14 @@ def main(argv: list[str] | None = None) -> int:
         win.open_path(f)
     if not files:
         win.offer_recovery()
-    return app.exec()
+    rc = app.exec()
+    # Fenster vor dem Interpreter-Ende abbauen: PySide räumt sonst in falscher Reihenfolge ab (Heap-Fehler beim Beenden)
+    from PySide6.QtCore import QEvent
+    win.deleteLater()
+    app.sendPostedEvents(None, QEvent.DeferredDelete)
+    app.processEvents()
+    del win
+    return rc
 
 
 if __name__ == "__main__":

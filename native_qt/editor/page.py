@@ -52,6 +52,8 @@ class PageSettings:
     diff_first: bool = False                 # „Erste Seite anders“
     first_header: HeaderFooter = field(default_factory=HeaderFooter)
     first_footer: HeaderFooter = field(default_factory=HeaderFooter)
+    silbentrennung: bool = False             # automatische Silbentrennung (Seitenansicht, Druck, PDF; DOCX: autoHyphenation)
+    silben_sprache: str = "de_DE"
 
     @property
     def landscape(self) -> bool:
@@ -91,4 +93,5 @@ class PageSettings:
             self.color, dict(self.border) if self.border else None, dict(self.watermark) if self.watermark else None,
             self.zeilennummern, self.diff_first,
             HeaderFooter(self.first_header.text, self.first_header.align), HeaderFooter(self.first_footer.text, self.first_footer.align),
+            self.silbentrennung, self.silben_sprache,
         )

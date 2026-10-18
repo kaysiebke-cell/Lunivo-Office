@@ -67,6 +67,17 @@ _AKTION_SATZ = {
     "ton-locker": "Ändere die Tonalität des folgenden Textes zu locker und ungezwungen.",
     "ton-bestimmt": "Ändere die Tonalität des folgenden Textes zu bestimmt und klar.",
 }
+ANBIETER_TAGS = [("text", "Text"), ("bilder", "Bilder"), ("einbettungen", "Einbettungen"), ("audio", "Audioverarbeitung"),
+                 ("moderation", "Inhaltsmoderation"), ("echtzeit", "Echtzeitaufgaben"),
+                 ("programmieren", "Hilfe zum Programmieren"), ("visuell", "Visuelle Analyse")]
+AUFGABEN = [("chatbot", "Chatbot"), ("zusammenfassen", "Zusammenfassen"), ("uebersetzung", "Übersetzung"),
+            ("textanalyse", "Textanalyse"), ("bildgenerierung", "Bildgenerierung")]
+# Bekannte Anbieter mit der Adresse, die sie selbst angeben (Claude fehlt bewusst: kein OpenAI-kompatibles /chat/completions)
+ANBIETER_VORLAGEN = [("andere", "Andere", ""), ("ollama", "Ollama (auf diesem Rechner)", "http://localhost:11434/v1"),
+                     ("openai", "OpenAI", "https://api.openai.com/v1"), ("openrouter", "OpenRouter", "https://openrouter.ai/api/v1"),
+                     ("gemini", "Google Gemini", "https://generativelanguage.googleapis.com/v1beta/openai"),
+                     ("mistral", "Mistral", "https://api.mistral.ai/v1"), ("groq", "Groq", "https://api.groq.com/openai/v1"),
+                     ("deepseek", "DeepSeek", "https://api.deepseek.com/v1"), ("together", "Together AI", "https://api.together.xyz/v1")]
 VORSCHLAG_BAUPLAN = {"type": "object", "properties": {"vorschlaege": {"type": "array", "items": {
     "type": "object", "properties": {"alt": {"type": "string"}, "neu": {"type": "string"}, "grund": {"type": "string"}},
     "required": ["alt", "neu", "grund"], "additionalProperties": False}}},
@@ -102,14 +113,29 @@ class KIKonfig:
     def anbieter_holen(self, id_: str):
         return next((a for a in self.d["anbieter"] if a["id"] == id_), None)
 
-    def anbieter_hinzufuegen(self, name, url, schluessel, modell) -> dict:
+    def anbieter_hinzufuegen(self, name, url, schluessel, modell, verwendung=None) -> dict:
         import uuid
-        e = {"id": "p" + uuid.uuid4().hex[:8], "name": (name or "Eigenes Modell").strip()[:60],
-             "url": (url or "").strip().rstrip("/"), "schluessel": (schluessel or "").strip(),
-             "modell": (modell or "").strip(), "verwendungFuer": ["text"]}
+        e = {"id": "p" + uuid.uuid4().hex[:8]}
         self.d["anbieter"].append(e)
+        return self.anbieter_aktualisieren(e["id"], name, url, schluessel, modell, verwendung)
+
+    def anbieter_aktualisieren(self, id_, name, url, schluessel, modell, verwendung=None) -> dict | None:
+        e = self.anbieter_holen(id_)
+        if e is None:
+            return None
+        gueltig = {k for k, _ in ANBIETER_TAGS}
+        e.update(name=(name or "").strip()[:60] or "Eigenes Modell", url=(url or "").strip().rstrip("/"),
+                 schluessel=(schluessel or "").strip(), modell=(modell or "").strip(),
+                 verwendungFuer=[t for t in (verwendung if verwendung is not None else e.get("verwendungFuer", ["text"])) if t in gueltig])
         self.speichern()
         return e
+
+    def aufgabe_setzen(self, aufgabe: str, modell: str) -> None:
+        if modell:
+            self.d["aufgaben"][aufgabe] = modell
+        else:
+            self.d["aufgaben"].pop(aufgabe, None)
+        self.speichern()
 
     def assistent_hinzufuegen(self, name: str, prompt: str, modus: str) -> dict:
         import uuid
@@ -125,7 +151,18 @@ class KIKonfig:
 
     def anbieter_entfernen(self, id_: str) -> None:
         self.d["anbieter"] = [a for a in self.d["anbieter"] if a["id"] != id_]
+        for aufgabe, m in list(self.d["aufgaben"].items()):      # eine Zuweisung auf den gelöschten Anbieter fällt auf „Standard“
+            if m == EIGEN_MARKE + id_:
+                del self.d["aufgaben"][aufgabe]
         self.speichern()
+
+    def alle_modelle(self) -> list[dict]:
+        """Eine Liste für alle Felder „welches Modell?“: Claude, eigene Anbieter (mit Fähigkeiten und ‚lokal‘)."""
+        r = [{"id": m, "name": n, "lokal": False, "verwendungFuer": ["text"]} for m, n in MODELLE_FEST]
+        for a in self.d["anbieter"]:
+            r.append({"id": EIGEN_MARKE + a["id"], "name": f"{a['name']} ({a['modell']})", "lokal": ist_lokale_url(a["url"]),
+                      "verwendungFuer": a.get("verwendungFuer", [])})
+        return r
 
 
 def ist_lokale_url(url: str) -> bool:
@@ -441,12 +478,56 @@ class KI:
                 sauber.append(w.strip())
         return {"woerter": sauber[:8], "cent": r.get("cent")}
 
+    def bild_erzeugen(self, beschreibung: str) -> dict:
+        """Bild aus Text: nur eigene Anbieter mit „Bilder“, OpenAI-Schnittstelle POST <URL>/images/generations."""
+        modell = self.k["aufgaben"].get("bildgenerierung", "")
+        if not modell.startswith(EIGEN_MARKE):
+            return {"fehler": "Dafür fehlt ein Anbieter mit „Bilder“ — in der KI-Konfiguration eintragen."}
+        a = self.k.anbieter_holen(modell[len(EIGEN_MARKE):])
+        if not a:
+            return {"fehler": "Der gewählte Anbieter ist nicht mehr da. In der KI-Konfiguration neu wählen."}
+        if not a["modell"]:
+            return {"fehler": f"Für „{a['name']}“ ist kein Modell eingetragen."}
+        kopf = {"authorization": "Bearer " + a["schluessel"]} if a["schluessel"] else {}
+        try:
+            with _post(a["url"] + "/images/generations", kopf,
+                       {"model": a["modell"], "prompt": beschreibung, "n": 1, "size": "1024x1024"}, 90) as r:
+                daten = json.loads(r.read().decode("utf-8"))
+            e = (daten.get("data") or [{}])[0]
+            if e.get("b64_json"):
+                import base64
+                return {"bild": base64.b64decode(e["b64_json"])}
+            if e.get("url"):
+                with urllib.request.urlopen(e["url"], timeout=90) as r2:
+                    return {"bild": r2.read()}
+            return {"fehler": f"„{a['name']}“ hat kein Bild zurückgegeben."}
+        except urllib.error.HTTPError as e:
+            zusatz = ""
+            try:
+                zusatz = (json.loads(e.read().decode("utf-8")).get("error") or {}).get("message", "")
+            except (OSError, ValueError, AttributeError):
+                pass
+            return {"fehler": f"„{a['name']}“ meldet Fehler {e.code}" + (f" ({zusatz})" if zusatz else "")}
+        except TimeoutError:
+            return {"fehler": f"„{a['name']}“ hat zu lange gebraucht. Bitte noch einmal versuchen."}
+        except (urllib.error.URLError, OSError, ValueError):
+            return {"fehler": f"„{a['name']}“ ist unter {a['url']} nicht zu erreichen. Stimmt die URL?"}
+
     def ollama_modelle(self) -> list[str]:
         try:
             with urllib.request.urlopen(OLLAMA_URL + "/api/tags", timeout=3) as r:
                 return sorted(m["name"] for m in json.loads(r.read().decode("utf-8")).get("models", []) if m.get("name"))
         except (OSError, ValueError, KeyError):
             return []
+
+
+def anbieter_modelle(url: str, schluessel: str = "") -> list[str]:
+    """GET <URL>/models — so fragen OpenAI und die meisten OpenAI-kompatiblen Dienste (auch Ollama unter /v1)."""
+    req = urllib.request.Request(url.rstrip("/") + "/models", headers={"accept": "application/json",
+                                 **({"authorization": "Bearer " + schluessel} if schluessel else {})})
+    with urllib.request.urlopen(req, timeout=6) as r:
+        d = json.loads(r.read().decode("utf-8"))
+    return sorted({m.get("id") or m.get("name") for m in (d.get("data") or d.get("models") or []) if isinstance(m, dict)} - {None})
 
 
 # ---------------------------------------------------------------- Ergebnis ins Dokument: Wort-Diff

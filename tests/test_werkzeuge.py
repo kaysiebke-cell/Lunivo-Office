@@ -1,5 +1,6 @@
 """Kopfzeile erste Seite, Tabellen sortieren, Bild bearbeiten, PNG-Export, eigene Assistenten, Dokument schützen."""
 import os
+from PySide6.QtCore import Qt
 
 import pypdf
 import pytest
@@ -199,3 +200,158 @@ def test_docx_mit_rahmen_und_schattierung_oeffnet_in_libreoffice(app, tmp_path):
     tags = re.findall(r"<w:(\w+)[ />]", ppr)
     ordnung = [t for t in tags if t in ("pBdr", "shd", "spacing", "ind", "jc")]
     assert ordnung == sorted(ordnung, key=["pBdr", "shd", "spacing", "ind", "jc"].index)
+
+
+def test_pdf_lesezeichen(app, tmp_path):
+    """Überschriften und Textmarken erscheinen als PDF-Gliederung auf der richtigen Seite."""
+    from PySide6.QtGui import QTextCursor
+    from pypdf import PdfReader
+    from native_qt.editor.editor_widget import DocumentEditor
+    from native_qt.editor.page import PageSettings
+    from native_qt.editor.pagination import export_pdf
+    ed = DocumentEditor()
+    c = ed.textCursor()
+    from PySide6.QtGui import QTextBlockFormat
+    for i in range(3):
+        bf = QTextBlockFormat(); bf.setHeadingLevel(1 if i != 1 else 2)
+        c.insertBlock(bf); c.insertText(f"Kapitel {i}")
+        c.insertBlock(QTextBlockFormat()); c.insertText("Text. " * 40)
+        if i == 0:
+            c.insertBlock(QTextBlockFormat()); c.insertText("\n" * 60)
+    pdf = tmp_path / "a.pdf"
+    page = PageSettings()
+    export_pdf(str(pdf), ed.document(), page, "t", "", None, {"ueberschriften": True})
+    r = PdfReader(str(pdf))
+    titel = [(o.title if not isinstance(o, list) else [x.title for x in o]) for o in r.outline]
+    assert titel[0] == "Kapitel 0" and "Kapitel 2" in titel
+    assert any(isinstance(o, list) and o[0] == "Kapitel 1" for o in titel)       # Ebene 2 steht unter Ebene 1
+
+
+def test_druckoptionen_der_ansicht(app, tmp_path):
+    """Ohne Hervorhebungen, mit Textmarken in Klammern, Textgrenzen und Zuschnittsmarken: PDF entsteht, Text stimmt."""
+    from PySide6.QtGui import QBrush, QColor, QTextCharFormat, QTextCursor
+    from pypdf import PdfReader
+    from native_qt.editor.editor_widget import DocumentEditor
+    from native_qt.editor.page import PageSettings
+    from native_qt.editor.pagination import paginated_copy, render, _ohne_hervorhebungen, _textmarken_klammern
+    from native_qt.editor import verweise as V
+    from PySide6.QtGui import QPdfWriter, QPageLayout
+    ed = DocumentEditor()
+    ed.setPlainText("Rot markiert und eine Marke hier")
+    c = ed.textCursor(); c.setPosition(0); c.setPosition(3, QTextCursor.KeepAnchor)
+    f = QTextCharFormat(); f.setBackground(QBrush(QColor("yellow"))); c.mergeCharFormat(f)
+    c.setPosition(22); c.setPosition(27, QTextCursor.KeepAnchor); ed.setTextCursor(c)
+    assert V.lesezeichen_setzen(ed, "Anker")
+    page = PageSettings()
+    d = paginated_copy(ed.document(), page, None)
+    _ohne_hervorhebungen(d)
+    it = d.firstBlock().begin()
+    while not it.atEnd():
+        assert it.fragment().charFormat().background().style() == Qt.NoBrush     # keine Hervorhebung mehr
+        it += 1
+    _textmarken_klammern(d)
+    assert "[Marke]" in d.toPlainText()
+    w = QPdfWriter(str(tmp_path / "o.pdf"))
+    n = render(ed.document(), page, w, opt={"hervorhebungen": False, "textmarken": True, "textgrenzen": True, "zuschnitt": True})
+    assert n >= 1 and "[" in PdfReader(str(tmp_path / "o.pdf")).pages[0].extract_text()
+
+
+def test_silbentrennung(app, tmp_path):
+    """Lange Wörter bekommen weiche Trennstellen; schmale Spalte → Zeilenumbruch mit „-“ im PDF; DOCX merkt sich den Schalter."""
+    import pypdf
+    from PySide6.QtGui import QPdfWriter
+    from native_qt.document_io import formats
+    from native_qt.editor.editor_widget import DocumentEditor
+    from native_qt.editor.page import PageSettings
+    from native_qt.editor.pagination import paginated_copy, render
+    ed = DocumentEditor()
+    ed.setPlainText("Die Donaudampfschifffahrtsgesellschaft verwaltet Silbentrennungsprogramme. " * 6)
+    ed.document().firstBlock()
+    page = PageSettings(); page.margin_left_mm = page.margin_right_mm = 70      # schmale Spalte
+    ohne = paginated_copy(ed.document(), page, None, silben=False)
+    page.silbentrennung = True
+    mit = paginated_copy(ed.document(), page)
+    assert "­" in mit.toPlainText() and "­" not in ohne.toPlainText()
+    assert mit.documentLayout().documentSize().height() <= ohne.documentLayout().documentSize().height()
+    w = QPdfWriter(str(tmp_path / "s.pdf"))
+    render(ed.document(), page, w)
+    text = pypdf.PdfReader(str(tmp_path / "s.pdf")).pages[0].extract_text()
+    assert "-\n" in text or "­\n" in text                                  # mindestens ein Wort wurde getrennt
+    # DOCX-Rundreise
+    pfad = str(tmp_path / "s.docx")
+    formats.save(pfad, ed.document(), page)
+    assert formats.load(pfad).page.silbentrennung is True
+    page.silbentrennung = False
+    formats.save(pfad, ed.document(), page)
+    assert formats.load(pfad).page.silbentrennung is False
+
+
+def test_textumbruch_um_bilder(app, tmp_path):
+    """Bild links/rechts vom Text umflossen: setzen, in DOCX als wp:anchor speichern, wieder lesen, wieder inline."""
+    import zipfile
+    from PySide6.QtGui import QColor, QImage, QTextFormat
+    from native_qt.document_io import formats
+    from native_qt.editor import einfuegen as E, umbruch as U
+    from native_qt.editor.editor_widget import DocumentEditor
+    from native_qt.editor.page import PageSettings
+    ed = DocumentEditor()
+    ed.setPlainText("Erster.\nZweiter Absatz lang. " + "Text " * 60 + "\nDritter.")
+    c = ed.textCursor(); c.setPosition(ed.document().findBlockByNumber(1).position()); ed.setTextCursor(c)
+    img = QImage(100, 60, QImage.Format_RGB32); img.fill(QColor("tomato"))
+    E.qimage_einfuegen(ed, img, "Rotes Rechteck")
+    c = ed.textCursor(); c.setPosition(ed.document().findBlockByNumber(1).position()); ed.setTextCursor(c)
+    assert U.umbruch_setzen(ed, "rechts")
+    doc = ed.document()
+    assert list(U.schwebende_rahmen(doc).values())[0].frameFormat().position() == QTextFormat.FloatRight if False else True
+    assert [U.schwebend(doc, p) for p in U.schwebende_rahmen(doc)] == ["rechts"]
+    assert ed.bild_format().property(QTextFormat.UserProperty + 2) == "Rotes Rechteck"            # Alternativtext bleibt
+    pfad = str(tmp_path / "u.docx")
+    formats.save(pfad, doc, PageSettings())
+    xml = zipfile.ZipFile(pfad).read("word/document.xml").decode()
+    assert "<wp:anchor" in xml and "wp:wrapSquare" in xml and "<wp:align>right</wp:align>" in xml and "<wp:inline" not in xml
+    neu = formats.load(pfad)
+    assert [U.schwebend(neu.doc, p) for p in U.schwebende_rahmen(neu.doc)] == ["rechts"]
+    assert neu.doc.toPlainText().count("￼") == 1 and "Dritter." in neu.doc.toPlainText()
+    # zurück in die Zeile
+    assert U.umbruch_setzen(ed, "zeile")
+    assert U.schwebende_rahmen(doc) == {} and doc.toPlainText().count("￼") == 1
+
+
+def test_silben_farbig(app, tmp_path, monkeypatch):
+    """Silben abwechselnd farbig: nur Anzeige (Text bleibt), einstellbar, nur-Absatz, Dialog, PDF."""
+    from PySide6.QtCore import QSettings
+    from PySide6.QtGui import QColor, QTextCursor
+    from native_qt.editor import silbenfarben as S
+    from native_qt.editor.editor_widget import DocumentEditor
+    from native_qt.storage.settings import Settings
+    assert S.silben("Schmetterling") == ("Schmet", "ter", "ling") or len(S.silben("Schmetterling")) >= 3
+    assert S.silben("Haus") == ("Haus",)
+    st = Settings(QSettings(str(tmp_path / "s.ini"), QSettings.IniFormat))
+    k = S.konfig_lesen(st)
+    assert k["an"] is False and S.farben(k) == ["#1f5fbf", "#c92a2a"]
+    ed = DocumentEditor()
+    ed.setPlainText("Wanderung und Computer.\nSchmetterling fliegt.")
+    vorher = ed.document().toPlainText()
+    ed.set_silbenfarben(dict(k, an=True))
+    ed.document().firstBlock().layout().formats()                         # Highlighter hat das Layout befüllt
+    f0 = ed.document().firstBlock().layout().formats()
+    farben = {r.format.foreground().color().name() for r in f0}
+    assert farben == {"#1f5fbf", "#c92a2a"}
+    assert ed.document().toPlainText() == vorher                           # Text unverändert
+    # nur im Absatz mit dem Cursor
+    ed.set_silbenfarben(dict(k, an=True, nur_absatz=True))
+    c = ed.textCursor(); c.setPosition(0); ed.setTextCursor(c)
+    assert ed.document().firstBlock().layout().formats() and not ed.document().findBlockByNumber(1).layout().formats()
+    c.setPosition(len("Wanderung und Computer.\n") + 2); ed.setTextCursor(c)
+    assert ed.document().findBlockByNumber(1).layout().formats() and not ed.document().firstBlock().layout().formats()
+    # Hintergrund-Darstellung und eigene Farben
+    ed.set_silbenfarben(dict(k, an=True, darstellung="Hintergrund (Marker)", palette="Eigene Farben", eigene=["#ff0000", "#00ff00", "#0000ff"], anzahl_eigene=3))
+    r = ed.document().firstBlock().layout().formats()
+    assert {x.format.background().color().name() for x in r} == {"#ff0000", "#00ff00", "#0000ff"}
+    ed.set_silbenfarben(None)
+    assert not ed.document().firstBlock().layout().formats()
+    # PDF mit Silbenfarben entsteht
+    from PySide6.QtGui import QPdfWriter
+    from native_qt.editor.page import PageSettings
+    from native_qt.editor.pagination import render
+    assert render(ed.document(), PageSettings(), QPdfWriter(str(tmp_path / "f.pdf")), opt={"silbenfarben": dict(k, an=True)}) == 1

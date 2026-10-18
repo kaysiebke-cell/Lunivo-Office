@@ -161,8 +161,7 @@ class OptionenDialog(QDialog):
 
     # ================= Leichter lesen =================
     def _lesehilfe(self, titel):
-        p = _Seite(self.w, titel, ["Lesestufe", "Zeilenluft", "Absatz beim Schreiben / Übriger Text (Abdunkeln)",
-                                   "Silbentrennung"])
+        p = _Seite(self.w, titel, ["Lesestufe", "Zeilenluft", "Absatz beim Schreiben / Übriger Text (Abdunkeln)"])
         f = p.gruppe("Leichter lesen")
         p.auswahl(f, "lesehilfe/papier", "Papierton", list(PAPIERTOENE), "Weiß", lambda _: self.w.lesehilfe_anwenden())
         p.zahl(f, "lesehilfe/buchstaben", "Buchstabenabstand", 0, 6, 0, " px", 1, lambda _: self.w.lesehilfe_anwenden())
@@ -184,6 +183,14 @@ class OptionenDialog(QDialog):
         p.zahl(f, "vorlesen/tempo", "Tempo (−100 bis 100)", -100, 100, 0)
         if not vorlesen.verfuegbar():
             p.hinweis("Es ist keine Sprachausgabe eingerichtet (speech-dispatcher oder Piper).")
+        f = p.gruppe("Silben farbig (Lesehilfe für Legasthenie)")
+        p.haken(f, "lesehilfe/silben/an", "Silben farbig anzeigen", False, lambda _: self.w.silbenfarben_anwenden())
+        b = QPushButton("Farben, Darstellung und Mindestlänge einstellen …")
+        b.clicked.connect(lambda: self.w.befehle.silbenEinstellen())
+        f.addRow(b)
+        f = p.gruppe("Silbentrennung")
+        p.auswahl(f, "silben/sprache", "Sprache der Silbentrennung", ["de_DE", "de_AT", "de_CH", "en_US", "en_GB", "fr", "es", "it", "nl_NL", "pl_PL", "tr_TR"], "de_DE")
+        p.zeile(f, "Ein/Aus: Reiter Schreibhilfe ▸ Sprache ▸ Silbentrennung. Wirkt in Seitenansicht, Druck und PDF; in DOCX wird der Schalter „automatische Silbentrennung“ gespeichert.")
         p.abschluss()
         return p
 
@@ -234,12 +241,17 @@ class OptionenDialog(QDialog):
     def _ansicht(self, titel):
         p = _Seite(self.w, titel, ["Lineal", "Vertikales Lineal", "Gitternetzlinien",
                                    "Live-Vorschau", "Minisymbolleiste", "Tipp für Kopf-/Fußzeile",
-                                   "Druckoptionen der Ansicht (Hervorhebungen, Textmarken, Feldfunktionen)",
+                                   "Feldfunktionen drucken, Feldschattierung",
                                    "Ausgeblendeter Text, Objektanker"])
         f = p.gruppe("Anzeigen")
         p.haken(f, "ui/marken", "Textbegrenzungen (Eckmarken)", True, self.w.set_marken)
         p.haken(f, "ui/seitenleiste", "Seitenleiste beim Start", True)
         p.haken(f, "ui/navigation", "Navigationsbereich beim Start", False)
+        f = p.gruppe("Druckoptionen der Ansicht")
+        p.haken(f, "drucken/hervorhebungen", "Hervorhebungen drucken (Textmarker)", True)
+        p.haken(f, "drucken/textgrenzen", "Textbegrenzungen drucken (gestrichelter Rahmen um die Textfläche)", False)
+        p.haken(f, "drucken/zuschnitt", "Zuschnittsmarken drucken (Ecken der Textfläche)", False)
+        p.haken(f, "drucken/textmarken", "Textmarken drucken (in eckigen Klammern)", False)
         f = p.gruppe("Formatierungszeichen")
         p.haken(f, "ui/steuerzeichen", "Absatzmarken, Leerzeichen und Tabstoppzeichen anzeigen", False,
                 lambda on: self.w.a_marks.setChecked(on))
@@ -256,7 +268,7 @@ class OptionenDialog(QDialog):
         return p
 
     def _bearbeiten(self, titel):
-        p = _Seite(self.w, titel, ["Wortweise markieren, Text mit der Maus verschieben", "Maximale Rückgängig-Schritte",
+        p = _Seite(self.w, titel, ["Text mit der Maus verschieben", "Maximale Rückgängig-Schritte",
                                    "Ausschneiden und Einfügen"])
         f = p.gruppe("AutoKorrektur")
         p.haken(f, "schreibhilfe/autokorr", "AutoKorrektur (Hauptschalter)", True, lambda on: self.w.assistant.setze("autokorr", on))
@@ -264,6 +276,7 @@ class OptionenDialog(QDialog):
             p.haken(f, "schreibhilfe/" + name, text, std)
         f = p.gruppe("Eingabe")
         p.haken(f, "bearbeiten/tippen_ersetzt", "Eingabe ersetzt die Markierung", True)
+        p.haken(f, "bearbeiten/wortweise", "Wortweise markieren (Ziehen mit der Maus erweitert auf ganze Wörter)", True)
         p.haken(f, "autoformat/liste", "Listen beim Tippen erkennen (1.  a)  -  *)", True)
         p.haken(f, "autoformat/punkte", "„- “ und „* “ am Zeilenanfang werden zur Aufzählung", True)
         p.haken(f, "schreibhilfe/akPfade", "Internet- und Netzwerkpfade durch Hyperlinks ersetzen", True)
@@ -276,7 +289,10 @@ class OptionenDialog(QDialog):
         return p
 
     def _speichern(self, titel):
-        p = _Seite(self.w, titel, ["Maßeinheit", "Bilder nicht komprimieren", "Webseitencodierung", "Kompatibilitätsoptionen"])
+        p = _Seite(self.w, titel, ["Bilder nicht komprimieren", "Kompatibilitätsoptionen"])
+        f = p.gruppe("Maßeinheit")
+        from . import dialogs as _d
+        p.auswahl(f, "ui/masseinheit", "Maßeinheit in Dialogen (Seitenränder, Einzüge …)", list(_d.EINHEITEN), "Millimeter", _d.set_einheit)
         f = p.gruppe("Speichern")
         p.auswahl(f, "speichern/standard", "Dateien standardmäßig speichern als", [".docx", ".txt"], ".docx")
         p.zeile(f, "Standardordner (leer = zuletzt benutzter)")
@@ -290,6 +306,8 @@ class OptionenDialog(QDialog):
         f = p.gruppe("PDF")
         p.haken(f, "pdf/oeffnen", "PDF nach dem Export öffnen", False)
         p.haken(f, "pdf/eigenschaften", "Dokumenteigenschaften (Autor) in das PDF übernehmen", True)
+        p.haken(f, "pdf/lz_ueberschriften", "Überschriften als Lesezeichen", False)
+        p.haken(f, "pdf/lz_textmarken", "Textmarken übernehmen", False)
         f3 = p.gruppe("Vorlagen")
         ve = QLineEdit(p.s.get("vorlagen/ordner", "")); ve.setPlaceholderText("leer = ~/Vorlagen")
         ve.textChanged.connect(lambda t: p.s.set("vorlagen/ordner", t)); f3.addRow("Vorlagenordner", ve)
@@ -455,7 +473,7 @@ class OptionenDialog(QDialog):
 
     # ================= Nur bei Lunivo =================
     def _ki(self, titel):
-        p = _Seite(self.w, titel, ["Aufgaben-Modellzuweisung je Funktion", "Bildgenerierung", "Eigenen Assistenten erstellen"])
+        p = _Seite(self.w, titel)
         k = self.w.ki.konfig
         f = p.gruppe("Modell")
         c = QComboBox()
@@ -479,36 +497,14 @@ class OptionenDialog(QDialog):
         f.addRow(QLabel(f"Gespeichert in {k.pfad} (nur für Sie lesbar). Bei Nutzung geht der Text an Anthropic — "
                         "vorher fragt das Programm um Erlaubnis."))
         p.zeile(f, f"Bisherige Kosten: {(K.als_geld(k['kosten']) if k['kosten'] else '0 $')}")
-        f = p.gruppe("Eigene Anbieter (OpenAI-kompatibel)")
-        liste = QListWidget()
-        liste.setMaximumHeight(90)
-        for a in k["anbieter"]:
-            liste.addItem(f"{a['name']} — {a['url']} — {a['modell']}")
-        f.addRow(liste)
-        zeile = QGridLayout()
-        n, u, s, m = QLineEdit(), QLineEdit(), QLineEdit(), QLineEdit()
-        n.setPlaceholderText("Name"); u.setPlaceholderText("https://…/v1"); s.setPlaceholderText("Schlüssel (optional)")
-        m.setPlaceholderText("Modell"); s.setEchoMode(QLineEdit.Password)
-        zeile.addWidget(n, 0, 0); zeile.addWidget(m, 0, 1); zeile.addWidget(u, 1, 0, 1, 2); zeile.addWidget(s, 2, 0, 1, 2)
-        b = QPushButton("Hinzufügen")
-
-        def neu():
-            if not u.text().strip() or not m.text().strip():
-                QMessageBox.information(self, "Anbieter", "Adresse und Modell werden gebraucht.")
-                return
-            a = k.anbieter_hinzufuegen(n.text(), u.text(), s.text(), m.text())
-            liste.addItem(f"{a['name']} — {a['url']} — {a['modell']}")
-            for w_ in (n, u, s, m):
-                w_.clear()
-            self.w.ki.geaendert.emit()
-        b.clicked.connect(neu)
-        zeile.addWidget(b, 3, 0, 1, 2)
-        host = QWidget(); host.setLayout(zeile)
-        f.addRow(host)
-        ent = QPushButton("Markierten Anbieter entfernen")
-        ent.clicked.connect(lambda: (k.anbieter_entfernen(k["anbieter"][liste.currentRow()]["id"]), liste.takeItem(liste.currentRow()),
-                                     self.w.ki.geaendert.emit()) if liste.currentRow() >= 0 else None)
-        f.addRow(ent)
+        f = p.gruppe("Anbieter und Aufgaben")
+        p.zeile(f, "Eigene Anbieter (OpenAI-kompatibel, auch Ollama unter /v1) und welches Modell welche Aufgabe übernimmt — "
+                   "Chatbot, Zusammenfassen, Übersetzung, Textanalyse, Bildgenerierung.")
+        for text, fn in (("KI-Konfiguration …", self.w.befehle.w_kiKonfiguration),
+                         ("Eigenen Anbieter hinzufügen …", self.w.befehle.w_eigenenAnbieterHinzufuegen)):
+            b = QPushButton(text)
+            b.clicked.connect(lambda _=False, fn=fn: fn())
+            f.addRow(b)
         f = p.gruppe("Für wen schreiben Sie? (Standard)")
         e2 = QComboBox(); e2.addItems(EMPFAENGER)
         e2.setCurrentText(self.w.assistant.thema)

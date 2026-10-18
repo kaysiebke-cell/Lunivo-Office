@@ -80,10 +80,61 @@ def noten_anhaengen(d: QTextDocument, noten: dict | None) -> None:
             c.insertText(f"{n if art == 'f' else roemisch(n)}  {(noten.get(art, {}) or {}).get(nid, '')}", f)
 
 
-def paginated_copy(qdoc: QTextDocument, page: PageSettings, noten: dict | None = None) -> QTextDocument:
+_TRENNER = {}
+
+
+def _trenner(sprache: str):
+    """pyphen-Wörterbuch (zwischengespeichert); None, wenn pyphen oder die Sprache fehlt."""
+    if sprache not in _TRENNER:
+        try:
+            import pyphen
+            _TRENNER[sprache] = pyphen.Pyphen(lang=sprache, left=2, right=3) if sprache in pyphen.LANGUAGES else None
+        except ImportError:
+            _TRENNER[sprache] = None
+    return _TRENNER[sprache]
+
+
+_WORT = None
+
+
+def silben_einfuegen(d: QTextDocument, sprache: str) -> int:
+    """Fügt in einer KOPIE des Dokuments weiche Trennstriche (U+00AD) in lange Wörter ein; Qt bricht dort um und zeigt „-“.
+    Überschriften, Wörter mit Ziffern/Sonderzeichen und Verweise bleiben unberührt. → Anzahl eingefügter Trennstellen."""
+    global _WORT
+    import re
+    t = _trenner(sprache)
+    if t is None:
+        return 0
+    if _WORT is None:
+        _WORT = re.compile(r"[^\W\d_]{6,}", re.UNICODE)
+    from PySide6.QtGui import QTextCursor
+    n = 0
+    b = d.firstBlock()
+    while b.isValid():
+        if b.blockFormat().headingLevel() == 0 and b.isVisible():
+            text = b.text()
+            stellen = []
+            for m in _WORT.finditer(text):
+                w = m.group()
+                if w.isupper() or "\u00ad" in w:
+                    continue
+                for i in t.positions(w):
+                    stellen.append(b.position() + m.start() + i)
+            c = QTextCursor(d)
+            for pos in reversed(stellen):                       # von hinten, damit die Stellen davor gültig bleiben
+                c.setPosition(pos)
+                c.insertText("\u00ad")
+                n += 1
+        b = b.next()
+    return n
+
+
+def paginated_copy(qdoc: QTextDocument, page: PageSettings, noten: dict | None = None, silben: bool | None = None) -> QTextDocument:
     d = qdoc.clone()
     bind_layout(d)
     noten_anhaengen(d, noten)
+    if (page.silbentrennung if silben is None else silben):
+        silben_einfuegen(d, page.silben_sprache)
     root = d.rootFrame()
     ff = root.frameFormat()
     ff.setMargin(0)
@@ -123,6 +174,45 @@ def _ohne_hintergruende(d: QTextDocument) -> None:
         if bf.hasProperty(QTextFormat.BackgroundBrush):
             QTextCursor(b).setBlockFormat(_bf_ohne(bf))
         b = b.next()
+
+
+def _ohne_hervorhebungen(d: QTextDocument) -> None:
+    """Nur die Texthervorhebung (Marker) entfällt; Absatz- und Tabellenhintergründe bleiben."""
+    from PySide6.QtCore import Qt as _Qt
+    from PySide6.QtGui import QBrush, QTextCursor
+    b = d.firstBlock()
+    while b.isValid():
+        it = b.begin()
+        stuecke = []
+        while not it.atEnd():
+            f = it.fragment()
+            if f.isValid() and f.charFormat().background().style() != _Qt.NoBrush and not f.charFormat().isImageFormat():
+                stuecke.append((f.position(), f.position() + f.length()))
+            it += 1
+        for von, bis in stuecke:
+            c = QTextCursor(d); c.setPosition(von); c.setPosition(bis, QTextCursor.KeepAnchor)
+            fm = QTextCharFormat(); fm.setBackground(QBrush(_Qt.NoBrush)); c.mergeCharFormat(fm)
+        b = b.next()
+
+
+def _textmarken_klammern(d: QTextDocument) -> None:
+    """„Textmarken drucken“: jede Textmarke steht in eckigen Klammern im Ausdruck."""
+    from PySide6.QtGui import QTextCursor
+    stellen = {}
+    b = d.firstBlock()
+    while b.isValid():
+        it = b.begin()
+        while not it.atEnd():
+            f = it.fragment()
+            if f.isValid() and f.charFormat().isAnchor() and not f.charFormat().anchorHref():
+                for n in f.charFormat().anchorNames():
+                    v, e = stellen.get(n, (f.position(), f.position() + f.length()))
+                    stellen[n] = (min(v, f.position()), max(e, f.position() + f.length()))
+            it += 1
+        b = b.next()
+    einfuegungen = sorted([(e, "]") for v, e in stellen.values()] + [(v, "[") for v, e in stellen.values()], reverse=True)
+    for pos, z in einfuegungen:
+        c = QTextCursor(d); c.setPosition(pos); c.insertText(z)
 
 
 def _bf_ohne(bf):
@@ -192,6 +282,13 @@ def render(qdoc: QTextDocument, page: PageSettings, device, first: int = 1, last
         luecken_entfernen(d)
     if opt.get("hintergrund") is False:
         _ohne_hintergruende(d)
+    if opt.get("hervorhebungen") is False:
+        _ohne_hervorhebungen(d)
+    if opt.get("textmarken"):
+        _textmarken_klammern(d)
+    if opt.get("silbenfarben"):
+        from .silbenfarben import SilbenFarben
+        _hl = SilbenFarben(d, opt["silbenfarben"])             # bleibt bis zum Zeichnen am Leben (lokale Variable)
     total = max(1, d.pageCount())
     last = total if last is None else min(last, total)
     p = QPainter(device)
@@ -212,9 +309,79 @@ def render(qdoc: QTextDocument, page: PageSettings, device, first: int = 1, last
         p.save()
         p.scale(s, s)
         zeichne_seite(p, d, page, n, total, base, opt.get("hintergrund") is not False)
+        if opt.get("textgrenzen") or opt.get("zuschnitt"):
+            _druckmarken(p, page, bool(opt.get("textgrenzen")), bool(opt.get("zuschnitt")))
         p.restore()
     p.end()
+    if opt.get("lesezeichen") is not None:
+        opt["lesezeichen_ergebnis"] = lesezeichen_sammeln(d, ch, liste, opt["lesezeichen"])
     return total
+
+
+def lesezeichen_sammeln(d: QTextDocument, ch: float, liste: list[int], was: dict) -> list[tuple[int, str, int]]:
+    """[(Ebene, Titel, Seitenindex 0-basiert)] für die PDF-Gliederung: Überschriften und/oder Textmarken."""
+    lay = d.documentLayout()
+    out = []
+    b = d.firstBlock()
+    while b.isValid():
+        seite = int(lay.blockBoundingRect(b).top() // ch) + 1 if ch else 1
+        if seite in liste and b.isVisible():
+            lv = b.blockFormat().headingLevel()
+            if was.get("ueberschriften", True) and lv and b.text().strip():
+                out.append((lv, b.text().strip(), liste.index(seite), b.position()))
+            if was.get("textmarken"):
+                it = b.begin()
+                while not it.atEnd():
+                    f = it.fragment()
+                    if f.isValid() and f.charFormat().isAnchor() and not f.charFormat().anchorHref():
+                        for n in f.charFormat().anchorNames():
+                            if not any(o[1] == n and o[0] == 0 for o in out):
+                                out.append((0, n, liste.index(seite), f.position()))
+                    it += 1
+        b = b.next()
+    out.sort(key=lambda o: o[3])
+    return [(lv, t, i) for lv, t, i, _p in out]
+
+
+def gliederung_schreiben(pfad: str, eintraege: list[tuple[int, str, int]]) -> None:
+    """Schreibt die Lesezeichen in die fertige PDF (QPdfWriter kann das nicht selbst) — mit pypdf."""
+    from pypdf import PdfReader, PdfWriter
+    w = PdfWriter(clone_from=PdfReader(pfad))
+    eltern: dict[int, object] = {}
+    for lv, titel, seite in eintraege:
+        stufe = max(1, lv)                    # Textmarken (Ebene 0) stehen auf oberster Ebene
+        vater = next((eltern[k] for k in range(stufe - 1, 0, -1) if k in eltern), None)
+        eltern[stufe] = w.add_outline_item(titel, min(seite, len(w.pages) - 1), parent=vater)
+        for k in [k for k in eltern if k > stufe]:
+            del eltern[k]
+    tmp = pfad + ".tmp"
+    with open(tmp, "wb") as fh:
+        w.write(fh)
+    import os
+    os.replace(tmp, pfad)
+
+
+def _druckmarken(p: QPainter, page: PageSettings, grenzen: bool, zuschnitt: bool) -> None:
+    """Textbegrenzungen (gestrichelter Rahmen um die Textfläche) und Zuschnittsmarken (Ecken) auf der gedruckten Seite."""
+    from PySide6.QtGui import QColor, QPen
+    cw, ch = page.content_width_px, page.content_height_px
+    ml, mt = mm_to_px(page.margin_left_mm), mm_to_px(page.margin_top_mm)
+    p.save()
+    pen = QPen(QColor("#888888"))
+    pen.setWidthF(0.7)
+    if grenzen:
+        pen.setStyle(Qt.DashLine)
+        p.setPen(pen)
+        p.setBrush(Qt.NoBrush)
+        p.drawRect(QRectF(ml, mt, cw, ch))
+    if zuschnitt:
+        pen.setStyle(Qt.SolidLine)
+        p.setPen(pen)
+        l = mm_to_px(4)
+        for x, y, dx, dy in ((ml, mt, -1, -1), (ml + cw, mt, 1, -1), (ml, mt + ch, -1, 1), (ml + cw, mt + ch, 1, 1)):
+            p.drawLine(x + dx * 2, y, x + dx * (2 + l), y)
+            p.drawLine(x, y + dy * 2, x, y + dy * (2 + l))
+    p.restore()
 
 
 def zeichne_seite(p: QPainter, d: QTextDocument, page: PageSettings, n: int, total: int, base: QFont,
@@ -331,7 +498,8 @@ def _page_layout(page: PageSettings) -> QPageLayout:
     return QPageLayout(size, orient, QMarginsF(0, 0, 0, 0), QPageLayout.Millimeter)
 
 
-def export_pdf(path: str, qdoc: QTextDocument, page: PageSettings, title: str = "", author: str = "", noten: dict | None = None) -> int:
+def export_pdf(path: str, qdoc: QTextDocument, page: PageSettings, title: str = "", author: str = "", noten: dict | None = None,
+               lesezeichen: dict | None = None, silben: dict | None = None) -> int:
     from PySide6.QtCore import QByteArray
     w = QPdfWriter(path)
     w.setResolution(300)
@@ -344,7 +512,16 @@ def export_pdf(path: str, qdoc: QTextDocument, page: PageSettings, title: str = 
         w.setDocumentXmpMetadata(QByteArray(("<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\">"
                                              "<rdf:Description xmlns:dc=\"http://purl.org/dc/elements/1.1/\"><dc:creator><rdf:Seq><rdf:li>"
                                              + esc + "</rdf:li></rdf:Seq></dc:creator></rdf:Description></rdf:RDF></x:xmpmeta>").encode("utf-8")))
-    return render(qdoc, page, w, opt={"noten": noten} if noten else None)
+    opt = {"noten": noten} if noten else {}
+    if lesezeichen:
+        opt["lesezeichen"] = lesezeichen
+    if silben:
+        opt["silbenfarben"] = silben
+    n = render(qdoc, page, w, opt=opt or None)
+    if lesezeichen and opt.get("lesezeichen_ergebnis"):
+        del w                                  # Datei schließen, bevor sie noch einmal geöffnet wird
+        gliederung_schreiben(path, opt["lesezeichen_ergebnis"])
+    return n
 
 
 def print_document(printer: QPrinter, qdoc: QTextDocument, page: PageSettings, opt: dict | None = None) -> int:

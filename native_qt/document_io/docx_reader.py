@@ -62,8 +62,18 @@ _UNSUPPORTED = [
     ("//w:sdt[.//w:sdtPr/w:text or .//w:sdtPr/w:dropDownList or .//w:sdtPr/w:date or .//w:sdtPr/w:comboBox]", "Formularfelder (Inhaltssteuerelemente) werden als einfacher Text übernommen."),
     ("//m:oMath", "Formeln werden nicht dargestellt und gehen beim Speichern verloren."),
     ("//w:pict | //wps:wsp | //wpg:wgp", "Formen und gezeichnete Objekte werden nicht dargestellt."),
-    ("//w:drawing[.//wp:anchor]", "Frei positionierte Bilder werden als Bild im Text eingefügt."),
+    ("//w:drawing[.//wp:anchor][not(.//wp:wrapSquare or .//wp:wrapTight or .//wp:wrapThrough)]",
+     "Frei positionierte Bilder ohne Umbruch um den Text werden als Bild im Text eingefügt."),
 ]
+
+
+from docx.oxml.ns import nsmap as _NS  # noqa: E402
+
+
+def _xp(el, ausdruck: str):
+    """XPath mit den Namensräumen von python-docx — auch für Elemente, deren Klasse kein eigenes xpath mit Namensräumen hat."""
+    from lxml import etree
+    return etree._Element.xpath(el, ausdruck, namespaces=_NS)
 
 
 def _emu_to_px(v) -> float:
@@ -735,7 +745,32 @@ class _Reader:
         alt = drawing.xpath(".//wp:docPr/@descr")
         if alt:
             imf.setProperty(STYLE_PROP + 1, alt[0])
+        seite = self._umbruch_seite(drawing, w)
+        if seite:
+            from ..editor.umbruch import schwebend_einfuegen
+            schwebend_einfuegen(self.doc, cursor.block().position(), imf, seite)      # gehört zum Absatz: steht an dessen Anfang
+            return
         cursor.insertImage(imf)
+
+    def _umbruch_seite(self, drawing, breite_px: float) -> str:
+        """„links“/„rechts“, wenn das Bild den Text umfließt (wrapSquare/Tight/Through); sonst leer."""
+        anker = drawing.xpath("wp:anchor")
+        if not anker or not _xp(anker[0], "wp:wrapSquare | wp:wrapTight | wp:wrapThrough"):
+            return ""
+        h = _xp(anker[0], "wp:positionH")
+        if h:
+            al = _xp(h[0], "wp:align/text()")
+            if al:
+                return "rechts" if al[0] in ("right", "outside") else "links"
+            off = _xp(h[0], "wp:posOffset/text()")
+            if off:
+                try:
+                    sec = self.d.sections[0]
+                    inhalt = _emu_to_px(sec.page_width - sec.left_margin - sec.right_margin)
+                except Exception:                                                      # noqa: BLE001
+                    inhalt = 600.0
+                return "rechts" if _emu_to_px(off[0]) + breite_px / 2 > inhalt / 2 else "links"
+        return "links"
 
     # ---- Tabellen ----------------------------------------------------
     def add_table(self, table: Table):
@@ -810,6 +845,9 @@ class _Reader:
                 ps.color = "#" + c.lower()
         if sect._sectPr.find(qn("w:lnNumType")) is not None:
             ps.zeilennummern = True
+        ah = self.d.settings.element.find(qn("w:autoHyphenation"))
+        if ah is not None and ah.get(qn("w:val"), "true").lower() not in ("false", "0", "off"):
+            ps.silbentrennung = True
         pb = sect._sectPr.find(qn("w:pgBorders"))
         if pb is not None:
             e = pb.find(qn("w:top"))

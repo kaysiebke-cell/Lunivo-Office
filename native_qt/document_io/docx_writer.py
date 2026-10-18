@@ -111,6 +111,13 @@ class _Writer:
             st = self.d.settings.element
             if st.find(qn("w:displayBackgroundShape")) is None:
                 st.insert(0, OxmlElement("w:displayBackgroundShape"))
+        st = self.d.settings.element
+        for alt in st.findall(qn("w:autoHyphenation")):
+            st.remove(alt)
+        if p.silbentrennung:
+            ah = OxmlElement("w:autoHyphenation")
+            anker = st.find(qn("w:zoom"))
+            (anker.addnext(ah) if anker is not None else st.insert(0, ah))
         sp = sect._sectPr
         for alt in sp.findall(qn("w:pgBorders")):
             sp.remove(alt)
@@ -397,7 +404,11 @@ class _Writer:
         cf: QTextCharFormat = frag.charFormat()
         text = frag.text()
         if cf.isImageFormat():
-            self._image(cf.toImageFormat(), para)
+            if not hasattr(self, "_schwebend"):
+                from ..editor import umbruch
+                self._schwebend = {pos: umbruch.SEITEN[r.frameFormat().position()]
+                                   for pos, r in umbruch.schwebende_rahmen(self.q).items()}
+            self._image(cf.toImageFormat(), para, self._schwebend.get(frag.position()))
             return
         parent = para
         href = cf.anchorHref() if cf.isAnchor() else ""
@@ -507,7 +518,7 @@ class _Writer:
             for a in ("w:hAnsi", "w:cs", "w:eastAsia"):
                 rf.set(qn(a), fam)
         elif _has(cf, QTextFormat.FontFamily):
-            f.name = cf.fontFamily()
+            f.name = cf.stringProperty(QTextFormat.FontFamily)
         if _has(cf, QTextFormat.FontPointSize) and cf.fontPointSize() > 0:
             f.size = Pt(cf.fontPointSize())
         if _has(cf, QTextFormat.FontWeight):
@@ -558,7 +569,7 @@ class _Writer:
         if is_link:
             run._r.get_or_add_rPr().append(_rstyle_hyperlink(self.d))
 
-    def _image(self, imf, para):
+    def _image(self, imf, para, seite: str | None = None):
         name = imf.name()
         img = self.q.resource(QTextDocument.ImageResource, QUrl(name))
         if not isinstance(img, QImage) or img.isNull():
@@ -578,6 +589,34 @@ class _Writer:
         if alt:
             for dp in run._r.xpath(".//wp:docPr"):
                 dp.set("descr", str(alt))
+        if seite:
+            self._verankern(run, "right" if seite == "rechts" else "left")
+
+    def _verankern(self, run, ausrichtung: str) -> None:
+        """Macht aus dem Bild im Text (wp:inline) ein umflossenes Bild (wp:anchor, Umbruch „Quadrat“, links/rechts)."""
+        for inline in run._r.xpath(".//wp:inline"):
+            anker = OxmlElement("wp:anchor")
+            for k, v in (("distT", "0"), ("distB", "0"), ("distL", "114300"), ("distR", "114300"), ("simplePos", "0"),
+                         ("relativeHeight", "251658240"), ("behindDoc", "0"), ("locked", "0"), ("layoutInCell", "1"),
+                         ("allowOverlap", "0")):
+                anker.set(k, v)
+            sp = OxmlElement("wp:simplePos"); sp.set("x", "0"); sp.set("y", "0")
+            ph = OxmlElement("wp:positionH"); ph.set("relativeFrom", "margin")
+            al = OxmlElement("wp:align"); al.text = ausrichtung; ph.append(al)
+            pv = OxmlElement("wp:positionV"); pv.set("relativeFrom", "paragraph")
+            po = OxmlElement("wp:posOffset"); po.text = "0"; pv.append(po)
+            ee = OxmlElement("wp:effectExtent")
+            for k in ("l", "t", "r", "b"):
+                ee.set(k, "0")
+            wr = OxmlElement("wp:wrapSquare"); wr.set("wrapText", "bothSides")
+            extent = inline.find(qn("wp:extent"))
+            vorn = [sp, ph, pv] + ([extent] if extent is not None else [])
+            for e in vorn + [ee, wr]:
+                anker.append(e)
+            for k in list(inline):
+                if k is not extent and k.tag != qn("wp:effectExtent"):
+                    anker.append(k)
+            inline.getparent().replace(inline, anker)
 
     # ---- Tabellen -------------------------------------------------------
     def write_table(self, qt: QTextTable, container):

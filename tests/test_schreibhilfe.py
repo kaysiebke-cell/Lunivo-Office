@@ -79,7 +79,7 @@ def test_vorhersage_mit_thema(app, tmp_path, monkeypatch):
 def test_band_ist_das_alte_register(app, tmp_path, monkeypatch):
     w = win(tmp_path, monkeypatch)
     sichtbar = [w.band.reiter.tabText(i) for i in range(w.band.reiter.count()) if w.band.reiter.isTabVisible(i)]
-    assert sichtbar == ["Datei", "Start", "Einfügen", "Seitenlayout", "Verweise", "Überprüfen", "KI", "Ansicht"]
+    assert sichtbar == ["Datei", "Start", "Einfügen", "Seitenlayout", "Verweise", "Überprüfen", "Schreibhilfe", "KI", "Ansicht"]
     # Kontext-Register erscheinen nur bei Bedarf
     assert not w.band.reiter.isTabVisible(w.band.kontext_index["tabelle"])
     e0 = w.current_editor(); e0.insert_table(2, 2); w._sync_format()
@@ -115,9 +115,14 @@ def test_tabellentools_wirken(app, tmp_path, monkeypatch):
 
 def test_seitenleiste_bereiche(app, tmp_path, monkeypatch):
     w = win(tmp_path, monkeypatch)
-    assert [b.text() for b in w.sidebar.bereiche.buttons()] == ["Überprüfen", "Schreibhilfe", "KI"]
-    w.sidebar.zeige_bereich(1)
-    assert w.sidebar.stapel.currentIndex() == 1 and w.sidebar._seite_sh.widget() is not None
+    assert not hasattr(w.sidebar, "bereiche")          # keine Reiterknöpfe über der Schreibhilfe
+    assert [b.text() for b in w.sidebar.chips.values()] == ["We", "Vo", "Ko"]
+    assert all(b.toolTip() for b in w.sidebar.chips.values())
+    assert w.sidebar.stapel.count() == 2 and w.sidebar._seite_ki.widget() is not None
+    w._rechts_klick(1)
+    assert w.sidebar.stapel.currentIndex() == 1 and w._rechts[1].isChecked() and not w._rechts[0].isChecked()
+    w._rechts_klick(1)
+    assert w.sidebar.isHidden() and not w._rechts[1].isChecked()
 
 
 def test_ki_korrektur_ende_zu_ende(app, tmp_path, monkeypatch):
@@ -197,3 +202,75 @@ def test_rechtsklick_menue_vorschlaege_und_ignorieren(app, tmp_path, monkeypatch
     assert "Zum Wörterbuch hinzufügen" in [a.text() for a in m2.actions()]
     n = w.assistant.ignorierte_wieder_pruefen()
     assert n >= 0
+
+
+def test_text_in_bild_ende_zu_ende(app, tmp_path, monkeypatch):
+    """Markierter Text → Anbieter mit „Bilder“ → Bild steht im Dokument an Stelle der Markierung; Strg+Z holt den Text zurück."""
+    import base64, json, threading
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+    from PySide6.QtCore import QBuffer, QIODevice
+    from PySide6.QtGui import QColor, QImage
+    img = QImage(16, 16, QImage.Format_RGB32); img.fill(QColor("blue"))
+    buf = QBuffer(); buf.open(QIODevice.WriteOnly); img.save(buf, "PNG")
+    png = base64.b64encode(bytes(buf.data())).decode()
+
+    class H(BaseHTTPRequestHandler):
+        def do_POST(self):
+            self.rfile.read(int(self.headers["Content-Length"]))
+            body = json.dumps({"data": [{"b64_json": png}]}).encode()
+            self.send_response(200); self.send_header("Content-Length", str(len(body))); self.end_headers(); self.wfile.write(body)
+        def log_message(self, *a): pass
+    srv = HTTPServer(("127.0.0.1", 0), H)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    w = win(tmp_path, monkeypatch)
+    k = w.ki.konfig
+    a = k.anbieter_hinzufuegen("Lokal", f"http://127.0.0.1:{srv.server_port}/v1", "", "bild", ["bilder"])
+    k.aufgabe_setzen("bildgenerierung", "eigen:" + a["id"])
+    e = w.current_editor()
+    e.setPlainText("Ein blauer Würfel")
+    c = e.textCursor(); c.select(QTextCursor.Document); e.setTextCursor(c)
+    w.ki.bild_aus_text()
+    warte(w.ki._sig.fertig)
+    assert "￼" in e.document().toPlainText() and "Würfel" not in e.document().toPlainText()
+    e.undo()
+    assert "Ein blauer Würfel" in e.document().toPlainText() or e.document().toPlainText().count("￼") == 0
+
+
+def test_ki_dialoge(app, tmp_path, monkeypatch):
+    from native_qt.widgets.ki_dialoge import AnbieterDialog, KIKonfigurationDialog, ModellListeDialog
+    w = win(tmp_path, monkeypatch)
+    k = w.ki.konfig
+    d = AnbieterDialog(w, k)
+    assert d.url.text().endswith(":11434/v1") and d.tags["text"].isChecked()
+    d.name.setText("X"); d.modell.setCurrentText("m"); d.tags["bilder"].setChecked(True)
+    d._ok()
+    assert k["anbieter"][0]["verwendungFuer"] == ["text", "bilder"]
+    kd = KIKonfigurationDialog(w)
+    assert list(kd.felder) == ["chatbot", "zusammenfassen", "uebersetzung", "textanalyse", "bildgenerierung"]
+    assert kd.felder["bildgenerierung"].count() == 2 and kd.felder["chatbot"].count() == 5
+    kd.felder["bildgenerierung"].setCurrentIndex(1); kd._ok()
+    assert k["aufgaben"]["bildgenerierung"].startswith("eigen:")
+    ModellListeDialog(w, k)._fuellen()
+
+
+def test_silbenfarben_befehl_und_dialog(app, tmp_path, monkeypatch):
+    from native_qt.widgets.silben_dialog import SilbenDialog
+    w = win(tmp_path, monkeypatch)
+    e = w.current_editor()
+    e.setPlainText("Wanderung und Schmetterling")
+    assert w.befehle.hat("silbenfarben") and w.befehle.hat("silbenEinstellen") and not w.befehle.zustand("silbenfarben")
+    w.befehle.tun("silbenfarben")
+    assert w.befehle.zustand("silbenfarben") and e.document().firstBlock().layout().formats()
+    d = SilbenDialog(w)
+    d.palette.setCurrentText("Blau / Orange"); d.mindestens.setValue(9); d.absatz.setChecked(False)
+    assert w.settings.get("lesehilfe/silben/palette") == "Blau / Orange"
+    assert {r.format.foreground().color().name() for r in e.document().firstBlock().layout().formats()} <= {"#1f5fbf", "#d9480f"}
+    d.reject()                                                         # Abbrechen stellt den alten Stand wieder her
+    assert w.settings.get("lesehilfe/silben/palette") == "Blau / Rot"
+    w.befehle.tun("silbenfarben")
+    assert not e.document().firstBlock().layout().formats()
+    # neue Dokumente übernehmen die Einstellung
+    w.settings.set("lesehilfe/silben/an", True)
+    w.new_document()
+    w.current_editor().setPlainText("Wanderung")
+    assert w.current_editor().document().firstBlock().layout().formats()

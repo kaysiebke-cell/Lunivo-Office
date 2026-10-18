@@ -1,6 +1,6 @@
 # Prüfbogen ↔ native Fassung
 
-Erzeugt von `werkzeug/pruefbogen-abgleich.py` aus dem Prüfkatalog (415 Punkte). **✅ 287 · ◐ 69 · ⬜ 59**. ✅ = Befehl/Funktion vorhanden (einzeln getestet nur, wo `tests/` es belegt); ◐ = teilweise oder anders gelöst; ⬜ = offen.
+Erzeugt von `werkzeug/pruefbogen-abgleich.py` aus dem Prüfkatalog (415 Punkte). **✅ 295 · ◐ 71 · ⬜ 49**. ✅ = Befehl/Funktion vorhanden (einzeln getestet nur, wo `tests/` es belegt); ◐ = teilweise oder anders gelöst; ⬜ = offen.
 Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/bilder/`.
 
 ## DATEI
@@ -149,8 +149,8 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 - ✅ Einzug — Band: Seitenlayout ▸ Absatz
 - ✅ Absatzabstand — Band: Seitenlayout ▸ Absatz
 - ✅ Zeilennummern — Band: Seitenlayout ▸ Seite einrichten
-- ⬜ Silbentrennung — Qt hat keine automatische Silbentrennung  _(Web-Fassung: teil)_
-- ⬜ Textumbruch — Bilder stehen im Text; frei schwebende Objekte kennt Qt nicht
+- ◐ Silbentrennung — pyphen setzt weiche Trennstellen in Seitenansicht, Druck, PDF; DOCX autoHyphenation (test_werkzeuge). Die Bearbeitungsansicht zeigt keine Trennstriche  _(Web-Fassung: teil)_
+- ◐ Textumbruch — Bild links/rechts vom Text umflossen (editor/umbruch.py, DOCX wp:anchor wrapSquare, test_werkzeuge); „Oben und unten“, „Hinter/vor dem Text“ und freie Position fehlen
 - ✅ Seitenfarbe — Band: Seitenlayout ▸ Seitenhintergrund  _(Web-Fassung: fertig)_
 - ✅ Wasserzeichen — Band: Seitenlayout ▸ Seitenhintergrund
 - ✅ Seitenrahmen — befehle.seitenrahmen, pagination.seitenschmuck, DOCX pgBorders (test_docx_roundtrip, test_pdf)  _(Web-Fassung: fertig)_
@@ -178,10 +178,10 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 
 ## ÜBERPRÜFEN
 
-- ✅ Prüfen — Band: Seitenleiste ▸ Prüfen ▸ Dokumentprüfung, Überprüfen ▸ Dokumentprüfung
-- ✅ Gründlich prüfen — Band: Seitenleiste ▸ Prüfen ▸ Dokumentprüfung, Überprüfen ▸ Dokumentprüfung
+- ✅ Prüfen — Band: Schreibhilfe ▸ Prüfen ▸ Dokumentprüfung, Überprüfen ▸ Dokumentprüfung
+- ✅ Gründlich prüfen — Band: Schreibhilfe ▸ Prüfen ▸ Dokumentprüfung, Überprüfen ▸ Dokumentprüfung
 - ✅ Rechtschreibung — Band: Überprüfen ▸ Dokumentprüfung
-- ✅ Thesaurus — Band: Seitenleiste ▸ Sprache, Überprüfen ▸ Dokumentprüfung
+- ✅ Thesaurus — Band: Schreibhilfe ▸ Sprache, Überprüfen ▸ Dokumentprüfung
 - ✅ Wörter zählen — Band: Überprüfen ▸ Dokumentprüfung
 - ✅ Korrektursprache — Band: Überprüfen ▸ Sprache  _(Web-Fassung: fertig)_
 - ✅ Barrierefreiheit prüfen — Band: Überprüfen ▸ Barrierefreiheit
@@ -203,19 +203,19 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 
 ## SCHREIBHILFE (Lunivo)
 
-- ✅ Dokumentprüfung > Prüfen — Band: Seitenleiste ▸ Prüfen ▸ Dokumentprüfung, Überprüfen ▸ Dokumentprüfung
-- ✅ Dokumentprüfung > Gründlich prüfen — Band: Seitenleiste ▸ Prüfen ▸ Dokumentprüfung, Überprüfen ▸ Dokumentprüfung
-- ✅ Dokumentprüfung > Welche Hilfe wann — Band: Seitenleiste ▸ Prüfen ▸ Dokumentprüfung
-- ✅ Beim Schreiben > Rechtschreibprüfung — Band: Seitenleiste ▸ Beim Schreiben
-- ✅ Beim Schreiben > Wortvorhersage — Band: Seitenleiste ▸ Beim Schreiben
-- ✅ Beim Schreiben > AutoKorrektur — Band: Seitenleiste ▸ Beim Schreiben
-- ✅ Vorlesen > Vorlesen — Band: Seitenleiste ▸ Vorlesen, Seitenleiste ▸ Vorlesen ▸ Vorlesen
-- ✅ Vorlesen > Ab hier vorlesen — Band: Seitenleiste ▸ Vorlesen ▸ Vorlesen
-- ✅ Vorlesen > Anhalten — Band: Seitenleiste ▸ Vorlesen ▸ Vorlesen
-- ✅ Vorlesen > Stimme und Tempo — Band: Seitenleiste ▸ Vorlesen ▸ Vorlesen
+- ✅ Dokumentprüfung > Prüfen — Band: Schreibhilfe ▸ Prüfen ▸ Dokumentprüfung, Überprüfen ▸ Dokumentprüfung
+- ✅ Dokumentprüfung > Gründlich prüfen — Band: Schreibhilfe ▸ Prüfen ▸ Dokumentprüfung, Überprüfen ▸ Dokumentprüfung
+- ✅ Dokumentprüfung > Welche Hilfe wann — Band: Schreibhilfe ▸ Prüfen ▸ Dokumentprüfung
+- ✅ Beim Schreiben > Rechtschreibprüfung — Band: Schreibhilfe ▸ Beim Schreiben
+- ✅ Beim Schreiben > Wortvorhersage — Band: Schreibhilfe ▸ Beim Schreiben
+- ✅ Beim Schreiben > AutoKorrektur — Band: Schreibhilfe ▸ Beim Schreiben
+- ✅ Vorlesen > Vorlesen — Band: Schreibhilfe ▸ Vorlesen, Schreibhilfe ▸ Vorlesen ▸ Vorlesen
+- ✅ Vorlesen > Ab hier vorlesen — Band: Schreibhilfe ▸ Vorlesen ▸ Vorlesen
+- ✅ Vorlesen > Anhalten — Band: Schreibhilfe ▸ Vorlesen ▸ Vorlesen
+- ✅ Vorlesen > Stimme und Tempo — Band: Schreibhilfe ▸ Vorlesen ▸ Vorlesen
 - ✅ KI > KI-Korrektur — Band: KI ▸ Korrektur
 - ✅ KI > Vorschläge — Seitenleiste / KI-Reiter (test_schreibhilfe)
-- ✅ Anzeigen > Seitenleiste Schreibhilfe — Band: Seitenleiste ▸ Anzeigen  _(Web-Fassung: fertig)_
+- ✅ Anzeigen > Seitenleiste Schreibhilfe — Band: Schreibhilfe ▸ Anzeigen  _(Web-Fassung: fertig)_
 - ✅ Anzeigen > Optionen — Seitenleiste / KI-Reiter (test_schreibhilfe)
 
 ## SENDUNGEN (Lunivo)
@@ -234,7 +234,7 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 ## ANSICHT
 
 - ✅ Drucklayout — Band: Ansicht ▸ Dokumentansichten
-- ✅ Lesemodus — Band: Ansicht ▸ Dokumentansichten, Seitenleiste ▸ Lesen
+- ✅ Lesemodus — Band: Ansicht ▸ Dokumentansichten, Schreibhilfe ▸ Lesen
 - ✅ Zwei Seiten — Band: Ansicht ▸ Dokumentansichten
 - ✅ Weblayout — Band: Ansicht ▸ Dokumentansichten
 - ✅ Gliederung — Band: Ansicht ▸ Dokumentansichten
@@ -243,9 +243,9 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 - ✅ Gitternetzlinien — Band: Ansicht ▸ Anzeigen  _(Web-Fassung: fertig)_
 - ✅ Navigationsbereich — Band: Ansicht ▸ Anzeigen
 - ✅ Textbegrenzungen — Band: Ansicht ▸ Anzeigen  _(Web-Fassung: fertig)_
-- ✅ Seitenleiste Schreibhilfe — Band: Seitenleiste ▸ Anzeigen  _(Web-Fassung: fertig)_
-- ✅ Lesehilfe — Band: Seitenleiste ▸ Lesen
-- ✅ Zeilenfokus — Band: Seitenleiste ▸ Lesen
+- ✅ Seitenleiste Schreibhilfe — Band: Schreibhilfe ▸ Anzeigen  _(Web-Fassung: fertig)_
+- ✅ Lesehilfe — Band: Schreibhilfe ▸ Lesen
+- ✅ Zeilenfokus — Band: Schreibhilfe ▸ Lesen
 - ✅ Vergrößern — Band: Ansicht ▸ Zoom
 - ✅ Verkleinern — Band: Ansicht ▸ Zoom
 - ✅ 100 % — Band: Ansicht ▸ Zoom
@@ -377,12 +377,12 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 
 ## OPTIONEN > Ansicht > Druckoptionen
 
-- ⬜ Hervorhebungen drucken — nicht übertragen
-- ⬜ Textbegrenzungen drucken — nicht übertragen
-- ⬜ Zuschnittsmarken anzeigen — nicht übertragen
-- ⬜ Feldfunktionen drucken — nicht übertragen
-- ⬜ Textmarken drucken — nicht übertragen
-- ⬜ Feldschattierung — nicht übertragen
+- ✅ Hervorhebungen drucken — drucken/hervorhebungen, textgrenzen, zuschnitt, textmarken → pagination.render (test_werkzeuge)
+- ✅ Textbegrenzungen drucken — drucken/hervorhebungen, textgrenzen, zuschnitt, textmarken → pagination.render (test_werkzeuge)
+- ✅ Zuschnittsmarken anzeigen — drucken/hervorhebungen, textgrenzen, zuschnitt, textmarken → pagination.render (test_werkzeuge)
+- ⬜ Feldfunktionen drucken — Felder erscheinen nur mit ihrem Ergebnis; keine Feldcodes und keine Schattierung
+- ✅ Textmarken drucken — drucken/hervorhebungen, textgrenzen, zuschnitt, textmarken → pagination.render (test_werkzeuge)
+- ⬜ Feldschattierung — Felder erscheinen nur mit ihrem Ergebnis; keine Feldcodes und keine Schattierung
 
 ## OPTIONEN > Ansicht > Formatierungszeichen
 
@@ -407,7 +407,7 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 
 ## OPTIONEN > Bearbeiten > Bearbeitungsoptionen
 
-- ⬜ Wortweise markieren — nicht übertragen
+- ✅ Wortweise markieren — bearbeiten/wortweise, editor_widget._wortweise (test_editor)
 - ◐ Text mit der Maus verschieben — Qt-Standard (Ziehen und Ablegen), nicht abschaltbar
 - ✅ Tippen ersetzt die Auswahl — bearbeiten/tippen_ersetzt (editor_widget.keyPressEvent)
 - ⬜ Maximale Rückgängig-Schritte — Qt bietet keine Begrenzung des Rückgängig-Stapels pro Dokument
@@ -420,7 +420,7 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 
 ## OPTIONEN > Bearbeiten > AutoKorrektur
 
-- ✅ AutoKorrektur — Band: Seitenleiste ▸ Beim Schreiben
+- ✅ AutoKorrektur — Band: Schreibhilfe ▸ Beim Schreiben
 - ✅ Typografische Anführungszeichen — services/autokorrektur.py, Optionen ▸ Bearbeiten (test_schreibhilfe)
 - ✅ Gedankenstriche — services/autokorrektur.py, Optionen ▸ Bearbeiten (test_schreibhilfe)
 - ✅ Auslassungspunkte — services/autokorrektur.py, Optionen ▸ Bearbeiten (test_schreibhilfe)
@@ -433,7 +433,7 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 - ⬜ Leerzeichenformat am Ende rechtsbündiger Zeilen anpassen — nicht übertragen
 - ◐ Bei zentriertem Ausrichten Erstzeileneinzug löschen — editor_widget._autokorr_extras/keyPressEvent — verdrahtet, noch ohne eigenen Test
 - ◐ Tabulator und Rücktaste setzen den Einzug — editor_widget._autokorr_extras/keyPressEvent — verdrahtet, noch ohne eigenen Test
-- ✅ Wortvorhersage — Band: Seitenleiste ▸ Beim Schreiben
+- ✅ Wortvorhersage — Band: Schreibhilfe ▸ Beim Schreiben
 
 ## OPTIONEN > Bearbeiten > Ausschneiden und Einfügen
 
@@ -453,7 +453,7 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 
 ## OPTIONEN > Allgemein und Speichern > Allgemeine Optionen
 
-- ⬜ Maßeinheit — nicht übertragen
+- ✅ Maßeinheit — ui/masseinheit → dialogs._MassSpin (Seitenränder, Einzüge; intern mm)
 - ◐ Bilder in der Datei nicht komprimieren — Bilder werden nie komprimiert; kein Schalter
 - ⬜ Standard-Ausgabeziel — nicht übertragen
 
@@ -516,13 +516,13 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 ## OPTIONEN > In PDF exportieren > Exportoptionen
 
 - ✅ Hyperlinks — Qt schreibt Link-Annotationen (geprüft mit pypdf)
-- ⬜ Überschriften als Lesezeichen — QPdfWriter kann keine PDF-Gliederung (Lesezeichen) schreiben
+- ✅ Überschriften als Lesezeichen — pagination.lesezeichen_sammeln + gliederung_schreiben (pypdf nach QPdfWriter; test_werkzeuge)
 - ⬜ Kommentare mitnehmen — nicht in QPdfWriter möglich; Noten stehen gesammelt am Textende
 - ✅ Dokumenteigenschaften mitnehmen — pdf/eigenschaften, pdf/oeffnen (export_pdf author)
 - ⬜ Verknüpfung von Fuß- und Endnoten — nicht in QPdfWriter möglich; Noten stehen gesammelt am Textende
-- ⬜ Textmarken übernehmen — QPdfWriter kann keine PDF-Gliederung (Lesezeichen) schreiben
-- ⬜ Andere Formatvorlagen in Lesezeichen umwandeln — QPdfWriter kann keine PDF-Gliederung (Lesezeichen) schreiben
-- ⬜ Eigene Formatvorlagen in Lesezeichen umwandeln — QPdfWriter kann keine PDF-Gliederung (Lesezeichen) schreiben
+- ✅ Textmarken übernehmen — pagination.lesezeichen_sammeln + gliederung_schreiben (pypdf nach QPdfWriter; test_werkzeuge)
+- ⬜ Andere Formatvorlagen in Lesezeichen umwandeln — nur Überschriften und Textmarken werden Lesezeichen; Formatvorlagen-Auswahl fehlt
+- ⬜ Eigene Formatvorlagen in Lesezeichen umwandeln — nur Überschriften und Textmarken werden Lesezeichen; Formatvorlagen-Auswahl fehlt
 - ✅ PDF nach dem Export öffnen — pdf/eigenschaften, pdf/oeffnen (export_pdf author)
 
 ## OPTIONEN > Benutzerinformationen > Benutzerdaten
@@ -584,7 +584,7 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 - ✅ KI-Modell — Optionen ▸ Schreibhilfe und KI (test_ki; nur mit Attrappen gegen die echten Dienste getestet)
 - ✅ Für wen der Text ist — Optionen ▸ Schreibhilfe und KI (test_ki; nur mit Attrappen gegen die echten Dienste getestet)
 - ✅ Verbrauch — Optionen ▸ Schreibhilfe und KI (test_ki; nur mit Attrappen gegen die echten Dienste getestet)
-- ✅ Übersetzen — Band: Seitenleiste ▸ Sprache
+- ✅ Übersetzen — Band: Schreibhilfe ▸ Sprache
 
 ## OPTIONEN > Gedächtnis > Gedächtnis
 

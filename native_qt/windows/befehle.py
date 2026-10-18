@@ -77,6 +77,10 @@ class Befehle:
         f = getattr(self, "menue_" + name.replace(".", "_"), None)
         return f() if callable(f) else None
 
+    def _popup(self, menue) -> None:
+        """Menü an der Mausposition zeigen (eigene Stelle, damit Tests es abfangen können)."""
+        menue.exec(QCursor.pos())
+
     def fehlende(self, namen) -> list[str]:
         return sorted(n for n in namen if not self.hat(n))
 
@@ -179,7 +183,7 @@ class Befehle:
         for t, px in (("Zeichenabstand: eng", -1.0), ("Zeichenabstand: normal", 0.0), ("Zeichenabstand: weit", 2.0),
                       ("Zeichenabstand: sehr weit", 4.0)):
             m.addAction(t, lambda _=False, px=px: self.ed.set_letter_spacing(px))
-        m.exec(QCursor.pos())
+        self._popup(m)
 
     def durch(self, k=None):
         if self.ed: self.ed.toggle_strike(not self.an_durch())
@@ -315,7 +319,7 @@ class Befehle:
     def an_steuerzeichenZeigen(self): return self.w.marks_on
 
     # ---- Bearbeiten -----------------------------------------------------------------------------------------
-    def suchen(self, k=None):
+    def suchen(self, k=None, *_):
         self.w.find_dialog_show()
 
     ersetzen = suchen
@@ -350,7 +354,7 @@ class Befehle:
 
 
     # ---- Seitenlayout --------------------------------------------------------------------------------------------------
-    def seitenraenderRahmen(self, k=None):
+    def seitenraenderRahmen(self, k=None, *_):
         self.w.page_setup()
 
     # ---- Überprüfen / Schreibhilfe --------------------------------------------------------------------------------------------
@@ -382,8 +386,8 @@ class Befehle:
     def welcheHilfe(self, k=None):
         self.w.sidebar.welche_hilfe()
 
-    def w_optionenOeffnen(self, k=None):
-        self.w.show_options()
+    def w_optionenOeffnen(self, k=None, seite=None):
+        self.w.show_options(seite) if seite else self.w.show_options()
 
     # ---- Ansicht ---------------------------------------------------------------------------------------------------------------
     def handbuch(self, k=None):
@@ -492,7 +496,7 @@ class Befehle:
                 return art
         return ""
 
-    def seitenraender(self, k=None): self.w.page_setup()
+    def seitenraender(self, k=None, *_): self.w.page_setup()
     seitenraenderRahmen = seitenraender
 
     def w_setzePapier(self, k, art):
@@ -676,7 +680,7 @@ class Befehle:
 
     def seitenfarbe(self, k=None):
         m = self.menue_seitenfarbe()
-        m.exec(QCursor.pos())
+        self._popup(m)
 
     def wasserzeichen(self, k=None):
         if not self.ed:
@@ -710,7 +714,7 @@ class Befehle:
         m = QMenu()
         for text, vor, nach in self.ABSATZABSTAND:
             m.addAction(text, lambda _=False, v=vor, n=nach: self._abstand_setzen(v, n))
-        m.exec(QCursor.pos())
+        self._popup(m)
 
     def _abstand_setzen(self, vor, nach):
         e = self.ed
@@ -727,6 +731,24 @@ class Befehle:
             self.ed.document().setModified(True)
 
     def an_zeilennummern(self): return bool(self.ed and self.ed.page.zeilennummern)
+
+    def silbentrennung(self, k=None):
+        if not self.ed:
+            return
+        from ..editor.pagination import _trenner
+        pg = self.ed.page
+        sprache = self.w.settings.get("silben/sprache", "de_DE")
+        if _trenner(sprache) is None:
+            self.w.statusBar().showMessage("Silbentrennung braucht das Paket „pyphen“ (pip install pyphen).", 6000)
+            return
+        pg.silbentrennung = not pg.silbentrennung
+        pg.silben_sprache = sprache
+        self.ed.page_settings_changed(pg)
+        self.w.statusBar().showMessage(
+            "Silbentrennung an — in Seitenansicht, Druck und PDF; die Bearbeitungsansicht zeigt keine Trennstriche."
+            if pg.silbentrennung else "Silbentrennung aus.", 6000)
+
+    def an_silbentrennung(self): return bool(self.ed and self.ed.page.silbentrennung)
 
     def textrichtung(self, k=None):
         if self.ed:
@@ -777,7 +799,7 @@ class Befehle:
             m.addAction(f, lambda _=False, f=f: self._bild_einfuegen(E.form_bild(f), f"Form: {f}"))
         m.addSeparator()
         m.addAction("Weitere Formen und Farben …", self.zeichnen)
-        m.exec(QCursor.pos())
+        self._popup(m)
 
     def zeichnen(self, k=None):
         if self.ed:
@@ -886,7 +908,7 @@ class Befehle:
         m = QMenu()
         for n in E.SCHNELLTABELLEN:
             m.addAction(n, lambda _=False, n=n: E.schnelltabelle(self.ed, n))
-        m.exec(QCursor.pos())
+        self._popup(m)
 
     def deckblatt(self, k=None):
         if not self.ed:
@@ -922,7 +944,7 @@ class Befehle:
             m.addAction("Noch keine Bausteine — Einfügen ▸ Textbaustein").setEnabled(False)
         m.addSeparator()
         m.addAction("Textbausteine verwalten …", self.textbaustein)
-        m.exec(QCursor.pos())
+        self._popup(m)
 
     # ---- Bild, Tabelle, Schrift, Seite: der Rest der Werkzeug-Reiter ----------------------------------------------
     def bildFarbe(self, k=None):
@@ -986,7 +1008,7 @@ class Befehle:
             return
         from PySide6.QtWidgets import QFontDialog
         cf = self._fmt()
-        start = cf.font() if cf.fontFamilies() or cf.fontFamily() else self.ed.document().defaultFont()
+        start = cf.font() if cf.fontFamilies() else self.ed.document().defaultFont()      # (cf.fontFamily() stürzt in PySide ab)
         ok, font = QFontDialog.getFont(start, self.w, "Schriftart")
         if ok:
             f = QTextCharFormat()
@@ -1489,7 +1511,7 @@ class Befehle:
     def fensterKacheln(self, k=None): self.w.fenster_anordnen("kacheln")
 
     def fensterListe(self, k=None):
-        self.w.fensterliste_menue().exec(QCursor.pos())
+        self._popup(self.w.fensterliste_menue())
 
     # ---- Dokumentansichten ----------------------------------------------------------------
     def w_setzeLayout(self, k=None, art="blatt"):
@@ -1571,6 +1593,24 @@ class Befehle:
         d = LesehilfeDialog(self.w)
         d.show()
         self._lh = d
+
+    def silbenfarben(self, k=None):
+        from ..editor import silbenfarben as S
+        k = S.konfig_lesen(self.w.settings)
+        if not k["an"] and not S.verfuegbar(k["sprache"]):
+            self.w.statusBar().showMessage("Silben farbig braucht das Paket „pyphen“ (pip install pyphen).", 6000)
+            return
+        self.w.settings.set("lesehilfe/silben/an", not k["an"])
+        self.w.silbenfarben_anwenden()
+        self.w.statusBar().showMessage("Silben werden farbig angezeigt." if not k["an"] else "Silbenfarben aus.", 4000)
+
+    def an_silbenfarben(self):
+        from ..editor import silbenfarben as S
+        return S.konfig_lesen(self.w.settings)["an"]
+
+    def silbenEinstellen(self, k=None):
+        from ..widgets.silben_dialog import SilbenDialog
+        SilbenDialog(self.w).exec()
 
     # ==== Ansicht ==========================================================================================================================
     def markenZeigen(self, k=None):
@@ -1714,6 +1754,21 @@ class Befehle:
             b = e.page.content_width_px
             e.bild_setzen(width=b, height=b * r)
 
+    def anordnen(self, k=None):
+        """Textumbruch / Position: Bild mit Text in der Zeile oder links/rechts vom Text umflossen."""
+        e, f = self._bild()
+        if f is None:
+            self.w.statusBar().showMessage("Erst ein Bild anklicken.", 4000)
+            return
+        from ..editor import umbruch as U
+        aktuell = U.schwebend(e.document(), e._bild_cursor().selectionStart()) or "zeile"
+        m = QMenu()
+        for modus, text in (("zeile", "Mit Text in Zeile"), ("links", "Links, Text umfließt"), ("rechts", "Rechts, Text umfließt")):
+            a = m.addAction(text, lambda _=False, modus=modus: U.umbruch_setzen(e, modus))
+            a.setCheckable(True)
+            a.setChecked(modus == aktuell)
+        self._popup(m)
+
     def bildOriginal(self, k=None):
         e, f = self._bild()
         if f is not None:
@@ -1763,8 +1818,16 @@ class Befehle:
     def w_kiUebersetzen(self, k=None): self.w.ki.uebersetzen()
     def kiEntwerfen(self, k=None): self.w.chat_oeffnen("Entwirf einen Text zu folgendem Anliegen: ")
     def w_chatUmschalten(self, k=None): self.w.chat_oeffnen("")
-    def w_kiKonfiguration(self, k=None): self.w.show_options("ki")
-    def w_eigenenAnbieterHinzufuegen(self, k=None): self.w.show_options("ki")
+    def w_kiKonfiguration(self, k=None):
+        from ..widgets.ki_dialoge import KIKonfigurationDialog
+        KIKonfigurationDialog(self.w).exec()
+
+    def w_eigenenAnbieterHinzufuegen(self, k=None):
+        from ..widgets.ki_dialoge import AnbieterDialog
+        if AnbieterDialog(self.w, self.w.ki.konfig).exec():
+            self.w.ki.geaendert.emit()
+
+    def kiTextInBild(self, k=None): self.w.ki.bild_aus_text()
     def kiTextAktion(self, k=None, aktion="verbessern"): self.w.ki.text_aktion(aktion)
 
     # ==== Externe Programme (Steuerung einer installierten Anwendung, keine Integration) ==========================
