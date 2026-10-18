@@ -79,7 +79,7 @@ def test_vorhersage_mit_thema(app, tmp_path, monkeypatch):
 def test_band_ist_das_alte_register(app, tmp_path, monkeypatch):
     w = win(tmp_path, monkeypatch)
     sichtbar = [w.band.reiter.tabText(i) for i in range(w.band.reiter.count()) if w.band.reiter.isTabVisible(i)]
-    assert sichtbar == ["Datei", "Start", "Einfügen", "Seitenlayout", "Verweise", "Überprüfen", "KI", "Ansicht"]
+    assert sichtbar == ["Datei", "Start", "Einfügen", "Seitenlayout", "Verweise", "Überprüfen", "Schreibhilfe", "KI", "Ansicht"]
     # Kontext-Register erscheinen nur bei Bedarf
     assert not w.band.reiter.isTabVisible(w.band.kontext_index["tabelle"])
     e0 = w.current_editor(); e0.insert_table(2, 2); w._sync_format()
@@ -118,8 +118,11 @@ def test_seitenleiste_bereiche(app, tmp_path, monkeypatch):
     assert not hasattr(w.sidebar, "bereiche")          # keine Reiterknöpfe über der Schreibhilfe
     assert [b.text() for b in w.sidebar.chips.values()] == ["We", "Vo", "Ko"]
     assert all(b.toolTip() for b in w.sidebar.chips.values())
-    w.sidebar.zeige_bereich(1)
-    assert w.sidebar.stapel.currentIndex() == 1 and w.sidebar._seite_sh.widget() is not None
+    assert w.sidebar.stapel.count() == 2 and w.sidebar._seite_ki.widget() is not None
+    w._rechts_klick(1)
+    assert w.sidebar.stapel.currentIndex() == 1 and w._rechts[1].isChecked() and not w._rechts[0].isChecked()
+    w._rechts_klick(1)
+    assert w.sidebar.isHidden() and not w._rechts[1].isChecked()
 
 
 def test_ki_korrektur_ende_zu_ende(app, tmp_path, monkeypatch):

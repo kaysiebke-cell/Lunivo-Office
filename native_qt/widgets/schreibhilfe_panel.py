@@ -128,6 +128,7 @@ class HinweisKarte(QFrame):
 
 class SchreibhilfePanel(QWidget):
     _ollama_gefunden = Signal(list)
+    bereich_geaendert = Signal(int)
 
     def __init__(self, assistent, parent=None):
         super().__init__(parent)
@@ -174,16 +175,11 @@ class SchreibhilfePanel(QWidget):
         s.setStyleSheet("color: palette(mid);")
         v.addWidget(s)
         zl = QHBoxLayout()
-        mehr = QPushButton("Mehr Hilfen …")
-        mehr.setFlat(True)
-        mehr.setCursor(Qt.PointingHandCursor)
-        mehr.clicked.connect(lambda: self.zeige_bereich(1))
-        zl.addWidget(mehr)
         l = QLabel("<a href='#' style='color:#6ea8e0'>Welche Hilfe wann?</a>")
         l.setTextFormat(Qt.RichText)
         l.linkActivated.connect(lambda _: self.welche_hilfe())
-        zl.addStretch(1)
         zl.addWidget(l)
+        zl.addStretch(1)
         v.addLayout(zl)
         self.liste = QVBoxLayout()
         self.liste.setSpacing(6)
@@ -246,12 +242,10 @@ class SchreibhilfePanel(QWidget):
         v.addWidget(self.ki_aktion)
         self.a.fundeGeaendert.connect(self.zeige)
         self._ollama_gefunden.connect(self._ollama_da)
-        self._seite_sh = QScrollArea()
         self._seite_ki = QScrollArea()
-        for sc in (self._seite_sh, self._seite_ki):
-            sc.setWidgetResizable(True)
-            sc.setFrameShape(QFrame.NoFrame)
-            self.stapel.addWidget(sc)
+        self._seite_ki.setWidgetResizable(True)
+        self._seite_ki.setFrameShape(QFrame.NoFrame)
+        self.stapel.addWidget(self._seite_ki)
 
     # ---- KI ------------------------------------------------------------------------------------
     def verbinde_ki(self, dienst, fenster) -> None:
@@ -333,28 +327,25 @@ class SchreibhilfePanel(QWidget):
         self.liste.insertWidget(0, m)
 
     def zeige_bereich(self, i: int) -> None:
-        """0 = Schreibhilfe, 1 = weitere Hilfen (Lesen, Vorlesen, Sprache, …), 2 = KI-Chat."""
+        """0 = Schreibhilfe, 1 = KI-Chat."""
         self.stapel.setCurrentIndex(i)
+        self.bereich_geaendert.emit(i)
 
-    def setze_bereiche(self, band, sh_gruppen: list, ki_gruppen: list) -> None:
-        """Bereich „Schreibhilfe“ und „KI“ aus den Gruppen des alten Registers bauen."""
-        for sc, gruppen, titel in ((self._seite_sh, sh_gruppen, "Schreibhilfe"), (self._seite_ki, ki_gruppen, "KI")):
-            host = QWidget()
-            lay = QVBoxLayout(host)
-            lay.setContentsMargins(12, 10, 12, 10)
-            lay.setSpacing(8)
-            zurueck = QPushButton("Zur Schreibhilfe")
-            zurueck.clicked.connect(lambda: self.zeige_bereich(0))
-            lay.addWidget(zurueck)
-            if titel == "KI":
-                from .chat_panel import ChatPanel
-                self.chat = ChatPanel(self.ki, self.fenster)
-                lay.addWidget(self.chat, 1)
-            for g in gruppen:
-                lay.addWidget(band.gruppe_widget(g))
-            if titel != "KI":
-                lay.addStretch(1)
-            sc.setWidget(host)
+    def setze_bereiche(self, band, ki_gruppen: list) -> None:
+        """Den KI-Bereich aus den Gruppen des alten Registers bauen (Chat und KI-Gruppen)."""
+        host = QWidget()
+        lay = QVBoxLayout(host)
+        lay.setContentsMargins(12, 10, 12, 10)
+        lay.setSpacing(8)
+        zurueck = QPushButton("Zur Schreibhilfe")
+        zurueck.clicked.connect(lambda: self.zeige_bereich(0))
+        lay.addWidget(zurueck)
+        from .chat_panel import ChatPanel
+        self.chat = ChatPanel(self.ki, self.fenster)
+        lay.addWidget(self.chat, 1)
+        for g in ki_gruppen:
+            lay.addWidget(band.gruppe_widget(g))
+        self._seite_ki.setWidget(host)
 
     def zeige(self, funde: list) -> None:
         while self.liste.count() > 1:

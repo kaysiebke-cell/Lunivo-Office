@@ -80,7 +80,7 @@ def test_sendungen_reiter_im_band(app, tmp_path):
     w.settings.set("ui/register_plan", json.dumps({"reihenfolge": [], "versteckt": []}))
     w.neu_bauen_band()
     namen = [w.band.reiter.tabText(i) for i in range(w.band.reiter.count())]
-    assert namen[:9] == ["Datei", "Start", "Einfügen", "Seitenlayout", "Verweise", "Überprüfen", "KI", "Ansicht", "Sendungen"]
+    assert namen[:10] == ["Datei", "Start", "Einfügen", "Seitenlayout", "Verweise", "Überprüfen", "Schreibhilfe", "KI", "Ansicht", "Sendungen"]
     assert not w.band.bandfehler or "umschlag" not in w.band.bandfehler
     for n in ("umschlag", "etiketten", "seriendruck", "seriendruckfeld", "adressblock", "seriendruckregel", "serienVorschau",
               "formTextfeld", "formKasten", "formKnopf"):

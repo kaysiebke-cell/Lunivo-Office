@@ -97,6 +97,7 @@ class MainWindow(QMainWindow):
         mitte.addWidget(self.navigation)
         mitte.addWidget(self.docs.stack, 1)
         mitte.addWidget(self.sidebar)
+        mitte.addWidget(self._leiste_rechts())
         lay.addLayout(mitte, 1)
         self.setCentralWidget(central)
         geo = self.settings.get("window/geometry")
@@ -873,7 +874,7 @@ class MainWindow(QMainWindow):
     def chat_oeffnen(self, vorlage: str):
         if not self.sidebar.isVisible():
             self.toggle_sidebar()
-        self.sidebar.zeige_bereich(2)
+        self.sidebar.zeige_bereich(1)
         ch = getattr(self.sidebar, "chat", None)
         if ch is not None:
             ch.eingabe.setText(vorlage); ch.eingabe.setFocus()
@@ -955,8 +956,8 @@ class MainWindow(QMainWindow):
         self.neu_bauen_band()
 
     def _bereiche_bauen(self):
-        from ..widgets.reiterplan import KI, schreibhilfe_gruppen
-        self.sidebar.setze_bereiche(self.band, schreibhilfe_gruppen(self.band.daten), KI["gruppen"])
+        from ..widgets.reiterplan import KI
+        self.sidebar.setze_bereiche(self.band, KI["gruppen"])
 
     # ---- Oberfläche: Register oder Symbolleisten, angepasst ----------------------------------------------------
     def _symbole_anwenden(self):
@@ -1005,10 +1006,51 @@ class MainWindow(QMainWindow):
         self._tafel = MenueTafel(daten["punkte"], self.befehle, self)
         self._tafel.zeigen_unter(self.band.menue_knopf)
 
+    def _leiste_rechts(self):
+        """Schmale Leiste rechts wie im alten Lunivo: Chat und Schreibhilfe schalten die Seitenleiste um."""
+        from PySide6.QtWidgets import QFrame, QToolButton, QVBoxLayout
+        from ..widgets import icons
+        leiste = QFrame()
+        leiste.setObjectName("leisteRechts")
+        leiste.setFixedWidth(44)
+        v = QVBoxLayout(leiste)
+        v.setContentsMargins(4, 8, 4, 8)
+        v.setSpacing(6)
+        self._rechts = {}
+        for i, (sym, tip) in enumerate((("tafel", "Schreibhilfe"), ("chat", "KI-Chat"))):
+            b = QToolButton()
+            b.setIcon(icons.icon(sym, 20))
+            b.setToolTip(tip)
+            b.setCheckable(True)
+            b.setFixedSize(34, 34)
+            b.clicked.connect(lambda _=False, i=i: self._rechts_klick(i))
+            v.addWidget(b)
+            self._rechts[i] = b
+        v.addStretch(1)
+        self.sidebar.bereich_geaendert.connect(lambda _i: self._rechts_sync())
+        self._rechts_sync()
+        return leiste
+
+    def _rechts_klick(self, i: int):
+        if not self.sidebar.isHidden() and self.sidebar.stapel.currentIndex() == i:
+            self.toggle_sidebar()
+        else:
+            if self.sidebar.isHidden():
+                self.toggle_sidebar()
+            self.sidebar.zeige_bereich(i)
+        self._rechts_sync()
+
+    def _rechts_sync(self):
+        sicht = not self.sidebar.isHidden()
+        for i, b in self._rechts.items():
+            b.setChecked(sicht and self.sidebar.stapel.currentIndex() == i)
+
     def toggle_sidebar(self):
-        on = not self.sidebar.isVisible()
+        on = self.sidebar.isHidden()
         self.sidebar.setVisible(on)
         self.settings.set("ui/seitenleiste", on)
+        if hasattr(self, "_rechts"):
+            self._rechts_sync()
 
     def toggle_menubar(self):
         self.menubar_wanted = not self.menubar_wanted

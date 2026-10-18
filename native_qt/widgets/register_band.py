@@ -17,7 +17,7 @@ from PySide6.QtWidgets import (
 
 from ..editor.editor_widget import STYLES
 from . import icons
-from .reiterplan import plan, schreibhilfe_gruppen
+from .reiterplan import plan
 
 _HIER = os.path.dirname(os.path.abspath(__file__))
 NICHT_DA = "{} — in der nativen Fassung noch nicht umgesetzt"
