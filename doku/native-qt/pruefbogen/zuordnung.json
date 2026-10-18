@@ -852,12 +852,12 @@
   "wo": "es gibt keine selbst angelegten Formatvorlagen, nur das Ändern der vorhandenen"
  },
  "OPTIONEN > In PDF exportieren > Exportoptionen|Kommentare mitnehmen": {
-  "status": "⬜",
-  "wo": "nicht in QPdfWriter möglich; Noten stehen gesammelt am Textende"
+  "status": "✅",
+  "wo": "pdf/kommentare → PDF-Notizen; pdf/notenlinks → Sprungverweise Marke ↔ Note (pypdf; test_werkzeuge, test_fussnoten)"
  },
  "OPTIONEN > In PDF exportieren > Exportoptionen|Verknüpfung von Fuß- und Endnoten": {
-  "status": "⬜",
-  "wo": "nicht in QPdfWriter möglich; Noten stehen gesammelt am Textende"
+  "status": "✅",
+  "wo": "pdf/kommentare → PDF-Notizen; pdf/notenlinks → Sprungverweise Marke ↔ Note (pypdf; test_werkzeuge, test_fussnoten)"
  },
  "OPTIONEN > Benutzerinformationen > Benutzerdaten|Wer schreibt": {
   "status": "✅",
@@ -1064,12 +1064,12 @@
   "wo": "nicht übertragen (Grafik-Vorlagen; keine Entsprechung in Qt)"
  },
  "REFERENZEN|Fußnote": {
-  "status": "◐",
-  "wo": "echte DOCX-Fuß-/Endnoten (gelesen und geschrieben, mit LibreOffice geprüft); im PDF/Druck gesammelt am Textende statt am Seitenfuß"
+  "status": "✅",
+  "wo": "echte DOCX-Fuß-/Endnoten (gelesen und geschrieben, mit LibreOffice geprüft); Fußnoten am Seitenfuß in Seitenansicht, Druck und PDF (bei mehreren Spalten gesammelt am Ende)"
  },
  "REFERENZEN|Endnote": {
-  "status": "◐",
-  "wo": "echte DOCX-Fuß-/Endnoten (gelesen und geschrieben, mit LibreOffice geprüft); im PDF/Druck gesammelt am Textende statt am Seitenfuß"
+  "status": "✅",
+  "wo": "echte DOCX-Fuß-/Endnoten (gelesen und geschrieben, mit LibreOffice geprüft); Fußnoten am Seitenfuß in Seitenansicht, Druck und PDF (bei mehreren Spalten gesammelt am Ende)"
  },
  "START > Absatzlayout|Absatzrahmen": {
   "status": "✅",

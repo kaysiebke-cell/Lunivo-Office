@@ -167,7 +167,7 @@ s("EINFÜGEN", "Initiale", TEIL, "erster Buchstabe vergrößert in der Zeile; h�
 s("EINFÜGEN", "Textfeld", TEIL, "einzellige Tabelle mit Rahmen; frei schwebende Textfelder kennt Qt nicht")
 s("EINFÜGEN", "Tabellenblatt", OFFEN, "ausgeschlossen: nur Textverarbeitung (Vorgabe des Projekts)")
 s("EINFÜGEN", "SmartArt", OFFEN, "nicht übertragen (Grafik-Vorlagen; keine Entsprechung in Qt)")
-s("REFERENZEN", "Fußnote; Endnote", TEIL, "echte DOCX-Fuß-/Endnoten (gelesen und geschrieben, mit LibreOffice geprüft); im PDF/Druck gesammelt am Textende statt am Seitenfuß")
+s("REFERENZEN", "Fußnote; Endnote", OK, "echte DOCX-Fuß-/Endnoten (gelesen und geschrieben, mit LibreOffice geprüft); Fußnoten am Seitenfuß in Seitenansicht, Druck und PDF (bei mehreren Spalten gesammelt am Ende)")
 s("OPTIONEN > Ansicht > Anzeigen", "Lineal; Vertikales Lineal", OK, "widgets/lineal.py: Millimeter, Ränder und Einzüge ziehbar (test_main_window)")
 s("OPTIONEN > Ansicht > Anzeigen", "Gitternetzlinien", OK, "befehle.netzlinien, editor._gitter_zeichnen")
 
@@ -199,7 +199,7 @@ s("OPTIONEN > Änderungen verfolgen > Markup", "Geänderte Zeilen", OK, "aenderu
 s("OPTIONEN > Änderungen verfolgen > Sprechblasen", "Sprechblasen verwenden; Empfohlene Breite verwenden; Bevorzugte Breite (mm); Seitenrand; Verbindungslinien zum Text anzeigen", OFFEN, "keine Sprechblasen; Kommentare stehen im Navigationsbereich")
 s("OPTIONEN > Änderungen verfolgen > Drucken (mit Sprechblasen)", "Papierausrichtung", OFFEN, "keine Sprechblasen")
 s("OPTIONEN > Sicherheit > Datenschutz", "Ausgeblendete Markups beim Öffnen anzeigen", TEIL, "Markup ist beim Öffnen immer sichtbar (umschaltbar)")
-s("OPTIONEN > In PDF exportieren > Exportoptionen", "Kommentare mitnehmen; Verknüpfung von Fuß- und Endnoten", OFFEN, "nicht in QPdfWriter möglich; Noten stehen gesammelt am Textende")
+s("OPTIONEN > In PDF exportieren > Exportoptionen", "Kommentare mitnehmen; Verknüpfung von Fuß- und Endnoten", OK, "pdf/kommentare → PDF-Notizen; pdf/notenlinks → Sprungverweise Marke ↔ Note (pypdf; test_werkzeuge, test_fussnoten)")
 s("OPTIONEN > Menüband anpassen", "Befehle auswählen; Menüband anpassen", OK, "Register anpassen (ein-/ausblenden, ordnen)")
 s("OPTIONEN > Symbolleiste für den Schnellzugriff", "Befehle auswählen; Derzeit angezeigte Optionen", OK, "Schnellzugriff anpassen (Haken je Befehl)")
 s("KONTEXTTABELLEN", "Kopf- und Fußzeilenwerkzeuge", TEIL, "Reiter mit „Erste Seite anders“ (PDF und DOCX); „Gerade/ungerade“ fehlt")

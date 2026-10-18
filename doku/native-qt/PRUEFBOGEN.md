@@ -1,6 +1,6 @@
 # Prüfbogen ↔ native Fassung
 
-Erzeugt von `werkzeug/pruefbogen-abgleich.py` aus dem Prüfkatalog (415 Punkte). **✅ 314 · ◐ 71 · ⬜ 30**. ✅ = Befehl/Funktion vorhanden (einzeln getestet nur, wo `tests/` es belegt); ◐ = teilweise oder anders gelöst; ⬜ = offen.
+Erzeugt von `werkzeug/pruefbogen-abgleich.py` aus dem Prüfkatalog (415 Punkte). **✅ 318 · ◐ 69 · ⬜ 28**. ✅ = Befehl/Funktion vorhanden (einzeln getestet nur, wo `tests/` es belegt); ◐ = teilweise oder anders gelöst; ⬜ = offen.
 Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/bilder/`.
 
 ## DATEI
@@ -160,8 +160,8 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 
 - ✅ Inhaltsverzeichnis — Band: Verweise ▸ Inhaltsverzeichnis
 - ✅ Verzeichnisse aktualisieren — Band: Verweise ▸ Inhaltsverzeichnis
-- ◐ Fußnote — echte DOCX-Fuß-/Endnoten (gelesen und geschrieben, mit LibreOffice geprüft); im PDF/Druck gesammelt am Textende statt am Seitenfuß
-- ◐ Endnote — echte DOCX-Fuß-/Endnoten (gelesen und geschrieben, mit LibreOffice geprüft); im PDF/Druck gesammelt am Textende statt am Seitenfuß
+- ✅ Fußnote — echte DOCX-Fuß-/Endnoten (gelesen und geschrieben, mit LibreOffice geprüft); Fußnoten am Seitenfuß in Seitenansicht, Druck und PDF (bei mehreren Spalten gesammelt am Ende)
+- ✅ Endnote — echte DOCX-Fuß-/Endnoten (gelesen und geschrieben, mit LibreOffice geprüft); Fußnoten am Seitenfuß in Seitenansicht, Druck und PDF (bei mehreren Spalten gesammelt am Ende)
 - ✅ Nächste Note — Band: Verweise ▸ Fußnoten
 - ✅ Vorige Note — Band: Verweise ▸ Fußnoten
 - ✅ Notenbereich — Band: Verweise ▸ Fußnoten
@@ -517,9 +517,9 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 
 - ✅ Hyperlinks — Qt schreibt Link-Annotationen (geprüft mit pypdf)
 - ✅ Überschriften als Lesezeichen — pagination.lesezeichen_sammeln + gliederung_schreiben (pypdf nach QPdfWriter; test_werkzeuge)
-- ⬜ Kommentare mitnehmen — nicht in QPdfWriter möglich; Noten stehen gesammelt am Textende
+- ✅ Kommentare mitnehmen — pdf/kommentare → PDF-Notizen; pdf/notenlinks → Sprungverweise Marke ↔ Note (pypdf; test_werkzeuge, test_fussnoten)
 - ✅ Dokumenteigenschaften mitnehmen — pdf/eigenschaften, pdf/oeffnen (export_pdf author)
-- ⬜ Verknüpfung von Fuß- und Endnoten — nicht in QPdfWriter möglich; Noten stehen gesammelt am Textende
+- ✅ Verknüpfung von Fuß- und Endnoten — pdf/kommentare → PDF-Notizen; pdf/notenlinks → Sprungverweise Marke ↔ Note (pypdf; test_werkzeuge, test_fussnoten)
 - ✅ Textmarken übernehmen — pagination.lesezeichen_sammeln + gliederung_schreiben (pypdf nach QPdfWriter; test_werkzeuge)
 - ✅ Andere Formatvorlagen in Lesezeichen umwandeln — pdf/lz_andere: Titel, Untertitel, Zitat (test_werkzeuge)
 - ⬜ Eigene Formatvorlagen in Lesezeichen umwandeln — es gibt keine selbst angelegten Formatvorlagen, nur das Ändern der vorhandenen
