@@ -299,7 +299,7 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
 
     # ---- Seitenzählung -----------------------------------------------------
     def _recount(self) -> None:
-        self._paged = paginated_copy(self.document(), self.page, self.noten)
+        self._paged = paginated_copy(self.document(), self.page, self.noten, silben=False)   # wie die Bearbeitungsansicht umbricht: ohne Trennstriche
         self._pages = max(1, self._paged.pageCount())
         self._breaks = self._seitenwechsel(self._paged)
         self.viewport().update()

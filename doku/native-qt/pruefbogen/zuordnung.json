@@ -1092,8 +1092,8 @@
   "wo": "nur „Nächste Seite“ (Seitenumbruch); Abschnitte kennt Qt nicht"
  },
  "SEITENLAYOUT|Silbentrennung": {
-  "status": "⬜",
-  "wo": "Qt hat keine automatische Silbentrennung"
+  "status": "◐",
+  "wo": "pyphen setzt weiche Trennstellen in Seitenansicht, Druck, PDF; DOCX autoHyphenation (test_werkzeuge). Die Bearbeitungsansicht zeigt keine Trennstriche"
  },
  "SENDUNGEN (Lunivo)|Formular > Textfeld": {
   "status": "◐",

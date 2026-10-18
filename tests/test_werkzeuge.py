@@ -254,3 +254,33 @@ def test_druckoptionen_der_ansicht(app, tmp_path):
     w = QPdfWriter(str(tmp_path / "o.pdf"))
     n = render(ed.document(), page, w, opt={"hervorhebungen": False, "textmarken": True, "textgrenzen": True, "zuschnitt": True})
     assert n >= 1 and "[" in PdfReader(str(tmp_path / "o.pdf")).pages[0].extract_text()
+
+
+def test_silbentrennung(app, tmp_path):
+    """Lange Wörter bekommen weiche Trennstellen; schmale Spalte → Zeilenumbruch mit „-“ im PDF; DOCX merkt sich den Schalter."""
+    import pypdf
+    from PySide6.QtGui import QPdfWriter
+    from native_qt.document_io import formats
+    from native_qt.editor.editor_widget import DocumentEditor
+    from native_qt.editor.page import PageSettings
+    from native_qt.editor.pagination import paginated_copy, render
+    ed = DocumentEditor()
+    ed.setPlainText("Die Donaudampfschifffahrtsgesellschaft verwaltet Silbentrennungsprogramme. " * 6)
+    ed.document().firstBlock()
+    page = PageSettings(); page.margin_left_mm = page.margin_right_mm = 70      # schmale Spalte
+    ohne = paginated_copy(ed.document(), page, None, silben=False)
+    page.silbentrennung = True
+    mit = paginated_copy(ed.document(), page)
+    assert "­" in mit.toPlainText() and "­" not in ohne.toPlainText()
+    assert mit.documentLayout().documentSize().height() <= ohne.documentLayout().documentSize().height()
+    w = QPdfWriter(str(tmp_path / "s.pdf"))
+    render(ed.document(), page, w)
+    text = pypdf.PdfReader(str(tmp_path / "s.pdf")).pages[0].extract_text()
+    assert "-\n" in text or "­\n" in text                                  # mindestens ein Wort wurde getrennt
+    # DOCX-Rundreise
+    pfad = str(tmp_path / "s.docx")
+    formats.save(pfad, ed.document(), page)
+    assert formats.load(pfad).page.silbentrennung is True
+    page.silbentrennung = False
+    formats.save(pfad, ed.document(), page)
+    assert formats.load(pfad).page.silbentrennung is False

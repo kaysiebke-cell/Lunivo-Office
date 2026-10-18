@@ -111,6 +111,13 @@ class _Writer:
             st = self.d.settings.element
             if st.find(qn("w:displayBackgroundShape")) is None:
                 st.insert(0, OxmlElement("w:displayBackgroundShape"))
+        st = self.d.settings.element
+        for alt in st.findall(qn("w:autoHyphenation")):
+            st.remove(alt)
+        if p.silbentrennung:
+            ah = OxmlElement("w:autoHyphenation")
+            anker = st.find(qn("w:zoom"))
+            (anker.addnext(ah) if anker is not None else st.insert(0, ah))
         sp = sect._sectPr
         for alt in sp.findall(qn("w:pgBorders")):
             sp.remove(alt)

@@ -179,7 +179,7 @@ s("START > Stile & Bearbeiten", "Formatvorlagen verwalten", OK, "editor/stile.py
 s("START > Stile & Bearbeiten", "Objekte auswählen", OK, "befehle.objekteWaehlen (test_main_window)")
 s("SEITENLAYOUT", "Spalten; Umbruch > Spaltenumbruch", OFFEN, "Das Textmodul von Qt kennt keine Spalten")
 s("SEITENLAYOUT", "Umbruch > Abschnittsumbruch", TEIL, "nur „Nächste Seite“ (Seitenumbruch); Abschnitte kennt Qt nicht")
-s("SEITENLAYOUT", "Silbentrennung", OFFEN, "Qt hat keine automatische Silbentrennung")
+s("SEITENLAYOUT", "Silbentrennung", TEIL, "pyphen setzt weiche Trennstellen in Seitenansicht, Druck, PDF; DOCX autoHyphenation (test_werkzeuge). Die Bearbeitungsansicht zeigt keine Trennstriche")
 s("SEITENLAYOUT", "Textumbruch", OFFEN, "Bilder stehen im Text; frei schwebende Objekte kennt Qt nicht")
 s("SEITENLAYOUT", "Bild/Objekt anordnen", TEIL, "nur Ausrichten und Drehen/Spiegeln (Bildtools); kein Gruppieren, keine Ebenen")
 s("SENDUNGEN (Lunivo)", "Umschlag; Etiketten; Seriendruck-Assistent; Seriendruckfeld; Adressblock; Regeln; Ergebnisse anzeigen; Formular > Kontrollkästchen", OK, "editor/sendungen.py + widgets/sendungen_dialoge.py (test_sendungen); Reiter „Sendungen“ ist nach Register anpassen sichtbar, sonst über die Menüleiste")

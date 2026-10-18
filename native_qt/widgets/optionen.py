@@ -161,8 +161,7 @@ class OptionenDialog(QDialog):
 
     # ================= Leichter lesen =================
     def _lesehilfe(self, titel):
-        p = _Seite(self.w, titel, ["Lesestufe", "Zeilenluft", "Absatz beim Schreiben / Übriger Text (Abdunkeln)",
-                                   "Silbentrennung"])
+        p = _Seite(self.w, titel, ["Lesestufe", "Zeilenluft", "Absatz beim Schreiben / Übriger Text (Abdunkeln)"])
         f = p.gruppe("Leichter lesen")
         p.auswahl(f, "lesehilfe/papier", "Papierton", list(PAPIERTOENE), "Weiß", lambda _: self.w.lesehilfe_anwenden())
         p.zahl(f, "lesehilfe/buchstaben", "Buchstabenabstand", 0, 6, 0, " px", 1, lambda _: self.w.lesehilfe_anwenden())
@@ -184,6 +183,9 @@ class OptionenDialog(QDialog):
         p.zahl(f, "vorlesen/tempo", "Tempo (−100 bis 100)", -100, 100, 0)
         if not vorlesen.verfuegbar():
             p.hinweis("Es ist keine Sprachausgabe eingerichtet (speech-dispatcher oder Piper).")
+        f = p.gruppe("Silbentrennung")
+        p.auswahl(f, "silben/sprache", "Sprache der Silbentrennung", ["de_DE", "de_AT", "de_CH", "en_US", "en_GB", "fr", "es", "it", "nl_NL", "pl_PL", "tr_TR"], "de_DE")
+        p.zeile(f, "Ein/Aus: Reiter Schreibhilfe ▸ Sprache ▸ Silbentrennung. Wirkt in Seitenansicht, Druck und PDF; in DOCX wird der Schalter „automatische Silbentrennung“ gespeichert.")
         p.abschluss()
         return p
 

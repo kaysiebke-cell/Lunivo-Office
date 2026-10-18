@@ -80,10 +80,61 @@ def noten_anhaengen(d: QTextDocument, noten: dict | None) -> None:
             c.insertText(f"{n if art == 'f' else roemisch(n)}  {(noten.get(art, {}) or {}).get(nid, '')}", f)
 
 
-def paginated_copy(qdoc: QTextDocument, page: PageSettings, noten: dict | None = None) -> QTextDocument:
+_TRENNER = {}
+
+
+def _trenner(sprache: str):
+    """pyphen-Wörterbuch (zwischengespeichert); None, wenn pyphen oder die Sprache fehlt."""
+    if sprache not in _TRENNER:
+        try:
+            import pyphen
+            _TRENNER[sprache] = pyphen.Pyphen(lang=sprache, left=2, right=3) if sprache in pyphen.LANGUAGES else None
+        except ImportError:
+            _TRENNER[sprache] = None
+    return _TRENNER[sprache]
+
+
+_WORT = None
+
+
+def silben_einfuegen(d: QTextDocument, sprache: str) -> int:
+    """Fügt in einer KOPIE des Dokuments weiche Trennstriche (U+00AD) in lange Wörter ein; Qt bricht dort um und zeigt „-“.
+    Überschriften, Wörter mit Ziffern/Sonderzeichen und Verweise bleiben unberührt. → Anzahl eingefügter Trennstellen."""
+    global _WORT
+    import re
+    t = _trenner(sprache)
+    if t is None:
+        return 0
+    if _WORT is None:
+        _WORT = re.compile(r"[^\W\d_]{6,}", re.UNICODE)
+    from PySide6.QtGui import QTextCursor
+    n = 0
+    b = d.firstBlock()
+    while b.isValid():
+        if b.blockFormat().headingLevel() == 0 and b.isVisible():
+            text = b.text()
+            stellen = []
+            for m in _WORT.finditer(text):
+                w = m.group()
+                if w.isupper() or "\u00ad" in w:
+                    continue
+                for i in t.positions(w):
+                    stellen.append(b.position() + m.start() + i)
+            c = QTextCursor(d)
+            for pos in reversed(stellen):                       # von hinten, damit die Stellen davor gültig bleiben
+                c.setPosition(pos)
+                c.insertText("\u00ad")
+                n += 1
+        b = b.next()
+    return n
+
+
+def paginated_copy(qdoc: QTextDocument, page: PageSettings, noten: dict | None = None, silben: bool | None = None) -> QTextDocument:
     d = qdoc.clone()
     bind_layout(d)
     noten_anhaengen(d, noten)
+    if (page.silbentrennung if silben is None else silben):
+        silben_einfuegen(d, page.silben_sprache)
     root = d.rootFrame()
     ff = root.frameFormat()
     ff.setMargin(0)

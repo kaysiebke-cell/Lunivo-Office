@@ -810,6 +810,9 @@ class _Reader:
                 ps.color = "#" + c.lower()
         if sect._sectPr.find(qn("w:lnNumType")) is not None:
             ps.zeilennummern = True
+        ah = self.d.settings.element.find(qn("w:autoHyphenation"))
+        if ah is not None and ah.get(qn("w:val"), "true").lower() not in ("false", "0", "off"):
+            ps.silbentrennung = True
         pb = sect._sectPr.find(qn("w:pgBorders"))
         if pb is not None:
             e = pb.find(qn("w:top"))

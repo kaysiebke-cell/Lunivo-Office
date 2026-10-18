@@ -732,6 +732,24 @@ class Befehle:
 
     def an_zeilennummern(self): return bool(self.ed and self.ed.page.zeilennummern)
 
+    def silbentrennung(self, k=None):
+        if not self.ed:
+            return
+        from ..editor.pagination import _trenner
+        pg = self.ed.page
+        sprache = self.w.settings.get("silben/sprache", "de_DE")
+        if _trenner(sprache) is None:
+            self.w.statusBar().showMessage("Silbentrennung braucht das Paket „pyphen“ (pip install pyphen).", 6000)
+            return
+        pg.silbentrennung = not pg.silbentrennung
+        pg.silben_sprache = sprache
+        self.ed.page_settings_changed(pg)
+        self.w.statusBar().showMessage(
+            "Silbentrennung an — in Seitenansicht, Druck und PDF; die Bearbeitungsansicht zeigt keine Trennstriche."
+            if pg.silbentrennung else "Silbentrennung aus.", 6000)
+
+    def an_silbentrennung(self): return bool(self.ed and self.ed.page.silbentrennung)
+
     def textrichtung(self, k=None):
         if self.ed:
             self.ed.toggle_rtl()
