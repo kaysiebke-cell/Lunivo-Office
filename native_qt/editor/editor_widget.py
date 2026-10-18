@@ -43,6 +43,7 @@ class DocumentEditor(QTextEdit):
         self.marken = True                 # Textbegrenzungen (Eckmarken am Textrand)
         self.vorhersage = None            # Rückruf: Wortanfang → Liste von Vorschlägen
         self.autokorr = None              # Rückruf: Text vor dem Zeiger → korrigierter Text
+        self.kontext_hook = None          # Rückruf(menü, position): ergänzt das Rechtsklick-Menü
         self._wellen: list[dict] = []
         self._popup = QListWidget(None)
         self._popup.setWindowFlags(Qt.ToolTip)
@@ -454,6 +455,14 @@ class DocumentEditor(QTextEdit):
         if alt is not None:
             f.setProperty(STYLE_PROP + 1, alt)
         c.setCharFormat(f)
+
+    def contextMenuEvent(self, e) -> None:
+        m = self.createStandardContextMenu()
+        if self.kontext_hook is not None:
+            pos = self.cursorForPosition(e.pos()).position()
+            self.kontext_hook(m, pos)
+        m.exec(e.globalPos())
+        m.deleteLater()
 
     def _cursor_at(self, pos: int) -> QTextCursor:
         c = QTextCursor(self.document())

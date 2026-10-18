@@ -155,15 +155,28 @@ KEIN_HAUPTWORT = set(_REGELN['KEIN_HAUPTWORT'])
 ABKUERZUNG = re.compile(
     r'(?:^|[\s(„"])(?:[A-Za-zÄÖÜäöüß]|ca|bzw|usw|evtl|ggf|inkl|exkl|vgl|bspw|'
     r'Nr|Dr|Prof|Abs|Mio|Mrd|Tel|Str)\.$')
-ADRESSE = re.compile(r'[@]|https?:|www\.|\.(de|com|org|net|eu)\b', re.I)
+# Gefragt wird das WORT an dieser Stelle, nicht die Nachbarschaft (wie wortUm/istAdresse in pruefung.js).
+ADR_A = re.compile(r'[@]|https?:|^www\.', re.I)
+ADR_B = re.compile(r'[A-Za-zÄÖÜäöü0-9_-]/[A-Za-zÄÖÜäöü0-9_-]')
+ADR_C = re.compile(r'\.(de|com|org|net|eu|git|io|dev)\b', re.I)
 
 
 def ist_abkuerzung(text, punkt):
     return bool(ABKUERZUNG.search(text[max(0, punkt - 9):punkt + 1]))
 
 
+def wort_um(text, stelle):
+    a = b = stelle
+    while a > 0 and not text[a - 1].isspace():
+        a -= 1
+    while b < len(text) and not text[b].isspace():
+        b += 1
+    return text[a:b]
+
+
 def ist_adresse(text, stelle):
-    return bool(ADRESSE.search(text[max(0, stelle - 25):stelle + 25]))
+    wort = wort_um(text, stelle)
+    return bool(ADR_A.search(wort) or ADR_B.search(wort) or ADR_C.search(wort))
 
 
 def gross_dahinter(m, text):
@@ -226,7 +239,7 @@ GROSS_REGELN = [
           'Satzanfang großschreiben', gruppe=2,
           pruefe=lambda m, t: not re.match(r'^\.{2,}', m.group(1))
                               and not ist_abkuerzung(t, m.start())
-                              and not ist_adresse(t, m.start())),
+                              and not ist_adresse(t, m.start() + len(m.group(1)))),
     regel(r'\b(beim|zum|vom|ans|aufs)([ \t]+)([a-zäöüß]{3,}en)\b',
           lambda m: m.group(3)[0].upper() + m.group(3)[1:],
           'Nach „beim/zum/vom“ wird aus dem Tunwort ein Hauptwort.',
@@ -438,7 +451,16 @@ def tippfehler_vorschlag(wort):
     if len(w) < 4 or len(w) > 20 or w in woerter:
         return None
 
-    treffer = [k for k in nachbar_woerter(w) if k in woerter]
+    treffer = []
+    for k in nachbar_woerter(w):
+        if k not in woerter:
+            continue
+        # Stummel (unter vier Buchstaben für ein längeres Wort) und abgeschnittener Anfang sind keine Tippfehler
+        if len(k) < 4 and len(w) >= 4:
+            continue
+        if k == w[1:]:
+            continue
+        treffer.append(k)
     if not treffer:
         return None
 
@@ -469,6 +491,9 @@ def pruefe_tippfehler(text, funde, gelernt=None):
         wort = m.group(0)
         # Was eine andere Regel schon anfasst, bleibt hier außen vor.
         if WOERTERBUCH.get(wort.lower()) or trenne_zusammen(wort):
+            continue
+        # In Adressen und Pfaden steht kein Deutsch — dort nichts vorschlagen.
+        if ist_adresse(text, m.start()):
             continue
         vorschlag = tippfehler_vorschlag(wort)
         if not vorschlag:
@@ -509,10 +534,28 @@ def ist_korrektur(falsch, richtig):
     return wort_abstand(a, b) <= erlaubt
 
 
-def pruefe_woerter(text, funde, gelernt=None):
+# Was gar nicht erst geprüft wird (Optionen ▸ Rechtschreibprüfung; Vorgabe: alle drei an, wie in pruefung.js)
+SCHALTER_STANDARD = {'rsGrossIgnorieren': True, 'rsZahlenIgnorieren': True, 'rsPfadeIgnorieren': True}
+
+
+def uebergehen(wort, text, stelle, schalter):
+    if schalter.get('rsGrossIgnorieren', True) and len(wort) > 1 and wort == wort.upper() \
+            and re.search(r'[A-ZÄÖÜ]', wort):
+        return True
+    if schalter.get('rsZahlenIgnorieren', True) and re.search(r'\d', wort):
+        return True
+    if schalter.get('rsPfadeIgnorieren', True) and ist_adresse(text, stelle):
+        return True
+    return False
+
+
+def pruefe_woerter(text, funde, gelernt=None, schalter=None):
     eigene = (gelernt or {}).get('woerter', {})
+    schalter = schalter or SCHALTER_STANDARD
     for m in WORT_MUSTER.finditer(text):
         wort = m.group(0)
+        if uebergehen(wort, text, m.start(), schalter):
+            continue
         aus_liste = WOERTERBUCH.get(wort.lower())
         selbst = None if aus_liste else eigene.get(wort.lower())
         richtig = aus_liste or selbst
@@ -610,12 +653,12 @@ def ohne_ueberschneidung(funde):
     return sorted(belegt, key=nach_stelle)
 
 
-def finde_probleme(text, gelernt=None):
+def finde_probleme(text, gelernt=None, schalter=None):
     """Alle Stellen, die auffällig sind — in derselben Reihenfolge wie am Handy."""
     gelernt = gelernt or {'woerter': {}, 'inRuhe': {}}
 
     korrekturen = []
-    pruefe_woerter(text, korrekturen, gelernt)
+    pruefe_woerter(text, korrekturen, gelernt, schalter)
     pruefe_zusammengeschrieben(text, korrekturen)
     pruefe_tippfehler(text, korrekturen, gelernt)
     for fund in korrekturen:
@@ -640,3 +683,164 @@ def finde_probleme(text, gelernt=None):
 
     # Erst das zum Ändern, danach das zum Nachdenken.
     return ohne_ueberschneidung(korrekturen) + hinweise
+
+
+# --------------------------------------------------------------------------
+# Vorschläge für ein einzelnes Wort (Rechtsklick-Menü) — Übertragung aus pruefung.js:
+# vorschlaegeFuer, klingtWie, koelnerPhonetik, abstand
+# --------------------------------------------------------------------------
+from .haeufig import HAEUFIG  # noqa: E402
+
+
+def abstand(a, b):
+    if a == b:
+        return 0
+    m, n = len(a), len(b)
+    if not m:
+        return n
+    if not n:
+        return m
+    zeile = list(range(n + 1))
+    for i in range(1, m + 1):
+        vorherige = zeile[0]
+        zeile[0] = i
+        for j in range(1, n + 1):
+            diagonal = vorherige
+            vorherige = zeile[j]
+            zeile[j] = min(zeile[j] + 1, zeile[j - 1] + 1, diagonal + (0 if a[i - 1] == b[j - 1] else 1))
+    return zeile[n]
+
+
+def koelner_phonetik(wort):
+    w = str(wort).upper().replace('Ä', 'A').replace('Ö', 'O').replace('Ü', 'U').replace('ß', 'SS')
+    w = w.replace('QU', 'KW').replace('PH', 'F')
+    w = re.sub(r'[^A-Z]', '', w)
+    if not w:
+        return ''
+    laute = []
+    for i, c in enumerate(w):
+        vor = w[i - 1] if i > 0 else ''
+        nach = w[i + 1] if i + 1 < len(w) else ''
+        code = None
+        if c in 'AEIOUYJ':
+            code = '0'
+        elif c == 'B':
+            code = '1'
+        elif c == 'P':
+            code = '3' if nach == 'H' else '1'
+        elif c in 'DT':
+            code = '8' if (nach and nach in 'CSZ') else '2'
+        elif c in 'FVW':
+            code = '3'
+        elif c in 'GKQ':
+            code = '4'
+        elif c == 'C':
+            if i == 0:
+                code = '4' if (nach and nach in 'AHKLOQRUX') else '8'
+            elif vor and vor in 'SZ':
+                code = '8'
+            else:
+                code = '4' if (nach and nach in 'AHKOQUX') else '8'
+        elif c == 'X':
+            code = '8' if (vor and vor in 'CKQ') else '48'
+        elif c == 'L':
+            code = '5'
+        elif c in 'MN':
+            code = '6'
+        elif c == 'R':
+            code = '7'
+        elif c in 'SZ':
+            code = '8'
+        elif c == 'H':
+            code = None
+        if code is not None:
+            laute.append(code)
+    aus = ''
+    for l in laute:
+        for z in l:
+            if not aus or z != aus[-1]:
+                aus += z
+    return aus[0] + aus[1:].replace('0', '') if aus else ''
+
+
+_KLANGTAFEL = None
+
+
+def _klangtafel():
+    global _KLANGTAFEL
+    if _KLANGTAFEL is None:
+        _KLANGTAFEL = {}
+        for wort in lade_woerter():
+            if len(wort) < 4:
+                continue
+            k = koelner_phonetik(wort)
+            if k:
+                _KLANGTAFEL.setdefault(k, []).append(wort)
+    return _KLANGTAFEL
+
+
+def klingt_wie(wort, hoechstens=15):
+    w = str(wort).lower()
+    if len(w) < 4 or not lade_woerter():
+        return []
+    klang = koelner_phonetik(w)
+    if not klang:
+        return []
+    gleiche = [k for k in _klangtafel().get(klang, []) if k != w]
+    if len(gleiche) <= 1:
+        return gleiche
+
+    def gewicht(k):
+        return abstand(w, k) - (2 if k in HAEUFIG else 0)
+    return sorted(gleiche, key=lambda k: (gewicht(k), abs(len(k) - len(w)), _de_schluessel(k)))[:hoechstens]
+
+
+def vorschlaege_fuer(wort, hoechstens=6, gelernt=None):
+    woerter = lade_woerter()
+    if not woerter:
+        return []
+    w = str(wort).lower()
+    if len(w) < 2 or len(w) > 24 or w in woerter:
+        return []
+    treffer = [k for k in nachbar_woerter(w) if k in woerter]
+    for k in klingt_wie(w):
+        if k not in treffer:
+            treffer.append(k)
+    eigen = ((gelernt or {}).get('woerter') or {}).get(w)
+    if eigen and eigen not in treffer:
+        treffer.insert(0, eigen)
+
+    def ist_teilfolge(kurz, lang):
+        i = 0
+        for c in lang:
+            if i < len(kurz) and kurz[i] == c:
+                i += 1
+        return i == len(kurz)
+    klang_gleich = set(klingt_wie(w))
+
+    def rang(k):
+        if k == eigen:
+            return -1
+        if ist_teilfolge(w, k):
+            return 0
+        if ist_teilfolge(k, w):
+            return 1
+        if k in klang_gleich:
+            return 1
+        return 2
+
+    def gleicher_anfang(k):
+        i = 0
+        while i < len(k) and i < len(w) and k[i] == w[i]:
+            i += 1
+        return i
+
+    def gewicht(k):
+        return abstand(w, k) - (2 if k in HAEUFIG else 0)
+    treffer.sort(key=lambda k: (rang(k), gewicht(k), -gleicher_anfang(k), len(k), _de_schluessel(k)))
+    seen, out = set(), []
+    for k in treffer:
+        if k not in seen:
+            seen.add(k)
+            out.append(k)
+    return out[:hoechstens]

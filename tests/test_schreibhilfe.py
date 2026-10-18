@@ -167,3 +167,33 @@ def test_ki_ohne_schluessel_oeffnet_nichts_nach_aussen(app, tmp_path, monkeypatc
     w.current_editor().setPlainText("Text")
     w.ki.korrigieren()
     assert aufgerufen == ["ki"] and not w.sidebar.ki_knoepfe[0].isEnabled()
+
+
+def test_rechtschreib_ignorieren_schalter(app, tmp_path, monkeypatch):
+    from native_qt.services import pruefung
+    text = "Das Wiederspruch gegen WIEDERSPRUCH und kaysiebke-cell/wiederspruch."
+    an = {f["alt"] for f in pruefung.finde_probleme(text, None, {"rsGrossIgnorieren": True, "rsPfadeIgnorieren": True})}
+    aus = {f["alt"] for f in pruefung.finde_probleme(text, None, {"rsGrossIgnorieren": False, "rsPfadeIgnorieren": False})}
+    assert "WIEDERSPRUCH" not in an and "WIEDERSPRUCH" in aus
+    assert not any("wiederspruch" in a and a != "Wiederspruch" for a in an) and "wiederspruch" in aus
+
+
+def test_rechtsklick_menue_vorschlaege_und_ignorieren(app, tmp_path, monkeypatch):
+    from PySide6.QtWidgets import QMenu
+    w = win(tmp_path, monkeypatch)
+    e = w.current_editor(); e.setPlainText("Das ist vieleicht gut.")
+    w.assistant.pruefen(); warte(w.assistant.fundeGeaendert)
+    pos = e.toPlainText().index("vieleicht") + 3
+    m = QMenu()
+    w.assistant.erweitere_menue(m, pos)
+    texte = [a.text() for a in m.actions() if a.text()]
+    assert "vielleicht" in texte and "Einmal ignorieren" in texte and "Alle ignorieren" in texte
+    # Vorschlag einsetzen
+    next(a for a in m.actions() if a.text() == "vielleicht").trigger()
+    assert "vielleicht" in e.toPlainText()
+    # unbekanntes Wort ohne Fund: Wörterbuch + Ignorieren
+    e.setPlainText("Das ist Zxqvbnk hier."); w.assistant.pruefen(); warte(w.assistant.fundeGeaendert)
+    m2 = QMenu(); w.assistant.erweitere_menue(m2, e.toPlainText().index("Zxqvbnk") + 2)
+    assert "Zum Wörterbuch hinzufügen" in [a.text() for a in m2.actions()]
+    n = w.assistant.ignorierte_wieder_pruefen()
+    assert n >= 0

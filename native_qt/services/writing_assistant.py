@@ -24,13 +24,13 @@ class _Signale(QObject):
 
 
 class _Lauf(QRunnable):
-    def __init__(self, rev: int, text: str, gelernt: dict, signale: _Signale):
+    def __init__(self, rev: int, text: str, gelernt: dict, signale: _Signale, schalter: dict | None = None):
         super().__init__()
-        self.rev, self.text, self.gelernt, self.sig = rev, text, gelernt, signale
+        self.rev, self.text, self.gelernt, self.sig, self.schalter = rev, text, gelernt, signale, schalter
 
     def run(self):
         try:
-            funde = pruefung.finde_probleme(self.text, self.gelernt)
+            funde = pruefung.finde_probleme(self.text, self.gelernt, self.schalter)
         except Exception:        # Eine Prüfung, die abstürzt, darf das Schreiben nie stören
             funde = []
         self.sig.fertig.emit(self.rev, funde)
@@ -48,6 +48,7 @@ class WritingAssistant(QObject):
         self.funde: list[dict] = []
         self._roh: list[dict] = []
         self._weg: set[tuple] = set()
+        self._alle_weg: set[str] = set()            # Wörter, die im ganzen Dokument in Ruhe bleiben (nur diese Sitzung)
         self._geprueft_rev = -1
         self._laeuft = False
         self._pool = QThreadPool(self)
@@ -90,9 +91,11 @@ class WritingAssistant(QObject):
             return
         self.editor = editor
         self._weg.clear()
+        self._alle_weg.clear()                      # beim Wechsel des Dokuments fangen die Ausnahmen bei null an
         if editor is not None:
             editor.vorhersage = self.vorschlaege
             editor.autokorr = self.autokorr
+            editor.kontext_hook = self.erweitere_menue
             self.anzeigen([])
             if self.an("wellen") and editor.document().characterCount() > 1:
                 self._timer.start()
@@ -113,7 +116,8 @@ class WritingAssistant(QObject):
             return
         doc = ed.document()
         self._laeuft = True
-        self._pool.start(_Lauf(doc.revision(), doc.toPlainText(), self.gelernt.daten, self._sig))
+        schalter = {k: self.settings.get_bool(k, True) for k in ("rsGrossIgnorieren", "rsZahlenIgnorieren", "rsPfadeIgnorieren")}
+        self._pool.start(_Lauf(doc.revision(), doc.toPlainText(), self.gelernt.daten, self._sig, schalter))
 
     def _fertig(self, rev: int, roh: list) -> None:
         self._laeuft = False
@@ -134,7 +138,7 @@ class WritingAssistant(QObject):
 
     def _zeigen(self, meldung: str | None = None) -> None:
         sichtbar = [dict(f, zeigeAlt=zeige_leer(f["alt"]), zeigeNeu=zeige_leer(f["neu"]))
-                    for f in self._roh if self._key(f) not in self._weg]
+                    for f in self._roh if self._key(f) not in self._weg and f["alt"].lower() not in self._alle_weg]
         sichtbar.sort(key=lambda f: (ART_REIHENFOLGE.get(f["art"], 3), f["von"]))
         self.anzeigen(sichtbar)
         if meldung:
@@ -145,6 +149,89 @@ class WritingAssistant(QObject):
         if self.editor is not None:
             self.editor.set_wellen(funde if self.an("wellen") else [])
         self.fundeGeaendert.emit(funde)
+
+    # ---- Rechtsklick-Menü ------------------------------------------------------------------
+    def funde_an(self, pos: int) -> list[dict]:
+        return [f for f in self.funde if f["von"] <= pos <= f["bis"] and f["von"] < f["bis"]]
+
+    def erweitere_menue(self, menu, pos: int) -> None:
+        """Ein Kopf, ein Vorschlag je Möglichkeit, drei Aktionen — wie im Prüfbogen (Kontextmenü für Fehler-Aktionen)."""
+        ed = self.editor
+        if ed is None or not self.an("wellen"):
+            return
+        gefunden = self.funde_an(pos)
+        wort = self._wort_an(pos)
+        vorschlaege: list[tuple[str, dict | None]] = []
+        for f in gefunden:
+            if f["neu"] and f["art"] != "hinweis":
+                vorschlaege.append((f["neu"], f))
+        if wort:
+            from . import pruefung
+            schon = {t for t, _f in vorschlaege}
+            for k in pruefung.vorschlaege_fuer(wort[0], 6, self.gelernt.daten):
+                if pruefung.uebernimm_schreibweise(wort[0], k) in schon:
+                    continue
+                vorschlaege.append((pruefung.uebernimm_schreibweise(wort[0], k), {"von": wort[1], "bis": wort[2], "alt": wort[0],
+                                                                                    "neu": k, "wortEbene": True, "art": "tipp",
+                                                                                    "grund": "Vorschlag"}))
+        if not vorschlaege and not gefunden and not wort:
+            return
+        erste = menu.actions()[0] if menu.actions() else None
+        from PySide6.QtGui import QAction, QFont
+        neu = []
+        if gefunden:
+            k = QAction(gefunden[0]["grund"], menu); k.setEnabled(False); neu.append(k)
+        for text, fund in vorschlaege:
+            a = QAction(text, menu)
+            f = a.font() if hasattr(a, "font") else QFont()
+            f.setBold(True); a.setFont(f)
+            a.triggered.connect(lambda _=False, fd=fund: self.aendern(fd))
+            neu.append(a)
+        if gefunden or vorschlaege or wort:
+            ziel = gefunden[0] if gefunden else (vorschlaege[0][1] if vorschlaege else None)
+            n1 = QAction("Einmal ignorieren", menu)
+            n2 = QAction("Alle ignorieren", menu)
+            if ziel is not None:
+                n1.triggered.connect(lambda _=False, fd=ziel: self.lassen(fd))
+                n2.triggered.connect(lambda _=False, fd=ziel: self.alle_ignorieren(fd["alt"]))
+            else:
+                n1.setEnabled(False); n2.setEnabled(False)
+            neu += [n1, n2]
+            if wort and not gefunden and vorschlaege == []:
+                pass
+            if wort:
+                n3 = QAction("Zum Wörterbuch hinzufügen", menu)
+                n3.triggered.connect(lambda _=False, w=wort[0]: self.zum_woerterbuch(w))
+                neu.append(n3)
+        for a in neu:
+            menu.insertAction(erste, a)
+        menu.insertSeparator(erste)
+
+    def _wort_an(self, pos: int):
+        """(Wort, von, bis), wenn an der Stelle ein Wort steht, das das Wörterbuch nicht kennt."""
+        from . import pruefung
+        text = self.editor.document().toPlainText()
+        for m in pruefung.WORT_MUSTER.finditer(text):
+            if m.start() <= pos <= m.end():
+                w = m.group(0)
+                if len(w) > 1 and w.lower() not in pruefung.lade_woerter() and not self.gelernt.daten["inRuhe"].get(w.lower()):
+                    return w, m.start(), m.end()
+        return None
+
+    def alle_ignorieren(self, wort: str) -> None:
+        self._alle_weg.add(wort.lower())
+        self._zeigen()
+
+    def zum_woerterbuch(self, wort: str) -> None:
+        self.gelernt.daten["inRuhe"][wort.lower()] = True
+        self.gelernt.speichern()
+        self.pruefen()
+
+    def ignorierte_wieder_pruefen(self) -> int:
+        n = len(self._weg) + len(self._alle_weg)
+        self._weg.clear(); self._alle_weg.clear()
+        self._zeigen()
+        return n
 
     # ---- Gründlich prüfen (eigene Regeln + LanguageTool, wenn eingerichtet) -------------------
     def gruendlich(self) -> None:
