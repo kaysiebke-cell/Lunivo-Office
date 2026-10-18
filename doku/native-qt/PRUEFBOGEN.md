@@ -1,6 +1,6 @@
 # Prüfbogen ↔ native Fassung
 
-Erzeugt von `werkzeug/pruefbogen-abgleich.py` aus dem Prüfkatalog (415 Punkte). **✅ 211 · ◐ 53 · ⬜ 151**. ✅ = Befehl/Funktion vorhanden (einzeln getestet nur, wo `tests/` es belegt); ◐ = teilweise oder anders gelöst; ⬜ = offen.
+Erzeugt von `werkzeug/pruefbogen-abgleich.py` aus dem Prüfkatalog (415 Punkte). **✅ 256 · ◐ 62 · ⬜ 97**. ✅ = Befehl/Funktion vorhanden (einzeln getestet nur, wo `tests/` es belegt); ◐ = teilweise oder anders gelöst; ⬜ = offen.
 Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/bilder/`.
 
 ## DATEI
@@ -66,8 +66,8 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 - ✅ Hervorheben — Band: Start ▸ Schriftart  _(Web-Fassung: fertig)_
 - ✅ Schriftfarbe — Band: Start ▸ Schriftart  _(Web-Fassung: fertig)_
 - ✅ Groß-/Kleinschreibung — Band: Start ▸ Schriftart  _(Web-Fassung: fertig)_
-- ⬜ Unterstreichungsart — nicht übertragen  _(Web-Fassung: fertig)_
-- ⬜ Texteffekte — Band: Start ▸ Schriftart  _(Web-Fassung: fertig)_
+- ✅ Unterstreichungsart — befehle.menue_unterstrichKlappe (Einfach, gestrichelt, gepunktet, Strich-Punkt, Wellenlinie); DOCX-Roundtrip getestet (test_docx_roundtrip)  _(Web-Fassung: fertig)_
+- ✅ Texteffekte — Band: Start ▸ Schriftart  _(Web-Fassung: fertig)_
 
 ## START > Absatz
 
@@ -104,38 +104,38 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 - ✅ Ersetzen — Band: Start ▸ Bearbeiten  _(Web-Fassung: fertig)_
 - ✅ Suchen und Ersetzen — Band: Start ▸ Bearbeiten  _(Web-Fassung: fertig)_
 - ✅ Alles auswählen — Band: Start ▸ Bearbeiten
-- ⬜ Objekte auswählen — Band: Start ▸ Bearbeiten
+- ✅ Objekte auswählen — Band: Start ▸ Bearbeiten
 
 ## EINFÜGEN
 
-- ⬜ Deckblatt — Band: Einfügen ▸ Seiten
+- ✅ Deckblatt — editor/einfuegen.py, storage/bausteine.py (test_einfuegen)
 - ✅ Leere Seite — Band: Einfügen ▸ Seiten  _(Web-Fassung: fertig)_
 - ✅ Seitenumbruch — Band: Einfügen ▸ Seiten, Seitenlayout ▸ Seite einrichten ▸ Umbrüche  _(Web-Fassung: fertig)_
 - ✅ Tabelle einfügen — Band: Einfügen ▸ Tabellen  _(Web-Fassung: fertig)_
-- ⬜ Schnelltabelle — Band: Einfügen ▸ Tabellen
-- ⬜ Tabellenblatt — Band: Einfügen ▸ Tabellen
+- ✅ Schnelltabelle — editor/einfuegen.py, storage/bausteine.py (test_einfuegen)
+- ⬜ Tabellenblatt — ausgeschlossen: nur Textverarbeitung (Vorgabe des Projekts)
 - ✅ Bild — Band: Einfügen ▸ Illustrationen  _(Web-Fassung: teil)_
-- ⬜ Zeichnen — nicht übertragen  _(Web-Fassung: fertig)_
-- ⬜ Diagramm — Band: Einfügen ▸ Illustrationen  _(Web-Fassung: fertig)_
-- ⬜ Bildschirmfoto — Band: Einfügen ▸ Illustrationen
-- ⬜ SmartArt — Band: Einfügen ▸ Illustrationen  _(Web-Fassung: fertig)_
-- ⬜ Piktogramm — Band: Einfügen ▸ Illustrationen
-- ⬜ WordArt — Band: Einfügen ▸ Illustrationen  _(Web-Fassung: fertig)_
+- ◐ Zeichnen — entsteht als Bild mit Alternativtext (Formen, Verläufe, QtCharts) — nachträglich nicht als Zeichnung/Diagramm bearbeitbar (test_einfuegen)  _(Web-Fassung: fertig)_
+- ◐ Diagramm — entsteht als Bild mit Alternativtext (Formen, Verläufe, QtCharts) — nachträglich nicht als Zeichnung/Diagramm bearbeitbar (test_einfuegen)  _(Web-Fassung: fertig)_
+- ◐ Bildschirmfoto — ganzer Bildschirm oder Bereich (befehle.screenshot); nur der Einfügeweg ist getestet, nicht die Aufnahme am echten Bildschirm
+- ⬜ SmartArt — nicht übertragen (Grafik-Vorlagen; keine Entsprechung in Qt)  _(Web-Fassung: fertig)_
+- ✅ Piktogramm — befehle.piktogramm: 1800 Lucide-Symbole als Bild mit Alternativtext (test_einfuegen)
+- ◐ WordArt — entsteht als Bild mit Alternativtext (Formen, Verläufe, QtCharts) — nachträglich nicht als Zeichnung/Diagramm bearbeitbar (test_einfuegen)  _(Web-Fassung: fertig)_
 - ✅ Hyperlink — Band: Einfügen ▸ Links
-- ⬜ Lesezeichen / Textmarke — Band: Einfügen ▸ Links  _(Web-Fassung: fertig)_
-- ⬜ Querverweis — Band: Einfügen ▸ Links, Verweise ▸ Beschriftungen  _(Web-Fassung: fertig)_
+- ✅ Lesezeichen / Textmarke — Band: Einfügen ▸ Links  _(Web-Fassung: fertig)_
+- ✅ Querverweis — Band: Einfügen ▸ Links, Verweise ▸ Beschriftungen  _(Web-Fassung: fertig)_
 - ✅ Kopfzeile — Dialoge (widgets/dialogs.py), PDF/Druck/DOCX getestet  _(Web-Fassung: fertig)_
 - ✅ Fußzeile — Dialoge (widgets/dialogs.py), PDF/Druck/DOCX getestet  _(Web-Fassung: fertig)_
 - ✅ Seitenzahl — Band: Einfügen ▸ Kopf- und Fußzeile  _(Web-Fassung: fertig)_
-- ⬜ Textfeld — Band: Einfügen ▸ Text  _(Web-Fassung: fertig)_
-- ⬜ Textbaustein — nicht übertragen  _(Web-Fassung: fertig)_
-- ⬜ Schnellbaustein — nicht übertragen  _(Web-Fassung: fertig)_
-- ⬜ Initiale — Band: Einfügen ▸ Text  _(Web-Fassung: teil)_
+- ◐ Textfeld — einzellige Tabelle mit Rahmen; frei schwebende Textfelder kennt Qt nicht  _(Web-Fassung: fertig)_
+- ✅ Textbaustein — editor/einfuegen.py, storage/bausteine.py (test_einfuegen)  _(Web-Fassung: fertig)_
+- ✅ Schnellbaustein — editor/einfuegen.py, storage/bausteine.py (test_einfuegen)  _(Web-Fassung: fertig)_
+- ◐ Initiale — erster Buchstabe vergrößert in der Zeile; hängende Initiale kennt Qt nicht  _(Web-Fassung: teil)_
 - ◐ Datum — Datum einfügen; Fenster mit Formatliste/Sprache fehlt  _(Web-Fassung: fertig)_
 - ◐ Uhrzeit — Datum einfügen; Fenster mit Formatliste/Sprache fehlt  _(Web-Fassung: fertig)_
-- ⬜ Text aus Datei — Band: Einfügen ▸ Text  _(Web-Fassung: fertig)_
+- ✅ Text aus Datei — editor/einfuegen.py, storage/bausteine.py (test_einfuegen)  _(Web-Fassung: fertig)_
 - ✅ Sonderzeichen — Band: Einfügen ▸ Symbole
-- ⬜ Formel — Band: Einfügen ▸ Symbole  _(Web-Fassung: fertig)_
+- ◐ Formel — einfache Schreibweise (hoch/tief, Wurzel, Bruch, Griechisch) als Text mit Formatierung; kein Formeleditor wie in Word  _(Web-Fassung: fertig)_
 
 ## SEITENLAYOUT
 
@@ -160,45 +160,45 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 
 - ✅ Inhaltsverzeichnis — Band: Verweise ▸ Inhaltsverzeichnis
 - ✅ Verzeichnisse aktualisieren — Band: Verweise ▸ Inhaltsverzeichnis
-- ⬜ Fußnote — Band: Verweise ▸ Fußnoten
-- ⬜ Endnote — Band: Verweise ▸ Fußnoten
-- ⬜ Nächste Note — Band: Verweise ▸ Fußnoten
-- ⬜ Vorige Note — Band: Verweise ▸ Fußnoten
-- ⬜ Notenbereich — Band: Verweise ▸ Fußnoten
-- ⬜ Zitat einfügen — Band: Verweise ▸ Zitate und Literatur
-- ⬜ Neue Quelle — Band: Verweise ▸ Zitate und Literatur
-- ⬜ Quellen verwalten — Band: Verweise ▸ Zitate und Literatur
-- ⬜ Zitierweise — Band: Verweise ▸ Zitate und Literatur
-- ⬜ Literaturverzeichnis — Band: Verweise ▸ Zitate und Literatur
-- ⬜ Beschriftung — Band: Verweise ▸ Beschriftungen
-- ⬜ Abbildungsverzeichnis — Band: Verweise ▸ Beschriftungen
-- ⬜ Querverweis — Band: Einfügen ▸ Links, Verweise ▸ Beschriftungen
-- ⬜ Indexeintrag — Band: Verweise ▸ Index
-- ⬜ Stichwortverzeichnis — Band: Verweise ▸ Index
+- ◐ Fußnote — echte DOCX-Fuß-/Endnoten (gelesen und geschrieben, mit LibreOffice geprüft); im PDF/Druck gesammelt am Textende statt am Seitenfuß
+- ◐ Endnote — echte DOCX-Fuß-/Endnoten (gelesen und geschrieben, mit LibreOffice geprüft); im PDF/Druck gesammelt am Textende statt am Seitenfuß
+- ✅ Nächste Note — Band: Verweise ▸ Fußnoten
+- ✅ Vorige Note — Band: Verweise ▸ Fußnoten
+- ✅ Notenbereich — Band: Verweise ▸ Fußnoten
+- ✅ Zitat einfügen — Band: Verweise ▸ Zitate und Literatur
+- ✅ Neue Quelle — Band: Verweise ▸ Zitate und Literatur
+- ✅ Quellen verwalten — Band: Verweise ▸ Zitate und Literatur
+- ✅ Zitierweise — Band: Verweise ▸ Zitate und Literatur
+- ✅ Literaturverzeichnis — Band: Verweise ▸ Zitate und Literatur
+- ✅ Beschriftung — Band: Verweise ▸ Beschriftungen
+- ✅ Abbildungsverzeichnis — Band: Verweise ▸ Beschriftungen
+- ✅ Querverweis — Band: Einfügen ▸ Links, Verweise ▸ Beschriftungen
+- ✅ Indexeintrag — Band: Verweise ▸ Index
+- ✅ Stichwortverzeichnis — Band: Verweise ▸ Index
 
 ## ÜBERPRÜFEN
 
 - ✅ Prüfen — Band: Seitenleiste ▸ Prüfen ▸ Dokumentprüfung, Überprüfen ▸ Dokumentprüfung
 - ✅ Gründlich prüfen — Band: Seitenleiste ▸ Prüfen ▸ Dokumentprüfung, Überprüfen ▸ Dokumentprüfung
 - ✅ Rechtschreibung — Band: Überprüfen ▸ Dokumentprüfung
-- ⬜ Thesaurus — Band: Seitenleiste ▸ Sprache, Überprüfen ▸ Dokumentprüfung
+- ✅ Thesaurus — Band: Seitenleiste ▸ Sprache, Überprüfen ▸ Dokumentprüfung
 - ✅ Wörter zählen — Band: Überprüfen ▸ Dokumentprüfung
-- ⬜ Korrektursprache — Band: Überprüfen ▸ Sprache  _(Web-Fassung: fertig)_
-- ⬜ Barrierefreiheit prüfen — Band: Überprüfen ▸ Barrierefreiheit
-- ⬜ Neuer Kommentar — Band: Überprüfen ▸ Kommentare
-- ⬜ Nächster Kommentar — Band: Überprüfen ▸ Kommentare
-- ⬜ Voriger Kommentar — Band: Überprüfen ▸ Kommentare
-- ⬜ Kommentar löschen — Band: Überprüfen ▸ Kommentare
-- ⬜ Alle Kommentare löschen — Band: Überprüfen ▸ Kommentare
-- ⬜ Änderungen verfolgen — Band: Überprüfen ▸ Änderungen
-- ⬜ Markup anzeigen — Band: Überprüfen ▸ Änderungen
-- ⬜ Überarbeitungsbereich — Band: Überprüfen ▸ Änderungen
-- ⬜ Änderung annehmen — Band: Überprüfen ▸ Änderungen
-- ⬜ Änderung ablehnen — Band: Überprüfen ▸ Änderungen
-- ⬜ Nächste Änderung — Band: Überprüfen ▸ Änderungen
-- ⬜ Vorige Änderung — Band: Überprüfen ▸ Änderungen
-- ⬜ Alle annehmen — Band: Überprüfen ▸ Änderungen
-- ⬜ Alle verwerfen — Band: Überprüfen ▸ Änderungen
+- ✅ Korrektursprache — Band: Überprüfen ▸ Sprache  _(Web-Fassung: fertig)_
+- ✅ Barrierefreiheit prüfen — Band: Überprüfen ▸ Barrierefreiheit
+- ✅ Neuer Kommentar — Band: Überprüfen ▸ Kommentare
+- ✅ Nächster Kommentar — Band: Überprüfen ▸ Kommentare
+- ✅ Voriger Kommentar — Band: Überprüfen ▸ Kommentare
+- ✅ Kommentar löschen — Band: Überprüfen ▸ Kommentare
+- ✅ Alle Kommentare löschen — Band: Überprüfen ▸ Kommentare
+- ✅ Änderungen verfolgen — Band: Überprüfen ▸ Änderungen
+- ✅ Markup anzeigen — Band: Überprüfen ▸ Änderungen
+- ✅ Überarbeitungsbereich — Band: Überprüfen ▸ Änderungen
+- ✅ Änderung annehmen — Band: Überprüfen ▸ Änderungen
+- ✅ Änderung ablehnen — Band: Überprüfen ▸ Änderungen
+- ✅ Nächste Änderung — Band: Überprüfen ▸ Änderungen
+- ✅ Vorige Änderung — Band: Überprüfen ▸ Änderungen
+- ✅ Alle annehmen — Band: Überprüfen ▸ Änderungen
+- ✅ Alle verwerfen — Band: Überprüfen ▸ Änderungen
 - ✅ Bearbeitung sperren — Band: Überprüfen ▸ Schützen
 
 ## SCHREIBHILFE (Lunivo)
@@ -227,7 +227,7 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 - ⬜ Adressblock — Reiter „Sendungen“ nicht in der neuen Struktur; Daten in register.json erhalten
 - ⬜ Regeln — Reiter „Sendungen“ nicht in der neuen Struktur; Daten in register.json erhalten
 - ⬜ Ergebnisse anzeigen — Reiter „Sendungen“ nicht in der neuen Struktur; Daten in register.json erhalten
-- ⬜ Formular > Textfeld — Band: Einfügen ▸ Text
+- ✅ Formular > Textfeld — Band: Einfügen ▸ Text
 - ⬜ Formular > Kontrollkästchen — Reiter „Sendungen“ nicht in der neuen Struktur; Daten in register.json erhalten
 - ⬜ Formular > Schaltfläche — Reiter „Sendungen“ nicht in der neuen Struktur; Daten in register.json erhalten  _(Web-Fassung: fertig)_
 
@@ -362,11 +362,11 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 
 ## OPTIONEN > Ansicht > Anzeigen
 
-- ⬜ Lineal — Task B (Lineal/Gitternetz)
-- ⬜ Vertikales Lineal — Task B (Lineal/Gitternetz)
+- ✅ Lineal — widgets/lineal.py: Millimeter, Ränder und Einzüge ziehbar (test_main_window)
+- ✅ Vertikales Lineal — widgets/lineal.py: Millimeter, Ränder und Einzüge ziehbar (test_main_window)
 - ✅ Navigationsbereich — Optionen ▸ Wie im WPS Writer ▸ Ansicht
 - ✅ Textbegrenzungen — Optionen ▸ Wie im WPS Writer ▸ Ansicht
-- ⬜ Gitternetzlinien — Task B (Lineal/Gitternetz)
+- ✅ Gitternetzlinien — befehle.netzlinien, editor._gitter_zeichnen
 - ✅ Statusleiste — Optionen ▸ Wie im WPS Writer ▸ Ansicht (ui/statusleiste → ansicht_optionen_anwenden)
 - ✅ Seitenleiste beim Start — Optionen ▸ Wie im WPS Writer ▸ Ansicht (ui/seitenleiste, main_window)
 - ◐ QuickInfo — Qt zeigt Kurzinfos immer; kein Schalter

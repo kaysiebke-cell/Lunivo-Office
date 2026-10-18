@@ -554,6 +554,10 @@ class _Writer:
         h = imf.height() or img.height()
         run = para.add_run()
         run.add_picture(io.BytesIO(data), width=Emu(int(w * EMU_PER_PX)), height=Emu(int(h * EMU_PER_PX)))
+        alt = imf.property(STYLE_PROP + 1) if imf.hasProperty(STYLE_PROP + 1) else ""
+        if alt:
+            for dp in run._r.xpath(".//wp:docPr"):
+                dp.set("descr", str(alt))
 
     # ---- Tabellen -------------------------------------------------------
     def write_table(self, qt: QTextTable, container):

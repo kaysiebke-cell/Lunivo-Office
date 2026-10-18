@@ -1,6 +1,6 @@
 # Abgleich: altes Register ↔ native Qt-Fassung
 
-Erzeugt von `werkzeug/abgleich-native.py`. **154 Knöpfe umgesetzt, 86 offen.** Offene Knöpfe stehen im Programm sichtbar, aber ausgegraut da.
+Erzeugt von `werkzeug/abgleich-native.py`. **205 Knöpfe umgesetzt, 35 offen.** Offene Knöpfe stehen im Programm sichtbar, aber ausgegraut da.
 
 ## Datei
 
@@ -75,10 +75,10 @@ Erzeugt von `werkzeug/abgleich-native.py`. **154 Knöpfe umgesetzt, 86 offen.** 
 - ✅ Durchgestrichen
 - ✅ Hochgestellt
 - ✅ Tiefgestellt
-- ⬜ Zeichenumriss  (`zeichenumriss`)
+- ✅ Zeichenumriss
 - ✅ Hervorheben
 - ✅ Schriftfarbe
-- ⬜ Texteffekte  (`effekt`)
+- ✅ Texteffekte
 
 **Absatz**
 
@@ -106,40 +106,40 @@ Erzeugt von `werkzeug/abgleich-native.py`. **154 Knöpfe umgesetzt, 86 offen.** 
 - ✅ Ersetzen
 - ✅ Suchen und Ersetzen
 - ✅ Alles auswählen
-- ⬜ Objekte auswählen  (`objekteWaehlen`)
+- ✅ Objekte auswählen
 
 
 ## Einfügen
 
 **Seiten**
 
-- ⬜ Deckblatt  (`deckblatt`)
+- ✅ Deckblatt
 - ✅ Leere Seite
 - ✅ Seitenumbruch
 
 **Tabellen**
 
 - ✅ Tabelle einfügen
-- ⬜ Schnelltabelle  (`schnelltabelle`)
+- ✅ Schnelltabelle
 - ⬜ Tabellenblatt  (`tabellenblatt`)
 - ⬜ Eigenschaften  (`tabelleEigenschaften`)
 
 **Illustrationen**
 
 - ✅ Bild
-- ⬜ Formen  (`formenGalerie`)
-- ⬜ Diagramm  (`diagramm`)
+- ✅ Formen
+- ✅ Diagramm
 - ⬜ SmartArt  (`smartart`)
-- ⬜ WordArt  (`wordart`)
-- ⬜ Form mit eigener Farbe…  (`zeichnen`)
-- ⬜ Bildschirmfoto  (`screenshot`)
-- ⬜ Piktogramm  (`piktogramm`)
+- ✅ WordArt
+- ✅ Form mit eigener Farbe…
+- ✅ Bildschirmfoto
+- ✅ Piktogramm
 
 **Links**
 
 - ✅ Hyperlink
-- ⬜ Lesezeichen / Textmarke  (`textmarke`)
-- ⬜ Querverweis  (`querverweis`)
+- ✅ Lesezeichen / Textmarke
+- ✅ Querverweis
 
 **Kopf- und Fußzeile**
 
@@ -148,15 +148,15 @@ Erzeugt von `werkzeug/abgleich-native.py`. **154 Knöpfe umgesetzt, 86 offen.** 
 
 **Text**
 
-- ⬜ Textfeld  (`textfeld`)
-- ⬜ Initiale  (`initiale`)
+- ✅ Textfeld
+- ✅ Initiale
 - ✅ Datum und Uhrzeit
-- ⬜ Text aus Datei  (`textAusDatei`)
+- ✅ Text aus Datei
 
 **Symbole**
 
 - ✅ Sonderzeichen
-- ⬜ Formel  (`formel`)
+- ✅ Formel
 
 
 ## Seitenlayout
@@ -214,30 +214,30 @@ Erzeugt von `werkzeug/abgleich-native.py`. **154 Knöpfe umgesetzt, 86 offen.** 
 
 **Fußnoten**
 
-- ⬜ Fußnote  (`fussnote`)
-- ⬜ Endnote  (`endnote`)
-- ⬜ Nächste Note  (`noteWeiter`)
-- ⬜ Vorige Note  (`noteZurueck`)
-- ⬜ Notenbereich  (`notenZeigen`)
+- ✅ Fußnote
+- ✅ Endnote
+- ✅ Nächste Note
+- ✅ Vorige Note
+- ✅ Notenbereich
 
 **Zitate und Literatur**
 
-- ⬜ Zitat einfügen  (`zitat`)
-- ⬜ Neue Quelle  (`quelleNeu`)
-- ⬜ Quellen verwalten  (`quellenVerwalten`)
-- ⬜ Zitierweise  (`zitierweise`)
-- ⬜ Literaturverzeichnis  (`literaturverzeichnis`)
+- ✅ Zitat einfügen
+- ✅ Neue Quelle
+- ✅ Quellen verwalten
+- ✅ Zitierweise
+- ✅ Literaturverzeichnis
 
 **Beschriftungen**
 
-- ⬜ Beschriftung  (`beschriftung`)
-- ⬜ Abbildungsverzeichnis  (`abbildungsverzeichnis`)
-- ⬜ Querverweis  (`querverweis`)
+- ✅ Beschriftung
+- ✅ Abbildungsverzeichnis
+- ✅ Querverweis
 
 **Index**
 
-- ⬜ Indexeintrag  (`indexEintrag`)
-- ⬜ Stichwortverzeichnis  (`stichwortverzeichnis`)
+- ✅ Indexeintrag
+- ✅ Stichwortverzeichnis
 
 
 ## Überprüfen
@@ -247,36 +247,36 @@ Erzeugt von `werkzeug/abgleich-native.py`. **154 Knöpfe umgesetzt, 86 offen.** 
 - ✅ Prüfen
 - ✅ Gründlich prüfen
 - ✅ Rechtschreibung
-- ⬜ Thesaurus  (`thesaurus`)
+- ✅ Thesaurus
 - ✅ Wörter zählen
 
 **Sprache**
 
-- ⬜ Korrektursprache  (`pruefsprache`)
+- ✅ Korrektursprache
 
 **Barrierefreiheit**
 
-- ⬜ Barrierefreiheit prüfen  (`barrierefrei`)
+- ✅ Barrierefreiheit prüfen
 
 **Kommentare**
 
-- ⬜ Neuer Kommentar  (`kommentar`)
-- ⬜ Nächster Kommentar  (`kommentarWeiter`)
-- ⬜ Voriger Kommentar  (`kommentarZurueck`)
-- ⬜ Kommentar löschen  (`kommentarWeg`)
-- ⬜ Alle Kommentare löschen  (`kommentareAlleWeg`)
+- ✅ Neuer Kommentar
+- ✅ Nächster Kommentar
+- ✅ Voriger Kommentar
+- ✅ Kommentar löschen
+- ✅ Alle Kommentare löschen
 
 **Änderungen**
 
-- ⬜ Änderungen verfolgen  (`verfolgen`)
-- ⬜ Markup anzeigen  (`markupUmschalten`)
-- ⬜ Überarbeitungsbereich  (`ueberarbeitungsbereich`)
-- ⬜ Änderung annehmen  (`aenderungAnnehmen`)
-- ⬜ Änderung ablehnen  (`aenderungAblehnen`)
-- ⬜ Nächste Änderung  (`aenderungWeiter`)
-- ⬜ Vorige Änderung  (`aenderungZurueck`)
-- ⬜ Alle annehmen  (`aenderungenUebernehmen`)
-- ⬜ Alle verwerfen  (`aenderungenVerwerfen`)
+- ✅ Änderungen verfolgen
+- ✅ Markup anzeigen
+- ✅ Überarbeitungsbereich
+- ✅ Änderung annehmen
+- ✅ Änderung ablehnen
+- ✅ Nächste Änderung
+- ✅ Vorige Änderung
+- ✅ Alle annehmen
+- ✅ Alle verwerfen
 
 **Schützen**
 
@@ -460,12 +460,12 @@ Erzeugt von `werkzeug/abgleich-native.py`. **154 Knöpfe umgesetzt, 86 offen.** 
 
 - ⬜ Silbentrennung  (`silbentrennung`)
 - ✅ Übersetzen
-- ⬜ Thesaurus  (`thesaurus`)
+- ✅ Thesaurus
 - ✅ Sprache und Prüfung
 
 **Bausteine**
 
-- ⬜ Textbausteine  (`textbausteine, schnellbaustein`)
+- ✅ Textbausteine
 
 **Anzeigen**
 

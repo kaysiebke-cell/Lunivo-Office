@@ -147,6 +147,21 @@ s(O+"Gedächtnis > Gedächtnis", "Gelernte Schreibweisen", OK, "Optionen ▸ Ged
 s(O+"Menüband anpassen", "Befehle auswählen; Menüband anpassen", OFFEN, "Task F (Register anpassen)")
 s(O+"Symbolleiste für den Schnellzugriff", "Befehle auswählen; Derzeit angezeigte Optionen", OFFEN, "Task F")
 s(O+"Erweitert > Erweitert", "Was zusätzlich geholt wurde", OK, "Optionen ▸ Erweitert (LibreOffice, LanguageTool, Sprachausgabe)")
+
+# ---------------------------------------------------------------- Stand nach Task B–E
+s("START > Schriftart", "Unterstreichungsart", OK, "befehle.menue_unterstrichKlappe (Einfach, gestrichelt, gepunktet, Strich-Punkt, Wellenlinie); DOCX-Roundtrip getestet (test_docx_roundtrip)")
+s("EINFÜGEN", "Piktogramm", OK, "befehle.piktogramm: 1800 Lucide-Symbole als Bild mit Alternativtext (test_einfuegen)")
+s("EINFÜGEN", "Deckblatt; Schnelltabelle; Text aus Datei; Textbaustein; Schnellbaustein", OK, "editor/einfuegen.py, storage/bausteine.py (test_einfuegen)")
+s("EINFÜGEN", "Bildschirmfoto", TEIL, "ganzer Bildschirm oder Bereich (befehle.screenshot); nur der Einfügeweg ist getestet, nicht die Aufnahme am echten Bildschirm")
+s("EINFÜGEN", "Zeichnen; WordArt; Diagramm", TEIL, "entsteht als Bild mit Alternativtext (Formen, Verläufe, QtCharts) — nachträglich nicht als Zeichnung/Diagramm bearbeitbar (test_einfuegen)")
+s("EINFÜGEN", "Formel", TEIL, "einfache Schreibweise (hoch/tief, Wurzel, Bruch, Griechisch) als Text mit Formatierung; kein Formeleditor wie in Word")
+s("EINFÜGEN", "Initiale", TEIL, "erster Buchstabe vergrößert in der Zeile; hängende Initiale kennt Qt nicht")
+s("EINFÜGEN", "Textfeld", TEIL, "einzellige Tabelle mit Rahmen; frei schwebende Textfelder kennt Qt nicht")
+s("EINFÜGEN", "Tabellenblatt", OFFEN, "ausgeschlossen: nur Textverarbeitung (Vorgabe des Projekts)")
+s("EINFÜGEN", "SmartArt", OFFEN, "nicht übertragen (Grafik-Vorlagen; keine Entsprechung in Qt)")
+s("REFERENZEN", "Fußnote; Endnote", TEIL, "echte DOCX-Fuß-/Endnoten (gelesen und geschrieben, mit LibreOffice geprüft); im PDF/Druck gesammelt am Textende statt am Seitenfuß")
+s("OPTIONEN > Ansicht > Anzeigen", "Lineal; Vertikales Lineal", OK, "widgets/lineal.py: Millimeter, Ränder und Einzüge ziehbar (test_main_window)")
+s("OPTIONEN > Ansicht > Anzeigen", "Gitternetzlinien", OK, "befehle.netzlinien, editor._gitter_zeichnen")
 json.dump(Z, open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                                 "doku/native-qt/pruefbogen/zuordnung.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 print(len(Z), "Zuordnungen (Teil 1)")

@@ -16,7 +16,7 @@ from datetime import datetime
 
 from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QBrush, QColor, QCursor, QFont, QIcon, QPixmap, QTextBlockFormat, QTextCharFormat, QTextCursor, QTextListFormat
-from PySide6.QtWidgets import QApplication, QColorDialog, QInputDialog, QMenu, QMessageBox
+from PySide6.QtWidgets import QApplication, QColorDialog, QFileDialog, QInputDialog, QMenu, QMessageBox
 
 PALETTE = ["#000000", "#c92a2a", "#e8590c", "#f08c00", "#2f9e44", "#1098ad", "#1971c2", "#6741d9",
            "#c2255c", "#868e96", "#ffec99", "#b2f2bb", "#a5d8ff", "#eebefa", "#ffffff"]
@@ -347,8 +347,6 @@ class Befehle:
     def seitenzahlKlappe(self, k=None):
         self.w.insert_page_number()
 
-    def datumUhrzeit(self, k=None):
-        self.w.insert_date()
 
     # ---- Seitenlayout --------------------------------------------------------------------------------------------------
     def seitenraenderRahmen(self, k=None):
@@ -667,6 +665,167 @@ class Befehle:
         if self.ed and (n := self._wahl("Schriftarten", self.SCHRIFTPAARE)):
             f, h = self.SCHRIFTPAARE[n]
             self.ed.apply_design(f, h, None)
+
+    # ---- Einfügen: Illustrationen, Text, Symbole, Tabellen, Seiten ----------------------------------------------------
+    def _bild_einfuegen(self, img, alt):
+        from ..editor import einfuegen as E
+        E.qimage_einfuegen(self.ed, img, alt)
+
+    def formenGalerie(self, k=None):
+        if not self.ed:
+            return
+        from ..editor import einfuegen as E
+        m = QMenu()
+        for f in E.FORMEN:
+            m.addAction(f, lambda _=False, f=f: self._bild_einfuegen(E.form_bild(f), f"Form: {f}"))
+        m.addSeparator()
+        m.addAction("Weitere Formen und Farben …", self.zeichnen)
+        m.exec(QCursor.pos())
+
+    def zeichnen(self, k=None):
+        if self.ed:
+            from ..widgets.einfuegen_dialoge import FormDialog
+            d = FormDialog(self.w)
+            if d.exec():
+                self._bild_einfuegen(d.bild(), f"Form: {d.art.currentText()}")
+
+    def wordart(self, k=None):
+        if self.ed:
+            from ..widgets.einfuegen_dialoge import WordArtDialog
+            d = WordArtDialog(self.w)
+            if d.exec():
+                self._bild_einfuegen(d.bild(), "WordArt: " + d.text.text())
+
+    def diagramm(self, k=None):
+        if self.ed:
+            from ..widgets.einfuegen_dialoge import DiagrammDialog
+            d = DiagrammDialog(self.w)
+            if d.exec():
+                self._bild_einfuegen(d.bild(), f"{d.art.currentText()}diagramm: {d.titel.text()}")
+
+    def piktogramm(self, k=None):
+        if self.ed:
+            from ..editor import einfuegen as E
+            from ..widgets.einfuegen_dialoge import PiktogrammDialog
+            d = PiktogrammDialog(self.w)
+            if d.exec():
+                n, farbe = d.ergebnis()
+                if n:
+                    self._bild_einfuegen(E.piktogramm_bild(n, 96, farbe), f"Piktogramm: {n}")
+
+    def screenshot(self, k=None):
+        if not self.ed:
+            return
+        antwort = QMessageBox(QMessageBox.Question, "Bildschirmfoto", "Was soll aufgenommen werden?", QMessageBox.NoButton, self.w)
+        ganz = antwort.addButton("Ganzer Bildschirm", QMessageBox.AcceptRole)
+        bereich = antwort.addButton("Bereich wählen …", QMessageBox.AcceptRole)
+        antwort.addButton("Abbrechen", QMessageBox.RejectRole)
+        antwort.exec()
+        if antwort.clickedButton() not in (ganz, bereich):
+            return
+        nur_bereich = antwort.clickedButton() is bereich
+        from PySide6.QtCore import QTimer
+        self.w.hide()
+        QTimer.singleShot(500, lambda: self._aufnehmen(nur_bereich))
+
+    def _aufnehmen(self, nur_bereich: bool):
+        pm = QApplication.primaryScreen().grabWindow(0)
+        if not nur_bereich:
+            self.w.show()
+            self._foto_einfuegen(pm)
+            return
+        from ..widgets.bildschirmfoto import BereichWahl
+        self._wahl = BereichWahl(pm)
+        self._wahl.fertig.connect(self._bereich_fertig)
+        self._wahl.showFullScreen()
+
+    def _bereich_fertig(self, pm):
+        self.w.show()
+        self._foto_einfuegen(pm)
+
+    def _foto_einfuegen(self, pm):
+        if pm is not None and not pm.isNull() and self.ed:
+            self._bild_einfuegen(pm.toImage(), "Bildschirmfoto")
+
+    def textfeld(self, k=None):
+        if self.ed:
+            from ..editor import einfuegen as E
+            E.textfeld(self.ed)
+
+    def initiale(self, k=None):
+        if self.ed:
+            from ..editor import einfuegen as E
+            if not E.initiale(self.ed):
+                self.w.statusBar().showMessage("Der Absatz ist leer.", 3000)
+
+    def textAusDatei(self, k=None):
+        if not self.ed:
+            return
+        from ..document_io import formats
+        from ..document_io.report import DocumentIOError
+        from ..editor import einfuegen as E
+        pfad, _ = QFileDialog.getOpenFileName(self.w, "Text aus Datei einfügen", self.w.settings.get("last_dir", ""), formats.OPEN_FILTER)
+        if not pfad:
+            return
+        try:
+            rep = E.text_aus_datei(self.ed, pfad)
+        except DocumentIOError as e:
+            QMessageBox.warning(self.w, "Einfügen nicht möglich", str(e))
+            return
+        self.w._show_report(rep, "Hinweise zur eingefügten Datei", "beim Einfügen")
+
+    def formel(self, k=None):
+        if self.ed:
+            from ..editor import einfuegen as E
+            from ..widgets.einfuegen_dialoge import FormelDialog
+            d = FormelDialog(self.w)
+            if d.exec() and d.eingabe.text().strip():
+                E.formel_einfuegen(self.ed, d.eingabe.text())
+
+    def schnelltabelle(self, k=None):
+        if not self.ed:
+            return
+        from ..editor import einfuegen as E
+        m = QMenu()
+        for n in E.SCHNELLTABELLEN:
+            m.addAction(n, lambda _=False, n=n: E.schnelltabelle(self.ed, n))
+        m.exec(QCursor.pos())
+
+    def deckblatt(self, k=None):
+        if not self.ed:
+            return
+        from ..editor import einfuegen as E
+        from ..widgets.einfuegen_dialoge import DeckblattDialog
+        d = DeckblattDialog(self.w, self.w.settings.get("benutzer/name", ""))
+        if d.exec():
+            E.deckblatt_einfuegen(self.ed, d.vorlage.currentText(), d.titel.text(), d.unter.text(), d.autor.text(), d.datum.text())
+
+    def datumUhrzeit(self, k=None):
+        if self.ed:
+            from ..widgets.einfuegen_dialoge import DatumDialog
+            d = DatumDialog(self.w)
+            if d.exec() and d.ergebnis():
+                self.ed.textCursor().insertText(d.ergebnis())
+                self.ed.document().setModified(True)
+
+    def textbaustein(self, k=None):
+        if self.ed:
+            from ..widgets.einfuegen_dialoge import BausteinDialog
+            BausteinDialog(self.w, self.ed).exec()
+
+    def schnellbaustein(self, k=None):
+        if not self.ed:
+            return
+        from ..storage import bausteine
+        m = QMenu()
+        liste = bausteine.laden()
+        for b in liste:
+            m.addAction(b["name"], lambda _=False, b=b: (bausteine.einfuegen(self.ed.textCursor(), b), self.ed.document().setModified(True)))
+        if not liste:
+            m.addAction("Noch keine Bausteine — Einfügen ▸ Textbaustein").setEnabled(False)
+        m.addSeparator()
+        m.addAction("Textbausteine verwalten …", self.textbaustein)
+        m.exec(QCursor.pos())
 
     # ---- Überprüfen: Thesaurus, Barrierefreiheit, Korrektursprache ------------------------------------------
     def thesaurus(self, k=None):

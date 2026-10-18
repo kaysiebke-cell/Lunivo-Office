@@ -140,8 +140,8 @@
   "wo": "Felder im Band (widgets/register_band.py)"
  },
  "START > Schriftart|Unterstreichungsart": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "✅",
+  "wo": "befehle.menue_unterstrichKlappe (Einfach, gestrichelt, gepunktet, Strich-Punkt, Wellenlinie); DOCX-Roundtrip getestet (test_docx_roundtrip)"
  },
  "START > Absatzlayout|Einzug genau": {
   "status": "◐",
@@ -176,16 +176,16 @@
   "wo": "Datum einfügen; Fenster mit Formatliste/Sprache fehlt"
  },
  "EINFÜGEN|Zeichnen": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "◐",
+  "wo": "entsteht als Bild mit Alternativtext (Formen, Verläufe, QtCharts) — nachträglich nicht als Zeichnung/Diagramm bearbeitbar (test_einfuegen)"
  },
  "EINFÜGEN|Textbaustein": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "✅",
+  "wo": "editor/einfuegen.py, storage/bausteine.py (test_einfuegen)"
  },
  "EINFÜGEN|Schnellbaustein": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "✅",
+  "wo": "editor/einfuegen.py, storage/bausteine.py (test_einfuegen)"
  },
  "SEITENLAYOUT|Papierformat": {
   "status": "✅",
@@ -504,16 +504,16 @@
   "wo": "Qt zeigt Kurzinfos immer; kein Schalter"
  },
  "OPTIONEN > Ansicht > Anzeigen|Lineal": {
-  "status": "⬜",
-  "wo": "Task B (Lineal/Gitternetz)"
+  "status": "✅",
+  "wo": "widgets/lineal.py: Millimeter, Ränder und Einzüge ziehbar (test_main_window)"
  },
  "OPTIONEN > Ansicht > Anzeigen|Vertikales Lineal": {
-  "status": "⬜",
-  "wo": "Task B (Lineal/Gitternetz)"
+  "status": "✅",
+  "wo": "widgets/lineal.py: Millimeter, Ränder und Einzüge ziehbar (test_main_window)"
  },
  "OPTIONEN > Ansicht > Anzeigen|Gitternetzlinien": {
-  "status": "⬜",
-  "wo": "Task B (Lineal/Gitternetz)"
+  "status": "✅",
+  "wo": "befehle.netzlinien, editor._gitter_zeichnen"
  },
  "OPTIONEN > Ansicht > Anzeigen|Live-Vorschau": {
   "status": "⬜",
@@ -1014,5 +1014,61 @@
  "OPTIONEN > Erweitert > Erweitert|Was zusätzlich geholt wurde": {
   "status": "✅",
   "wo": "Optionen ▸ Erweitert (LibreOffice, LanguageTool, Sprachausgabe)"
+ },
+ "EINFÜGEN|Piktogramm": {
+  "status": "✅",
+  "wo": "befehle.piktogramm: 1800 Lucide-Symbole als Bild mit Alternativtext (test_einfuegen)"
+ },
+ "EINFÜGEN|Deckblatt": {
+  "status": "✅",
+  "wo": "editor/einfuegen.py, storage/bausteine.py (test_einfuegen)"
+ },
+ "EINFÜGEN|Schnelltabelle": {
+  "status": "✅",
+  "wo": "editor/einfuegen.py, storage/bausteine.py (test_einfuegen)"
+ },
+ "EINFÜGEN|Text aus Datei": {
+  "status": "✅",
+  "wo": "editor/einfuegen.py, storage/bausteine.py (test_einfuegen)"
+ },
+ "EINFÜGEN|Bildschirmfoto": {
+  "status": "◐",
+  "wo": "ganzer Bildschirm oder Bereich (befehle.screenshot); nur der Einfügeweg ist getestet, nicht die Aufnahme am echten Bildschirm"
+ },
+ "EINFÜGEN|WordArt": {
+  "status": "◐",
+  "wo": "entsteht als Bild mit Alternativtext (Formen, Verläufe, QtCharts) — nachträglich nicht als Zeichnung/Diagramm bearbeitbar (test_einfuegen)"
+ },
+ "EINFÜGEN|Diagramm": {
+  "status": "◐",
+  "wo": "entsteht als Bild mit Alternativtext (Formen, Verläufe, QtCharts) — nachträglich nicht als Zeichnung/Diagramm bearbeitbar (test_einfuegen)"
+ },
+ "EINFÜGEN|Formel": {
+  "status": "◐",
+  "wo": "einfache Schreibweise (hoch/tief, Wurzel, Bruch, Griechisch) als Text mit Formatierung; kein Formeleditor wie in Word"
+ },
+ "EINFÜGEN|Initiale": {
+  "status": "◐",
+  "wo": "erster Buchstabe vergrößert in der Zeile; hängende Initiale kennt Qt nicht"
+ },
+ "EINFÜGEN|Textfeld": {
+  "status": "◐",
+  "wo": "einzellige Tabelle mit Rahmen; frei schwebende Textfelder kennt Qt nicht"
+ },
+ "EINFÜGEN|Tabellenblatt": {
+  "status": "⬜",
+  "wo": "ausgeschlossen: nur Textverarbeitung (Vorgabe des Projekts)"
+ },
+ "EINFÜGEN|SmartArt": {
+  "status": "⬜",
+  "wo": "nicht übertragen (Grafik-Vorlagen; keine Entsprechung in Qt)"
+ },
+ "REFERENZEN|Fußnote": {
+  "status": "◐",
+  "wo": "echte DOCX-Fuß-/Endnoten (gelesen und geschrieben, mit LibreOffice geprüft); im PDF/Druck gesammelt am Textende statt am Seitenfuß"
+ },
+ "REFERENZEN|Endnote": {
+  "status": "◐",
+  "wo": "echte DOCX-Fuß-/Endnoten (gelesen und geschrieben, mit LibreOffice geprüft); im PDF/Druck gesammelt am Textende statt am Seitenfuß"
  }
 }
