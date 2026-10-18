@@ -16,6 +16,7 @@ from typing import Optional
 
 import docx
 from docx.document import Document as _Document
+from docx.enum.style import WD_STYLE_TYPE
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn
 from docx.table import Table
@@ -117,11 +118,19 @@ class _Reader:
         self.zus = leere_meta()
         self._komm_offen: list[int] = []
         self._lz_offen: dict[str, str] = {}
+        self._lz_pos: dict[str, int] = {}
+        self._lz_wartend: list[str] = []
         self._aend = None                 # (art, autor, datum) innerhalb w:ins / w:del
         self._note_n = {"f": 0, "e": 0}
         self._feld = None                 # {"instr", "phase": "i"|"r"} innerhalb eines Feldes
         self._letzter = None              # (von, bis) des zuletzt eingefügten Textstücks (für XE-Felder)
         self._laden_zusatz()
+        self._stile_id = {st.style_id: st for st in self.d.styles}          # Zwischenspeicher: python-docx sucht sonst bei jedem Zugriff per XPath
+        self._standard_absatz = self._standard_stil(WD_STYLE_TYPE.PARAGRAPH)
+        self._standard_zeichen = self._standard_stil(WD_STYLE_TYPE.CHARACTER)
+        self._basis: dict[int, object] = {}
+        self._ketten: dict[int, list] = {}
+        self._attr_cache: dict[tuple, object] = {}
         self.def_font, self.def_size = _doc_defaults(self.d)
         normal = self.d.styles["Normal"] if "Normal" in [s.name for s in self.d.styles] else None
         self.normal = normal
@@ -181,36 +190,75 @@ class _Reader:
                                             "jahr": t("Year"), "verlag": t("Publisher"), "ort": t("City"), "url": t("URL")})
 
     # ---- Auflösung der Vererbung -------------------------------------
+    def _standard_stil(self, art):
+        try:
+            return self.d.styles.default(art)
+        except Exception:
+            return None
+
+    def _ps(self, para):
+        """Absatzvorlage (mit Zwischenspeicher)."""
+        ppr = para._p.pPr
+        sid = ppr.pStyle.val if ppr is not None and ppr.pStyle is not None else None
+        return self._stile_id.get(sid) or self._standard_absatz
+
+    def _rs(self, run):
+        rpr = run._r.rPr
+        sid = rpr.rStyle.val if rpr is not None and rpr.rStyle is not None else None
+        return self._stile_id.get(sid) if sid else None
+
+    def _kette(self, style):
+        k = self._ketten.get(id(style.element))
+        if k is None:
+            k, gesehen, s = [], set(), style
+            while s is not None and id(s.element) not in gesehen:
+                gesehen.add(id(s.element)); k.append(s)
+                b = self._basis.get(id(s.element), False)
+                if b is False:
+                    b = s.base_style
+                    self._basis[id(s.element)] = b
+                s = b
+            self._ketten[id(style.element)] = k
+        return k
+
     def _style_attr(self, style, getter):
-        for s in _style_chain(style):
+        for s in self._kette(style):
             v = getter(s)
             if v is not None:
                 return v
         return None
 
+    def _stil_font(self, style, attr):
+        key = (id(style.element), attr)
+        if key not in self._attr_cache:
+            self._attr_cache[key] = self._style_attr(style, lambda s: getattr(s.font, attr) if attr != "name" else s.font.name)
+        return self._attr_cache[key]
+
     def _font_name(self, run, para) -> str:
         v = run.font.name
-        if v is None and run.style is not None:
-            v = self._style_attr(run.style, lambda s: s.font.name)
+        rs = self._rs(run) if hasattr(run, "_r") else None
+        if v is None and rs is not None:
+            v = self._stil_font(rs, "name")
         if v is None and para is not None:
-            v = self._style_attr(para.style, lambda s: s.font.name)
+            v = self._stil_font(self._ps(para), "name")
         if v is None and self.normal is not None:
             v = self.normal.font.name
         return v or self.def_font or "Calibri"
 
     def _font_size_pt(self, run, para) -> float:
         v = run.font.size
-        if v is None and run.style is not None:
-            v = self._style_attr(run.style, lambda s: s.font.size)
+        rs = self._rs(run) if hasattr(run, "_r") else None
+        if v is None and rs is not None:
+            v = self._stil_font(rs, "size")
         if v is None and para is not None:
-            v = self._style_attr(para.style, lambda s: s.font.size)
+            v = self._stil_font(self._ps(para), "size")
         if v is not None:
             return v.pt
         if para is not None:
             lvl = self._heading_level(para)
             if lvl:
                 return HEADING_DEFAULT_PT[lvl]
-            nm = NAMED_STYLE_DEFAULT.get(para.style.name)
+            nm = NAMED_STYLE_DEFAULT.get(self._ps(para).name)
             if nm and nm[0]:
                 return nm[0]
         if self.normal is not None and self.normal.font.size is not None:
@@ -219,15 +267,16 @@ class _Reader:
 
     def _flag(self, run, para, attr):
         v = getattr(run.font, attr)
-        if v is None and run.style is not None:
-            v = self._style_attr(run.style, lambda s: getattr(s.font, attr))
+        rs = self._rs(run) if hasattr(run, "_r") else None
+        if v is None and rs is not None:
+            v = self._stil_font(rs, attr)
         if v is None and para is not None:
-            v = self._style_attr(para.style, lambda s: getattr(s.font, attr))
+            v = self._stil_font(self._ps(para), attr)
         return v
 
-    @staticmethod
-    def _heading_level(para) -> int:
-        n = para.style.name if para.style is not None else ""
+    def _heading_level(self, para) -> int:
+        st = self._ps(para)
+        n = st.name if st is not None else ""
         if n.startswith("Heading ") and n[8:].isdigit():
             return max(1, min(9, int(n[8:])))
         return 0
@@ -238,7 +287,7 @@ class _Reader:
         f.setFontFamilies([self._font_name(run, para)])
         f.setFontPointSize(self._font_size_pt(run, para))
         lvl = self._heading_level(para) if para is not None else 0
-        named = NAMED_STYLE_DEFAULT.get(para.style.name) if para is not None else None
+        named = NAMED_STYLE_DEFAULT.get(self._ps(para).name) if para is not None else None
         bold = self._flag(run, para, "bold")
         if bold is None and lvl:
             bold = True
@@ -302,22 +351,44 @@ class _Reader:
         return None
 
     # ---- Absatzformat ------------------------------------------------
+    _JC = {"left": Qt.AlignLeft, "start": Qt.AlignLeft, "right": Qt.AlignRight, "end": Qt.AlignRight, "center": Qt.AlignHCenter,
+           "both": Qt.AlignJustify, "distribute": Qt.AlignJustify, "justify": Qt.AlignJustify}
+
+    def _ausrichtung(self, para: Paragraph, st):
+        """w:jc roh lesen — python-docx kennt „start“/„end“ nicht und bricht sonst ab."""
+        def roh(ppr):
+            if ppr is None:
+                return None
+            jc = ppr.find(qn("w:jc"))
+            return jc.get(qn("w:val")) if jc is not None else None
+        v = roh(para._p.pPr)
+        s = st
+        while v is None and s is not None:
+            v = roh(s.element.pPr)
+            s = s.base_style
+        return self._JC.get(v, Qt.AlignLeft)
+
     def _block_format(self, para: Paragraph) -> QTextBlockFormat:
         pf = para.paragraph_format
-        st = para.style
+        st = self._ps(para)
         b = QTextBlockFormat()
 
+        def sicher(fn, *a):
+            try:
+                return fn(*a)
+            except (ValueError, KeyError, AttributeError):        # ungewöhnliche Werte (z. B. jc="start" von LibreOffice)
+                return None
+
         def eff(getter):
-            v = getter(pf)
+            v = sicher(getter, pf)
             if v is None and st is not None:
-                v = self._style_attr(st, lambda s: getter(s.paragraph_format))
+                v = self._style_attr(st, lambda s: sicher(getter, s.paragraph_format))
             return v
 
         ppr = para._p.pPr
         if ppr is not None and ppr.find(qn("w:bidi")) is not None:
             b.setLayoutDirection(Qt.RightToLeft)
-        al = eff(lambda p: p.alignment)
-        b.setAlignment(_QT_ALIGN.get(al, Qt.AlignLeft))
+        b.setAlignment(self._ausrichtung(para, st))
         left = eff(lambda p: p.left_indent)
         right = eff(lambda p: p.right_indent)
         first = eff(lambda p: p.first_line_indent)
@@ -368,8 +439,8 @@ class _Reader:
         if numpr is not None:
             num_id = numpr.numId.val if numpr.numId is not None else None
             ilvl = numpr.ilvl.val if numpr.ilvl is not None else 0
-        if num_id is None and para.style is not None:
-            for s in _style_chain(para.style):
+        if num_id is None and self._ps(para) is not None:
+            for s in self._kette(self._ps(para)):
                 sp = s.element.pPr
                 if sp is not None and sp.numPr is not None and sp.numPr.numId is not None:
                     num_id = sp.numPr.numId.val
@@ -470,8 +541,12 @@ class _Reader:
                 n = el.get(qn("w:name")) or ""
                 if n and not n.startswith("_"):
                     self._lz_offen[el.get(qn("w:id"))] = n
+                    self._lz_pos[el.get(qn("w:id"))] = cursor.position()
             elif tag == qn("w:bookmarkEnd"):
-                self._lz_offen.pop(el.get(qn("w:id")), None)
+                i = el.get(qn("w:id"))
+                n = self._lz_offen.pop(i, None)
+                if n is not None and self._lz_pos.pop(i, None) == cursor.position():
+                    self._lz_wartend.append(n)         # leere Textmarke: hängt am folgenden Text
             elif tag in (qn("w:sdt"),):
                 inhalt = el.find(qn("w:sdtContent"))
                 if inhalt is not None:
@@ -511,9 +586,10 @@ class _Reader:
             cfmt.setProperty(P_AENDERUNG, self._aend[0])
             cfmt.setProperty(P_AUTOR, self._aend[1])
             cfmt.setProperty(P_DATUM, self._aend[2])
-        if self._lz_offen and not cfmt.isAnchor():
+        namen = list(self._lz_offen.values()) + self._lz_wartend
+        if namen and not cfmt.isAnchor():
             cfmt.setAnchor(True)
-            cfmt.setAnchorNames(list(self._lz_offen.values()))
+            cfmt.setAnchorNames(namen)
 
     _TOC_STILE = {"TOC Heading": "kopf", "TOC 1": "zeile1", "TOC 2": "zeile2", "TOC 3": "zeile3", "Table of Figures": "zeile1",
                   "Index 1": "zeile1", "Bibliography": "zeile1"}
@@ -529,7 +605,7 @@ class _Reader:
                 bfmt.setProperty(B_RAHMEN, f"#{col.lower() if col.lower() != 'auto' else '000000'}|{int(e.get(qn('w:sz')) or 8) / 8:g}|"
                                  + ("doppelt" if e.get(qn("w:val")) == "double" else "einfach"))
         try:
-            name = para.style.name
+            name = self._ps(para).name
         except Exception:
             return
         if name in self._TOC_STILE:
@@ -593,6 +669,7 @@ class _Reader:
                     von = cursor.position()
                     cursor.insertText(child.text, cfmt)
                     self._letzter = (von, cursor.position())
+                    self._lz_wartend = []
                     added = True
             elif tag == qn("w:tab"):
                 self._flush_break(cursor)
@@ -765,9 +842,8 @@ class _Reader:
                     instr = (el.get(qn("w:instr")) or "").upper()
                     txt += "{PAGES}" if "NUMPAGES" in instr else "{PAGE}" if "PAGE" in instr else ""
             if i == 0:
-                a = p.alignment
-                align = {WD_ALIGN_PARAGRAPH.CENTER: "center",
-                         WD_ALIGN_PARAGRAPH.RIGHT: "right"}.get(a, "left")
+                a = self._ausrichtung(p, p.style)
+                align = {Qt.AlignHCenter: "center", Qt.AlignRight: "right"}.get(a, "left")
             lines.append(txt)
         text = "\n".join(lines).rstrip("\n")
         return HeaderFooter(text, align)
