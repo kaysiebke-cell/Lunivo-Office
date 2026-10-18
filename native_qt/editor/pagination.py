@@ -27,8 +27,27 @@ def layout_device() -> QImage:
     return _DEV
 
 
-def bind_layout(qdoc: QTextDocument) -> None:
-    qdoc.documentLayout().setPaintDevice(layout_device())
+_ZOOM_DEV: dict[int, QImage] = {}
+
+
+def zoom_device(faktor: float) -> QImage:
+    """Ein Gerät mit 96 dpi × Zoom: Text, Ränder, Tabellen und Bilder werden beim Setzen mitskaliert."""
+    key = round(faktor * 1000)
+    if key == 1000:
+        return layout_device()
+    d = _ZOOM_DEV.get(key)
+    if d is None:
+        d = QImage(1, 1, QImage.Format_RGB32)
+        dpm = round(96 * key / 1000 / 0.0254)
+        d.setDotsPerMeterX(dpm); d.setDotsPerMeterY(dpm)
+        if len(_ZOOM_DEV) > 40:
+            _ZOOM_DEV.clear()
+        _ZOOM_DEV[key] = d
+    return d
+
+
+def bind_layout(qdoc: QTextDocument, faktor: float = 1.0) -> None:
+    qdoc.documentLayout().setPaintDevice(zoom_device(faktor))
 
 
 def paginated_copy(qdoc: QTextDocument, page: PageSettings) -> QTextDocument:

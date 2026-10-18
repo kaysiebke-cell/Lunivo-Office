@@ -133,3 +133,27 @@ def test_bearbeitung_sperren_und_band_einklappen(app, tmp_path):
     assert b.stapel.isVisibleTo(b)
     w.current_editor().document().setModified(False)
     w.close()
+
+
+def test_zoom_skaliert_ansicht_nicht_dokument(app, tmp_path):
+    w = win(tmp_path)
+    w.new_document()
+    w.resize(1200, 800); w.show()
+    e = w.current_editor()
+    e.insertPlainText("Hallo Welt " * 30)
+    breite, hoehe = e.width(), e.document().size().height()
+    schrift = e.document().defaultFont().pointSizeF()
+    e.set_zoom(2.0)
+    assert abs(e.width() - (2 * (breite - 2) + 2)) <= 2
+    assert e.document().size().height() > 1.8 * hoehe
+    assert e.document().defaultFont().pointSizeF() == schrift      # Dokument bleibt unverändert
+    assert w.lbl_zoom.text() == "200 %" and w.zoom_regler.value() == 200
+    w.befehle.normal()
+    assert e.zoom == 1.0 and e.width() == breite
+    w.befehle.zoomBreite()
+    t = w.current_tab()
+    assert abs(e.width() - (t.viewport().width() - 24)) <= 4
+    w.befehle.zoomSeite()
+    assert e.height() >= 0 and e.zoom <= 1.5
+    e.document().setModified(False)
+    w.close()

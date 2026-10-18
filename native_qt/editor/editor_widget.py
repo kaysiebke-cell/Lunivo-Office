@@ -30,6 +30,7 @@ STYLE_KEY = {"Titel": "Title", "Untertitel": "Subtitle", "Zitat": "Quote"}
 class DocumentEditor(QTextEdit):
     pageInfoChanged = Signal(int, int)       # aktuelle Seite, Seitenzahl
     formatChanged = Signal()                 # Cursor-Format hat sich geändert
+    zoomChanged = Signal(float)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -39,6 +40,7 @@ class DocumentEditor(QTextEdit):
         self.setUndoRedoEnabled(True)
         self.setLineWrapMode(QTextEdit.WidgetWidth)
         self.show_marks = False
+        self.zoom = 1.0
         self.zeilenfokus = False
         self.marken = True                 # Textbegrenzungen (Eckmarken am Textrand)
         self.vorhersage = None            # Rückruf: Wortanfang → Liste von Vorschlägen
@@ -73,7 +75,7 @@ class DocumentEditor(QTextEdit):
 
     def _passe_hoehe_an(self, *_):
         h = int(self.document().size().height()) + 4
-        mind = int(mm_to_px(self.page.height_mm))
+        mind = int(mm_to_px(self.page.height_mm) * self.zoom)
         self.setFixedHeight(max(h, mind))
 
     def _aussen(self):
@@ -102,7 +104,7 @@ class DocumentEditor(QTextEdit):
     def apply_page(self, page: PageSettings) -> None:
         self.page = page
         doc = self.document()
-        bind_layout(doc)
+        bind_layout(doc, self.zoom)
         doc.setDocumentMargin(0)
         root = doc.rootFrame()
         ff: QTextFrameFormat = root.frameFormat()
@@ -111,9 +113,28 @@ class DocumentEditor(QTextEdit):
         ff.setLeftMargin(mm_to_px(page.margin_left_mm))
         ff.setRightMargin(mm_to_px(page.margin_right_mm))
         root.setFrameFormat(ff)
-        self.setFixedWidth(int(mm_to_px(page.width_mm)) + 2)
+        self.setFixedWidth(int(mm_to_px(page.width_mm) * self.zoom) + 2)
         self._passe_hoehe_an()
         self._timer.start()
+
+    ZOOM_MIN, ZOOM_MAX = 0.1, 5.0
+
+    def set_zoom(self, faktor: float) -> None:
+        """Ansicht vergrößern/verkleinern. Das Dokument selbst (Schriftgrößen, Maße) bleibt unverändert."""
+        faktor = max(self.ZOOM_MIN, min(self.ZOOM_MAX, round(faktor, 3)))
+        if abs(faktor - self.zoom) < 1e-6:
+            return
+        self.zoom = faktor
+        self.apply_page(self.page)
+        self.viewport().update()
+        self.zoomChanged.emit(faktor)
+
+    def wheelEvent(self, e) -> None:
+        if e.modifiers() & Qt.ControlModifier:
+            self.set_zoom(self.zoom * (1.1 if e.angleDelta().y() > 0 else 1 / 1.1))
+            e.accept()
+            return
+        e.ignore()                      # die Seite scrollt im grauen Grund
 
     def page_settings_changed(self, page: PageSettings) -> None:
         self.apply_page(page)
@@ -512,8 +533,9 @@ class DocumentEditor(QTextEdit):
         vp = self.viewport()
         p = QPainter(vp)
         if self.marken:
-            ml, mt = int(mm_to_px(self.page.margin_left_mm)), int(mm_to_px(self.page.margin_top_mm))
-            mr = int(mm_to_px(self.page.margin_right_mm))
+            z = self.zoom
+            ml, mt = int(mm_to_px(self.page.margin_left_mm) * z), int(mm_to_px(self.page.margin_top_mm) * z)
+            mr = int(mm_to_px(self.page.margin_right_mm) * z)
             y = mt - self.verticalScrollBar().value()
             p.setPen(QPen(QColor("#868e96"), 1))
             L, x2 = 14, vp.width() - mr

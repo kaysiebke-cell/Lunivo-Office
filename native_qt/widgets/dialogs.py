@@ -193,3 +193,43 @@ class BildGroesseDialog(QDialog):
 
     def breite_px(self): return self.b.value() * 96 / 25.4
     def hoehe_px(self): return self.h.value() * 96 / 25.4
+
+
+class ZoomDialog(QDialog):
+    """Ansicht ▸ Zoom: feste Stufen, Seitenbreite, ganze Seite oder eigener Wert."""
+    STUFEN = (200, 150, 100, 75, 50, 25)
+
+    def __init__(self, parent, aktuell: float):
+        super().__init__(parent)
+        from PySide6.QtWidgets import QButtonGroup, QRadioButton, QSpinBox
+        self.setWindowTitle("Zoom")
+        lay = QVBoxLayout(self)
+        self.gruppe = QButtonGroup(self)
+        self._art: dict[int, tuple[str, float]] = {}
+        eintraege = [(f"{n} %", ("wert", n / 100)) for n in self.STUFEN] + \
+                    [("Seitenbreite", ("breite", 0)), ("Ganze Seite", ("seite", 0))]
+        for i, (text, art) in enumerate(eintraege):
+            r = QRadioButton(text)
+            self.gruppe.addButton(r, i)
+            self._art[i] = art
+            lay.addWidget(r)
+            if art[0] == "wert" and abs(art[1] - aktuell) < 0.005:
+                r.setChecked(True)
+        eigen = QRadioButton("Eigener Wert:")
+        self.gruppe.addButton(eigen, 100)
+        self.spin = QSpinBox(); self.spin.setRange(10, 500); self.spin.setSuffix(" %")
+        self.spin.setValue(int(round(aktuell * 100)))
+        self.spin.valueChanged.connect(lambda _: eigen.setChecked(True))
+        zeile = QHBoxLayout(); zeile.addWidget(eigen); zeile.addWidget(self.spin)
+        lay.addLayout(zeile)
+        if self.gruppe.checkedId() < 0:
+            eigen.setChecked(True)
+        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        bb.accepted.connect(self.accept); bb.rejected.connect(self.reject)
+        lay.addWidget(bb)
+
+    def ergebnis(self) -> tuple[str, float]:
+        i = self.gruppe.checkedId()
+        if i == 100 or i not in self._art:
+            return "wert", self.spin.value() / 100
+        return self._art[i]

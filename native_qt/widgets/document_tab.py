@@ -39,6 +39,19 @@ class DocumentTab(QScrollArea):
             self.meta = loaded.meta
         self.editor.document().setDefaultFont(self.editor.document().defaultFont())
 
+    def zoom_breite(self) -> None:
+        """Seitenbreite: die Seite füllt die Breite des Fensters."""
+        from ..editor.page import mm_to_px
+        frei = self.viewport().width() - 24 - 2
+        self.editor.set_zoom(frei / mm_to_px(self.page.width_mm))
+
+    def zoom_seite(self) -> None:
+        """Eine Seite: die ganze Seite ist sichtbar."""
+        from ..editor.page import mm_to_px
+        b = (self.viewport().width() - 24 - 2) / mm_to_px(self.page.width_mm)
+        h = (self.viewport().height() - 24 - 2) / mm_to_px(self.page.height_mm)
+        self.editor.set_zoom(min(b, h))
+
     @property
     def page(self) -> PageSettings:
         return self.editor.page

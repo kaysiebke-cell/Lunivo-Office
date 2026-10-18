@@ -9,7 +9,7 @@ from PySide6.QtGui import QAction, QActionGroup, QColor, QFont, QKeySequence, QT
 from PySide6.QtPrintSupport import QPrintDialog, QPrintPreviewDialog, QPrinter
 from PySide6.QtWidgets import (
     QApplication, QColorDialog, QComboBox, QFileDialog, QFontComboBox, QInputDialog, QLabel, QLineEdit,
-    QMainWindow, QMenu, QMessageBox, QStatusBar, QTabWidget, QToolBar, QToolButton, QWidget,
+    QMainWindow, QMenu, QMessageBox, QSlider, QStatusBar, QTabWidget, QToolBar, QToolButton, QWidget,
 )
 
 from .. import __version__
@@ -248,6 +248,18 @@ class MainWindow(QMainWindow):
         self.lbl_state = QLabel("")
         for w in (self.lbl_words, self.lbl_page):
             w.setContentsMargins(10, 0, 10, 0); sb.addPermanentWidget(w)
+        self.zoom_minus = QToolButton(); self.zoom_minus.setText("−"); self.zoom_minus.setAutoRaise(True)
+        self.zoom_plus = QToolButton(); self.zoom_plus.setText("+"); self.zoom_plus.setAutoRaise(True)
+        self.zoom_regler = QSlider(Qt.Horizontal); self.zoom_regler.setRange(10, 500); self.zoom_regler.setValue(100)
+        self.zoom_regler.setFixedWidth(120)
+        self.lbl_zoom = QToolButton(); self.lbl_zoom.setText("100 %"); self.lbl_zoom.setAutoRaise(True)
+        self.lbl_zoom.setToolTip("Zoom …"); self.lbl_zoom.setMinimumWidth(52)
+        self.zoom_minus.clicked.connect(lambda: self.befehle.kleiner())
+        self.zoom_plus.clicked.connect(lambda: self.befehle.groesser())
+        self.lbl_zoom.clicked.connect(lambda: self.befehle.zoomStufe())
+        self.zoom_regler.valueChanged.connect(self._regler_bewegt)
+        for w in (self.zoom_minus, self.zoom_regler, self.zoom_plus, self.lbl_zoom):
+            sb.addPermanentWidget(w)
 
     # ==== Hilfen ====================================================================
     def current_tab(self) -> DocumentTab | None:
@@ -298,10 +310,25 @@ class MainWindow(QMainWindow):
         self._update_window_title()
         self._sync_format()
         self._sync_status()
+        self._zoom_anzeigen()
         self.assistant.attach(self.current_editor())
+
+    def _regler_bewegt(self, v: int):
+        e = self.current_editor()
+        if e and abs(e.zoom * 100 - v) > 0.5:
+            e.set_zoom(v / 100)
+
+    def _zoom_anzeigen(self, f: float | None = None):
+        e = self.current_editor()
+        f = f if f is not None else (e.zoom if e else 1.0)
+        self.lbl_zoom.setText(f"{round(f * 100)} %")
+        self.zoom_regler.blockSignals(True)
+        self.zoom_regler.setValue(int(round(f * 100)))
+        self.zoom_regler.blockSignals(False)
 
     def _connect_tab(self, tab: DocumentTab):
         e = tab.editor
+        e.zoomChanged.connect(lambda f, ed=e: ed is self.current_editor() and self._zoom_anzeigen(f))
         e.formatChanged.connect(self._sync_later)
         e.pageInfoChanged.connect(lambda *_: self._sync_status())
         e.document().modificationChanged.connect(lambda _m: self._update_tab_titles())

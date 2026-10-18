@@ -514,6 +514,42 @@ class Befehle:
 
     def an_lesemodus(self): return self.w.lesemodus
 
+    # ---- Zoom ---------------------------------------------------------------------------
+    def _zoom_um(self, faktor):
+        if self.ed:
+            self.ed.set_zoom(self.ed.zoom * faktor)
+
+    def groesser(self, k=None): self._zoom_um(1.1)
+    def kleiner(self, k=None): self._zoom_um(1 / 1.1)
+
+    def normal(self, k=None):
+        if self.ed:
+            self.ed.set_zoom(1.0)
+
+    def zoomBreite(self, k=None):
+        t = self.w.current_tab()
+        if t:
+            t.zoom_breite()
+
+    def zoomSeite(self, k=None):
+        t = self.w.current_tab()
+        if t:
+            t.zoom_seite()
+
+    def zoomStufe(self, k=None):
+        if not self.ed:
+            return
+        from ..widgets.dialogs import ZoomDialog
+        d = ZoomDialog(self.w, self.ed.zoom)
+        if d.exec():
+            art, wert = d.ergebnis()
+            if art == "breite":
+                self.zoomBreite()
+            elif art == "seite":
+                self.zoomSeite()
+            else:
+                self.ed.set_zoom(wert)
+
     def lesehilfe(self, k=None):
         from ..widgets.lesehilfe_dialog import LesehilfeDialog
         d = LesehilfeDialog(self.w)
