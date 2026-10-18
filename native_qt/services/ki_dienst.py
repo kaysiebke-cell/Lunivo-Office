@@ -55,8 +55,8 @@ class KIDienst(QObject):
     def zettel(self, text: str) -> None:
         self.konfig.d["zettel"] = (text or "")[:K.ZETTEL_GRENZE]
 
-    def _einwilligung(self) -> bool:
-        ziel = self.ki.schickt_nach_aussen()
+    def _einwilligung(self, modell: str | None = None) -> bool:
+        ziel = self.ki.schickt_nach_aussen(modell)
         if ziel is None:
             return True
         erlaubt = self.konfig["einwilligungen"] if "einwilligungen" in self.konfig.d else []
@@ -109,6 +109,9 @@ class KIDienst(QObject):
         danach, eing = auftrag
         self._beschaeftigt = False
         self.laeuft.emit(False)
+        if danach == "bild":
+            self._bild_fertig(r, eing)
+            return
         if danach == "chat":
             self.chatAntwort.emit("⚠ " + r["fehler"] if "fehler" in r else r["text"], r.get("cent"))
             return
@@ -125,6 +128,48 @@ class KIDienst(QObject):
                              "zu dem, was jetzt dasteht — nichts wurde geändert. Noch einmal drücken fragt sie neu.")
             return
         danach(r, eing)
+
+    # ---- Bild aus Text ------------------------------------------------------------------------
+    def bild_aus_text(self, beschreibung: str | None = None) -> None:
+        """Markierter Text (oder der übergebene) ist die Bildbeschreibung; das Bild tritt an die Stelle der Markierung."""
+        if self._beschaeftigt:
+            return
+        ed = self.w.current_editor()
+        if ed is None:
+            return
+        c = ed.textCursor()
+        text = (beschreibung or (c.selectedText().replace(" ", "\n") if c.hasSelection() else "")).strip()
+        if not text:
+            self.status.emit("Erst einen Text markieren, der das Bild beschreibt.")
+            return
+        if not self.konfig["aufgaben"].get("bildgenerierung", "").startswith(K.EIGEN_MARKE):
+            self.status.emit("Dafür fehlt ein Modell mit „Bilder“ — in der KI-Konfiguration eintragen.")
+            self.w.befehle.w_kiKonfiguration()
+            return
+        if not self._einwilligung(self.konfig["aufgaben"]["bildgenerierung"]):
+            self.status.emit("Abgebrochen — es wurde nichts gesendet.")
+            return
+        self._beschaeftigt = True
+        self.laeuft.emit(True)
+        self.status.emit("Die KI erzeugt das Bild …")
+        eing = {"ed": ed, "beschreibung": text, "ersetzen": c.hasSelection()}
+        self._pool.start(_Lauf(("bild", eing), lambda: self.ki.bild_erzeugen(text), self._sig))
+
+    def _bild_fertig(self, r, eing) -> None:
+        if "fehler" in r:
+            self.status.emit(r["fehler"])
+            return
+        from PySide6.QtGui import QImage
+        img = QImage.fromData(r["bild"])
+        if img.isNull():
+            self.status.emit("Der Anbieter hat etwas geschickt, das kein Bild ist.")
+            return
+        from ..editor import einfuegen as E
+        ed = eing["ed"]
+        if eing["ersetzen"] and ed.textCursor().hasSelection():
+            ed.textCursor().removeSelectedText()
+        E.qimage_einfuegen(ed, img, eing["beschreibung"][:200])
+        self.status.emit("Bild eingefügt. Strg+Z macht es rückgängig.")
 
     # ---- Anwenden ---------------------------------------------------------------------------
     def _preis(self, cent) -> str:

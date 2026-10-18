@@ -31,8 +31,10 @@ class ChatPanel(QWidget):
         self.eingabe = QLineEdit(); self.eingabe.setPlaceholderText("Frage an die KI … (z. B. „Was fehlt in diesem Brief noch?“)")
         self.eingabe.returnPressed.connect(self.senden)
         b = QPushButton("Senden"); b.clicked.connect(self.senden)
+        bild = QPushButton("Bild"); bild.setToolTip("Aus dem Text im Feld (oder der Markierung) ein Bild erzeugen und einfügen")
+        bild.clicked.connect(self._bild)
         neu = QPushButton("Neu"); neu.setToolTip("Gespräch leeren"); neu.clicked.connect(self.leeren)
-        z.addWidget(self.eingabe, 1); z.addWidget(b); z.addWidget(neu)
+        z.addWidget(self.eingabe, 1); z.addWidget(b); z.addWidget(bild); z.addWidget(neu)
         v.addLayout(z)
         dienst.chatAntwort.connect(self._antwort)
 
@@ -75,6 +77,13 @@ class ChatPanel(QWidget):
         self.verlauf.append({"rolle": "mensch", "text": t})
         self._blase(t, False)
         self.d.chat(list(self.verlauf))
+
+    def _bild(self):
+        t = self.eingabe.text().strip()
+        self.eingabe.clear()
+        if t:
+            self._blase("Bild: " + t, False)
+        self.d.bild_aus_text(t or None)
 
     def _antwort(self, text: str, cent) -> None:
         if not text.startswith("⚠"):

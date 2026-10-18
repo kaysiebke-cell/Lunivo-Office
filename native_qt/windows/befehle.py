@@ -1767,8 +1767,16 @@ class Befehle:
     def w_kiUebersetzen(self, k=None): self.w.ki.uebersetzen()
     def kiEntwerfen(self, k=None): self.w.chat_oeffnen("Entwirf einen Text zu folgendem Anliegen: ")
     def w_chatUmschalten(self, k=None): self.w.chat_oeffnen("")
-    def w_kiKonfiguration(self, k=None): self.w.show_options("ki")
-    def w_eigenenAnbieterHinzufuegen(self, k=None): self.w.show_options("ki")
+    def w_kiKonfiguration(self, k=None):
+        from ..widgets.ki_dialoge import KIKonfigurationDialog
+        KIKonfigurationDialog(self.w).exec()
+
+    def w_eigenenAnbieterHinzufuegen(self, k=None):
+        from ..widgets.ki_dialoge import AnbieterDialog
+        if AnbieterDialog(self.w, self.w.ki.konfig).exec():
+            self.w.ki.geaendert.emit()
+
+    def kiTextInBild(self, k=None): self.w.ki.bild_aus_text()
     def kiTextAktion(self, k=None, aktion="verbessern"): self.w.ki.text_aktion(aktion)
 
     # ==== Externe Programme (Steuerung einer installierten Anwendung, keine Integration) ==========================

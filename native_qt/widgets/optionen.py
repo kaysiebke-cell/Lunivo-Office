@@ -455,7 +455,7 @@ class OptionenDialog(QDialog):
 
     # ================= Nur bei Lunivo =================
     def _ki(self, titel):
-        p = _Seite(self.w, titel, ["Aufgaben-Modellzuweisung je Funktion", "Bildgenerierung", "Eigenen Assistenten erstellen"])
+        p = _Seite(self.w, titel)
         k = self.w.ki.konfig
         f = p.gruppe("Modell")
         c = QComboBox()
@@ -479,36 +479,14 @@ class OptionenDialog(QDialog):
         f.addRow(QLabel(f"Gespeichert in {k.pfad} (nur für Sie lesbar). Bei Nutzung geht der Text an Anthropic — "
                         "vorher fragt das Programm um Erlaubnis."))
         p.zeile(f, f"Bisherige Kosten: {(K.als_geld(k['kosten']) if k['kosten'] else '0 $')}")
-        f = p.gruppe("Eigene Anbieter (OpenAI-kompatibel)")
-        liste = QListWidget()
-        liste.setMaximumHeight(90)
-        for a in k["anbieter"]:
-            liste.addItem(f"{a['name']} — {a['url']} — {a['modell']}")
-        f.addRow(liste)
-        zeile = QGridLayout()
-        n, u, s, m = QLineEdit(), QLineEdit(), QLineEdit(), QLineEdit()
-        n.setPlaceholderText("Name"); u.setPlaceholderText("https://…/v1"); s.setPlaceholderText("Schlüssel (optional)")
-        m.setPlaceholderText("Modell"); s.setEchoMode(QLineEdit.Password)
-        zeile.addWidget(n, 0, 0); zeile.addWidget(m, 0, 1); zeile.addWidget(u, 1, 0, 1, 2); zeile.addWidget(s, 2, 0, 1, 2)
-        b = QPushButton("Hinzufügen")
-
-        def neu():
-            if not u.text().strip() or not m.text().strip():
-                QMessageBox.information(self, "Anbieter", "Adresse und Modell werden gebraucht.")
-                return
-            a = k.anbieter_hinzufuegen(n.text(), u.text(), s.text(), m.text())
-            liste.addItem(f"{a['name']} — {a['url']} — {a['modell']}")
-            for w_ in (n, u, s, m):
-                w_.clear()
-            self.w.ki.geaendert.emit()
-        b.clicked.connect(neu)
-        zeile.addWidget(b, 3, 0, 1, 2)
-        host = QWidget(); host.setLayout(zeile)
-        f.addRow(host)
-        ent = QPushButton("Markierten Anbieter entfernen")
-        ent.clicked.connect(lambda: (k.anbieter_entfernen(k["anbieter"][liste.currentRow()]["id"]), liste.takeItem(liste.currentRow()),
-                                     self.w.ki.geaendert.emit()) if liste.currentRow() >= 0 else None)
-        f.addRow(ent)
+        f = p.gruppe("Anbieter und Aufgaben")
+        p.zeile(f, "Eigene Anbieter (OpenAI-kompatibel, auch Ollama unter /v1) und welches Modell welche Aufgabe übernimmt — "
+                   "Chatbot, Zusammenfassen, Übersetzung, Textanalyse, Bildgenerierung.")
+        for text, fn in (("KI-Konfiguration …", self.w.befehle.w_kiKonfiguration),
+                         ("Eigenen Anbieter hinzufügen …", self.w.befehle.w_eigenenAnbieterHinzufuegen)):
+            b = QPushButton(text)
+            b.clicked.connect(lambda _=False, fn=fn: fn())
+            f.addRow(b)
         f = p.gruppe("Für wen schreiben Sie? (Standard)")
         e2 = QComboBox(); e2.addItems(EMPFAENGER)
         e2.setCurrentText(self.w.assistant.thema)

@@ -202,3 +202,52 @@ def test_rechtsklick_menue_vorschlaege_und_ignorieren(app, tmp_path, monkeypatch
     assert "Zum Wörterbuch hinzufügen" in [a.text() for a in m2.actions()]
     n = w.assistant.ignorierte_wieder_pruefen()
     assert n >= 0
+
+
+def test_text_in_bild_ende_zu_ende(app, tmp_path, monkeypatch):
+    """Markierter Text → Anbieter mit „Bilder“ → Bild steht im Dokument an Stelle der Markierung; Strg+Z holt den Text zurück."""
+    import base64, json, threading
+    from http.server import BaseHTTPRequestHandler, HTTPServer
+    from PySide6.QtCore import QBuffer, QIODevice
+    from PySide6.QtGui import QColor, QImage
+    img = QImage(16, 16, QImage.Format_RGB32); img.fill(QColor("blue"))
+    buf = QBuffer(); buf.open(QIODevice.WriteOnly); img.save(buf, "PNG")
+    png = base64.b64encode(bytes(buf.data())).decode()
+
+    class H(BaseHTTPRequestHandler):
+        def do_POST(self):
+            self.rfile.read(int(self.headers["Content-Length"]))
+            body = json.dumps({"data": [{"b64_json": png}]}).encode()
+            self.send_response(200); self.send_header("Content-Length", str(len(body))); self.end_headers(); self.wfile.write(body)
+        def log_message(self, *a): pass
+    srv = HTTPServer(("127.0.0.1", 0), H)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    w = win(tmp_path, monkeypatch)
+    k = w.ki.konfig
+    a = k.anbieter_hinzufuegen("Lokal", f"http://127.0.0.1:{srv.server_port}/v1", "", "bild", ["bilder"])
+    k.aufgabe_setzen("bildgenerierung", "eigen:" + a["id"])
+    e = w.current_editor()
+    e.setPlainText("Ein blauer Würfel")
+    c = e.textCursor(); c.select(QTextCursor.Document); e.setTextCursor(c)
+    w.ki.bild_aus_text()
+    warte(w.ki._sig.fertig)
+    assert "￼" in e.document().toPlainText() and "Würfel" not in e.document().toPlainText()
+    e.undo()
+    assert "Ein blauer Würfel" in e.document().toPlainText() or e.document().toPlainText().count("￼") == 0
+
+
+def test_ki_dialoge(app, tmp_path, monkeypatch):
+    from native_qt.widgets.ki_dialoge import AnbieterDialog, KIKonfigurationDialog, ModellListeDialog
+    w = win(tmp_path, monkeypatch)
+    k = w.ki.konfig
+    d = AnbieterDialog(w, k)
+    assert d.url.text().endswith(":11434/v1") and d.tags["text"].isChecked()
+    d.name.setText("X"); d.modell.setCurrentText("m"); d.tags["bilder"].setChecked(True)
+    d._ok()
+    assert k["anbieter"][0]["verwendungFuer"] == ["text", "bilder"]
+    kd = KIKonfigurationDialog(w)
+    assert list(kd.felder) == ["chatbot", "zusammenfassen", "uebersetzung", "textanalyse", "bildgenerierung"]
+    assert kd.felder["bildgenerierung"].count() == 2 and kd.felder["chatbot"].count() == 5
+    kd.felder["bildgenerierung"].setCurrentIndex(1); kd._ok()
+    assert k["aufgaben"]["bildgenerierung"].startswith("eigen:")
+    ModellListeDialog(w, k)._fuellen()

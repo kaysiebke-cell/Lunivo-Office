@@ -703,6 +703,10 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         if self.kontext_hook is not None:
             pos = self.cursorForPosition(e.pos()).position()
             self.kontext_hook(m, pos)
+        ki = getattr(self.window(), "ki", None)
+        if ki is not None and self.textCursor().hasSelection() and not self.isReadOnly():
+            m.addSeparator()
+            m.addAction("KI: Text in Bild", ki.bild_aus_text)
         m.exec(e.globalPos())
         m.deleteLater()
 
