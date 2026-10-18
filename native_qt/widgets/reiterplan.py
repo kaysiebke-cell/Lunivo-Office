@@ -118,7 +118,7 @@ def plan(register: dict) -> list[dict]:
     nach = {t["name"]: t for t in register["register"]}
     verweise = dict(nach["Referenzen"], name="Verweise")
     reiter = [DATEI, nach["Start"], nach["Einfügen"], nach["Seitenlayout"], verweise, nach["Überprüfen"], KI,
-              nach["Ansicht"]]
+              nach["Ansicht"], nach["Sendungen"]]
     return reiter + [TABELLENTOOLS, BILDTOOLS, FORMTOOLS, KOPFFUSS]
 
 

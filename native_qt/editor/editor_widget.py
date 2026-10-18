@@ -680,6 +680,10 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
                 from PySide6.QtGui import QDesktopServices
                 QDesktopServices.openUrl(_U(href))
                 return
+        if e.button() == Qt.LeftButton and not self.textCursor().hasSelection() and not self.isReadOnly():
+            from .sendungen import kasten_umschalten
+            if kasten_umschalten(self, self.cursorForPosition(e.pos()).position()):
+                return
         c = self.cursorForPosition(e.pos())
         c2 = QTextCursor(c)
         c2.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor)

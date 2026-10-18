@@ -892,6 +892,111 @@ class Befehle:
         m.addAction("Textbausteine verwalten …", self.textbaustein)
         m.exec(QCursor.pos())
 
+    # ---- Sendungen --------------------------------------------------------------------------------------------
+    def _neues_blatt(self, titel: str):
+        self.w.new_document()
+        t = self.w.current_tab()
+        t.title = titel
+        self.w._update_tab_titles()
+        return t
+
+    def umschlag(self, k=None):
+        from ..editor import sendungen as S
+        from ..widgets.sendungen_dialoge import UmschlagDialog
+        b = self.w.benutzerdaten()
+        absender = "\n".join(x for x in (b["name"], b["strasse"], b["plz_ort"]) if x)
+        d = UmschlagDialog(self.w, absender)
+        if d.exec():
+            t = self._neues_blatt("Umschlag")
+            pg = S.umschlag_aufbauen(t.editor, d.format.currentText(), d.absender.toPlainText(), d.empfaenger.toPlainText())
+            t.editor.page_settings_changed(pg)
+            self.w.statusBar().showMessage(f"Umschlag im Format {d.format.currentText()} angelegt.", 5000)
+
+    def etiketten(self, k=None):
+        from ..editor import sendungen as S
+        from ..widgets.sendungen_dialoge import EtikettenDialog
+        d = EtikettenDialog(self.w)
+        if d.exec():
+            t = self._neues_blatt("Etiketten")
+            pg = S.etiketten_aufbauen(t.editor, d.bogen.currentText(), d.text.toPlainText(), d.gleich.currentIndex() == 0)
+            t.editor.page_settings_changed(pg)
+            self.w.statusBar().showMessage("Bogen angelegt.", 5000)
+
+    def seriendruckfeld(self, k=None):
+        if self.ed:
+            from ..editor import sendungen as S
+            n, ok = QInputDialog.getText(self.w, "Seriendruckfeld", "Feldname (muss in der Kopfzeile der Empfängerliste stehen):", text="Name")
+            if ok and n.strip():
+                S.feld_einfuegen(self.ed, n.strip().replace("{", "").replace("}", ""))
+
+    def adressblock(self, k=None):
+        if self.ed:
+            from ..editor import sendungen as S
+            namen = {"Adressblock (Name, Straße, Ort)": "adresse", "Grußzeile (Anrede + Name)": "gruss", "Adressblock und Grußzeile": "beides"}
+            n, ok = QInputDialog.getItem(self.w, "Adressblock und Grußzeile", "Einfügen:", list(namen), 0, False)
+            if ok:
+                S.adressblock_einfuegen(self.ed, namen[n])
+
+    def seriendruckregel(self, k=None):
+        if self.ed:
+            from ..editor import sendungen as S
+            from ..widgets.sendungen_dialoge import RegelDialog
+            d = RegelDialog(self.w)
+            if d.exec() and d.feld.text().strip():
+                S.regel_einfuegen(self.ed, d.feld.text().strip(), d.wert.text().strip(), d.dann.text(), d.sonst.text())
+
+    def seriendruck(self, k=None):
+        if not self.ed:
+            return
+        from ..editor import sendungen as S
+        from ..widgets.sendungen_dialoge import SeriendruckDialog
+        d = SeriendruckDialog(self.w, S.felder_im_text(self.ed.document()), self.w.settings.get("serien/liste", ""))
+        if not d.exec():
+            return
+        tab = S.tabelle_lesen(d.daten.toPlainText())
+        if not tab:
+            QMessageBox.information(self.w, "Seriendruck", "Dafür braucht es eine Kopfzeile und mindestens einen Empfänger.")
+            return
+        self.w.settings.set("serien/liste", d.daten.toPlainText())
+        quelle = self.ed.document()
+        seite = self.ed.page.copy()
+        t = self._neues_blatt(self.w.current_tab().title + " — Seriendruck")
+        n = S.serienbrief_erzeugen(quelle, tab[1], t.editor.document())
+        t.editor.page_settings_changed(seite)
+        self.w.statusBar().showMessage(f"{n} Briefe erzeugt (neues Dokument; die Vorlage bleibt unverändert).", 6000)
+
+    def serienVorschau(self, k=None):
+        if not self.ed:
+            return
+        from ..editor import sendungen as S
+        roh = self.w.settings.get("serien/liste", "")
+        tab = S.tabelle_lesen(roh) if roh else None
+        if not tab:
+            QMessageBox.information(self.w, "Vorschau", "Erst die Empfänger eingeben — Sendungen ▸ Seriendruck-Assistent.")
+            return
+        namen = [f"{i + 1}. " + ", ".join(list(s.values())[:2]) for i, s in enumerate(tab[1])]
+        n, ok = QInputDialog.getItem(self.w, "Vorschau auf Ergebnisse", f"{len(namen)} Empfänger. Die Vorschau ersetzt den Text nicht:", namen, 0, False)
+        if ok:
+            d = S.brief_fuer(self.ed.document(), tab[1][namen.index(n)])
+            QMessageBox.information(self.w, "Vorschau: " + n, d.toPlainText().strip()[:1200])
+
+    def formTextfeld(self, k=None):
+        if self.ed:
+            from ..editor import sendungen as S
+            S.form_textfeld(self.ed)
+
+    def formKasten(self, k=None):
+        if self.ed:
+            from ..editor import sendungen as S
+            S.form_kasten(self.ed)
+
+    def formKnopf(self, k=None):
+        if self.ed:
+            from ..editor import sendungen as S
+            t, ok = QInputDialog.getText(self.w, "Schaltfläche", "Aufschrift:", text="Absenden")
+            if ok:
+                S.form_knopf(self.ed, t.strip())
+
     # ---- Überprüfen: Thesaurus, Barrierefreiheit, Korrektursprache ------------------------------------------
     def thesaurus(self, k=None):
         ki = getattr(self.w, "ki", None)
