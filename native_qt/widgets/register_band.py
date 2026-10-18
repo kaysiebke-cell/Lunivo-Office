@@ -72,11 +72,13 @@ class RegisterBand(QWidget):
         self.kopf.addLayout(self.schnell)
         self._trenner()
         self.reiter = _ReiterLeiste()
+        self.reiter.setObjectName("bandReiter")
         self.reiter.setDrawBase(False)
         self.reiter.setExpanding(False)
         self.kopf.addWidget(self.reiter, 1)
         lay.addLayout(self.kopf)
         self.stapel = QStackedWidget()
+        self.stapel.setObjectName("bandStapel")
         self.stapel.setFixedHeight(112)
         lay.addWidget(self.stapel)
         linie = QFrame()
@@ -133,6 +135,7 @@ class RegisterBand(QWidget):
     # ---- Reiter und Gruppen -------------------------------------------------------------------------------
     def _reiter(self, r: dict):
         scroll = QScrollArea()
+        scroll.setObjectName("bandSeite")
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.NoFrame)
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
