@@ -385,6 +385,29 @@ class Befehle:
         self.w.show_options()
 
     # ---- Ansicht ---------------------------------------------------------------------------------------------------------------
+    def handbuch(self, k=None):
+        from ..widgets import hilfe_dialoge
+        hilfe_dialoge.handbuch(self.w).show()
+
+    def tastenHilfe(self, k=None):
+        from ..widgets import hilfe_dialoge
+        hilfe_dialoge.tastenkuerzel(self.w).show()
+
+    def erweiterungen(self, k=None):
+        from ..widgets import hilfe_dialoge
+        hilfe_dialoge.erweiterungen(self.w).show()
+
+    def vorlagenWaehlen(self, k=None): self.w.neu_aus_vorlage()
+
+    def vorlagenOrdner(self, k=None):
+        import os
+        from PySide6.QtCore import QUrl
+        from PySide6.QtGui import QDesktopServices
+        from ..editor import vorlagen
+        o = vorlagen.vorlagenordner(self.w.settings)
+        os.makedirs(o, exist_ok=True)
+        QDesktopServices.openUrl(QUrl.fromLocalFile(o))
+
     def menueleisteZeigen(self, k=None):
         self.w.toggle_menubar()
 

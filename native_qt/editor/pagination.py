@@ -187,6 +187,9 @@ def render(qdoc: QTextDocument, page: PageSettings, device, first: int = 1, last
     """Zeichnet die Seiten first..last auf device (QPdfWriter/QPrinter). → Anzahl Seiten."""
     opt = opt or {}
     d = paginated_copy(qdoc, page, opt.get("noten"))
+    if opt.get("luecken", True):
+        from .vorlagen import luecken_entfernen
+        luecken_entfernen(d)
     if opt.get("hintergrund") is False:
         _ohne_hintergruende(d)
     total = max(1, d.pageCount())

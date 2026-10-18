@@ -69,6 +69,7 @@ class MainWindow(QMainWindow):
         self.ki.status.connect(lambda t: self.lbl_msg.setText(t))
         self.befehle = Befehle(self)
         self._build_actions()
+        self._zusatz_kuerzel()
         self._build_status()
         self.menubar_wanted = self.settings.get_bool("ui/menueleiste", False)
         self._symbole_anwenden()
@@ -615,6 +616,72 @@ class MainWindow(QMainWindow):
         w.deleteLater()
         self._refresh_ui()
         return True
+
+    def _zusatz_kuerzel(self):
+        """Kürzel ohne eigene Aktion (Tabelle in windows/kuerzel.py zeigt sie in der Hilfe)."""
+        from PySide6.QtGui import QShortcut
+        b = self.befehle
+        tabelle = [("F3", b.schnellbaustein), ("F4", b.vorlesen), ("F5", self.toggle_sidebar), ("F6", b.welcheHilfe),
+                   ("F7", lambda: self.assistant.pruefen(True)), ("F8", b.kiKorrektur),
+                   ("Ctrl++", b.groesser), ("Ctrl+-", b.kleiner), ("Ctrl+0", b.normal),
+                   ("Ctrl+Tab", lambda: self._tab_weiter(1)), ("Ctrl+Shift+Tab", lambda: self._tab_weiter(-1))]
+        self._kuerzel = []
+        for taste, fn in tabelle:
+            sc = QShortcut(QKeySequence(taste), self)
+            sc.setContext(Qt.WindowShortcut)
+            sc.activated.connect(fn)
+            self._kuerzel.append(sc)
+
+    def _tab_weiter(self, d: int):
+        n = self.tabs.count()
+        if n > 1:
+            self.tabs.setCurrentIndex((self.tabs.currentIndex() + d) % n)
+
+    # ==== Vorlagen ==================================================================
+    def benutzerdaten(self) -> dict:
+        g = self.settings.get
+        return {k: g(f"benutzer/{k}", "") or "" for k in ("name", "initialen", "strasse", "plz_ort", "ort", "telefon", "mail")}
+
+    def neu_aus_vorlage(self):
+        from ..widgets.vorlagen_dialog import VorlagenDialog
+        d = VorlagenDialog(self, self.settings, self.current_tab() is not None)
+        if not d.exec():
+            return
+        if d.als_vorlage_gewuenscht:
+            self.als_vorlage_speichern()
+            return
+        art, wert = d.auswahl
+        if art == "geruest":
+            from ..editor import vorlagen
+            from PySide6.QtCore import QDate, QLocale
+            self.new_document()
+            t = self.current_tab()
+            t.title = wert["name"]
+            self._update_tab_titles()
+            vorlagen.aufbauen(t.editor, wert["zeilen"], self.benutzerdaten(), QLocale("de_DE").toString(QDate.currentDate(), "d. MMMM yyyy"))
+        else:
+            try:
+                geladen = formats.load(wert)
+            except DocumentIOError as e:
+                QMessageBox.warning(self, "Vorlage", str(e)); return
+            tab = DocumentTab(geladen, None, title=os.path.splitext(os.path.basename(wert))[0])
+            self._add_tab(tab)
+            tab.editor.document().setModified(True)
+            self._show_report(geladen.report, "Hinweise zur Vorlage", "beim Öffnen")
+
+    def als_vorlage_speichern(self):
+        t = self.current_tab()
+        if not t:
+            return
+        from ..editor import vorlagen
+        ordner = vorlagen.vorlagenordner(self.settings)
+        os.makedirs(ordner, exist_ok=True)
+        pfad, _ = QFileDialog.getSaveFileName(self, "Als Vorlage speichern", os.path.join(ordner, os.path.splitext(t.title)[0] + ".docx"),
+                                              "Word-Dokument (*.docx)")
+        if pfad:
+            if not pfad.lower().endswith(".docx"):
+                pfad += ".docx"
+            self._write(t, pfad, mark_saved=False)
 
     # ==== Fenster ====================================================================
     @staticmethod

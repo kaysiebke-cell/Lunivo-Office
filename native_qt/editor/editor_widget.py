@@ -7,7 +7,7 @@ from PySide6.QtGui import (
     QTextDocument, QTextFormat, QTextFrameFormat, QTextImageFormat, QTextListFormat,
     QTextTableFormat, QTextLength,
 )
-from PySide6.QtWidgets import QListWidget, QScrollArea, QTextEdit
+from PySide6.QtWidgets import QListWidget, QListWidgetItem, QScrollArea, QTextEdit
 
 from ..document_io.docx_reader import LH_PROPORTIONAL, STYLE_PROP
 from .page import PageSettings, mm_to_px
@@ -57,7 +57,7 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         self._popup = QListWidget(None)
         self._popup.setWindowFlags(Qt.ToolTip)
         self._popup.setFocusPolicy(Qt.NoFocus)
-        self._popup.itemClicked.connect(lambda it: self._vorschlag_nehmen(it.text()))
+        self._popup.itemClicked.connect(lambda it: self._vorschlag_nehmen(it.data(Qt.UserRole)))
         self._pages = 1
         self._breaks: list[int] = []
         self._paged: QTextDocument | None = None
@@ -792,7 +792,11 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
             self._popup.hide(); return
         gross = w[:1].isupper()
         self._popup.clear()
-        self._popup.addItems([v.capitalize() if gross else v for v in vs])
+        for i, v in enumerate(vs, start=1):
+            wort = v.capitalize() if gross else v
+            it = QListWidgetItem(f"{i}  {wort}" if i <= 6 else wort)
+            it.setData(Qt.UserRole, wort)
+            self._popup.addItem(it)
         self._popup.setCurrentRow(0)
         r = self.cursorRect()
         self._popup.resize(220, min(200, 22 * len(vs) + 6))
@@ -829,6 +833,12 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         self.setTextCursor(end)
 
     def keyPressEvent(self, e) -> None:
+        if e.key() == Qt.Key_Tab and e.modifiers() == Qt.NoModifier and not self.isReadOnly() and not self.textCursor().currentTable():
+            from .vorlagen import naechste_luecke
+            ziel = naechste_luecke(self.document(), self.textCursor().selectionEnd())
+            if ziel:
+                self.select_range(*ziel)
+                return
         if self.verfolgen and not self.isReadOnly() and self._verfolgte_taste(e):
             return
         if self.gliederung and (e.modifiers() & Qt.AltModifier) and (e.modifiers() & Qt.ShiftModifier) \
@@ -840,7 +850,11 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
             if k in (Qt.Key_Tab, Qt.Key_Return, Qt.Key_Enter):
                 it = self._popup.currentItem()
                 if it:
-                    self._vorschlag_nehmen(it.text()); e.accept(); return
+                    self._vorschlag_nehmen(it.data(Qt.UserRole)); e.accept(); return
+            if (e.modifiers() & Qt.ControlModifier) and Qt.Key_1.value <= k <= Qt.Key_6.value:        # Strg+1…6: Vorschlag nehmen
+                n = k - Qt.Key_1.value
+                if n < self._popup.count():
+                    self._vorschlag_nehmen(self._popup.item(n).data(Qt.UserRole)); e.accept(); return
             if k == Qt.Key_Escape:
                 self._popup.hide(); e.accept(); return
             if k in (Qt.Key_Down, Qt.Key_Up):
