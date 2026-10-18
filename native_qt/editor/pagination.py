@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from PySide6.QtCore import QMarginsF, QRectF, QSizeF, Qt
 from PySide6.QtGui import (
-    QFont, QImage, QPageLayout, QPageSize, QPainter, QPdfWriter, QTextCharFormat, QTextDocument, QTextFormat,
+    QFont, QImage, QPageLayout, QPageSize, QPainter, QPdfWriter, QTextCharFormat, QTextCursor, QTextDocument, QTextFormat,
 )
 from PySide6.QtPrintSupport import QPrinter
 
@@ -50,9 +50,40 @@ def bind_layout(qdoc: QTextDocument, faktor: float = 1.0) -> None:
     qdoc.documentLayout().setPaintDevice(zoom_device(faktor))
 
 
-def paginated_copy(qdoc: QTextDocument, page: PageSettings) -> QTextDocument:
+def noten_anhaengen(d: QTextDocument, noten: dict | None) -> None:
+    """Fuß- und Endnoten gesammelt am Textende (nur in der Kopie für Seitenzählung, PDF und Druck)."""
+    if not noten or not (noten.get("f") or noten.get("e")):
+        return
+    from .zusatz import P_NOTE, roemisch
+    stellen = {"f": [], "e": []}
+    b = d.firstBlock()
+    while b.isValid():
+        it = b.begin()
+        while not it.atEnd():
+            f = it.fragment()
+            if f.isValid() and f.charFormat().hasProperty(P_NOTE):
+                art, _, nid = f.charFormat().stringProperty(P_NOTE).partition(":")
+                stellen[art].append(int(nid))
+            it += 1
+        b = b.next()
+    c = QTextCursor(d)
+    c.movePosition(QTextCursor.End)
+    for art, titel in (("f", "Fußnoten"), ("e", "Endnoten")):
+        if not stellen[art]:
+            continue
+        c.insertBlock()
+        kopf = QTextCharFormat(); kopf.setFontWeight(QFont.Bold); kopf.setFontPointSize(10)
+        c.insertText("—" * 10 + " " + titel, kopf)
+        for n, nid in enumerate(stellen[art], start=1):
+            c.insertBlock()
+            f = QTextCharFormat(); f.setFontPointSize(9)
+            c.insertText(f"{n if art == 'f' else roemisch(n)}  {(noten.get(art, {}) or {}).get(nid, '')}", f)
+
+
+def paginated_copy(qdoc: QTextDocument, page: PageSettings, noten: dict | None = None) -> QTextDocument:
     d = qdoc.clone()
     bind_layout(d)
+    noten_anhaengen(d, noten)
     root = d.rootFrame()
     ff = root.frameFormat()
     ff.setMargin(0)
@@ -155,7 +186,7 @@ def render(qdoc: QTextDocument, page: PageSettings, device, first: int = 1, last
            dpi: int | None = None, opt: dict | None = None) -> int:
     """Zeichnet die Seiten first..last auf device (QPdfWriter/QPrinter). → Anzahl Seiten."""
     opt = opt or {}
-    d = paginated_copy(qdoc, page)
+    d = paginated_copy(qdoc, page, opt.get("noten"))
     if opt.get("hintergrund") is False:
         _ohne_hintergruende(d)
     total = max(1, d.pageCount())
@@ -227,9 +258,10 @@ def _zeilennummern(p: QPainter, d: QTextDocument, n: int, ch: float, base: QFont
         b = b.next()
 
 
-def seite_als_bild(qdoc: QTextDocument, page: PageSettings, n: int, faktor: float = 1.0, d: QTextDocument | None = None) -> QImage:
+def seite_als_bild(qdoc: QTextDocument, page: PageSettings, n: int, faktor: float = 1.0, d: QTextDocument | None = None,
+                   noten: dict | None = None) -> QImage:
     """Seite n als Bild (für die Zwei-Seiten-Ansicht und „Als Bild exportieren“)."""
-    d = d or paginated_copy(qdoc, page)
+    d = d or paginated_copy(qdoc, page, noten)
     total = max(1, d.pageCount())
     w, h = int(mm_to_px(page.width_mm) * faktor), int(mm_to_px(page.height_mm) * faktor)
     img = QImage(w, h, QImage.Format_RGB32)
@@ -263,7 +295,7 @@ def _page_layout(page: PageSettings) -> QPageLayout:
     return QPageLayout(size, orient, QMarginsF(0, 0, 0, 0), QPageLayout.Millimeter)
 
 
-def export_pdf(path: str, qdoc: QTextDocument, page: PageSettings, title: str = "", author: str = "") -> int:
+def export_pdf(path: str, qdoc: QTextDocument, page: PageSettings, title: str = "", author: str = "", noten: dict | None = None) -> int:
     from PySide6.QtCore import QByteArray
     w = QPdfWriter(path)
     w.setResolution(300)
@@ -276,7 +308,7 @@ def export_pdf(path: str, qdoc: QTextDocument, page: PageSettings, title: str = 
         w.setDocumentXmpMetadata(QByteArray(("<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\">"
                                              "<rdf:Description xmlns:dc=\"http://purl.org/dc/elements/1.1/\"><dc:creator><rdf:Seq><rdf:li>"
                                              + esc + "</rdf:li></rdf:Seq></dc:creator></rdf:Description></rdf:RDF></x:xmpmeta>").encode("utf-8")))
-    return render(qdoc, page, w)
+    return render(qdoc, page, w, opt={"noten": noten} if noten else None)
 
 
 def print_document(printer: QPrinter, qdoc: QTextDocument, page: PageSettings, opt: dict | None = None) -> int:

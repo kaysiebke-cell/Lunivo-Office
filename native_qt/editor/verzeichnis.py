@@ -25,7 +25,7 @@ def _ueberschriften(doc):
 
 
 def _seiten(editor, positionen):
-    kopie = paginated_copy(editor.document(), editor.page)
+    kopie = paginated_copy(editor.document(), editor.page, editor.noten)
     ch = editor.page.content_height_px
     out = []
     for pos in positionen:

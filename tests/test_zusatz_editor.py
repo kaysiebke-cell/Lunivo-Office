@@ -74,3 +74,15 @@ def test_aenderungen_verfolgen_annehmen_ablehnen(app, tmp_path):
     c = e2.textCursor(); c.setPosition(5); e2.setTextCursor(c); e2.insertPlainText("!!")
     e2.alle_aenderungen(False)
     assert e2.toPlainText() == "Hallo Welt"
+
+
+def test_noten_im_pdf_gesammelt(app, tmp_path):
+    import pypdf
+    from native_qt.editor.pagination import export_pdf
+    e = ed("Eins Zwei")
+    c = e.textCursor(); c.setPosition(4); e.setTextCursor(c)
+    e.note_neu("f", "Erklärung zur Eins")
+    out = str(tmp_path / "n.pdf")
+    export_pdf(out, e.document(), e.page, "t", "", e.noten)
+    txt = " ".join(pypdf.PdfReader(out).pages[0].extract_text().split())
+    assert "Fußnoten" in txt and "Erklärung zur Eins" in txt

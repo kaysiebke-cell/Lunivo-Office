@@ -545,7 +545,7 @@ class MainWindow(QMainWindow):
             path += ".pdf"
         try:
             autor = self._meta_fuer_speichern(t).get("author", "") if self.settings.get_bool("pdf/eigenschaften", True) else ""
-            n = export_pdf(path, t.editor.document(), t.page, os.path.splitext(t.title)[0], autor)
+            n = export_pdf(path, t.editor.document(), t.page, os.path.splitext(t.title)[0], autor, t.editor.noten)
         except Exception as e:  # PDF-Ausgabe darf das Programm nicht beenden
             QMessageBox.critical(self, "PDF-Export fehlgeschlagen", str(e)); return
         self.statusBar().showMessage(f"PDF gespeichert ({n} Seiten): {path}", 5000)
@@ -564,7 +564,7 @@ class MainWindow(QMainWindow):
         dlg.setMinMax(1, t.editor.page_count)
         if dlg.exec():
             self._vor_dem_drucken(t)
-            print_document(pr, t.editor.document(), t.page, self.druckoptionen())
+            print_document(pr, t.editor.document(), t.page, dict(self.druckoptionen(), noten=t.editor.noten))
             self.statusBar().showMessage("An den Drucker gesendet.", 4000)
 
     def print_preview(self):
@@ -573,7 +573,7 @@ class MainWindow(QMainWindow):
             return
         pr = self._neuer_drucker()
         dlg = QPrintPreviewDialog(pr, self)
-        dlg.paintRequested.connect(lambda p: print_document(p, t.editor.document(), t.page, self.druckoptionen()))
+        dlg.paintRequested.connect(lambda p: print_document(p, t.editor.document(), t.page, dict(self.druckoptionen(), noten=t.editor.noten)))
         dlg.resize(1000, 800)
         dlg.exec()
 

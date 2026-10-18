@@ -22,7 +22,7 @@ class SeitenAnsicht(QWidget):
         faktor = max(0.25, min(1.2, (breite - 16 * 4) / 2 / mm_to_px(pg.width_mm)))
         QApplication.setOverrideCursor(Qt.WaitCursor)
         try:
-            d = paginated_copy(editor.document(), pg)
+            d = paginated_copy(editor.document(), pg, editor.noten)
             self.seiten = max(1, d.pageCount())
             for n in range(1, self.seiten + 1):
                 bild = seite_als_bild(editor.document(), pg, n, faktor, d)
