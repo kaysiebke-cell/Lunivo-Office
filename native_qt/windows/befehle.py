@@ -668,6 +668,50 @@ class Befehle:
             f, h = self.SCHRIFTPAARE[n]
             self.ed.apply_design(f, h, None)
 
+    # ---- Überprüfen: Thesaurus, Barrierefreiheit, Korrektursprache ------------------------------------------
+    def thesaurus(self, k=None):
+        ki = getattr(self.w, "ki", None)
+        if not self.ed or ki is None:
+            return
+
+        def danach(wort, lst, von, bis):
+            n, ok = QInputDialog.getItem(self.w, f"Wörter für „{wort}“", "Statt dessen:", lst, 0, False)
+            if ok:
+                self.ed.replace_range(von, bis, self._wie_geschrieben(wort, n))
+        ki.thesaurus(danach)
+
+    @staticmethod
+    def _wie_geschrieben(alt: str, neu: str) -> str:
+        return neu[:1].upper() + neu[1:] if alt[:1].isupper() else neu[:1].lower() + neu[1:]
+
+    def barrierefrei(self, k=None):
+        if not self.ed:
+            return
+        from ..services.barrierefreiheit import pruefe
+        funde = pruefe(self.ed)
+        text = ("\n\n".join(f"{i}. {f}" for i, f in enumerate(funde, 1)) if funde else
+                "Nichts gefunden. Bilder beschrieben, Überschriften der Reihe nach, Tabellen mit Kopfzeile, Schrift kräftig genug.")
+        QMessageBox.information(self.w, "Barrierefreiheit", text)
+
+    SPRACHEN = [("de-DE", "Deutsch"), ("de-AT", "Deutsch (Österreich)"), ("de-CH", "Deutsch (Schweiz)"), ("en-US", "Englisch"),
+                ("en-GB", "Englisch (UK)"), ("fr-FR", "Französisch"), ("es-ES", "Spanisch"), ("it-IT", "Italienisch"),
+                ("nl-NL", "Niederländisch"), ("pl-PL", "Polnisch"), ("ru-RU", "Russisch"), ("tr-TR", "Türkisch")]
+
+    def pruefsprache(self, k=None):
+        if not self.ed:
+            return
+        aktuell = self.w.current_tab().meta.get("sprache") or self.w.settings.get("pruefsprache", "de-DE")
+        namen = [n for _k, n in self.SPRACHEN]
+        start = next((i for i, (kk, _n) in enumerate(self.SPRACHEN) if kk == aktuell), 0)
+        n, ok = QInputDialog.getItem(self.w, "Sprache für die Korrekturhilfen", "Sprache des Dokuments (wird in der Datei vermerkt).\n"
+                                     "Die Schreibhilfe selbst prüft weiter auf Deutsch.", namen, start, False)
+        if ok:
+            kennung = self.SPRACHEN[namen.index(n)][0]
+            self.w.current_tab().meta["sprache"] = kennung
+            self.w.settings.set("pruefsprache", kennung)
+            self.ed.document().setModified(True)
+            self.w.statusBar().showMessage(f"Dokumentsprache: {n}.", 4000)
+
     # ---- Verweise: Beschriftungen, Textmarken, Querverweise, Index, Zitate -------------------------------------
     def beschriftung(self, k=None):
         if not self.ed:

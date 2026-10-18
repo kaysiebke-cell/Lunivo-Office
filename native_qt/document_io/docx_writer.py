@@ -162,6 +162,19 @@ class _Writer:
                 run._r.append(t)
 
     # ---- Grundschrift --------------------------------------------------
+    def _sprache(self) -> None:
+        kennung = self.meta.get("sprache")
+        if not kennung:
+            return
+        rpr = self.d.styles.element.find(qn("w:docDefaults") + "/" + qn("w:rPrDefault") + "/" + qn("w:rPr"))
+        if rpr is None:
+            return
+        lang = rpr.find(qn("w:lang"))
+        if lang is None:
+            lang = OxmlElement("w:lang")
+            rpr.append(lang)
+        lang.set(qn("w:val"), kennung)
+
     def write_defaults(self):
         f: QFont = self.q.defaultFont()
         normal = self.d.styles["Normal"]
@@ -577,6 +590,7 @@ class _Writer:
     # ---- Hauptlauf --------------------------------------------------------
     def run(self) -> bytes:
         self.write_defaults()
+        self._sprache()
         self.write_page()
         self.write_frame(self.q.rootFrame(), _Body(self.d))
         self._trim_trailing_empty()

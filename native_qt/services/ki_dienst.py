@@ -85,7 +85,7 @@ class KIDienst(QObject):
         text = ed.document().toPlainText().rstrip("\n")
         return {"ed": ed, "text": text, "basis": 0, "markiert": False, "rev": ed.document().revision()}
 
-    def starte(self, meldung: str, arbeit, danach) -> None:
+    def starte(self, meldung: str, arbeit, danach, eing: dict | None = None) -> None:
         """arbeit(text) → Ergebnisdict (im Hintergrund); danach(ergebnis, eingabe) im Hauptthread."""
         if self._beschaeftigt:
             return
@@ -93,7 +93,7 @@ class KIDienst(QObject):
             self.status.emit("Dafür fehlt der KI-Schlüssel — oder Ollama auf diesem Rechner. Optionen ▸ Schreibhilfe und KI.")
             self.w.show_options("ki")
             return
-        eing = self._eingabe()
+        eing = eing or self._eingabe()
         if eing is None or not eing["text"].strip():
             self.status.emit("Es steht noch kein Text da.")
             return
@@ -182,6 +182,31 @@ class KIDienst(QObject):
             self.status.emit((f"{len(lst)} Vorschläge." if lst else "Die KI findet nichts, was sich leichter sagen ließe.")
                              + self._preis(r.get("cent")))
         self.starte("Die KI sucht Sätze, die sich leichter lesen ließen …", self.ki.vorschlaege, danach)
+
+    def thesaurus(self, danach) -> None:
+        """Synonyme zum Wort am Zeiger; danach(wort, woerter, von, bis) im Hauptthread."""
+        ed = self.w.current_editor()
+        if ed is None:
+            return
+        c = ed.textCursor()
+        if not c.hasSelection():
+            c.select(c.SelectionType.WordUnderCursor)
+        wort = c.selectedText().strip()
+        if not wort:
+            self.status.emit("Erst ein Wort markieren oder den Zeiger hineinsetzen.")
+            return
+        von, bis = c.selectionStart(), c.selectionEnd()
+        text = ed.document().toPlainText()
+        umgebung = text[max(0, von - 120):bis + 120]
+        eing = {"ed": ed, "text": umgebung, "basis": von, "markiert": False, "rev": ed.document().revision()}
+
+        def fertig(r, e):
+            lst = r.get("woerter", [])
+            if not lst:
+                self.status.emit("Dazu ist der KI nichts eingefallen." + self._preis(r.get("cent")))
+                return
+            danach(wort, lst, von, bis)
+        self.starte(f"Suche Wörter für „{wort}“ …", lambda _t: self.ki.synonyme(wort, umgebung), fertig, eing)
 
     def vorschlag_einsetzen(self, v: dict) -> bool:
         ed = self.w.current_editor()

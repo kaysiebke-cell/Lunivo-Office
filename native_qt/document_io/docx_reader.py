@@ -792,6 +792,9 @@ class _Reader:
         props = self.d.core_properties
         meta = {"title": props.title or "", "author": props.author or ""}
         meta.update(self.zus)
+        lang = self.d.styles.element.find(qn("w:docDefaults") + "/" + qn("w:rPrDefault") + "/" + qn("w:rPr") + "/" + qn("w:lang"))
+        if lang is not None and lang.get(qn("w:val")):
+            meta["sprache"] = lang.get(qn("w:val"))
         self.doc.setModified(False)
         return self.doc, page, meta, self.report
 

@@ -401,6 +401,31 @@ class KI:
                and v["alt"].strip() and v["neu"].strip() and v["alt"] != v["neu"] and v["alt"] in text]
         return {"vorschlaege": gut, "cent": r.get("cent")}
 
+    def synonyme(self, wort: str, umgebung: str = "") -> dict:
+        """Wörter, die statt `wort` an dieser Stelle stehen könnten (Thesaurus — geht nur mit KI, wie in ki.js)."""
+        anweisung = (f"Nenne gebräuchliche deutsche Wörter, die statt „{wort}“ an dieser Stelle stehen könnten. "
+                     "Achte auf den Zusammenhang: Dasselbe Wort bedeutet je nach Satz Verschiedenes. "
+                     "Nimm einfache, geläufige Wörter — dieser Text wird von einem Menschen mit Legasthenie geschrieben, "
+                     "und ein seltenes Fremdwort hilft ihm nicht. Höchstens acht, jedes in der Form, in der es im Satz "
+                     "stehen müsste. Fällt dir nichts Passendes ein, bleibt die Liste leer.")
+        bauplan = {"type": "object", "properties": {"woerter": {"type": "array", "items": {"type": "string"}}},
+                   "required": ["woerter"], "additionalProperties": False}
+        r = self.anfrage(anweisung, umgebung or wort, bauplan)
+        if "fehler" in r:
+            return r
+        self._kosten(r.get("cent"))
+        try:
+            daten = json.loads(re.sub(r"^```(?:json)?\s*|\s*```$", "", r["ergebnis"].strip()))
+            lst = daten["woerter"]
+            assert isinstance(lst, list)
+        except (ValueError, KeyError, AssertionError):
+            return {"fehler": "Die Antwort kam nicht in der erwarteten Form."}
+        sauber = []
+        for w in lst:
+            if isinstance(w, str) and w.strip() and len(w) < 40 and w.strip().lower() != wort.lower() and w.strip() not in sauber:
+                sauber.append(w.strip())
+        return {"woerter": sauber[:8], "cent": r.get("cent")}
+
     def ollama_modelle(self) -> list[str]:
         try:
             with urllib.request.urlopen(OLLAMA_URL + "/api/tags", timeout=3) as r:
