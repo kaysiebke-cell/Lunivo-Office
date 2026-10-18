@@ -1736,6 +1736,21 @@ class Befehle:
             b = e.page.content_width_px
             e.bild_setzen(width=b, height=b * r)
 
+    def anordnen(self, k=None):
+        """Textumbruch / Position: Bild mit Text in der Zeile oder links/rechts vom Text umflossen."""
+        e, f = self._bild()
+        if f is None:
+            self.w.statusBar().showMessage("Erst ein Bild anklicken.", 4000)
+            return
+        from ..editor import umbruch as U
+        aktuell = U.schwebend(e.document(), e._bild_cursor().selectionStart()) or "zeile"
+        m = QMenu()
+        for modus, text in (("zeile", "Mit Text in Zeile"), ("links", "Links, Text umfließt"), ("rechts", "Rechts, Text umfließt")):
+            a = m.addAction(text, lambda _=False, modus=modus: U.umbruch_setzen(e, modus))
+            a.setCheckable(True)
+            a.setChecked(modus == aktuell)
+        self._popup(m)
+
     def bildOriginal(self, k=None):
         e, f = self._bild()
         if f is not None:

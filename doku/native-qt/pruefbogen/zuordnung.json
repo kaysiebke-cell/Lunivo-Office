@@ -192,8 +192,8 @@
   "wo": "Reiter Seitenlayout ▸ Größe (Befehle.w_setzePapier)"
  },
  "SEITENLAYOUT|Textumbruch": {
-  "status": "⬜",
-  "wo": "Bilder stehen im Text; frei schwebende Objekte kennt Qt nicht"
+  "status": "◐",
+  "wo": "Bild links/rechts vom Text umflossen (editor/umbruch.py, DOCX wp:anchor wrapSquare, test_werkzeuge); „Oben und unten“, „Hinter/vor dem Text“ und freie Position fehlen"
  },
  "SEITENLAYOUT|Bild/Objekt anordnen": {
   "status": "◐",

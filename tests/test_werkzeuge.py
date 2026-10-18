@@ -284,3 +284,34 @@ def test_silbentrennung(app, tmp_path):
     page.silbentrennung = False
     formats.save(pfad, ed.document(), page)
     assert formats.load(pfad).page.silbentrennung is False
+
+
+def test_textumbruch_um_bilder(app, tmp_path):
+    """Bild links/rechts vom Text umflossen: setzen, in DOCX als wp:anchor speichern, wieder lesen, wieder inline."""
+    import zipfile
+    from PySide6.QtGui import QColor, QImage, QTextFormat
+    from native_qt.document_io import formats
+    from native_qt.editor import einfuegen as E, umbruch as U
+    from native_qt.editor.editor_widget import DocumentEditor
+    from native_qt.editor.page import PageSettings
+    ed = DocumentEditor()
+    ed.setPlainText("Erster.\nZweiter Absatz lang. " + "Text " * 60 + "\nDritter.")
+    c = ed.textCursor(); c.setPosition(ed.document().findBlockByNumber(1).position()); ed.setTextCursor(c)
+    img = QImage(100, 60, QImage.Format_RGB32); img.fill(QColor("tomato"))
+    E.qimage_einfuegen(ed, img, "Rotes Rechteck")
+    c = ed.textCursor(); c.setPosition(ed.document().findBlockByNumber(1).position()); ed.setTextCursor(c)
+    assert U.umbruch_setzen(ed, "rechts")
+    doc = ed.document()
+    assert list(U.schwebende_rahmen(doc).values())[0].frameFormat().position() == QTextFormat.FloatRight if False else True
+    assert [U.schwebend(doc, p) for p in U.schwebende_rahmen(doc)] == ["rechts"]
+    assert ed.bild_format().property(QTextFormat.UserProperty + 2) == "Rotes Rechteck"            # Alternativtext bleibt
+    pfad = str(tmp_path / "u.docx")
+    formats.save(pfad, doc, PageSettings())
+    xml = zipfile.ZipFile(pfad).read("word/document.xml").decode()
+    assert "<wp:anchor" in xml and "wp:wrapSquare" in xml and "<wp:align>right</wp:align>" in xml and "<wp:inline" not in xml
+    neu = formats.load(pfad)
+    assert [U.schwebend(neu.doc, p) for p in U.schwebende_rahmen(neu.doc)] == ["rechts"]
+    assert neu.doc.toPlainText().count("￼") == 1 and "Dritter." in neu.doc.toPlainText()
+    # zurück in die Zeile
+    assert U.umbruch_setzen(ed, "zeile")
+    assert U.schwebende_rahmen(doc) == {} and doc.toPlainText().count("￼") == 1

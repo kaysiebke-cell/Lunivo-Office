@@ -703,6 +703,16 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         if self.kontext_hook is not None:
             pos = self.cursorForPosition(e.pos()).position()
             self.kontext_hook(m, pos)
+        if self._bild_cursor() is not None and not self.isReadOnly():
+            from . import umbruch as U
+            m.addSeparator()
+            c = self._bild_cursor()
+            aktuell = U.schwebend(self.document(), c.selectionStart()) or "zeile"
+            for modus, text in (("zeile", "Bild: mit Text in Zeile"), ("links", "Bild: links, Text umfließt"),
+                                ("rechts", "Bild: rechts, Text umfließt")):
+                a = m.addAction(text, lambda _=False, modus=modus: U.umbruch_setzen(self, modus))
+                a.setCheckable(True)
+                a.setChecked(modus == aktuell)
         ki = getattr(self.window(), "ki", None)
         if ki is not None and self.textCursor().hasSelection() and not self.isReadOnly():
             m.addSeparator()
