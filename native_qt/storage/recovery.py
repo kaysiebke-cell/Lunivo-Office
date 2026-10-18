@@ -82,3 +82,20 @@ def pending(exclude: set[str] | None = None) -> list[RecoveryEntry]:
         except (OSError, ValueError):
             continue
     return out
+
+
+def zwischenstand(token: str, title: str, tage: int) -> None:
+    """Legt eine Kopie der Sicherung unter staende/ ab und löscht Kopien, die älter als `tage` sind."""
+    import shutil, time
+    quelle, _ = paths(token)
+    if not os.path.exists(quelle):
+        return
+    ordner = os.path.join(recovery_dir(), "staende")
+    os.makedirs(ordner, exist_ok=True)
+    name = "".join(c if c.isalnum() or c in "-_ " else "_" for c in title) or "Dokument"
+    shutil.copy2(quelle, os.path.join(ordner, f"{name}-{time.strftime('%Y%m%d-%H%M%S')}.docx"))
+    grenze = time.time() - max(1, tage) * 86400
+    for f in os.listdir(ordner):
+        pf = os.path.join(ordner, f)
+        if os.path.getmtime(pf) < grenze:
+            os.remove(pf)

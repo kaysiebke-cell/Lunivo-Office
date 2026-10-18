@@ -502,6 +502,13 @@ class Befehle:
 
     def an_zeilenfokus(self): return bool(self.ed) and self.ed.zeilenfokus
 
+    def bearbeitungSperren(self, k=None):
+        self.w.toggle_sperre()
+
+    def an_bearbeitungSperren(self):
+        t = self.w.current_tab()
+        return bool(t and getattr(t, "gesperrt", False))
+
     def lesemodus(self, k=None):
         self.w.toggle_lesemodus()
 

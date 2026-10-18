@@ -117,3 +117,19 @@ def test_tastenkuerzel_fett(app, tmp_path):
     assert e.textCursor().charFormat().fontWeight() < 600       # zweites Mal schaltet aus
     e.document().setModified(False)
     w.close()
+
+
+def test_bearbeitung_sperren_und_band_einklappen(app, tmp_path):
+    w = win(tmp_path)
+    w.new_document()
+    w.befehle.bearbeitungSperren()
+    assert w.current_editor().isReadOnly()
+    w.befehle.bearbeitungSperren()
+    assert not w.current_editor().isReadOnly()
+    b = w.band
+    b.einklappen_umschalten()
+    assert b._eingeklappt and not b.stapel.isVisibleTo(b)
+    b.einklappen_umschalten()
+    assert b.stapel.isVisibleTo(b)
+    w.current_editor().document().setModified(False)
+    w.close()

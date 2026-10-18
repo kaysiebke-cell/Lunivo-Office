@@ -38,6 +38,14 @@ def _zweizeilig(text: str) -> str:
     return text[:i] + "\n" + text[i + 1:]
 
 
+class _ReiterLeiste(QTabBar):
+    doppelt = Signal()
+
+    def mouseDoubleClickEvent(self, ev):
+        self.doppelt.emit()
+        super().mouseDoubleClickEvent(ev)
+
+
 class RegisterBand(QWidget):
     """Kopfzeile (☰, Schnellzugriff, Reiter) und darunter das Band des gewählten Reiters."""
 
@@ -63,7 +71,7 @@ class RegisterBand(QWidget):
         self.schnell.setSpacing(0)
         self.kopf.addLayout(self.schnell)
         self._trenner()
-        self.reiter = QTabBar()
+        self.reiter = _ReiterLeiste()
         self.reiter.setDrawBase(False)
         self.reiter.setExpanding(False)
         self.kopf.addWidget(self.reiter, 1)
@@ -80,8 +88,24 @@ class RegisterBand(QWidget):
         for r in plan(self.daten):
             self._reiter(r)
         self.reiter.currentChanged.connect(self.stapel.setCurrentIndex)
+        self.reiter.tabBarClicked.connect(self._reiter_geklickt)
+        self.reiter.doppelt.connect(self.einklappen_umschalten)
         self.reiter.setCurrentIndex(1)          # Start
         self.bandfehler = sorted(set(self.fehlend))
+
+    einklappbar = True          # Optionen ▸ Doppelklick blendet das Band aus
+    _eingeklappt = False
+
+    def _reiter_geklickt(self, _i):
+        if self._eingeklappt:
+            self._eingeklappt = False
+            self.stapel.setVisible(True)
+
+    def einklappen_umschalten(self):
+        if not self.einklappbar:
+            return
+        self._eingeklappt = not self._eingeklappt
+        self.stapel.setVisible(not self._eingeklappt)
 
     def _trenner(self):
         s = QFrame()

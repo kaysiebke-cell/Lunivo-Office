@@ -577,6 +577,8 @@ class MainWindow(QMainWindow):
 
     # ==== Wiederherstellung ================================================================
     def autosave_now(self):
+        if not self.settings.get_bool("sicherung/aktiv", True):
+            return
         for t in self._doc_tabs():
             if not t.is_modified():
                 continue
@@ -584,6 +586,8 @@ class MainWindow(QMainWindow):
             try:
                 formats.save(docx_path, t.editor.document(), t.page, t.meta)
                 recovery.write_meta(t.token, t.path or "", t.title)
+                if self.settings.get_bool("sicherung/staende", False):
+                    recovery.zwischenstand(t.token, t.title, self.settings.get_int("sicherung/tage", 7))
             except Exception:
                 pass            # Sicherung darf nie die Arbeit stören
 
@@ -755,6 +759,7 @@ class MainWindow(QMainWindow):
         alt = self.band
         idx = self.band_lay.indexOf(alt)
         self.band = RegisterBand(self.befehle, lade_register())
+        self.band.einklappbar = self.settings.get_bool("ui/band_doppelklick", True)
         self.band.menue_knopf.clicked.connect(self.show_main_menu)
         self.band_lay.insertWidget(idx, self.band)
         alt.setParent(None); alt.deleteLater()
@@ -798,6 +803,15 @@ class MainWindow(QMainWindow):
         t.set_path(ziel)
         self.settings.add_recent(ziel)
         self._update_tab_titles()
+
+    def toggle_sperre(self):
+        """Überprüfen ▸ Bearbeitung einschränken: Dokument schreibgeschützt (nur in dieser Sitzung)."""
+        t = self.current_tab() if hasattr(self, "current_tab") else None
+        if not t:
+            return
+        t.gesperrt = not getattr(t, "gesperrt", False)
+        t.editor.setReadOnly(t.gesperrt or self.lesemodus)
+        self.statusBar().showMessage("Bearbeitung gesperrt." if t.gesperrt else "Bearbeitung freigegeben.", 4000)
 
     def toggle_marks(self, on: bool):
         self.marks_on = on

@@ -231,7 +231,7 @@ class OptionenDialog(QDialog):
     def _ansicht(self, titel):
         p = _Seite(self.w, titel, ["Lineal", "Vertikales Lineal", "Gitternetzlinien",
                                    "Live-Vorschau", "Minisymbolleiste", "Tipp für Kopf-/Fußzeile",
-                                   "Ausgeblendeter Text, Objektanker", "Doppelklick blendet das Band aus"])
+                                   "Ausgeblendeter Text, Objektanker"])
         f = p.gruppe("Anzeigen")
         p.haken(f, "ui/marken", "Textbegrenzungen (Eckmarken)", True, self.w.set_marken)
         p.haken(f, "ui/seitenleiste", "Seitenleiste beim Start", True)
@@ -240,6 +240,8 @@ class OptionenDialog(QDialog):
         p.haken(f, "ui/steuerzeichen", "Absatzmarken, Leerzeichen und Tabstoppzeichen anzeigen", False,
                 lambda on: self.w.a_marks.setChecked(on))
         p.haken(f, "ui/statusleiste", "Statusleiste anzeigen", True, lambda on: self.w.statusBar().setVisible(on))
+        p.haken(f, "ui/band_doppelklick", "Doppelklick auf einen Reiter blendet das Band aus", True,
+                lambda on: setattr(self.w.band, "einklappbar", on))
         p.haken(f, "ui/strg_klick_link", "Strg + Klick öffnet Hyperlinks", True)
         f = p.gruppe("Darstellung")
         p.auswahl(f, "ui/icongroesse", "Symbolgröße", ["klein", "mittel", "gross"], "mittel", lambda _: self.w.ansicht_optionen_anwenden())
@@ -286,8 +288,11 @@ class OptionenDialog(QDialog):
         return p
 
     def _sicherung(self, titel):
-        p = _Seite(self.w, titel, ["Zwischenstände aufheben (Tage)"])
+        p = _Seite(self.w, titel)
         f = p.gruppe("Sicherung")
+        p.haken(f, "sicherung/aktiv", "Automatisch sichern (Absturzschutz)", True)
+        p.haken(f, "sicherung/staende", "Zwischenstände aufheben", False)
+        p.zahl(f, "sicherung/tage", "Zwischenstände aufheben (Tage)", 1, 365, 7, " Tage")
         p.zahl(f, "autosave_seconds", "Abstand der automatischen Sicherung", 10, 3600, 60, " s",
                wirkt=lambda v: self.w.autosave.start(int(v) * 1000))
         from ..storage import recovery
