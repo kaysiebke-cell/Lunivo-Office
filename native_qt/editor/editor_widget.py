@@ -1,9 +1,9 @@
 """Der Editor: QTextEdit mit Seitenbreite, Formatierungsbefehlen und Seitenzählung."""
 from __future__ import annotations
 
-from PySide6.QtCore import QPoint, QTimer, Qt, Signal, QUrl
+from PySide6.QtCore import QPoint, QRect, QTimer, Qt, Signal, QUrl
 from PySide6.QtGui import (
-    QBrush, QColor, QFont, QImage, QTextBlockFormat, QTextCharFormat, QTextCursor,
+    QBrush, QColor, QFont, QImage, QPainter, QPen, QTextBlockFormat, QTextCharFormat, QTextCursor,
     QTextDocument, QTextFormat, QTextFrameFormat, QTextImageFormat, QTextListFormat,
     QTextTableFormat, QTextLength,
 )
@@ -39,6 +39,8 @@ class DocumentEditor(QTextEdit):
         self.setUndoRedoEnabled(True)
         self.setLineWrapMode(QTextEdit.WidgetWidth)
         self.show_marks = False
+        self.zeilenfokus = False
+        self.marken = True                 # Textbegrenzungen (Eckmarken am Textrand)
         self.vorhersage = None            # Rückruf: Wortanfang → Liste von Vorschlägen
         self.autokorr = None              # Rückruf: Text vor dem Zeiger → korrigierter Text
         self._wellen: list[dict] = []
@@ -53,6 +55,7 @@ class DocumentEditor(QTextEdit):
         self._timer.setInterval(350)
         self._timer.timeout.connect(self._recount)
         self.cursorPositionChanged.connect(self._cursor_moved)
+        self.cursorPositionChanged.connect(lambda: self.zeilenfokus and self.viewport().update())
         self.currentCharFormatChanged.connect(lambda *_: self.formatChanged.emit())
         self.document().contentsChanged.connect(self._timer.start)
         self.apply_page(self.page)
@@ -367,6 +370,46 @@ class DocumentEditor(QTextEdit):
             n += 1
         cur.endEditBlock()
         return n
+
+    # ---- Anzeige: Zeilenfokus, Eckmarken, Lesehilfe --------------------------------------------------
+    def set_zeilenfokus(self, an: bool) -> None:
+        self.zeilenfokus = an
+        self.viewport().update()
+
+    def set_marken(self, an: bool) -> None:
+        self.marken = an
+        self.viewport().update()
+
+    def set_lesehilfe(self, papier: str, buchstaben: float, wort: float) -> None:
+        self.setStyleSheet(f"QTextEdit {{ background: {papier}; color: black; }}")
+        f = QFont(self.document().defaultFont())
+        f.setLetterSpacing(QFont.AbsoluteSpacing, buchstaben)
+        f.setWordSpacing(wort)
+        self.document().setDefaultFont(f)
+
+    def paintEvent(self, e) -> None:
+        super().paintEvent(e)
+        vp = self.viewport()
+        p = QPainter(vp)
+        if self.marken:
+            ml, mt = int(mm_to_px(self.page.margin_left_mm)), int(mm_to_px(self.page.margin_top_mm))
+            mr = int(mm_to_px(self.page.margin_right_mm))
+            y = mt - self.verticalScrollBar().value()
+            p.setPen(QPen(QColor("#868e96"), 1))
+            L, x2 = 14, vp.width() - mr
+            for x, dx in ((ml, 1), (x2, -1)):
+                p.drawLine(x, y - 1, x + dx * L, y - 1)
+                p.drawLine(x - dx, y - L, x - dx, y - 1)
+        if self.zeilenfokus and self.hasFocus() and not self.textCursor().hasSelection():
+            r = self.cursorRect()
+            zeile = QRect(0, r.top() - 1, vp.width(), r.height() + 2)
+            dunkel = QColor(self.palette().color(self.viewport().backgroundRole()))
+            dunkel.setAlpha(170)
+            p.setPen(Qt.NoPen)
+            p.setBrush(dunkel)
+            p.drawRect(QRect(0, 0, vp.width(), zeile.top()))
+            p.drawRect(QRect(0, zeile.bottom() + 1, vp.width(), vp.height()))
+        p.end()
 
     # ---- Schreibhilfe: Wellenlinien, Ersetzen, Vorhersage, AutoKorrektur -------------------
     WELLE = {"fehler": "#e8590c", "tipp": "#1c7ed6", "hinweis": "#868e96"}

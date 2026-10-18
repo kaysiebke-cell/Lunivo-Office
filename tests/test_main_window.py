@@ -80,3 +80,17 @@ def test_no_web_modules_loaded(app):
     bad = [m for m in sys.modules if m.startswith(("PySide6.QtWebEngine", "PySide6.QtWebKit", "PySide6.QtWebChannel",
                                                      "http.server", "flask", "PySide6.QtWebView"))]
     assert bad == []
+
+
+def test_tastenkuerzel_fett(app, tmp_path):
+    from PySide6.QtCore import Qt
+    from PySide6.QtTest import QTest
+    w = win(tmp_path); w.new_document(); w.show()
+    e = w.current_editor(); e.setPlainText("abc"); e.selectAll(); e.setFocus()
+    w.a_bold.trigger()                                   # das Kürzel Strg+B löst genau diese Aktion aus
+    assert w.a_bold.shortcut().toString() == "Ctrl+B"
+    assert e.textCursor().charFormat().fontWeight() >= 600
+    w.a_bold.trigger()
+    assert e.textCursor().charFormat().fontWeight() < 600       # zweites Mal schaltet aus
+    e.document().setModified(False)
+    w.close()

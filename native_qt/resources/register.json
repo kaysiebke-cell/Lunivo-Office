@@ -280,7 +280,7 @@
        "symbol": "lupe",
        "name": "Suchen und Ersetzen",
        "gross": false,
-       "tun": "w.sucheZeigen"
+       "tun": "w.sucheZeigen:[true]"
       },
       {
        "symbol": "allesmark",
@@ -317,11 +317,11 @@
        "menue": [
         {
          "name": "Hochformat",
-         "tun": "leereSeite"
+         "tun": "leereSeite:[false]"
         },
         {
          "name": "Querformat",
-         "tun": "leereSeite"
+         "tun": "leereSeite:[true]"
         }
        ]
       },
@@ -548,22 +548,31 @@
        "gross": true,
        "menue": [
         {
-         "text": "[object Object]"
+         "name": "Normal",
+         "tun": "w.setzeRandVorgabe:[\"normal\"]",
+         "haken": "w.randVorgabeJetzt"
         },
         {
-         "text": "[object Object]"
+         "name": "Schmal",
+         "tun": "w.setzeRandVorgabe:[\"schmal\"]",
+         "haken": "w.randVorgabeJetzt"
         },
         {
-         "text": "[object Object]"
+         "name": "Moderat",
+         "tun": "w.setzeRandVorgabe:[\"moderat\"]",
+         "haken": "w.randVorgabeJetzt"
         },
         {
-         "text": "[object Object]"
+         "name": "Breit",
+         "tun": "w.setzeRandVorgabe:[\"breit\"]",
+         "haken": "w.randVorgabeJetzt"
         },
         {
          "trenner": true
         },
         {
-         "text": "[object Object]"
+         "name": "Benutzerdefinierte Seitenränder…",
+         "tun": "seitenraender"
         }
        ]
       }
@@ -582,10 +591,14 @@
        "gross": true,
        "menue": [
         {
-         "text": "[object Object]"
+         "name": "Hochformat",
+         "tun": "querformat",
+         "haken": "w.querJetzt"
         },
         {
-         "text": "[object Object]"
+         "name": "Querformat",
+         "tun": "w.querJetzt",
+         "haken": "w.querJetzt"
         }
        ]
       },
@@ -595,37 +608,56 @@
        "gross": true,
        "menue": [
         {
-         "text": "[object Object]"
+         "name": "A4",
+         "tun": "w.setzePapier:[\"a4\"]",
+         "haken": "w.papierJetzt"
         },
         {
-         "text": "[object Object]"
+         "name": "A3",
+         "tun": "w.setzePapier:[\"a3\"]",
+         "haken": "w.papierJetzt"
         },
         {
-         "text": "[object Object]"
+         "name": "A5",
+         "tun": "w.setzePapier:[\"a5\"]",
+         "haken": "w.papierJetzt"
         },
         {
-         "text": "[object Object]"
+         "name": "B5",
+         "tun": "w.setzePapier:[\"b5\"]",
+         "haken": "w.papierJetzt"
         },
         {
-         "text": "[object Object]"
+         "name": "Letter",
+         "tun": "w.setzePapier:[\"letter\"]",
+         "haken": "w.papierJetzt"
         },
         {
-         "text": "[object Object]"
+         "name": "Legal",
+         "tun": "w.setzePapier:[\"legal\"]",
+         "haken": "w.papierJetzt"
         },
         {
-         "text": "[object Object]"
+         "name": "Umschlag DIN lang",
+         "tun": "w.setzePapier:[\"dinlang\"]",
+         "haken": "w.papierJetzt"
         },
         {
-         "text": "[object Object]"
+         "name": "Umschlag C5",
+         "tun": "w.setzePapier:[\"c5\"]",
+         "haken": "w.papierJetzt"
         },
         {
-         "text": "[object Object]"
+         "name": "Umschlag C6",
+         "tun": "w.setzePapier:[\"c6\"]",
+         "haken": "w.papierJetzt"
         },
         {
          "trenner": true
         },
         {
-         "text": "[object Object]"
+         "name": "Weitere Papierformate…",
+         "tun": "papierformatFenster"
         }
        ]
       },
@@ -635,19 +667,26 @@
        "gross": false,
        "menue": [
         {
-         "text": "[object Object]"
+         "name": "Eins",
+         "tun": "spaltenSetzen:[1]",
+         "haken": "w.spaltenJetzt"
         },
         {
-         "text": "[object Object]"
+         "name": "Zwei",
+         "tun": "spaltenSetzen:[2]",
+         "haken": "w.spaltenJetzt"
         },
         {
-         "text": "[object Object]"
+         "name": "Drei",
+         "tun": "spaltenSetzen:[3]",
+         "haken": "w.spaltenJetzt"
         },
         {
          "trenner": true
         },
         {
-         "text": "[object Object]"
+         "name": "Mehr Spalten…",
+         "tun": "spalten"
         }
        ]
       },
@@ -663,28 +702,35 @@
        "gross": false,
        "menue": [
         {
-         "text": "[object Object]"
+         "name": "Seitenumbruch",
+         "tun": "seitenumbruch"
         },
         {
-         "text": "[object Object]"
+         "name": "Spaltenumbruch",
+         "tun": "spaltenumbruch"
         },
         {
-         "text": "[object Object]"
+         "name": "Textflussumbruch",
+         "tun": "textflussumbruch"
         },
         {
          "trenner": true
         },
         {
-         "text": "[object Object]"
+         "name": "Abschnittsumbruch auf nächster Seite",
+         "tun": "abschnittsumbruch:[\"NextPage\"]"
         },
         {
-         "text": "[object Object]"
+         "name": "Fortlaufender Abschnittsumbruch",
+         "tun": "abschnittsumbruch:[\"Continuous\"]"
         },
         {
-         "text": "[object Object]"
+         "name": "Abschnittsumbruch (gerade Seite)",
+         "tun": "abschnittsumbruch:[\"EvenPage\"]"
         },
         {
-         "text": "[object Object]"
+         "name": "Abschnittsumbruch auf ungerader Seite",
+         "tun": "abschnittsumbruch:[\"OddPage\"]"
         }
        ]
       },
@@ -741,7 +787,7 @@
        "symbol": "seitenrahmen",
        "name": "Seitenränder",
        "gross": false,
-       "tun": "seitenraenderRahmen"
+       "tun": "seitenraenderRahmen:[\"seite\"]"
       }
      ]
     },
@@ -1107,7 +1153,7 @@
        "symbol": "groesserA",
        "name": "Schrift zum Lesen",
        "gross": false,
-       "tun": "w.optionenOeffnen"
+       "tun": "w.optionenOeffnen:[\"schriften\"]"
       }
      ],
      "pfeil": "lesehilfe"
@@ -1221,10 +1267,10 @@
        "symbol": "sprache",
        "name": "Sprache und Prüfung",
        "gross": false,
-       "tun": "w.optionenOeffnen"
+       "tun": "w.optionenOeffnen:[\"sprache\"]"
       }
      ],
-     "pfeil": "w.optionenOeffnen"
+     "pfeil": "w.optionenOeffnen:[\"sprache\"]"
     },
     {
      "name": "Bausteine",
@@ -1383,7 +1429,7 @@
        "symbol": "blattansicht",
        "name": "Drucklayout",
        "gross": true,
-       "tun": "w.setzeLayout"
+       "tun": "w.setzeLayout:[\"blatt\"]"
       },
       {
        "symbol": "lesen",
@@ -1396,13 +1442,13 @@
        "symbol": "zweiblatt",
        "name": "Zwei Seiten",
        "gross": false,
-       "tun": "w.setzeLayout"
+       "tun": "w.setzeLayout:[\"doppelt\"]"
       },
       {
        "symbol": "fortlaufend",
        "name": "Weblayout",
        "gross": false,
-       "tun": "w.setzeLayout"
+       "tun": "w.setzeLayout:[\"web\"]"
       },
       {
        "symbol": "gliederung",
@@ -1556,19 +1602,19 @@
        "symbol": "automatisch",
        "name": "Wie das System",
        "gross": false,
-       "tun": "w.setzeThema"
+       "tun": "w.setzeThema:[\"auto\"]"
       },
       {
        "symbol": "hell",
        "name": "Immer hell",
        "gross": false,
-       "tun": "w.setzeThema"
+       "tun": "w.setzeThema:[\"light\"]"
       },
       {
        "symbol": "dunkel",
        "name": "Immer dunkel",
        "gross": false,
-       "tun": "w.setzeThema"
+       "tun": "w.setzeThema:[\"dark\"]"
       }
      ]
     },

@@ -27,6 +27,7 @@ from ..widgets.dialogs import (
 from ..widgets.doc_tabs import DocTabs
 from ..widgets.document_tab import DocumentTab
 from ..widgets.menue_tafel import MenueTafel
+from ..widgets.navigation import NavigationPanel
 from ..widgets.register_band import RegisterBand, lade_register
 from ..widgets.schreibhilfe_panel import SchreibhilfePanel
 from ..widgets.start_page import StartPage
@@ -47,6 +48,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Lunivo Writer")
         self.resize(1280, 860)
         self.marks_on = False
+        self.lesemodus = False
         self.docs = DocTabs()
         self.docs.tabCloseRequested.connect(self.close_tab)
         self.docs.currentChanged.connect(self._tab_changed)
@@ -76,8 +78,12 @@ class MainWindow(QMainWindow):
         lay = QVBoxLayout(central)
         lay.setContentsMargins(0, 0, 0, 0); lay.setSpacing(0)
         lay.addWidget(self.docs.leiste)
+        self.band_lay = lay
         lay.addWidget(self.band)
         mitte = QHBoxLayout(); mitte.setSpacing(0)
+        self.navigation = NavigationPanel(self.current_editor)
+        self.navigation.hide()
+        mitte.addWidget(self.navigation)
         mitte.addWidget(self.docs.stack, 1)
         mitte.addWidget(self.sidebar)
         lay.addLayout(mitte, 1)
@@ -138,14 +144,12 @@ class MainWindow(QMainWindow):
         self.a_find = A("Suchen …", self.find_dialog_show, "Ctrl+F")
         self.a_replace = A("Ersetzen …", self.find_dialog_show, "Ctrl+H")
 
-        self.a_bold = A("F", lambda on: self._ed(lambda e: e.toggle_bold(on)), "Ctrl+B", True, "Fett")
-        self.a_italic = A("K", lambda on: self._ed(lambda e: e.toggle_italic(on)), "Ctrl+I", True, "Kursiv")
-        self.a_under = A("U", lambda on: self._ed(lambda e: e.toggle_underline(on)), "Ctrl+U", True, "Unterstrichen")
-        self.a_strike = A("S̶", lambda on: self._ed(lambda e: e.toggle_strike(on)), None, True, "Durchgestrichen")
-        self.a_sup = A("x²", lambda on: self._ed(lambda e: e.set_script("sup" if on else None)),
-                       "Ctrl+Shift+=", True, "Hochgestellt")
-        self.a_sub = A("x₂", lambda on: self._ed(lambda e: e.set_script("sub" if on else None)),
-                       "Ctrl+=", True, "Tiefgestellt")
+        self.a_bold = A("F", self.befehle.fett, "Ctrl+B")
+        self.a_italic = A("K", self.befehle.kursiv, "Ctrl+I")
+        self.a_under = A("U", self.befehle.unter, "Ctrl+U")
+        self.a_strike = A("S̶", self.befehle.durch, None)
+        self.a_sup = A("x²", self.befehle.hoch, "Ctrl+Shift+=")
+        self.a_sub = A("x₂", self.befehle.tief, "Ctrl+=")
         f = self.a_bold.font() if False else None
         self.a_grow = A("A▲", lambda: self._ed(lambda e: e.grow_font(1)), "Ctrl+]", tip="Schrift vergrößern")
         self.a_shrink = A("A▼", lambda: self._ed(lambda e: e.grow_font(-1)), "Ctrl+[", tip="Schrift verkleinern")
@@ -157,10 +161,10 @@ class MainWindow(QMainWindow):
         self.a_indent_less = A("⇤", lambda: self._ed(lambda e: e.change_indent(-10)), tip="Einzug verkleinern")
         self.a_indent_more = A("⇥", lambda: self._ed(lambda e: e.change_indent(10)), tip="Einzug vergrößern")
         self.align_group = QActionGroup(self)
-        self.a_left = A("⯇", lambda: self._ed(lambda e: e.set_alignment(Qt.AlignLeft)), "Ctrl+L", True, "Linksbündig")
-        self.a_center = A("☰", lambda: self._ed(lambda e: e.set_alignment(Qt.AlignHCenter)), "Ctrl+E", True, "Zentriert")
-        self.a_right = A("⯈", lambda: self._ed(lambda e: e.set_alignment(Qt.AlignRight)), "Ctrl+R", True, "Rechtsbündig")
-        self.a_justify = A("≣", lambda: self._ed(lambda e: e.set_alignment(Qt.AlignJustify)), "Ctrl+J", True, "Blocksatz")
+        self.a_left = A("⯇", self.befehle.links, "Ctrl+L")
+        self.a_center = A("☰", self.befehle.mitte, "Ctrl+E")
+        self.a_right = A("⯈", self.befehle.rechts, "Ctrl+R")
+        self.a_justify = A("≣", self.befehle.block, "Ctrl+J")
         for a in (self.a_left, self.a_center, self.a_right, self.a_justify):
             self.align_group.addAction(a)
         self.a_para = A("Absatz …", self.paragraph_dialog)
@@ -178,6 +182,11 @@ class MainWindow(QMainWindow):
         self.a_wordcount = A("Wortanzahl", self.word_count)
         self.a_fullscreen = A("Vollbild", self.toggle_fullscreen, "F11", True)
         self.a_about = A("Über Lunivo Writer", self.about)
+        self.a_lesemodus = A("Lesemodus", self.toggle_lesemodus, "Ctrl+Shift+L")
+        self.a_navigation = A("Navigationsbereich", self.toggle_navigation, "Ctrl+Shift+N")
+        for name, a in list(vars(self).items()):
+            if name.startswith("a_") and isinstance(a, QAction):
+                self.addAction(a)            # Tastenkürzel gelten auch bei verstecktem Menü
 
     # ==== Menü ============================================================
     def _build_menu(self):
@@ -292,6 +301,9 @@ class MainWindow(QMainWindow):
         e.document().modificationChanged.connect(lambda _m: self._update_tab_titles())
         e.document().contentsChanged.connect(self._sync_status)
         e.document().contentsChanged.connect(self.assistant.dokument_geaendert)
+        e.document().contentsChanged.connect(self.navigation.spaeter)
+        e.set_marken(self.settings.get_bool("ui/marken", True))
+        self._lesehilfe_auf(e)
         felder = self.band.felder
         if felder and e is not None:
             pass
@@ -353,6 +365,7 @@ class MainWindow(QMainWindow):
 
     def _add_tab(self, tab: DocumentTab):
         self._connect_tab(tab)
+        tab.editor.setReadOnly(self.lesemodus)
         i = self.tabs.addTab(tab, self._tab_title(tab))
         self.tabs.setCurrentIndex(i)
         self._update_tab_titles()
@@ -584,6 +597,52 @@ class MainWindow(QMainWindow):
             e.set_indents(d.left.value(), d.right.value(), d.first.value())
             e.set_paragraph_spacing(d.before.value(), d.after.value())
             e.set_line_spacing(d.line.value())
+
+    def _lesehilfe_auf(self, e):
+        from ..widgets.lesehilfe_dialog import PAPIERTOENE
+        s = self.settings
+        e.set_lesehilfe(PAPIERTOENE.get(s.get("lesehilfe/papier", "Weiß"), "#ffffff"),
+                        float(s.get("lesehilfe/buchstaben", 0)), float(s.get("lesehilfe/wort", 0)))
+
+    def lesehilfe_anwenden(self):
+        for t in self._doc_tabs():
+            self._lesehilfe_auf(t.editor)
+
+    def set_marken(self, an: bool):
+        self.settings.set("ui/marken", an)
+        for t in self._doc_tabs():
+            t.editor.set_marken(an)
+
+    def toggle_navigation(self):
+        self.navigation.setVisible(not self.navigation.isVisible())
+        self.navigation.aktualisieren()
+
+    def toggle_lesemodus(self):
+        self.lesemodus = not self.lesemodus
+        for w in (self.band, self.sidebar):
+            w.setVisible(not self.lesemodus and (w is self.band or self.settings.get_bool("ui/seitenleiste", True)))
+        for t in self._doc_tabs():
+            t.editor.setReadOnly(self.lesemodus)
+        self.lbl_msg.setText("Lesemodus — Tastenkürzel Strg+Umschalt+L oder Schreibhilfe ▸ Lesemodus beendet ihn."
+                             if self.lesemodus else "")
+
+    def set_theme(self, wahl: str):
+        from ..theme import apply_theme
+        from ..widgets import icons
+        self.settings.set("theme", wahl)
+        apply_theme(QApplication.instance(), wahl)
+        icons.leeren()
+        self.neu_bauen_band()
+
+    def neu_bauen_band(self):
+        alt = self.band
+        idx = self.band_lay.indexOf(alt)
+        self.band = RegisterBand(self.befehle, lade_register())
+        self.band.menue_knopf.clicked.connect(self.show_main_menu)
+        self.band_lay.insertWidget(idx, self.band)
+        alt.setParent(None); alt.deleteLater()
+        self._verbinde_felder()
+        self._refresh_ui()
 
     def show_main_menu(self):
         daten = next(m for m in self.band.daten["menues"] if m["name"] == "Datei")

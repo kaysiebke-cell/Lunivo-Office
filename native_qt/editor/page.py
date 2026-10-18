@@ -41,8 +41,8 @@ class PageSettings:
     height_mm: float = 297.0
     margin_top_mm: float = 25.0
     margin_bottom_mm: float = 25.0
-    margin_left_mm: float = 25.0
-    margin_right_mm: float = 25.0
+    margin_left_mm: float = 32.0
+    margin_right_mm: float = 32.0
     header: HeaderFooter = field(default_factory=HeaderFooter)
     footer: HeaderFooter = field(default_factory=HeaderFooter)
 

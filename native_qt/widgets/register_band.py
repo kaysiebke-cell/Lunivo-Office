@@ -135,7 +135,9 @@ class RegisterBand(QWidget):
         inhalt.setSpacing(4)
         inhalt.setAlignment(Qt.AlignLeft | Qt.AlignTop)
         v.addLayout(inhalt, 1)
-        if g.get("katalog"):
+        if g.get("katalog") == "raender":
+            inhalt.addWidget(self._raender())
+        elif g.get("katalog"):
             inhalt.addWidget(self._stile())
         else:
             self._knoepfe(g, inhalt)
@@ -231,6 +233,22 @@ class RegisterBand(QWidget):
             self.knoepfe.append((k, None, True))
         return host
 
+    def _raender(self) -> QWidget:
+        host = QWidget()
+        h = QHBoxLayout(host)
+        h.setContentsMargins(0, 0, 0, 0)
+        h.setSpacing(2)
+        for art, text in (("normal", "Normal\n25 / 32 mm"), ("schmal", "Schmal\n13 mm"),
+                          ("moderat", "Moderat\n25 / 19 mm"), ("breit", "Breit\n25 / 51 mm")):
+            k = QToolButton()
+            k.setAutoRaise(True)
+            k.setText(text)
+            k.setFixedSize(84, 62)
+            k.clicked.connect(lambda _=False, a=art: (self.b.tun('w.setzeRandVorgabe:["%s"]' % a), self.aktualisieren()))
+            h.addWidget(k)
+            self.knoepfe.append((k, None, True))
+        return host
+
     def _knopf(self, e: dict, gross: bool) -> QToolButton:
         name = e["name"]
         sym = e.get("symbol", "")
@@ -307,7 +325,12 @@ class RegisterBand(QWidget):
                 a = menu.addAction(it["name"])
                 t = it.get("tun")
                 if t and self.b.hat(t):
-                    a.triggered.connect(lambda _=False, t=t: self.b.tun(t))
+                    if it.get("haken"):
+                        a.setCheckable(True)
+                        menu.aboutToShow.connect(lambda a=a, it=it: a.setChecked(bool(self.b.haken_wert(it))))
+                        a.triggered.connect(lambda _=False, t=t, it=it: self.b.haken_wert(it) or self.b.tun(t))
+                    else:
+                        a.triggered.connect(lambda _=False, t=t: self.b.tun(t))
                     ok = True
                 else:
                     a.setEnabled(False)

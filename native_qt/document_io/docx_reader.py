@@ -261,6 +261,17 @@ class _Reader:
         if eff(lambda p: p.page_break_before) or self.pending_break:
             b.setPageBreakPolicy(QTextFormat.PageBreak_AlwaysBefore)
             self.pending_break = False
+        shd = para._p.xpath("w:pPr/w:shd")
+        if shd and shd[0].get(qn("w:fill")) not in (None, "auto"):
+            b.setBackground(QBrush(QColor("#" + shd[0].get(qn("w:fill")))))
+        stops = list(pf.tab_stops)
+        if stops:
+            from docx.enum.text import WD_TAB_ALIGNMENT
+            from PySide6.QtGui import QTextOption
+            art = {WD_TAB_ALIGNMENT.RIGHT: QTextOption.RightTab, WD_TAB_ALIGNMENT.CENTER: QTextOption.CenterTab,
+                   WD_TAB_ALIGNMENT.DECIMAL: QTextOption.DelimiterTab}
+            b.setTabPositions([QTextOption.Tab(_emu_to_px(t.position), art.get(t.alignment, QTextOption.LeftTab))
+                               for t in stops])
         lvl = self._heading_level(para)
         if lvl:
             b.setHeadingLevel(lvl)

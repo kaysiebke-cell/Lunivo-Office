@@ -185,6 +185,19 @@ class _Writer:
             pf.line_spacing = Pt(lh * PX_TO_PT)
         if bf.pageBreakPolicy() & QTextFormat.PageBreak_AlwaysBefore:
             pf.page_break_before = True
+        tabs = bf.tabPositions()
+        if tabs:
+            from docx.enum.text import WD_TAB_ALIGNMENT
+            from PySide6.QtGui import QTextOption
+            art = {QTextOption.RightTab: WD_TAB_ALIGNMENT.RIGHT, QTextOption.CenterTab: WD_TAB_ALIGNMENT.CENTER,
+                   QTextOption.DelimiterTab: WD_TAB_ALIGNMENT.DECIMAL}
+            for t in tabs:
+                pf.tab_stops.add_tab_stop(Emu(int(t.position * EMU_PER_PX)), art.get(t.type, WD_TAB_ALIGNMENT.LEFT))
+        bg = bf.background()
+        if bg.style() != Qt.NoBrush and bg.color().isValid():
+            shd = OxmlElement("w:shd")
+            shd.set(qn("w:val"), "clear"); shd.set(qn("w:color"), "auto"); shd.set(qn("w:fill"), bg.color().name()[1:].upper())
+            para._p.get_or_add_pPr().append(shd)
         # Läufe
         it = blk.begin()
         in_head = bool(lvl) or style_name in ("Title", "Subtitle")

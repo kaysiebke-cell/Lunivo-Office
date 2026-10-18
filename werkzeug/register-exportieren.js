@@ -6,8 +6,10 @@ const wurzel = path.resolve(__dirname, '..');
 const quelle = fs.readFileSync(path.join(wurzel, 'oberflaeche/daten/register.js'), 'utf8');
 
 let rec;
-const B = new Proxy({}, { get: (_, n) => { const f = (...a) => { rec.push(String(n)); }; f.nm = String(n); return f; } });
-const w = new Proxy({}, { get: (_, n) => (...a) => { rec.push('w.' + String(n)); return false; } });
+const mitArgs = (n, a) => n + (a.length && a.every((x) => ['string', 'number', 'boolean'].includes(typeof x)) ? ':' + JSON.stringify(a) : '');
+const B = new Proxy({}, { get: (_, n) => { const f = (...a) => { rec.push(mitArgs(String(n), a)); }; f.nm = String(n); return f; } });
+// w.xyz('arg')() — Fabrik: gibt eine Funktion zurück, die den Namen samt Argument festhält
+const w = new Proxy({}, { get: (_, n) => (...a) => { const nm = mitArgs('w.' + String(n), a); const f = () => { rec.push(nm); return false; }; rec.push(nm); return f; } });
 
 function aktion(a) {
   if (a === undefined || a === null || a === false) return null;
@@ -20,7 +22,15 @@ function aktion(a) {
   }
   return null;
 }
+function menueObjekt(o) {
+  const r = { name: o.name };
+  if (typeof o.tun === 'function') { rec = []; try { o.tun({}); } catch (e) {} r.tun = rec[rec.length - 1] || null; }
+  if (typeof o.haken === 'function') { rec = []; try { o.haken(); } catch (e) {} r.haken = rec[0] || true; }
+  if (Array.isArray(o.unter)) r.menue = o.unter.map(eintrag);
+  return r;
+}
 function eintrag(e) {
+  if (e && !Array.isArray(e) && typeof e === 'object' && e.name) return menueObjekt(e);
   if (!Array.isArray(e)) return { text: String(e) };
   if (e[0] === '-' || e[0] === '//') return { trenner: true };
   const [name, a] = e;
