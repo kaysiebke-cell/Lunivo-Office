@@ -16,10 +16,12 @@ from typing import Optional
 
 import docx
 from docx.document import Document as _Document
+from docx.enum.style import WD_STYLE_TYPE
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn
 from docx.table import Table
 from docx.text.hyperlink import Hyperlink
+from docx.text.run import Run
 from docx.text.paragraph import Paragraph
 from PySide6.QtCore import QUrl
 from PySide6.QtGui import (
@@ -33,6 +35,9 @@ from .report import DocumentIOError, IOReport
 
 LH_PROPORTIONAL, LH_FIXED = 1, 2                # QTextBlockFormat.LineHeightTypes
 STYLE_PROP = QTextFormat.UserProperty + 1       # Name der Formatvorlage am Block
+from ..editor.zusatz import (  # noqa: E402
+    B_ART, B_CAP, B_RAHMEN, B_TOC, BESCHRIFTUNGEN, P_AENDERUNG, P_AUTOR, P_DATUM, P_FELD, P_INDEX, P_KOMMENTAR, P_NOTE, P_ZITAT, leere_meta,
+)
 EMU_PER_PX = 9525
 PT_PER_PX = 0.75
 
@@ -53,12 +58,8 @@ _QT_ALIGN = {
 
 # Was beim Lesen nicht übernommen wird → Hinweis
 _UNSUPPORTED = [
-    ("//w:footnoteReference", "Fußnoten werden nicht dargestellt und beim Speichern nicht erhalten."),
-    ("//w:endnoteReference", "Endnoten werden nicht dargestellt und beim Speichern nicht erhalten."),
     ("//w:txbxContent", "Textfelder werden nicht dargestellt und gehen beim Speichern verloren."),
-    ("//w:ins | //w:del", "Nachverfolgte Änderungen werden nicht als Änderungen dargestellt."),
-    ("//w:commentReference", "Kommentare werden nicht dargestellt und gehen beim Speichern verloren."),
-    ("//w:sdt", "Inhaltssteuerelemente (z. B. Inhaltsverzeichnis) werden nicht dargestellt."),
+    ("//w:sdt[.//w:sdtPr/w:text or .//w:sdtPr/w:dropDownList or .//w:sdtPr/w:date or .//w:sdtPr/w:comboBox]", "Formularfelder (Inhaltssteuerelemente) werden als einfacher Text übernommen."),
     ("//m:oMath", "Formeln werden nicht dargestellt und gehen beim Speichern verloren."),
     ("//w:pict | //wps:wsp | //wpg:wgp", "Formen und gezeichnete Objekte werden nicht dargestellt."),
     ("//w:drawing[.//wp:anchor]", "Frei positionierte Bilder werden als Bild im Text eingefügt."),
@@ -114,41 +115,150 @@ class _Reader:
         self.pending_break = False
         self.deferred_break = False       # Seitenumbruch im Absatz, danach folgt noch nichts
         self.img_n = 0
+        self.zus = leere_meta()
+        self._komm_offen: list[int] = []
+        self._lz_offen: dict[str, str] = {}
+        self._lz_pos: dict[str, int] = {}
+        self._lz_wartend: list[str] = []
+        self._aend = None                 # (art, autor, datum) innerhalb w:ins / w:del
+        self._note_n = {"f": 0, "e": 0}
+        self._feld = None                 # {"instr", "phase": "i"|"r"} innerhalb eines Feldes
+        self._letzter = None              # (von, bis) des zuletzt eingefügten Textstücks (für XE-Felder)
+        self._laden_zusatz()
+        self._stile_id = {st.style_id: st for st in self.d.styles}          # Zwischenspeicher: python-docx sucht sonst bei jedem Zugriff per XPath
+        self._standard_absatz = self._standard_stil(WD_STYLE_TYPE.PARAGRAPH)
+        self._standard_zeichen = self._standard_stil(WD_STYLE_TYPE.CHARACTER)
+        self._basis: dict[int, object] = {}
+        self._ketten: dict[int, list] = {}
+        self._attr_cache: dict[tuple, object] = {}
         self.def_font, self.def_size = _doc_defaults(self.d)
         normal = self.d.styles["Normal"] if "Normal" in [s.name for s in self.d.styles] else None
         self.normal = normal
 
+    def _laden_zusatz(self) -> None:
+        """Kommentare (python-docx) und Fuß-/Endnoten (Teile footnotes.xml / endnotes.xml) einlesen."""
+        try:
+            for c in self.d.comments:
+                self.zus["kommentare"][int(c.comment_id)] = {
+                    "autor": c.author or "", "initialen": c.initials or "",
+                    "datum": c.timestamp.isoformat() if c.timestamp else "",
+                    "text": "\n".join(p.text for p in c.paragraphs)}
+        except Exception:
+            self.report.warn("Kommentare konnten nicht gelesen werden.")
+        self._quellen_lesen()
+        for art, rel in (("f", "footnotes"), ("e", "endnotes")):
+            for r in self.d.part.rels.values():
+                if r.reltype.endswith("/" + rel) and not r.is_external:
+                    from lxml import etree
+                    wurzel = etree.fromstring(r.target_part.blob)
+                    tag = qn("w:footnote") if art == "f" else qn("w:endnote")
+                    for n in wurzel.iterchildren(tag):
+                        if n.get(qn("w:type")) in ("separator", "continuationSeparator", "continuationNotice"):
+                            continue
+                        zeilen = []
+                        for p in n.iterchildren(qn("w:p")):
+                            zeilen.append("".join(t.text or "" for t in p.iter(qn("w:t"))).strip())
+                        self.zus["noten"][art][int(n.get(qn("w:id")))] = "\n".join(zeilen)
+
+    def _quellen_lesen(self) -> None:
+        """Literaturquellen aus dem Word-Bibliografieteil (customXml, Namensraum …/bibliography)."""
+        from lxml import etree
+        B = "{http://schemas.openxmlformats.org/officeDocument/2006/bibliography}"
+        for r in self.d.part.rels.values():
+            if r.is_external or not r.reltype.endswith("/customXml"):
+                continue
+            try:
+                w = etree.fromstring(r.target_part.blob)
+            except Exception:
+                continue
+            if w.tag != B + "Sources":
+                continue
+            self.zus["zitierweise"] = (w.get("StyleName") or "APA")
+            for q in w.iterchildren(B + "Source"):
+                def t(n):
+                    e = q.find(B + n)
+                    return (e.text or "") if e is not None else ""
+                personen = []
+                for pe in q.iter(B + "Person"):
+                    last = (pe.findtext(B + "Last") or "").strip(); first = (pe.findtext(B + "First") or "").strip()
+                    personen.append(f"{last}, {first}" if first else last)
+                corp = q.find(f"{B}Author/{B}Author/{B}Corporate")
+                if corp is not None and corp.text:
+                    personen.append(corp.text)
+                typ = {"Book": "Buch", "JournalArticle": "Aufsatz", "InternetSite": "Webseite", "Report": "Bericht"}.get(t("SourceType"), "Sonstiges")
+                self.zus["quellen"].append({"tag": t("Tag"), "typ": typ, "autor": "; ".join(personen), "titel": t("Title"),
+                                            "jahr": t("Year"), "verlag": t("Publisher"), "ort": t("City"), "url": t("URL")})
+
     # ---- Auflösung der Vererbung -------------------------------------
+    def _standard_stil(self, art):
+        try:
+            return self.d.styles.default(art)
+        except Exception:
+            return None
+
+    def _ps(self, para):
+        """Absatzvorlage (mit Zwischenspeicher)."""
+        ppr = para._p.pPr
+        sid = ppr.pStyle.val if ppr is not None and ppr.pStyle is not None else None
+        return self._stile_id.get(sid) or self._standard_absatz
+
+    def _rs(self, run):
+        rpr = run._r.rPr
+        sid = rpr.rStyle.val if rpr is not None and rpr.rStyle is not None else None
+        return self._stile_id.get(sid) if sid else None
+
+    def _kette(self, style):
+        k = self._ketten.get(id(style.element))
+        if k is None:
+            k, gesehen, s = [], set(), style
+            while s is not None and id(s.element) not in gesehen:
+                gesehen.add(id(s.element)); k.append(s)
+                b = self._basis.get(id(s.element), False)
+                if b is False:
+                    b = s.base_style
+                    self._basis[id(s.element)] = b
+                s = b
+            self._ketten[id(style.element)] = k
+        return k
+
     def _style_attr(self, style, getter):
-        for s in _style_chain(style):
+        for s in self._kette(style):
             v = getter(s)
             if v is not None:
                 return v
         return None
 
+    def _stil_font(self, style, attr):
+        key = (id(style.element), attr)
+        if key not in self._attr_cache:
+            self._attr_cache[key] = self._style_attr(style, lambda s: getattr(s.font, attr) if attr != "name" else s.font.name)
+        return self._attr_cache[key]
+
     def _font_name(self, run, para) -> str:
         v = run.font.name
-        if v is None and run.style is not None:
-            v = self._style_attr(run.style, lambda s: s.font.name)
+        rs = self._rs(run) if hasattr(run, "_r") else None
+        if v is None and rs is not None:
+            v = self._stil_font(rs, "name")
         if v is None and para is not None:
-            v = self._style_attr(para.style, lambda s: s.font.name)
+            v = self._stil_font(self._ps(para), "name")
         if v is None and self.normal is not None:
             v = self.normal.font.name
         return v or self.def_font or "Calibri"
 
     def _font_size_pt(self, run, para) -> float:
         v = run.font.size
-        if v is None and run.style is not None:
-            v = self._style_attr(run.style, lambda s: s.font.size)
+        rs = self._rs(run) if hasattr(run, "_r") else None
+        if v is None and rs is not None:
+            v = self._stil_font(rs, "size")
         if v is None and para is not None:
-            v = self._style_attr(para.style, lambda s: s.font.size)
+            v = self._stil_font(self._ps(para), "size")
         if v is not None:
             return v.pt
         if para is not None:
             lvl = self._heading_level(para)
             if lvl:
                 return HEADING_DEFAULT_PT[lvl]
-            nm = NAMED_STYLE_DEFAULT.get(para.style.name)
+            nm = NAMED_STYLE_DEFAULT.get(self._ps(para).name)
             if nm and nm[0]:
                 return nm[0]
         if self.normal is not None and self.normal.font.size is not None:
@@ -157,15 +267,16 @@ class _Reader:
 
     def _flag(self, run, para, attr):
         v = getattr(run.font, attr)
-        if v is None and run.style is not None:
-            v = self._style_attr(run.style, lambda s: getattr(s.font, attr))
+        rs = self._rs(run) if hasattr(run, "_r") else None
+        if v is None and rs is not None:
+            v = self._stil_font(rs, attr)
         if v is None and para is not None:
-            v = self._style_attr(para.style, lambda s: getattr(s.font, attr))
+            v = self._stil_font(self._ps(para), attr)
         return v
 
-    @staticmethod
-    def _heading_level(para) -> int:
-        n = para.style.name if para.style is not None else ""
+    def _heading_level(self, para) -> int:
+        st = self._ps(para)
+        n = st.name if st is not None else ""
         if n.startswith("Heading ") and n[8:].isdigit():
             return max(1, min(9, int(n[8:])))
         return 0
@@ -176,7 +287,7 @@ class _Reader:
         f.setFontFamilies([self._font_name(run, para)])
         f.setFontPointSize(self._font_size_pt(run, para))
         lvl = self._heading_level(para) if para is not None else 0
-        named = NAMED_STYLE_DEFAULT.get(para.style.name) if para is not None else None
+        named = NAMED_STYLE_DEFAULT.get(self._ps(para).name) if para is not None else None
         bold = self._flag(run, para, "bold")
         if bold is None and lvl:
             bold = True
@@ -187,6 +298,21 @@ class _Reader:
         f.setFontItalic(bool(ital))
         ul = self._flag(run, para, "underline")
         f.setFontUnderline(bool(ul))
+        raw = run.font.underline
+        if raw not in (None, True, False):
+            from docx.enum.text import WD_UNDERLINE as U
+            stil = {U.DASH: QTextCharFormat.DashUnderline, U.DOTTED: QTextCharFormat.DotLine,
+                    U.DOT_DASH: QTextCharFormat.DashDotLine, U.WAVY: QTextCharFormat.WaveUnderline}.get(raw)
+            if stil is not None:
+                f.setUnderlineStyle(stil)
+        if run.font.outline:
+            from PySide6.QtGui import QPen
+            f.setTextOutline(QPen(QColor("#000000")))
+        rpr = run._r.rPr
+        sp = rpr.find(qn("w:spacing")) if rpr is not None else None
+        if sp is not None and sp.get(qn("w:val")):
+            f.setFontLetterSpacingType(QFont.AbsoluteSpacing)
+            f.setFontLetterSpacing(int(sp.get(qn("w:val"))) / 20 / 0.75)
         f.setFontStrikeOut(bool(self._flag(run, para, "strike")))
         if self._flag(run, para, "superscript"):
             f.setVerticalAlignment(QTextCharFormat.AlignSuperScript)
@@ -225,19 +351,44 @@ class _Reader:
         return None
 
     # ---- Absatzformat ------------------------------------------------
+    _JC = {"left": Qt.AlignLeft, "start": Qt.AlignLeft, "right": Qt.AlignRight, "end": Qt.AlignRight, "center": Qt.AlignHCenter,
+           "both": Qt.AlignJustify, "distribute": Qt.AlignJustify, "justify": Qt.AlignJustify}
+
+    def _ausrichtung(self, para: Paragraph, st):
+        """w:jc roh lesen — python-docx kennt „start“/„end“ nicht und bricht sonst ab."""
+        def roh(ppr):
+            if ppr is None:
+                return None
+            jc = ppr.find(qn("w:jc"))
+            return jc.get(qn("w:val")) if jc is not None else None
+        v = roh(para._p.pPr)
+        s = st
+        while v is None and s is not None:
+            v = roh(s.element.pPr)
+            s = s.base_style
+        return self._JC.get(v, Qt.AlignLeft)
+
     def _block_format(self, para: Paragraph) -> QTextBlockFormat:
         pf = para.paragraph_format
-        st = para.style
+        st = self._ps(para)
         b = QTextBlockFormat()
 
+        def sicher(fn, *a):
+            try:
+                return fn(*a)
+            except (ValueError, KeyError, AttributeError):        # ungewöhnliche Werte (z. B. jc="start" von LibreOffice)
+                return None
+
         def eff(getter):
-            v = getter(pf)
+            v = sicher(getter, pf)
             if v is None and st is not None:
-                v = self._style_attr(st, lambda s: getter(s.paragraph_format))
+                v = self._style_attr(st, lambda s: sicher(getter, s.paragraph_format))
             return v
 
-        al = eff(lambda p: p.alignment)
-        b.setAlignment(_QT_ALIGN.get(al, Qt.AlignLeft))
+        ppr = para._p.pPr
+        if ppr is not None and ppr.find(qn("w:bidi")) is not None:
+            b.setLayoutDirection(Qt.RightToLeft)
+        b.setAlignment(self._ausrichtung(para, st))
         left = eff(lambda p: p.left_indent)
         right = eff(lambda p: p.right_indent)
         first = eff(lambda p: p.first_line_indent)
@@ -275,7 +426,7 @@ class _Reader:
         lvl = self._heading_level(para)
         if lvl:
             b.setHeadingLevel(lvl)
-        if st is not None and st.name in ("Title", "Subtitle", "Quote"):
+        if st is not None and st.name in ("Title", "Subtitle", "Quote", "No Spacing"):
             b.setProperty(STYLE_PROP, st.name)
         return b
 
@@ -288,8 +439,8 @@ class _Reader:
         if numpr is not None:
             num_id = numpr.numId.val if numpr.numId is not None else None
             ilvl = numpr.ilvl.val if numpr.ilvl is not None else 0
-        if num_id is None and para.style is not None:
-            for s in _style_chain(para.style):
+        if num_id is None and self._ps(para) is not None:
+            for s in self._kette(self._ps(para)):
                 sp = s.element.pPr
                 if sp is not None and sp.numPr is not None and sp.numPr.numId is not None:
                     num_id = sp.numPr.numId.val
@@ -334,6 +485,7 @@ class _Reader:
 
     def add_paragraph(self, para: Paragraph, cursor: QTextCursor, reuse: bool, in_table=False):
         bfmt = self._block_format(para)
+        self._block_zusatz(bfmt, para)
         base_cfmt = QTextCharFormat()
         base_cfmt.setFontFamilies([self._font_name(_NoRun(), para)])
         base_cfmt.setFontPointSize(self._font_size_pt(_NoRun(), para))
@@ -355,19 +507,124 @@ class _Reader:
 
         self.deferred_break = False
         had_content = False
-        for item in para.iter_inner_content():
-            if isinstance(item, Hyperlink):
-                url = item.url or ("#" + item.fragment if item.fragment else "")
-                for r in item.runs:
-                    had_content |= self._add_run(r, para, cursor, href=url)
-            else:
-                had_content |= self._add_run(item, para, cursor)
+        had_content |= self._laufe(para._p, para, cursor)
         if self.deferred_break:
             # Umbruch am Absatzende: er gilt für den nächsten Absatz
             self.deferred_break = False
             self.pending_break = True
             return not had_content        # leerer Absatz → Block wiederverwenden
         return False
+
+    def _laufe(self, eltern, para, cursor: QTextCursor, href: Optional[str] = None) -> bool:
+        """Kinder eines Absatzes der Reihe nach: Läufe, Links, nachverfolgte Änderungen, Kommentar- und Textmarkenbereiche."""
+        had = False
+        for el in eltern:
+            tag = el.tag
+            if tag == qn("w:r"):
+                had |= self._add_run(Run(el, para), para, cursor, href=href)
+            elif tag == qn("w:hyperlink"):
+                h = Hyperlink(el, para)
+                url = h.url or ("#" + h.fragment if h.fragment else "")
+                had |= self._laufe(el, para, cursor, href=url)
+            elif tag in (qn("w:ins"), qn("w:del")):
+                alt = self._aend
+                self._aend = ("ins" if tag == qn("w:ins") else "del", el.get(qn("w:author")) or "", el.get(qn("w:date")) or "")
+                had |= self._laufe(el, para, cursor, href=href)
+                self._aend = alt
+            elif tag == qn("w:commentRangeStart"):
+                self._komm_offen.append(int(el.get(qn("w:id"))))
+            elif tag == qn("w:commentRangeEnd"):
+                i = int(el.get(qn("w:id")))
+                if i in self._komm_offen:
+                    self._komm_offen.remove(i)
+            elif tag == qn("w:bookmarkStart"):
+                n = el.get(qn("w:name")) or ""
+                if n and not n.startswith("_"):
+                    self._lz_offen[el.get(qn("w:id"))] = n
+                    self._lz_pos[el.get(qn("w:id"))] = cursor.position()
+            elif tag == qn("w:bookmarkEnd"):
+                i = el.get(qn("w:id"))
+                n = self._lz_offen.pop(i, None)
+                if n is not None and self._lz_pos.pop(i, None) == cursor.position():
+                    self._lz_wartend.append(n)         # leere Textmarke: hängt am folgenden Text
+            elif tag in (qn("w:sdt"),):
+                inhalt = el.find(qn("w:sdtContent"))
+                if inhalt is not None:
+                    had |= self._laufe(inhalt, para, cursor, href=href)
+            elif tag == qn("w:fldSimple"):
+                self._feld = {"instr": el.get(qn("w:instr")) or "", "phase": "r"}
+                had |= self._laufe(el, para, cursor, href=href)
+                self._feld_ende()
+            elif tag == qn("w:smartTag"):
+                had |= self._laufe(el, para, cursor, href=href)
+        return had
+
+    FELDER_BEHALTEN = ("SEQ", "CITATION")
+
+    def _feld_ende(self) -> None:
+        f, self._feld = self._feld, None
+        if not f:
+            return
+        teile = f["instr"].split()
+        if teile and teile[0].upper() == "XE" and self._letzter:
+            term = f["instr"].split('"')[1] if '"' in f["instr"] else " ".join(teile[1:])
+            c = QTextCursor(self.doc)
+            c.setPosition(self._letzter[0]); c.setPosition(self._letzter[1], QTextCursor.KeepAnchor)
+            nf = QTextCharFormat(); nf.setProperty(P_INDEX, term)
+            c.mergeCharFormat(nf)
+
+    def _zusatz_formate(self, cfmt: QTextCharFormat) -> None:
+        if self._feld and self._feld["phase"] == "r":
+            teile = self._feld["instr"].split()
+            if teile and teile[0].upper() in self.FELDER_BEHALTEN:
+                cfmt.setProperty(P_FELD, self._feld["instr"].strip())
+                if teile[0].upper() == "CITATION" and len(teile) > 1:
+                    cfmt.setProperty(P_ZITAT, teile[1])
+        if self._komm_offen:
+            cfmt.setProperty(P_KOMMENTAR, self._komm_offen[-1])
+        if self._aend:
+            cfmt.setProperty(P_AENDERUNG, self._aend[0])
+            cfmt.setProperty(P_AUTOR, self._aend[1])
+            cfmt.setProperty(P_DATUM, self._aend[2])
+        namen = list(self._lz_offen.values()) + self._lz_wartend
+        if namen and not cfmt.isAnchor():
+            cfmt.setAnchor(True)
+            cfmt.setAnchorNames(namen)
+
+    _TOC_STILE = {"TOC Heading": "kopf", "TOC 1": "zeile1", "TOC 2": "zeile2", "TOC 3": "zeile3", "Table of Figures": "zeile1",
+                  "Index 1": "zeile1", "Bibliography": "zeile1"}
+
+    def _block_zusatz(self, bfmt: QTextBlockFormat, para: Paragraph) -> None:
+        """Verzeichnis- und Beschriftungsabsätze an ihrer Formatvorlage wiedererkennen; Absatzrahmen aus w:pBdr."""
+        ppr = para._p.pPr
+        bdr = ppr.find(qn("w:pBdr")) if ppr is not None else None
+        if bdr is not None:
+            e = next((bdr.find(qn(f"w:{x}")) for x in ("top", "left", "bottom", "right") if bdr.find(qn(f"w:{x}")) is not None), None)
+            if e is not None and e.get(qn("w:val"), "nil") not in ("nil", "none"):
+                col = e.get(qn("w:color")) or "000000"
+                bfmt.setProperty(B_RAHMEN, f"#{col.lower() if col.lower() != 'auto' else '000000'}|{int(e.get(qn('w:sz')) or 8) / 8:g}|"
+                                 + ("doppelt" if e.get(qn("w:val")) == "double" else "einfach"))
+        try:
+            name = self._ps(para).name
+        except Exception:
+            return
+        if name in self._TOC_STILE:
+            art = {"TOC 1": "toc", "TOC 2": "toc", "TOC 3": "toc", "Index 1": "index", "Bibliography": "lit"}.get(name)
+            if name == "Table of Figures":
+                art = "tab" if para.text.strip().lower().startswith(("tabelle", "table")) else "abb"
+            elif name == "TOC Heading":
+                nxt = para._p.getnext()
+                art = "toc"
+                if nxt is not None and nxt.tag == qn("w:p"):
+                    nn = Paragraph(nxt, para._parent).style.name
+                    art = {"Table of Figures": "abb", "Index 1": "index", "Bibliography": "lit"}.get(nn, "toc")
+                    if nn == "Table of Figures" and Paragraph(nxt, para._parent).text.strip().lower().startswith(("tabelle", "table")):
+                        art = "tab"
+            bfmt.setProperty(B_TOC, self._TOC_STILE[name])
+            bfmt.setProperty(B_ART, art or "toc")
+        elif name == "Caption":
+            erstes = para.text.strip().split(" ")[0] if para.text.strip() else ""
+            bfmt.setProperty(B_CAP, erstes if erstes in BESCHRIFTUNGEN else (erstes or "Abbildung"))
 
     def _flush_break(self, cursor: QTextCursor):
         if self.deferred_break:
@@ -381,6 +638,7 @@ class _Reader:
         """→ True, wenn Text oder Bild eingefügt wurde."""
         added = False
         cfmt = self._char_format(run, para)
+        self._zusatz_formate(cfmt)
         if href:
             cfmt.setAnchor(True)
             cfmt.setAnchorHref(href)
@@ -388,10 +646,30 @@ class _Reader:
             cfmt.setFontUnderline(True)
         for child in run._r:
             tag = child.tag
-            if tag == qn("w:t"):
+            if tag == qn("w:fldChar"):
+                typ = child.get(qn("w:fldCharType"))
+                if typ == "begin":
+                    self._feld = {"instr": "", "phase": "i"}
+                elif typ == "separate" and self._feld:
+                    self._feld["phase"] = "r"
+                    cfmt = self._char_format(run, para)
+                    self._zusatz_formate(cfmt)
+                elif typ == "end":
+                    self._feld_ende()
+                continue
+            if tag == qn("w:instrText"):
+                if self._feld and self._feld["phase"] == "i":
+                    self._feld["instr"] += child.text or ""
+                continue
+            if self._feld and self._feld["phase"] == "i":
+                continue
+            if tag == qn("w:t") or tag == qn("w:delText"):
                 if child.text:
                     self._flush_break(cursor)
+                    von = cursor.position()
                     cursor.insertText(child.text, cfmt)
+                    self._letzter = (von, cursor.position())
+                    self._lz_wartend = []
                     added = True
             elif tag == qn("w:tab"):
                 self._flush_break(cursor)
@@ -411,7 +689,22 @@ class _Reader:
                 self._flush_break(cursor)
                 self._add_image(child, cursor, cfmt)
                 added = True
+            elif tag in (qn("w:footnoteReference"), qn("w:endnoteReference")):
+                self._flush_break(cursor)
+                art = "f" if tag == qn("w:footnoteReference") else "e"
+                nid = int(child.get(qn("w:id")))
+                self._note_n[art] += 1
+                nf = QTextCharFormat(cfmt)
+                nf.setVerticalAlignment(QTextCharFormat.AlignSuperScript)
+                nf.setProperty(P_NOTE, f"{art}:{nid}")
+                cursor.insertText(self._note_marke(art, self._note_n[art]), nf)
+                added = True
         return added
+
+    @staticmethod
+    def _note_marke(art: str, n: int) -> str:
+        from ..editor.zusatz import roemisch
+        return str(n) if art == "f" else roemisch(n)
 
     def _add_image(self, drawing, cursor: QTextCursor, cfmt: QTextCharFormat):
         blips = drawing.xpath(".//a:blip")
@@ -500,11 +793,34 @@ class _Reader:
             ps.margin_right_mm = s.right_margin.mm
         except Exception:
             self.report.warn("Seitengröße oder Ränder fehlen; es gilt A4 mit 2,5 cm Rand.")
+        self._seitenschmuck(ps, s)
         ps.header = self._hf(s.header)
         ps.footer = self._hf(s.footer)
         if s.different_first_page_header_footer:
-            self.report.warn("„Erste Seite anders“ bei Kopf-/Fußzeile wird nicht unterstützt.")
+            ps.diff_first = True
+            ps.first_header = self._hf(s.first_page_header)
+            ps.first_footer = self._hf(s.first_page_footer)
         return ps
+
+    def _seitenschmuck(self, ps: PageSettings, sect) -> None:
+        bg = self.d.element.find(qn("w:background"))
+        if bg is not None:
+            c = bg.get(qn("w:color"))
+            if c and c.lower() not in ("auto", "ffffff"):
+                ps.color = "#" + c.lower()
+        if sect._sectPr.find(qn("w:lnNumType")) is not None:
+            ps.zeilennummern = True
+        pb = sect._sectPr.find(qn("w:pgBorders"))
+        if pb is not None:
+            e = pb.find(qn("w:top"))
+            if e is not None and e.get(qn("w:val"), "none") not in ("none", "nil"):
+                col = (e.get(qn("w:color")) or "000000")
+                ps.border = {"farbe": "#" + (col if col.lower() != "auto" else "000000").lower(),
+                             "breite_pt": int(e.get(qn("w:sz")) or 8) / 8.0,
+                             "art": "doppelt" if e.get(qn("w:val")) == "double" else "einfach",
+                             "abstand_mm": int(e.get(qn("w:space")) or 24) / 72 * 25.4}
+                if pb.find(qn("w:left")) is None or pb.find(qn("w:bottom")) is None:
+                    self.report.warn("Der Seitenrahmen hat nicht auf allen Seiten eine Linie; er wird als vollständiger Rahmen gezeigt.")
 
     def _hf(self, part) -> HeaderFooter:
         if part.is_linked_to_previous or not part.paragraphs:
@@ -526,9 +842,8 @@ class _Reader:
                     instr = (el.get(qn("w:instr")) or "").upper()
                     txt += "{PAGES}" if "NUMPAGES" in instr else "{PAGE}" if "PAGE" in instr else ""
             if i == 0:
-                a = p.alignment
-                align = {WD_ALIGN_PARAGRAPH.CENTER: "center",
-                         WD_ALIGN_PARAGRAPH.RIGHT: "right"}.get(a, "left")
+                a = self._ausrichtung(p, p.style)
+                align = {Qt.AlignHCenter: "center", Qt.AlignRight: "right"}.get(a, "left")
             lines.append(txt)
         text = "\n".join(lines).rstrip("\n")
         return HeaderFooter(text, align)
@@ -542,7 +857,15 @@ class _Reader:
                     self.report.warn(msg)
             except Exception:
                 pass
-        for child in body.iterchildren():
+        def kinder(eltern):
+            for c in eltern.iterchildren():
+                if c.tag == qn("w:sdt"):
+                    inhalt = c.find(qn("w:sdtContent"))
+                    if inhalt is not None:
+                        yield from kinder(inhalt)
+                else:
+                    yield c
+        for child in kinder(body):
             if child.tag == qn("w:p"):
                 self.fresh = self.add_paragraph(Paragraph(child, self.d._body), self.cur, reuse=self.fresh)
             elif child.tag == qn("w:tbl"):
@@ -554,6 +877,10 @@ class _Reader:
         self.doc.setDefaultFont(df)
         props = self.d.core_properties
         meta = {"title": props.title or "", "author": props.author or ""}
+        meta.update(self.zus)
+        lang = self.d.styles.element.find(qn("w:docDefaults") + "/" + qn("w:rPrDefault") + "/" + qn("w:rPr") + "/" + qn("w:lang"))
+        if lang is not None and lang.get(qn("w:val")):
+            meta["sprache"] = lang.get(qn("w:val"))
         self.doc.setModified(False)
         return self.doc, page, meta, self.report
 
@@ -564,7 +891,7 @@ class _NoRun:
         name = None
         size = None
         bold = italic = underline = strike = superscript = subscript = None
-        all_caps = small_caps = None
+        all_caps = small_caps = outline = None
         color = None
     font = _F()
     style = None

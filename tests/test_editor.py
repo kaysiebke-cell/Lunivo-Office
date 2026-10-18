@@ -119,3 +119,69 @@ def test_seitenliste_duplex_umgekehrt():
     assert seiten_liste(5, 1, 5, {"duplex": "vorder"}) == [1, 3, 5]
     assert seiten_liste(5, 1, 5, {"duplex": "rueck"}) == [2, 4]
     assert seiten_liste(3, 1, 3, {"umgekehrt": True}) == [3, 2, 1]
+
+
+def test_design_und_absatzabstand(app):
+    from native_qt.windows.befehle import Befehle
+    e = make(app, "Titel\nText")
+    c = e.textCursor(); c.setPosition(0); e.setTextCursor(c)
+    e.apply_style("Überschrift 1")
+    e.apply_design("Liberation Serif", "DejaVu Sans", "#2f6fb5")
+    k = e.document().firstBlock().begin().fragment().charFormat()
+    assert "DejaVu Sans" in k.fontFamilies() and k.foreground().color().name() == "#2f6fb5"
+    t = e.document().firstBlock().next().begin().fragment().charFormat()
+    assert "Liberation Serif" in t.fontFamilies() and t.foreground().color().name() != "#2f6fb5"
+    e.select_range(0, e.document().characterCount() - 1)
+    e.set_paragraph_spacing(6, 12)
+    bf = e.document().firstBlock().next().blockFormat()
+    assert abs(bf.bottomMargin() - 16) < 0.1
+
+
+def test_zeilennummern_im_pdf(app, tmp_path):
+    import pypdf
+    from PySide6.QtGui import QTextDocument
+    from native_qt.editor.page import PageSettings
+    from native_qt.editor.pagination import export_pdf
+    d = QTextDocument(); d.setPlainText("\n".join(f"Zeile{i}" for i in range(1, 8)))
+    out = str(tmp_path / "n.pdf")
+    export_pdf(out, d, PageSettings(zeilennummern=True), "t")
+    txt = pypdf.PdfReader(out).pages[0].extract_text()
+    assert all(str(i) in txt for i in range(1, 8))
+    out2 = str(tmp_path / "m.pdf")
+    export_pdf(out2, d, PageSettings(), "t")
+    assert pypdf.PdfReader(out2).pages[0].extract_text().count("7") <= pypdf.PdfReader(out).pages[0].extract_text().count("7")
+
+
+def test_formatvorlagen_verwalten_wirkt_auf_alle_absaetze(app):
+    from native_qt.editor import stile
+    e = make(app, "Eins\nZwei\nDrei\nVier")
+    select_all(e)
+    e.apply_style("Überschrift 2")                           # mehrere Absätze auf einmal
+    assert all(b.blockFormat().headingLevel() == 2 for b in _blk(e.document()))
+    c = e.textCursor(); c.setPosition(0); e.setTextCursor(c); e.apply_style("Standard")
+    try:
+        stile.aendern("Überschrift 2", groesse=30, farbe="#336699", fett=False, nach=20)
+        n = e.stil_neu_anwenden("Überschrift 2")
+        assert n == 3
+        b = e.document().findBlockByNumber(1)
+        cf = QTextCursor(b).charFormat()
+        c2 = QTextCursor(b); c2.movePosition(QTextCursor.EndOfBlock)
+        assert c2.charFormat().fontPointSize() == 30 and c2.charFormat().foreground().color().name() == "#336699"
+        assert abs(b.blockFormat().bottomMargin() - 20 / 0.75) < 0.01
+        assert e.document().findBlockByNumber(0).blockFormat().headingLevel() == 0          # „Standard“ unberührt
+        assert "Überschrift 2" in stile.als_json()
+        stile.laden(stile.als_json())
+        assert stile.definition("Überschrift 2")["groesse"] == 30
+    finally:
+        stile.zuruecksetzen()
+    assert stile.definition("Überschrift 2")["groesse"] == 16
+    # „Kein Abstand“ ist eine eigene Vorlage und überlebt DOCX („No Spacing“)
+    e2 = make(app, "Text"); e2.apply_style("Kein Abstand")
+    assert e2.current_style() == "Kein Abstand"
+
+
+def _blk(doc):
+    b = doc.firstBlock()
+    while b.isValid():
+        yield b
+        b = b.next()

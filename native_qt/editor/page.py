@@ -45,6 +45,13 @@ class PageSettings:
     margin_right_mm: float = 32.0
     header: HeaderFooter = field(default_factory=HeaderFooter)
     footer: HeaderFooter = field(default_factory=HeaderFooter)
+    color: str = ""                      # Seitenfarbe als „#rrggbb“; leer = keine
+    border: dict | None = None           # {"farbe": "#000000", "breite_pt": 1.0, "art": "einfach|doppelt", "abstand_mm": 8.0}
+    watermark: dict | None = None        # {"text": …, "farbe": "#c0c0c0", "winkel": -45, "groesse_pt": 80}
+    zeilennummern: bool = False
+    diff_first: bool = False                 # „Erste Seite anders“
+    first_header: HeaderFooter = field(default_factory=HeaderFooter)
+    first_footer: HeaderFooter = field(default_factory=HeaderFooter)
 
     @property
     def landscape(self) -> bool:
@@ -81,4 +88,7 @@ class PageSettings:
             self.margin_left_mm, self.margin_right_mm,
             HeaderFooter(self.header.text, self.header.align),
             HeaderFooter(self.footer.text, self.footer.align),
+            self.color, dict(self.border) if self.border else None, dict(self.watermark) if self.watermark else None,
+            self.zeilennummern, self.diff_first,
+            HeaderFooter(self.first_header.text, self.first_header.align), HeaderFooter(self.first_footer.text, self.first_footer.align),
         )

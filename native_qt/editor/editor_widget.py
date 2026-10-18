@@ -1,35 +1,29 @@
 """Der Editor: QTextEdit mit Seitenbreite, Formatierungsbefehlen und Seitenzählung."""
 from __future__ import annotations
 
-from PySide6.QtCore import QPoint, QRect, QTimer, Qt, Signal, QUrl
+from PySide6.QtCore import QPoint, QRect, QRectF, QTimer, Qt, Signal, QUrl
 from PySide6.QtGui import (
     QBrush, QColor, QFont, QImage, QPainter, QPen, QTextBlockFormat, QTextCharFormat, QTextCursor,
     QTextDocument, QTextFormat, QTextFrameFormat, QTextImageFormat, QTextListFormat,
     QTextTableFormat, QTextLength,
 )
-from PySide6.QtWidgets import QListWidget, QScrollArea, QTextEdit
+from PySide6.QtWidgets import QListWidget, QListWidgetItem, QScrollArea, QTextEdit
 
 from ..document_io.docx_reader import LH_PROPORTIONAL, STYLE_PROP
 from .page import PageSettings, mm_to_px
 from ..services.autokorrektur import kleinste_aenderung
 from .pagination import bind_layout, paginated_copy
+from . import stile
+from .zusatz_editor import ZusatzMixin
 
-# Formatvorlagen: Name → (Überschriftsebene, Punktgröße, fett, kursiv)
-STYLES = {
-    "Standard": (0, None, False, False),
-    "Überschrift 1": (1, 20, True, False),
-    "Überschrift 2": (2, 16, True, False),
-    "Überschrift 3": (3, 14, True, False),
-    "Titel": (0, 26, False, False),
-    "Untertitel": (0, 15, False, True),
-    "Zitat": (0, None, False, True),
-}
-STYLE_KEY = {"Titel": "Title", "Untertitel": "Subtitle", "Zitat": "Quote"}
+STYLES = dict.fromkeys(stile.NAMEN)            # Namen der Formatvorlagen (Definitionen: editor/stile.py)
 
 
-class DocumentEditor(QTextEdit):
+class DocumentEditor(ZusatzMixin, QTextEdit):
     pageInfoChanged = Signal(int, int)       # aktuelle Seite, Seitenzahl
     formatChanged = Signal()                 # Cursor-Format hat sich geändert
+    zoomChanged = Signal(float)
+    pageApplied = Signal()                    # Seiteneinrichtung oder Größe hat sich geändert
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -39,6 +33,11 @@ class DocumentEditor(QTextEdit):
         self.setUndoRedoEnabled(True)
         self.setLineWrapMode(QTextEdit.WidgetWidth)
         self.show_marks = False
+        self.zoom = 1.0
+        self.gitter = False
+        self.web = False
+        self._web_breite = 800
+        self.gliederung = False
         self.zeilenfokus = False
         self.marken = True                 # Textbegrenzungen (Eckmarken am Textrand)
         self.vorhersage = None            # Rückruf: Wortanfang → Liste von Vorschlägen
@@ -49,7 +48,7 @@ class DocumentEditor(QTextEdit):
         self._popup = QListWidget(None)
         self._popup.setWindowFlags(Qt.ToolTip)
         self._popup.setFocusPolicy(Qt.NoFocus)
-        self._popup.itemClicked.connect(lambda it: self._vorschlag_nehmen(it.text()))
+        self._popup.itemClicked.connect(lambda it: self._vorschlag_nehmen(it.data(Qt.UserRole)))
         self._pages = 1
         self._breaks: list[int] = []
         self._paged: QTextDocument | None = None
@@ -65,6 +64,7 @@ class DocumentEditor(QTextEdit):
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.cursorPositionChanged.connect(self._scroll_outer)
         self._verbinde_groesse()
+        self._zusatz_init()
         self.apply_page(self.page)
 
     # ---- Dokument und Seite ---------------------------------------------
@@ -73,8 +73,9 @@ class DocumentEditor(QTextEdit):
 
     def _passe_hoehe_an(self, *_):
         h = int(self.document().size().height()) + 4
-        mind = int(mm_to_px(self.page.height_mm))
+        mind = 0 if self.web else int(mm_to_px(self.page.height_mm) * self.zoom)
         self.setFixedHeight(max(h, mind))
+        self.pageApplied.emit()
 
     def _aussen(self):
         w = self.parent()
@@ -95,6 +96,7 @@ class DocumentEditor(QTextEdit):
         self._verbinde_groesse()
         doc.setDocumentMargin(0)
         doc.contentsChanged.connect(self._timer.start)
+        doc.contentsChange.connect(self._inhalt_geaendert)
         self.apply_page(page)
         doc.setModified(False)
         doc.clearUndoRedoStacks()
@@ -102,18 +104,194 @@ class DocumentEditor(QTextEdit):
     def apply_page(self, page: PageSettings) -> None:
         self.page = page
         doc = self.document()
-        bind_layout(doc)
+        self.seitenfarbe_anwenden()
+        bind_layout(doc, self.zoom)
         doc.setDocumentMargin(0)
         root = doc.rootFrame()
         ff: QTextFrameFormat = root.frameFormat()
-        ff.setTopMargin(mm_to_px(page.margin_top_mm))
-        ff.setBottomMargin(mm_to_px(page.margin_bottom_mm))
-        ff.setLeftMargin(mm_to_px(page.margin_left_mm))
-        ff.setRightMargin(mm_to_px(page.margin_right_mm))
-        root.setFrameFormat(ff)
-        self.setFixedWidth(int(mm_to_px(page.width_mm)) + 2)
+        if self.web:                      # Weblayout: fortlaufender Text in Fensterbreite, kleine Ränder
+            for setze in (ff.setTopMargin, ff.setBottomMargin, ff.setLeftMargin, ff.setRightMargin):
+                setze(mm_to_px(8))
+            root.setFrameFormat(ff)
+            self.setFixedWidth(max(300, int(self._web_breite)))
+        else:
+            ff.setTopMargin(mm_to_px(page.margin_top_mm))
+            ff.setBottomMargin(mm_to_px(page.margin_bottom_mm))
+            ff.setLeftMargin(mm_to_px(page.margin_left_mm))
+            ff.setRightMargin(mm_to_px(page.margin_right_mm))
+            root.setFrameFormat(ff)
+            self.setFixedWidth(int(mm_to_px(page.width_mm) * self.zoom) + 2)
         self._passe_hoehe_an()
         self._timer.start()
+        self.pageApplied.emit()
+
+    def set_web(self, an: bool) -> None:
+        if an != self.web:
+            self.web = an
+            self.apply_page(self.page)
+            self.viewport().update()
+
+    def set_web_breite(self, px: int) -> None:
+        if px != self._web_breite:
+            self._web_breite = px
+            if self.web:
+                self.apply_page(self.page)
+
+    def set_gliederung(self, an: bool) -> None:
+        """Gliederungsansicht: nur Überschriften sind sichtbar; der Text dazwischen ist ausgeblendet (nicht gelöscht)."""
+        self.gliederung = an
+        b = self.document().firstBlock()
+        while b.isValid():
+            b.setVisible(not an or b.blockFormat().headingLevel() > 0)
+            b = b.next()
+        self.document().markContentsDirty(0, self.document().characterCount())
+        self.viewport().update()
+
+    def gliederung_ebene(self, delta: int) -> None:
+        """Überschrift hoch-/herabstufen (Gliederung): Ebene 1..6, darüber/darunter wird sie zu Text/Titel."""
+        c = self.textCursor()
+        bf = c.blockFormat()
+        lv = bf.headingLevel() + delta
+        if bf.headingLevel() and 1 <= lv <= 6:
+            self.apply_style(f"Überschrift {lv}")
+
+    def set_zeilennummern(self, an: bool) -> None:
+        self.page.zeilennummern = an
+        self.viewport().update()
+
+    def _zeilennummern_zeichnen(self, p: QPainter) -> None:
+        vp = self.viewport()
+        lay = self.document().documentLayout()
+        f = p.font(); f.setPixelSize(max(7, int(9 * self.zoom))); p.setFont(f)
+        p.setPen(QColor("#868e96"))
+        ml = mm_to_px(self.page.margin_left_mm) * self.zoom
+        oben = self.verticalScrollBar().value()
+        nr = 0
+        b = self.document().firstBlock()
+        while b.isValid():
+            if b.isVisible() and b.layout() is not None:
+                top = lay.blockBoundingRect(b).top()
+                for i in range(b.layout().lineCount()):
+                    nr += 1
+                    z = b.layout().lineAt(i)
+                    y = top + z.y() - oben
+                    if -20 < y < vp.height():
+                        p.drawText(QRectF(ml - 52, y, 44, z.height()), Qt.AlignRight | Qt.AlignVCenter, str(nr))
+            b = b.next()
+
+    def apply_design(self, fliess: str | None = None, kopf: str | None = None, farbe: str | None = None) -> None:
+        """Design: Schriftart für Text und Überschriften, Farbe der Überschriften — für das ganze Dokument."""
+        doc = self.document()
+        cur = QTextCursor(doc)
+        cur.beginEditBlock()
+        if fliess:
+            f = doc.defaultFont(); f.setFamily(fliess); doc.setDefaultFont(f)
+        b = doc.firstBlock()
+        while b.isValid():
+            kopf_block = b.blockFormat().headingLevel() > 0 or (
+                b.blockFormat().hasProperty(STYLE_PROP) and b.blockFormat().property(STYLE_PROP) in ("title", "subtitle", "Title", "Subtitle"))
+            fam = kopf if kopf_block and kopf else fliess
+            if fam or (kopf_block and farbe):
+                c = QTextCursor(b)
+                c.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
+                cf = QTextCharFormat()
+                if fam:
+                    cf.setFontFamilies([fam])
+                if kopf_block and farbe:
+                    cf.setForeground(QColor(farbe))
+                c.mergeCharFormat(cf)
+            b = b.next()
+        cur.endEditBlock()
+
+    def set_absatzrahmen(self, wert: str | None) -> None:
+        from .zusatz import B_RAHMEN
+
+        def f(bf):
+            if wert:
+                bf.setProperty(B_RAHMEN, wert)
+            else:
+                bf.clearProperty(B_RAHMEN)
+        self._block_merge(f)
+        self.viewport().update()
+
+    def toggle_rtl(self) -> None:
+        rtl = self.textCursor().blockFormat().layoutDirection() == Qt.RightToLeft
+        self._block_merge(lambda bf: bf.setLayoutDirection(Qt.LeftToRight if rtl else Qt.RightToLeft))
+
+    def _hat_rahmen(self) -> bool:
+        from .zusatz import B_RAHMEN
+        b = self.document().firstBlock()
+        while b.isValid():
+            if b.blockFormat().hasProperty(B_RAHMEN):
+                return True
+            b = b.next()
+        return False
+
+    def set_gitter(self, an: bool) -> None:
+        self.gitter = an
+        self.viewport().update()
+
+    def seitenspannen(self) -> list[tuple[int, int]]:
+        """Senkrechte Bereiche (von, bis) jeder Seite im Editor, aus den Seitenwechseln."""
+        h = self.viewport().height() + self.verticalScrollBar().value()
+        h = max(h, int(self.document().size().height()))
+        starts = [0]
+        n = self.document().characterCount()
+        for pos in self._breaks:
+            if pos < n:
+                starts.append(self.cursorRect(self._cursor_at(pos)).top() - 3)
+        return [(a, starts[i + 1] if i + 1 < len(starts) else h) for i, a in enumerate(starts)]
+
+    def _schmuck_zeichnen(self, p: QPainter) -> None:
+        pg, z = self.page, self.zoom
+        if self.web or not (pg.border or pg.watermark):
+            return
+        from .pagination import seitenschmuck
+        vp = self.viewport()
+        for a, b in self.seitenspannen():
+            if b < 0 or a > vp.height():
+                continue
+            p.save()
+            p.scale(z, z)
+            seitenschmuck(p, pg, False, QRectF(0, a / z, vp.width() / z, (b - a) / z))
+            p.restore()
+
+    def _gitter_zeichnen(self, p: QPainter) -> None:
+        vp = self.viewport()
+        schritt = mm_to_px(10) * self.zoom
+        if schritt < 6:
+            return
+        c = QColor("#868e96"); c.setAlpha(70)
+        p.setPen(QPen(c, 1))
+        x = schritt
+        while x < vp.width():
+            p.drawLine(int(x), 0, int(x), vp.height()); x += schritt
+        y = schritt
+        while y < vp.height():
+            p.drawLine(0, int(y), vp.width(), int(y)); y += schritt
+
+    def seitenfarbe_anwenden(self) -> None:
+        c = self.page.color or "white"
+        self.setStyleSheet(f"QTextEdit {{ background: {c}; color: black; border: 1px solid #5c6166; }}")
+
+    ZOOM_MIN, ZOOM_MAX = 0.1, 5.0
+
+    def set_zoom(self, faktor: float) -> None:
+        """Ansicht vergrößern/verkleinern. Das Dokument selbst (Schriftgrößen, Maße) bleibt unverändert."""
+        faktor = max(self.ZOOM_MIN, min(self.ZOOM_MAX, round(faktor, 3)))
+        if abs(faktor - self.zoom) < 1e-6:
+            return
+        self.zoom = faktor
+        self.apply_page(self.page)
+        self.viewport().update()
+        self.zoomChanged.emit(faktor)
+
+    def wheelEvent(self, e) -> None:
+        if e.modifiers() & Qt.ControlModifier:
+            self.set_zoom(self.zoom * (1.1 if e.angleDelta().y() > 0 else 1 / 1.1))
+            e.accept()
+            return
+        e.ignore()                      # die Seite scrollt im grauen Grund
 
     def page_settings_changed(self, page: PageSettings) -> None:
         self.apply_page(page)
@@ -121,7 +299,7 @@ class DocumentEditor(QTextEdit):
 
     # ---- Seitenzählung -----------------------------------------------------
     def _recount(self) -> None:
-        self._paged = paginated_copy(self.document(), self.page)
+        self._paged = paginated_copy(self.document(), self.page, self.noten)
         self._pages = max(1, self._paged.pageCount())
         self._breaks = self._seitenwechsel(self._paged)
         self.viewport().update()
@@ -186,6 +364,27 @@ class DocumentEditor(QTextEdit):
 
     def toggle_underline(self, on: bool) -> None:
         f = QTextCharFormat(); f.setFontUnderline(on); self._merge(f)
+
+    def set_underline_style(self, stil) -> None:
+        f = QTextCharFormat()
+        f.setUnderlineStyle(stil)
+        self._merge(f)
+
+    def set_outline(self, an: bool) -> None:
+        f = QTextCharFormat()
+        f.setTextOutline(QPen(QColor("#000000")) if an else QPen(Qt.NoPen))
+        self._merge(f)
+
+    def set_letter_spacing(self, px: float) -> None:
+        f = QTextCharFormat()
+        f.setFontLetterSpacingType(QFont.AbsoluteSpacing)
+        f.setFontLetterSpacing(px)
+        self._merge(f)
+
+    def set_capitalization(self, cap) -> None:
+        f = QTextCharFormat()
+        f.setFontCapitalization(cap)
+        self._merge(f)
 
     def toggle_strike(self, on: bool) -> None:
         f = QTextCharFormat(); f.setFontStrikeOut(on); self._merge(f)
@@ -268,6 +467,11 @@ class DocumentEditor(QTextEdit):
         d = mm_to_px(delta_mm)
         self._block_merge(lambda bf: bf.setLeftMargin(max(0.0, bf.leftMargin() + d)))
 
+    def set_page_break_before(self, an: bool) -> None:
+        def f(bf):
+            bf.setPageBreakPolicy(QTextFormat.PageBreak_AlwaysBefore if an else QTextFormat.PageBreak_Auto)
+        self._block_merge(f)
+
     def set_indents(self, left_mm: float, right_mm: float, first_mm: float) -> None:
         def f(bf):
             bf.setLeftMargin(mm_to_px(left_mm)); bf.setRightMargin(mm_to_px(right_mm))
@@ -307,39 +511,72 @@ class DocumentEditor(QTextEdit):
         lst.setFormat(fmt)
 
     def apply_style(self, name: str) -> None:
-        level, size, bold, italic = STYLES[name]
+        """Formatvorlage auf alle Absätze der Markierung (oder den Absatz am Zeiger) anwenden."""
         cur = self.textCursor()
         cur.beginEditBlock()
-        bf = cur.blockFormat()
-        bf.setHeadingLevel(level)
-        if name in STYLE_KEY:
-            bf.setProperty(STYLE_PROP, STYLE_KEY[name])
-        else:
-            bf.clearProperty(STYLE_PROP)
-        bf.setTopMargin(12 if level == 1 else 8 if level else 0)
-        bf.setBottomMargin(6 if level else 0)
-        cur.setBlockFormat(bf)
-        sel = QTextCursor(cur.block())
-        sel.movePosition(QTextCursor.StartOfBlock)
-        sel.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
-        f = QTextCharFormat()
-        f.setFontWeight(QFont.Bold if bold else QFont.Normal)
-        f.setFontItalic(italic)
-        f.setFontPointSize(size or self.document().defaultFont().pointSizeF() or 11)
-        sel.mergeCharFormat(f)
+        von, bis = sorted((cur.anchor(), cur.position()))
+        c = QTextCursor(self.document()); c.setPosition(von)
+        blk = c.block()
+        while blk.isValid() and blk.position() <= bis:
+            self._stil_auf_block(blk, name)
+            blk = blk.next()
         cur.endEditBlock()
         self.setFocus()
 
-    def current_style(self) -> str:
-        bf = self.textCursor().blockFormat()
+    def _stil_auf_block(self, blk, name: str) -> None:
+        d = stile.definition(name)
+        cc = QTextCursor(blk)
+        bf = cc.blockFormat()
+        level = d["ebene"]
+        bf.setHeadingLevel(level)
+        key = d.get("key")
+        if key:
+            bf.setProperty(STYLE_PROP, key)
+        else:
+            bf.clearProperty(STYLE_PROP)
+        bf.setTopMargin(d["vor"] / 0.75); bf.setBottomMargin(d["nach"] / 0.75)
+        if d["ausr"]:
+            bf.setAlignment({"links": Qt.AlignLeft, "mitte": Qt.AlignHCenter, "rechts": Qt.AlignRight, "block": Qt.AlignJustify}[d["ausr"]])
+        cc.setBlockFormat(bf)
+        sel = QTextCursor(blk)
+        sel.movePosition(QTextCursor.StartOfBlock)
+        sel.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
+        f = QTextCharFormat()
+        f.setFontWeight(QFont.Bold if d["fett"] else QFont.Normal)
+        f.setFontItalic(d["kursiv"])
+        f.setFontPointSize(d["groesse"] or self.document().defaultFont().pointSizeF() or 11)
+        if d["schrift"]:
+            f.setFontFamilies([d["schrift"]])
+        if d["farbe"]:
+            f.setForeground(QColor(d["farbe"]))
+        sel.mergeCharFormat(f)
+
+    def stil_neu_anwenden(self, name: str) -> int:
+        """Nach „Formatvorlagen verwalten“: alle Absätze dieser Vorlage im Dokument neu formatieren."""
+        n = 0
+        cur = QTextCursor(self.document())
+        cur.beginEditBlock()
+        blk = self.document().firstBlock()
+        while blk.isValid():
+            if self._stil_name(blk.blockFormat()) == name:
+                self._stil_auf_block(blk, name); n += 1
+            blk = blk.next()
+        cur.endEditBlock()
+        return n
+
+    @staticmethod
+    def _stil_name(bf) -> str:
         lvl = bf.headingLevel()
         if lvl in (1, 2, 3):
             return f"Überschrift {lvl}"
         key = bf.property(STYLE_PROP) if bf.hasProperty(STYLE_PROP) else None
-        for k, v in STYLE_KEY.items():
-            if v == key:
-                return k
+        for pfad in ("Title", "Subtitle", "Quote", "No Spacing"):
+            if key == pfad:
+                return stile.key_zu_name(pfad)
         return "Standard"
+
+    def current_style(self) -> str:
+        return self._stil_name(self.textCursor().blockFormat())
 
     # ---- Einfügen ----------------------------------------------------------------
     def insert_page_break(self) -> None:
@@ -478,10 +715,18 @@ class DocumentEditor(QTextEdit):
         super().mouseReleaseEvent(e)
         if (e.modifiers() & Qt.ControlModifier) and self.opt("ui/strg_klick_link", True):
             href = self.anchorAt(e.pos())
+            if href and href.startswith("#"):
+                from .verweise import intern_springen
+                intern_springen(self, href)
+                return
             if href:
                 from PySide6.QtCore import QUrl as _U
                 from PySide6.QtGui import QDesktopServices
                 QDesktopServices.openUrl(_U(href))
+                return
+        if e.button() == Qt.LeftButton and not self.textCursor().hasSelection() and not self.isReadOnly():
+            from .sendungen import kasten_umschalten
+            if kasten_umschalten(self, self.cursorForPosition(e.pos()).position()):
                 return
         c = self.cursorForPosition(e.pos())
         c2 = QTextCursor(c)
@@ -511,16 +756,28 @@ class DocumentEditor(QTextEdit):
         super().paintEvent(e)
         vp = self.viewport()
         p = QPainter(vp)
-        if self.marken:
-            ml, mt = int(mm_to_px(self.page.margin_left_mm)), int(mm_to_px(self.page.margin_top_mm))
-            mr = int(mm_to_px(self.page.margin_right_mm))
+        self._schmuck_zeichnen(p)
+        if self.gitter:
+            self._gitter_zeichnen(p)
+        if not self.web and self._hat_rahmen():
+            from .pagination import absatzrahmen_zeichnen
+            p.save()
+            p.translate(0, -self.verticalScrollBar().value())
+            absatzrahmen_zeichnen(p, self.document(), self.zoom)
+            p.restore()
+        if self.page.zeilennummern and not self.web:
+            self._zeilennummern_zeichnen(p)
+        if self.marken and not self.web:
+            z = self.zoom
+            ml, mt = int(mm_to_px(self.page.margin_left_mm) * z), int(mm_to_px(self.page.margin_top_mm) * z)
+            mr = int(mm_to_px(self.page.margin_right_mm) * z)
             y = mt - self.verticalScrollBar().value()
             p.setPen(QPen(QColor("#868e96"), 1))
             L, x2 = 14, vp.width() - mr
             for x, dx in ((ml, 1), (x2, -1)):
                 p.drawLine(x, y - 1, x + dx * L, y - 1)
                 p.drawLine(x - dx, y - L, x - dx, y - 1)
-        if self._breaks:
+        if self._breaks and not self.web:
             p.setPen(QPen(QColor("#868e96"), 1, Qt.DashLine))
             f = p.font(); f.setPointSizeF(8); p.setFont(f)
             n = self.document().characterCount()
@@ -546,22 +803,17 @@ class DocumentEditor(QTextEdit):
     # ---- Schreibhilfe: Wellenlinien, Ersetzen, Vorhersage, AutoKorrektur -------------------
     WELLE = {"fehler": "#e8590c", "tipp": "#1c7ed6", "hinweis": "#868e96"}
 
+    def cut(self) -> None:
+        if self.verfolgen and self.textCursor().hasSelection():
+            self.copy()
+            c = self.textCursor()
+            self._loesche_verfolgt(c.selectionStart(), c.selectionEnd(), ende=True)
+            return
+        super().cut()
+
     def set_wellen(self, funde: list) -> None:
         self._wellen = funde
-        sel = []
-        n = self.document().characterCount()
-        for f in funde:
-            if f["bis"] > n or f["von"] >= f["bis"]:
-                continue
-            c = QTextCursor(self.document())
-            c.setPosition(f["von"]); c.setPosition(f["bis"], QTextCursor.KeepAnchor)
-            fmt = QTextCharFormat()
-            fmt.setUnderlineStyle(QTextCharFormat.WaveUnderline)
-            fmt.setUnderlineColor(QColor(self.WELLE.get(f["art"], "#868e96")))
-            sel.append(QTextEdit.ExtraSelection())
-            sel[-1].cursor = c
-            sel[-1].format = fmt
-        self.setExtraSelections(sel)
+        self._overlays_neu()
 
     def replace_range(self, von: int, bis: int, neu: str, erwartet: str | None = None) -> bool:
         c = QTextCursor(self.document())
@@ -594,7 +846,11 @@ class DocumentEditor(QTextEdit):
             self._popup.hide(); return
         gross = w[:1].isupper()
         self._popup.clear()
-        self._popup.addItems([v.capitalize() if gross else v for v in vs])
+        for i, v in enumerate(vs, start=1):
+            wort = v.capitalize() if gross else v
+            it = QListWidgetItem(f"{i}  {wort}" if i <= 6 else wort)
+            it.setData(Qt.UserRole, wort)
+            self._popup.addItem(it)
         self._popup.setCurrentRow(0)
         r = self.cursorRect()
         self._popup.resize(220, min(200, 22 * len(vs) + 6))
@@ -631,12 +887,28 @@ class DocumentEditor(QTextEdit):
         self.setTextCursor(end)
 
     def keyPressEvent(self, e) -> None:
+        if e.key() == Qt.Key_Tab and e.modifiers() == Qt.NoModifier and not self.isReadOnly() and not self.textCursor().currentTable():
+            from .vorlagen import naechste_luecke
+            ziel = naechste_luecke(self.document(), self.textCursor().selectionEnd())
+            if ziel:
+                self.select_range(*ziel)
+                return
+        if self.verfolgen and not self.isReadOnly() and self._verfolgte_taste(e):
+            return
+        if self.gliederung and (e.modifiers() & Qt.AltModifier) and (e.modifiers() & Qt.ShiftModifier) \
+                and e.key() in (Qt.Key_Left, Qt.Key_Right):
+            self.gliederung_ebene(-1 if e.key() == Qt.Key_Left else 1)
+            return
         if self._popup.isVisible():
             k = e.key()
             if k in (Qt.Key_Tab, Qt.Key_Return, Qt.Key_Enter):
                 it = self._popup.currentItem()
                 if it:
-                    self._vorschlag_nehmen(it.text()); e.accept(); return
+                    self._vorschlag_nehmen(it.data(Qt.UserRole)); e.accept(); return
+            if (e.modifiers() & Qt.ControlModifier) and Qt.Key_1.value <= k <= Qt.Key_6.value:        # Strg+1…6: Vorschlag nehmen
+                n = k - Qt.Key_1.value
+                if n < self._popup.count():
+                    self._vorschlag_nehmen(self._popup.item(n).data(Qt.UserRole)); e.accept(); return
             if k == Qt.Key_Escape:
                 self._popup.hide(); e.accept(); return
             if k in (Qt.Key_Down, Qt.Key_Up):

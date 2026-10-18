@@ -78,7 +78,7 @@ class KIKonfig:
     def __init__(self, pfad: str):
         self.pfad = pfad
         self.d = {"modell": "claude-opus-5", "sprache": "Englisch", "empfaenger": "egal", "zettel": "",
-                  "apiKey": "", "anbieter": [], "aufgaben": {}, "kosten": 0.0, "claude_erlaubt": False}
+                  "apiKey": "", "anbieter": [], "aufgaben": {}, "kosten": 0.0, "claude_erlaubt": False, "assistenten": []}
         try:
             with open(pfad, encoding="utf-8") as fh:
                 self.d.update(json.load(fh))
@@ -110,6 +110,18 @@ class KIKonfig:
         self.d["anbieter"].append(e)
         self.speichern()
         return e
+
+    def assistent_hinzufuegen(self, name: str, prompt: str, modus: str) -> dict:
+        import uuid
+        e = {"id": "a" + uuid.uuid4().hex[:8], "name": (name or "").strip()[:40], "prompt": (prompt or "").strip()[:2000],
+             "modus": "ersetzen" if modus == "ersetzen" else "hinweis"}
+        self.d["assistenten"].append(e)
+        self.speichern()
+        return e
+
+    def assistent_entfernen(self, id_: str) -> None:
+        self.d["assistenten"] = [a for a in self.d["assistenten"] if a["id"] != id_]
+        self.speichern()
 
     def anbieter_entfernen(self, id_: str) -> None:
         self.d["anbieter"] = [a for a in self.d["anbieter"] if a["id"] != id_]
@@ -376,6 +388,9 @@ class KI:
     def uebersetzen(self, text, sprache): return self._text(anweisung_uebersetzung(sprache), text, "uebersetzung")
     def zusammenfassen(self, text): return self._text(ANWEISUNG_ZUSAMMENFASSUNG, text, "zusammenfassen")
     def text_analyse(self, text): return self._text(ANWEISUNG_ANALYSE, text, "textanalyse")
+    def eigener_assistent(self, text, prompt):
+        return self._text(prompt, text)
+
     def text_aktion(self, text, aktion): return self._text(anweisung_text_aktion(self.k, aktion), text)
 
     def chat(self, verlauf: list[dict], dokumenttext: str = "") -> dict:
@@ -400,6 +415,31 @@ class KI:
         gut = [v for v in lst if isinstance(v, dict) and isinstance(v.get("alt"), str) and isinstance(v.get("neu"), str)
                and v["alt"].strip() and v["neu"].strip() and v["alt"] != v["neu"] and v["alt"] in text]
         return {"vorschlaege": gut, "cent": r.get("cent")}
+
+    def synonyme(self, wort: str, umgebung: str = "") -> dict:
+        """Wörter, die statt `wort` an dieser Stelle stehen könnten (Thesaurus — geht nur mit KI, wie in ki.js)."""
+        anweisung = (f"Nenne gebräuchliche deutsche Wörter, die statt „{wort}“ an dieser Stelle stehen könnten. "
+                     "Achte auf den Zusammenhang: Dasselbe Wort bedeutet je nach Satz Verschiedenes. "
+                     "Nimm einfache, geläufige Wörter — dieser Text wird von einem Menschen mit Legasthenie geschrieben, "
+                     "und ein seltenes Fremdwort hilft ihm nicht. Höchstens acht, jedes in der Form, in der es im Satz "
+                     "stehen müsste. Fällt dir nichts Passendes ein, bleibt die Liste leer.")
+        bauplan = {"type": "object", "properties": {"woerter": {"type": "array", "items": {"type": "string"}}},
+                   "required": ["woerter"], "additionalProperties": False}
+        r = self.anfrage(anweisung, umgebung or wort, bauplan)
+        if "fehler" in r:
+            return r
+        self._kosten(r.get("cent"))
+        try:
+            daten = json.loads(re.sub(r"^```(?:json)?\s*|\s*```$", "", r["ergebnis"].strip()))
+            lst = daten["woerter"]
+            assert isinstance(lst, list)
+        except (ValueError, KeyError, AssertionError):
+            return {"fehler": "Die Antwort kam nicht in der erwarteten Form."}
+        sauber = []
+        for w in lst:
+            if isinstance(w, str) and w.strip() and len(w) < 40 and w.strip().lower() != wort.lower() and w.strip() not in sauber:
+                sauber.append(w.strip())
+        return {"woerter": sauber[:8], "cent": r.get("cent")}
 
     def ollama_modelle(self) -> list[str]:
         try:

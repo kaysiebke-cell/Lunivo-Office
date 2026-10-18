@@ -57,21 +57,94 @@ class PageSetupDialog(QDialog):
         super().accept()
 
 
+class _AbsatzVorschau(QWidget):
+    """Kleine Vorschau: graue Balken als Nachbarabsätze, blauer Balken als der eigene mit Einzügen und Abständen."""
+    def __init__(self):
+        super().__init__()
+        self.setMinimumHeight(150)
+        self.w = dict(left=0, right=0, first=0, before=0, after=0, line=1.0, align="links")
+
+    def setze(self, **kw):
+        self.w.update(kw)
+        self.update()
+
+    def paintEvent(self, ev):
+        from PySide6.QtGui import QColor, QPainter
+        p = QPainter(self)
+        p.fillRect(self.rect(), QColor("white"))
+        p.setPen(QColor("#adb5bd"))
+        p.drawRect(self.rect().adjusted(0, 0, -1, -1))
+        mm = 2.2                                           # Bildpunkte je Millimeter in der Vorschau
+        x0, x1 = 14, self.width() - 14
+        y = 10
+
+        def balken(zeilen, farbe, links=0.0, rechts=0.0, erste=0.0, abstand=3.0, ausr="links"):
+            nonlocal y
+            p.setPen(Qt.NoPen); p.setBrush(QColor(farbe))
+            for i in range(zeilen):
+                l = x0 + (links + (erste if i == 0 else 0)) * mm
+                r = x1 - rechts * mm
+                voll = max(10.0, r - l)
+                laenge = voll if i < zeilen - 1 else voll * 0.55
+                if ausr == "zentriert":
+                    xs = l + (voll - laenge) / 2
+                elif ausr == "rechts":
+                    xs = r - laenge
+                else:
+                    xs = l
+                p.drawRect(int(xs), int(y), int(laenge), 4)
+                y += 4 + 3 * self.w["line"] if farbe == "#4a8fd8" else 7
+            y += abstand
+        balken(2, "#ced4da", abstand=3)
+        y += self.w["before"] * 0.8
+        balken(4, "#4a8fd8", self.w["left"], self.w["right"], self.w["first"], self.w["after"] * 0.8,
+               {"zentriert": "zentriert", "rechts": "rechts"}.get(self.w["align"], "links"))
+        balken(2, "#ced4da")
+        p.end()
+
+
 class ParagraphDialog(QDialog):
-    def __init__(self, left=0.0, right=0.0, first=0.0, before=0.0, after=0.0, line=1.0, parent=None):
+    """Absatz mit zwei Karteireitern und Vorschau (wie im Vorlagenbild)."""
+    AUSRICHTUNGEN = ["Links", "Zentriert", "Rechts", "Blocksatz"]
+
+    def __init__(self, left=0.0, right=0.0, first=0.0, before=0.0, after=0.0, line=1.0, parent=None,
+                 align=0, umbruch_davor=False):
         super().__init__(parent)
+        from PySide6.QtWidgets import QCheckBox, QTabWidget
         self.setWindowTitle("Absatz")
-        form = QFormLayout()
-        self.left = _spin(left, 0, 300); self.right = _spin(right, 0, 300); self.first = _spin(first, -300, 300)
+        tabs = QTabWidget()
+        seite1 = QWidget(); form = QFormLayout(seite1)
+        self.align = QComboBox(); self.align.addItems(self.AUSRICHTUNGEN); self.align.setCurrentIndex(align)
+        self.left = _spin(left, 0, 300, " mm"); self.right = _spin(right, 0, 300, " mm"); self.first = _spin(first, -300, 300, " mm")
         self.before = _spin(before, 0, 200, " pt"); self.after = _spin(after, 0, 200, " pt")
         self.line = _spin(line, 0.5, 5.0, " ×", 0.05, 2)
-        for lab, w in (("Einzug links", self.left), ("Einzug rechts", self.right),
+        for lab, w in (("Ausrichtung", self.align), ("Einzug links", self.left), ("Einzug rechts", self.right),
                        ("Erste Zeile", self.first), ("Abstand vor", self.before),
                        ("Abstand nach", self.after), ("Zeilenabstand", self.line)):
             form.addRow(lab, w)
+        tabs.addTab(seite1, "Einzüge und Abstände")
+        seite2 = QWidget(); v2 = QVBoxLayout(seite2)
+        self.umbruch = QCheckBox("Seitenumbruch davor"); self.umbruch.setChecked(umbruch_davor)
+        v2.addWidget(self.umbruch)
+        for t in ("Absatz nicht trennen", "Absatz mit nächstem zusammenhalten", "Schusterjungen-/Hurenkinder-Kontrolle"):
+            c = QCheckBox(t); c.setEnabled(False)
+            c.setToolTip("Das Textmodul von Qt kennt diese Seitenumbruch-Regel nicht.")
+            v2.addWidget(c)
+        v2.addStretch(1)
+        tabs.addTab(seite2, "Zeilen- und Seitenumbruch")
+        self.vorschau = _AbsatzVorschau()
         bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         bb.accepted.connect(self.accept); bb.rejected.connect(self.reject)
-        lay = QVBoxLayout(self); lay.addLayout(form); lay.addWidget(bb)
+        lay = QVBoxLayout(self); lay.addWidget(tabs); lay.addWidget(QLabel("Vorschau")); lay.addWidget(self.vorschau); lay.addWidget(bb)
+        for sp in (self.left, self.right, self.first, self.before, self.after, self.line):
+            sp.valueChanged.connect(self._aktualisieren)
+        self.align.currentIndexChanged.connect(self._aktualisieren)
+        self._aktualisieren()
+
+    def _aktualisieren(self, *_):
+        self.vorschau.setze(left=self.left.value(), right=self.right.value(), first=self.first.value(), before=self.before.value(),
+                            after=self.after.value(), line=self.line.value(),
+                            align=["links", "zentriert", "rechts", "links"][self.align.currentIndex()])
 
 
 class HeaderFooterDialog(QDialog):
@@ -193,3 +266,113 @@ class BildGroesseDialog(QDialog):
 
     def breite_px(self): return self.b.value() * 96 / 25.4
     def hoehe_px(self): return self.h.value() * 96 / 25.4
+
+
+class ZoomDialog(QDialog):
+    """Ansicht ▸ Zoom: feste Stufen, Seitenbreite, ganze Seite oder eigener Wert."""
+    STUFEN = (200, 150, 100, 75, 50, 25)
+
+    def __init__(self, parent, aktuell: float):
+        super().__init__(parent)
+        from PySide6.QtWidgets import QButtonGroup, QRadioButton, QSpinBox
+        self.setWindowTitle("Zoom")
+        lay = QVBoxLayout(self)
+        self.gruppe = QButtonGroup(self)
+        self._art: dict[int, tuple[str, float]] = {}
+        eintraege = [(f"{n} %", ("wert", n / 100)) for n in self.STUFEN] + \
+                    [("Seitenbreite", ("breite", 0)), ("Ganze Seite", ("seite", 0))]
+        for i, (text, art) in enumerate(eintraege):
+            r = QRadioButton(text)
+            self.gruppe.addButton(r, i)
+            self._art[i] = art
+            lay.addWidget(r)
+            if art[0] == "wert" and abs(art[1] - aktuell) < 0.005:
+                r.setChecked(True)
+        eigen = QRadioButton("Eigener Wert:")
+        self.gruppe.addButton(eigen, 100)
+        self.spin = QSpinBox(); self.spin.setRange(10, 500); self.spin.setSuffix(" %")
+        self.spin.setValue(int(round(aktuell * 100)))
+        self.spin.valueChanged.connect(lambda _: eigen.setChecked(True))
+        zeile = QHBoxLayout(); zeile.addWidget(eigen); zeile.addWidget(self.spin)
+        lay.addLayout(zeile)
+        if self.gruppe.checkedId() < 0:
+            eigen.setChecked(True)
+        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        bb.accepted.connect(self.accept); bb.rejected.connect(self.reject)
+        lay.addWidget(bb)
+
+    def ergebnis(self) -> tuple[str, float]:
+        i = self.gruppe.checkedId()
+        if i == 100 or i not in self._art:
+            return "wert", self.spin.value() / 100
+        return self._art[i]
+
+
+class WasserzeichenDialog(QDialog):
+    def __init__(self, parent, aktuell: dict | None):
+        super().__init__(parent)
+        from PySide6.QtWidgets import QColorDialog, QSpinBox
+        self.setWindowTitle("Wasserzeichen")
+        a = aktuell or {}
+        f = QFormLayout(self)
+        self.text = QLineEdit(a.get("text", "ENTWURF"))
+        self.farbe = a.get("farbe", "#c0c0c0")
+        self.knopf = QPushButton(self.farbe)
+        self.knopf.clicked.connect(self._waehle)
+        self.winkel = QSpinBox(); self.winkel.setRange(-90, 90); self.winkel.setValue(int(a.get("winkel", -45)))
+        self.groesse = QSpinBox(); self.groesse.setRange(10, 300); self.groesse.setSuffix(" pt"); self.groesse.setValue(int(a.get("groesse_pt", 80)))
+        f.addRow("Text", self.text); f.addRow("Farbe", self.knopf); f.addRow("Drehung (Grad)", self.winkel); f.addRow("Größe", self.groesse)
+        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        self.weg = bb.addButton("Entfernen", QDialogButtonBox.DestructiveRole)
+        self.entfernt = False
+        self.weg.clicked.connect(lambda: (setattr(self, "entfernt", True), self.accept()))
+        bb.accepted.connect(self.accept); bb.rejected.connect(self.reject)
+        f.addRow(bb)
+
+    def _waehle(self):
+        from PySide6.QtGui import QColor
+        from PySide6.QtWidgets import QColorDialog
+        c = QColorDialog.getColor(QColor(self.farbe), self, "Farbe")
+        if c.isValid():
+            self.farbe = c.name(); self.knopf.setText(self.farbe)
+
+    def ergebnis(self) -> dict | None:
+        if self.entfernt or not self.text.text().strip():
+            return None
+        return {"text": self.text.text().strip(), "farbe": self.farbe, "winkel": self.winkel.value(), "groesse_pt": self.groesse.value()}
+
+
+class SeitenrahmenDialog(QDialog):
+    def __init__(self, parent, aktuell: dict | None):
+        super().__init__(parent)
+        from PySide6.QtWidgets import QSpinBox
+        self.setWindowTitle("Seitenrahmen")
+        a = aktuell or {}
+        f = QFormLayout(self)
+        self.art = QComboBox(); self.art.addItems(["Einfach", "Doppelt"])
+        self.art.setCurrentIndex(1 if a.get("art") == "doppelt" else 0)
+        self.farbe = a.get("farbe", "#000000")
+        self.knopf = QPushButton(self.farbe); self.knopf.clicked.connect(self._waehle)
+        self.breite = QDoubleSpinBox(); self.breite.setRange(0.25, 6); self.breite.setSingleStep(0.25); self.breite.setSuffix(" pt")
+        self.breite.setValue(float(a.get("breite_pt", 1.0)))
+        self.abstand = QDoubleSpinBox(); self.abstand.setRange(2, 30); self.abstand.setSuffix(" mm"); self.abstand.setValue(float(a.get("abstand_mm", 8.0)))
+        f.addRow("Art", self.art); f.addRow("Farbe", self.knopf); f.addRow("Breite", self.breite); f.addRow("Abstand vom Seitenrand", self.abstand)
+        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        self.weg = bb.addButton("Kein Rahmen", QDialogButtonBox.DestructiveRole)
+        self.entfernt = False
+        self.weg.clicked.connect(lambda: (setattr(self, "entfernt", True), self.accept()))
+        bb.accepted.connect(self.accept); bb.rejected.connect(self.reject)
+        f.addRow(bb)
+
+    def _waehle(self):
+        from PySide6.QtGui import QColor
+        from PySide6.QtWidgets import QColorDialog
+        c = QColorDialog.getColor(QColor(self.farbe), self, "Farbe")
+        if c.isValid():
+            self.farbe = c.name(); self.knopf.setText(self.farbe)
+
+    def ergebnis(self) -> dict | None:
+        if self.entfernt:
+            return None
+        return {"art": "doppelt" if self.art.currentIndex() else "einfach", "farbe": self.farbe,
+                "breite_pt": self.breite.value(), "abstand_mm": self.abstand.value()}

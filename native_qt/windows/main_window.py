@@ -5,16 +5,16 @@ import os
 from datetime import datetime
 
 from PySide6.QtCore import QSize, Qt, QTimer
-from PySide6.QtGui import QAction, QActionGroup, QColor, QFont, QKeySequence, QTextCursor
+from PySide6.QtGui import QAction, QActionGroup, QColor, QFont, QKeySequence, QTextCursor, QTextFormat
 from PySide6.QtPrintSupport import QPrintDialog, QPrintPreviewDialog, QPrinter
 from PySide6.QtWidgets import (
-    QApplication, QColorDialog, QComboBox, QFileDialog, QFontComboBox, QInputDialog, QLabel,
-    QMainWindow, QMenu, QMessageBox, QStatusBar, QTabWidget, QToolBar, QToolButton, QWidget,
+    QApplication, QColorDialog, QComboBox, QFileDialog, QFontComboBox, QInputDialog, QLabel, QLineEdit,
+    QMainWindow, QMenu, QMessageBox, QSlider, QStatusBar, QTabWidget, QToolBar, QToolButton, QWidget,
 )
 
 from .. import __version__
 from ..document_io import formats
-from ..document_io.report import DocumentIOError, IOReport
+from ..document_io.report import DocumentIOError, IOReport, PasswortNoetig
 from ..editor.editor_widget import STYLES, DocumentEditor
 from ..editor.page import PAPER_MM, HeaderFooter, PageSettings, px_to_mm
 from ..editor.pagination import export_pdf, print_document
@@ -47,7 +47,8 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.settings = settings or Settings()
         self.setWindowTitle("Lunivo Writer")
-        self.resize(1280, 860)
+        scr = QApplication.primaryScreen().availableGeometry() if QApplication.primaryScreen() else None
+        self.resize(min(1380, scr.width()) if scr else 1380, min(860, scr.height()) if scr else 860)
         self.marks_on = False
         self.lesemodus = False
         self.docs = DocTabs()
@@ -68,10 +69,14 @@ class MainWindow(QMainWindow):
         self.ki.status.connect(lambda t: self.lbl_msg.setText(t))
         self.befehle = Befehle(self)
         self._build_actions()
+        self._zusatz_kuerzel()
         self._build_status()
-        self.band = RegisterBand(self.befehle, lade_register())
-        self.band.menue_knopf.clicked.connect(self.show_main_menu)
+        from ..editor import stile
+        stile.laden(self.settings.get("stile/aenderungen", ""))
         self.menubar_wanted = self.settings.get_bool("ui/menueleiste", False)
+        self._symbole_anwenden()
+        self.band = self._band_erzeugen()
+        self.band.menue_knopf.clicked.connect(self.show_main_menu)
         self._build_menu()
         self.menuBar().setVisible(self.menubar_wanted)
         self.sidebar = SchreibhilfePanel(self.assistant)
@@ -87,6 +92,7 @@ class MainWindow(QMainWindow):
         lay.addWidget(self.band)
         mitte = QHBoxLayout(); mitte.setSpacing(0)
         self.navigation = NavigationPanel(self.current_editor)
+        self.navigation.aktion = self._nav_aktion
         self.navigation.hide()
         mitte.addWidget(self.navigation)
         mitte.addWidget(self.docs.stack, 1)
@@ -248,6 +254,18 @@ class MainWindow(QMainWindow):
         self.lbl_state = QLabel("")
         for w in (self.lbl_words, self.lbl_page):
             w.setContentsMargins(10, 0, 10, 0); sb.addPermanentWidget(w)
+        self.zoom_minus = QToolButton(); self.zoom_minus.setText("−"); self.zoom_minus.setAutoRaise(True)
+        self.zoom_plus = QToolButton(); self.zoom_plus.setText("+"); self.zoom_plus.setAutoRaise(True)
+        self.zoom_regler = QSlider(Qt.Horizontal); self.zoom_regler.setRange(10, 500); self.zoom_regler.setValue(100)
+        self.zoom_regler.setFixedWidth(120)
+        self.lbl_zoom = QToolButton(); self.lbl_zoom.setText("100 %"); self.lbl_zoom.setAutoRaise(True)
+        self.lbl_zoom.setToolTip("Zoom …"); self.lbl_zoom.setMinimumWidth(52)
+        self.zoom_minus.clicked.connect(lambda: self.befehle.kleiner())
+        self.zoom_plus.clicked.connect(lambda: self.befehle.groesser())
+        self.lbl_zoom.clicked.connect(lambda: self.befehle.zoomStufe())
+        self.zoom_regler.valueChanged.connect(self._regler_bewegt)
+        for w in (self.zoom_minus, self.zoom_regler, self.zoom_plus, self.lbl_zoom):
+            sb.addPermanentWidget(w)
 
     # ==== Hilfen ====================================================================
     def current_tab(self) -> DocumentTab | None:
@@ -298,10 +316,25 @@ class MainWindow(QMainWindow):
         self._update_window_title()
         self._sync_format()
         self._sync_status()
+        self._zoom_anzeigen()
         self.assistant.attach(self.current_editor())
+
+    def _regler_bewegt(self, v: int):
+        e = self.current_editor()
+        if e and abs(e.zoom * 100 - v) > 0.5:
+            e.set_zoom(v / 100)
+
+    def _zoom_anzeigen(self, f: float | None = None):
+        e = self.current_editor()
+        f = f if f is not None else (e.zoom if e else 1.0)
+        self.lbl_zoom.setText(f"{round(f * 100)} %")
+        self.zoom_regler.blockSignals(True)
+        self.zoom_regler.setValue(int(round(f * 100)))
+        self.zoom_regler.blockSignals(False)
 
     def _connect_tab(self, tab: DocumentTab):
         e = tab.editor
+        e.zoomChanged.connect(lambda f, ed=e: ed is self.current_editor() and self._zoom_anzeigen(f))
         e.formatChanged.connect(self._sync_later)
         e.pageInfoChanged.connect(lambda *_: self._sync_status())
         e.document().modificationChanged.connect(lambda _m: self._update_tab_titles())
@@ -309,8 +342,11 @@ class MainWindow(QMainWindow):
         e.document().contentsChanged.connect(self.assistant.dokument_geaendert)
         e.document().contentsChanged.connect(self.navigation.spaeter)
         e.opt = lambda name, std=True: self.settings.get_bool(name, std)
+        e.autor = self.autor_angaben
+        e.zusatzGeaendert.connect(self.navigation.spaeter)
         e.set_marken(self.settings.get_bool("ui/marken", True))
         self.formatzeichen_anwenden(e)
+        self.lineale_anwenden(tab)
         self._lesehilfe_auf(e)
         felder = self.band.felder
         if felder and e is not None:
@@ -354,7 +390,7 @@ class MainWindow(QMainWindow):
         f["stil"].activated.connect(lambda _: self.stil_anwenden(f["stil"].currentText()))
 
     def stil_anwenden(self, name: str):
-        name = "Standard" if name in ("Fließtext", "Kein Abstand") else name
+        name = "Standard" if name == "Fließtext" else name
         self._ed(lambda e: e.apply_style(name))
 
     def _size_chosen(self, *_):
@@ -394,10 +430,23 @@ class MainWindow(QMainWindow):
         for i, t in enumerate(self._doc_tabs()):
             if t.path == path:
                 self.tabs.setCurrentWidget(t); return True
-        try:
-            loaded = formats.load(path)
-        except DocumentIOError as e:
-            QMessageBox.warning(self, "Öffnen nicht möglich", f"{os.path.basename(path)}\n\n{e}")
+        kennwort = None
+        while True:
+            try:
+                loaded = formats.load(path, kennwort)
+                break
+            except PasswortNoetig as e:
+                kennwort, ok = QInputDialog.getText(
+                    self, "Kennwort", ("Falsches Kennwort. " if e.falsch else "") +
+                    f"„{os.path.basename(path)}“ ist geschützt.\nKennwort:", QLineEdit.Password)
+                if not ok:
+                    return False
+                continue
+            except DocumentIOError as e:
+                loaded, fehler = None, e
+                break
+        if loaded is None:
+            QMessageBox.warning(self, "Öffnen nicht möglich", f"{os.path.basename(path)}\n\n{fehler}")
             self.settings.remove_recent(path); self.start.set_recent(self.settings.recent())
             return False
         tab = DocumentTab(loaded, path)
@@ -433,13 +482,14 @@ class MainWindow(QMainWindow):
             flt = formats.SAVE_FILTERS[only]; default = only
         else:
             standard = self.settings.get("speichern/standard", ".docx")
-            flt = "Word-Dokument (*.docx);;Textdatei (*.txt)" if standard != ".txt" else "Textdatei (*.txt);;Word-Dokument (*.docx)"
+            flt = ("Word-Dokument (*.docx);;Textdatei (*.txt);;Webseite (*.html)" if standard != ".txt"
+                   else "Textdatei (*.txt);;Word-Dokument (*.docx);;Webseite (*.html)")
             default = standard if standard in (".docx", ".txt") else ".docx"
         path, chosen = QFileDialog.getSaveFileName(self, title, os.path.join(folder, base + default), flt)
         if not path:
             return None
         if not os.path.splitext(path)[1]:
-            path += ".txt" if "txt" in chosen else default
+            path += ".txt" if "txt" in chosen else ".html" if "html" in chosen else default
         return path
 
     def _save_tab_as(self, tab: DocumentTab) -> bool:
@@ -455,6 +505,7 @@ class MainWindow(QMainWindow):
 
     def _meta_fuer_speichern(self, tab: DocumentTab) -> dict:
         m = dict(tab.meta)
+        m["codierung"] = self.settings.get("speichern/codierung", "UTF-8")
         if self.settings.get_bool("sicherheit/personendaten_weg", False) or not self.settings.get_bool("benutzer/verwenden", True):
             m["author"] = ""
         elif self.settings.get("benutzer/name", ""):
@@ -498,7 +549,7 @@ class MainWindow(QMainWindow):
             path += ".pdf"
         try:
             autor = self._meta_fuer_speichern(t).get("author", "") if self.settings.get_bool("pdf/eigenschaften", True) else ""
-            n = export_pdf(path, t.editor.document(), t.page, os.path.splitext(t.title)[0], autor)
+            n = export_pdf(path, t.editor.document(), t.page, os.path.splitext(t.title)[0], autor, t.editor.noten)
         except Exception as e:  # PDF-Ausgabe darf das Programm nicht beenden
             QMessageBox.critical(self, "PDF-Export fehlgeschlagen", str(e)); return
         self.statusBar().showMessage(f"PDF gespeichert ({n} Seiten): {path}", 5000)
@@ -517,7 +568,7 @@ class MainWindow(QMainWindow):
         dlg.setMinMax(1, t.editor.page_count)
         if dlg.exec():
             self._vor_dem_drucken(t)
-            print_document(pr, t.editor.document(), t.page, self.druckoptionen())
+            print_document(pr, t.editor.document(), t.page, dict(self.druckoptionen(), noten=t.editor.noten))
             self.statusBar().showMessage("An den Drucker gesendet.", 4000)
 
     def print_preview(self):
@@ -526,7 +577,7 @@ class MainWindow(QMainWindow):
             return
         pr = self._neuer_drucker()
         dlg = QPrintPreviewDialog(pr, self)
-        dlg.paintRequested.connect(lambda p: print_document(p, t.editor.document(), t.page, self.druckoptionen()))
+        dlg.paintRequested.connect(lambda p: print_document(p, t.editor.document(), t.page, dict(self.druckoptionen(), noten=t.editor.noten)))
         dlg.resize(1000, 800)
         dlg.exec()
 
@@ -568,6 +619,121 @@ class MainWindow(QMainWindow):
         self._refresh_ui()
         return True
 
+    def _zusatz_kuerzel(self):
+        """Kürzel ohne eigene Aktion (Tabelle in windows/kuerzel.py zeigt sie in der Hilfe)."""
+        from PySide6.QtGui import QShortcut
+        b = self.befehle
+        tabelle = [("F3", b.schnellbaustein), ("F4", b.vorlesen), ("F5", self.toggle_sidebar), ("F6", b.welcheHilfe),
+                   ("F7", lambda: self.assistant.pruefen(True)), ("F8", b.kiKorrektur),
+                   ("Ctrl++", b.groesser), ("Ctrl+-", b.kleiner), ("Ctrl+0", b.normal),
+                   ("Ctrl+Tab", lambda: self._tab_weiter(1)), ("Ctrl+Shift+Tab", lambda: self._tab_weiter(-1))]
+        self._kuerzel = []
+        for taste, fn in tabelle:
+            sc = QShortcut(QKeySequence(taste), self)
+            sc.setContext(Qt.WindowShortcut)
+            sc.activated.connect(fn)
+            self._kuerzel.append(sc)
+
+    def _tab_weiter(self, d: int):
+        n = self.tabs.count()
+        if n > 1:
+            self.tabs.setCurrentIndex((self.tabs.currentIndex() + d) % n)
+
+    # ==== Vorlagen ==================================================================
+    def benutzerdaten(self) -> dict:
+        g = self.settings.get
+        return {k: g(f"benutzer/{k}", "") or "" for k in ("name", "initialen", "strasse", "plz_ort", "ort", "telefon", "mail")}
+
+    def neu_aus_vorlage(self):
+        from ..widgets.vorlagen_dialog import VorlagenDialog
+        d = VorlagenDialog(self, self.settings, self.current_tab() is not None)
+        if not d.exec():
+            return
+        if d.als_vorlage_gewuenscht:
+            self.als_vorlage_speichern()
+            return
+        art, wert = d.auswahl
+        if art == "geruest":
+            from ..editor import vorlagen
+            from PySide6.QtCore import QDate, QLocale
+            self.new_document()
+            t = self.current_tab()
+            t.title = wert["name"]
+            self._update_tab_titles()
+            vorlagen.aufbauen(t.editor, wert["zeilen"], self.benutzerdaten(), QLocale("de_DE").toString(QDate.currentDate(), "d. MMMM yyyy"))
+        else:
+            try:
+                geladen = formats.load(wert)
+            except DocumentIOError as e:
+                QMessageBox.warning(self, "Vorlage", str(e)); return
+            tab = DocumentTab(geladen, None, title=os.path.splitext(os.path.basename(wert))[0])
+            self._add_tab(tab)
+            tab.editor.document().setModified(True)
+            self._show_report(geladen.report, "Hinweise zur Vorlage", "beim Öffnen")
+
+    def als_vorlage_speichern(self):
+        t = self.current_tab()
+        if not t:
+            return
+        from ..editor import vorlagen
+        ordner = vorlagen.vorlagenordner(self.settings)
+        os.makedirs(ordner, exist_ok=True)
+        pfad, _ = QFileDialog.getSaveFileName(self, "Als Vorlage speichern", os.path.join(ordner, os.path.splitext(t.title)[0] + ".docx"),
+                                              "Word-Dokument (*.docx)")
+        if pfad:
+            if not pfad.lower().endswith(".docx"):
+                pfad += ".docx"
+            self._write(t, pfad, mark_saved=False)
+
+    # ==== Fenster ====================================================================
+    @staticmethod
+    def alle_fenster() -> list["MainWindow"]:
+        return [w for w in QApplication.topLevelWidgets() if isinstance(w, MainWindow) and w.isVisible()]
+
+    def neues_fenster(self):
+        """Das aktuelle Dokument in einem zweiten Fenster öffnen (eigene Kopie, keine Synchronisation)."""
+        t = self.current_tab()
+        if t is None:
+            w = MainWindow(self.settings); w.show(); return w
+        if t.is_modified() or not t.path:
+            r = QMessageBox.question(self, "Neues Fenster",
+                                     "Das neue Fenster zeigt die gespeicherte Datei als eigene Kopie. Änderungen werden nicht zwischen "
+                                     "den Fenstern abgeglichen.\n\nJetzt speichern und das Fenster öffnen?")
+            if r != QMessageBox.Yes or not self.save():
+                return None
+        w = MainWindow(self.settings)
+        w.show()
+        w.open_path(t.path)
+        return w
+
+    def fenster_anordnen(self, art: str):
+        fenster = self.alle_fenster()
+        if len(fenster) < 2:
+            self.statusBar().showMessage("Zum Anordnen werden mindestens zwei Fenster gebraucht (Ansicht ▸ Neues Fenster).", 5000)
+            return
+        r = (self.screen() or QApplication.primaryScreen()).availableGeometry()
+        n = len(fenster)
+        if art == "nebeneinander":
+            spalten, zeilen = n, 1
+        elif art == "untereinander":
+            spalten, zeilen = 1, n
+        else:
+            spalten = int(n ** 0.5 + 0.999); zeilen = (n + spalten - 1) // spalten
+        bw, bh = r.width() // spalten, r.height() // zeilen
+        for i, f in enumerate(fenster):
+            f.showNormal()
+            f.setGeometry(r.x() + (i % spalten) * bw, r.y() + (i // spalten) * bh, bw, bh)
+
+    def fensterliste_menue(self) -> QMenu:
+        m = QMenu()
+        for f in self.alle_fenster():
+            for t in f._doc_tabs():
+                a = m.addAction(t.title + ("  (dieses Fenster)" if f is self else ""))
+                a.triggered.connect(lambda _=False, f=f, t=t: (f.raise_(), f.activateWindow(), f.tabs.setCurrentWidget(t)))
+        if m.isEmpty():
+            m.addAction("Keine Dokumente geöffnet").setEnabled(False)
+        return m
+
     def closeEvent(self, ev):
         for i in range(self.tabs.count() - 1, -1, -1):
             if isinstance(self.tabs.widget(i), DocumentTab) and not self.close_tab(i):
@@ -577,6 +743,8 @@ class MainWindow(QMainWindow):
 
     # ==== Wiederherstellung ================================================================
     def autosave_now(self):
+        if not self.settings.get_bool("sicherung/aktiv", True):
+            return
         for t in self._doc_tabs():
             if not t.is_modified():
                 continue
@@ -584,6 +752,8 @@ class MainWindow(QMainWindow):
             try:
                 formats.save(docx_path, t.editor.document(), t.page, t.meta)
                 recovery.write_meta(t.token, t.path or "", t.title)
+                if self.settings.get_bool("sicherung/staende", False):
+                    recovery.zwischenstand(t.token, t.title, self.settings.get_int("sicherung/tage", 7))
             except Exception:
                 pass            # Sicherung darf nie die Arbeit stören
 
@@ -635,9 +805,14 @@ class MainWindow(QMainWindow):
             return
         bf = e.textCursor().blockFormat()
         lh = bf.lineHeight() / 100 if bf.lineHeightType() == 1 and bf.lineHeight() else 1.0
+        al = bf.alignment()
+        ai = 1 if al & Qt.AlignHCenter else 2 if al & Qt.AlignRight else 3 if al & Qt.AlignJustify else 0
         d = ParagraphDialog(px_to_mm(bf.leftMargin()), px_to_mm(bf.rightMargin()), px_to_mm(bf.textIndent()),
-                            bf.topMargin() * 0.75, bf.bottomMargin() * 0.75, lh, self)
+                            bf.topMargin() * 0.75, bf.bottomMargin() * 0.75, lh, self, ai,
+                            bool(bf.pageBreakPolicy() & QTextFormat.PageBreak_AlwaysBefore))
         if d.exec():
+            e.set_alignment([Qt.AlignLeft, Qt.AlignHCenter, Qt.AlignRight, Qt.AlignJustify][d.align.currentIndex()])
+            e.set_page_break_before(d.umbruch.isChecked())
             e.set_indents(d.left.value(), d.right.value(), d.first.value())
             e.set_paragraph_spacing(d.before.value(), d.after.value())
             e.set_line_spacing(d.line.value())
@@ -647,6 +822,13 @@ class MainWindow(QMainWindow):
         s = self.settings
         e.set_lesehilfe(PAPIERTOENE.get(s.get("lesehilfe/papier", "Weiß"), "#ffffff"),
                         float(s.get("lesehilfe/buchstaben", 0)), float(s.get("lesehilfe/wort", 0)))
+
+    def lineale_anwenden(self, tab=None):
+        h = self.settings.get_bool("ansicht/lineal", False)
+        v = self.settings.get_bool("ansicht/lineal_hoch", False)
+        for t in ([tab] if tab is not None else self._doc_tabs()):
+            t.zeige_lineale(h, v)
+        self.band.aktualisieren(self.current_tab() is not None)
 
     def formatzeichen_anwenden(self, e=None):
         """Formatierungszeichen für neue Reiter: Zustand aus Optionen (ui/steuerzeichen)."""
@@ -726,6 +908,31 @@ class MainWindow(QMainWindow):
         if ok:
             self.settings.set("vorlesen/stimme", liste[namen.index(n)]["kennung"])
 
+    def _nav_aktion(self, name: str, b: dict):
+        e = self.current_editor()
+        if e is None:
+            return
+        if name == "kommentar_weg":
+            e.kommentar_loeschen(int(b["wert"]))
+        elif name == "aenderung_an":
+            e.aenderung_annehmen(b, True)
+        elif name == "aenderung_ab":
+            e.aenderung_annehmen(b, False)
+        elif name == "note_weg":
+            e.note_loeschen(b["art"], b["id"])
+        elif name == "note_bearbeiten":
+            self.befehle.note_bearbeiten(b["art"], b["id"])
+        self.navigation.aktualisieren()
+
+    def zeige_navigation(self, tab: str):
+        self.navigation.show()
+        self.navigation.zeige_tab(tab)
+
+    def autor_angaben(self) -> tuple[str, str]:
+        name = self.settings.get("benutzer/name", "") or "Unbekannt"
+        init = self.settings.get("benutzer/initialen", "") or "".join(w[0] for w in name.split()[:2]).upper()
+        return name, init
+
     def toggle_navigation(self):
         self.navigation.setVisible(not self.navigation.isVisible())
         self.navigation.aktualisieren()
@@ -751,10 +958,41 @@ class MainWindow(QMainWindow):
         from ..widgets.reiterplan import KI, schreibhilfe_gruppen
         self.sidebar.setze_bereiche(self.band, schreibhilfe_gruppen(self.band.daten), KI["gruppen"])
 
+    # ---- Oberfläche: Register oder Symbolleisten, angepasst ----------------------------------------------------
+    def _symbole_anwenden(self):
+        from ..widgets import icons
+        from ..widgets.oberflaeche_dialoge import lade_json
+        icons.uebersteuern(lade_json(self.settings, "ui/symbol_tausch", {}))
+
+    def _band_erzeugen(self):
+        from ..widgets.oberflaeche_dialoge import lade_json
+        from ..widgets.symbolleisten import Symbolleisten
+        reg = RegisterBand(self.befehle, lade_register(), lade_json(self.settings, "ui/register_plan", {}),
+                           lade_json(self.settings, "ui/schnellzugriff", None))
+        if self.settings.get("ui/oberflaeche", "register") != "symbolleisten":
+            return reg
+        sym = Symbolleisten(self.befehle)
+        sym.daten = reg.daten
+        sym.gruppe_widget = reg.gruppe_widget            # die Seitenleiste baut ihre Gruppen weiter aus dem Register
+        sym._reg = reg
+        urspr = sym.aktualisieren
+
+        def aktualisieren(hat=None, _u=urspr, _r=reg):
+            _u(hat); _r.aktualisieren(hat)
+        sym.aktualisieren = aktualisieren
+        return sym
+
+    def oberflaeche_aendern(self, art: str, menueleiste: bool):
+        self.settings.set("ui/oberflaeche", art)
+        if menueleiste != self.menubar_wanted:
+            self.toggle_menubar()
+        self.neu_bauen_band()
+
     def neu_bauen_band(self):
         alt = self.band
         idx = self.band_lay.indexOf(alt)
-        self.band = RegisterBand(self.befehle, lade_register())
+        self.band = self._band_erzeugen()
+        self.band.einklappbar = self.settings.get_bool("ui/band_doppelklick", True)
         self.band.menue_knopf.clicked.connect(self.show_main_menu)
         self.band_lay.insertWidget(idx, self.band)
         alt.setParent(None); alt.deleteLater()
@@ -799,6 +1037,15 @@ class MainWindow(QMainWindow):
         self.settings.add_recent(ziel)
         self._update_tab_titles()
 
+    def toggle_sperre(self):
+        """Überprüfen ▸ Bearbeitung einschränken: Dokument schreibgeschützt (nur in dieser Sitzung)."""
+        t = self.current_tab() if hasattr(self, "current_tab") else None
+        if not t:
+            return
+        t.gesperrt = not getattr(t, "gesperrt", False)
+        t.editor.setReadOnly(t.gesperrt or self.lesemodus)
+        self.statusBar().showMessage("Bearbeitung gesperrt." if t.gesperrt else "Bearbeitung freigegeben.", 4000)
+
     def toggle_marks(self, on: bool):
         self.marks_on = on
         self.settings.set("ui/steuerzeichen", on)
@@ -841,10 +1088,25 @@ class MainWindow(QMainWindow):
         if not t:
             return
         page = t.page.copy()
-        hf = page.header if header else page.footer
-        d = HeaderFooterDialog("Kopfzeile" if header else "Fußzeile", hf, self)
+        erste = False
+        if page.diff_first:
+            from PySide6.QtWidgets import QInputDialog
+            w, ok = QInputDialog.getItem(self, "Kopf- und Fußzeile", "Welche Seiten?", ["Erste Seite", "Übrige Seiten"], 0, False)
+            if not ok:
+                return
+            erste = w == "Erste Seite"
+        if erste:
+            hf = page.first_header if header else page.first_footer
+        else:
+            hf = page.header if header else page.footer
+        d = HeaderFooterDialog(("Kopfzeile" if header else "Fußzeile") + (" (erste Seite)" if erste else ""), hf, self)
         if d.exec():
-            if header:
+            if erste:
+                if header:
+                    page.first_header = d.value()
+                else:
+                    page.first_footer = d.value()
+            elif header:
                 page.header = d.value()
             else:
                 page.footer = d.value()

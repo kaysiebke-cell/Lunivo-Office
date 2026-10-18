@@ -11,13 +11,13 @@ import re
 from .settings import data_dir
 
 WORT = re.compile(r"^[A-Za-zÄÖÜäöüß-]+$")
-RUHE_NACH = 2          # so oft stehen gelassen, dann gilt das Wort als gewollt
+LERN_SCHWELLE = 5      # so oft darf ein Fund bei ausdrücklichem „Prüfen“ angezeigt und nie geändert werden (wie ki.js)
 
 
 class Gelernt:
     def __init__(self, pfad: str | None = None):
         self.pfad = pfad or os.path.join(data_dir(), "gelernt.json")
-        self.daten = {"woerter": {}, "inRuhe": {}, "zaehler": {}}
+        self.daten = {"woerter": {}, "inRuhe": {}, "gezeigt": {}}
         self.laden()
 
     def laden(self) -> None:
@@ -46,19 +46,32 @@ class Gelernt:
 
     def gewaehlt(self, fund: dict) -> None:
         if self.wort_ebene(fund):
-            self.daten["woerter"][fund["alt"].lower()] = fund["neu"].lower()
-            self.daten["inRuhe"].pop(fund["alt"].lower(), None)
+            k = fund["alt"].lower()
+            self.daten["woerter"][k] = fund["neu"]
+            self.daten["gezeigt"].pop(k, None)          # angenommen ist das Gegenteil von ignoriert
+            self.daten["inRuhe"].pop(k, None)
             self.speichern()
 
-    def stehen_gelassen(self, fund: dict) -> None:
-        if self.wort_ebene(fund):
-            k = fund["alt"].lower()
-            z = self.daten["zaehler"].get(k, 0) + 1
-            self.daten["zaehler"][k] = z
-            if z >= RUHE_NACH:
+    def merke_gezeigt(self, funde: list) -> None:
+        """Beim ausdrücklichen Prüfen: wer denselben Fund fünfmal stehen lässt, meint es so (Wort kommt in Ruhe).
+        Die lebende Prüfung zählt nicht — sonst verschwänden Wellenlinien von selbst (siehe programm.js, zeichneFunde)."""
+        geaendert = False
+        for f in funde:
+            if not self.wort_ebene(f):
+                continue
+            k = f["alt"].lower()
+            if self.daten["woerter"].get(k) or self.daten["inRuhe"].get(k):
+                continue
+            n = self.daten["gezeigt"].get(k, 0) + 1
+            if n >= LERN_SCHWELLE:
                 self.daten["inRuhe"][k] = True
+                self.daten["gezeigt"].pop(k, None)
+            else:
+                self.daten["gezeigt"][k] = n
+            geaendert = True
+        if geaendert:
             self.speichern()
 
     def vergessen(self) -> None:
-        self.daten = {"woerter": {}, "inRuhe": {}, "zaehler": {}}
+        self.daten = {"woerter": {}, "inRuhe": {}, "gezeigt": {}}
         self.speichern()

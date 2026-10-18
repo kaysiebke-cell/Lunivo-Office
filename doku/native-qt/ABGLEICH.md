@@ -1,14 +1,14 @@
 # Abgleich: altes Register ↔ native Qt-Fassung
 
-Erzeugt von `werkzeug/abgleich-native.py`. **128 Knöpfe umgesetzt, 112 offen.** Offene Knöpfe stehen im Programm sichtbar, aber ausgegraut da.
+Erzeugt von `werkzeug/abgleich-native.py`. **236 Knöpfe umgesetzt, 16 offen.** Offene Knöpfe stehen im Programm sichtbar, aber ausgegraut da.
 
 ## Datei
 
 **Neu**
 
 - ✅ Leeres Dokument
-- ⬜ Aus Vorlage erstellen  (`neuAusVorlage`)
-- ⬜ Vorlagen durchsuchen  (`vorlagenDurchsuchen`)
+- ✅ Aus Vorlage erstellen
+- ✅ Vorlagen durchsuchen
 
 **Öffnen**
 
@@ -29,6 +29,7 @@ Erzeugt von `werkzeug/abgleich-native.py`. **128 Knöpfe umgesetzt, 112 offen.**
 - ✅ Als RTF exportieren
 - ✅ Als TXT exportieren
 - ✅ Als ODT exportieren
+- ✅ Als Bild exportieren (PNG)
 
 **Drucken**
 
@@ -41,7 +42,7 @@ Erzeugt von `werkzeug/abgleich-native.py`. **128 Knöpfe umgesetzt, 112 offen.**
 **Dokument**
 
 - ✅ Dokumentinformationen
-- ⬜ Dokument schützen  (`dokumentSchuetzen`)
+- ✅ Dokument schützen
 - ⬜ Dokument teilen (optional)  (`dokumentTeilen`)
 - ✅ Mit WPS Writer öffnen
 - ✅ Mit LibreOffice öffnen
@@ -75,10 +76,10 @@ Erzeugt von `werkzeug/abgleich-native.py`. **128 Knöpfe umgesetzt, 112 offen.**
 - ✅ Durchgestrichen
 - ✅ Hochgestellt
 - ✅ Tiefgestellt
-- ⬜ Zeichenumriss  (`zeichenumriss`)
+- ✅ Zeichenumriss
 - ✅ Hervorheben
 - ✅ Schriftfarbe
-- ⬜ Texteffekte  (`effekt`)
+- ✅ Texteffekte
 
 **Absatz**
 
@@ -94,7 +95,7 @@ Erzeugt von `werkzeug/abgleich-native.py`. **128 Knöpfe umgesetzt, 112 offen.**
 - ✅ Verteilt
 - ✅ Zeilenabstand
 - ✅ Absatzschattierung
-- ⬜ Absatzrahmen  (`absatzRahmen`)
+- ✅ Absatzrahmen
 
 **Stile**
 
@@ -106,40 +107,40 @@ Erzeugt von `werkzeug/abgleich-native.py`. **128 Knöpfe umgesetzt, 112 offen.**
 - ✅ Ersetzen
 - ✅ Suchen und Ersetzen
 - ✅ Alles auswählen
-- ⬜ Objekte auswählen  (`objekteWaehlen`)
+- ✅ Objekte auswählen
 
 
 ## Einfügen
 
 **Seiten**
 
-- ⬜ Deckblatt  (`deckblatt`)
+- ✅ Deckblatt
 - ✅ Leere Seite
 - ✅ Seitenumbruch
 
 **Tabellen**
 
 - ✅ Tabelle einfügen
-- ⬜ Schnelltabelle  (`schnelltabelle`)
+- ✅ Schnelltabelle
 - ⬜ Tabellenblatt  (`tabellenblatt`)
-- ⬜ Eigenschaften  (`tabelleEigenschaften`)
+- ✅ Eigenschaften
 
 **Illustrationen**
 
 - ✅ Bild
-- ⬜ Formen  (`formenGalerie`)
-- ⬜ Diagramm  (`diagramm`)
+- ✅ Formen
+- ✅ Diagramm
 - ⬜ SmartArt  (`smartart`)
-- ⬜ WordArt  (`wordart`)
-- ⬜ Form mit eigener Farbe…  (`zeichnen`)
-- ⬜ Bildschirmfoto  (`screenshot`)
-- ⬜ Piktogramm  (`piktogramm`)
+- ✅ WordArt
+- ✅ Form mit eigener Farbe…
+- ✅ Bildschirmfoto
+- ✅ Piktogramm
 
 **Links**
 
 - ✅ Hyperlink
-- ⬜ Lesezeichen / Textmarke  (`textmarke`)
-- ⬜ Querverweis  (`querverweis`)
+- ✅ Lesezeichen / Textmarke
+- ✅ Querverweis
 
 **Kopf- und Fußzeile**
 
@@ -148,24 +149,24 @@ Erzeugt von `werkzeug/abgleich-native.py`. **128 Knöpfe umgesetzt, 112 offen.**
 
 **Text**
 
-- ⬜ Textfeld  (`textfeld`)
-- ⬜ Initiale  (`initiale`)
+- ✅ Textfeld
+- ✅ Initiale
 - ✅ Datum und Uhrzeit
-- ⬜ Text aus Datei  (`textAusDatei`)
+- ✅ Text aus Datei
 
 **Symbole**
 
 - ✅ Sonderzeichen
-- ⬜ Formel  (`formel`)
+- ✅ Formel
 
 
 ## Seitenlayout
 
 **Designs**
 
-- ⬜ Designs  (`designs`)
-- ⬜ Farben  (`farbschema`)
-- ⬜ Schriftarten  (`designSchriften`)
+- ✅ Designs
+- ✅ Farben
+- ✅ Schriftarten
 - ⬜ Effekte  (`designEffekte`)
 
 **Ränder**
@@ -181,28 +182,28 @@ Erzeugt von `werkzeug/abgleich-native.py`. **128 Knöpfe umgesetzt, 112 offen.**
 - ✅ Ausrichtung
 - ✅ Größe
 - ⬜ Spalten  (`spaltenSetzen:[1], spaltenSetzen:[2], spaltenSetzen:[3], spalten`)
-- ⬜ Textrichtung  (`textrichtung`)
+- ✅ Textrichtung
 - ✅ Umbrüche
-- ⬜ Zeilennummern  (`zeilennummern`)
+- ✅ Zeilennummern
 
 **Absatz**
 
 - ✅ Einzug
-- ⬜ Absatzabstand  (`absatzabstand`)
+- ✅ Absatzabstand
 - ⬜ Silbentrennung  (`silbentrennung`)
 
 **Seitenhintergrund**
 
-- ⬜ Seitenfarbe  (`seitenfarbe`)
-- ⬜ Wasserzeichen  (`wasserzeichen`)
+- ✅ Seitenfarbe
+- ✅ Wasserzeichen
 - ✅ Seitenränder
 
 **Anordnen**
 
 - ⬜ Textfluss  (`anordnen`)
-- ⬜ Ausrichten  (`objektAusrichten`)
+- ✅ Ausrichten
 - ⬜ Gruppieren  (`gruppieren`)
-- ⬜ Drehen  (`objektDrehen`)
+- ✅ Drehen
 
 
 ## Verweise
@@ -214,30 +215,30 @@ Erzeugt von `werkzeug/abgleich-native.py`. **128 Knöpfe umgesetzt, 112 offen.**
 
 **Fußnoten**
 
-- ⬜ Fußnote  (`fussnote`)
-- ⬜ Endnote  (`endnote`)
-- ⬜ Nächste Note  (`noteWeiter`)
-- ⬜ Vorige Note  (`noteZurueck`)
-- ⬜ Notenbereich  (`notenZeigen`)
+- ✅ Fußnote
+- ✅ Endnote
+- ✅ Nächste Note
+- ✅ Vorige Note
+- ✅ Notenbereich
 
 **Zitate und Literatur**
 
-- ⬜ Zitat einfügen  (`zitat`)
-- ⬜ Neue Quelle  (`quelleNeu`)
-- ⬜ Quellen verwalten  (`quellenVerwalten`)
-- ⬜ Zitierweise  (`zitierweise`)
-- ⬜ Literaturverzeichnis  (`literaturverzeichnis`)
+- ✅ Zitat einfügen
+- ✅ Neue Quelle
+- ✅ Quellen verwalten
+- ✅ Zitierweise
+- ✅ Literaturverzeichnis
 
 **Beschriftungen**
 
-- ⬜ Beschriftung  (`beschriftung`)
-- ⬜ Abbildungsverzeichnis  (`abbildungsverzeichnis`)
-- ⬜ Querverweis  (`querverweis`)
+- ✅ Beschriftung
+- ✅ Abbildungsverzeichnis
+- ✅ Querverweis
 
 **Index**
 
-- ⬜ Indexeintrag  (`indexEintrag`)
-- ⬜ Stichwortverzeichnis  (`stichwortverzeichnis`)
+- ✅ Indexeintrag
+- ✅ Stichwortverzeichnis
 
 
 ## Überprüfen
@@ -247,40 +248,40 @@ Erzeugt von `werkzeug/abgleich-native.py`. **128 Knöpfe umgesetzt, 112 offen.**
 - ✅ Prüfen
 - ✅ Gründlich prüfen
 - ✅ Rechtschreibung
-- ⬜ Thesaurus  (`thesaurus`)
+- ✅ Thesaurus
 - ✅ Wörter zählen
 
 **Sprache**
 
-- ⬜ Korrektursprache  (`pruefsprache`)
+- ✅ Korrektursprache
 
 **Barrierefreiheit**
 
-- ⬜ Barrierefreiheit prüfen  (`barrierefrei`)
+- ✅ Barrierefreiheit prüfen
 
 **Kommentare**
 
-- ⬜ Neuer Kommentar  (`kommentar`)
-- ⬜ Nächster Kommentar  (`kommentarWeiter`)
-- ⬜ Voriger Kommentar  (`kommentarZurueck`)
-- ⬜ Kommentar löschen  (`kommentarWeg`)
-- ⬜ Alle Kommentare löschen  (`kommentareAlleWeg`)
+- ✅ Neuer Kommentar
+- ✅ Nächster Kommentar
+- ✅ Voriger Kommentar
+- ✅ Kommentar löschen
+- ✅ Alle Kommentare löschen
 
 **Änderungen**
 
-- ⬜ Änderungen verfolgen  (`verfolgen`)
-- ⬜ Markup anzeigen  (`markupUmschalten`)
-- ⬜ Überarbeitungsbereich  (`ueberarbeitungsbereich`)
-- ⬜ Änderung annehmen  (`aenderungAnnehmen`)
-- ⬜ Änderung ablehnen  (`aenderungAblehnen`)
-- ⬜ Nächste Änderung  (`aenderungWeiter`)
-- ⬜ Vorige Änderung  (`aenderungZurueck`)
-- ⬜ Alle annehmen  (`aenderungenUebernehmen`)
-- ⬜ Alle verwerfen  (`aenderungenVerwerfen`)
+- ✅ Änderungen verfolgen
+- ✅ Markup anzeigen
+- ✅ Überarbeitungsbereich
+- ✅ Änderung annehmen
+- ✅ Änderung ablehnen
+- ✅ Nächste Änderung
+- ✅ Vorige Änderung
+- ✅ Alle annehmen
+- ✅ Alle verwerfen
 
 **Schützen**
 
-- ⬜ Bearbeitung sperren  (`bearbeitungSperren`)
+- ✅ Bearbeitung sperren
 
 
 ## KI
@@ -304,7 +305,8 @@ Erzeugt von `werkzeug/abgleich-native.py`. **128 Knöpfe umgesetzt, 112 offen.**
 
 **Einrichten**
 
-- ⬜ Eigenen Assistenten erstellen  (`w.assistentErstellen`)
+- ✅ Eigene Assistenten
+- ✅ Eigenen Assistenten erstellen
 - ✅ Eigenen Anbieter hinzufügen
 - ✅ KI-Konfiguration
 
@@ -313,17 +315,17 @@ Erzeugt von `werkzeug/abgleich-native.py`. **128 Knöpfe umgesetzt, 112 offen.**
 
 **Dokumentansichten**
 
-- ⬜ Drucklayout  (`w.setzeLayout:["blatt"]`)
+- ✅ Drucklayout
 - ✅ Lesemodus
-- ⬜ Zwei Seiten  (`w.setzeLayout:["doppelt"]`)
-- ⬜ Weblayout  (`w.setzeLayout:["web"]`)
-- ⬜ Gliederung  (`gliederung`)
+- ✅ Zwei Seiten
+- ✅ Weblayout
+- ✅ Gliederung
 
 **Anzeigen**
 
-- ⬜ Lineal  (`linealZeigen`)
-- ⬜ Vertikales Lineal  (`linealHochZeigen`)
-- ⬜ Gitternetzlinien  (`netzlinien`)
+- ✅ Lineal
+- ✅ Vertikales Lineal
+- ✅ Gitternetzlinien
 - ✅ Navigationsbereich
 - ✅ Textbegrenzungen
 
@@ -331,19 +333,19 @@ Erzeugt von `werkzeug/abgleich-native.py`. **128 Knöpfe umgesetzt, 112 offen.**
 
 - ✅ Vergrößern
 - ✅ Verkleinern
-- ⬜ 100 %  (`normal`)
-- ⬜ Seitenbreite  (`zoomBreite`)
-- ⬜ Eine Seite  (`zoomSeite`)
-- ⬜ Zoom  (`zoomStufe`)
+- ✅ 100 %
+- ✅ Seitenbreite
+- ✅ Eine Seite
+- ✅ Zoom
 
 **Fenster**
 
-- ⬜ Neues Fenster  (`neuesFenster`)
-- ⬜ Anordnen  (`fensterNebeneinander, fensterUntereinander, fensterKacheln`)
-- ⬜ Nebeneinander  (`fensterNebeneinander`)
-- ⬜ Untereinander  (`fensterUntereinander`)
-- ⬜ Kacheln  (`fensterKacheln`)
-- ⬜ Fensterliste  (`fensterListe`)
+- ✅ Neues Fenster
+- ✅ Anordnen
+- ✅ Nebeneinander
+- ✅ Untereinander
+- ✅ Kacheln
+- ✅ Fensterliste
 
 **Helligkeit**
 
@@ -353,12 +355,37 @@ Erzeugt von `werkzeug/abgleich-native.py`. **128 Knöpfe umgesetzt, 112 offen.**
 
 **Oberfläche**
 
-- ⬜ Register anpassen  (`registerAnpassen`)
-- ⬜ Symbol austauschen  (`symbolTauschen`)
-- ⬜ Benutzeroberfläche  (`benutzeroberflaeche`)
+- ✅ Register anpassen
+- ✅ Symbol austauschen
+- ✅ Benutzeroberfläche
 - ✅ Menüleiste
-- ⬜ Symbolleisten  (`leistenZeigen`)
-- ⬜ Vorlagen zurücksetzen  (`vorlagenZurueck`)
+- ✅ Symbolleisten
+- ✅ Vorlagen zurücksetzen
+
+
+## Sendungen
+
+**Erstellen**
+
+- ✅ Umschlag
+- ✅ Etiketten
+
+**Seriendruck**
+
+- ✅ Seriendruck-Assistent
+- ✅ Seriendruckfeld
+- ✅ Adressblock
+- ✅ Regeln
+
+**Vorschau**
+
+- ✅ Ergebnisse anzeigen
+
+**Formular**
+
+- ✅ Textfeld
+- ✅ Kontrollkästchen
+- ✅ Schaltfläche
 
 
 ## Tabellentools (Kontext-Register)
@@ -382,7 +409,7 @@ Erzeugt von `werkzeug/abgleich-native.py`. **128 Knöpfe umgesetzt, 112 offen.**
 
 - ✅ Zellen verbinden
 - ✅ Zelle teilen
-- ⬜ Tabelle sortieren  (`tabelleSortieren`)
+- ✅ Tabelle sortieren
 
 **Ausrichtung**
 
@@ -406,8 +433,8 @@ Erzeugt von `werkzeug/abgleich-native.py`. **128 Knöpfe umgesetzt, 112 offen.**
 **Bearbeiten**
 
 - ✅ Bild entfernen
-- ⬜ Zuschneiden  (`bildZuschneiden`)
-- ⬜ Helligkeit / Kontrast / Farbe  (`bildFarbe`)
+- ✅ Zuschneiden
+- ✅ Helligkeit / Kontrast / Farbe
 - ⬜ Textumbruch / Position  (`anordnen`)
 
 
@@ -426,11 +453,11 @@ Erzeugt von `werkzeug/abgleich-native.py`. **128 Knöpfe umgesetzt, 112 offen.**
 **Entwurf**
 
 - ✅ Kopfzeile bearbeiten
-- ⬜ Fußzeile bearbeiten  (`fusszeileBearbeiten`)
+- ✅ Fußzeile bearbeiten
 - ✅ Seitenzahl einfügen
-- ⬜ Erste Seite anders  (`ersteSeiteAnders`)
+- ✅ Erste Seite anders
 - ⬜ Gerade/ungerade Seiten unterschiedlich  (`geradeUngerade`)
-- ⬜ Kopf- und Fußzeile schließen  (`kopfFussSchliessen`)
+- ✅ Kopf- und Fußzeile schließen
 
 
 ## Seitenleiste: Schreibhilfe
@@ -460,12 +487,12 @@ Erzeugt von `werkzeug/abgleich-native.py`. **128 Knöpfe umgesetzt, 112 offen.**
 
 - ⬜ Silbentrennung  (`silbentrennung`)
 - ✅ Übersetzen
-- ⬜ Thesaurus  (`thesaurus`)
+- ✅ Thesaurus
 - ✅ Sprache und Prüfung
 
 **Bausteine**
 
-- ⬜ Textbausteine  (`textbausteine, schnellbaustein`)
+- ✅ Textbausteine
 
 **Anzeigen**
 

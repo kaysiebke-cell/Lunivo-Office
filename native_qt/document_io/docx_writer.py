@@ -45,6 +45,11 @@ def _has(fmt, prop) -> bool:
     return fmt.hasProperty(prop)
 
 
+from ..editor.zusatz import (  # noqa: E402
+    B_ART, B_CAP, B_RAHMEN, B_TOC, P_AENDERUNG, P_AUTOR, P_DATUM, P_FELD, P_INDEX, P_KOMMENTAR, P_NOTE,
+)
+
+
 class _Writer:
     def __init__(self, qdoc: QTextDocument, page: PageSettings, meta: dict):
         self.q = qdoc
@@ -56,6 +61,12 @@ class _Writer:
         self._num_ids: dict[tuple, int] = {}
         self.last_list_obj = None
         self.last_num = None
+        self._komm_runs: dict[int, list] = {}
+        self._noten: dict[str, list] = {"f": [], "e": []}       # [(Ausgabe-Id, Text)]
+        self._note_ids: dict[tuple, int] = {}
+        self._aend_id = 0
+        self._lz_id = 0
+        self._lz_offen: dict[str, int] = {}
 
     def _clear_body(self):
         body = self.d.element.body
@@ -71,7 +82,12 @@ class _Writer:
         s.orientation = WD_ORIENT.LANDSCAPE if p.landscape else WD_ORIENT.PORTRAIT
         s.top_margin, s.bottom_margin = Mm(p.margin_top_mm), Mm(p.margin_bottom_mm)
         s.left_margin, s.right_margin = Mm(p.margin_left_mm), Mm(p.margin_right_mm)
-        for part, hf in ((s.header, p.header), (s.footer, p.footer)):
+        self._seitenschmuck(s)
+        paare = [(s.header, p.header), (s.footer, p.footer)]
+        if p.diff_first:
+            s.different_first_page_header_footer = True
+            paare += [(s.first_page_header, p.first_header), (s.first_page_footer, p.first_footer)]
+        for part, hf in paare:
             if hf.is_empty():
                 continue
             part.is_linked_to_previous = False
@@ -81,6 +97,47 @@ class _Writer:
                 para.alignment = {"center": WD_ALIGN_PARAGRAPH.CENTER,
                                   "right": WD_ALIGN_PARAGRAPH.RIGHT}.get(hf.align, WD_ALIGN_PARAGRAPH.LEFT)
                 self._text_with_fields(para, line)
+
+    def _seitenschmuck(self, sect) -> None:
+        from docx.oxml import OxmlElement
+        p = self.page
+        doc_el = self.d.element
+        for alt in doc_el.findall(qn("w:background")):
+            doc_el.remove(alt)
+        if p.color:
+            bg = OxmlElement("w:background")
+            bg.set(qn("w:color"), p.color.lstrip("#").upper())
+            doc_el.insert(0, bg)
+            st = self.d.settings.element
+            if st.find(qn("w:displayBackgroundShape")) is None:
+                st.insert(0, OxmlElement("w:displayBackgroundShape"))
+        sp = sect._sectPr
+        for alt in sp.findall(qn("w:pgBorders")):
+            sp.remove(alt)
+        if p.border:
+            b = p.border
+            pb = OxmlElement("w:pgBorders")
+            pb.set(qn("w:offsetFrom"), "page")
+            for seite in ("top", "left", "bottom", "right"):
+                e = OxmlElement(f"w:{seite}")
+                e.set(qn("w:val"), "double" if b.get("art") == "doppelt" else "single")
+                e.set(qn("w:sz"), str(max(2, int(round(b.get("breite_pt", 1.0) * 8)))))
+                e.set(qn("w:space"), str(int(round(b.get("abstand_mm", 8.0) / 25.4 * 72))))
+                e.set(qn("w:color"), b.get("farbe", "#000000").lstrip("#").upper())
+                pb.append(e)
+            pg_mar = sp.find(qn("w:pgMar"))
+            (pg_mar.addnext(pb) if pg_mar is not None else sp.append(pb))
+        for alt in sp.findall(qn("w:lnNumType")):
+            sp.remove(alt)
+        if p.zeilennummern:
+            ln = OxmlElement("w:lnNumType")
+            ln.set(qn("w:countBy"), "1"); ln.set(qn("w:restart"), "continuous")
+            anker = sp.find(qn("w:pgBorders"))
+            if anker is None:
+                anker = sp.find(qn("w:pgMar"))
+            (anker.addnext(ln) if anker is not None else sp.append(ln))
+        if p.watermark and p.watermark.get("text"):
+            self.report.warn("Das Wasserzeichen wird in der DOCX-Datei nicht gespeichert (nur Anzeige, PDF und Druck).")
 
     def _text_with_fields(self, para, text: str):
         import re
@@ -109,6 +166,19 @@ class _Writer:
                 run._r.append(t)
 
     # ---- Grundschrift --------------------------------------------------
+    def _sprache(self) -> None:
+        kennung = self.meta.get("sprache")
+        if not kennung:
+            return
+        rpr = self.d.styles.element.find(qn("w:docDefaults") + "/" + qn("w:rPrDefault") + "/" + qn("w:rPr"))
+        if rpr is None:
+            return
+        lang = rpr.find(qn("w:lang"))
+        if lang is None:
+            lang = OxmlElement("w:lang")
+            rpr.append(lang)
+        lang.set(qn("w:val"), kennung)
+
     def write_defaults(self):
         f: QFont = self.q.defaultFont()
         normal = self.d.styles["Normal"]
@@ -154,9 +224,18 @@ class _Writer:
         style_name = bf.property(STYLE_PROP) if _has(bf, STYLE_PROP) else None
         lvl = bf.headingLevel()
         lst = blk.textList()
-        if lvl:
+        if bf.hasProperty(B_TOC):
+            kind = bf.property(B_TOC)
+            art = bf.property(B_ART) if bf.hasProperty(B_ART) else "toc"
+            name = ("TOC Heading" if kind == "kopf" else
+                    {"toc": f"TOC {kind[-1]}", "abb": "Table of Figures", "tab": "Table of Figures",
+                     "index": "Index 1", "lit": "Bibliography"}.get(art, "TOC 1"))
+            para.style = self._stil(name)
+        elif bf.hasProperty(B_CAP):
+            para.style = self.d.styles["Caption"]
+        elif lvl:
             para.style = self.d.styles[f"Heading {lvl}"]
-        elif style_name in ("Title", "Subtitle", "Quote"):
+        elif style_name in ("Title", "Subtitle", "Quote", "No Spacing"):
             para.style = self.d.styles[style_name]
         elif lst is not None:
             self._apply_list(para, lst)
@@ -176,6 +255,12 @@ class _Writer:
                 pf.first_line_indent = Emu(int(bf.textIndent() * EMU_PER_PX))
         if bf.rightMargin():
             pf.right_indent = Emu(int(bf.rightMargin() * EMU_PER_PX))
+        if bf.layoutDirection() == Qt.RightToLeft:
+            ppr = para._p.get_or_add_pPr()
+            bidi = OxmlElement("w:bidi")
+            ppr.insert_element_before(bidi, "w:adjustRightInd", "w:snapToGrid", "w:spacing", "w:ind", "w:contextualSpacing",
+                                      "w:mirrorIndents", "w:suppressOverlap", "w:jc", "w:textDirection", "w:textAlignment",
+                                      "w:textboxTightWrap", "w:outlineLvl", "w:divId", "w:cnfStyle", "w:rPr", "w:sectPr", "w:pPrChange")
         pf.space_before = Pt(bf.topMargin() * PX_TO_PT)
         pf.space_after = Pt(bf.bottomMargin() * PX_TO_PT)
         lh, lht = bf.lineHeight(), bf.lineHeightType()
@@ -193,19 +278,74 @@ class _Writer:
                    QTextOption.DelimiterTab: WD_TAB_ALIGNMENT.DECIMAL}
             for t in tabs:
                 pf.tab_stops.add_tab_stop(Emu(int(t.position * EMU_PER_PX)), art.get(t.type, WD_TAB_ALIGNMENT.LEFT))
+        nach_shd = ("w:tabs", "w:suppressAutoHyphens", "w:kinsoku", "w:wordWrap", "w:overflowPunct", "w:topLinePunct", "w:autoSpaceDE",
+                    "w:autoSpaceDN", "w:bidi", "w:adjustRightInd", "w:snapToGrid", "w:spacing", "w:ind", "w:contextualSpacing",
+                    "w:mirrorIndents", "w:suppressOverlap", "w:jc", "w:textDirection", "w:textAlignment", "w:textboxTightWrap",
+                    "w:outlineLvl", "w:divId", "w:cnfStyle", "w:rPr", "w:sectPr", "w:pPrChange")
+        if bf.hasProperty(B_RAHMEN):
+            farbe, _, rest = bf.stringProperty(B_RAHMEN).partition("|")
+            pt, _, art = rest.partition("|")
+            bdr = OxmlElement("w:pBdr")
+            for seite in ("top", "left", "bottom", "right"):
+                e = OxmlElement(f"w:{seite}")
+                e.set(qn("w:val"), "double" if art == "doppelt" else "single")
+                e.set(qn("w:sz"), str(max(2, int(round(float(pt or 1) * 8)))))
+                e.set(qn("w:space"), "4")
+                e.set(qn("w:color"), (farbe or "#000000").lstrip("#").upper())
+                bdr.append(e)
+            para._p.get_or_add_pPr().insert_element_before(bdr, "w:shd", *nach_shd)
         bg = bf.background()
         if bg.style() != Qt.NoBrush and bg.color().isValid():
             shd = OxmlElement("w:shd")
             shd.set(qn("w:val"), "clear"); shd.set(qn("w:color"), "auto"); shd.set(qn("w:fill"), bg.color().name()[1:].upper())
-            para._p.get_or_add_pPr().append(shd)
+            para._p.get_or_add_pPr().insert_element_before(shd, *nach_shd)
         # Läufe
         it = blk.begin()
         in_head = bool(lvl) or style_name in ("Title", "Subtitle")
+        frags = []
         while not it.atEnd():
-            frag = it.fragment()
-            if frag.isValid():
-                self.write_fragment(frag, para, in_head)
+            if it.fragment().isValid():
+                frags.append(it.fragment())
             it += 1
+        i = 0
+        while i < len(frags):
+            cf = frags[i].charFormat()
+            instr = cf.stringProperty(P_FELD) if cf.hasProperty(P_FELD) else ""
+            if instr:
+                j = i
+                while j < len(frags) and frags[j].charFormat().hasProperty(P_FELD) and frags[j].charFormat().stringProperty(P_FELD) == instr:
+                    j += 1
+                self._textmarken(para, [])
+                self._fldchar(para, "begin"); self._instr(para, instr); self._fldchar(para, "separate")
+                for k in range(i, j):
+                    self.write_fragment(frags[k], para, in_head)
+                self._fldchar(para, "end")
+                i = j
+            else:
+                self.write_fragment(frags[i], para, in_head)
+                i += 1
+        self._textmarken(para, [])
+
+    def _stil(self, name: str):
+        from docx.enum.style import WD_STYLE_TYPE
+        if name not in [s.name for s in self.d.styles]:
+            st = self.d.styles.add_style(name, WD_STYLE_TYPE.PARAGRAPH)
+            st.base_style = self.d.styles["Normal"]
+        return self.d.styles[name]
+
+    @staticmethod
+    def _fldchar(para, typ: str):
+        r = OxmlElement("w:r")
+        fc = OxmlElement("w:fldChar"); fc.set(qn("w:fldCharType"), typ)
+        r.append(fc)
+        para._p.append(r)
+
+    @staticmethod
+    def _instr(para, text: str):
+        r = OxmlElement("w:r")
+        it = OxmlElement("w:instrText"); it.set("{http://www.w3.org/XML/1998/namespace}space", "preserve"); it.text = f" {text} "
+        r.append(it)
+        para._p.append(r)
 
     def _apply_list(self, para, lst):
         fmt = lst.format()
@@ -261,9 +401,16 @@ class _Writer:
             return
         parent = para
         href = cf.anchorHref() if cf.isAnchor() else ""
+        self._textmarken(para, [] if href else (list(cf.anchorNames()) if cf.isAnchor() else []))
         if href:
             hl = self._hyperlink(para, href)
             parent = hl
+        note = cf.stringProperty(P_NOTE) if cf.hasProperty(P_NOTE) else ""
+        if note:
+            run = self._make_run(parent, para)
+            self._note_verweis(run, note)
+            self._zusatz_anwenden(run, cf)
+            return
         for chunk, kind in _split(text):
             run = self._make_run(parent, para)
             if kind == "text":
@@ -275,6 +422,62 @@ class _Writer:
             elif kind == "img":
                 continue
             self._format_run(run, cf, in_head, bool(href))
+            self._zusatz_anwenden(run, cf)
+        if cf.hasProperty(P_INDEX) and cf.stringProperty(P_INDEX):
+            self._fldchar(para, "begin")
+            self._instr(para, 'XE "' + cf.stringProperty(P_INDEX).replace('"', "'") + '"')
+            self._fldchar(para, "end")
+
+    def _textmarken(self, para, namen: list) -> None:
+        """Offene Textmarken schließen, neue öffnen — je Name genau ein bookmarkStart/-End-Paar."""
+        for n in [n for n in self._lz_offen if n not in namen]:
+            e = OxmlElement("w:bookmarkEnd")
+            e.set(qn("w:id"), str(self._lz_offen.pop(n)))
+            para._p.append(e)
+        for n in namen:
+            if n not in self._lz_offen:
+                self._lz_id += 1
+                st = OxmlElement("w:bookmarkStart")
+                st.set(qn("w:id"), str(self._lz_id)); st.set(qn("w:name"), n)
+                para._p.append(st)
+                self._lz_offen[n] = self._lz_id
+
+    def _note_verweis(self, run, note: str) -> None:
+        art, _, nid = note.partition(":")
+        nid = int(nid)
+        key = (art, nid)
+        if key not in self._note_ids:
+            self._note_ids[key] = len(self._noten[art]) + 1
+            self._noten[art].append((self._note_ids[key], (self.meta.get("noten", {}).get(art, {}) or {}).get(nid, "")))
+        r = run._r
+        for k in list(r):
+            r.remove(k)
+        rpr = OxmlElement("w:rPr")
+        rs = OxmlElement("w:rStyle"); rs.set(qn("w:val"), "FootnoteReference" if art == "f" else "EndnoteReference")
+        rpr.append(rs)
+        r.append(rpr)
+        ref = OxmlElement("w:footnoteReference" if art == "f" else "w:endnoteReference")
+        ref.set(qn("w:id"), str(self._note_ids[key]))
+        r.append(ref)
+
+    def _zusatz_anwenden(self, run, cf: QTextCharFormat) -> None:
+        """Kommentarbereich merken, nachverfolgte Änderung als w:ins / w:del um den Lauf legen."""
+        if cf.hasProperty(P_KOMMENTAR):
+            self._komm_runs.setdefault(int(cf.property(P_KOMMENTAR)), []).append(run)
+        if cf.hasProperty(P_AENDERUNG):
+            art = cf.stringProperty(P_AENDERUNG)
+            if art in ("ins", "del"):
+                self._aend_id += 1
+                w = OxmlElement("w:ins" if art == "ins" else "w:del")
+                w.set(qn("w:id"), str(1000 + self._aend_id))
+                w.set(qn("w:author"), cf.stringProperty(P_AUTOR) or "Unbekannt")
+                if cf.stringProperty(P_DATUM):
+                    w.set(qn("w:date"), cf.stringProperty(P_DATUM))
+                run._r.addprevious(w)
+                w.append(run._r)
+                if art == "del":
+                    for t in run._r.findall(qn("w:t")):
+                        t.tag = qn("w:delText")
 
     def _make_run(self, parent, para):
         if parent is para:
@@ -311,8 +514,12 @@ class _Writer:
             f.bold = cf.fontWeight() >= QFont.DemiBold
         if _has(cf, QTextFormat.FontItalic):
             f.italic = cf.fontItalic()
-        if cf.fontUnderline() and not is_link:
-            f.underline = True
+        ustil = cf.underlineStyle()
+        if ustil != QTextCharFormat.NoUnderline and not is_link:
+            from docx.enum.text import WD_UNDERLINE
+            f.underline = {QTextCharFormat.DashUnderline: WD_UNDERLINE.DASH, QTextCharFormat.DotLine: WD_UNDERLINE.DOTTED,
+                           QTextCharFormat.DashDotLine: WD_UNDERLINE.DOT_DASH,
+                           QTextCharFormat.WaveUnderline: WD_UNDERLINE.WAVY}.get(ustil, True)
         if cf.fontStrikeOut():
             f.strike = True
         va = cf.verticalAlignment()
@@ -334,6 +541,15 @@ class _Writer:
                 shd.set(qn("w:color"), "auto")
                 shd.set(qn("w:fill"), c.name()[1:].upper())
                 run._r.get_or_add_rPr().append(shd)
+        if cf.textOutline().style() != Qt.NoPen:
+            f.outline = True
+        ls = cf.fontLetterSpacing()
+        if ls and cf.fontLetterSpacingType() == QFont.AbsoluteSpacing:
+            sp = OxmlElement("w:spacing")
+            sp.set(qn("w:val"), str(int(round(ls * 0.75 * 20))))             # px → pt → Zwanzigstelpunkt
+            run._r.get_or_add_rPr().insert_element_before(
+                sp, "w:w", "w:kern", "w:position", "w:sz", "w:szCs", "w:highlight", "w:u", "w:effect", "w:bdr", "w:shd",
+                "w:fitText", "w:vertAlign", "w:rtl", "w:cs", "w:em", "w:lang", "w:eastAsianLayout", "w:specVanish", "w:oMath")
         cap = cf.fontCapitalization()
         if cap == QFont.AllUppercase:
             f.all_caps = True
@@ -358,6 +574,10 @@ class _Writer:
         h = imf.height() or img.height()
         run = para.add_run()
         run.add_picture(io.BytesIO(data), width=Emu(int(w * EMU_PER_PX)), height=Emu(int(h * EMU_PER_PX)))
+        alt = imf.property(STYLE_PROP + 1) if imf.hasProperty(STYLE_PROP + 1) else ""
+        if alt:
+            for dp in run._r.xpath(".//wp:docPr"):
+                dp.set("descr", str(alt))
 
     # ---- Tabellen -------------------------------------------------------
     def write_table(self, qt: QTextTable, container):
@@ -394,15 +614,126 @@ class _Writer:
     # ---- Hauptlauf --------------------------------------------------------
     def run(self) -> bytes:
         self.write_defaults()
+        self._sprache()
         self.write_page()
         self.write_frame(self.q.rootFrame(), _Body(self.d))
         self._trim_trailing_empty()
+        self._noten_schreiben()
+        self._kommentare_schreiben()
+        self._quellen_schreiben()
         cp = self.d.core_properties
         cp.title = self.meta.get("title", "") or ""
         cp.author = self.meta.get("author", "") or "Lunivo Writer"
         out = io.BytesIO()
         self.d.save(out)
         return out.getvalue()
+
+    def _kommentare_schreiben(self) -> None:
+        daten = self.meta.get("kommentare", {}) or {}
+        for kid in sorted(self._komm_runs):
+            runs = self._komm_runs[kid]
+            k = daten.get(kid) or daten.get(str(kid)) or {}
+            try:
+                c = self.d.add_comment(runs=[runs[0], runs[-1]] if len(runs) > 1 else runs[0], text=k.get("text", ""),
+                                       author=k.get("autor", "") or "Unbekannt", initials=k.get("initialen", "") or "")
+                if k.get("datum"):
+                    c._comment_elm.set(qn("w:date"), k["datum"])
+            except Exception as ex:
+                self.report.warn(f"Ein Kommentar konnte nicht gespeichert werden: {ex}")
+
+    def _quellen_schreiben(self) -> None:
+        quellen = self.meta.get("quellen") or []
+        if not quellen:
+            return
+        import uuid
+        from docx.opc.packuri import PackURI
+        from docx.opc.part import Part
+        from lxml import etree
+        B = "http://schemas.openxmlformats.org/officeDocument/2006/bibliography"
+        w = etree.Element(f"{{{B}}}Sources", nsmap={"b": B, None: B},
+                          SelectedStyle="\\APA.XSL", StyleName=self.meta.get("zitierweise", "APA"), Version="6")
+        for q in quellen:
+            e = etree.SubElement(w, f"{{{B}}}Source")
+            def sub(n, v, parent=e):
+                x = etree.SubElement(parent, f"{{{B}}}{n}")
+                x.text = v or ""
+                return x
+            sub("Tag", q.get("tag", ""))
+            sub("SourceType", {"Buch": "Book", "Aufsatz": "JournalArticle", "Webseite": "InternetSite", "Bericht": "Report"}.get(q.get("typ"), "Misc"))
+            a1 = etree.SubElement(etree.SubElement(e, f"{{{B}}}Author"), f"{{{B}}}Author")
+            nl = etree.SubElement(a1, f"{{{B}}}NameList")
+            for person in [x.strip() for x in (q.get("autor") or "").split(";") if x.strip()]:
+                pe = etree.SubElement(nl, f"{{{B}}}Person")
+                last, _, first = person.partition(",")
+                sub("Last", last.strip(), pe)
+                if first.strip():
+                    sub("First", first.strip(), pe)
+            sub("Title", q.get("titel", "")); sub("Year", q.get("jahr", "")); sub("City", q.get("ort", ""))
+            sub("Publisher", q.get("verlag", "")); sub("URL", q.get("url", ""))
+        blob = etree.tostring(w, xml_declaration=True, encoding="UTF-8", standalone=True)
+        pkg = self.d.part.package
+        vorhanden = {str(x.partname) for x in pkg.iter_parts()}
+        n = 1
+        while f"/customXml/item{n}.xml" in vorhanden or f"/customXml/itemProps{n}.xml" in vorhanden:
+            n += 1
+        item = Part(PackURI(f"/customXml/item{n}.xml"), "application/xml", blob, pkg)
+        guid = "{" + str(uuid.uuid4()).upper() + "}"
+        props = ('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+                 f'<ds:datastoreItem ds:itemID="{guid}" xmlns:ds="http://schemas.openxmlformats.org/officeDocument/2006/customXml">'
+                 f'<ds:schemaRefs><ds:schemaRef ds:uri="{B}"/></ds:schemaRefs></ds:datastoreItem>').encode("utf-8")
+        pp = Part(PackURI(f"/customXml/itemProps{n}.xml"),
+                  "application/vnd.openxmlformats-officedocument.customXmlProperties+xml", props, pkg)
+        item.relate_to(pp, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXmlProps")
+        self.d.part.relate_to(item, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/customXml")
+
+    def _noten_schreiben(self) -> None:
+        from docx.enum.style import WD_STYLE_TYPE
+        from docx.opc.packuri import PackURI
+        from docx.opc.part import Part
+        from lxml import etree
+        W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+        for art, wurzel, tag, ref, rel, ct, stil_t, stil_r in (
+                ("f", "footnotes", "footnote", "footnoteRef", "footnotes",
+                 "application/vnd.openxmlformats-officedocument.wordprocessingml.footnotes+xml", "Footnote Text", "Footnote Reference"),
+                ("e", "endnotes", "endnote", "endnoteRef", "endnotes",
+                 "application/vnd.openxmlformats-officedocument.wordprocessingml.endnotes+xml", "Endnote Text", "Endnote Reference")):
+            if not self._noten[art]:
+                continue
+            names = [s.name for s in self.d.styles]
+            if stil_t not in names:
+                st = self.d.styles.add_style(stil_t, WD_STYLE_TYPE.PARAGRAPH)
+                st.base_style = self.d.styles["Normal"]
+                st.font.size = Pt(10)
+            if stil_r not in names:
+                st = self.d.styles.add_style(stil_r, WD_STYLE_TYPE.CHARACTER)
+                st.font.superscript = True
+            root = etree.Element(f"{{{W}}}{wurzel}", nsmap={"w": W})
+
+            def trenner(typ, nid, kind):
+                n = etree.SubElement(root, f"{{{W}}}{tag}", {f"{{{W}}}type": typ, f"{{{W}}}id": str(nid)})
+                p = etree.SubElement(n, f"{{{W}}}p")
+                r = etree.SubElement(p, f"{{{W}}}r")
+                etree.SubElement(r, f"{{{W}}}{kind}")
+            trenner("separator", -1, "separator")
+            trenner("continuationSeparator", 0, "continuationSeparator")
+            for nid, text in self._noten[art]:
+                n = etree.SubElement(root, f"{{{W}}}{tag}", {f"{{{W}}}id": str(nid)})
+                for i, zeile in enumerate((text or "").split("\n")):
+                    p = etree.SubElement(n, f"{{{W}}}p")
+                    ppr = etree.SubElement(p, f"{{{W}}}pPr")
+                    etree.SubElement(ppr, f"{{{W}}}pStyle", {f"{{{W}}}val": stil_t.replace(" ", "")})
+                    if i == 0:
+                        r = etree.SubElement(p, f"{{{W}}}r")
+                        rpr = etree.SubElement(r, f"{{{W}}}rPr")
+                        etree.SubElement(rpr, f"{{{W}}}rStyle", {f"{{{W}}}val": stil_r.replace(" ", "")})
+                        etree.SubElement(r, f"{{{W}}}{ref}")
+                    r2 = etree.SubElement(p, f"{{{W}}}r")
+                    t = etree.SubElement(r2, f"{{{W}}}t")
+                    t.text = (" " if i == 0 else "") + zeile
+                    t.set("{http://www.w3.org/XML/1998/namespace}space", "preserve")
+            blob = etree.tostring(root, xml_declaration=True, encoding="UTF-8", standalone=True)
+            part = Part(PackURI(f"/word/{wurzel}.xml"), ct, blob, self.d.part.package)
+            self.d.part.relate_to(part, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/" + rel)
 
     def _trim_trailing_empty(self):
         body = self.d.element.body

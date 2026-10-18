@@ -10,9 +10,9 @@ from PySide6.QtWidgets import (
 from ..services.vorhersage import EMPFAENGER
 from .flow_layout import FlowLayout
 
-CHIP = ("QPushButton { border: 1px solid palette(mid); border-radius: 11px; padding: 3px 12px; }"
+CHIP = ("QPushButton { border: 1px solid palette(mid); border-radius: 11px; padding: 3px 12px; color: palette(window-text); }"
         "QPushButton:checked { background: #2f6fb5; color: white; border-color: #2f6fb5; }")
-CHIP_GRUEN = ("QPushButton { border: 1px solid palette(mid); border-radius: 11px; padding: 3px 12px; font-weight: bold; }"
+CHIP_GRUEN = ("QPushButton { border: 1px solid palette(mid); border-radius: 11px; padding: 3px 12px; font-weight: bold; color: palette(window-text); }"
               "QPushButton:checked { background: #2f9e75; color: white; border-color: #2f9e75; }")
 FARBE = {"fehler": "#e8590c", "tipp": "#1c7ed6", "hinweis": "#868e96"}
 LEER = ("Nichts gefunden. Das heißt nicht, dass alles richtig ist — die Schreibhilfe sucht nur die Fehler, "
@@ -167,7 +167,7 @@ class SchreibhilfePanel(QWidget):
         v.addWidget(s)
         self.pruefen = QPushButton("Prüfen")
         self.pruefen.setMinimumHeight(32)
-        self.pruefen.clicked.connect(self.a.pruefen)
+        self.pruefen.clicked.connect(lambda: self.a.pruefen(True))
         v.addWidget(self.pruefen)
         z = QHBoxLayout()
         self.chips = {}

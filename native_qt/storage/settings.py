@@ -30,6 +30,10 @@ class Settings:
         self.q.setValue(key, value)
         self.q.sync()
 
+    def remove(self, key: str) -> None:
+        self.q.remove(key)
+        self.q.sync()
+
     def get_bool(self, key: str, default: bool) -> bool:
         v = self.q.value(key, default)
         return v if isinstance(v, bool) else str(v).lower() in ("1", "true", "yes")

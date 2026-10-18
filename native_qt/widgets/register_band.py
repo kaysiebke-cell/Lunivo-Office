@@ -27,7 +27,13 @@ TEXTSYMBOLE = {"F": QFont.Bold, "K": None, "U": None}
 
 def lade_register() -> dict:
     with open(os.path.join(_HIER, "..", "resources", "register.json"), encoding="utf-8") as fh:
-        return json.load(fh)
+        d = json.load(fh)
+    # Start ▸ Stile: Startknopf für „Formatvorlagen verwalten“ (alt: Dialog unter „Neue Formatvorlage“)
+    for t in d["register"]:
+        for g in t.get("gruppen", []):
+            if t["name"] == "Start" and g["name"] == "Stile":
+                g.setdefault("pfeil", "stileVerwalten")
+    return d
 
 
 def _zweizeilig(text: str) -> str:
@@ -38,11 +44,26 @@ def _zweizeilig(text: str) -> str:
     return text[:i] + "\n" + text[i + 1:]
 
 
+# „Sendungen“ gehört nicht zur neuen Struktur (Datei … Ansicht): vorhanden, aber erst nach Register anpassen sichtbar —
+# bis dahin über die Menüleiste (Ansicht ▸ Oberfläche ▸ Menüleiste) erreichbar.
+STANDARD_VERSTECKT = ("Sendungen",)
+
+
+class _ReiterLeiste(QTabBar):
+    doppelt = Signal()
+
+    def mouseDoubleClickEvent(self, ev):
+        self.doppelt.emit()
+        super().mouseDoubleClickEvent(ev)
+
+
 class RegisterBand(QWidget):
     """Kopfzeile (☰, Schnellzugriff, Reiter) und darunter das Band des gewählten Reiters."""
 
-    def __init__(self, befehle, daten: dict | None = None):
+    def __init__(self, befehle, daten: dict | None = None, cfg: dict | None = None, schnell: list | None = None):
         super().__init__()
+        self.cfg = cfg or {}
+        self._schnell_wahl = schnell
         self.b = befehle
         self.daten = daten or lade_register()
         self.schalter: list[tuple[QToolButton, str]] = []     # (Knopf, Aktionsname) für Haken
@@ -63,12 +84,14 @@ class RegisterBand(QWidget):
         self.schnell.setSpacing(0)
         self.kopf.addLayout(self.schnell)
         self._trenner()
-        self.reiter = QTabBar()
+        self.reiter = _ReiterLeiste()
+        self.reiter.setObjectName("bandReiter")
         self.reiter.setDrawBase(False)
         self.reiter.setExpanding(False)
         self.kopf.addWidget(self.reiter, 1)
         lay.addLayout(self.kopf)
         self.stapel = QStackedWidget()
+        self.stapel.setObjectName("bandStapel")
         self.stapel.setFixedHeight(112)
         lay.addWidget(self.stapel)
         linie = QFrame()
@@ -77,11 +100,27 @@ class RegisterBand(QWidget):
         lay.addWidget(linie)
         self._schnellzugriff()
         self.kontext_index: dict[str, int] = {}
-        for r in plan(self.daten):
+        for r in self._plan_angepasst():
             self._reiter(r)
         self.reiter.currentChanged.connect(self.stapel.setCurrentIndex)
-        self.reiter.setCurrentIndex(1)          # Start
+        self.reiter.tabBarClicked.connect(self._reiter_geklickt)
+        self.reiter.doppelt.connect(self.einklappen_umschalten)
+        self.reiter.setCurrentIndex(self._start_index())          # Start
         self.bandfehler = sorted(set(self.fehlend))
+
+    einklappbar = True          # Optionen ▸ Doppelklick blendet das Band aus
+    _eingeklappt = False
+
+    def _reiter_geklickt(self, _i):
+        if self._eingeklappt:
+            self._eingeklappt = False
+            self.stapel.setVisible(True)
+
+    def einklappen_umschalten(self):
+        if not self.einklappbar:
+            return
+        self._eingeklappt = not self._eingeklappt
+        self.stapel.setVisible(not self._eingeklappt)
 
     def _trenner(self):
         s = QFrame()
@@ -95,8 +134,26 @@ class RegisterBand(QWidget):
                ("vorschau", "Druckvorschau", "vorschau"), ("zurueck", "Rückgängig", "rueckgaengig"),
                ("vor", "Wiederholen", "wiederholen")]
 
+    SCHNELL_ALLE = SCHNELL + [("neu", "Neu", "neu"), ("unter", "Speichern unter", "speichernUnter"), ("kleben", "Einfügen", "einfuegen"),
+                              ("schere", "Ausschneiden", "ausschneiden"), ("kopie", "Kopieren", "kopieren"),
+                              ("lupe", "Suchen und Ersetzen", "suchen"), ("haken", "Prüfen", "rechtschreibung"),
+                              ("umbruch", "Seitenumbruch", "seitenumbruch"), ("bild", "Bild", "bild"), ("kette", "Hyperlink", "hyperlink"),
+                              ("notiz", "Neuer Kommentar", "kommentar"), ("verfolgt", "Änderungen verfolgen", "verfolgen"),
+                              ("F", "Fett", "fett"), ("K", "Kursiv", "kursiv")]
+
+    def _plan_angepasst(self) -> list[dict]:
+        """Reiter in der Reihenfolge der Struktur — ausgeblendete weglassen, eigene Reihenfolge beachten (Register anpassen)."""
+        alle = plan(self.daten)
+        haupt = [r for r in alle if not r.get("kontext")]
+        kontext = [r for r in alle if r.get("kontext")]
+        ordnung = self.cfg.get("reihenfolge") or []
+        versteckt = set(self.cfg["versteckt"] if "versteckt" in self.cfg else STANDARD_VERSTECKT) - {"Datei"}
+        haupt.sort(key=lambda r: ordnung.index(r["name"]) if r["name"] in ordnung else 999)
+        return [r for r in haupt if r["name"] not in versteckt] + kontext
+
     def _schnellzugriff(self):
-        for sym, name, aktion in self.SCHNELL:
+        liste = self.SCHNELL if self._schnell_wahl is None else [e for e in self.SCHNELL_ALLE if e[2] in self._schnell_wahl]
+        for sym, name, aktion in liste:
             k = QToolButton()
             k.setAutoRaise(True)
             k.setToolTip(name)
@@ -109,6 +166,7 @@ class RegisterBand(QWidget):
     # ---- Reiter und Gruppen -------------------------------------------------------------------------------
     def _reiter(self, r: dict):
         scroll = QScrollArea()
+        scroll.setObjectName("bandSeite")
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.NoFrame)
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -136,7 +194,7 @@ class RegisterBand(QWidget):
     def _gruppe(self, g: dict) -> QWidget:
         rahmen = QWidget()
         v = QVBoxLayout(rahmen)
-        v.setContentsMargins(8, 2, 8, 0)
+        v.setContentsMargins(5, 2, 5, 0)
         v.setSpacing(0)
         inhalt = QHBoxLayout()
         inhalt.setSpacing(4)
@@ -238,7 +296,36 @@ class RegisterBand(QWidget):
             k.clicked.connect(lambda _=False, n=name: self.b.w.stil_anwenden(n))
             g.addWidget(k, i % 2, i // 2)
             self.knoepfe.append((k, None, True))
-        return host
+        # wie im WPS: drei Spalten sichtbar, der Rest wird durchgescrollt
+        sa = QScrollArea()
+        sa.setObjectName("stileGalerie")
+        sa.setWidget(host)
+        sa.setWidgetResizable(False)
+        sa.setFrameShape(QFrame.NoFrame)
+        sa.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        sa.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        host.adjustSize()
+        sa.setFixedWidth(3 * 85 + 4)
+        sa.setFixedHeight(host.sizeHint().height() + 2)
+        sa.setStyleSheet("QScrollArea#stileGalerie, QScrollArea#stileGalerie > QWidget > QWidget { background: transparent; }")
+        pfeil = QToolButton(); pfeil.setText("›"); pfeil.setAutoRaise(True); pfeil.setFixedWidth(16)
+        pfeil.setToolTip("Weitere Formatvorlagen")
+        pfeil.clicked.connect(lambda: sa.horizontalScrollBar().setValue(
+            (sa.horizontalScrollBar().value() + 85) if sa.horizontalScrollBar().value() < sa.horizontalScrollBar().maximum() else 0))
+        sa.viewport().installEventFilter(self)
+        self._stile_scroll = sa
+        aussen = QWidget()
+        h = QHBoxLayout(aussen); h.setContentsMargins(0, 0, 0, 0); h.setSpacing(0)
+        h.addWidget(sa); h.addWidget(pfeil, 0, Qt.AlignVCenter)
+        return aussen
+
+    def eventFilter(self, obj, ev):
+        from PySide6.QtCore import QEvent
+        sa = getattr(self, "_stile_scroll", None)
+        if sa is not None and obj is sa.viewport() and ev.type() == QEvent.Wheel:
+            sa.horizontalScrollBar().setValue(sa.horizontalScrollBar().value() - ev.angleDelta().y() // 2)
+            return True
+        return super().eventFilter(obj, ev)
 
     def _raender(self) -> QWidget:
         host = QWidget()
@@ -353,7 +440,13 @@ class RegisterBand(QWidget):
             return
         self.reiter.setTabVisible(i, sichtbar)
         if not sichtbar and self.reiter.currentIndex() == i:
-            self.reiter.setCurrentIndex(1)
+            self.reiter.setCurrentIndex(self._start_index())
+
+    def _start_index(self) -> int:
+        for i in range(self.reiter.count()):
+            if self.reiter.tabText(i) == "Start":
+                return i
+        return 0
 
     def gruppe_widget(self, g: dict) -> QWidget:
         """Eine Gruppe als eigenständiges Widget (für die Seitenleiste)."""

@@ -30,3 +30,18 @@ def test_recovery_cycle(app, tmp_path, monkeypatch):
     assert recovery.pending(exclude={t}) == []
     recovery.discard(t)
     assert recovery.pending() == []
+
+
+def test_gedaechtnis_zaehlt_nur_beim_ausdruecklichen_pruefen(tmp_path):
+    from native_qt.storage.gelernt import LERN_SCHWELLE, Gelernt
+    g = Gelernt(str(tmp_path / "g.json"))
+    fund = {"alt": "Meyr", "neu": "Mehr", "wortEbene": True, "von": 0, "bis": 4, "art": "fehler", "grund": "x"}
+    for _ in range(LERN_SCHWELLE - 1):
+        g.merke_gezeigt([fund])
+    assert not g.daten["inRuhe"]
+    g.merke_gezeigt([fund])
+    assert g.daten["inRuhe"] == {"meyr": True} and "meyr" not in g.daten["gezeigt"]
+    g2 = Gelernt(str(tmp_path / "g.json"))                       # bleibt gespeichert
+    assert g2.daten["inRuhe"] == {"meyr": True}
+    g2.gewaehlt({"alt": "Vieleicht", "neu": "Vielleicht", "wortEbene": True})
+    assert g2.daten["woerter"]["vieleicht"] == "Vielleicht"

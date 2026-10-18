@@ -14,6 +14,7 @@ class DocTabs(QObject):
     def __init__(self):
         super().__init__()
         self.bar = QTabBar()
+        self.bar.setObjectName("dokReiter")
         self.bar.setTabsClosable(True)
         self.bar.setMovable(True)
         self.bar.setExpanding(False)
@@ -21,6 +22,7 @@ class DocTabs(QObject):
         self.bar.setDrawBase(False)
         self.stack = QStackedWidget()
         self.leiste = QWidget()
+        self.leiste.setObjectName("dokLeiste")
         h = QHBoxLayout(self.leiste)
         h.setContentsMargins(6, 3, 6, 0)
         h.setSpacing(2)

@@ -50,3 +50,25 @@ def test_save_to_unwritable_folder(app, tmp_path):
     d = QTextDocument(); QTextCursor(d).insertText("x")
     with pytest.raises(DocumentIOError):
         formats.save("/proc/nicht/möglich.docx", d, PageSettings())
+
+
+def test_kennwort_roundtrip_und_html(app, tmp_path):
+    import pytest
+    pytest.importorskip("msoffcrypto")
+    from PySide6.QtGui import QTextDocument
+    from native_qt.document_io import formats
+    from native_qt.document_io.report import PasswortNoetig
+    from native_qt.editor.page import PageSettings
+    d = QTextDocument(); d.setPlainText("Streng geheim äöü")
+    p = str(tmp_path / "g.docx")
+    formats.save(p, d, PageSettings(), {"kennwort": "pw1"})
+    with pytest.raises(PasswortNoetig):
+        formats.load(p)
+    with pytest.raises(PasswortNoetig) as ei:
+        formats.load(p, "falsch")
+    assert ei.value.falsch
+    l = formats.load(p, "pw1")
+    assert "Streng geheim äöü" in l.doc.toPlainText() and l.meta["kennwort"] == "pw1"
+    h = str(tmp_path / "x.html")
+    formats.save(h, d, PageSettings(), {"codierung": "ISO-8859-1"})
+    assert "Streng geheim \xe4\xf6\xfc".encode("latin-1") in open(h, "rb").read()

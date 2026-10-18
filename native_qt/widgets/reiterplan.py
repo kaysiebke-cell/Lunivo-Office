@@ -32,7 +32,8 @@ DATEI = {"name": "Datei", "gruppen": [
                                         _k("//", "x"),
                                         _k("ausdatei", "Als RTF exportieren", "exportierenRtf"),
                                         _k("notiz", "Als TXT exportieren", "exportierenTxt"),
-                                        _k("buch", "Als ODT exportieren", "exportierenOdt")]},
+                                        _k("buch", "Als ODT exportieren", "exportierenOdt"),
+                                        _k("bild", "Als Bild exportieren (PNG)", "exportierenPng")]},
     {"name": "Drucken", "knoepfe": [_k("drucken", "Drucken", "drucken", True),
                                     _k("vorschau", "Druckvorschau", "vorschau"),
                                     _k("drucker2", "Drucker auswählen", "druckerWaehlen"),
@@ -58,7 +59,8 @@ KI = {"name": "KI", "gruppen": [
                                       _k("vorschlag", "Verbesserungsvorschläge", "kiVorschlaege", True)]},
     {"name": "Seitenleiste", "knoepfe": [_k("tafel", "Schreibhilfe-Seitenleiste", "tafelZeigen", True),
                                          _k("chat", "KI-Chat", "w.chatUmschalten", True)]},
-    {"name": "Einrichten", "knoepfe": [_k("assistent", "Eigenen Assistenten erstellen", "w.assistentErstellen"),
+    {"name": "Einrichten", "knoepfe": [_k("assistent", "Eigene Assistenten", klappe="assistenten", gross=True),
+                                       _k("assistent", "Eigenen Assistenten erstellen", "w.assistentErstellen"),
                                        _k("kombination", "Eigenen Anbieter hinzufügen", "w.eigenenAnbieterHinzufuegen"),
                                        _k("zahnrad", "KI-Konfiguration", "w.kiKonfiguration")]},
 ]}
@@ -118,7 +120,7 @@ def plan(register: dict) -> list[dict]:
     nach = {t["name"]: t for t in register["register"]}
     verweise = dict(nach["Referenzen"], name="Verweise")
     reiter = [DATEI, nach["Start"], nach["Einfügen"], nach["Seitenlayout"], verweise, nach["Überprüfen"], KI,
-              nach["Ansicht"]]
+              nach["Ansicht"], nach["Sendungen"]]
     return reiter + [TABELLENTOOLS, BILDTOOLS, FORMTOOLS, KOPFFUSS]
 
 

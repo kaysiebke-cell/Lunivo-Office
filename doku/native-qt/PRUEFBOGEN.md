@@ -1,6 +1,6 @@
 # Prüfbogen ↔ native Fassung
 
-Erzeugt von `werkzeug/pruefbogen-abgleich.py` aus dem Prüfkatalog (415 Punkte). **✅ 141 · ◐ 30 · ⬜ 244**. ✅ = Befehl/Funktion vorhanden (einzeln getestet nur, wo `tests/` es belegt); ◐ = teilweise oder anders gelöst; ⬜ = offen.
+Erzeugt von `werkzeug/pruefbogen-abgleich.py` aus dem Prüfkatalog (415 Punkte). **✅ 287 · ◐ 69 · ⬜ 59**. ✅ = Befehl/Funktion vorhanden (einzeln getestet nur, wo `tests/` es belegt); ◐ = teilweise oder anders gelöst; ⬜ = offen.
 Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/bilder/`.
 
 ## DATEI
@@ -8,8 +8,8 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 - ✅ Neu — Datei-Reiter, ☰-Menü, Schnellzugriff; windows/main_window.py (test_main_window)
 - ✅ Öffnen — Datei-Reiter, ☰-Menü, Schnellzugriff; windows/main_window.py (test_main_window)
 - ✅ Zuletzt geöffnet — ☰-Menü (widgets/menue_tafel.py), Optionen F9
-- ⬜ Neu aus Vorlage — nicht übertragen
-- ⬜ Vorlagenordner — nicht übertragen
+- ✅ Neu aus Vorlage — editor/vorlagen.py + widgets/vorlagen_dialog.py: 10 mitgelieferte Gerüste mit Lücken, eigene Vorlagen aus dem Ordner (test_vorlagen)
+- ✅ Vorlagenordner — editor/vorlagen.py + widgets/vorlagen_dialog.py: 10 mitgelieferte Gerüste mit Lücken, eigene Vorlagen aus dem Ordner (test_vorlagen)
 - ✅ Speichern — Datei-Reiter, ☰-Menü, Schnellzugriff; windows/main_window.py (test_main_window)
 - ✅ Speichern unter — Datei-Reiter, ☰-Menü, Schnellzugriff; windows/main_window.py (test_main_window)
 - ✅ Drucken — Datei-Reiter, ☰-Menü, Schnellzugriff; windows/main_window.py (test_main_window)  _(Web-Fassung: fertig)_
@@ -21,23 +21,23 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 - ✅ Optionen (F9) — ☰-Menü (widgets/menue_tafel.py), Optionen F9
 - ✅ Schließen — Datei-Reiter, ☰-Menü, Schnellzugriff; windows/main_window.py (test_main_window)
 - ✅ Beenden — ☰-Menü (widgets/menue_tafel.py), Optionen F9
-- ⬜ Hilfe > Handbuch — nicht übertragen
-- ⬜ Hilfe > Tastenkürzel — nicht übertragen
-- ⬜ Hilfe > Erweiterungen — nicht übertragen
+- ◐ Hilfe > Handbuch — das Handbuch der Web-Fassung (als Markdown) im Hilfefenster; beschreibt zum Teil die Web-Oberfläche
+- ✅ Hilfe > Tastenkürzel — widgets/hilfe_dialoge.py (test_vorlagen: Hilfe-Dialoge und Funktionstasten)
+- ✅ Hilfe > Erweiterungen — widgets/hilfe_dialoge.py (test_vorlagen: Hilfe-Dialoge und Funktionstasten)
 - ✅ Hilfe > Über Lunivo Office — ☰-Menü ▸ Hilfe ▸ Über
 
 ## MENÜ UND SCHNELLZUGRIFF
 
 - ◐ Kein Datei-Reiter mehr — Widerspruch: die neue Struktur („1. DATEI“) hat einen Datei-Reiter — beides ist vorhanden
 - ✅ ☰ Menü links vor den Reitern — widgets/menue_tafel.py, widgets/register_band.py
-- ◐ ☰ Menü auch am Anfang der Symbolleiste — widgets/symbolleisten.py gebaut, noch nicht als Oberfläche wählbar
+- ✅ ☰ Menü auch am Anfang der Symbolleiste — Ansicht ▸ Oberfläche ▸ Benutzeroberfläche: Symbolleisten (widgets/symbolleisten.py, test_main_window)
 - ✅ Tafel mit zwei Spalten — widgets/menue_tafel.py, widgets/register_band.py
 - ✅ Untermenü füllt die rechte Spalte, kein eigenes Fenster — widgets/menue_tafel.py, widgets/register_band.py
 - ✅ Liste zuletzt verwendeter Dateien rechts — widgets/menue_tafel.py, widgets/register_band.py
 - ✅ × nimmt einen Eintrag aus der Liste — widgets/menue_tafel.py, widgets/register_band.py
 - ✅ ↻ holt die Liste neu — widgets/menue_tafel.py, widgets/register_band.py
-- ⬜ Als Bild exportieren (PNG) — nicht übertragen  _(Web-Fassung: teil)_
-- ⬜ Dokumentverschlüsselung — nicht übertragen  _(Web-Fassung: fertig)_
+- ✅ Als Bild exportieren (PNG) — befehle.exportierenPng: eine PNG je Seite (test_werkzeuge)  _(Web-Fassung: teil)_
+- ✅ Dokumentverschlüsselung — Datei ▸ Dokument schützen: DOCX-Verschlüsselung mit msoffcrypto-tool (test_formats, test_werkzeuge)  _(Web-Fassung: fertig)_
 - ✅ Schnellzugriff in der Reiterzeile — widgets/menue_tafel.py, widgets/register_band.py
 
 ## START > Zwischenablage
@@ -66,8 +66,8 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 - ✅ Hervorheben — Band: Start ▸ Schriftart  _(Web-Fassung: fertig)_
 - ✅ Schriftfarbe — Band: Start ▸ Schriftart  _(Web-Fassung: fertig)_
 - ✅ Groß-/Kleinschreibung — Band: Start ▸ Schriftart  _(Web-Fassung: fertig)_
-- ⬜ Unterstreichungsart — nicht übertragen  _(Web-Fassung: fertig)_
-- ⬜ Texteffekte — Band: Start ▸ Schriftart  _(Web-Fassung: fertig)_
+- ✅ Unterstreichungsart — befehle.menue_unterstrichKlappe (Einfach, gestrichelt, gepunktet, Strich-Punkt, Wellenlinie); DOCX-Roundtrip getestet (test_docx_roundtrip)  _(Web-Fassung: fertig)_
+- ✅ Texteffekte — Band: Start ▸ Schriftart  _(Web-Fassung: fertig)_
 
 ## START > Absatz
 
@@ -88,8 +88,8 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 ## START > Absatzlayout
 
 - ✅ Zeilenabstand — Band: Start ▸ Absatz  _(Web-Fassung: fertig)_
-- ◐ Einzug genau — Absatz-Dialog (widgets/dialogs.py) — einfacher als das Vorlagenbild (zwei Karteireiter, Vorschau)  _(Web-Fassung: fertig)_
-- ⬜ Absatzrahmen — Band: Start ▸ Absatz  _(Web-Fassung: fertig)_
+- ✅ Einzug genau — Absatz-Dialog mit zwei Karteireitern und Vorschau; „Absatz nicht trennen“ u. ä. sind Qt-bedingt gesperrt  _(Web-Fassung: fertig)_
+- ✅ Absatzrahmen — B_RAHMEN: Editor, PDF/Druck und DOCX pBdr (test_werkzeuge, mit LibreOffice geprüft)  _(Web-Fassung: fertig)_
 - ✅ Absatzschattierung — Band: Start ▸ Absatz  _(Web-Fassung: fertig)_
 
 ## START > Einstellungen
@@ -99,107 +99,107 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 ## START > Stile & Bearbeiten
 
 - ✅ Formatvorlage auswählen — Stilkatalog + Feld im Band
-- ⬜ Formatvorlagen verwalten — nicht übertragen
+- ✅ Formatvorlagen verwalten — editor/stile.py + StileVerwaltenDialog; wirkt auf alle Absätze der Vorlage (test_editor)
 - ✅ Suchen — Band: Start ▸ Bearbeiten  _(Web-Fassung: fertig)_
 - ✅ Ersetzen — Band: Start ▸ Bearbeiten  _(Web-Fassung: fertig)_
 - ✅ Suchen und Ersetzen — Band: Start ▸ Bearbeiten  _(Web-Fassung: fertig)_
 - ✅ Alles auswählen — Band: Start ▸ Bearbeiten
-- ⬜ Objekte auswählen — Band: Start ▸ Bearbeiten
+- ✅ Objekte auswählen — befehle.objekteWaehlen (test_main_window)
 
 ## EINFÜGEN
 
-- ⬜ Deckblatt — Band: Einfügen ▸ Seiten
+- ✅ Deckblatt — editor/einfuegen.py, storage/bausteine.py (test_einfuegen)
 - ✅ Leere Seite — Band: Einfügen ▸ Seiten  _(Web-Fassung: fertig)_
 - ✅ Seitenumbruch — Band: Einfügen ▸ Seiten, Seitenlayout ▸ Seite einrichten ▸ Umbrüche  _(Web-Fassung: fertig)_
 - ✅ Tabelle einfügen — Band: Einfügen ▸ Tabellen  _(Web-Fassung: fertig)_
-- ⬜ Schnelltabelle — Band: Einfügen ▸ Tabellen
-- ⬜ Tabellenblatt — Band: Einfügen ▸ Tabellen
+- ✅ Schnelltabelle — editor/einfuegen.py, storage/bausteine.py (test_einfuegen)
+- ⬜ Tabellenblatt — ausgeschlossen: nur Textverarbeitung (Vorgabe des Projekts)
 - ✅ Bild — Band: Einfügen ▸ Illustrationen  _(Web-Fassung: teil)_
-- ⬜ Zeichnen — nicht übertragen  _(Web-Fassung: fertig)_
-- ⬜ Diagramm — Band: Einfügen ▸ Illustrationen  _(Web-Fassung: fertig)_
-- ⬜ Bildschirmfoto — Band: Einfügen ▸ Illustrationen
-- ⬜ SmartArt — Band: Einfügen ▸ Illustrationen  _(Web-Fassung: fertig)_
-- ⬜ Piktogramm — Band: Einfügen ▸ Illustrationen
-- ⬜ WordArt — Band: Einfügen ▸ Illustrationen  _(Web-Fassung: fertig)_
+- ◐ Zeichnen — entsteht als Bild mit Alternativtext (Formen, Verläufe, QtCharts) — nachträglich nicht als Zeichnung/Diagramm bearbeitbar (test_einfuegen)  _(Web-Fassung: fertig)_
+- ◐ Diagramm — entsteht als Bild mit Alternativtext (Formen, Verläufe, QtCharts) — nachträglich nicht als Zeichnung/Diagramm bearbeitbar (test_einfuegen)  _(Web-Fassung: fertig)_
+- ◐ Bildschirmfoto — ganzer Bildschirm oder Bereich (befehle.screenshot); nur der Einfügeweg ist getestet, nicht die Aufnahme am echten Bildschirm
+- ⬜ SmartArt — nicht übertragen (Grafik-Vorlagen; keine Entsprechung in Qt)  _(Web-Fassung: fertig)_
+- ✅ Piktogramm — befehle.piktogramm: 1800 Lucide-Symbole als Bild mit Alternativtext (test_einfuegen)
+- ◐ WordArt — entsteht als Bild mit Alternativtext (Formen, Verläufe, QtCharts) — nachträglich nicht als Zeichnung/Diagramm bearbeitbar (test_einfuegen)  _(Web-Fassung: fertig)_
 - ✅ Hyperlink — Band: Einfügen ▸ Links
-- ⬜ Lesezeichen / Textmarke — Band: Einfügen ▸ Links  _(Web-Fassung: fertig)_
-- ⬜ Querverweis — Band: Einfügen ▸ Links, Verweise ▸ Beschriftungen  _(Web-Fassung: fertig)_
+- ✅ Lesezeichen / Textmarke — Band: Einfügen ▸ Links  _(Web-Fassung: fertig)_
+- ✅ Querverweis — Band: Einfügen ▸ Links, Verweise ▸ Beschriftungen  _(Web-Fassung: fertig)_
 - ✅ Kopfzeile — Dialoge (widgets/dialogs.py), PDF/Druck/DOCX getestet  _(Web-Fassung: fertig)_
 - ✅ Fußzeile — Dialoge (widgets/dialogs.py), PDF/Druck/DOCX getestet  _(Web-Fassung: fertig)_
 - ✅ Seitenzahl — Band: Einfügen ▸ Kopf- und Fußzeile  _(Web-Fassung: fertig)_
-- ⬜ Textfeld — Band: Einfügen ▸ Text  _(Web-Fassung: fertig)_
-- ⬜ Textbaustein — nicht übertragen  _(Web-Fassung: fertig)_
-- ⬜ Schnellbaustein — nicht übertragen  _(Web-Fassung: fertig)_
-- ⬜ Initiale — Band: Einfügen ▸ Text  _(Web-Fassung: teil)_
+- ◐ Textfeld — einzellige Tabelle mit Rahmen; frei schwebende Textfelder kennt Qt nicht  _(Web-Fassung: fertig)_
+- ✅ Textbaustein — editor/einfuegen.py, storage/bausteine.py (test_einfuegen)  _(Web-Fassung: fertig)_
+- ✅ Schnellbaustein — editor/einfuegen.py, storage/bausteine.py (test_einfuegen)  _(Web-Fassung: fertig)_
+- ◐ Initiale — erster Buchstabe vergrößert in der Zeile; hängende Initiale kennt Qt nicht  _(Web-Fassung: teil)_
 - ◐ Datum — Datum einfügen; Fenster mit Formatliste/Sprache fehlt  _(Web-Fassung: fertig)_
 - ◐ Uhrzeit — Datum einfügen; Fenster mit Formatliste/Sprache fehlt  _(Web-Fassung: fertig)_
-- ⬜ Text aus Datei — Band: Einfügen ▸ Text  _(Web-Fassung: fertig)_
+- ✅ Text aus Datei — editor/einfuegen.py, storage/bausteine.py (test_einfuegen)  _(Web-Fassung: fertig)_
 - ✅ Sonderzeichen — Band: Einfügen ▸ Symbole
-- ⬜ Formel — Band: Einfügen ▸ Symbole  _(Web-Fassung: fertig)_
+- ◐ Formel — einfache Schreibweise (hoch/tief, Wurzel, Bruch, Griechisch) als Text mit Formatierung; kein Formeleditor wie in Word  _(Web-Fassung: fertig)_
 
 ## SEITENLAYOUT
 
 - ✅ Seitenränder — Band: Seitenlayout ▸ Seitenhintergrund  _(Web-Fassung: fertig)_
 - ✅ Ausrichtung — Band: Seitenlayout ▸ Seite einrichten
 - ✅ Papierformat — Reiter Seitenlayout ▸ Größe (Befehle.w_setzePapier)  _(Web-Fassung: fertig)_
-- ⬜ Spalten — Band: Seitenlayout ▸ Seite einrichten
+- ⬜ Spalten — Das Textmodul von Qt kennt keine Spalten
 - ✅ Umbruch > Seitenumbruch — Band: Einfügen ▸ Seiten, Seitenlayout ▸ Seite einrichten ▸ Umbrüche  _(Web-Fassung: fertig)_
-- ⬜ Umbruch > Spaltenumbruch — Band: Seitenlayout ▸ Seite einrichten ▸ Umbrüche
-- ⬜ Umbruch > Abschnittsumbruch — Band: Seitenlayout ▸ Seite einrichten ▸ Umbrüche
+- ⬜ Umbruch > Spaltenumbruch — Das Textmodul von Qt kennt keine Spalten
+- ◐ Umbruch > Abschnittsumbruch — nur „Nächste Seite“ (Seitenumbruch); Abschnitte kennt Qt nicht
 - ✅ Einzug — Band: Seitenlayout ▸ Absatz
-- ⬜ Absatzabstand — Band: Seitenlayout ▸ Absatz
-- ⬜ Zeilennummern — Band: Seitenlayout ▸ Seite einrichten
-- ⬜ Silbentrennung — Band: Seitenlayout ▸ Absatz, Seitenleiste ▸ Sprache  _(Web-Fassung: teil)_
-- ⬜ Textumbruch — nicht übertragen
-- ⬜ Seitenfarbe — Band: Seitenlayout ▸ Seitenhintergrund  _(Web-Fassung: fertig)_
-- ⬜ Wasserzeichen — Band: Seitenlayout ▸ Seitenhintergrund
-- ⬜ Seitenrahmen — nicht übertragen  _(Web-Fassung: fertig)_
-- ⬜ Bild/Objekt anordnen — nicht übertragen  _(Web-Fassung: fertig)_
+- ✅ Absatzabstand — Band: Seitenlayout ▸ Absatz
+- ✅ Zeilennummern — Band: Seitenlayout ▸ Seite einrichten
+- ⬜ Silbentrennung — Qt hat keine automatische Silbentrennung  _(Web-Fassung: teil)_
+- ⬜ Textumbruch — Bilder stehen im Text; frei schwebende Objekte kennt Qt nicht
+- ✅ Seitenfarbe — Band: Seitenlayout ▸ Seitenhintergrund  _(Web-Fassung: fertig)_
+- ✅ Wasserzeichen — Band: Seitenlayout ▸ Seitenhintergrund
+- ✅ Seitenrahmen — befehle.seitenrahmen, pagination.seitenschmuck, DOCX pgBorders (test_docx_roundtrip, test_pdf)  _(Web-Fassung: fertig)_
+- ◐ Bild/Objekt anordnen — nur Ausrichten und Drehen/Spiegeln (Bildtools); kein Gruppieren, keine Ebenen  _(Web-Fassung: fertig)_
 
 ## REFERENZEN
 
 - ✅ Inhaltsverzeichnis — Band: Verweise ▸ Inhaltsverzeichnis
 - ✅ Verzeichnisse aktualisieren — Band: Verweise ▸ Inhaltsverzeichnis
-- ⬜ Fußnote — Band: Verweise ▸ Fußnoten
-- ⬜ Endnote — Band: Verweise ▸ Fußnoten
-- ⬜ Nächste Note — Band: Verweise ▸ Fußnoten
-- ⬜ Vorige Note — Band: Verweise ▸ Fußnoten
-- ⬜ Notenbereich — Band: Verweise ▸ Fußnoten
-- ⬜ Zitat einfügen — Band: Verweise ▸ Zitate und Literatur
-- ⬜ Neue Quelle — Band: Verweise ▸ Zitate und Literatur
-- ⬜ Quellen verwalten — Band: Verweise ▸ Zitate und Literatur
-- ⬜ Zitierweise — Band: Verweise ▸ Zitate und Literatur
-- ⬜ Literaturverzeichnis — Band: Verweise ▸ Zitate und Literatur
-- ⬜ Beschriftung — Band: Verweise ▸ Beschriftungen
-- ⬜ Abbildungsverzeichnis — Band: Verweise ▸ Beschriftungen
-- ⬜ Querverweis — Band: Einfügen ▸ Links, Verweise ▸ Beschriftungen
-- ⬜ Indexeintrag — Band: Verweise ▸ Index
-- ⬜ Stichwortverzeichnis — Band: Verweise ▸ Index
+- ◐ Fußnote — echte DOCX-Fuß-/Endnoten (gelesen und geschrieben, mit LibreOffice geprüft); im PDF/Druck gesammelt am Textende statt am Seitenfuß
+- ◐ Endnote — echte DOCX-Fuß-/Endnoten (gelesen und geschrieben, mit LibreOffice geprüft); im PDF/Druck gesammelt am Textende statt am Seitenfuß
+- ✅ Nächste Note — Band: Verweise ▸ Fußnoten
+- ✅ Vorige Note — Band: Verweise ▸ Fußnoten
+- ✅ Notenbereich — Band: Verweise ▸ Fußnoten
+- ✅ Zitat einfügen — Band: Verweise ▸ Zitate und Literatur
+- ✅ Neue Quelle — Band: Verweise ▸ Zitate und Literatur
+- ✅ Quellen verwalten — Band: Verweise ▸ Zitate und Literatur
+- ✅ Zitierweise — Band: Verweise ▸ Zitate und Literatur
+- ✅ Literaturverzeichnis — Band: Verweise ▸ Zitate und Literatur
+- ✅ Beschriftung — Band: Verweise ▸ Beschriftungen
+- ✅ Abbildungsverzeichnis — Band: Verweise ▸ Beschriftungen
+- ✅ Querverweis — Band: Einfügen ▸ Links, Verweise ▸ Beschriftungen
+- ✅ Indexeintrag — Band: Verweise ▸ Index
+- ✅ Stichwortverzeichnis — Band: Verweise ▸ Index
 
 ## ÜBERPRÜFEN
 
 - ✅ Prüfen — Band: Seitenleiste ▸ Prüfen ▸ Dokumentprüfung, Überprüfen ▸ Dokumentprüfung
 - ✅ Gründlich prüfen — Band: Seitenleiste ▸ Prüfen ▸ Dokumentprüfung, Überprüfen ▸ Dokumentprüfung
 - ✅ Rechtschreibung — Band: Überprüfen ▸ Dokumentprüfung
-- ⬜ Thesaurus — Band: Seitenleiste ▸ Sprache, Überprüfen ▸ Dokumentprüfung
+- ✅ Thesaurus — Band: Seitenleiste ▸ Sprache, Überprüfen ▸ Dokumentprüfung
 - ✅ Wörter zählen — Band: Überprüfen ▸ Dokumentprüfung
-- ⬜ Korrektursprache — Band: Überprüfen ▸ Sprache  _(Web-Fassung: fertig)_
-- ⬜ Barrierefreiheit prüfen — Band: Überprüfen ▸ Barrierefreiheit
-- ⬜ Neuer Kommentar — Band: Überprüfen ▸ Kommentare
-- ⬜ Nächster Kommentar — Band: Überprüfen ▸ Kommentare
-- ⬜ Voriger Kommentar — Band: Überprüfen ▸ Kommentare
-- ⬜ Kommentar löschen — Band: Überprüfen ▸ Kommentare
-- ⬜ Alle Kommentare löschen — Band: Überprüfen ▸ Kommentare
-- ⬜ Änderungen verfolgen — Band: Überprüfen ▸ Änderungen
-- ⬜ Markup anzeigen — Band: Überprüfen ▸ Änderungen
-- ⬜ Überarbeitungsbereich — Band: Überprüfen ▸ Änderungen
-- ⬜ Änderung annehmen — Band: Überprüfen ▸ Änderungen
-- ⬜ Änderung ablehnen — Band: Überprüfen ▸ Änderungen
-- ⬜ Nächste Änderung — Band: Überprüfen ▸ Änderungen
-- ⬜ Vorige Änderung — Band: Überprüfen ▸ Änderungen
-- ⬜ Alle annehmen — Band: Überprüfen ▸ Änderungen
-- ⬜ Alle verwerfen — Band: Überprüfen ▸ Änderungen
-- ⬜ Bearbeitung sperren — Band: Überprüfen ▸ Schützen
+- ✅ Korrektursprache — Band: Überprüfen ▸ Sprache  _(Web-Fassung: fertig)_
+- ✅ Barrierefreiheit prüfen — Band: Überprüfen ▸ Barrierefreiheit
+- ✅ Neuer Kommentar — Band: Überprüfen ▸ Kommentare
+- ✅ Nächster Kommentar — Band: Überprüfen ▸ Kommentare
+- ✅ Voriger Kommentar — Band: Überprüfen ▸ Kommentare
+- ✅ Kommentar löschen — Band: Überprüfen ▸ Kommentare
+- ✅ Alle Kommentare löschen — Band: Überprüfen ▸ Kommentare
+- ✅ Änderungen verfolgen — Band: Überprüfen ▸ Änderungen
+- ✅ Markup anzeigen — Band: Überprüfen ▸ Änderungen
+- ✅ Überarbeitungsbereich — Band: Überprüfen ▸ Änderungen
+- ✅ Änderung annehmen — Band: Überprüfen ▸ Änderungen
+- ✅ Änderung ablehnen — Band: Überprüfen ▸ Änderungen
+- ✅ Nächste Änderung — Band: Überprüfen ▸ Änderungen
+- ✅ Vorige Änderung — Band: Überprüfen ▸ Änderungen
+- ✅ Alle annehmen — Band: Überprüfen ▸ Änderungen
+- ✅ Alle verwerfen — Band: Überprüfen ▸ Änderungen
+- ✅ Bearbeitung sperren — Band: Überprüfen ▸ Schützen
 
 ## SCHREIBHILFE (Lunivo)
 
@@ -220,27 +220,27 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 
 ## SENDUNGEN (Lunivo)
 
-- ⬜ Umschlag — Reiter „Sendungen“ nicht in der neuen Struktur; Daten in register.json erhalten
-- ⬜ Etiketten — Reiter „Sendungen“ nicht in der neuen Struktur; Daten in register.json erhalten
-- ⬜ Seriendruck-Assistent — Reiter „Sendungen“ nicht in der neuen Struktur; Daten in register.json erhalten
-- ⬜ Seriendruckfeld — Reiter „Sendungen“ nicht in der neuen Struktur; Daten in register.json erhalten
-- ⬜ Adressblock — Reiter „Sendungen“ nicht in der neuen Struktur; Daten in register.json erhalten
-- ⬜ Regeln — Reiter „Sendungen“ nicht in der neuen Struktur; Daten in register.json erhalten
-- ⬜ Ergebnisse anzeigen — Reiter „Sendungen“ nicht in der neuen Struktur; Daten in register.json erhalten
-- ⬜ Formular > Textfeld — Band: Einfügen ▸ Text
-- ⬜ Formular > Kontrollkästchen — Reiter „Sendungen“ nicht in der neuen Struktur; Daten in register.json erhalten
-- ⬜ Formular > Schaltfläche — Reiter „Sendungen“ nicht in der neuen Struktur; Daten in register.json erhalten  _(Web-Fassung: fertig)_
+- ✅ Umschlag — editor/sendungen.py + widgets/sendungen_dialoge.py (test_sendungen); Reiter „Sendungen“ ist nach Register anpassen sichtbar, sonst über die Menüleiste
+- ✅ Etiketten — editor/sendungen.py + widgets/sendungen_dialoge.py (test_sendungen); Reiter „Sendungen“ ist nach Register anpassen sichtbar, sonst über die Menüleiste
+- ✅ Seriendruck-Assistent — editor/sendungen.py + widgets/sendungen_dialoge.py (test_sendungen); Reiter „Sendungen“ ist nach Register anpassen sichtbar, sonst über die Menüleiste
+- ✅ Seriendruckfeld — editor/sendungen.py + widgets/sendungen_dialoge.py (test_sendungen); Reiter „Sendungen“ ist nach Register anpassen sichtbar, sonst über die Menüleiste
+- ✅ Adressblock — editor/sendungen.py + widgets/sendungen_dialoge.py (test_sendungen); Reiter „Sendungen“ ist nach Register anpassen sichtbar, sonst über die Menüleiste
+- ✅ Regeln — editor/sendungen.py + widgets/sendungen_dialoge.py (test_sendungen); Reiter „Sendungen“ ist nach Register anpassen sichtbar, sonst über die Menüleiste
+- ✅ Ergebnisse anzeigen — editor/sendungen.py + widgets/sendungen_dialoge.py (test_sendungen); Reiter „Sendungen“ ist nach Register anpassen sichtbar, sonst über die Menüleiste
+- ◐ Formular > Textfeld — als formatierter Text ohne Funktion (Qt kennt keine Formularsteuerelemente)
+- ✅ Formular > Kontrollkästchen — editor/sendungen.py + widgets/sendungen_dialoge.py (test_sendungen); Reiter „Sendungen“ ist nach Register anpassen sichtbar, sonst über die Menüleiste
+- ◐ Formular > Schaltfläche — als formatierter Text ohne Funktion (Qt kennt keine Formularsteuerelemente)  _(Web-Fassung: fertig)_
 
 ## ANSICHT
 
-- ⬜ Drucklayout — Band: Ansicht ▸ Dokumentansichten
+- ✅ Drucklayout — Band: Ansicht ▸ Dokumentansichten
 - ✅ Lesemodus — Band: Ansicht ▸ Dokumentansichten, Seitenleiste ▸ Lesen
-- ⬜ Zwei Seiten — Band: Ansicht ▸ Dokumentansichten
-- ⬜ Weblayout — Band: Ansicht ▸ Dokumentansichten
-- ⬜ Gliederung — Band: Ansicht ▸ Dokumentansichten
-- ⬜ Lineal — Band: Ansicht ▸ Anzeigen
-- ⬜ Vertikales Lineal — Band: Ansicht ▸ Anzeigen
-- ⬜ Gitternetzlinien — Band: Ansicht ▸ Anzeigen  _(Web-Fassung: fertig)_
+- ✅ Zwei Seiten — Band: Ansicht ▸ Dokumentansichten
+- ✅ Weblayout — Band: Ansicht ▸ Dokumentansichten
+- ✅ Gliederung — Band: Ansicht ▸ Dokumentansichten
+- ✅ Lineal — Band: Ansicht ▸ Anzeigen
+- ✅ Vertikales Lineal — Band: Ansicht ▸ Anzeigen
+- ✅ Gitternetzlinien — Band: Ansicht ▸ Anzeigen  _(Web-Fassung: fertig)_
 - ✅ Navigationsbereich — Band: Ansicht ▸ Anzeigen
 - ✅ Textbegrenzungen — Band: Ansicht ▸ Anzeigen  _(Web-Fassung: fertig)_
 - ✅ Seitenleiste Schreibhilfe — Band: Seitenleiste ▸ Anzeigen  _(Web-Fassung: fertig)_
@@ -248,25 +248,25 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 - ✅ Zeilenfokus — Band: Seitenleiste ▸ Lesen
 - ✅ Vergrößern — Band: Ansicht ▸ Zoom
 - ✅ Verkleinern — Band: Ansicht ▸ Zoom
-- ⬜ 100 % — Band: Ansicht ▸ Zoom
-- ⬜ Seitenbreite — Band: Ansicht ▸ Zoom
-- ⬜ Eine Seite — Band: Ansicht ▸ Zoom
-- ⬜ Zoom — Band: Ansicht ▸ Zoom
-- ⬜ Neues Fenster — Band: Ansicht ▸ Fenster
-- ⬜ Anordnen — Band: Ansicht ▸ Fenster
-- ⬜ Nebeneinander — Band: Ansicht ▸ Fenster, Ansicht ▸ Fenster ▸ Anordnen
-- ⬜ Untereinander — Band: Ansicht ▸ Fenster, Ansicht ▸ Fenster ▸ Anordnen
-- ⬜ Kacheln — Band: Ansicht ▸ Fenster, Ansicht ▸ Fenster ▸ Anordnen
-- ⬜ Fensterliste — Band: Ansicht ▸ Fenster
+- ✅ 100 % — Band: Ansicht ▸ Zoom
+- ✅ Seitenbreite — Band: Ansicht ▸ Zoom
+- ✅ Eine Seite — Band: Ansicht ▸ Zoom
+- ✅ Zoom — Band: Ansicht ▸ Zoom
+- ✅ Neues Fenster — Band: Ansicht ▸ Fenster
+- ✅ Anordnen — Band: Ansicht ▸ Fenster
+- ✅ Nebeneinander — Band: Ansicht ▸ Fenster, Ansicht ▸ Fenster ▸ Anordnen
+- ✅ Untereinander — Band: Ansicht ▸ Fenster, Ansicht ▸ Fenster ▸ Anordnen
+- ✅ Kacheln — Band: Ansicht ▸ Fenster, Ansicht ▸ Fenster ▸ Anordnen
+- ✅ Fensterliste — Band: Ansicht ▸ Fenster
 - ✅ Helligkeit > Wie das System — Band: Ansicht ▸ Helligkeit
 - ✅ Helligkeit > Immer hell — Band: Ansicht ▸ Helligkeit
 - ✅ Helligkeit > Immer dunkel — Band: Ansicht ▸ Helligkeit
-- ⬜ Oberfläche > Register anpassen — Band: Ansicht ▸ Oberfläche
-- ⬜ Oberfläche > Symbol austauschen — Band: Ansicht ▸ Oberfläche
-- ⬜ Oberfläche > Benutzeroberfläche — Band: Ansicht ▸ Oberfläche
+- ✅ Oberfläche > Register anpassen — widgets/oberflaeche_dialoge.py, Ansicht ▸ Oberfläche (test_main_window)
+- ✅ Oberfläche > Symbol austauschen — widgets/oberflaeche_dialoge.py, Ansicht ▸ Oberfläche (test_main_window)
+- ✅ Oberfläche > Benutzeroberfläche — widgets/oberflaeche_dialoge.py, Ansicht ▸ Oberfläche (test_main_window)
 - ✅ Oberfläche > Menüleiste — Band: Ansicht ▸ Oberfläche
-- ⬜ Oberfläche > Symbolleisten — Band: Ansicht ▸ Oberfläche  _(Web-Fassung: fertig)_
-- ⬜ Oberfläche > Vorlagen zurücksetzen — Band: Ansicht ▸ Oberfläche
+- ✅ Oberfläche > Symbolleisten — widgets/oberflaeche_dialoge.py, Ansicht ▸ Oberfläche (test_main_window)  _(Web-Fassung: fertig)_
+- ✅ Oberfläche > Vorlagen zurücksetzen — widgets/oberflaeche_dialoge.py, Ansicht ▸ Oberfläche (test_main_window)
 
 ## KONTEXTTABELLEN
 
@@ -275,7 +275,7 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 - ⬜ Diagrammtools — nicht übertragen
 - ⬜ SmartArt-Tools — nicht übertragen
 - ⬜ Gleichungswerkzeuge — nicht übertragen  _(Web-Fassung: fertig)_
-- ◐ Kopf- und Fußzeilenwerkzeuge — Reiter vorhanden, Kopf/Fuß über Dialog statt am Blatt  _(Web-Fassung: teil)_
+- ◐ Kopf- und Fußzeilenwerkzeuge — Reiter mit „Erste Seite anders“ (PDF und DOCX); „Gerade/ungerade“ fehlt  _(Web-Fassung: teil)_
 
 ## LANGUAGE BRIDGE (Architektur)
 
@@ -330,7 +330,7 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 
 - ✅ Fehler aus Language Bridge anzeigen — widgets/schreibhilfe_panel.py, editor_widget.set_wellen
 - ✅ Rote Wellenlinien aus Bridge-Status — widgets/schreibhilfe_panel.py, editor_widget.set_wellen
-- ⬜ Kontextmenü für Fehler-Aktionen — Rechtsklick-Menü fehlt  _(Web-Fassung: fertig)_
+- ✅ Kontextmenü für Fehler-Aktionen — editor_widget.contextMenuEvent + WritingAssistant.erweitere_menue (test_schreibhilfe)  _(Web-Fassung: fertig)_
 - ✅ Fehler annehmen/ignorieren/korrigieren — widgets/schreibhilfe_panel.py, editor_widget.set_wellen
 - ◐ Schalter 'Rote Wellenlinien' zeigt/versteckt nur — Schalter hält auch die Prüfung an
 
@@ -362,244 +362,244 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 
 ## OPTIONEN > Ansicht > Anzeigen
 
-- ⬜ Lineal — Band: Ansicht ▸ Anzeigen
-- ⬜ Vertikales Lineal — Band: Ansicht ▸ Anzeigen
-- ✅ Navigationsbereich — Band: Ansicht ▸ Anzeigen
-- ✅ Textbegrenzungen — Band: Ansicht ▸ Anzeigen
-- ⬜ Gitternetzlinien — Band: Ansicht ▸ Anzeigen
-- ⬜ Statusleiste — (noch nicht zugeordnet)
-- ⬜ Seitenleiste beim Start — (noch nicht zugeordnet)
-- ⬜ QuickInfo — (noch nicht zugeordnet)
-- ⬜ Live-Vorschau — (noch nicht zugeordnet)
-- ⬜ Minisymbolleiste bei Auswahl — (noch nicht zugeordnet)
-- ⬜ Minisymbolleiste bei Rechtsklick — (noch nicht zugeordnet)
-- ⬜ Tipp für Kopf- bzw. Fußzeile — (noch nicht zugeordnet)
+- ✅ Lineal — widgets/lineal.py: Millimeter, Ränder und Einzüge ziehbar (test_main_window)
+- ✅ Vertikales Lineal — widgets/lineal.py: Millimeter, Ränder und Einzüge ziehbar (test_main_window)
+- ✅ Navigationsbereich — Optionen ▸ Wie im WPS Writer ▸ Ansicht
+- ✅ Textbegrenzungen — Optionen ▸ Wie im WPS Writer ▸ Ansicht
+- ✅ Gitternetzlinien — befehle.netzlinien, editor._gitter_zeichnen
+- ✅ Statusleiste — Optionen ▸ Wie im WPS Writer ▸ Ansicht (ui/statusleiste → ansicht_optionen_anwenden)
+- ✅ Seitenleiste beim Start — Optionen ▸ Wie im WPS Writer ▸ Ansicht (ui/seitenleiste, main_window)
+- ◐ QuickInfo — Qt zeigt Kurzinfos immer; kein Schalter
+- ⬜ Live-Vorschau — nicht übertragen (in den Optionen als gesperrte Zeile sichtbar)
+- ⬜ Minisymbolleiste bei Auswahl — nicht übertragen (in den Optionen als gesperrte Zeile sichtbar)
+- ⬜ Minisymbolleiste bei Rechtsklick — nicht übertragen (in den Optionen als gesperrte Zeile sichtbar)
+- ⬜ Tipp für Kopf- bzw. Fußzeile — nicht übertragen (in den Optionen als gesperrte Zeile sichtbar)
 
 ## OPTIONEN > Ansicht > Druckoptionen
 
-- ⬜ Hervorhebungen drucken — (noch nicht zugeordnet)
-- ⬜ Textbegrenzungen drucken — (noch nicht zugeordnet)
-- ⬜ Zuschnittsmarken anzeigen — (noch nicht zugeordnet)
-- ⬜ Feldfunktionen drucken — (noch nicht zugeordnet)
-- ⬜ Textmarken drucken — (noch nicht zugeordnet)
-- ⬜ Feldschattierung — (noch nicht zugeordnet)
+- ⬜ Hervorhebungen drucken — nicht übertragen
+- ⬜ Textbegrenzungen drucken — nicht übertragen
+- ⬜ Zuschnittsmarken anzeigen — nicht übertragen
+- ⬜ Feldfunktionen drucken — nicht übertragen
+- ⬜ Textmarken drucken — nicht übertragen
+- ⬜ Feldschattierung — nicht übertragen
 
 ## OPTIONEN > Ansicht > Formatierungszeichen
 
-- ⬜ Alle anzeigen — (noch nicht zugeordnet)
-- ⬜ Absatzmarken — (noch nicht zugeordnet)
-- ⬜ Leerzeichen — (noch nicht zugeordnet)
-- ⬜ Tabstoppzeichen — (noch nicht zugeordnet)
-- ⬜ Objektanker — (noch nicht zugeordnet)
-- ⬜ Ausgeblendeter Text — (noch nicht zugeordnet)
+- ✅ Alle anzeigen — ui/steuerzeichen, toggle_marks (¶)
+- ◐ Absatzmarken — Qt schaltet Absatzmarken, Leerzeichen und Tabs nur gemeinsam
+- ◐ Leerzeichen — Qt schaltet Absatzmarken, Leerzeichen und Tabs nur gemeinsam
+- ◐ Tabstoppzeichen — Qt schaltet Absatzmarken, Leerzeichen und Tabs nur gemeinsam
+- ⬜ Objektanker — Qt kennt weder Objektanker noch ausgeblendeten Text
+- ⬜ Ausgeblendeter Text — Qt kennt weder Objektanker noch ausgeblendeten Text
 
 ## OPTIONEN > Ansicht > Menübandoptionen
 
-- ⬜ Doppelklick blendet das Band aus — (noch nicht zugeordnet)
-- ⬜ Strg+Klick folgt einem Verweis — (noch nicht zugeordnet)
+- ✅ Doppelklick blendet das Band aus — RegisterBand.einklappen_umschalten (test_main_window)
+- ✅ Strg+Klick folgt einem Verweis — editor_widget.mouseReleaseEvent, ui/strg_klick_link
 
 ## OPTIONEN > Ansicht > Darstellung
 
-- ⬜ Schrift und Helligkeit — (noch nicht zugeordnet)
-- ⬜ Größe der Symbole — (noch nicht zugeordnet)
-- ⬜ Schrift der Bedienung — (noch nicht zugeordnet)
-- ⬜ Benutzeroberfläche — Band: Ansicht ▸ Oberfläche
+- ✅ Schrift und Helligkeit — Optionen ▸ Wie im WPS Writer ▸ Ansicht (theme, ui/icongroesse, icons.FAKTOR)
+- ✅ Größe der Symbole — Optionen ▸ Wie im WPS Writer ▸ Ansicht (theme, ui/icongroesse, icons.FAKTOR)
+- ◐ Schrift der Bedienung — nur die Schriftgröße (ui/bedienschrift_groesse); Schriftart folgt dem System
+- ✅ Benutzeroberfläche — Optionen ▸ Menüband anpassen ▸ Benutzeroberfläche wählen
 
 ## OPTIONEN > Bearbeiten > Bearbeitungsoptionen
 
-- ⬜ Wortweise markieren — (noch nicht zugeordnet)
-- ⬜ Text mit der Maus verschieben — (noch nicht zugeordnet)
-- ⬜ Tippen ersetzt die Auswahl — (noch nicht zugeordnet)
-- ⬜ Maximale Rückgängig-Schritte — (noch nicht zugeordnet)
+- ⬜ Wortweise markieren — nicht übertragen
+- ◐ Text mit der Maus verschieben — Qt-Standard (Ziehen und Ablegen), nicht abschaltbar
+- ✅ Tippen ersetzt die Auswahl — bearbeiten/tippen_ersetzt (editor_widget.keyPressEvent)
+- ⬜ Maximale Rückgängig-Schritte — Qt bietet keine Begrenzung des Rückgängig-Stapels pro Dokument
 
 ## OPTIONEN > Bearbeiten > AutoFormat
 
-- ⬜ Automatisch nummerierte Listen — (noch nicht zugeordnet)
-- ⬜ Aufzählungen erkennen — (noch nicht zugeordnet)
-- ⬜ Zahl automatisch im Kreis — (noch nicht zugeordnet)
+- ✅ Automatisch nummerierte Listen — autoformat/liste, autoformat/punkte (test_editor)
+- ✅ Aufzählungen erkennen — autoformat/liste, autoformat/punkte (test_editor)
+- ⬜ Zahl automatisch im Kreis — nicht übertragen
 
 ## OPTIONEN > Bearbeiten > AutoKorrektur
 
 - ✅ AutoKorrektur — Band: Seitenleiste ▸ Beim Schreiben
-- ⬜ Typografische Anführungszeichen — (noch nicht zugeordnet)
-- ⬜ Gedankenstriche — (noch nicht zugeordnet)
-- ⬜ Auslassungspunkte — (noch nicht zugeordnet)
-- ⬜ Jeden Satz mit einem Großbuchstaben beginnen — (noch nicht zugeordnet)
-- ⬜ Wochentage immer großschreiben — (noch nicht zugeordnet)
-- ⬜ Englische Ordnungszahlen hochstellen — (noch nicht zugeordnet)
-- ⬜ Feststelltaste korrigieren — (noch nicht zugeordnet)
-- ⬜ Internet- und Netzwerkpfade durch Hyperlinks ersetzen — (noch nicht zugeordnet)
-- ⬜ Leerzeichen am Absatzanfang mit Erstzeileneinzug — (noch nicht zugeordnet)
-- ⬜ Leerzeichenformat am Ende rechtsbündiger Zeilen anpassen — (noch nicht zugeordnet)
-- ⬜ Bei zentriertem Ausrichten Erstzeileneinzug löschen — (noch nicht zugeordnet)
-- ⬜ Tabulator und Rücktaste setzen den Einzug — (noch nicht zugeordnet)
+- ✅ Typografische Anführungszeichen — services/autokorrektur.py, Optionen ▸ Bearbeiten (test_schreibhilfe)
+- ✅ Gedankenstriche — services/autokorrektur.py, Optionen ▸ Bearbeiten (test_schreibhilfe)
+- ✅ Auslassungspunkte — services/autokorrektur.py, Optionen ▸ Bearbeiten (test_schreibhilfe)
+- ✅ Jeden Satz mit einem Großbuchstaben beginnen — services/autokorrektur.py, Optionen ▸ Bearbeiten (test_schreibhilfe)
+- ✅ Wochentage immer großschreiben — services/autokorrektur.py, Optionen ▸ Bearbeiten (test_schreibhilfe)
+- ✅ Englische Ordnungszahlen hochstellen — services/autokorrektur.py, Optionen ▸ Bearbeiten (test_schreibhilfe)
+- ✅ Feststelltaste korrigieren — services/autokorrektur.py, Optionen ▸ Bearbeiten (test_schreibhilfe)
+- ◐ Internet- und Netzwerkpfade durch Hyperlinks ersetzen — editor_widget._autokorr_extras/keyPressEvent — verdrahtet, noch ohne eigenen Test
+- ◐ Leerzeichen am Absatzanfang mit Erstzeileneinzug — editor_widget._autokorr_extras/keyPressEvent — verdrahtet, noch ohne eigenen Test
+- ⬜ Leerzeichenformat am Ende rechtsbündiger Zeilen anpassen — nicht übertragen
+- ◐ Bei zentriertem Ausrichten Erstzeileneinzug löschen — editor_widget._autokorr_extras/keyPressEvent — verdrahtet, noch ohne eigenen Test
+- ◐ Tabulator und Rücktaste setzen den Einzug — editor_widget._autokorr_extras/keyPressEvent — verdrahtet, noch ohne eigenen Test
 - ✅ Wortvorhersage — Band: Seitenleiste ▸ Beim Schreiben
 
 ## OPTIONEN > Bearbeiten > Ausschneiden und Einfügen
 
-- ⬜ Schaltfläche nach dem Einfügen — (noch nicht zugeordnet)
-- ⬜ Mittlere Maustaste fügt ein — (noch nicht zugeordnet)
-- ⬜ Standardeinfügeformat — (noch nicht zugeordnet)
-- ⬜ Ohne Formatierung einfügen — (noch nicht zugeordnet)
+- ⬜ Schaltfläche nach dem Einfügen — nicht übertragen
+- ◐ Mittlere Maustaste fügt ein — unter Linux/X11 durch Qt (Primärauswahl), nicht schaltbar
+- ⬜ Standardeinfügeformat — nicht übertragen
+- ✅ Ohne Formatierung einfügen — Befehle.einfuegenOhne
 
 ## OPTIONEN > Allgemein und Speichern > Speichern
 
-- ⬜ Dateien als Standard speichern — (noch nicht zugeordnet)
+- ✅ Dateien als Standard speichern — speichern/standard (DOCX/TXT), _ask_path
 
 ## OPTIONEN > Allgemein und Speichern > Schrift für neuen Text
 
-- ⬜ Schrift — (noch nicht zugeordnet)
-- ✅ Größe — Band: Seitenlayout ▸ Seite einrichten
+- ✅ Schrift — standard/schrift, standard/groesse (new_document)
+- ✅ Größe — standard/schrift, standard/groesse (new_document)
 
 ## OPTIONEN > Allgemein und Speichern > Allgemeine Optionen
 
-- ⬜ Maßeinheit — (noch nicht zugeordnet)
-- ⬜ Bilder in der Datei nicht komprimieren — (noch nicht zugeordnet)
-- ⬜ Standard-Ausgabeziel — (noch nicht zugeordnet)
+- ⬜ Maßeinheit — nicht übertragen
+- ◐ Bilder in der Datei nicht komprimieren — Bilder werden nie komprimiert; kein Schalter
+- ⬜ Standard-Ausgabeziel — nicht übertragen
 
 ## OPTIONEN > Allgemein und Speichern > Webseite
 
-- ⬜ Webseitencodierung — (noch nicht zugeordnet)
+- ✅ Webseitencodierung — speichern/codierung, formats.save(.html) (test_formats)
 
 ## OPTIONEN > Allgemein und Speichern > Kompatibilitätsoptionen
 
-- ⬜ Seitenumbruch und Absatzmarke aufteilen — (noch nicht zugeordnet)
-- ⬜ Hängenden Einzug nicht als Tabstopp verwenden — (noch nicht zugeordnet)
-- ⬜ Nachstehende Leerstellen unterstreichen — (noch nicht zugeordnet)
-- ⬜ Layout von Fußnoten wie Word 6/95/97 — (noch nicht zugeordnet)
-- ⬜ Zeilenhöhe in Tabellen auf Rasterhöhe anpassen — (noch nicht zugeordnet)
+- ⬜ Seitenumbruch und Absatzmarke aufteilen — WPS-/Word-Altlayout; Qt hat keine Entsprechung
+- ⬜ Hängenden Einzug nicht als Tabstopp verwenden — WPS-/Word-Altlayout; Qt hat keine Entsprechung
+- ⬜ Nachstehende Leerstellen unterstreichen — WPS-/Word-Altlayout; Qt hat keine Entsprechung
+- ⬜ Layout von Fußnoten wie Word 6/95/97 — WPS-/Word-Altlayout; Qt hat keine Entsprechung
+- ⬜ Zeilenhöhe in Tabellen auf Rasterhöhe anpassen — WPS-/Word-Altlayout; Qt hat keine Entsprechung
 
 ## OPTIONEN > Sicherungseinstellungen > Sicherung
 
-- ⬜ Wann gesichert wird — (noch nicht zugeordnet)
-- ⬜ Abstand (Minuten) — (noch nicht zugeordnet)
-- ⬜ Wo die Einstellungen liegen — (noch nicht zugeordnet)
+- ✅ Wann gesichert wird — sicherung/aktiv, autosave_seconds, Pfadanzeige
+- ✅ Abstand (Minuten) — sicherung/aktiv, autosave_seconds, Pfadanzeige
+- ✅ Wo die Einstellungen liegen — sicherung/aktiv, autosave_seconds, Pfadanzeige
 
 ## OPTIONEN > Sicherungseinstellungen > Zwischenstände aufheben
 
-- ⬜ Wie lange (Tage) — (noch nicht zugeordnet)
-- ⬜ Zwischenstände löschen — (noch nicht zugeordnet)
+- ◐ Wie lange (Tage) — sicherung/staende + sicherung/tage, recovery.zwischenstand — noch ohne eigenen Test
+- ◐ Zwischenstände löschen — alte Stände werden automatisch gelöscht; kein Knopf
 
 ## OPTIONEN > Sicherungseinstellungen > Was im Speicher steht
 
-- ⬜ Sichern und zurückholen — (noch nicht zugeordnet)
+- ◐ Sichern und zurückholen — ZIP mit Gedächtnis (ohne API-Schlüssel) — noch ohne eigenen Test
 
 ## OPTIONEN > Speicherort für Dateien > Speicherort für Dateien
 
-- ⬜ Ordner zum Speichern — (noch nicht zugeordnet)
-- ⬜ Eigene Vorlagen — (noch nicht zugeordnet)
+- ✅ Ordner zum Speichern — speichern/ordner
+- ✅ Eigene Vorlagen — vorlagen/ordner (Optionen ▸ Allgemein und Speichern)
 
 ## OPTIONEN > Änderungen verfolgen > Änderungen verfolgen
 
-- ⬜ Änderungen verfolgen — Band: Überprüfen ▸ Änderungen
-- ⬜ Markup anzeigen — Band: Überprüfen ▸ Änderungen
+- ✅ Änderungen verfolgen — Optionen ▸ Änderungen verfolgen; editor/zusatz_editor.py (test_zusatz_editor)
+- ✅ Markup anzeigen — Optionen ▸ Änderungen verfolgen; editor/zusatz_editor.py (test_zusatz_editor)
 
 ## OPTIONEN > Änderungen verfolgen > Markup
 
-- ⬜ Einfügungen — (noch nicht zugeordnet)
-- ⬜ Löschvorgänge — (noch nicht zugeordnet)
-- ⬜ Geänderte Zeilen — (noch nicht zugeordnet)
-- ⬜ Farbe — (noch nicht zugeordnet)
+- ◐ Einfügungen — unterstrichen/durchgestrichen in einer Farbe je Autor; nicht einstellbar
+- ◐ Löschvorgänge — unterstrichen/durchgestrichen in einer Farbe je Autor; nicht einstellbar
+- ⬜ Geänderte Zeilen — nicht übertragen
+- ◐ Farbe — unterstrichen/durchgestrichen in einer Farbe je Autor; nicht einstellbar
 
 ## OPTIONEN > Änderungen verfolgen > Sprechblasen
 
-- ⬜ Sprechblasen verwenden — (noch nicht zugeordnet)
-- ⬜ Empfohlene Breite verwenden — (noch nicht zugeordnet)
-- ⬜ Bevorzugte Breite (mm) — (noch nicht zugeordnet)
-- ⬜ Seitenrand — (noch nicht zugeordnet)
-- ⬜ Verbindungslinien zum Text anzeigen — (noch nicht zugeordnet)
+- ⬜ Sprechblasen verwenden — keine Sprechblasen; Kommentare stehen im Navigationsbereich
+- ⬜ Empfohlene Breite verwenden — keine Sprechblasen; Kommentare stehen im Navigationsbereich
+- ⬜ Bevorzugte Breite (mm) — keine Sprechblasen; Kommentare stehen im Navigationsbereich
+- ⬜ Seitenrand — keine Sprechblasen; Kommentare stehen im Navigationsbereich
+- ⬜ Verbindungslinien zum Text anzeigen — keine Sprechblasen; Kommentare stehen im Navigationsbereich
 
 ## OPTIONEN > Änderungen verfolgen > Drucken (mit Sprechblasen)
 
-- ⬜ Papierausrichtung — (noch nicht zugeordnet)
+- ⬜ Papierausrichtung — keine Sprechblasen
 
 ## OPTIONEN > In PDF exportieren > Exportoptionen
 
-- ⬜ Hyperlinks — (noch nicht zugeordnet)
-- ⬜ Überschriften als Lesezeichen — (noch nicht zugeordnet)
-- ⬜ Kommentare mitnehmen — (noch nicht zugeordnet)
-- ⬜ Dokumenteigenschaften mitnehmen — (noch nicht zugeordnet)
-- ⬜ Verknüpfung von Fuß- und Endnoten — (noch nicht zugeordnet)
-- ⬜ Textmarken übernehmen — (noch nicht zugeordnet)
-- ⬜ Andere Formatvorlagen in Lesezeichen umwandeln — (noch nicht zugeordnet)
-- ⬜ Eigene Formatvorlagen in Lesezeichen umwandeln — (noch nicht zugeordnet)
-- ⬜ PDF nach dem Export öffnen — (noch nicht zugeordnet)
+- ✅ Hyperlinks — Qt schreibt Link-Annotationen (geprüft mit pypdf)
+- ⬜ Überschriften als Lesezeichen — QPdfWriter kann keine PDF-Gliederung (Lesezeichen) schreiben
+- ⬜ Kommentare mitnehmen — nicht in QPdfWriter möglich; Noten stehen gesammelt am Textende
+- ✅ Dokumenteigenschaften mitnehmen — pdf/eigenschaften, pdf/oeffnen (export_pdf author)
+- ⬜ Verknüpfung von Fuß- und Endnoten — nicht in QPdfWriter möglich; Noten stehen gesammelt am Textende
+- ⬜ Textmarken übernehmen — QPdfWriter kann keine PDF-Gliederung (Lesezeichen) schreiben
+- ⬜ Andere Formatvorlagen in Lesezeichen umwandeln — QPdfWriter kann keine PDF-Gliederung (Lesezeichen) schreiben
+- ⬜ Eigene Formatvorlagen in Lesezeichen umwandeln — QPdfWriter kann keine PDF-Gliederung (Lesezeichen) schreiben
+- ✅ PDF nach dem Export öffnen — pdf/eigenschaften, pdf/oeffnen (export_pdf author)
 
 ## OPTIONEN > Benutzerinformationen > Benutzerdaten
 
-- ⬜ Wer schreibt — (noch nicht zugeordnet)
-- ⬜ Initialen — (noch nicht zugeordnet)
-- ⬜ Diese Benutzerinformationen verwenden — (noch nicht zugeordnet)
+- ✅ Wer schreibt — benutzer/name, benutzer/verwenden (_meta_fuer_speichern)
+- ✅ Initialen — benutzer/initialen → Kommentare (main_window.autor_angaben)
+- ✅ Diese Benutzerinformationen verwenden — benutzer/name, benutzer/verwenden (_meta_fuer_speichern)
 
 ## OPTIONEN > Drucken > Druckoptionen
 
-- ⬜ Womit das Druckfenster aufgeht — (noch nicht zugeordnet)
-- ⬜ Hohe Qualität — (noch nicht zugeordnet)
-- ⬜ Umgekehrte Reihenfolge — (noch nicht zugeordnet)
-- ⬜ Zeichnungsobjekte drucken — (noch nicht zugeordnet)
-- ⬜ Hintergrundfarben und -bilder drucken — (noch nicht zugeordnet)
-- ⬜ Leere Seiten mitdrucken — (noch nicht zugeordnet)
-- ⬜ Felder vor dem Drucken aktualisieren — (noch nicht zugeordnet)
-- ⬜ Feldfunktionen drucken — (noch nicht zugeordnet)
-- ⬜ Ausgeblendeter Text — (noch nicht zugeordnet)
-- ⬜ Autor der Kommentare und Überarbeitungen — (noch nicht zugeordnet)
+- ⬜ Womit das Druckfenster aufgeht — nicht übertragen
+- ◐ Hohe Qualität — pagination.render/print_document, main_window.druckoptionen — seiten_liste getestet, übrige nur verdrahtet
+- ◐ Umgekehrte Reihenfolge — pagination.render/print_document, main_window.druckoptionen — seiten_liste getestet, übrige nur verdrahtet
+- ⬜ Zeichnungsobjekte drucken — nicht übertragen
+- ◐ Hintergrundfarben und -bilder drucken — pagination.render/print_document, main_window.druckoptionen — seiten_liste getestet, übrige nur verdrahtet
+- ◐ Leere Seiten mitdrucken — pagination.render/print_document, main_window.druckoptionen — seiten_liste getestet, übrige nur verdrahtet
+- ◐ Felder vor dem Drucken aktualisieren — pagination.render/print_document, main_window.druckoptionen — seiten_liste getestet, übrige nur verdrahtet
+- ⬜ Feldfunktionen drucken — nicht übertragen
+- ⬜ Ausgeblendeter Text — nicht übertragen
+- ⬜ Autor der Kommentare und Überarbeitungen — nicht übertragen
 
 ## OPTIONEN > Drucken > Nur für das aktuelle Dokument
 
-- ⬜ Nur Formulardaten drucken — (noch nicht zugeordnet)
+- ⬜ Nur Formulardaten drucken — Formulare nicht übertragen
 
 ## OPTIONEN > Drucken > Duplexdruck
 
-- ⬜ Blattvorderseite — (noch nicht zugeordnet)
-- ⬜ Blattrückseite — (noch nicht zugeordnet)
+- ✅ Blattvorderseite — drucken/duplex → seiten_liste (test_editor)
+- ✅ Blattrückseite — drucken/duplex → seiten_liste (test_editor)
 
 ## OPTIONEN > Rechtschreibprüfung > Rechtschreibprüfung
 
-- ⬜ Sprache für die Prüfung — (noch nicht zugeordnet)
-- ⬜ Rechtschreibung während der Eingabe prüfen — (noch nicht zugeordnet)
-- ⬜ Immer Korrekturvorschläge unterbreiten — (noch nicht zugeordnet)
-- ⬜ Grammatik mitprüfen — (noch nicht zugeordnet)
-- ⬜ Wörter in GROSSBUCHSTABEN ignorieren — (noch nicht zugeordnet)
-- ⬜ Wörter mit Zahlen ignorieren — (noch nicht zugeordnet)
-- ⬜ Internet- und Netzwerkpfade ignorieren — (noch nicht zugeordnet)
-- ⬜ Weggewinkte Funde wieder anzeigen — (noch nicht zugeordnet)
+- ◐ Sprache für die Prüfung — nur Deutsch
+- ✅ Rechtschreibung während der Eingabe prüfen — Optionen ▸ Rechtschreibprüfung (test_schreibhilfe, test_pruefung_paritaet)
+- ⬜ Immer Korrekturvorschläge unterbreiten — Vorschläge kommen immer; kein Schalter
+- ◐ Grammatik mitprüfen — nur über „Gründlich prüfen“ mit LanguageTool (optional)
+- ✅ Wörter in GROSSBUCHSTABEN ignorieren — Optionen ▸ Rechtschreibprüfung (test_schreibhilfe, test_pruefung_paritaet)
+- ✅ Wörter mit Zahlen ignorieren — Optionen ▸ Rechtschreibprüfung (test_schreibhilfe, test_pruefung_paritaet)
+- ✅ Internet- und Netzwerkpfade ignorieren — Optionen ▸ Rechtschreibprüfung (test_schreibhilfe, test_pruefung_paritaet)
+- ✅ Weggewinkte Funde wieder anzeigen — Optionen ▸ Rechtschreibprüfung (test_schreibhilfe, test_pruefung_paritaet)
 
 ## OPTIONEN > Rechtschreibprüfung > Benutzerwörterbuch
 
-- ⬜ Was das Programm gelernt hat — (noch nicht zugeordnet)
+- ✅ Was das Programm gelernt hat — Optionen ▸ Gedächtnis, storage/gelernt.py
 
 ## OPTIONEN > Sicherheit > Kennwortschutz
 
-- ⬜ Dokumentkennwort — (noch nicht zugeordnet)
-- ⬜ Bearbeitung sperren — Band: Überprüfen ▸ Schützen
+- ✅ Dokumentkennwort — formats.load/save mit msoffcrypto-tool (test_formats: Kennwort-Roundtrip)
+- ◐ Bearbeitung sperren — nur für die Sitzung (main_window.toggle_sperre, test_main_window); kein Kennwort für die Freigabe
 
 ## OPTIONEN > Sicherheit > Datenschutz
 
-- ⬜ Ausgeblendete Markups beim Öffnen anzeigen — (noch nicht zugeordnet)
-- ⬜ Beim Speichern persönliche Daten entfernen — (noch nicht zugeordnet)
+- ◐ Ausgeblendete Markups beim Öffnen anzeigen — Markup ist beim Öffnen immer sichtbar (umschaltbar)
+- ✅ Beim Speichern persönliche Daten entfernen — sicherheit/personendaten_weg (_meta_fuer_speichern)
 
 ## OPTIONEN > Schreibhilfe und KI > Prüfung und KI
 
-- ⬜ API-Schlüssel — (noch nicht zugeordnet)
-- ⬜ KI-Modell — (noch nicht zugeordnet)
-- ⬜ Für wen der Text ist — (noch nicht zugeordnet)
-- ⬜ Verbrauch — (noch nicht zugeordnet)
+- ✅ API-Schlüssel — Optionen ▸ Schreibhilfe und KI (test_ki; nur mit Attrappen gegen die echten Dienste getestet)
+- ✅ KI-Modell — Optionen ▸ Schreibhilfe und KI (test_ki; nur mit Attrappen gegen die echten Dienste getestet)
+- ✅ Für wen der Text ist — Optionen ▸ Schreibhilfe und KI (test_ki; nur mit Attrappen gegen die echten Dienste getestet)
+- ✅ Verbrauch — Optionen ▸ Schreibhilfe und KI (test_ki; nur mit Attrappen gegen die echten Dienste getestet)
 - ✅ Übersetzen — Band: Seitenleiste ▸ Sprache
 
 ## OPTIONEN > Gedächtnis > Gedächtnis
 
-- ⬜ Gelernte Schreibweisen — (noch nicht zugeordnet)
+- ✅ Gelernte Schreibweisen — Optionen ▸ Gedächtnis: Liste, Eintrag entfernen, alles vergessen
 
 ## OPTIONEN > Menüband anpassen
 
-- ⬜ Befehle auswählen — (noch nicht zugeordnet)
-- ⬜ Menüband anpassen — (noch nicht zugeordnet)
+- ✅ Befehle auswählen — Register anpassen (ein-/ausblenden, ordnen)
+- ✅ Menüband anpassen — Register anpassen (ein-/ausblenden, ordnen)
 
 ## OPTIONEN > Symbolleiste für den Schnellzugriff
 
-- ⬜ Befehle auswählen — (noch nicht zugeordnet)
-- ⬜ Derzeit angezeigte Optionen — (noch nicht zugeordnet)
+- ✅ Befehle auswählen — Schnellzugriff anpassen (Haken je Befehl)
+- ✅ Derzeit angezeigte Optionen — Schnellzugriff anpassen (Haken je Befehl)
 
 ## OPTIONEN > Erweitert > Erweitert
 
-- ⬜ Was zusätzlich geholt wurde — (noch nicht zugeordnet)
+- ✅ Was zusätzlich geholt wurde — Optionen ▸ Erweitert (LibreOffice, LanguageTool, Sprachausgabe)
