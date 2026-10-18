@@ -555,6 +555,33 @@ class Befehle:
 
     def an_netzlinien(self): return bool(self.ed and self.ed.gitter)
 
+    # ---- Dokumentansichten ----------------------------------------------------------------
+    def w_setzeLayout(self, k=None, art="blatt"):
+        t = self.w.current_tab()
+        if t:
+            if art != "blatt" and t.editor.gliederung:
+                self.gliederung()
+            t.set_layout(art)
+            self.w.band.aktualisieren(True)
+
+    def w_layoutJetzt(self, k=None):
+        t = self.w.current_tab()
+        return t.layout_art if t else "blatt"
+
+    def gliederung(self, k=None):
+        t = self.w.current_tab()
+        if not t:
+            return
+        if t.layout_art != "blatt":
+            t.set_layout("blatt")
+        t.editor.set_gliederung(not t.editor.gliederung)
+        self.w.statusBar().showMessage(
+            "Gliederung: nur Überschriften. Alt+Umschalt+←/→ ändert die Ebene." if t.editor.gliederung else "Gliederung beendet.", 5000)
+
+    def an_gliederung(self):
+        t = self.w.current_tab()
+        return bool(t and t.editor.gliederung)
+
     # ---- Lineale ---------------------------------------------------------------------------
     def linealZeigen(self, k=None):
         self.w.settings.set("ansicht/lineal", not self.w.settings.get_bool("ansicht/lineal", False))

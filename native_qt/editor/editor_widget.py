@@ -43,6 +43,9 @@ class DocumentEditor(QTextEdit):
         self.show_marks = False
         self.zoom = 1.0
         self.gitter = False
+        self.web = False
+        self._web_breite = 800
+        self.gliederung = False
         self.zeilenfokus = False
         self.marken = True                 # Textbegrenzungen (Eckmarken am Textrand)
         self.vorhersage = None            # Rückruf: Wortanfang → Liste von Vorschlägen
@@ -77,7 +80,7 @@ class DocumentEditor(QTextEdit):
 
     def _passe_hoehe_an(self, *_):
         h = int(self.document().size().height()) + 4
-        mind = int(mm_to_px(self.page.height_mm) * self.zoom)
+        mind = 0 if self.web else int(mm_to_px(self.page.height_mm) * self.zoom)
         self.setFixedHeight(max(h, mind))
         self.pageApplied.emit()
 
@@ -112,15 +115,51 @@ class DocumentEditor(QTextEdit):
         doc.setDocumentMargin(0)
         root = doc.rootFrame()
         ff: QTextFrameFormat = root.frameFormat()
-        ff.setTopMargin(mm_to_px(page.margin_top_mm))
-        ff.setBottomMargin(mm_to_px(page.margin_bottom_mm))
-        ff.setLeftMargin(mm_to_px(page.margin_left_mm))
-        ff.setRightMargin(mm_to_px(page.margin_right_mm))
-        root.setFrameFormat(ff)
-        self.setFixedWidth(int(mm_to_px(page.width_mm) * self.zoom) + 2)
+        if self.web:                      # Weblayout: fortlaufender Text in Fensterbreite, kleine Ränder
+            for setze in (ff.setTopMargin, ff.setBottomMargin, ff.setLeftMargin, ff.setRightMargin):
+                setze(mm_to_px(8))
+            root.setFrameFormat(ff)
+            self.setFixedWidth(max(300, int(self._web_breite)))
+        else:
+            ff.setTopMargin(mm_to_px(page.margin_top_mm))
+            ff.setBottomMargin(mm_to_px(page.margin_bottom_mm))
+            ff.setLeftMargin(mm_to_px(page.margin_left_mm))
+            ff.setRightMargin(mm_to_px(page.margin_right_mm))
+            root.setFrameFormat(ff)
+            self.setFixedWidth(int(mm_to_px(page.width_mm) * self.zoom) + 2)
         self._passe_hoehe_an()
         self._timer.start()
         self.pageApplied.emit()
+
+    def set_web(self, an: bool) -> None:
+        if an != self.web:
+            self.web = an
+            self.apply_page(self.page)
+            self.viewport().update()
+
+    def set_web_breite(self, px: int) -> None:
+        if px != self._web_breite:
+            self._web_breite = px
+            if self.web:
+                self.apply_page(self.page)
+
+    def set_gliederung(self, an: bool) -> None:
+        """Gliederungsansicht: nur Überschriften sind sichtbar; der Text dazwischen ist ausgeblendet (nicht gelöscht)."""
+        self.gliederung = an
+        b = self.document().firstBlock()
+        while b.isValid():
+            b.setVisible(not an or b.blockFormat().headingLevel() > 0)
+            b = b.next()
+        self.document().markContentsDirty(0, self.document().characterCount())
+        self.viewport().update()
+
+    def gliederung_ebene(self, delta: int) -> None:
+        """Überschrift hoch-/herabstufen (Gliederung): Ebene 1..6, darüber/darunter wird sie zu Text/Titel."""
+        c = self.textCursor()
+        bf = c.blockFormat()
+        lv = bf.headingLevel() + delta
+        if bf.headingLevel() and 1 <= lv <= 6:
+            self.apply_style(f"Überschrift {lv}")
 
     def set_gitter(self, an: bool) -> None:
         self.gitter = an
@@ -139,7 +178,7 @@ class DocumentEditor(QTextEdit):
 
     def _schmuck_zeichnen(self, p: QPainter) -> None:
         pg, z = self.page, self.zoom
-        if not (pg.border or pg.watermark):
+        if self.web or not (pg.border or pg.watermark):
             return
         from .pagination import seitenschmuck
         vp = self.viewport()
@@ -587,7 +626,7 @@ class DocumentEditor(QTextEdit):
         self._schmuck_zeichnen(p)
         if self.gitter:
             self._gitter_zeichnen(p)
-        if self.marken:
+        if self.marken and not self.web:
             z = self.zoom
             ml, mt = int(mm_to_px(self.page.margin_left_mm) * z), int(mm_to_px(self.page.margin_top_mm) * z)
             mr = int(mm_to_px(self.page.margin_right_mm) * z)
@@ -597,7 +636,7 @@ class DocumentEditor(QTextEdit):
             for x, dx in ((ml, 1), (x2, -1)):
                 p.drawLine(x, y - 1, x + dx * L, y - 1)
                 p.drawLine(x - dx, y - L, x - dx, y - 1)
-        if self._breaks:
+        if self._breaks and not self.web:
             p.setPen(QPen(QColor("#868e96"), 1, Qt.DashLine))
             f = p.font(); f.setPointSizeF(8); p.setFont(f)
             n = self.document().characterCount()
@@ -708,6 +747,10 @@ class DocumentEditor(QTextEdit):
         self.setTextCursor(end)
 
     def keyPressEvent(self, e) -> None:
+        if self.gliederung and (e.modifiers() & Qt.AltModifier) and (e.modifiers() & Qt.ShiftModifier) \
+                and e.key() in (Qt.Key_Left, Qt.Key_Right):
+            self.gliederung_ebene(-1 if e.key() == Qt.Key_Left else 1)
+            return
         if self._popup.isVisible():
             k = e.key()
             if k in (Qt.Key_Tab, Qt.Key_Return, Qt.Key_Enter):

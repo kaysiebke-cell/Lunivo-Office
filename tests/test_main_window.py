@@ -181,3 +181,36 @@ def test_lineale_zeigen_und_raender_ziehen(app, tmp_path):
     assert t.lineal_h.width() == t.editor.width()
     t.editor.document().setModified(False)
     w.close()
+
+
+def test_ansichten_web_zwei_seiten_gliederung(app, tmp_path):
+    from PySide6.QtGui import QTextCursor
+    w = win(tmp_path)
+    w.new_document(); w.resize(1200, 800); w.show()
+    t = w.current_tab(); e = t.editor
+    e.insertPlainText("Kapitel\nText A\nText B")
+    c = QTextCursor(e.document()); e.setTextCursor(c); e.apply_style("Überschrift 1")
+    # Weblayout
+    w.befehle.w_setzeLayout(None, "web")
+    assert e.web and e.width() <= t.viewport().width()
+    # Zwei Seiten
+    w.befehle.w_setzeLayout(None, "doppelt")
+    assert t.widget() is not t._holder and t.widget().seiten >= 1
+    w.befehle.w_setzeLayout(None, "blatt")
+    assert t.widget() is t._holder and not e.web
+    assert abs(e.width() - (e.page.width_mm * 96 / 25.4 + 2)) <= 2
+    # Gliederung
+    w.befehle.gliederung()
+    bloecke = [b.isVisible() for b in _bloecke(e.document())]
+    assert bloecke == [True, False, False]
+    e.set_gliederung(False)
+    assert all(b.isVisible() for b in _bloecke(e.document()))
+    e.document().setModified(False)
+    w.close()
+
+
+def _bloecke(doc):
+    b = doc.firstBlock()
+    while b.isValid():
+        yield b
+        b = b.next()

@@ -177,16 +177,43 @@ def render(qdoc: QTextDocument, page: PageSettings, device, first: int = 1, last
         first_page = False
         p.save()
         p.scale(s, s)
-        seitenschmuck(p, page, opt.get("hintergrund") is not False)
-        _draw_hf(p, page.header, QRectF(ml, mm_to_px(8), cw, mm_to_px(10)), n, total, base)
-        _draw_hf(p, page.footer, QRectF(ml, ph - mm_to_px(18), cw, mm_to_px(10)), n, total, base)
-        p.translate(ml, mt)
-        p.setClipRect(QRectF(0, 0, cw, ch))
-        p.translate(0, -(n - 1) * ch)
-        d.drawContents(p, QRectF(0, (n - 1) * ch, cw, ch))
+        zeichne_seite(p, d, page, n, total, base, opt.get("hintergrund") is not False)
         p.restore()
     p.end()
     return total
+
+
+def zeichne_seite(p: QPainter, d: QTextDocument, page: PageSettings, n: int, total: int, base: QFont,
+                  hintergrund: bool = True) -> None:
+    """Eine Seite (Nummer n, 1-basiert) mit Seitenschmuck, Kopf-/Fußzeile und Text; Maßstab 96 dpi, Ursprung links oben."""
+    cw, ch = page.content_width_px, page.content_height_px
+    ml, mt = mm_to_px(page.margin_left_mm), mm_to_px(page.margin_top_mm)
+    ph = mm_to_px(page.height_mm)
+    seitenschmuck(p, page, hintergrund)
+    _draw_hf(p, page.header, QRectF(ml, mm_to_px(8), cw, mm_to_px(10)), n, total, base)
+    _draw_hf(p, page.footer, QRectF(ml, ph - mm_to_px(18), cw, mm_to_px(10)), n, total, base)
+    p.save()
+    p.translate(ml, mt)
+    p.setClipRect(QRectF(0, 0, cw, ch))
+    p.translate(0, -(n - 1) * ch)
+    d.drawContents(p, QRectF(0, (n - 1) * ch, cw, ch))
+    p.restore()
+
+
+def seite_als_bild(qdoc: QTextDocument, page: PageSettings, n: int, faktor: float = 1.0, d: QTextDocument | None = None) -> QImage:
+    """Seite n als Bild (für die Zwei-Seiten-Ansicht und „Als Bild exportieren“)."""
+    d = d or paginated_copy(qdoc, page)
+    total = max(1, d.pageCount())
+    w, h = int(mm_to_px(page.width_mm) * faktor), int(mm_to_px(page.height_mm) * faktor)
+    img = QImage(w, h, QImage.Format_RGB32)
+    img.fill(Qt.white)
+    p = QPainter(img)
+    p.setRenderHint(QPainter.Antialiasing)
+    p.setRenderHint(QPainter.TextAntialiasing)
+    p.scale(faktor, faktor)
+    zeichne_seite(p, d, page, n, total, qdoc.defaultFont())
+    p.end()
+    return img
 
 
 def _leere_seiten(d: QTextDocument, page: PageSettings, total: int) -> set[int]:

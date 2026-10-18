@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import os
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import QHBoxLayout, QScrollArea, QVBoxLayout, QWidget
 
 from ..document_io.formats import Loaded
@@ -13,6 +13,8 @@ from ..storage import recovery
 
 
 class DocumentTab(QScrollArea):
+    layout_geaendert = Signal(str)
+
     def __init__(self, loaded: Loaded | None = None, path: str | None = None, title: str | None = None):
         super().__init__()
         self.setWidgetResizable(True)
@@ -43,6 +45,8 @@ class DocumentTab(QScrollArea):
         lay.setAlignment(reihe, Qt.AlignTop)
         lay.addStretch(1)
         self.setWidget(holder)
+        self._holder = holder
+        self.layout_art = "blatt"
         self.path = path
         self.title = title or (os.path.basename(path) if path else "Unbenannt")
         self.meta: dict = {}
@@ -52,6 +56,31 @@ class DocumentTab(QScrollArea):
             self.editor.set_document_and_page(loaded.doc, loaded.page)
             self.meta = loaded.meta
         self.editor.document().setDefaultFont(self.editor.document().defaultFont())
+
+    def set_layout(self, art: str) -> None:
+        """blatt (Drucklayout) | web (Weblayout) | doppelt (Zwei Seiten, nur Ansicht)."""
+        from .seiten_ansicht import SeitenAnsicht
+        if self.layout_art == "doppelt" and art != "doppelt":
+            alt = self.takeWidget()
+            if alt is not self._holder and alt is not None:
+                alt.deleteLater()
+            self.setWidget(self._holder)
+            self._holder.show()
+        self.layout_art = art
+        self.editor.set_web(art == "web")
+        if art == "web":
+            self.editor.set_web_breite(self.viewport().width() - 24 - 22)
+        if art == "doppelt":
+            ansicht = SeitenAnsicht(self.editor, self.viewport().width())
+            self.takeWidget()
+            self._holder.hide()
+            self.setWidget(ansicht)
+        self.layout_geaendert.emit(art)
+
+    def resizeEvent(self, ev):
+        super().resizeEvent(ev)
+        if self.layout_art == "web":
+            self.editor.set_web_breite(self.viewport().width() - 24 - 22)
 
     def _rand(self, seite: str, mm: float) -> None:
         pg = self.editor.page.copy()
