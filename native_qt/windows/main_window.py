@@ -105,6 +105,7 @@ class MainWindow(QMainWindow):
         self._sync_timer.setInterval(60)
         self._sync_timer.timeout.connect(self._sync_format)
         self._verbinde_felder()
+        self.ansicht_optionen_anwenden()
         self._refresh_ui()
 
     # ==== Aktionen =======================================================
@@ -307,7 +308,9 @@ class MainWindow(QMainWindow):
         e.document().contentsChanged.connect(self._sync_status)
         e.document().contentsChanged.connect(self.assistant.dokument_geaendert)
         e.document().contentsChanged.connect(self.navigation.spaeter)
+        e.opt = lambda name, std=True: self.settings.get_bool(name, std)
         e.set_marken(self.settings.get_bool("ui/marken", True))
+        self.formatzeichen_anwenden(e)
         self._lesehilfe_auf(e)
         felder = self.band.felder
         if felder and e is not None:
@@ -366,7 +369,9 @@ class MainWindow(QMainWindow):
         tab = DocumentTab()
         from PySide6.QtGui import QTextDocument
         d = QTextDocument()
-        f = QFont("Liberation Sans"); f.setPointSizeF(11); d.setDefaultFont(f)
+        f = QFont(self.settings.get("standard/schrift", "Liberation Sans"))
+        f.setPointSizeF(float(self.settings.get("standard/groesse", 11)))
+        d.setDefaultFont(f)
         tab.editor.set_document_and_page(d, PageSettings())
         self._add_tab(tab)
 
@@ -421,12 +426,15 @@ class MainWindow(QMainWindow):
         return self._save_tab_as(t) if t else False
 
     def _ask_path(self, tab: DocumentTab, title: str, only: str | None = None) -> str | None:
-        folder = os.path.dirname(tab.path) if tab.path else self.settings.get("last_dir", os.path.expanduser("~"))
+        folder = os.path.dirname(tab.path) if tab.path else (self.settings.get("speichern/ordner", "") or
+                                                             self.settings.get("last_dir", os.path.expanduser("~")))
         base = os.path.splitext(tab.title)[0] or "Unbenannt"
         if only:
             flt = formats.SAVE_FILTERS[only]; default = only
         else:
-            flt = "Word-Dokument (*.docx);;Textdatei (*.txt)"; default = ".docx"
+            standard = self.settings.get("speichern/standard", ".docx")
+            flt = "Word-Dokument (*.docx);;Textdatei (*.txt)" if standard != ".txt" else "Textdatei (*.txt);;Word-Dokument (*.docx)"
+            default = standard if standard in (".docx", ".txt") else ".docx"
         path, chosen = QFileDialog.getSaveFileName(self, title, os.path.join(folder, base + default), flt)
         if not path:
             return None
@@ -445,9 +453,17 @@ class MainWindow(QMainWindow):
         self._update_tab_titles()
         return True
 
+    def _meta_fuer_speichern(self, tab: DocumentTab) -> dict:
+        m = dict(tab.meta)
+        if self.settings.get_bool("sicherheit/personendaten_weg", False) or not self.settings.get_bool("benutzer/verwenden", True):
+            m["author"] = ""
+        elif self.settings.get("benutzer/name", ""):
+            m["author"] = self.settings.get("benutzer/name", "")
+        return m
+
     def _write(self, tab: DocumentTab, path: str, mark_saved: bool = True) -> bool:
         try:
-            rep = formats.save(path, tab.editor.document(), tab.page, tab.meta)
+            rep = formats.save(path, tab.editor.document(), tab.page, self._meta_fuer_speichern(tab))
         except DocumentIOError as e:
             QMessageBox.critical(self, "Speichern fehlgeschlagen", str(e)); return False
         if mark_saved:
@@ -481,32 +497,53 @@ class MainWindow(QMainWindow):
         if not path.lower().endswith(".pdf"):
             path += ".pdf"
         try:
-            n = export_pdf(path, t.editor.document(), t.page, os.path.splitext(t.title)[0])
+            autor = self._meta_fuer_speichern(t).get("author", "") if self.settings.get_bool("pdf/eigenschaften", True) else ""
+            n = export_pdf(path, t.editor.document(), t.page, os.path.splitext(t.title)[0], autor)
         except Exception as e:  # PDF-Ausgabe darf das Programm nicht beenden
             QMessageBox.critical(self, "PDF-Export fehlgeschlagen", str(e)); return
         self.statusBar().showMessage(f"PDF gespeichert ({n} Seiten): {path}", 5000)
+        if self.settings.get_bool("pdf/oeffnen", False):
+            from PySide6.QtCore import QUrl
+            from PySide6.QtGui import QDesktopServices
+            QDesktopServices.openUrl(QUrl.fromLocalFile(path))
 
     def print_dialog(self):
         t = self.current_tab()
         if not t:
             return
-        pr = QPrinter(QPrinter.HighResolution)
+        pr = self._neuer_drucker()
         dlg = QPrintDialog(pr, self)
         dlg.setOption(QPrintDialog.PrintPageRange, True)
         dlg.setMinMax(1, t.editor.page_count)
         if dlg.exec():
-            print_document(pr, t.editor.document(), t.page)
+            self._vor_dem_drucken(t)
+            print_document(pr, t.editor.document(), t.page, self.druckoptionen())
             self.statusBar().showMessage("An den Drucker gesendet.", 4000)
 
     def print_preview(self):
         t = self.current_tab()
         if not t:
             return
-        pr = QPrinter(QPrinter.HighResolution)
+        pr = self._neuer_drucker()
         dlg = QPrintPreviewDialog(pr, self)
-        dlg.paintRequested.connect(lambda p: print_document(p, t.editor.document(), t.page))
+        dlg.paintRequested.connect(lambda p: print_document(p, t.editor.document(), t.page, self.druckoptionen()))
         dlg.resize(1000, 800)
         dlg.exec()
+
+    def druckoptionen(self) -> dict:
+        return {"umgekehrt": self.settings.get_bool("drucken/umgekehrt", False),
+                "duplex": self.settings.get("drucken/duplex", "alle"),
+                "hintergrund": self.settings.get_bool("drucken/hintergrund", True),
+                "leere": self.settings.get_bool("drucken/leere", True)}
+
+    def _neuer_drucker(self):
+        return QPrinter(QPrinter.HighResolution if self.settings.get_bool("drucken/hoch", True) else QPrinter.ScreenResolution)
+
+    def _vor_dem_drucken(self, tab):
+        """„Felder vor dem Drucken aktualisieren“: Verzeichnisse neu rechnen."""
+        if self.settings.get_bool("drucken/felder", True):
+            from ..editor.verzeichnis import verzeichnis_aktualisieren
+            verzeichnis_aktualisieren(tab.editor)
 
     def close_tab(self, index: int) -> bool:
         w = self.tabs.widget(index)
@@ -610,6 +647,37 @@ class MainWindow(QMainWindow):
         s = self.settings
         e.set_lesehilfe(PAPIERTOENE.get(s.get("lesehilfe/papier", "Weiß"), "#ffffff"),
                         float(s.get("lesehilfe/buchstaben", 0)), float(s.get("lesehilfe/wort", 0)))
+
+    def formatzeichen_anwenden(self, e=None):
+        """Formatierungszeichen für neue Reiter: Zustand aus Optionen (ui/steuerzeichen)."""
+        from PySide6.QtGui import QTextOption
+        an = self.settings.get_bool("ui/steuerzeichen", False)
+        self.marks_on = an
+        for ed in ([e] if e is not None else [t.editor for t in self._doc_tabs()]):
+            opt = ed.document().defaultTextOption()
+            fl = QTextOption.ShowTabsAndSpaces | QTextOption.ShowLineAndParagraphSeparators
+            opt.setFlags(opt.flags() | fl if an else opt.flags() & ~fl)
+            ed.document().setDefaultTextOption(opt)
+
+    def ansicht_optionen_anwenden(self):
+        """Statusleiste, QuickInfo, Bedienschrift, Symbolgröße — aus den Optionen."""
+        self.statusBar().setVisible(self.settings.get_bool("ui/statusleiste", True))
+        app = QApplication.instance()
+        fam = self.settings.get("ui/bedienschrift", "")
+        gr = self.settings.get_int("ui/bedienschrift_groesse", 0)
+        if fam or gr:
+            f = app.font()
+            if fam:
+                f.setFamily(fam)
+            if gr:
+                f.setPointSize(gr)
+            app.setFont(f)
+        from ..widgets import icons
+        faktor = {"klein": 0.8, "mittel": 1.0, "gross": 1.3}.get(self.settings.get("ui/icongroesse", "mittel"), 1.0)
+        if abs(icons.FAKTOR - faktor) > 1e-6:
+            icons.FAKTOR = faktor
+            icons.leeren()
+            self.neu_bauen_band()
 
     def lesehilfe_anwenden(self):
         for t in self._doc_tabs():
@@ -733,6 +801,7 @@ class MainWindow(QMainWindow):
 
     def toggle_marks(self, on: bool):
         self.marks_on = on
+        self.settings.set("ui/steuerzeichen", on)
         from PySide6.QtGui import QTextOption
         for t in self._doc_tabs():
             opt = t.editor.document().defaultTextOption()

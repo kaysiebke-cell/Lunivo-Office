@@ -94,3 +94,28 @@ def test_seitenwechsel_werden_gefunden(app):
     # Seitenumbruch erzwingt einen Wechsel
     e2 = make(app, "A"); e2.moveCursor(QTextCursor.End); e2.insert_page_break(); e2.insertPlainText("B"); e2._recount()
     assert len(e2.seitenwechsel) == 1
+
+
+def _tippe(e, text):
+    from PySide6.QtGui import QKeyEvent
+    from PySide6.QtCore import QEvent
+    for ch in text:
+        e.keyPressEvent(QKeyEvent(QEvent.KeyPress, Qt.Key_Space if ch == " " else 0, Qt.NoModifier, ch))
+
+
+def test_autoformat_liste_und_url(app):
+    e = make(app, "")
+    e.opt = lambda n, std=True: True
+    _tippe(e, "1. ")
+    assert e.textCursor().currentList() is not None
+    e2 = make(app, "")
+    e2.opt = lambda n, std=True: True
+    _tippe(e2, "- ")
+    assert e2.textCursor().currentList() is not None
+
+
+def test_seitenliste_duplex_umgekehrt():
+    from native_qt.editor.pagination import seiten_liste
+    assert seiten_liste(5, 1, 5, {"duplex": "vorder"}) == [1, 3, 5]
+    assert seiten_liste(5, 1, 5, {"duplex": "rueck"}) == [2, 4]
+    assert seiten_liste(3, 1, 3, {"umgekehrt": True}) == [3, 2, 1]

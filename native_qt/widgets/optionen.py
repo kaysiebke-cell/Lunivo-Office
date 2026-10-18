@@ -229,8 +229,8 @@ class OptionenDialog(QDialog):
 
     # ================= Wie im WPS Writer =================
     def _ansicht(self, titel):
-        p = _Seite(self.w, titel, ["Lineal", "Vertikales Lineal", "Gitternetzlinien", "Statusleiste ausblenden", "QuickInfo",
-                                   "Live-Vorschau", "Minisymbolleiste", "Tipp für Kopf-/Fußzeile", "Druckoptionen (Hervorhebungen, Zuschnittsmarken, Feldfunktionen …)",
+        p = _Seite(self.w, titel, ["Lineal", "Vertikales Lineal", "Gitternetzlinien",
+                                   "Live-Vorschau", "Minisymbolleiste", "Tipp für Kopf-/Fußzeile",
                                    "Ausgeblendeter Text, Objektanker", "Doppelklick blendet das Band aus"])
         f = p.gruppe("Anzeigen")
         p.haken(f, "ui/marken", "Textbegrenzungen (Eckmarken)", True, self.w.set_marken)
@@ -239,19 +239,31 @@ class OptionenDialog(QDialog):
         f = p.gruppe("Formatierungszeichen")
         p.haken(f, "ui/steuerzeichen", "Absatzmarken, Leerzeichen und Tabstoppzeichen anzeigen", False,
                 lambda on: self.w.a_marks.setChecked(on))
+        p.haken(f, "ui/statusleiste", "Statusleiste anzeigen", True, lambda on: self.w.statusBar().setVisible(on))
+        p.haken(f, "ui/strg_klick_link", "Strg + Klick öffnet Hyperlinks", True)
         f = p.gruppe("Darstellung")
+        p.auswahl(f, "ui/icongroesse", "Symbolgröße", ["klein", "mittel", "gross"], "mittel", lambda _: self.w.ansicht_optionen_anwenden())
+        p.zahl(f, "ui/bedienschrift_groesse", "Schriftgröße der Bedienelemente (0 = System)", 0, 24, 0, " pt",
+               wirkt=lambda _: self.w.ansicht_optionen_anwenden())
         p.auswahl(f, "theme", "Helligkeit", ["system", "light", "dark"], "system", self.w.set_theme)
         p.abschluss()
         return p
 
     def _bearbeiten(self, titel):
         p = _Seite(self.w, titel, ["Wortweise markieren, Text mit der Maus verschieben", "Maximale Rückgängig-Schritte",
-                                   "AutoFormat (Listen automatisch erkennen)", "Internet- und Netzwerkpfade durch Hyperlinks ersetzen",
-                                   "Erstzeileneinzug / Tabulator-Einzug", "Ausschneiden und Einfügen"])
+                                   "Ausschneiden und Einfügen"])
         f = p.gruppe("AutoKorrektur")
         p.haken(f, "schreibhilfe/autokorr", "AutoKorrektur (Hauptschalter)", True, lambda on: self.w.assistant.setze("autokorr", on))
         for name, (std, text) in autokorrektur.SCHALTER.items():
             p.haken(f, "schreibhilfe/" + name, text, std)
+        f = p.gruppe("Eingabe")
+        p.haken(f, "bearbeiten/tippen_ersetzt", "Eingabe ersetzt die Markierung", True)
+        p.haken(f, "autoformat/liste", "Listen beim Tippen erkennen (1.  a)  -  *)", True)
+        p.haken(f, "autoformat/punkte", "„- “ und „* “ am Zeilenanfang werden zur Aufzählung", True)
+        p.haken(f, "schreibhilfe/akPfade", "Internet- und Netzwerkpfade durch Hyperlinks ersetzen", True)
+        p.haken(f, "schreibhilfe/akTabEinzug", "Tab / Rücktaste am Absatzanfang ändert den Einzug", True)
+        p.haken(f, "schreibhilfe/akErstzeile", "Leerzeichen am Absatzanfang werden Erstzeileneinzug", False)
+        p.haken(f, "schreibhilfe/akZentriert", "Zentrieren hebt den Erstzeileneinzug auf", True)
         f = p.gruppe("Wortvorhersage")
         p.haken(f, "schreibhilfe/vorhersage", "Wortvorhersage", True, lambda on: self.w.assistant.setze("vorhersage", on))
         p.abschluss()
@@ -261,6 +273,14 @@ class OptionenDialog(QDialog):
         p = _Seite(self.w, titel, ["Maßeinheit", "Bilder nicht komprimieren", "Webseitencodierung", "Kompatibilitätsoptionen"])
         f = p.gruppe("Speichern")
         p.auswahl(f, "speichern/standard", "Dateien standardmäßig speichern als", [".docx", ".txt"], ".docx")
+        p.zeile(f, "Standardordner (leer = zuletzt benutzter)")
+        e = QLineEdit(p.s.get("speichern/ordner", "")); e.textChanged.connect(lambda t: p.s.set("speichern/ordner", t)); f.addRow("Ordner", e)
+        f = p.gruppe("Neue Dokumente")
+        e = QLineEdit(p.s.get("standard/schrift", "Liberation Sans")); e.textChanged.connect(lambda t: p.s.set("standard/schrift", t)); f.addRow("Schriftart", e)
+        p.zahl(f, "standard/groesse", "Schriftgröße", 6, 72, 11, " pt")
+        f = p.gruppe("PDF")
+        p.haken(f, "pdf/oeffnen", "PDF nach dem Export öffnen", False)
+        p.haken(f, "pdf/eigenschaften", "Dokumenteigenschaften (Autor) in das PDF übernehmen", True)
         p.hinweis("DOCX ist das Austauschformat mit der höchsten Treue. ODT, DOC und RTF gehen über LibreOffice (Datei ▸ Exportieren).")
         p.abschluss()
         return p
@@ -278,8 +298,14 @@ class OptionenDialog(QDialog):
         return p
 
     def _drucken(self, titel):
-        p = _Seite(self.w, titel, ["Womit das Druckfenster aufgeht", "Hohe Qualität", "Hervorhebungen / Hintergrundfarben drucken",
-                                   "Textbegrenzungen / Zuschnittsmarken drucken"])
+        p = _Seite(self.w, titel, ["Womit das Druckfenster aufgeht", "Textbegrenzungen / Zuschnittsmarken drucken"])
+        f = p.gruppe("Drucken")
+        p.haken(f, "drucken/hoch", "Hohe Qualität (Druckerauflösung)", True)
+        p.haken(f, "drucken/umgekehrt", "Seiten in umgekehrter Reihenfolge drucken", False)
+        p.haken(f, "drucken/hintergrund", "Hintergrundfarben und Bilder drucken", True)
+        p.haken(f, "drucken/leere", "Leere Seiten drucken", True)
+        p.haken(f, "drucken/felder", "Felder (Verzeichnisse) vor dem Drucken aktualisieren", True)
+        p.auswahl(f, "drucken/duplex", "Beidseitig von Hand", ["alle", "vorder", "rueck"], "alle")
         p.hinweis("Gedruckt wird über das Druckfenster des Systems (Datei ▸ Drucken). Kopf-/Fußzeile und Seitenzahlen werden mitgedruckt.")
         p.abschluss()
         return p
@@ -290,6 +316,8 @@ class OptionenDialog(QDialog):
         e = QLineEdit(p.s.get("benutzer/name", ""))
         e.textChanged.connect(lambda t: p.s.set("benutzer/name", t))
         f.addRow("Name (Autor in DOCX-Dokumenten)", e)
+        p.haken(f, "benutzer/verwenden", "Benutzerdaten in Dokumenten verwenden", True)
+        p.haken(f, "sicherheit/personendaten_weg", "Beim Speichern persönliche Daten entfernen", False)
         p.abschluss()
         return p
 

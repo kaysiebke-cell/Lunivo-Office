@@ -13,6 +13,7 @@ _HIER = os.path.dirname(os.path.abspath(__file__))
 _PFADE: dict | None = None
 _CACHE: dict = {}
 STRICH = 1.7
+FAKTOR = 1.0          # Größe der Symbole (Optionen ▸ Darstellung)
 
 
 def pfade() -> dict:
@@ -50,6 +51,7 @@ def _pixmap(name: str, farbe: str, px: int) -> QPixmap:
 
 
 def icon(name: str, px: int = 20) -> QIcon:
+    px = max(10, int(round(px * FAKTOR)))
     """Symbol in den Farben der aktuellen Palette (hell/dunkel), ausgegraut wenn deaktiviert."""
     if not hat(name):
         return QIcon()

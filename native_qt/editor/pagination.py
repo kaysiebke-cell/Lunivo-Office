@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from PySide6.QtCore import QMarginsF, QRectF, QSizeF, Qt
 from PySide6.QtGui import (
-    QFont, QImage, QPageLayout, QPageSize, QPainter, QPdfWriter, QTextDocument,
+    QFont, QImage, QPageLayout, QPageSize, QPainter, QPdfWriter, QTextCharFormat, QTextDocument, QTextFormat,
 )
 from PySide6.QtPrintSupport import QPrinter
 
@@ -61,10 +61,48 @@ def _draw_hf(p: QPainter, hf, rect: QRectF, n: int, total: int, base: QFont) -> 
     p.drawText(rect, int(flag | Qt.AlignVCenter | Qt.TextWordWrap), _expand(hf.text, n, total))
 
 
+def _ohne_hintergruende(d: QTextDocument) -> None:
+    from PySide6.QtCore import Qt as _Qt
+    from PySide6.QtGui import QBrush, QTextCursor
+    c = QTextCursor(d)
+    c.select(QTextCursor.Document)
+    f = QTextCharFormat(); f.setBackground(QBrush(_Qt.NoBrush)); c.mergeCharFormat(f)
+    b = d.firstBlock()
+    while b.isValid():
+        bf = b.blockFormat()
+        if bf.hasProperty(QTextFormat.BackgroundBrush):
+            QTextCursor(b).setBlockFormat(_bf_ohne(bf))
+        b = b.next()
+
+
+def _bf_ohne(bf):
+    from PySide6.QtCore import Qt as _Qt
+    from PySide6.QtGui import QBrush
+    bf.setBackground(QBrush(_Qt.NoBrush))
+    return bf
+
+
+def seiten_liste(total: int, first: int, last: int, opt: dict | None) -> list[int]:
+    """Welche Seiten in welcher Reihenfolge gedruckt werden (Duplex, umgekehrte Reihenfolge)."""
+    seiten = list(range(first, last + 1))
+    opt = opt or {}
+    duplex = opt.get("duplex", "alle")
+    if duplex == "vorder":
+        seiten = [n for n in seiten if n % 2 == 1]
+    elif duplex == "rueck":
+        seiten = [n for n in seiten if n % 2 == 0]
+    if opt.get("umgekehrt"):
+        seiten.reverse()
+    return seiten
+
+
 def render(qdoc: QTextDocument, page: PageSettings, device, first: int = 1, last: int | None = None,
-           dpi: int | None = None) -> int:
+           dpi: int | None = None, opt: dict | None = None) -> int:
     """Zeichnet die Seiten first..last auf device (QPdfWriter/QPrinter). → Anzahl Seiten."""
+    opt = opt or {}
     d = paginated_copy(qdoc, page)
+    if opt.get("hintergrund") is False:
+        _ohne_hintergruende(d)
     total = max(1, d.pageCount())
     last = total if last is None else min(last, total)
     p = QPainter(device)
@@ -74,7 +112,11 @@ def render(qdoc: QTextDocument, page: PageSettings, device, first: int = 1, last
     pw, ph = mm_to_px(page.width_mm), mm_to_px(page.height_mm)
     base = qdoc.defaultFont()
     first_page = True
-    for n in range(first, last + 1):
+    liste = seiten_liste(total, first, last, opt)
+    if opt.get("leere") is False:
+        leer = _leere_seiten(d, page, total)
+        liste = [n for n in liste if n not in leer] or liste[:1]
+    for n in liste:
         if not first_page:
             device.newPage()
         first_page = False
@@ -91,6 +133,19 @@ def render(qdoc: QTextDocument, page: PageSettings, device, first: int = 1, last
     return total
 
 
+def _leere_seiten(d: QTextDocument, page: PageSettings, total: int) -> set[int]:
+    ch = page.content_height_px
+    mit_text = set()
+    b = d.firstBlock()
+    lay = d.documentLayout()
+    while b.isValid():
+        if b.text().strip(chr(0xfffc) + " \t\n") or b.text():
+            r = lay.blockBoundingRect(b)
+            mit_text.add(int(r.top() // ch) + 1)
+        b = b.next()
+    return {n for n in range(1, total + 1) if n not in mit_text}
+
+
 def _page_layout(page: PageSettings) -> QPageLayout:
     size = QPageSize(QSizeF(min(page.width_mm, page.height_mm), max(page.width_mm, page.height_mm)),
                      QPageSize.Millimeter)
@@ -98,19 +153,25 @@ def _page_layout(page: PageSettings) -> QPageLayout:
     return QPageLayout(size, orient, QMarginsF(0, 0, 0, 0), QPageLayout.Millimeter)
 
 
-def export_pdf(path: str, qdoc: QTextDocument, page: PageSettings, title: str = "") -> int:
+def export_pdf(path: str, qdoc: QTextDocument, page: PageSettings, title: str = "", author: str = "") -> int:
+    from PySide6.QtCore import QByteArray
     w = QPdfWriter(path)
     w.setResolution(300)
     w.setPageLayout(_page_layout(page))
     if title:
         w.setTitle(title)
     w.setCreator("Lunivo Writer")
+    if author:
+        esc = author.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+        w.setDocumentXmpMetadata(QByteArray(("<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\">"
+                                             "<rdf:Description xmlns:dc=\"http://purl.org/dc/elements/1.1/\"><dc:creator><rdf:Seq><rdf:li>"
+                                             + esc + "</rdf:li></rdf:Seq></dc:creator></rdf:Description></rdf:RDF></x:xmpmeta>").encode("utf-8")))
     return render(qdoc, page, w)
 
 
-def print_document(printer: QPrinter, qdoc: QTextDocument, page: PageSettings) -> int:
+def print_document(printer: QPrinter, qdoc: QTextDocument, page: PageSettings, opt: dict | None = None) -> int:
     printer.setPageLayout(_page_layout(page))
     first, last = 1, None
     if printer.printRange() == QPrinter.PageRange and printer.fromPage():
         first, last = printer.fromPage(), printer.toPage() or None
-    return render(qdoc, page, printer, first, last)
+    return render(qdoc, page, printer, first, last, opt=opt)

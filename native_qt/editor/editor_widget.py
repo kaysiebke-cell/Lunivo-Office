@@ -44,6 +44,7 @@ class DocumentEditor(QTextEdit):
         self.vorhersage = None            # Rückruf: Wortanfang → Liste von Vorschlägen
         self.autokorr = None              # Rückruf: Text vor dem Zeiger → korrigierter Text
         self.kontext_hook = None          # Rückruf(menü, position): ergänzt das Rechtsklick-Menü
+        self.opt = lambda name, std=True: std      # Rückruf: Schalter aus den Optionen
         self._wellen: list[dict] = []
         self._popup = QListWidget(None)
         self._popup.setWindowFlags(Qt.ToolTip)
@@ -257,7 +258,11 @@ class DocumentEditor(QTextEdit):
         cur.endEditBlock()
 
     def set_alignment(self, al: Qt.AlignmentFlag) -> None:
-        self._block_merge(lambda bf: bf.setAlignment(al))
+        def f(bf):
+            bf.setAlignment(al)
+            if (al & Qt.AlignHCenter) and self.opt("schreibhilfe/akZentriert", True):
+                bf.setTextIndent(0)               # „Bei zentriertem Ausrichten Erstzeileneinzug löschen“
+        self._block_merge(f)
 
     def change_indent(self, delta_mm: float) -> None:
         d = mm_to_px(delta_mm)
@@ -471,6 +476,13 @@ class DocumentEditor(QTextEdit):
 
     def mouseReleaseEvent(self, e) -> None:
         super().mouseReleaseEvent(e)
+        if (e.modifiers() & Qt.ControlModifier) and self.opt("ui/strg_klick_link", True):
+            href = self.anchorAt(e.pos())
+            if href:
+                from PySide6.QtCore import QUrl as _U
+                from PySide6.QtGui import QDesktopServices
+                QDesktopServices.openUrl(_U(href))
+                return
         c = self.cursorForPosition(e.pos())
         c2 = QTextCursor(c)
         c2.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor)
@@ -630,15 +642,78 @@ class DocumentEditor(QTextEdit):
             if k in (Qt.Key_Down, Qt.Key_Up):
                 r = self._popup.currentRow() + (1 if k == Qt.Key_Down else -1)
                 self._popup.setCurrentRow(max(0, min(self._popup.count() - 1, r))); e.accept(); return
+        c0 = self.textCursor()
+        k = e.key()
+        # Tab/Rücktaste setzen den Einzug (nur am Absatzanfang)
+        if self.opt("schreibhilfe/akTabEinzug", True) and not c0.hasSelection() and c0.atBlockStart() \
+                and not c0.currentList() and k in (Qt.Key_Tab, Qt.Key_Backspace):
+            bf = c0.blockFormat()
+            if k == Qt.Key_Tab:
+                self.change_indent(10); e.accept(); return
+            if bf.leftMargin() > 0:
+                self.change_indent(-10); e.accept(); return
+        # Tippen ersetzt die Auswahl — ist das abgeschaltet, wird hinter die Auswahl geschrieben
+        if c0.hasSelection() and e.text() and e.text().isprintable() and not (e.modifiers() & (Qt.ControlModifier | Qt.AltModifier)) \
+                and not self.opt("bearbeiten/tippen_ersetzt", True):
+            c0.setPosition(max(c0.anchor(), c0.position())); self.setTextCursor(c0)
         super().keyPressEvent(e)
         t = e.text()
+        if t == " " and self.opt("autoformat/liste", True):
+            self._autoformat_liste()
         if t and t in " .,;:!?\n\r":
             self._popup.hide()
             self._autokorr_anwenden()
+            if t == " ":
+                self._autokorr_extras()
         elif t and (t.isalpha() or e.key() == Qt.Key_Backspace):
             self._vorschlaege_zeigen()
         else:
             self._popup.hide()
+
+    def _autoformat_liste(self) -> None:
+        """„1. “ / „1) “ am Absatzanfang → Nummerierung, „* “ / „- “ / „• “ → Aufzählung."""
+        c = self.textCursor()
+        if c.hasSelection() or c.currentList():
+            return
+        vor = c.block().text()[:c.positionInBlock()]
+        import re as _re
+        art = None
+        if _re.fullmatch(r"\d{1,3}[.)] ", vor):
+            art = "number"
+        elif vor in ("* ", "- ", "• ") and self.opt("autoformat/punkte", True):
+            art = "bullet"
+        if art == "number" and not self.opt("autoformat/liste", True):
+            return
+        if art:
+            c.beginEditBlock()
+            c.movePosition(QTextCursor.StartOfBlock, QTextCursor.KeepAnchor)
+            c.removeSelectedText()
+            self.toggle_list(art)
+            c.endEditBlock()
+
+    def _autokorr_extras(self) -> None:
+        """Netzadressen → Hyperlinks; Leerzeichen am Absatzanfang → Erstzeileneinzug."""
+        c = self.textCursor()
+        if c.hasSelection():
+            return
+        vor = c.block().text()[:c.positionInBlock()]
+        import re as _re
+        if self.opt("schreibhilfe/akPfade", True):
+            m = _re.search(r"(https?://\S+|www\.\S+|[\w.+-]+@[\w-]+\.[\w.-]+)[ ]$", vor)
+            if m:
+                start = c.block().position() + m.start(1)
+                end = c.block().position() + m.end(1)
+                url = m.group(1)
+                href = url if _re.match(r"https?://", url) else ("mailto:" + url if "@" in url else "http://" + url)
+                cc = QTextCursor(self.document()); cc.setPosition(start); cc.setPosition(end, QTextCursor.KeepAnchor)
+                f = QTextCharFormat(); f.setAnchor(True); f.setAnchorHref(href)
+                f.setForeground(QBrush(QColor("#0563C1"))); f.setFontUnderline(True)
+                cc.mergeCharFormat(f)
+        if self.opt("schreibhilfe/akErstzeile", False) and _re.fullmatch(r"[ \t]{3,}", vor):
+            cc = QTextCursor(self.document()); cc.setPosition(c.block().position())
+            cc.setPosition(c.block().position() + len(vor), QTextCursor.KeepAnchor); cc.removeSelectedText()
+            bf = QTextCursor(c.block()).blockFormat(); bf.setTextIndent(mm_to_px(10))
+            QTextCursor(self.document().findBlock(c.block().position())).setBlockFormat(bf)
 
     def focusOutEvent(self, e) -> None:
         try:
