@@ -7,7 +7,7 @@ from PySide6.QtGui import (
     QTextDocument, QTextFormat, QTextFrameFormat, QTextImageFormat, QTextListFormat,
     QTextTableFormat, QTextLength,
 )
-from PySide6.QtWidgets import QListWidget, QTextEdit
+from PySide6.QtWidgets import QListWidget, QScrollArea, QTextEdit
 
 from ..document_io.docx_reader import LH_PROPORTIONAL, STYLE_PROP
 from .page import PageSettings, mm_to_px
@@ -35,7 +35,7 @@ class DocumentEditor(QTextEdit):
         super().__init__(parent)
         self.page = PageSettings()
         self.setAcceptRichText(True)
-        self.setFrameShape(QTextEdit.NoFrame)
+        self.setFrameShape(QTextEdit.StyledPanel)
         self.setUndoRedoEnabled(True)
         self.setLineWrapMode(QTextEdit.WidgetWidth)
         self.show_marks = False
@@ -49,6 +49,7 @@ class DocumentEditor(QTextEdit):
         self._popup.setFocusPolicy(Qt.NoFocus)
         self._popup.itemClicked.connect(lambda it: self._vorschlag_nehmen(it.text()))
         self._pages = 1
+        self._breaks: list[int] = []
         self._paged: QTextDocument | None = None
         self._timer = QTimer(self)
         self._timer.setSingleShot(True)
@@ -58,11 +59,38 @@ class DocumentEditor(QTextEdit):
         self.cursorPositionChanged.connect(lambda: self.zeilenfokus and self.viewport().update())
         self.currentCharFormatChanged.connect(lambda *_: self.formatChanged.emit())
         self.document().contentsChanged.connect(self._timer.start)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)       # die Seite wächst mit, der graue Grund scrollt
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.cursorPositionChanged.connect(self._scroll_outer)
+        self._verbinde_groesse()
         self.apply_page(self.page)
 
     # ---- Dokument und Seite ---------------------------------------------
+    def _verbinde_groesse(self) -> None:
+        self.document().documentLayout().documentSizeChanged.connect(self._passe_hoehe_an)
+
+    def _passe_hoehe_an(self, *_):
+        h = int(self.document().size().height()) + 4
+        mind = int(mm_to_px(self.page.height_mm))
+        self.setFixedHeight(max(h, mind))
+
+    def _aussen(self):
+        w = self.parent()
+        while w is not None and not isinstance(w, QScrollArea):
+            w = w.parent()
+        return w
+
+    def _scroll_outer(self) -> None:
+        sa = self._aussen()
+        if sa is None or sa.widget() is None:
+            return
+        r = self.cursorRect()
+        pt = self.viewport().mapTo(sa.widget(), r.topLeft())
+        sa.ensureVisible(pt.x(), pt.y() + r.height() // 2, 10, max(40, r.height() * 2))
+
     def set_document_and_page(self, doc: QTextDocument, page: PageSettings) -> None:
         self.setDocument(doc)
+        self._verbinde_groesse()
         doc.setDocumentMargin(0)
         doc.contentsChanged.connect(self._timer.start)
         self.apply_page(page)
@@ -82,6 +110,7 @@ class DocumentEditor(QTextEdit):
         ff.setRightMargin(mm_to_px(page.margin_right_mm))
         root.setFrameFormat(ff)
         self.setFixedWidth(int(mm_to_px(page.width_mm)) + 2)
+        self._passe_hoehe_an()
         self._timer.start()
 
     def page_settings_changed(self, page: PageSettings) -> None:
@@ -92,7 +121,32 @@ class DocumentEditor(QTextEdit):
     def _recount(self) -> None:
         self._paged = paginated_copy(self.document(), self.page)
         self._pages = max(1, self._paged.pageCount())
+        self._breaks = self._seitenwechsel(self._paged)
+        self.viewport().update()
         self._cursor_moved()
+
+    def _seitenwechsel(self, d: QTextDocument) -> list[int]:
+        """Zeichenstellen, an denen eine neue Seite beginnt (erste Zeile der Seiten 2, 3, …)."""
+        ch = self.page.content_height_px
+        lay = d.documentLayout()
+        stellen, seite = [], 0
+        b = d.firstBlock()
+        while b.isValid():
+            tl = b.layout()
+            if tl is not None and tl.lineCount():
+                top = lay.blockBoundingRect(b).top()
+                for i in range(tl.lineCount()):
+                    ln = tl.lineAt(i)
+                    k = int((top + ln.y() + 0.5) // ch)
+                    if k > seite:
+                        seite = k
+                        stellen.append(b.position() + ln.textStart())
+            b = b.next()
+        return stellen
+
+    @property
+    def seitenwechsel(self) -> list[int]:
+        return list(self._breaks)
 
     @property
     def page_count(self) -> int:
@@ -401,6 +455,11 @@ class DocumentEditor(QTextEdit):
             f.setProperty(STYLE_PROP + 1, alt)
         c.setCharFormat(f)
 
+    def _cursor_at(self, pos: int) -> QTextCursor:
+        c = QTextCursor(self.document())
+        c.setPosition(pos)
+        return c
+
     def mouseReleaseEvent(self, e) -> None:
         super().mouseReleaseEvent(e)
         c = self.cursorForPosition(e.pos())
@@ -440,6 +499,18 @@ class DocumentEditor(QTextEdit):
             for x, dx in ((ml, 1), (x2, -1)):
                 p.drawLine(x, y - 1, x + dx * L, y - 1)
                 p.drawLine(x - dx, y - L, x - dx, y - 1)
+        if self._breaks:
+            p.setPen(QPen(QColor("#868e96"), 1, Qt.DashLine))
+            f = p.font(); f.setPointSizeF(8); p.setFont(f)
+            n = self.document().characterCount()
+            for k, pos in enumerate(self._breaks, start=2):
+                if pos >= n:
+                    continue
+                r = self.cursorRect(self._cursor_at(pos))
+                y = r.top() - 3
+                if -20 < y < vp.height() + 20:
+                    p.drawLine(0, y, vp.width(), y)
+                    p.drawText(6, y - 2, f"Seite {k}")
         if self.zeilenfokus and self.hasFocus() and not self.textCursor().hasSelection():
             r = self.cursorRect()
             zeile = QRect(0, r.top() - 1, vp.width(), r.height() + 2)

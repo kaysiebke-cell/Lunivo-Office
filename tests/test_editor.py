@@ -83,3 +83,14 @@ def test_table_image_pagebreak_roundtrip(app, tmp_path):
     # und wieder einlesen
     l = formats.load(out)
     assert "Nach" in l.doc.toPlainText()
+
+
+def test_seitenwechsel_werden_gefunden(app):
+    e = make(app, "\n".join(f"Zeile {i}" for i in range(150)))
+    e._recount()
+    b = e.seitenwechsel
+    assert len(b) == e.page_count - 1 >= 2
+    assert b == sorted(b) and all(0 < x < e.document().characterCount() for x in b)
+    # Seitenumbruch erzwingt einen Wechsel
+    e2 = make(app, "A"); e2.moveCursor(QTextCursor.End); e2.insert_page_break(); e2.insertPlainText("B"); e2._recount()
+    assert len(e2.seitenwechsel) == 1
