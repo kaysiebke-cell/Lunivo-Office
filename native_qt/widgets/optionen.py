@@ -132,6 +132,8 @@ class OptionenDialog(QDialog):
                                    ("sicherung", "Sicherungseinstellungen", self._sicherung),
                                    ("drucken", "Drucken", self._drucken), ("benutzer", "Benutzerinformationen", self._benutzer),
                                    ("sicherheit", "Sicherheit", self._sicherheit),
+                                   ("menueband", "Menüband anpassen", self._menueband),
+                                   ("schnellzugriff", "Symbolleiste für den Schnellzugriff", self._schnellzugriff),
                                    ("verfolgen", "Änderungen verfolgen", self._verfolgen)]),
             ("Nur bei Lunivo", [("ki", "Schreibhilfe und KI", self._ki), ("gedaechtnis", "Gedächtnis", self._gedaechtnis),
                                 ("erweitert", "Erweitert", self._erweitert)]),
@@ -356,12 +358,38 @@ class OptionenDialog(QDialog):
         p.abschluss()
         return p
 
+    def _menueband(self, titel):
+        p = _Seite(self.w, titel)
+        f = p.gruppe("Register")
+        p.zeile(f, "Reiter ein- und ausblenden und die Reihenfolge ändern.")
+        b = QPushButton("Register anpassen …"); b.clicked.connect(self.w.befehle.registerAnpassen); f.addRow(b)
+        f = p.gruppe("Aussehen")
+        b2 = QPushButton("Benutzeroberfläche wählen …"); b2.clicked.connect(self.w.befehle.benutzeroberflaeche); f.addRow(b2)
+        b3 = QPushButton("Symbole austauschen …"); b3.clicked.connect(self.w.befehle.symbolTauschen); f.addRow(b3)
+        b4 = QPushButton("Auf die Vorgabe zurücksetzen …"); b4.clicked.connect(self.w.befehle.vorlagenZurueck); f.addRow(b4)
+        p.abschluss()
+        return p
+
+    def _schnellzugriff(self, titel):
+        p = _Seite(self.w, titel)
+        f = p.gruppe("Schnellzugriff")
+        p.zeile(f, "Welche Knöpfe neben dem ☰-Menü stehen.")
+        b = QPushButton("Schnellzugriff anpassen …"); b.clicked.connect(self.w.befehle.schnellzugriffAnpassen); f.addRow(b)
+        p.abschluss()
+        return p
+
     def _benutzer(self, titel):
         p = _Seite(self.w, titel)
         f = p.gruppe("Benutzerdaten")
         e = QLineEdit(p.s.get("benutzer/name", ""))
         e.textChanged.connect(lambda t: p.s.set("benutzer/name", t))
         f.addRow("Name (Autor in DOCX-Dokumenten)", e)
+        for key, text in (("benutzer/initialen", "Initialen (Kommentare)"), ("benutzer/strasse", "Straße und Hausnummer"),
+                          ("benutzer/plz_ort", "PLZ und Ort"), ("benutzer/ort", "Ort (für „Ort, Datum“)"),
+                          ("benutzer/telefon", "Telefon"), ("benutzer/mail", "E-Mail")):
+            le = QLineEdit(p.s.get(key, ""))
+            le.textChanged.connect(lambda t, k=key: p.s.set(k, t))
+            f.addRow(text, le)
         p.haken(f, "benutzer/verwenden", "Benutzerdaten in Dokumenten verwenden", True)
         p.haken(f, "sicherheit/personendaten_weg", "Beim Speichern persönliche Daten entfernen", False)
         p.abschluss()

@@ -388,6 +388,48 @@ class Befehle:
     def menueleisteZeigen(self, k=None):
         self.w.toggle_menubar()
 
+    def an_menueleisteZeigen(self): return self.w.menubar_wanted
+
+    def registerAnpassen(self, k=None):
+        from ..widgets.oberflaeche_dialoge import RegisterAnpassenDialog
+        if RegisterAnpassenDialog(self.w, self.w.settings, self.w.band.daten).exec():
+            self.w.neu_bauen_band()
+
+    def schnellzugriffAnpassen(self, k=None):
+        from ..widgets.oberflaeche_dialoge import SchnellzugriffDialog, lade_json
+        from ..widgets.register_band import RegisterBand
+        akt = lade_json(self.w.settings, "ui/schnellzugriff", None)
+        if akt is None:
+            akt = [a for _s, _n, a in RegisterBand.SCHNELL]
+        if SchnellzugriffDialog(self.w, self.w.settings, RegisterBand.SCHNELL_ALLE, akt).exec():
+            self.w.neu_bauen_band()
+
+    def symbolTauschen(self, k=None):
+        from ..widgets.oberflaeche_dialoge import SymbolTauschenDialog
+        SymbolTauschenDialog(self.w, self.w.settings).exec()
+        self.w.neu_bauen_band()
+
+    def benutzeroberflaeche(self, k=None):
+        from ..widgets.oberflaeche_dialoge import OberflaecheDialog
+        d = OberflaecheDialog(self.w, self.w.settings)
+        if d.exec():
+            self.w.oberflaeche_aendern(d.wahl(), d.menue.isChecked())
+
+    def leistenZeigen(self, k=None):
+        neu = "register" if self.w.settings.get("ui/oberflaeche", "register") == "symbolleisten" else "symbolleisten"
+        self.w.oberflaeche_aendern(neu, self.w.menubar_wanted)
+
+    def an_leistenZeigen(self): return self.w.settings.get("ui/oberflaeche", "register") == "symbolleisten"
+
+    def vorlagenZurueck(self, k=None):
+        if QMessageBox.question(self.w, "Vorlagen zurücksetzen",
+                                "Register, Schnellzugriff und ausgetauschte Symbole auf die Vorgabe zurücksetzen?") != QMessageBox.Yes:
+            return
+        for key in ("ui/register_plan", "ui/schnellzugriff", "ui/symbol_tausch", "ui/oberflaeche"):
+            self.w.settings.remove(key)
+        self.w._symbole_anwenden()
+        self.w.neu_bauen_band()
+
     # ---- Datei (☰-Menü und Schnellzugriff) ----------------------------------------------------------------
     def neu(self, k=None): self.w.new_document()
     def oeffnen(self, k=None): self.w.open_dialog()

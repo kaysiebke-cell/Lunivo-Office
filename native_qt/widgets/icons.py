@@ -16,12 +16,34 @@ STRICH = 1.7
 FAKTOR = 1.0          # Größe der Symbole (Optionen ▸ Darstellung)
 
 
+_ORIGINAL: dict | None = None
+
+
+def pfade_original() -> dict:
+    """Die mitgelieferten Symbole, ohne Austausch."""
+    global _ORIGINAL
+    if _ORIGINAL is None:
+        with open(os.path.join(_HIER, "..", "resources", "symbole.json"), encoding="utf-8") as fh:
+            _ORIGINAL = json.load(fh)
+    return _ORIGINAL
+
+
 def pfade() -> dict:
     global _PFADE
     if _PFADE is None:
-        with open(os.path.join(_HIER, "..", "resources", "symbole.json"), encoding="utf-8") as fh:
-            _PFADE = json.load(fh)
+        _PFADE = dict(pfade_original())
     return _PFADE
+
+
+def uebersteuern(tausch: dict) -> None:
+    """Austausch {Symbolname: Katalogname} anwenden (Ansicht ▸ Symbol austauschen); leere Zuordnung stellt alles zurück."""
+    global _PFADE
+    _PFADE = dict(pfade_original())
+    kat = katalog()
+    for alt, neu in (tausch or {}).items():
+        if alt in _PFADE and neu in kat:
+            _PFADE[alt] = kat[neu]
+    leeren()
 
 
 _KATALOG: dict | None = None

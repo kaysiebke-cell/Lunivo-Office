@@ -285,3 +285,40 @@ def test_kommentar_note_verfolgen_ueber_befehle(app, tmp_path, monkeypatch):
     assert list(e2.kommentare.values())[0]["text"] == "Mein Text" and list(e2.noten["f"].values())[0] == "Mein Text"
     for f in (w, w2):
         f.current_editor().document().setModified(False); f.close()
+
+
+def test_oberflaeche_wechseln_register_anpassen_symbole_tauschen(app, tmp_path):
+    import json
+    from native_qt.widgets import icons
+    from native_qt.widgets.symbolleisten import Symbolleisten
+    from native_qt.widgets.register_band import RegisterBand
+    w = win(tmp_path)
+    w.new_document(); w.resize(1380, 860); w.show()
+    assert isinstance(w.band, RegisterBand)
+    assert [w.band.reiter.tabText(i) for i in range(8)][:3] == ["Datei", "Start", "Einfügen"]
+    # Reiter ausblenden und umordnen
+    w.settings.set("ui/register_plan", json.dumps({"reihenfolge": ["Datei", "Ansicht", "Start"], "versteckt": ["Verweise", "KI"]}))
+    w.neu_bauen_band()
+    namen = [w.band.reiter.tabText(i) for i in range(w.band.reiter.count()) if w.band.reiter.isTabVisible(i)]
+    assert namen[:3] == ["Datei", "Ansicht", "Start"] and "Verweise" not in namen and "KI" not in namen
+    assert w.band.reiter.tabText(w.band.reiter.currentIndex()) == "Start"
+    # Schnellzugriff
+    w.settings.set("ui/schnellzugriff", json.dumps(["speichern", "neu"]))
+    w.neu_bauen_band()
+    assert w.band.schnell.count() == 2
+    # Symbolleisten-Oberfläche
+    w.oberflaeche_aendern("symbolleisten", True)
+    assert isinstance(w.band, Symbolleisten) and w.menuBar().isVisible()
+    assert w.sidebar.isVisible() and w.band.felder["font"] is not None
+    w.befehle.fett()
+    w.current_editor().insertPlainText("x")
+    w.band.aktualisieren(True)
+    w.oberflaeche_aendern("register", False)
+    # Symbol austauschen und zurücksetzen
+    orig = icons.pfade_original()["fett"] if "fett" in icons.pfade_original() else None
+    name = next(iter(icons.pfade_original()))
+    icons.uebersteuern({name: "heart"})
+    assert icons.pfade()[name] == icons.katalog()["heart"] and icons.pfade_original()[name] != icons.katalog()["heart"]
+    icons.uebersteuern({})
+    assert icons.pfade()[name] == icons.pfade_original()[name]
+    w.current_editor().document().setModified(False); w.close()

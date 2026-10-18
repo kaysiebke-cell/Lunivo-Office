@@ -49,8 +49,10 @@ class _ReiterLeiste(QTabBar):
 class RegisterBand(QWidget):
     """Kopfzeile (☰, Schnellzugriff, Reiter) und darunter das Band des gewählten Reiters."""
 
-    def __init__(self, befehle, daten: dict | None = None):
+    def __init__(self, befehle, daten: dict | None = None, cfg: dict | None = None, schnell: list | None = None):
         super().__init__()
+        self.cfg = cfg or {}
+        self._schnell_wahl = schnell
         self.b = befehle
         self.daten = daten or lade_register()
         self.schalter: list[tuple[QToolButton, str]] = []     # (Knopf, Aktionsname) für Haken
@@ -87,12 +89,12 @@ class RegisterBand(QWidget):
         lay.addWidget(linie)
         self._schnellzugriff()
         self.kontext_index: dict[str, int] = {}
-        for r in plan(self.daten):
+        for r in self._plan_angepasst():
             self._reiter(r)
         self.reiter.currentChanged.connect(self.stapel.setCurrentIndex)
         self.reiter.tabBarClicked.connect(self._reiter_geklickt)
         self.reiter.doppelt.connect(self.einklappen_umschalten)
-        self.reiter.setCurrentIndex(1)          # Start
+        self.reiter.setCurrentIndex(self._start_index())          # Start
         self.bandfehler = sorted(set(self.fehlend))
 
     einklappbar = True          # Optionen ▸ Doppelklick blendet das Band aus
@@ -121,8 +123,26 @@ class RegisterBand(QWidget):
                ("vorschau", "Druckvorschau", "vorschau"), ("zurueck", "Rückgängig", "rueckgaengig"),
                ("vor", "Wiederholen", "wiederholen")]
 
+    SCHNELL_ALLE = SCHNELL + [("neu", "Neu", "neu"), ("unter", "Speichern unter", "speichernUnter"), ("kleben", "Einfügen", "einfuegen"),
+                              ("schere", "Ausschneiden", "ausschneiden"), ("kopie", "Kopieren", "kopieren"),
+                              ("lupe", "Suchen und Ersetzen", "suchen"), ("haken", "Prüfen", "rechtschreibung"),
+                              ("umbruch", "Seitenumbruch", "seitenumbruch"), ("bild", "Bild", "bild"), ("kette", "Hyperlink", "hyperlink"),
+                              ("notiz", "Neuer Kommentar", "kommentar"), ("verfolgt", "Änderungen verfolgen", "verfolgen"),
+                              ("F", "Fett", "fett"), ("K", "Kursiv", "kursiv")]
+
+    def _plan_angepasst(self) -> list[dict]:
+        """Reiter in der Reihenfolge der Struktur — ausgeblendete weglassen, eigene Reihenfolge beachten (Register anpassen)."""
+        alle = plan(self.daten)
+        haupt = [r for r in alle if not r.get("kontext")]
+        kontext = [r for r in alle if r.get("kontext")]
+        ordnung = self.cfg.get("reihenfolge") or []
+        versteckt = set(self.cfg.get("versteckt") or []) - {"Datei"}
+        haupt.sort(key=lambda r: ordnung.index(r["name"]) if r["name"] in ordnung else 999)
+        return [r for r in haupt if r["name"] not in versteckt] + kontext
+
     def _schnellzugriff(self):
-        for sym, name, aktion in self.SCHNELL:
+        liste = self.SCHNELL if self._schnell_wahl is None else [e for e in self.SCHNELL_ALLE if e[2] in self._schnell_wahl]
+        for sym, name, aktion in liste:
             k = QToolButton()
             k.setAutoRaise(True)
             k.setToolTip(name)
@@ -409,7 +429,13 @@ class RegisterBand(QWidget):
             return
         self.reiter.setTabVisible(i, sichtbar)
         if not sichtbar and self.reiter.currentIndex() == i:
-            self.reiter.setCurrentIndex(1)
+            self.reiter.setCurrentIndex(self._start_index())
+
+    def _start_index(self) -> int:
+        for i in range(self.reiter.count()):
+            if self.reiter.tabText(i) == "Start":
+                return i
+        return 0
 
     def gruppe_widget(self, g: dict) -> QWidget:
         """Eine Gruppe als eigenständiges Widget (für die Seitenleiste)."""

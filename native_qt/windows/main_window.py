@@ -70,9 +70,10 @@ class MainWindow(QMainWindow):
         self.befehle = Befehle(self)
         self._build_actions()
         self._build_status()
-        self.band = RegisterBand(self.befehle, lade_register())
-        self.band.menue_knopf.clicked.connect(self.show_main_menu)
         self.menubar_wanted = self.settings.get_bool("ui/menueleiste", False)
+        self._symbole_anwenden()
+        self.band = self._band_erzeugen()
+        self.band.menue_knopf.clicked.connect(self.show_main_menu)
         self._build_menu()
         self.menuBar().setVisible(self.menubar_wanted)
         self.sidebar = SchreibhilfePanel(self.assistant)
@@ -888,10 +889,40 @@ class MainWindow(QMainWindow):
         from ..widgets.reiterplan import KI, schreibhilfe_gruppen
         self.sidebar.setze_bereiche(self.band, schreibhilfe_gruppen(self.band.daten), KI["gruppen"])
 
+    # ---- Oberfläche: Register oder Symbolleisten, angepasst ----------------------------------------------------
+    def _symbole_anwenden(self):
+        from ..widgets import icons
+        from ..widgets.oberflaeche_dialoge import lade_json
+        icons.uebersteuern(lade_json(self.settings, "ui/symbol_tausch", {}))
+
+    def _band_erzeugen(self):
+        from ..widgets.oberflaeche_dialoge import lade_json
+        from ..widgets.symbolleisten import Symbolleisten
+        reg = RegisterBand(self.befehle, lade_register(), lade_json(self.settings, "ui/register_plan", {}),
+                           lade_json(self.settings, "ui/schnellzugriff", None))
+        if self.settings.get("ui/oberflaeche", "register") != "symbolleisten":
+            return reg
+        sym = Symbolleisten(self.befehle)
+        sym.daten = reg.daten
+        sym.gruppe_widget = reg.gruppe_widget            # die Seitenleiste baut ihre Gruppen weiter aus dem Register
+        sym._reg = reg
+        urspr = sym.aktualisieren
+
+        def aktualisieren(hat=None, _u=urspr, _r=reg):
+            _u(hat); _r.aktualisieren(hat)
+        sym.aktualisieren = aktualisieren
+        return sym
+
+    def oberflaeche_aendern(self, art: str, menueleiste: bool):
+        self.settings.set("ui/oberflaeche", art)
+        if menueleiste != self.menubar_wanted:
+            self.toggle_menubar()
+        self.neu_bauen_band()
+
     def neu_bauen_band(self):
         alt = self.band
         idx = self.band_lay.indexOf(alt)
-        self.band = RegisterBand(self.befehle, lade_register())
+        self.band = self._band_erzeugen()
         self.band.einklappbar = self.settings.get_bool("ui/band_doppelklick", True)
         self.band.menue_knopf.clicked.connect(self.show_main_menu)
         self.band_lay.insertWidget(idx, self.band)
