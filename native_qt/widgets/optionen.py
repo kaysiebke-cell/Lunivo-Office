@@ -234,12 +234,17 @@ class OptionenDialog(QDialog):
     def _ansicht(self, titel):
         p = _Seite(self.w, titel, ["Lineal", "Vertikales Lineal", "Gitternetzlinien",
                                    "Live-Vorschau", "Minisymbolleiste", "Tipp für Kopf-/Fußzeile",
-                                   "Druckoptionen der Ansicht (Hervorhebungen, Textmarken, Feldfunktionen)",
+                                   "Feldfunktionen drucken, Feldschattierung",
                                    "Ausgeblendeter Text, Objektanker"])
         f = p.gruppe("Anzeigen")
         p.haken(f, "ui/marken", "Textbegrenzungen (Eckmarken)", True, self.w.set_marken)
         p.haken(f, "ui/seitenleiste", "Seitenleiste beim Start", True)
         p.haken(f, "ui/navigation", "Navigationsbereich beim Start", False)
+        f = p.gruppe("Druckoptionen der Ansicht")
+        p.haken(f, "drucken/hervorhebungen", "Hervorhebungen drucken (Textmarker)", True)
+        p.haken(f, "drucken/textgrenzen", "Textbegrenzungen drucken (gestrichelter Rahmen um die Textfläche)", False)
+        p.haken(f, "drucken/zuschnitt", "Zuschnittsmarken drucken (Ecken der Textfläche)", False)
+        p.haken(f, "drucken/textmarken", "Textmarken drucken (in eckigen Klammern)", False)
         f = p.gruppe("Formatierungszeichen")
         p.haken(f, "ui/steuerzeichen", "Absatzmarken, Leerzeichen und Tabstoppzeichen anzeigen", False,
                 lambda on: self.w.a_marks.setChecked(on))

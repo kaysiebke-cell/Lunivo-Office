@@ -592,7 +592,11 @@ class MainWindow(QMainWindow):
         return {"umgekehrt": self.settings.get_bool("drucken/umgekehrt", False),
                 "duplex": self.settings.get("drucken/duplex", "alle"),
                 "hintergrund": self.settings.get_bool("drucken/hintergrund", True),
-                "leere": self.settings.get_bool("drucken/leere", True)}
+                "leere": self.settings.get_bool("drucken/leere", True),
+                "hervorhebungen": self.settings.get_bool("drucken/hervorhebungen", True),
+                "textmarken": self.settings.get_bool("drucken/textmarken", False),
+                "textgrenzen": self.settings.get_bool("drucken/textgrenzen", False),
+                "zuschnitt": self.settings.get_bool("drucken/zuschnitt", False)}
 
     def _neuer_drucker(self):
         return QPrinter(QPrinter.HighResolution if self.settings.get_bool("drucken/hoch", True) else QPrinter.ScreenResolution)

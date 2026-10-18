@@ -125,6 +125,45 @@ def _ohne_hintergruende(d: QTextDocument) -> None:
         b = b.next()
 
 
+def _ohne_hervorhebungen(d: QTextDocument) -> None:
+    """Nur die Texthervorhebung (Marker) entfällt; Absatz- und Tabellenhintergründe bleiben."""
+    from PySide6.QtCore import Qt as _Qt
+    from PySide6.QtGui import QBrush, QTextCursor
+    b = d.firstBlock()
+    while b.isValid():
+        it = b.begin()
+        stuecke = []
+        while not it.atEnd():
+            f = it.fragment()
+            if f.isValid() and f.charFormat().background().style() != _Qt.NoBrush and not f.charFormat().isImageFormat():
+                stuecke.append((f.position(), f.position() + f.length()))
+            it += 1
+        for von, bis in stuecke:
+            c = QTextCursor(d); c.setPosition(von); c.setPosition(bis, QTextCursor.KeepAnchor)
+            fm = QTextCharFormat(); fm.setBackground(QBrush(_Qt.NoBrush)); c.mergeCharFormat(fm)
+        b = b.next()
+
+
+def _textmarken_klammern(d: QTextDocument) -> None:
+    """„Textmarken drucken“: jede Textmarke steht in eckigen Klammern im Ausdruck."""
+    from PySide6.QtGui import QTextCursor
+    stellen = {}
+    b = d.firstBlock()
+    while b.isValid():
+        it = b.begin()
+        while not it.atEnd():
+            f = it.fragment()
+            if f.isValid() and f.charFormat().isAnchor() and not f.charFormat().anchorHref():
+                for n in f.charFormat().anchorNames():
+                    v, e = stellen.get(n, (f.position(), f.position() + f.length()))
+                    stellen[n] = (min(v, f.position()), max(e, f.position() + f.length()))
+            it += 1
+        b = b.next()
+    einfuegungen = sorted([(e, "]") for v, e in stellen.values()] + [(v, "[") for v, e in stellen.values()], reverse=True)
+    for pos, z in einfuegungen:
+        c = QTextCursor(d); c.setPosition(pos); c.insertText(z)
+
+
 def _bf_ohne(bf):
     from PySide6.QtCore import Qt as _Qt
     from PySide6.QtGui import QBrush
@@ -192,6 +231,10 @@ def render(qdoc: QTextDocument, page: PageSettings, device, first: int = 1, last
         luecken_entfernen(d)
     if opt.get("hintergrund") is False:
         _ohne_hintergruende(d)
+    if opt.get("hervorhebungen") is False:
+        _ohne_hervorhebungen(d)
+    if opt.get("textmarken"):
+        _textmarken_klammern(d)
     total = max(1, d.pageCount())
     last = total if last is None else min(last, total)
     p = QPainter(device)
@@ -212,6 +255,8 @@ def render(qdoc: QTextDocument, page: PageSettings, device, first: int = 1, last
         p.save()
         p.scale(s, s)
         zeichne_seite(p, d, page, n, total, base, opt.get("hintergrund") is not False)
+        if opt.get("textgrenzen") or opt.get("zuschnitt"):
+            _druckmarken(p, page, bool(opt.get("textgrenzen")), bool(opt.get("zuschnitt")))
         p.restore()
     p.end()
     if opt.get("lesezeichen") is not None:
@@ -260,6 +305,29 @@ def gliederung_schreiben(pfad: str, eintraege: list[tuple[int, str, int]]) -> No
         w.write(fh)
     import os
     os.replace(tmp, pfad)
+
+
+def _druckmarken(p: QPainter, page: PageSettings, grenzen: bool, zuschnitt: bool) -> None:
+    """Textbegrenzungen (gestrichelter Rahmen um die Textfläche) und Zuschnittsmarken (Ecken) auf der gedruckten Seite."""
+    from PySide6.QtGui import QColor, QPen
+    cw, ch = page.content_width_px, page.content_height_px
+    ml, mt = mm_to_px(page.margin_left_mm), mm_to_px(page.margin_top_mm)
+    p.save()
+    pen = QPen(QColor("#888888"))
+    pen.setWidthF(0.7)
+    if grenzen:
+        pen.setStyle(Qt.DashLine)
+        p.setPen(pen)
+        p.setBrush(Qt.NoBrush)
+        p.drawRect(QRectF(ml, mt, cw, ch))
+    if zuschnitt:
+        pen.setStyle(Qt.SolidLine)
+        p.setPen(pen)
+        l = mm_to_px(4)
+        for x, y, dx, dy in ((ml, mt, -1, -1), (ml + cw, mt, 1, -1), (ml, mt + ch, -1, 1), (ml + cw, mt + ch, 1, 1)):
+            p.drawLine(x + dx * 2, y, x + dx * (2 + l), y)
+            p.drawLine(x, y + dy * 2, x, y + dy * (2 + l))
+    p.restore()
 
 
 def zeichne_seite(p: QPainter, d: QTextDocument, page: PageSettings, n: int, total: int, base: QFont,

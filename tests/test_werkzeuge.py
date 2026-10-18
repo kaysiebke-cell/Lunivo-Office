@@ -1,5 +1,6 @@
 """Kopfzeile erste Seite, Tabellen sortieren, Bild bearbeiten, PNG-Export, eigene Assistenten, Dokument schützen."""
 import os
+from PySide6.QtCore import Qt
 
 import pypdf
 import pytest
@@ -224,3 +225,32 @@ def test_pdf_lesezeichen(app, tmp_path):
     titel = [(o.title if not isinstance(o, list) else [x.title for x in o]) for o in r.outline]
     assert titel[0] == "Kapitel 0" and "Kapitel 2" in titel
     assert any(isinstance(o, list) and o[0] == "Kapitel 1" for o in titel)       # Ebene 2 steht unter Ebene 1
+
+
+def test_druckoptionen_der_ansicht(app, tmp_path):
+    """Ohne Hervorhebungen, mit Textmarken in Klammern, Textgrenzen und Zuschnittsmarken: PDF entsteht, Text stimmt."""
+    from PySide6.QtGui import QBrush, QColor, QTextCharFormat, QTextCursor
+    from pypdf import PdfReader
+    from native_qt.editor.editor_widget import DocumentEditor
+    from native_qt.editor.page import PageSettings
+    from native_qt.editor.pagination import paginated_copy, render, _ohne_hervorhebungen, _textmarken_klammern
+    from native_qt.editor import verweise as V
+    from PySide6.QtGui import QPdfWriter, QPageLayout
+    ed = DocumentEditor()
+    ed.setPlainText("Rot markiert und eine Marke hier")
+    c = ed.textCursor(); c.setPosition(0); c.setPosition(3, QTextCursor.KeepAnchor)
+    f = QTextCharFormat(); f.setBackground(QBrush(QColor("yellow"))); c.mergeCharFormat(f)
+    c.setPosition(22); c.setPosition(27, QTextCursor.KeepAnchor); ed.setTextCursor(c)
+    assert V.lesezeichen_setzen(ed, "Anker")
+    page = PageSettings()
+    d = paginated_copy(ed.document(), page, None)
+    _ohne_hervorhebungen(d)
+    it = d.firstBlock().begin()
+    while not it.atEnd():
+        assert it.fragment().charFormat().background().style() == Qt.NoBrush     # keine Hervorhebung mehr
+        it += 1
+    _textmarken_klammern(d)
+    assert "[Marke]" in d.toPlainText()
+    w = QPdfWriter(str(tmp_path / "o.pdf"))
+    n = render(ed.document(), page, w, opt={"hervorhebungen": False, "textmarken": True, "textgrenzen": True, "zuschnitt": True})
+    assert n >= 1 and "[" in PdfReader(str(tmp_path / "o.pdf")).pages[0].extract_text()

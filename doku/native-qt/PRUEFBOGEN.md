@@ -1,6 +1,6 @@
 # Prüfbogen ↔ native Fassung
 
-Erzeugt von `werkzeug/pruefbogen-abgleich.py` aus dem Prüfkatalog (415 Punkte). **✅ 291 · ◐ 69 · ⬜ 55**. ✅ = Befehl/Funktion vorhanden (einzeln getestet nur, wo `tests/` es belegt); ◐ = teilweise oder anders gelöst; ⬜ = offen.
+Erzeugt von `werkzeug/pruefbogen-abgleich.py` aus dem Prüfkatalog (415 Punkte). **✅ 295 · ◐ 69 · ⬜ 51**. ✅ = Befehl/Funktion vorhanden (einzeln getestet nur, wo `tests/` es belegt); ◐ = teilweise oder anders gelöst; ⬜ = offen.
 Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/bilder/`.
 
 ## DATEI
@@ -377,12 +377,12 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 
 ## OPTIONEN > Ansicht > Druckoptionen
 
-- ⬜ Hervorhebungen drucken — nicht übertragen
-- ⬜ Textbegrenzungen drucken — nicht übertragen
-- ⬜ Zuschnittsmarken anzeigen — nicht übertragen
-- ⬜ Feldfunktionen drucken — nicht übertragen
-- ⬜ Textmarken drucken — nicht übertragen
-- ⬜ Feldschattierung — nicht übertragen
+- ✅ Hervorhebungen drucken — drucken/hervorhebungen, textgrenzen, zuschnitt, textmarken → pagination.render (test_werkzeuge)
+- ✅ Textbegrenzungen drucken — drucken/hervorhebungen, textgrenzen, zuschnitt, textmarken → pagination.render (test_werkzeuge)
+- ✅ Zuschnittsmarken anzeigen — drucken/hervorhebungen, textgrenzen, zuschnitt, textmarken → pagination.render (test_werkzeuge)
+- ⬜ Feldfunktionen drucken — Felder erscheinen nur mit ihrem Ergebnis; keine Feldcodes und keine Schattierung
+- ✅ Textmarken drucken — drucken/hervorhebungen, textgrenzen, zuschnitt, textmarken → pagination.render (test_werkzeuge)
+- ⬜ Feldschattierung — Felder erscheinen nur mit ihrem Ergebnis; keine Feldcodes und keine Schattierung
 
 ## OPTIONEN > Ansicht > Formatierungszeichen
 

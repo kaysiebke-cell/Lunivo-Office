@@ -532,28 +532,28 @@
   "wo": "nicht übertragen (in den Optionen als gesperrte Zeile sichtbar)"
  },
  "OPTIONEN > Ansicht > Druckoptionen|Hervorhebungen drucken": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "✅",
+  "wo": "drucken/hervorhebungen, textgrenzen, zuschnitt, textmarken → pagination.render (test_werkzeuge)"
  },
  "OPTIONEN > Ansicht > Druckoptionen|Textbegrenzungen drucken": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "✅",
+  "wo": "drucken/hervorhebungen, textgrenzen, zuschnitt, textmarken → pagination.render (test_werkzeuge)"
  },
  "OPTIONEN > Ansicht > Druckoptionen|Zuschnittsmarken anzeigen": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "✅",
+  "wo": "drucken/hervorhebungen, textgrenzen, zuschnitt, textmarken → pagination.render (test_werkzeuge)"
+ },
+ "OPTIONEN > Ansicht > Druckoptionen|Textmarken drucken": {
+  "status": "✅",
+  "wo": "drucken/hervorhebungen, textgrenzen, zuschnitt, textmarken → pagination.render (test_werkzeuge)"
  },
  "OPTIONEN > Ansicht > Druckoptionen|Feldfunktionen drucken": {
   "status": "⬜",
-  "wo": "nicht übertragen"
- },
- "OPTIONEN > Ansicht > Druckoptionen|Textmarken drucken": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "wo": "Felder erscheinen nur mit ihrem Ergebnis; keine Feldcodes und keine Schattierung"
  },
  "OPTIONEN > Ansicht > Druckoptionen|Feldschattierung": {
   "status": "⬜",
-  "wo": "nicht übertragen"
+  "wo": "Felder erscheinen nur mit ihrem Ergebnis; keine Feldcodes und keine Schattierung"
  },
  "OPTIONEN > Ansicht > Formatierungszeichen|Alle anzeigen": {
   "status": "✅",
