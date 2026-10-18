@@ -2,7 +2,7 @@
 
 Alle Angaben stammen aus tatsächlichen Läufen in der Entwicklungsumgebung (Linux, Qt „offscreen“, LibreOffice 25.x vorhanden).
 **Nicht** auf einem echten Linux-Mint-Desktop mit Bildschirm, Drucker, Ollama/Claude, LanguageTool, Piper oder WPS getestet —
-das ist offen (siehe 6). Der Prüfbogen ([PRUEFBOGEN.md](PRUEFBOGEN.md)) ist der Maßstab: **415 Punkte, ✅ 295 · ◐ 71 · ⬜ 49**;
+das ist offen (siehe 6). Der Prüfbogen ([PRUEFBOGEN.md](PRUEFBOGEN.md)) ist der Maßstab: **415 Punkte, ✅ 301 · ◐ 71 · ⬜ 43**;
 „✅“ heißt „Befehl/Funktion vorhanden“, einzeln durch `tests/` belegt nur dort, wo im Eintrag ein Test genannt ist.
 
 ## 1. Dateien
