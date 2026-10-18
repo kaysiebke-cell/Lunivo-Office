@@ -1,6 +1,6 @@
 # Prüfbogen ↔ native Fassung
 
-Erzeugt von `werkzeug/pruefbogen-abgleich.py` aus dem Prüfkatalog (415 Punkte). **✅ 188 · ◐ 53 · ⬜ 174**. ✅ = Befehl/Funktion vorhanden (einzeln getestet nur, wo `tests/` es belegt); ◐ = teilweise oder anders gelöst; ⬜ = offen.
+Erzeugt von `werkzeug/pruefbogen-abgleich.py` aus dem Prüfkatalog (415 Punkte). **✅ 211 · ◐ 53 · ⬜ 151**. ✅ = Befehl/Funktion vorhanden (einzeln getestet nur, wo `tests/` es belegt); ◐ = teilweise oder anders gelöst; ⬜ = offen.
 Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/bilder/`.
 
 ## DATEI
@@ -147,14 +147,14 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 - ⬜ Umbruch > Spaltenumbruch — Band: Seitenlayout ▸ Seite einrichten ▸ Umbrüche
 - ⬜ Umbruch > Abschnittsumbruch — Band: Seitenlayout ▸ Seite einrichten ▸ Umbrüche
 - ✅ Einzug — Band: Seitenlayout ▸ Absatz
-- ⬜ Absatzabstand — Band: Seitenlayout ▸ Absatz
-- ⬜ Zeilennummern — Band: Seitenlayout ▸ Seite einrichten
+- ✅ Absatzabstand — Band: Seitenlayout ▸ Absatz
+- ✅ Zeilennummern — Band: Seitenlayout ▸ Seite einrichten
 - ⬜ Silbentrennung — Band: Seitenlayout ▸ Absatz, Seitenleiste ▸ Sprache  _(Web-Fassung: teil)_
-- ⬜ Textumbruch — nicht übertragen
-- ⬜ Seitenfarbe — Band: Seitenlayout ▸ Seitenhintergrund  _(Web-Fassung: fertig)_
-- ⬜ Wasserzeichen — Band: Seitenlayout ▸ Seitenhintergrund
-- ⬜ Seitenrahmen — nicht übertragen  _(Web-Fassung: fertig)_
-- ⬜ Bild/Objekt anordnen — nicht übertragen  _(Web-Fassung: fertig)_
+- ⬜ Textumbruch — nicht übertragen (Task D: Objekte)
+- ✅ Seitenfarbe — Band: Seitenlayout ▸ Seitenhintergrund  _(Web-Fassung: fertig)_
+- ✅ Wasserzeichen — Band: Seitenlayout ▸ Seitenhintergrund
+- ✅ Seitenrahmen — befehle.seitenrahmen, pagination.seitenschmuck, DOCX pgBorders (test_docx_roundtrip, test_pdf)  _(Web-Fassung: fertig)_
+- ⬜ Bild/Objekt anordnen — nicht übertragen (Task D: Objekte)  _(Web-Fassung: fertig)_
 
 ## REFERENZEN
 
@@ -233,14 +233,14 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 
 ## ANSICHT
 
-- ⬜ Drucklayout — Band: Ansicht ▸ Dokumentansichten
+- ✅ Drucklayout — Band: Ansicht ▸ Dokumentansichten
 - ✅ Lesemodus — Band: Ansicht ▸ Dokumentansichten, Seitenleiste ▸ Lesen
-- ⬜ Zwei Seiten — Band: Ansicht ▸ Dokumentansichten
-- ⬜ Weblayout — Band: Ansicht ▸ Dokumentansichten
-- ⬜ Gliederung — Band: Ansicht ▸ Dokumentansichten
-- ⬜ Lineal — Band: Ansicht ▸ Anzeigen
-- ⬜ Vertikales Lineal — Band: Ansicht ▸ Anzeigen
-- ⬜ Gitternetzlinien — Band: Ansicht ▸ Anzeigen  _(Web-Fassung: fertig)_
+- ✅ Zwei Seiten — Band: Ansicht ▸ Dokumentansichten
+- ✅ Weblayout — Band: Ansicht ▸ Dokumentansichten
+- ✅ Gliederung — Band: Ansicht ▸ Dokumentansichten
+- ✅ Lineal — Band: Ansicht ▸ Anzeigen
+- ✅ Vertikales Lineal — Band: Ansicht ▸ Anzeigen
+- ✅ Gitternetzlinien — Band: Ansicht ▸ Anzeigen  _(Web-Fassung: fertig)_
 - ✅ Navigationsbereich — Band: Ansicht ▸ Anzeigen
 - ✅ Textbegrenzungen — Band: Ansicht ▸ Anzeigen  _(Web-Fassung: fertig)_
 - ✅ Seitenleiste Schreibhilfe — Band: Seitenleiste ▸ Anzeigen  _(Web-Fassung: fertig)_
@@ -248,16 +248,16 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 - ✅ Zeilenfokus — Band: Seitenleiste ▸ Lesen
 - ✅ Vergrößern — Band: Ansicht ▸ Zoom
 - ✅ Verkleinern — Band: Ansicht ▸ Zoom
-- ⬜ 100 % — Band: Ansicht ▸ Zoom
-- ⬜ Seitenbreite — Band: Ansicht ▸ Zoom
-- ⬜ Eine Seite — Band: Ansicht ▸ Zoom
-- ⬜ Zoom — Band: Ansicht ▸ Zoom
-- ⬜ Neues Fenster — Band: Ansicht ▸ Fenster
-- ⬜ Anordnen — Band: Ansicht ▸ Fenster
-- ⬜ Nebeneinander — Band: Ansicht ▸ Fenster, Ansicht ▸ Fenster ▸ Anordnen
-- ⬜ Untereinander — Band: Ansicht ▸ Fenster, Ansicht ▸ Fenster ▸ Anordnen
-- ⬜ Kacheln — Band: Ansicht ▸ Fenster, Ansicht ▸ Fenster ▸ Anordnen
-- ⬜ Fensterliste — Band: Ansicht ▸ Fenster
+- ✅ 100 % — Band: Ansicht ▸ Zoom
+- ✅ Seitenbreite — Band: Ansicht ▸ Zoom
+- ✅ Eine Seite — Band: Ansicht ▸ Zoom
+- ✅ Zoom — Band: Ansicht ▸ Zoom
+- ✅ Neues Fenster — Band: Ansicht ▸ Fenster
+- ✅ Anordnen — Band: Ansicht ▸ Fenster
+- ✅ Nebeneinander — Band: Ansicht ▸ Fenster, Ansicht ▸ Fenster ▸ Anordnen
+- ✅ Untereinander — Band: Ansicht ▸ Fenster, Ansicht ▸ Fenster ▸ Anordnen
+- ✅ Kacheln — Band: Ansicht ▸ Fenster, Ansicht ▸ Fenster ▸ Anordnen
+- ✅ Fensterliste — Band: Ansicht ▸ Fenster
 - ✅ Helligkeit > Wie das System — Band: Ansicht ▸ Helligkeit
 - ✅ Helligkeit > Immer hell — Band: Ansicht ▸ Helligkeit
 - ✅ Helligkeit > Immer dunkel — Band: Ansicht ▸ Helligkeit
@@ -330,7 +330,7 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 
 - ✅ Fehler aus Language Bridge anzeigen — widgets/schreibhilfe_panel.py, editor_widget.set_wellen
 - ✅ Rote Wellenlinien aus Bridge-Status — widgets/schreibhilfe_panel.py, editor_widget.set_wellen
-- ⬜ Kontextmenü für Fehler-Aktionen — Rechtsklick-Menü fehlt  _(Web-Fassung: fertig)_
+- ✅ Kontextmenü für Fehler-Aktionen — editor_widget.contextMenuEvent + WritingAssistant.erweitere_menue (test_schreibhilfe)  _(Web-Fassung: fertig)_
 - ✅ Fehler annehmen/ignorieren/korrigieren — widgets/schreibhilfe_panel.py, editor_widget.set_wellen
 - ◐ Schalter 'Rote Wellenlinien' zeigt/versteckt nur — Schalter hält auch die Prüfung an
 

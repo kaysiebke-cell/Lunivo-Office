@@ -1,6 +1,6 @@
 # Abgleich: altes Register ↔ native Qt-Fassung
 
-Erzeugt von `werkzeug/abgleich-native.py`. **129 Knöpfe umgesetzt, 111 offen.** Offene Knöpfe stehen im Programm sichtbar, aber ausgegraut da.
+Erzeugt von `werkzeug/abgleich-native.py`. **154 Knöpfe umgesetzt, 86 offen.** Offene Knöpfe stehen im Programm sichtbar, aber ausgegraut da.
 
 ## Datei
 
@@ -163,9 +163,9 @@ Erzeugt von `werkzeug/abgleich-native.py`. **129 Knöpfe umgesetzt, 111 offen.**
 
 **Designs**
 
-- ⬜ Designs  (`designs`)
-- ⬜ Farben  (`farbschema`)
-- ⬜ Schriftarten  (`designSchriften`)
+- ✅ Designs
+- ✅ Farben
+- ✅ Schriftarten
 - ⬜ Effekte  (`designEffekte`)
 
 **Ränder**
@@ -181,20 +181,20 @@ Erzeugt von `werkzeug/abgleich-native.py`. **129 Knöpfe umgesetzt, 111 offen.**
 - ✅ Ausrichtung
 - ✅ Größe
 - ⬜ Spalten  (`spaltenSetzen:[1], spaltenSetzen:[2], spaltenSetzen:[3], spalten`)
-- ⬜ Textrichtung  (`textrichtung`)
+- ✅ Textrichtung
 - ✅ Umbrüche
-- ⬜ Zeilennummern  (`zeilennummern`)
+- ✅ Zeilennummern
 
 **Absatz**
 
 - ✅ Einzug
-- ⬜ Absatzabstand  (`absatzabstand`)
+- ✅ Absatzabstand
 - ⬜ Silbentrennung  (`silbentrennung`)
 
 **Seitenhintergrund**
 
-- ⬜ Seitenfarbe  (`seitenfarbe`)
-- ⬜ Wasserzeichen  (`wasserzeichen`)
+- ✅ Seitenfarbe
+- ✅ Wasserzeichen
 - ✅ Seitenränder
 
 **Anordnen**
@@ -313,17 +313,17 @@ Erzeugt von `werkzeug/abgleich-native.py`. **129 Knöpfe umgesetzt, 111 offen.**
 
 **Dokumentansichten**
 
-- ⬜ Drucklayout  (`w.setzeLayout:["blatt"]`)
+- ✅ Drucklayout
 - ✅ Lesemodus
-- ⬜ Zwei Seiten  (`w.setzeLayout:["doppelt"]`)
-- ⬜ Weblayout  (`w.setzeLayout:["web"]`)
-- ⬜ Gliederung  (`gliederung`)
+- ✅ Zwei Seiten
+- ✅ Weblayout
+- ✅ Gliederung
 
 **Anzeigen**
 
-- ⬜ Lineal  (`linealZeigen`)
-- ⬜ Vertikales Lineal  (`linealHochZeigen`)
-- ⬜ Gitternetzlinien  (`netzlinien`)
+- ✅ Lineal
+- ✅ Vertikales Lineal
+- ✅ Gitternetzlinien
 - ✅ Navigationsbereich
 - ✅ Textbegrenzungen
 
@@ -331,19 +331,19 @@ Erzeugt von `werkzeug/abgleich-native.py`. **129 Knöpfe umgesetzt, 111 offen.**
 
 - ✅ Vergrößern
 - ✅ Verkleinern
-- ⬜ 100 %  (`normal`)
-- ⬜ Seitenbreite  (`zoomBreite`)
-- ⬜ Eine Seite  (`zoomSeite`)
-- ⬜ Zoom  (`zoomStufe`)
+- ✅ 100 %
+- ✅ Seitenbreite
+- ✅ Eine Seite
+- ✅ Zoom
 
 **Fenster**
 
-- ⬜ Neues Fenster  (`neuesFenster`)
-- ⬜ Anordnen  (`fensterNebeneinander, fensterUntereinander, fensterKacheln`)
-- ⬜ Nebeneinander  (`fensterNebeneinander`)
-- ⬜ Untereinander  (`fensterUntereinander`)
-- ⬜ Kacheln  (`fensterKacheln`)
-- ⬜ Fensterliste  (`fensterListe`)
+- ✅ Neues Fenster
+- ✅ Anordnen
+- ✅ Nebeneinander
+- ✅ Untereinander
+- ✅ Kacheln
+- ✅ Fensterliste
 
 **Helligkeit**
 

@@ -48,6 +48,7 @@ class PageSettings:
     color: str = ""                      # Seitenfarbe als „#rrggbb“; leer = keine
     border: dict | None = None           # {"farbe": "#000000", "breite_pt": 1.0, "art": "einfach|doppelt", "abstand_mm": 8.0}
     watermark: dict | None = None        # {"text": …, "farbe": "#c0c0c0", "winkel": -45, "groesse_pt": 80}
+    zeilennummern: bool = False
 
     @property
     def landscape(self) -> bool:
@@ -85,4 +86,5 @@ class PageSettings:
             HeaderFooter(self.header.text, self.header.align),
             HeaderFooter(self.footer.text, self.footer.align),
             self.color, dict(self.border) if self.border else None, dict(self.watermark) if self.watermark else None,
+            self.zeilennummern,
         )

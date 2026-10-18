@@ -236,6 +236,9 @@ class _Reader:
                 v = self._style_attr(st, lambda s: getter(s.paragraph_format))
             return v
 
+        ppr = para._p.pPr
+        if ppr is not None and ppr.find(qn("w:bidi")) is not None:
+            b.setLayoutDirection(Qt.RightToLeft)
         al = eff(lambda p: p.alignment)
         b.setAlignment(_QT_ALIGN.get(al, Qt.AlignLeft))
         left = eff(lambda p: p.left_indent)
@@ -513,6 +516,8 @@ class _Reader:
             c = bg.get(qn("w:color"))
             if c and c.lower() not in ("auto", "ffffff"):
                 ps.color = "#" + c.lower()
+        if sect._sectPr.find(qn("w:lnNumType")) is not None:
+            ps.zeilennummern = True
         pb = sect._sectPr.find(qn("w:pgBorders"))
         if pb is not None:
             e = pb.find(qn("w:top"))

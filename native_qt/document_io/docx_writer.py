@@ -112,6 +112,15 @@ class _Writer:
                 pb.append(e)
             pg_mar = sp.find(qn("w:pgMar"))
             (pg_mar.addnext(pb) if pg_mar is not None else sp.append(pb))
+        for alt in sp.findall(qn("w:lnNumType")):
+            sp.remove(alt)
+        if p.zeilennummern:
+            ln = OxmlElement("w:lnNumType")
+            ln.set(qn("w:countBy"), "1"); ln.set(qn("w:restart"), "continuous")
+            anker = sp.find(qn("w:pgBorders"))
+            if anker is None:
+                anker = sp.find(qn("w:pgMar"))
+            (anker.addnext(ln) if anker is not None else sp.append(ln))
         if p.watermark and p.watermark.get("text"):
             self.report.warn("Das Wasserzeichen wird in der DOCX-Datei nicht gespeichert (nur Anzeige, PDF und Druck).")
 
@@ -209,6 +218,12 @@ class _Writer:
                 pf.first_line_indent = Emu(int(bf.textIndent() * EMU_PER_PX))
         if bf.rightMargin():
             pf.right_indent = Emu(int(bf.rightMargin() * EMU_PER_PX))
+        if bf.layoutDirection() == Qt.RightToLeft:
+            ppr = para._p.get_or_add_pPr()
+            bidi = OxmlElement("w:bidi")
+            ppr.insert_element_before(bidi, "w:adjustRightInd", "w:snapToGrid", "w:spacing", "w:ind", "w:contextualSpacing",
+                                      "w:mirrorIndents", "w:suppressOverlap", "w:jc", "w:textDirection", "w:textAlignment",
+                                      "w:textboxTightWrap", "w:outlineLvl", "w:divId", "w:cnfStyle", "w:rPr", "w:sectPr", "w:pPrChange")
         pf.space_before = Pt(bf.topMargin() * PX_TO_PT)
         pf.space_after = Pt(bf.bottomMargin() * PX_TO_PT)
         lh, lht = bf.lineHeight(), bf.lineHeightType()

@@ -192,12 +192,39 @@ def zeichne_seite(p: QPainter, d: QTextDocument, page: PageSettings, n: int, tot
     seitenschmuck(p, page, hintergrund)
     _draw_hf(p, page.header, QRectF(ml, mm_to_px(8), cw, mm_to_px(10)), n, total, base)
     _draw_hf(p, page.footer, QRectF(ml, ph - mm_to_px(18), cw, mm_to_px(10)), n, total, base)
+    if page.zeilennummern:
+        p.save()
+        p.translate(ml, mt)
+        p.translate(0, -(n - 1) * ch)
+        _zeilennummern(p, d, n, ch, base)
+        p.restore()
     p.save()
     p.translate(ml, mt)
     p.setClipRect(QRectF(0, 0, cw, ch))
     p.translate(0, -(n - 1) * ch)
     d.drawContents(p, QRectF(0, (n - 1) * ch, cw, ch))
     p.restore()
+
+
+def _zeilennummern(p: QPainter, d: QTextDocument, n: int, ch: float, base: QFont) -> None:
+    """Fortlaufende Zeilennummern am linken Rand der Seite n (Koordinaten: Textfläche, auf die Seite verschoben)."""
+    f = QFont(base)
+    f.setPixelSize(9)
+    p.setFont(f)
+    p.setPen(Qt.gray)
+    lay = d.documentLayout()
+    nr = 0
+    b = d.firstBlock()
+    while b.isValid():
+        if b.isVisible() and b.layout() is not None:
+            top = lay.blockBoundingRect(b).top()
+            for i in range(b.layout().lineCount()):
+                nr += 1
+                zeile = b.layout().lineAt(i)
+                y = top + zeile.y()
+                if (n - 1) * ch <= y < n * ch:
+                    p.drawText(QRectF(-48, y, 42, zeile.height()), Qt.AlignRight | Qt.AlignVCenter, str(nr))
+        b = b.next()
 
 
 def seite_als_bild(qdoc: QTextDocument, page: PageSettings, n: int, faktor: float = 1.0, d: QTextDocument | None = None) -> QImage:

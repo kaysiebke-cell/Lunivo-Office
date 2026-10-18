@@ -161,6 +161,58 @@ class DocumentEditor(QTextEdit):
         if bf.headingLevel() and 1 <= lv <= 6:
             self.apply_style(f"Überschrift {lv}")
 
+    def set_zeilennummern(self, an: bool) -> None:
+        self.page.zeilennummern = an
+        self.viewport().update()
+
+    def _zeilennummern_zeichnen(self, p: QPainter) -> None:
+        vp = self.viewport()
+        lay = self.document().documentLayout()
+        f = p.font(); f.setPixelSize(max(7, int(9 * self.zoom))); p.setFont(f)
+        p.setPen(QColor("#868e96"))
+        ml = mm_to_px(self.page.margin_left_mm) * self.zoom
+        oben = self.verticalScrollBar().value()
+        nr = 0
+        b = self.document().firstBlock()
+        while b.isValid():
+            if b.isVisible() and b.layout() is not None:
+                top = lay.blockBoundingRect(b).top()
+                for i in range(b.layout().lineCount()):
+                    nr += 1
+                    z = b.layout().lineAt(i)
+                    y = top + z.y() - oben
+                    if -20 < y < vp.height():
+                        p.drawText(QRectF(ml - 52, y, 44, z.height()), Qt.AlignRight | Qt.AlignVCenter, str(nr))
+            b = b.next()
+
+    def apply_design(self, fliess: str | None = None, kopf: str | None = None, farbe: str | None = None) -> None:
+        """Design: Schriftart für Text und Überschriften, Farbe der Überschriften — für das ganze Dokument."""
+        doc = self.document()
+        cur = QTextCursor(doc)
+        cur.beginEditBlock()
+        if fliess:
+            f = doc.defaultFont(); f.setFamily(fliess); doc.setDefaultFont(f)
+        b = doc.firstBlock()
+        while b.isValid():
+            kopf_block = b.blockFormat().headingLevel() > 0 or (
+                b.blockFormat().hasProperty(STYLE_PROP) and b.blockFormat().property(STYLE_PROP) in ("title", "subtitle", "Title", "Subtitle"))
+            fam = kopf if kopf_block and kopf else fliess
+            if fam or (kopf_block and farbe):
+                c = QTextCursor(b)
+                c.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
+                cf = QTextCharFormat()
+                if fam:
+                    cf.setFontFamilies([fam])
+                if kopf_block and farbe:
+                    cf.setForeground(QColor(farbe))
+                c.mergeCharFormat(cf)
+            b = b.next()
+        cur.endEditBlock()
+
+    def toggle_rtl(self) -> None:
+        rtl = self.textCursor().blockFormat().layoutDirection() == Qt.RightToLeft
+        self._block_merge(lambda bf: bf.setLayoutDirection(Qt.LeftToRight if rtl else Qt.RightToLeft))
+
     def set_gitter(self, an: bool) -> None:
         self.gitter = an
         self.viewport().update()
@@ -626,6 +678,8 @@ class DocumentEditor(QTextEdit):
         self._schmuck_zeichnen(p)
         if self.gitter:
             self._gitter_zeichnen(p)
+        if self.page.zeilennummern and not self.web:
+            self._zeilennummern_zeichnen(p)
         if self.marken and not self.web:
             z = self.zoom
             ml, mt = int(mm_to_px(self.page.margin_left_mm) * z), int(mm_to_px(self.page.margin_top_mm) * z)

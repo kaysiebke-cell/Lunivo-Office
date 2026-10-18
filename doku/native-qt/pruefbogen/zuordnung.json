@@ -193,15 +193,15 @@
  },
  "SEITENLAYOUT|Textumbruch": {
   "status": "⬜",
-  "wo": "nicht übertragen"
- },
- "SEITENLAYOUT|Seitenrahmen": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "wo": "nicht übertragen (Task D: Objekte)"
  },
  "SEITENLAYOUT|Bild/Objekt anordnen": {
   "status": "⬜",
-  "wo": "nicht übertragen"
+  "wo": "nicht übertragen (Task D: Objekte)"
+ },
+ "SEITENLAYOUT|Seitenrahmen": {
+  "status": "✅",
+  "wo": "befehle.seitenrahmen, pagination.seitenschmuck, DOCX pgBorders (test_docx_roundtrip, test_pdf)"
  },
  "SCHREIBHILFE (Lunivo)|KI > Vorschläge": {
   "status": "✅",
@@ -408,8 +408,8 @@
   "wo": "widgets/schreibhilfe_panel.py, editor_widget.set_wellen"
  },
  "SCHREIBHILFE (Sidebar-Integration)|Kontextmenü für Fehler-Aktionen": {
-  "status": "⬜",
-  "wo": "Rechtsklick-Menü fehlt"
+  "status": "✅",
+  "wo": "editor_widget.contextMenuEvent + WritingAssistant.erweitere_menue (test_schreibhilfe)"
  },
  "SCHREIBHILFE (Sidebar-Integration)|Schalter 'Rote Wellenlinien' zeigt/versteckt nur": {
   "status": "◐",

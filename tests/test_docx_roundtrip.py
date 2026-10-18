@@ -142,3 +142,18 @@ def test_seitenfarbe_und_rahmen_roundtrip(tmp_path):
     assert p2.border["art"] == "doppelt" and p2.border["farbe"] == "#336699"
     assert abs(p2.border["breite_pt"] - 1.5) < 0.2 and abs(p2.border["abstand_mm"] - 10) < 0.6
     assert p2.watermark is None
+
+
+def test_zeilennummern_und_textrichtung_roundtrip(tmp_path):
+    from PySide6.QtCore import Qt
+    from PySide6.QtGui import QTextBlockFormat, QTextCursor, QTextDocument
+    from native_qt.document_io import docx_reader, docx_writer
+    from native_qt.editor.page import PageSettings
+    d = QTextDocument(); d.setPlainText("Eins\nZwei")
+    c = QTextCursor(d.firstBlock()); bf = c.blockFormat(); bf.setLayoutDirection(Qt.RightToLeft); c.setBlockFormat(bf)
+    out = str(tmp_path / "z.docx")
+    docx_writer.write_docx(out, d, PageSettings(zeilennummern=True), {})
+    doc2, p2, _, _ = docx_reader.read_docx(out)
+    assert p2.zeilennummern is True
+    assert doc2.firstBlock().blockFormat().layoutDirection() == Qt.RightToLeft
+    assert doc2.firstBlock().next().blockFormat().layoutDirection() != Qt.RightToLeft

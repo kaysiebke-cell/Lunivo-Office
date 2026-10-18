@@ -119,3 +119,34 @@ def test_seitenliste_duplex_umgekehrt():
     assert seiten_liste(5, 1, 5, {"duplex": "vorder"}) == [1, 3, 5]
     assert seiten_liste(5, 1, 5, {"duplex": "rueck"}) == [2, 4]
     assert seiten_liste(3, 1, 3, {"umgekehrt": True}) == [3, 2, 1]
+
+
+def test_design_und_absatzabstand(app):
+    from native_qt.windows.befehle import Befehle
+    e = make(app, "Titel\nText")
+    c = e.textCursor(); c.setPosition(0); e.setTextCursor(c)
+    e.apply_style("Überschrift 1")
+    e.apply_design("Liberation Serif", "DejaVu Sans", "#2f6fb5")
+    k = e.document().firstBlock().begin().fragment().charFormat()
+    assert "DejaVu Sans" in k.fontFamilies() and k.foreground().color().name() == "#2f6fb5"
+    t = e.document().firstBlock().next().begin().fragment().charFormat()
+    assert "Liberation Serif" in t.fontFamilies() and t.foreground().color().name() != "#2f6fb5"
+    e.select_range(0, e.document().characterCount() - 1)
+    e.set_paragraph_spacing(6, 12)
+    bf = e.document().firstBlock().next().blockFormat()
+    assert abs(bf.bottomMargin() - 16) < 0.1
+
+
+def test_zeilennummern_im_pdf(app, tmp_path):
+    import pypdf
+    from PySide6.QtGui import QTextDocument
+    from native_qt.editor.page import PageSettings
+    from native_qt.editor.pagination import export_pdf
+    d = QTextDocument(); d.setPlainText("\n".join(f"Zeile{i}" for i in range(1, 8)))
+    out = str(tmp_path / "n.pdf")
+    export_pdf(out, d, PageSettings(zeilennummern=True), "t")
+    txt = pypdf.PdfReader(out).pages[0].extract_text()
+    assert all(str(i) in txt for i in range(1, 8))
+    out2 = str(tmp_path / "m.pdf")
+    export_pdf(out2, d, PageSettings(), "t")
+    assert pypdf.PdfReader(out2).pages[0].extract_text().count("7") <= pypdf.PdfReader(out).pages[0].extract_text().count("7")

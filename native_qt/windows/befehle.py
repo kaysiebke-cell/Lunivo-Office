@@ -555,6 +555,69 @@ class Befehle:
 
     def an_netzlinien(self): return bool(self.ed and self.ed.gitter)
 
+    # ---- Seitenlayout: Absatz, Zeilennummern, Textrichtung, Designs ---------------------------------------
+    ABSATZABSTAND = [("Standard (0 / 0 pt)", 0, 0), ("Kompakt (0 / 4 pt)", 0, 4), ("Locker (0 / 10 pt)", 0, 10),
+                     ("Luftig (6 / 12 pt)", 6, 12), ("Vor und nach 12 pt", 12, 12)]
+
+    def absatzabstand(self, k=None):
+        if not self.ed:
+            return
+        m = QMenu()
+        for text, vor, nach in self.ABSATZABSTAND:
+            m.addAction(text, lambda _=False, v=vor, n=nach: self._abstand_setzen(v, n))
+        m.exec(QCursor.pos())
+
+    def _abstand_setzen(self, vor, nach):
+        e = self.ed
+        if not e.textCursor().hasSelection():
+            c = e.textCursor(); c.select(QTextCursor.Document); e.setTextCursor(c)       # ohne Markierung: ganzes Dokument
+            e.set_paragraph_spacing(vor, nach)
+            c.clearSelection(); e.setTextCursor(c)
+        else:
+            e.set_paragraph_spacing(vor, nach)
+
+    def zeilennummern(self, k=None):
+        if self.ed:
+            self.ed.set_zeilennummern(not self.ed.page.zeilennummern)
+            self.ed.document().setModified(True)
+
+    def an_zeilennummern(self): return bool(self.ed and self.ed.page.zeilennummern)
+
+    def textrichtung(self, k=None):
+        if self.ed:
+            self.ed.toggle_rtl()
+
+    def an_textrichtung(self):
+        return bool(self.ed and self.ed.textCursor().blockFormat().layoutDirection() == Qt.RightToLeft)
+
+    DESIGNS = {"Office": ("Liberation Sans", "Liberation Sans", "#1f3864"),
+               "Klassisch": ("Liberation Serif", "Liberation Serif", "#000000"),
+               "Modern": ("DejaVu Sans", "DejaVu Sans", "#2f6fb5"),
+               "Zeitung": ("Liberation Serif", "Liberation Sans", "#222222"),
+               "Dezent": ("Liberation Sans", "Liberation Sans", "#555555")}
+    FARBSCHEMEN = {"Blau": "#2f6fb5", "Grün": "#2f9e75", "Rot": "#c92a2a", "Violett": "#7048a8", "Orange": "#e8590c", "Grau": "#495057"}
+    SCHRIFTPAARE = {"Sans / Sans": ("Liberation Sans", "Liberation Sans"), "Serif / Serif": ("Liberation Serif", "Liberation Serif"),
+                    "Serif / Sans (Überschrift)": ("Liberation Serif", "Liberation Sans"),
+                    "Sans / Serif (Überschrift)": ("Liberation Sans", "Liberation Serif"), "Mono": ("DejaVu Sans Mono", "DejaVu Sans Mono")}
+
+    def _wahl(self, titel, namen):
+        n, ok = QInputDialog.getItem(self.w, titel, titel + ":", list(namen), 0, False)
+        return n if ok else None
+
+    def designs(self, k=None):
+        if self.ed and (n := self._wahl("Design", self.DESIGNS)):
+            f, h, c = self.DESIGNS[n]
+            self.ed.apply_design(f, h, c)
+
+    def farbschema(self, k=None):
+        if self.ed and (n := self._wahl("Farben", self.FARBSCHEMEN)):
+            self.ed.apply_design(None, None, self.FARBSCHEMEN[n])
+
+    def designSchriften(self, k=None):
+        if self.ed and (n := self._wahl("Schriftarten", self.SCHRIFTPAARE)):
+            f, h = self.SCHRIFTPAARE[n]
+            self.ed.apply_design(f, h, None)
+
     # ---- Fenster ---------------------------------------------------------------------------
     def neuesFenster(self, k=None): self.w.neues_fenster()
     def fensterNebeneinander(self, k=None): self.w.fenster_anordnen("nebeneinander")
