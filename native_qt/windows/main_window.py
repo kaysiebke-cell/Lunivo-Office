@@ -845,13 +845,10 @@ class MainWindow(QMainWindow):
                                 f"Seiten: {t.editor.page_count}   Wörter: {t.editor.word_count()}")
 
     def show_options(self, seite: str | None = None):
-        from ..widgets.options_dialog import OptionsDialog
-        d = OptionsDialog(self.settings, self)
-        if d.exec():
-            self.autosave.start(max(10, self.settings.get_int("autosave_seconds", 60)) * 1000)
-            QApplication.instance().setProperty("lunivo_apply_theme", True)
-            from ..theme import apply_theme
-            apply_theme(QApplication.instance(), self.settings.get("theme", "system"))
+        from ..widgets.optionen import OptionenDialog
+        d = OptionenDialog(self, seite)
+        d.exec()
+        self.ki.geaendert.emit()
 
     def toggle_fullscreen(self, on: bool):
         self.showFullScreen() if on else self.showNormal()

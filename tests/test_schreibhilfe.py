@@ -11,6 +11,8 @@ from native_qt.windows.main_window import MainWindow
 def win(tmp_path, monkeypatch):
     from native_qt.storage import gelernt
     monkeypatch.setattr(gelernt, "data_dir", lambda: str(tmp_path))
+    from native_qt.services import ki_dienst
+    monkeypatch.setattr(ki_dienst, "data_dir", lambda: str(tmp_path))
     from native_qt.storage import recovery
     monkeypatch.setattr(recovery, "recovery_dir", lambda: str(tmp_path))
     w = MainWindow(Settings(QSettings(str(tmp_path / "s.ini"), QSettings.IniFormat)))

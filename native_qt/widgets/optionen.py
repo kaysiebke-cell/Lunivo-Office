@@ -1,0 +1,400 @@
+"""Optionen — das Fenster hinter „☰ Menü ▸ Optionen“ (F9), aufgebaut wie im alten Programm in drei Zweigen:
+Leichter lesen · Wie im WPS Writer · Nur bei Lunivo. Links der Baum, rechts die Seite.
+
+Was hier steht, wirkt. Was aus dem alten Fenster noch keine Wirkung hat, steht je Seite unter „Noch nicht umgesetzt“,
+damit nichts stillschweigend verschwindet.
+"""
+from __future__ import annotations
+
+import os
+
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QFontDatabase
+from PySide6.QtWidgets import (
+    QCheckBox, QComboBox, QDialog, QDialogButtonBox, QDoubleSpinBox, QFormLayout, QGridLayout, QGroupBox, QHBoxLayout, QLabel,
+    QLineEdit, QListWidget, QMessageBox, QPushButton, QScrollArea, QSpinBox, QStackedWidget, QTreeWidget,
+    QTreeWidgetItem, QVBoxLayout, QWidget,
+)
+
+from ..services import autokorrektur, ki as K, vorlesen
+from ..services.vorhersage import EMPFAENGER
+from .lesehilfe_dialog import PAPIERTOENE
+
+LESESCHRIFTEN = ("OpenDyslexic", "Lexend", "Atkinson Hyperlegible")
+
+
+class _Seite(QWidget):
+    """Eine Optionenseite: Gruppen mit Zeilen; Werte stehen sofort in den Einstellungen."""
+    def __init__(self, fenster, titel: str, offen: list[str] | None = None):
+        super().__init__()
+        self.w = fenster
+        self.s = fenster.settings
+        self.lay = QVBoxLayout(self)
+        self.lay.setContentsMargins(24, 16, 24, 16)
+        t = QLabel(f"<h2>{titel}</h2>")
+        self.lay.addWidget(t)
+        self.gruppe_lay = None
+        self._offen = offen or []
+
+    def gruppe(self, name: str) -> QFormLayout:
+        g = QGroupBox(name)
+        f = QFormLayout(g)
+        self.lay.addWidget(g)
+        return f
+
+    def haken(self, f, key, text, std, wirkt=None):
+        c = QCheckBox(text)
+        c.setChecked(self.s.get_bool(key, std))
+
+        def geaendert(on):
+            self.s.set(key, on)
+            if wirkt:
+                wirkt(on)
+        c.toggled.connect(geaendert)
+        f.addRow(c)
+        return c
+
+    def auswahl(self, f, key, label, werte: list[str], std, wirkt=None):
+        c = QComboBox()
+        c.addItems(werte)
+        c.setCurrentText(str(self.s.get(key, std)))
+
+        def geaendert(t):
+            self.s.set(key, t)
+            if wirkt:
+                wirkt(t)
+        c.currentTextChanged.connect(geaendert)
+        f.addRow(label, c)
+        return c
+
+    def zahl(self, f, key, label, lo, hi, std, einheit="", dezimal=0, wirkt=None):
+        c = QDoubleSpinBox() if dezimal else QSpinBox()
+        c.setRange(lo, hi)
+        if dezimal:
+            c.setDecimals(dezimal)
+        c.setSuffix(einheit)
+        c.setValue(float(self.s.get(key, std)) if dezimal else self.s.get_int(key, std))
+
+        def geaendert(v):
+            self.s.set(key, v)
+            if wirkt:
+                wirkt(v)
+        c.valueChanged.connect(geaendert)
+        f.addRow(label, c)
+        return c
+
+    def zeile(self, f, text: str):
+        l = QLabel(text)
+        l.setWordWrap(True)
+        l.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        f.addRow(l)
+        return l
+
+    def hinweis(self, text: str):
+        l = QLabel(text)
+        l.setWordWrap(True)
+        l.setStyleSheet("color: palette(mid);")
+        self.lay.addWidget(l)
+
+    def abschluss(self):
+        if self._offen:
+            self.hinweis("<b>Noch nicht umgesetzt</b> (im alten Programm vorhanden): " + "; ".join(self._offen) + ".")
+        self.lay.addStretch(1)
+
+
+class OptionenDialog(QDialog):
+    def __init__(self, fenster, seite: str | None = None):
+        super().__init__(fenster)
+        self.setWindowTitle("Optionen")
+        self.resize(900, 640)
+        self.w = fenster
+        h = QHBoxLayout(self)
+        self.baum = QTreeWidget()
+        self.baum.setHeaderHidden(True)
+        self.baum.setFixedWidth(230)
+        self.stapel = QStackedWidget()
+        self.stapel.setMinimumWidth(560)
+        h.addWidget(self.baum)
+        rechts = QVBoxLayout()
+        sc = QScrollArea(); sc.setWidgetResizable(True); sc.setWidget(self.stapel); sc.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        rechts.addWidget(sc, 1)
+        bb = QDialogButtonBox(QDialogButtonBox.Close)
+        bb.button(QDialogButtonBox.Close).setText("Fertig")
+        bb.rejected.connect(self.accept)
+        rechts.addWidget(bb)
+        h.addLayout(rechts, 1)
+        self.knoten: dict[str, QTreeWidgetItem] = {}
+        zweige = [
+            ("Leichter lesen", [("lesehilfe", "Lesehilfe", self._lesehilfe), ("schriften", "Schriftarten", self._schriften),
+                                ("sprache", "Sprache", self._sprache), ("rechtschreibung", "Rechtschreibprüfung", self._rechtschreibung)]),
+            ("Wie im WPS Writer", [("ansicht", "Ansicht", self._ansicht), ("bearbeiten", "Bearbeiten", self._bearbeiten),
+                                   ("speichern", "Allgemein und Speichern", self._speichern),
+                                   ("sicherung", "Sicherungseinstellungen", self._sicherung),
+                                   ("drucken", "Drucken", self._drucken), ("benutzer", "Benutzerinformationen", self._benutzer),
+                                   ("verfolgen", "Änderungen verfolgen", self._verfolgen)]),
+            ("Nur bei Lunivo", [("ki", "Schreibhilfe und KI", self._ki), ("gedaechtnis", "Gedächtnis", self._gedaechtnis),
+                                ("erweitert", "Erweitert", self._erweitert)]),
+        ]
+        for zweig, seiten in zweige:
+            z = QTreeWidgetItem([zweig])
+            z.setFlags(z.flags() & ~Qt.ItemIsSelectable)
+            f = z.font(0); f.setBold(True); z.setFont(0, f)
+            self.baum.addTopLevelItem(z)
+            for key, titel, bauer in seiten:
+                it = QTreeWidgetItem([titel])
+                it.setData(0, Qt.UserRole, key)
+                z.addChild(it)
+                self.knoten[key] = it
+                self.stapel.addWidget(bauer(titel))
+                it.setData(0, Qt.UserRole + 1, self.stapel.count() - 1)
+        self.baum.expandAll()
+        self.baum.currentItemChanged.connect(lambda cur, _p: cur and cur.data(0, Qt.UserRole + 1) is not None
+                                             and self.stapel.setCurrentIndex(cur.data(0, Qt.UserRole + 1)))
+        self.gehe_zu(seite or "lesehilfe")
+
+    def gehe_zu(self, key: str):
+        it = self.knoten.get(key) or self.knoten["lesehilfe"]
+        self.baum.setCurrentItem(it)
+
+    # ================= Leichter lesen =================
+    def _lesehilfe(self, titel):
+        p = _Seite(self.w, titel, ["Lesestufe", "Zeilenluft", "Absatz beim Schreiben / Übriger Text (Abdunkeln)",
+                                   "Silbentrennung"])
+        f = p.gruppe("Leichter lesen")
+        p.auswahl(f, "lesehilfe/papier", "Papierton", list(PAPIERTOENE), "Weiß", lambda _: self.w.lesehilfe_anwenden())
+        p.zahl(f, "lesehilfe/buchstaben", "Buchstabenabstand", 0, 6, 0, " px", 1, lambda _: self.w.lesehilfe_anwenden())
+        p.zahl(f, "lesehilfe/wort", "Wortabstand", 0, 20, 0, " px", 1, lambda _: self.w.lesehilfe_anwenden())
+        f = p.gruppe("Beim Schreiben")
+        c = p.haken(f, "lesehilfe/zeilenfokus", "Zeilenfokus", False,
+                    lambda on: [t.editor.set_zeilenfokus(on) for t in self.w._doc_tabs()])
+        f = p.gruppe("Schrift und Sprache")
+        p.haken(f, "schreibhilfe/wellen", "Rechtschreibung während der Eingabe prüfen (Wellenlinien)", True,
+                lambda on: self.w.assistant.setze("wellen", on))
+        f = p.gruppe("Vorlesen")
+        liste = vorlesen.stimmen()
+        v = QComboBox(); v.addItem("Automatisch", "")
+        for s in liste:
+            v.addItem(s["name"], s["kennung"])
+        v.setCurrentIndex(max(0, v.findData(p.s.get("vorlesen/stimme", ""))))
+        v.currentIndexChanged.connect(lambda _: p.s.set("vorlesen/stimme", v.currentData()))
+        f.addRow("Stimme", v)
+        p.zahl(f, "vorlesen/tempo", "Tempo (−100 bis 100)", -100, 100, 0)
+        if not vorlesen.verfuegbar():
+            p.hinweis("Es ist keine Sprachausgabe eingerichtet (speech-dispatcher oder Piper).")
+        p.abschluss()
+        return p
+
+    def _schriften(self, titel):
+        p = _Seite(self.w, titel)
+        f = p.gruppe("Schrift für neuen Text")
+        fam = QComboBox(); fam.setEditable(True)
+        fam.addItems(sorted(set(QFontDatabase.families())))
+        fam.setCurrentText(p.s.get("standard/schrift", "Liberation Sans"))
+        fam.currentTextChanged.connect(lambda t: p.s.set("standard/schrift", t))
+        f.addRow("Schrift", fam)
+        p.zahl(f, "standard/groesse", "Größe", 6, 72, 11, " pt", 1)
+        f = p.gruppe("Zum leichteren Lesen")
+        vorhanden = {n.lower() for n in QFontDatabase.families()}
+        for n in LESESCHRIFTEN:
+            p.zeile(f, f"{n}: " + ("ist da ✔" if n.lower() in vorhanden else "fehlt — ./schrift-holen.sh holt sie"))
+        p.hinweis("Gilt für neue Dokumente. Bestehende Dokumente behalten ihre Schrift.")
+        p.abschluss()
+        return p
+
+    def _sprache(self, titel):
+        p = _Seite(self.w, titel, ["Weitere Prüfsprachen (derzeit Deutsch)", "Alle Prüfoptionen"])
+        f = p.gruppe("Sprache")
+        c = QComboBox(); c.addItems(K.SPRACHEN)
+        c.setCurrentText(self.w.ki.konfig["sprache"])
+        c.currentTextChanged.connect(lambda t: (self.w.ki.konfig.setze("sprache", t), self.w.ki.geaendert.emit()))
+        f.addRow("Übersetzen nach", c)
+        f = p.gruppe("Was geprüft wird")
+        p.haken(f, "schreibhilfe/wellen", "Rechtschreibung während der Eingabe", True, lambda on: self.w.assistant.setze("wellen", on))
+        p.abschluss()
+        return p
+
+    def _rechtschreibung(self, titel):
+        p = _Seite(self.w, titel, ["Immer Korrekturvorschläge unterbreiten", "Grammatik mitprüfen (LanguageTool einrichten, siehe INSTALLATION.md)",
+                                   "Benutzerwörterbuch (siehe Gedächtnis)"])
+        f = p.gruppe("Rechtschreibprüfung")
+        p.haken(f, "schreibhilfe/wellen", "Rechtschreibung während der Eingabe prüfen", True, lambda on: self.w.assistant.setze("wellen", on))
+        p.haken(f, "rsGrossIgnorieren", "Wörter in GROSSBUCHSTABEN ignorieren", True, lambda _: self.w.assistant.pruefen())
+        p.haken(f, "rsZahlenIgnorieren", "Wörter mit Zahlen ignorieren", True, lambda _: self.w.assistant.pruefen())
+        p.haken(f, "rsPfadeIgnorieren", "Internet- und Netzwerkpfade ignorieren", True, lambda _: self.w.assistant.pruefen())
+        b = QPushButton("Weggewinkte Funde wieder anzeigen")
+        b.clicked.connect(lambda: (self.w.assistant._weg.clear(), self.w.assistant.pruefen()))
+        f.addRow(b)
+        p.abschluss()
+        return p
+
+    # ================= Wie im WPS Writer =================
+    def _ansicht(self, titel):
+        p = _Seite(self.w, titel, ["Lineal", "Vertikales Lineal", "Gitternetzlinien", "Statusleiste ausblenden", "QuickInfo",
+                                   "Live-Vorschau", "Minisymbolleiste", "Tipp für Kopf-/Fußzeile", "Druckoptionen (Hervorhebungen, Zuschnittsmarken, Feldfunktionen …)",
+                                   "Ausgeblendeter Text, Objektanker", "Doppelklick blendet das Band aus"])
+        f = p.gruppe("Anzeigen")
+        p.haken(f, "ui/marken", "Textbegrenzungen (Eckmarken)", True, self.w.set_marken)
+        p.haken(f, "ui/seitenleiste", "Seitenleiste beim Start", True)
+        p.haken(f, "ui/navigation", "Navigationsbereich beim Start", False)
+        f = p.gruppe("Formatierungszeichen")
+        p.haken(f, "ui/steuerzeichen", "Absatzmarken, Leerzeichen und Tabstoppzeichen anzeigen", False,
+                lambda on: self.w.a_marks.setChecked(on))
+        f = p.gruppe("Darstellung")
+        p.auswahl(f, "theme", "Helligkeit", ["system", "light", "dark"], "system", self.w.set_theme)
+        p.abschluss()
+        return p
+
+    def _bearbeiten(self, titel):
+        p = _Seite(self.w, titel, ["Wortweise markieren, Text mit der Maus verschieben", "Maximale Rückgängig-Schritte",
+                                   "AutoFormat (Listen automatisch erkennen)", "Internet- und Netzwerkpfade durch Hyperlinks ersetzen",
+                                   "Erstzeileneinzug / Tabulator-Einzug", "Ausschneiden und Einfügen"])
+        f = p.gruppe("AutoKorrektur")
+        p.haken(f, "schreibhilfe/autokorr", "AutoKorrektur (Hauptschalter)", True, lambda on: self.w.assistant.setze("autokorr", on))
+        for name, (std, text) in autokorrektur.SCHALTER.items():
+            p.haken(f, "schreibhilfe/" + name, text, std)
+        f = p.gruppe("Wortvorhersage")
+        p.haken(f, "schreibhilfe/vorhersage", "Wortvorhersage", True, lambda on: self.w.assistant.setze("vorhersage", on))
+        p.abschluss()
+        return p
+
+    def _speichern(self, titel):
+        p = _Seite(self.w, titel, ["Maßeinheit", "Bilder nicht komprimieren", "Webseitencodierung", "Kompatibilitätsoptionen"])
+        f = p.gruppe("Speichern")
+        p.auswahl(f, "speichern/standard", "Dateien standardmäßig speichern als", [".docx", ".txt"], ".docx")
+        p.hinweis("DOCX ist das Austauschformat mit der höchsten Treue. ODT, DOC und RTF gehen über LibreOffice (Datei ▸ Exportieren).")
+        p.abschluss()
+        return p
+
+    def _sicherung(self, titel):
+        p = _Seite(self.w, titel, ["Zwischenstände aufheben (Tage)"])
+        f = p.gruppe("Sicherung")
+        p.zahl(f, "autosave_seconds", "Abstand der automatischen Sicherung", 10, 3600, 60, " s",
+               wirkt=lambda v: self.w.autosave.start(int(v) * 1000))
+        from ..storage import recovery
+        p.zeile(f, "Gesichert wird nach: " + recovery.recovery_dir())
+        from ..storage.settings import data_dir
+        p.zeile(f, "Einstellungen und Daten liegen in: " + data_dir())
+        p.abschluss()
+        return p
+
+    def _drucken(self, titel):
+        p = _Seite(self.w, titel, ["Womit das Druckfenster aufgeht", "Hohe Qualität", "Hervorhebungen / Hintergrundfarben drucken",
+                                   "Textbegrenzungen / Zuschnittsmarken drucken"])
+        p.hinweis("Gedruckt wird über das Druckfenster des Systems (Datei ▸ Drucken). Kopf-/Fußzeile und Seitenzahlen werden mitgedruckt.")
+        p.abschluss()
+        return p
+
+    def _benutzer(self, titel):
+        p = _Seite(self.w, titel)
+        f = p.gruppe("Benutzerdaten")
+        e = QLineEdit(p.s.get("benutzer/name", ""))
+        e.textChanged.connect(lambda t: p.s.set("benutzer/name", t))
+        f.addRow("Name (Autor in DOCX-Dokumenten)", e)
+        p.abschluss()
+        return p
+
+    def _verfolgen(self, titel):
+        p = _Seite(self.w, titel, ["Änderungen verfolgen", "Markup", "Sprechblasen", "Drucken mit Sprechblasen"])
+        p.hinweis("Das Verfolgen von Änderungen und Kommentare sind in der nativen Fassung noch nicht umgesetzt. "
+                  "Beim Öffnen von DOCX-Dateien mit nachverfolgten Änderungen oder Kommentaren warnt das Programm.")
+        p.abschluss()
+        return p
+
+    # ================= Nur bei Lunivo =================
+    def _ki(self, titel):
+        p = _Seite(self.w, titel, ["Aufgaben-Modellzuweisung je Funktion", "Bildgenerierung", "Eigenen Assistenten erstellen"])
+        k = self.w.ki.konfig
+        f = p.gruppe("Modell")
+        c = QComboBox()
+        c.addItem("(keines)", "")
+        for mid, name in K.MODELLE_FEST:
+            c.addItem(name, mid)
+        modelle = self.w.ki.ki.ollama_modelle()
+        for m in modelle:
+            c.addItem(f"Auf diesem Rechner: {m}", K.OLLAMA_MARKE + m)
+        for a in k["anbieter"]:
+            c.addItem(f"{a['name']} ({a['modell']})", K.EIGEN_MARKE + a["id"])
+        c.setCurrentIndex(max(0, c.findData(k["modell"])))
+        c.currentIndexChanged.connect(lambda _: (k.setze("modell", c.currentData()), self.w.ki.geaendert.emit()))
+        f.addRow("KI-Modell", c)
+        if not modelle:
+            p.zeile(f, "Ollama ist auf diesem Rechner nicht erreichbar — oder es ist kein Modell geholt.")
+        f = p.gruppe("Claude (Anthropic)")
+        e = QLineEdit(k["apiKey"]); e.setEchoMode(QLineEdit.Password); e.setPlaceholderText("Schlüssel (sk-ant-…)")
+        e.editingFinished.connect(lambda: (k.setze("apiKey", e.text().strip()), self.w.ki.geaendert.emit()))
+        f.addRow("Schlüssel", e)
+        f.addRow(QLabel(f"Gespeichert in {k.pfad} (nur für Sie lesbar). Bei Nutzung geht der Text an Anthropic — "
+                        "vorher fragt das Programm um Erlaubnis."))
+        p.zeile(f, f"Bisherige Kosten: {(K.als_geld(k['kosten']) if k['kosten'] else '0 $')}")
+        f = p.gruppe("Eigene Anbieter (OpenAI-kompatibel)")
+        liste = QListWidget()
+        liste.setMaximumHeight(90)
+        for a in k["anbieter"]:
+            liste.addItem(f"{a['name']} — {a['url']} — {a['modell']}")
+        f.addRow(liste)
+        zeile = QGridLayout()
+        n, u, s, m = QLineEdit(), QLineEdit(), QLineEdit(), QLineEdit()
+        n.setPlaceholderText("Name"); u.setPlaceholderText("https://…/v1"); s.setPlaceholderText("Schlüssel (optional)")
+        m.setPlaceholderText("Modell"); s.setEchoMode(QLineEdit.Password)
+        zeile.addWidget(n, 0, 0); zeile.addWidget(m, 0, 1); zeile.addWidget(u, 1, 0, 1, 2); zeile.addWidget(s, 2, 0, 1, 2)
+        b = QPushButton("Hinzufügen")
+
+        def neu():
+            if not u.text().strip() or not m.text().strip():
+                QMessageBox.information(self, "Anbieter", "Adresse und Modell werden gebraucht.")
+                return
+            a = k.anbieter_hinzufuegen(n.text(), u.text(), s.text(), m.text())
+            liste.addItem(f"{a['name']} — {a['url']} — {a['modell']}")
+            for w_ in (n, u, s, m):
+                w_.clear()
+            self.w.ki.geaendert.emit()
+        b.clicked.connect(neu)
+        zeile.addWidget(b, 3, 0, 1, 2)
+        host = QWidget(); host.setLayout(zeile)
+        f.addRow(host)
+        ent = QPushButton("Markierten Anbieter entfernen")
+        ent.clicked.connect(lambda: (k.anbieter_entfernen(k["anbieter"][liste.currentRow()]["id"]), liste.takeItem(liste.currentRow()),
+                                     self.w.ki.geaendert.emit()) if liste.currentRow() >= 0 else None)
+        f.addRow(ent)
+        f = p.gruppe("Für wen schreiben Sie? (Standard)")
+        e2 = QComboBox(); e2.addItems(EMPFAENGER)
+        e2.setCurrentText(self.w.assistant.thema)
+        e2.currentTextChanged.connect(self.w.assistant.setze_thema)
+        f.addRow("Empfänger", e2)
+        p.abschluss()
+        return p
+
+    def _gedaechtnis(self, titel):
+        p = _Seite(self.w, titel)
+        g = self.w.assistant.gelernt
+        f = p.gruppe("Was das Programm gelernt hat")
+        lab = QLabel()
+        f.addRow(lab)
+
+        def stand():
+            d = g.daten
+            lab.setText(f"{len(d['woerter'])} Wörter, die Sie richtiggestellt haben · {len(d['inRuhe'])} Wörter, die in Ruhe bleiben.")
+        stand()
+        b = QPushButton("Alles Gelernte vergessen")
+
+        def weg():
+            if QMessageBox.question(self, "Vergessen", "Wirklich alles Gelernte löschen?") == QMessageBox.Yes:
+                g.vergessen(); stand(); self.w.assistant.pruefen()
+        b.clicked.connect(weg)
+        f.addRow(b)
+        p.hinweis("Das Gedächtnis liegt als Datei auf diesem Rechner und wird nur auf Ihren Wunsch an eine KI mitgeschickt (als Steckbrief).")
+        p.abschluss()
+        return p
+
+    def _erweitert(self, titel):
+        from ..integrations import languagetool, libreoffice
+        from ..storage.settings import data_dir
+        p = _Seite(self.w, titel)
+        f = p.gruppe("Angebundene Programme")
+        p.zeile(f, "LibreOffice (ODT/DOC/RTF-Umwandlung): " + (libreoffice.finde_soffice() or "nicht installiert"))
+        p.zeile(f, "LanguageTool (gründliche Prüfung): " + ("bereit" if languagetool.verfuegbar() else "nicht eingerichtet"))
+        p.zeile(f, "Sprachausgabe: " + ("Piper" if vorlesen.piper_da() else "speech-dispatcher" if vorlesen.spd_da() else "nicht eingerichtet"))
+        f = p.gruppe("Daten")
+        p.zeile(f, data_dir())
+        p.abschluss()
+        return p

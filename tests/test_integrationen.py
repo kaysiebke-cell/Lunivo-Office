@@ -54,3 +54,13 @@ def test_vorlesen_spd_befehl(monkeypatch):
     assert vorlesen.lies_vor("Hallo Welt", "", 20)
     assert gesehen["cmd"][:2] == ["spd-say", "-l"] and "20" in gesehen["cmd"] and gesehen["cmd"][-1] == "Hallo Welt"
     assert vorlesen.lies_vor("   ") is False
+
+
+def test_wps_nur_ehrlich(monkeypatch):
+    from native_qt.integrations import wps
+    monkeypatch.setattr(wps.shutil, "which", lambda n: None)
+    assert not wps.verfuegbar() and wps.oeffnen("/x.docx") is False
+    gesehen = {}
+    monkeypatch.setattr(wps.shutil, "which", lambda n: "/usr/bin/wps" if n == "wps" else None)
+    monkeypatch.setattr(wps.subprocess, "Popen", lambda cmd, **k: gesehen.setdefault("cmd", cmd))
+    assert wps.oeffnen("/x.docx") and gesehen["cmd"] == ["/usr/bin/wps", "/x.docx"]

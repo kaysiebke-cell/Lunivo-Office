@@ -707,3 +707,22 @@ class Befehle:
     def w_kiKonfiguration(self, k=None): self.w.show_options("ki")
     def w_eigenenAnbieterHinzufuegen(self, k=None): self.w.show_options("ki")
     def kiTextAktion(self, k=None, aktion="verbessern"): self.w.ki.text_aktion(aktion)
+
+    # ==== Externe Programme (Steuerung einer installierten Anwendung, keine Integration) ==========================
+    def _extern(self, fn, name):
+        t = self.w.current_tab()
+        if not t:
+            return
+        if not t.path or t.is_modified():
+            QMessageBox.information(self.w, name, "Bitte das Dokument zuerst speichern.")
+            return
+        if not fn(t.path):
+            QMessageBox.information(self.w, name, f"{name} ist auf diesem Rechner nicht installiert.")
+
+    def mitWpsOeffnen(self, k=None):
+        from ..integrations import wps
+        self._extern(wps.oeffnen, "WPS Writer")
+
+    def mitLibreOfficeOeffnen(self, k=None):
+        from ..integrations import wps
+        self._extern(wps.mit_libreoffice_oeffnen, "LibreOffice")
