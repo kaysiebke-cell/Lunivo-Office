@@ -555,6 +555,18 @@ class Befehle:
 
     def an_netzlinien(self): return bool(self.ed and self.ed.gitter)
 
+    # ---- Lineale ---------------------------------------------------------------------------
+    def linealZeigen(self, k=None):
+        self.w.settings.set("ansicht/lineal", not self.w.settings.get_bool("ansicht/lineal", False))
+        self.w.lineale_anwenden()
+
+    def linealHochZeigen(self, k=None):
+        self.w.settings.set("ansicht/lineal_hoch", not self.w.settings.get_bool("ansicht/lineal_hoch", False))
+        self.w.lineale_anwenden()
+
+    def an_linealZeigen(self): return self.w.settings.get_bool("ansicht/lineal", False)
+    def an_linealHochZeigen(self): return self.w.settings.get_bool("ansicht/lineal_hoch", False)
+
     # ---- Zoom ---------------------------------------------------------------------------
     def _zoom_um(self, faktor):
         if self.ed:

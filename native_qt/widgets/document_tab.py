@@ -24,8 +24,23 @@ class DocumentTab(QScrollArea):
         lay = QHBoxLayout(holder)
         lay.setContentsMargins(12, 12, 12, 12)
         self.editor = DocumentEditor()
+        from .lineal import LinealH, LinealV
+        spalte = QVBoxLayout(); spalte.setSpacing(0); spalte.setContentsMargins(0, 0, 0, 0)
+        reihe = QHBoxLayout(); reihe.setSpacing(0); reihe.setContentsMargins(0, 0, 0, 0)
+        self.lineal_h = LinealH(self.editor); self.lineal_v = LinealV(self.editor)
+        self.lineal_h.hide(); self.lineal_v.hide()
+        self.lineal_h.randGeaendert.connect(self._rand)
+        self.lineal_v.randGeaendert.connect(self._rand)
+        self.lineal_h.einzugGeaendert.connect(lambda l, r, f: self.editor.set_indents(l, r, f))
+        links = QVBoxLayout(); links.setSpacing(0); links.setContentsMargins(0, 0, 0, 0)
+        self._abstand = QWidget(); self._abstand.setFixedSize(1, 22); self._abstand.hide()
+        links.addWidget(self._abstand); links.addWidget(self.lineal_v); links.addStretch(1)
+        rechts = QVBoxLayout(); rechts.setSpacing(0); rechts.setContentsMargins(0, 0, 0, 0)
+        rechts.addWidget(self.lineal_h); rechts.addWidget(self.editor); rechts.addStretch(1)
+        reihe.addLayout(links); reihe.addLayout(rechts)
         lay.addStretch(1)
-        lay.addWidget(self.editor)
+        lay.addLayout(reihe)
+        lay.setAlignment(reihe, Qt.AlignTop)
         lay.addStretch(1)
         self.setWidget(holder)
         self.path = path
@@ -37,6 +52,19 @@ class DocumentTab(QScrollArea):
             self.editor.set_document_and_page(loaded.doc, loaded.page)
             self.meta = loaded.meta
         self.editor.document().setDefaultFont(self.editor.document().defaultFont())
+
+    def _rand(self, seite: str, mm: float) -> None:
+        pg = self.editor.page.copy()
+        setattr(pg, {"links": "margin_left_mm", "rechts": "margin_right_mm", "oben": "margin_top_mm",
+                     "unten": "margin_bottom_mm"}[seite], mm)
+        self.editor.page_settings_changed(pg)
+
+    def zeige_lineale(self, waagerecht: bool, senkrecht: bool) -> None:
+        self.lineal_h.setVisible(waagerecht)
+        self.lineal_v.setVisible(senkrecht)
+        self._abstand.setVisible(waagerecht)
+        if waagerecht or senkrecht:
+            self.lineal_h._neu(); self.lineal_v._neu()
 
     def zoom_breite(self) -> None:
         """Seitenbreite: die Seite füllt die Breite des Fensters."""

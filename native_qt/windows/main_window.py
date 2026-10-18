@@ -338,6 +338,7 @@ class MainWindow(QMainWindow):
         e.opt = lambda name, std=True: self.settings.get_bool(name, std)
         e.set_marken(self.settings.get_bool("ui/marken", True))
         self.formatzeichen_anwenden(e)
+        self.lineale_anwenden(tab)
         self._lesehilfe_auf(e)
         felder = self.band.felder
         if felder and e is not None:
@@ -693,6 +694,13 @@ class MainWindow(QMainWindow):
         s = self.settings
         e.set_lesehilfe(PAPIERTOENE.get(s.get("lesehilfe/papier", "Weiß"), "#ffffff"),
                         float(s.get("lesehilfe/buchstaben", 0)), float(s.get("lesehilfe/wort", 0)))
+
+    def lineale_anwenden(self, tab=None):
+        h = self.settings.get_bool("ansicht/lineal", False)
+        v = self.settings.get_bool("ansicht/lineal_hoch", False)
+        for t in ([tab] if tab is not None else self._doc_tabs()):
+            t.zeige_lineale(h, v)
+        self.band.aktualisieren(self.current_tab() is not None)
 
     def formatzeichen_anwenden(self, e=None):
         """Formatierungszeichen für neue Reiter: Zustand aus Optionen (ui/steuerzeichen)."""

@@ -31,6 +31,7 @@ class DocumentEditor(QTextEdit):
     pageInfoChanged = Signal(int, int)       # aktuelle Seite, Seitenzahl
     formatChanged = Signal()                 # Cursor-Format hat sich geändert
     zoomChanged = Signal(float)
+    pageApplied = Signal()                    # Seiteneinrichtung oder Größe hat sich geändert
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -78,6 +79,7 @@ class DocumentEditor(QTextEdit):
         h = int(self.document().size().height()) + 4
         mind = int(mm_to_px(self.page.height_mm) * self.zoom)
         self.setFixedHeight(max(h, mind))
+        self.pageApplied.emit()
 
     def _aussen(self):
         w = self.parent()
@@ -118,6 +120,7 @@ class DocumentEditor(QTextEdit):
         self.setFixedWidth(int(mm_to_px(page.width_mm) * self.zoom) + 2)
         self._passe_hoehe_an()
         self._timer.start()
+        self.pageApplied.emit()
 
     def set_gitter(self, an: bool) -> None:
         self.gitter = an
