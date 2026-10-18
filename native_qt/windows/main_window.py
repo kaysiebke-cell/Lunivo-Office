@@ -88,6 +88,7 @@ class MainWindow(QMainWindow):
         lay.addWidget(self.band)
         mitte = QHBoxLayout(); mitte.setSpacing(0)
         self.navigation = NavigationPanel(self.current_editor)
+        self.navigation.aktion = self._nav_aktion
         self.navigation.hide()
         mitte.addWidget(self.navigation)
         mitte.addWidget(self.docs.stack, 1)
@@ -337,6 +338,8 @@ class MainWindow(QMainWindow):
         e.document().contentsChanged.connect(self.assistant.dokument_geaendert)
         e.document().contentsChanged.connect(self.navigation.spaeter)
         e.opt = lambda name, std=True: self.settings.get_bool(name, std)
+        e.autor = self.autor_angaben
+        e.zusatzGeaendert.connect(self.navigation.spaeter)
         e.set_marken(self.settings.get_bool("ui/marken", True))
         self.formatzeichen_anwenden(e)
         self.lineale_anwenden(tab)
@@ -834,6 +837,31 @@ class MainWindow(QMainWindow):
         n, ok = QInputDialog.getItem(self, "Stimme wählen", "Stimme:", namen, 0, False)
         if ok:
             self.settings.set("vorlesen/stimme", liste[namen.index(n)]["kennung"])
+
+    def _nav_aktion(self, name: str, b: dict):
+        e = self.current_editor()
+        if e is None:
+            return
+        if name == "kommentar_weg":
+            e.kommentar_loeschen(int(b["wert"]))
+        elif name == "aenderung_an":
+            e.aenderung_annehmen(b, True)
+        elif name == "aenderung_ab":
+            e.aenderung_annehmen(b, False)
+        elif name == "note_weg":
+            e.note_loeschen(b["art"], b["id"])
+        elif name == "note_bearbeiten":
+            self.befehle.note_bearbeiten(b["art"], b["id"])
+        self.navigation.aktualisieren()
+
+    def zeige_navigation(self, tab: str):
+        self.navigation.show()
+        self.navigation.zeige_tab(tab)
+
+    def autor_angaben(self) -> tuple[str, str]:
+        name = self.settings.get("benutzer/name", "") or "Unbekannt"
+        init = self.settings.get("benutzer/initialen", "") or "".join(w[0] for w in name.split()[:2]).upper()
+        return name, init
 
     def toggle_navigation(self):
         self.navigation.setVisible(not self.navigation.isVisible())

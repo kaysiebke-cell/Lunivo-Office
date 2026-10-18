@@ -13,6 +13,7 @@ from ..document_io.docx_reader import LH_PROPORTIONAL, STYLE_PROP
 from .page import PageSettings, mm_to_px
 from ..services.autokorrektur import kleinste_aenderung
 from .pagination import bind_layout, paginated_copy
+from .zusatz_editor import ZusatzMixin
 
 # Formatvorlagen: Name → (Überschriftsebene, Punktgröße, fett, kursiv)
 STYLES = {
@@ -27,7 +28,7 @@ STYLES = {
 STYLE_KEY = {"Titel": "Title", "Untertitel": "Subtitle", "Zitat": "Quote"}
 
 
-class DocumentEditor(QTextEdit):
+class DocumentEditor(ZusatzMixin, QTextEdit):
     pageInfoChanged = Signal(int, int)       # aktuelle Seite, Seitenzahl
     formatChanged = Signal()                 # Cursor-Format hat sich geändert
     zoomChanged = Signal(float)
@@ -72,6 +73,7 @@ class DocumentEditor(QTextEdit):
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.cursorPositionChanged.connect(self._scroll_outer)
         self._verbinde_groesse()
+        self._zusatz_init()
         self.apply_page(self.page)
 
     # ---- Dokument und Seite ---------------------------------------------
@@ -103,6 +105,7 @@ class DocumentEditor(QTextEdit):
         self._verbinde_groesse()
         doc.setDocumentMargin(0)
         doc.contentsChanged.connect(self._timer.start)
+        doc.contentsChange.connect(self._inhalt_geaendert)
         self.apply_page(page)
         doc.setModified(False)
         doc.clearUndoRedoStacks()
@@ -742,22 +745,17 @@ class DocumentEditor(QTextEdit):
     # ---- Schreibhilfe: Wellenlinien, Ersetzen, Vorhersage, AutoKorrektur -------------------
     WELLE = {"fehler": "#e8590c", "tipp": "#1c7ed6", "hinweis": "#868e96"}
 
+    def cut(self) -> None:
+        if self.verfolgen and self.textCursor().hasSelection():
+            self.copy()
+            c = self.textCursor()
+            self._loesche_verfolgt(c.selectionStart(), c.selectionEnd(), ende=True)
+            return
+        super().cut()
+
     def set_wellen(self, funde: list) -> None:
         self._wellen = funde
-        sel = []
-        n = self.document().characterCount()
-        for f in funde:
-            if f["bis"] > n or f["von"] >= f["bis"]:
-                continue
-            c = QTextCursor(self.document())
-            c.setPosition(f["von"]); c.setPosition(f["bis"], QTextCursor.KeepAnchor)
-            fmt = QTextCharFormat()
-            fmt.setUnderlineStyle(QTextCharFormat.WaveUnderline)
-            fmt.setUnderlineColor(QColor(self.WELLE.get(f["art"], "#868e96")))
-            sel.append(QTextEdit.ExtraSelection())
-            sel[-1].cursor = c
-            sel[-1].format = fmt
-        self.setExtraSelections(sel)
+        self._overlays_neu()
 
     def replace_range(self, von: int, bis: int, neu: str, erwartet: str | None = None) -> bool:
         c = QTextCursor(self.document())
@@ -827,6 +825,8 @@ class DocumentEditor(QTextEdit):
         self.setTextCursor(end)
 
     def keyPressEvent(self, e) -> None:
+        if self.verfolgen and not self.isReadOnly() and self._verfolgte_taste(e):
+            return
         if self.gliederung and (e.modifiers() & Qt.AltModifier) and (e.modifiers() & Qt.ShiftModifier) \
                 and e.key() in (Qt.Key_Left, Qt.Key_Right):
             self.gliederung_ebene(-1 if e.key() == Qt.Key_Left else 1)

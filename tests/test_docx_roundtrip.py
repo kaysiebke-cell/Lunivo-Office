@@ -121,10 +121,10 @@ def test_unsupported_content_is_reported(app, tmp_path):
     d = docx.Document(); p = d.add_paragraph("x")
     from docx.oxml import OxmlElement
     from docx.oxml.ns import qn
-    r = OxmlElement("w:r"); fr = OxmlElement("w:footnoteReference"); fr.set(qn("w:id"), "1"); r.append(fr); p._p.append(r)
+    r = OxmlElement("w:r"); tb = OxmlElement("w:txbxContent"); r.append(tb); p._p.append(r)
     f = tmp_path / "f.docx"; d.save(f)
     _, _, _, rep = read_docx(str(f))
-    assert any("Fußnoten" in w for w in rep.warnings)
+    assert any("Textfelder" in w for w in rep.warnings)
 
 
 def test_seitenfarbe_und_rahmen_roundtrip(tmp_path):

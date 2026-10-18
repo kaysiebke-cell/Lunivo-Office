@@ -56,6 +56,7 @@ class DocumentTab(QScrollArea):
             self.editor.set_document_and_page(loaded.doc, loaded.page)
             self.meta = loaded.meta
         self.editor.document().setDefaultFont(self.editor.document().defaultFont())
+        self.editor.zusatz_binden(self.meta)
 
     def set_layout(self, art: str) -> None:
         """blatt (Drucklayout) | web (Weblayout) | doppelt (Zwei Seiten, nur Ansicht)."""

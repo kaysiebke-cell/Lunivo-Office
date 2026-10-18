@@ -256,3 +256,32 @@ def test_absatzdialog_und_objekte_waehlen(app, tmp_path):
     w.befehle.objekteWaehlen()
     assert e.textCursor().selectedText() == "￼"
     e.document().setModified(False); w.close()
+
+
+def test_kommentar_note_verfolgen_ueber_befehle(app, tmp_path, monkeypatch):
+    from PySide6.QtWidgets import QInputDialog
+    w = win(tmp_path)
+    w.new_document(); w.show()
+    e = w.current_editor()
+    e.insertPlainText("Ein Satz zum Prüfen.")
+    monkeypatch.setattr(QInputDialog, "getMultiLineText", staticmethod(lambda *a, **k: ("Mein Text", True)))
+    e.select_range(0, 3)
+    w.befehle.kommentar()
+    assert len(e.kommentare) == 1 and w.navigation.isVisible()
+    assert w.navigation.liste["kommentare"].count() == 1
+    c = e.textCursor(); c.setPosition(e.document().characterCount() - 1); e.setTextCursor(c)
+    w.befehle.fussnote()
+    w.navigation.aktualisieren()
+    assert len(e.noten["f"]) == 1 and w.navigation.liste["noten"].count() == 1
+    assert not w.befehle.an_verfolgen()
+    w.befehle.verfolgen()
+    assert w.befehle.an_verfolgen()
+    ziel = str(tmp_path / "k.docx")
+    assert w._write(w.current_tab(), ziel)
+    w.current_tab().editor.document().setModified(False)
+    w2 = win(tmp_path / "x") if (tmp_path / "x").mkdir() is None else None
+    w2.open_path(ziel)
+    e2 = w2.current_editor()
+    assert list(e2.kommentare.values())[0]["text"] == "Mein Text" and list(e2.noten["f"].values())[0] == "Mein Text"
+    for f in (w, w2):
+        f.current_editor().document().setModified(False); f.close()

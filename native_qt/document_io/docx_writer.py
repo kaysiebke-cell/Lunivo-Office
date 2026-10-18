@@ -45,6 +45,9 @@ def _has(fmt, prop) -> bool:
     return fmt.hasProperty(prop)
 
 
+from ..editor.zusatz import P_AENDERUNG, P_AUTOR, P_DATUM, P_KOMMENTAR, P_NOTE  # noqa: E402
+
+
 class _Writer:
     def __init__(self, qdoc: QTextDocument, page: PageSettings, meta: dict):
         self.q = qdoc
@@ -56,6 +59,12 @@ class _Writer:
         self._num_ids: dict[tuple, int] = {}
         self.last_list_obj = None
         self.last_num = None
+        self._komm_runs: dict[int, list] = {}
+        self._noten: dict[str, list] = {"f": [], "e": []}       # [(Ausgabe-Id, Text)]
+        self._note_ids: dict[tuple, int] = {}
+        self._aend_id = 0
+        self._lz_id = 0
+        self._lz_offen: dict[str, int] = {}
 
     def _clear_body(self):
         body = self.d.element.body
@@ -254,6 +263,7 @@ class _Writer:
             if frag.isValid():
                 self.write_fragment(frag, para, in_head)
             it += 1
+        self._textmarken(para, [])
 
     def _apply_list(self, para, lst):
         fmt = lst.format()
@@ -309,9 +319,16 @@ class _Writer:
             return
         parent = para
         href = cf.anchorHref() if cf.isAnchor() else ""
+        self._textmarken(para, [] if href else (list(cf.anchorNames()) if cf.isAnchor() else []))
         if href:
             hl = self._hyperlink(para, href)
             parent = hl
+        note = cf.stringProperty(P_NOTE) if cf.hasProperty(P_NOTE) else ""
+        if note:
+            run = self._make_run(parent, para)
+            self._note_verweis(run, note)
+            self._zusatz_anwenden(run, cf)
+            return
         for chunk, kind in _split(text):
             run = self._make_run(parent, para)
             if kind == "text":
@@ -323,6 +340,58 @@ class _Writer:
             elif kind == "img":
                 continue
             self._format_run(run, cf, in_head, bool(href))
+            self._zusatz_anwenden(run, cf)
+
+    def _textmarken(self, para, namen: list) -> None:
+        """Offene Textmarken schließen, neue öffnen — je Name genau ein bookmarkStart/-End-Paar."""
+        for n in [n for n in self._lz_offen if n not in namen]:
+            e = OxmlElement("w:bookmarkEnd")
+            e.set(qn("w:id"), str(self._lz_offen.pop(n)))
+            para._p.append(e)
+        for n in namen:
+            if n not in self._lz_offen:
+                self._lz_id += 1
+                st = OxmlElement("w:bookmarkStart")
+                st.set(qn("w:id"), str(self._lz_id)); st.set(qn("w:name"), n)
+                para._p.append(st)
+                self._lz_offen[n] = self._lz_id
+
+    def _note_verweis(self, run, note: str) -> None:
+        art, _, nid = note.partition(":")
+        nid = int(nid)
+        key = (art, nid)
+        if key not in self._note_ids:
+            self._note_ids[key] = len(self._noten[art]) + 1
+            self._noten[art].append((self._note_ids[key], (self.meta.get("noten", {}).get(art, {}) or {}).get(nid, "")))
+        r = run._r
+        for k in list(r):
+            r.remove(k)
+        rpr = OxmlElement("w:rPr")
+        rs = OxmlElement("w:rStyle"); rs.set(qn("w:val"), "FootnoteReference" if art == "f" else "EndnoteReference")
+        rpr.append(rs)
+        r.append(rpr)
+        ref = OxmlElement("w:footnoteReference" if art == "f" else "w:endnoteReference")
+        ref.set(qn("w:id"), str(self._note_ids[key]))
+        r.append(ref)
+
+    def _zusatz_anwenden(self, run, cf: QTextCharFormat) -> None:
+        """Kommentarbereich merken, nachverfolgte Änderung als w:ins / w:del um den Lauf legen."""
+        if cf.hasProperty(P_KOMMENTAR):
+            self._komm_runs.setdefault(int(cf.property(P_KOMMENTAR)), []).append(run)
+        if cf.hasProperty(P_AENDERUNG):
+            art = cf.stringProperty(P_AENDERUNG)
+            if art in ("ins", "del"):
+                self._aend_id += 1
+                w = OxmlElement("w:ins" if art == "ins" else "w:del")
+                w.set(qn("w:id"), str(1000 + self._aend_id))
+                w.set(qn("w:author"), cf.stringProperty(P_AUTOR) or "Unbekannt")
+                if cf.stringProperty(P_DATUM):
+                    w.set(qn("w:date"), cf.stringProperty(P_DATUM))
+                run._r.addprevious(w)
+                w.append(run._r)
+                if art == "del":
+                    for t in run._r.findall(qn("w:t")):
+                        t.tag = qn("w:delText")
 
     def _make_run(self, parent, para):
         if parent is para:
@@ -458,12 +527,76 @@ class _Writer:
         self.write_page()
         self.write_frame(self.q.rootFrame(), _Body(self.d))
         self._trim_trailing_empty()
+        self._noten_schreiben()
+        self._kommentare_schreiben()
         cp = self.d.core_properties
         cp.title = self.meta.get("title", "") or ""
         cp.author = self.meta.get("author", "") or "Lunivo Writer"
         out = io.BytesIO()
         self.d.save(out)
         return out.getvalue()
+
+    def _kommentare_schreiben(self) -> None:
+        daten = self.meta.get("kommentare", {}) or {}
+        for kid in sorted(self._komm_runs):
+            runs = self._komm_runs[kid]
+            k = daten.get(kid) or daten.get(str(kid)) or {}
+            try:
+                c = self.d.add_comment(runs=[runs[0], runs[-1]] if len(runs) > 1 else runs[0], text=k.get("text", ""),
+                                       author=k.get("autor", "") or "Unbekannt", initials=k.get("initialen", "") or "")
+                if k.get("datum"):
+                    c._comment_elm.set(qn("w:date"), k["datum"])
+            except Exception as ex:
+                self.report.warn(f"Ein Kommentar konnte nicht gespeichert werden: {ex}")
+
+    def _noten_schreiben(self) -> None:
+        from docx.enum.style import WD_STYLE_TYPE
+        from docx.opc.packuri import PackURI
+        from docx.opc.part import Part
+        from lxml import etree
+        W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+        for art, wurzel, tag, ref, rel, ct, stil_t, stil_r in (
+                ("f", "footnotes", "footnote", "footnoteRef", "footnotes",
+                 "application/vnd.openxmlformats-officedocument.wordprocessingml.footnotes+xml", "Footnote Text", "Footnote Reference"),
+                ("e", "endnotes", "endnote", "endnoteRef", "endnotes",
+                 "application/vnd.openxmlformats-officedocument.wordprocessingml.endnotes+xml", "Endnote Text", "Endnote Reference")):
+            if not self._noten[art]:
+                continue
+            names = [s.name for s in self.d.styles]
+            if stil_t not in names:
+                st = self.d.styles.add_style(stil_t, WD_STYLE_TYPE.PARAGRAPH)
+                st.base_style = self.d.styles["Normal"]
+                st.font.size = Pt(10)
+            if stil_r not in names:
+                st = self.d.styles.add_style(stil_r, WD_STYLE_TYPE.CHARACTER)
+                st.font.superscript = True
+            root = etree.Element(f"{{{W}}}{wurzel}", nsmap={"w": W})
+
+            def trenner(typ, nid, kind):
+                n = etree.SubElement(root, f"{{{W}}}{tag}", {f"{{{W}}}type": typ, f"{{{W}}}id": str(nid)})
+                p = etree.SubElement(n, f"{{{W}}}p")
+                r = etree.SubElement(p, f"{{{W}}}r")
+                etree.SubElement(r, f"{{{W}}}{kind}")
+            trenner("separator", -1, "separator")
+            trenner("continuationSeparator", 0, "continuationSeparator")
+            for nid, text in self._noten[art]:
+                n = etree.SubElement(root, f"{{{W}}}{tag}", {f"{{{W}}}id": str(nid)})
+                for i, zeile in enumerate((text or "").split("\n")):
+                    p = etree.SubElement(n, f"{{{W}}}p")
+                    ppr = etree.SubElement(p, f"{{{W}}}pPr")
+                    etree.SubElement(ppr, f"{{{W}}}pStyle", {f"{{{W}}}val": stil_t.replace(" ", "")})
+                    if i == 0:
+                        r = etree.SubElement(p, f"{{{W}}}r")
+                        rpr = etree.SubElement(r, f"{{{W}}}rPr")
+                        etree.SubElement(rpr, f"{{{W}}}rStyle", {f"{{{W}}}val": stil_r.replace(" ", "")})
+                        etree.SubElement(r, f"{{{W}}}{ref}")
+                    r2 = etree.SubElement(p, f"{{{W}}}r")
+                    t = etree.SubElement(r2, f"{{{W}}}t")
+                    t.text = (" " if i == 0 else "") + zeile
+                    t.set("{http://www.w3.org/XML/1998/namespace}space", "preserve")
+            blob = etree.tostring(root, xml_declaration=True, encoding="UTF-8", standalone=True)
+            part = Part(PackURI(f"/word/{wurzel}.xml"), ct, blob, self.d.part.package)
+            self.d.part.relate_to(part, "http://schemas.openxmlformats.org/officeDocument/2006/relationships/" + rel)
 
     def _trim_trailing_empty(self):
         body = self.d.element.body

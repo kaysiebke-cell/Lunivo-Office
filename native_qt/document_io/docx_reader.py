@@ -20,6 +20,7 @@ from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn
 from docx.table import Table
 from docx.text.hyperlink import Hyperlink
+from docx.text.run import Run
 from docx.text.paragraph import Paragraph
 from PySide6.QtCore import QUrl
 from PySide6.QtGui import (
@@ -33,6 +34,7 @@ from .report import DocumentIOError, IOReport
 
 LH_PROPORTIONAL, LH_FIXED = 1, 2                # QTextBlockFormat.LineHeightTypes
 STYLE_PROP = QTextFormat.UserProperty + 1       # Name der Formatvorlage am Block
+from ..editor.zusatz import P_AENDERUNG, P_AUTOR, P_DATUM, P_KOMMENTAR, P_NOTE, leere_meta  # noqa: E402
 EMU_PER_PX = 9525
 PT_PER_PX = 0.75
 
@@ -53,11 +55,7 @@ _QT_ALIGN = {
 
 # Was beim Lesen nicht übernommen wird → Hinweis
 _UNSUPPORTED = [
-    ("//w:footnoteReference", "Fußnoten werden nicht dargestellt und beim Speichern nicht erhalten."),
-    ("//w:endnoteReference", "Endnoten werden nicht dargestellt und beim Speichern nicht erhalten."),
     ("//w:txbxContent", "Textfelder werden nicht dargestellt und gehen beim Speichern verloren."),
-    ("//w:ins | //w:del", "Nachverfolgte Änderungen werden nicht als Änderungen dargestellt."),
-    ("//w:commentReference", "Kommentare werden nicht dargestellt und gehen beim Speichern verloren."),
     ("//w:sdt", "Inhaltssteuerelemente (z. B. Inhaltsverzeichnis) werden nicht dargestellt."),
     ("//m:oMath", "Formeln werden nicht dargestellt und gehen beim Speichern verloren."),
     ("//w:pict | //wps:wsp | //wpg:wgp", "Formen und gezeichnete Objekte werden nicht dargestellt."),
@@ -114,9 +112,39 @@ class _Reader:
         self.pending_break = False
         self.deferred_break = False       # Seitenumbruch im Absatz, danach folgt noch nichts
         self.img_n = 0
+        self.zus = leere_meta()
+        self._komm_offen: list[int] = []
+        self._lz_offen: dict[str, str] = {}
+        self._aend = None                 # (art, autor, datum) innerhalb w:ins / w:del
+        self._note_n = {"f": 0, "e": 0}
+        self._laden_zusatz()
         self.def_font, self.def_size = _doc_defaults(self.d)
         normal = self.d.styles["Normal"] if "Normal" in [s.name for s in self.d.styles] else None
         self.normal = normal
+
+    def _laden_zusatz(self) -> None:
+        """Kommentare (python-docx) und Fuß-/Endnoten (Teile footnotes.xml / endnotes.xml) einlesen."""
+        try:
+            for c in self.d.comments:
+                self.zus["kommentare"][int(c.comment_id)] = {
+                    "autor": c.author or "", "initialen": c.initials or "",
+                    "datum": c.timestamp.isoformat() if c.timestamp else "",
+                    "text": "\n".join(p.text for p in c.paragraphs)}
+        except Exception:
+            self.report.warn("Kommentare konnten nicht gelesen werden.")
+        for art, rel in (("f", "footnotes"), ("e", "endnotes")):
+            for r in self.d.part.rels.values():
+                if r.reltype.endswith("/" + rel) and not r.is_external:
+                    from lxml import etree
+                    wurzel = etree.fromstring(r.target_part.blob)
+                    tag = qn("w:footnote") if art == "f" else qn("w:endnote")
+                    for n in wurzel.iterchildren(tag):
+                        if n.get(qn("w:type")) in ("separator", "continuationSeparator", "continuationNotice"):
+                            continue
+                        zeilen = []
+                        for p in n.iterchildren(qn("w:p")):
+                            zeilen.append("".join(t.text or "" for t in p.iter(qn("w:t"))).strip())
+                        self.zus["noten"][art][int(n.get(qn("w:id")))] = "\n".join(zeilen)
 
     # ---- Auflösung der Vererbung -------------------------------------
     def _style_attr(self, style, getter):
@@ -373,19 +401,60 @@ class _Reader:
 
         self.deferred_break = False
         had_content = False
-        for item in para.iter_inner_content():
-            if isinstance(item, Hyperlink):
-                url = item.url or ("#" + item.fragment if item.fragment else "")
-                for r in item.runs:
-                    had_content |= self._add_run(r, para, cursor, href=url)
-            else:
-                had_content |= self._add_run(item, para, cursor)
+        had_content |= self._laufe(para._p, para, cursor)
         if self.deferred_break:
             # Umbruch am Absatzende: er gilt für den nächsten Absatz
             self.deferred_break = False
             self.pending_break = True
             return not had_content        # leerer Absatz → Block wiederverwenden
         return False
+
+    def _laufe(self, eltern, para, cursor: QTextCursor, href: Optional[str] = None) -> bool:
+        """Kinder eines Absatzes der Reihe nach: Läufe, Links, nachverfolgte Änderungen, Kommentar- und Textmarkenbereiche."""
+        had = False
+        for el in eltern:
+            tag = el.tag
+            if tag == qn("w:r"):
+                had |= self._add_run(Run(el, para), para, cursor, href=href)
+            elif tag == qn("w:hyperlink"):
+                h = Hyperlink(el, para)
+                url = h.url or ("#" + h.fragment if h.fragment else "")
+                had |= self._laufe(el, para, cursor, href=url)
+            elif tag in (qn("w:ins"), qn("w:del")):
+                alt = self._aend
+                self._aend = ("ins" if tag == qn("w:ins") else "del", el.get(qn("w:author")) or "", el.get(qn("w:date")) or "")
+                had |= self._laufe(el, para, cursor, href=href)
+                self._aend = alt
+            elif tag == qn("w:commentRangeStart"):
+                self._komm_offen.append(int(el.get(qn("w:id"))))
+            elif tag == qn("w:commentRangeEnd"):
+                i = int(el.get(qn("w:id")))
+                if i in self._komm_offen:
+                    self._komm_offen.remove(i)
+            elif tag == qn("w:bookmarkStart"):
+                n = el.get(qn("w:name")) or ""
+                if n and not n.startswith("_"):
+                    self._lz_offen[el.get(qn("w:id"))] = n
+            elif tag == qn("w:bookmarkEnd"):
+                self._lz_offen.pop(el.get(qn("w:id")), None)
+            elif tag in (qn("w:sdt"),):
+                inhalt = el.find(qn("w:sdtContent"))
+                if inhalt is not None:
+                    had |= self._laufe(inhalt, para, cursor, href=href)
+            elif tag == qn("w:smartTag"):
+                had |= self._laufe(el, para, cursor, href=href)
+        return had
+
+    def _zusatz_formate(self, cfmt: QTextCharFormat) -> None:
+        if self._komm_offen:
+            cfmt.setProperty(P_KOMMENTAR, self._komm_offen[-1])
+        if self._aend:
+            cfmt.setProperty(P_AENDERUNG, self._aend[0])
+            cfmt.setProperty(P_AUTOR, self._aend[1])
+            cfmt.setProperty(P_DATUM, self._aend[2])
+        if self._lz_offen and not cfmt.isAnchor():
+            cfmt.setAnchor(True)
+            cfmt.setAnchorNames(list(self._lz_offen.values()))
 
     def _flush_break(self, cursor: QTextCursor):
         if self.deferred_break:
@@ -399,6 +468,7 @@ class _Reader:
         """→ True, wenn Text oder Bild eingefügt wurde."""
         added = False
         cfmt = self._char_format(run, para)
+        self._zusatz_formate(cfmt)
         if href:
             cfmt.setAnchor(True)
             cfmt.setAnchorHref(href)
@@ -406,7 +476,7 @@ class _Reader:
             cfmt.setFontUnderline(True)
         for child in run._r:
             tag = child.tag
-            if tag == qn("w:t"):
+            if tag == qn("w:t") or tag == qn("w:delText"):
                 if child.text:
                     self._flush_break(cursor)
                     cursor.insertText(child.text, cfmt)
@@ -429,7 +499,22 @@ class _Reader:
                 self._flush_break(cursor)
                 self._add_image(child, cursor, cfmt)
                 added = True
+            elif tag in (qn("w:footnoteReference"), qn("w:endnoteReference")):
+                self._flush_break(cursor)
+                art = "f" if tag == qn("w:footnoteReference") else "e"
+                nid = int(child.get(qn("w:id")))
+                self._note_n[art] += 1
+                nf = QTextCharFormat(cfmt)
+                nf.setVerticalAlignment(QTextCharFormat.AlignSuperScript)
+                nf.setProperty(P_NOTE, f"{art}:{nid}")
+                cursor.insertText(self._note_marke(art, self._note_n[art]), nf)
+                added = True
         return added
+
+    @staticmethod
+    def _note_marke(art: str, n: int) -> str:
+        from ..editor.zusatz import roemisch
+        return str(n) if art == "f" else roemisch(n)
 
     def _add_image(self, drawing, cursor: QTextCursor, cfmt: QTextCharFormat):
         blips = drawing.xpath(".//a:blip")
@@ -593,6 +678,7 @@ class _Reader:
         self.doc.setDefaultFont(df)
         props = self.d.core_properties
         meta = {"title": props.title or "", "author": props.author or ""}
+        meta.update(self.zus)
         self.doc.setModified(False)
         return self.doc, page, meta, self.report
 
