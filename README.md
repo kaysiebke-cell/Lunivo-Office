@@ -144,6 +144,7 @@ Dazu im Programm selbst: **☰ Menü → Hilfe → Handbuch** und **Datei → Hi
 | [Der Aufbau der Optionen](docs/aufbau-optionen.md)  | Alle Seiten und Felder, ebenso                    |
 | [Der Ist-Stand am Stück](docs/aufbau-ist-stand.md)  | Bänder und Optionen zusammen (Stand der früheren Fassung) |
 | [Stand der Qt-Fassung (Bericht)](docs/BERICHT.md) | Was geht, was nicht, was ungetestet ist |
+| [Menüstruktur-Abgleich](docs/MENUESTRUKTUR.md) | Ihre 12 Bereiche, Punkt für Punkt: da, teilweise, fehlt |
 | [Prüfbogen-Abgleich](docs/PRUEFBOGEN.md) | 415 Punkte, jeder mit Beleg |
 | [Aufbau der Qt-Fassung](docs/README.md) | Ordner und Zuständigkeiten |
 | [Installation](docs/INSTALLATION.md) | Pakete und optionale Bausteine |
