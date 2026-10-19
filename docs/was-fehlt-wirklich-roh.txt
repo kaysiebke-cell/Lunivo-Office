@@ -1,0 +1,43 @@
+150 Befehle im Band.
+  FEHLT        19
+  NUR MELDUNG  0
+  DUENN        13
+  KNAPP        3
+  AUSGEBAUT    115
+
+=== FEHLT (19) ===
+  Einfügen       Lesezeichen / Textmarke              B.textmarke (0)
+  Einfügen       Querverweis                          B.querverweis (0)
+  Referenzen     Abbildungsverzeichnis                B.abbildungsverzeichnis (0)
+  Referenzen     Beschriftung                         B.beschriftung (0)
+  Referenzen     Endnote                              B.endnote (0)
+  Referenzen     Fußnote                              B.fussnote (0)
+  Referenzen     Indexeintrag                         B.indexEintrag (0)
+  Referenzen     Inhaltsverzeichnis                   B.inhaltsverzeichnis (0)
+  Referenzen     Literaturverzeichnis                 B.literaturverzeichnis (0)
+  Referenzen     Neue Quelle                          B.quelleNeu (0)
+  Referenzen     Notenbereich                         B.notenZeigen (0)
+  Referenzen     Nächste Note                         B.noteWeiter (0)
+  Referenzen     Quellen verwalten                    B.quellenVerwalten (0)
+  Referenzen     Querverweis                          B.querverweis (0)
+  Referenzen     Stichwortverzeichnis                 B.stichwortverzeichnis (0)
+  Referenzen     Verzeichnisse aktualisieren          B.verzeichnisseAktualisieren (0)
+  Referenzen     Vorige Note                          B.noteZurueck (0)
+  Referenzen     Zitat einfügen                       B.zitat (0)
+  Referenzen     Zitierweise                          B.zitierweise (0)
+
+=== DUENN (13) ===
+  Ansicht        Eine Seite                           B.zoomSeite (2)
+  Ansicht        Lineal                               B.linealZeigen (2)
+  Ansicht        Nebeneinander                        B.fensterNebeneinander (2)
+  Ansicht        Seitenbreite                         B.zoomBreite (2)
+  Ansicht        Untereinander                        B.fensterUntereinander (2)
+  Ansicht        Vergrößern                           B.groesser (2)
+  Ansicht        Verkleinern                          B.kleiner (2)
+  Einfügen       Kopfzeile                            B.kopfzeile (2)
+  Start          Ersetzen                             B.ersetzen (2)
+  Start          Schrift vergrößern                   B.schriftGroesser (2)
+  Start          Suchen                               B.suchen (2)
+  Überprüfen     Nächste Änderung                     B.aenderungWeiter (2)
+  Überprüfen     Vorige Änderung                      B.aenderungZurueck (2)
+

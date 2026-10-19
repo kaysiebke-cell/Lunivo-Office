@@ -1,0 +1,704 @@
+# Alles, was WPS Writer zu Bildern kennt
+
+**Wiederholbar:** `python3 werkzeug/wps-befehle-lesen.py`
+
+Ausgelesen aus `/opt/kingsoft/wps-office/office6/mui/en_US/` —
+`wps.qm`, `wpstips.qm`, `kso.qm`, `ksotips.qm`. Das sind die
+Beschriftungen des Programms selbst, nicht meine Auswahl.
+
+Kay am 12.09.2026: *„wozu sage ich, du sollst in den Ordner und
+alles zum Thema Bildbearbeitung rausholen, wenn du doch wieder
+machst, was du willst."* — Recht hat er. Vorher stand hier eine
+Liste von zehn Punkten, die ich für wichtig hielt. Hier steht
+jetzt, was da ist. Was davon gebaut wird, entscheidet er.
+
+## Einfügen und Ersetzen (26)
+
+- Add Picture
+- Add Picture Frame
+- Add picture frames
+- Can't take screenshot
+- Change Picture
+- Create from file
+- FHide current window when screenshot
+- FInsert a picture from local folder.
+- From File
+- From Online Picture
+- From Scanner
+- Insert Object from File
+- Insert Online Picture
+- Insert Picture...
+- Insert Text from File
+- Insert a picture from a file
+- Insert text from file
+- Online Picture
+- Open from File...
+- Oval screenshot
+- Polygon screenshot
+- Rectangle screenshot
+- Rounded rectangle screenshot
+- Screenshot
+- Screenshot Permission
+- Screenshot Permission:
+
+## Größe und Zuschneiden (101)
+
+- Adjust Table Column Width
+- Adjust Table Row Height
+- Allow text to scale to frame
+- Aspect
+- Aspect Ratio
+- Auto column width
+- Autofit the tab width
+- BMatch Brackets to Argument Height
+- CROP
+- Cell Height
+- Cell Width
+- Char Scale
+- Character scale
+- Crop
+- Crop by Scale
+- Crop by Shape
+- Crop from
+- Crop position
+- Crop to Shape
+- Current Width:
+- DRelative to original picture size
+- Equal Height
+- Equal Width
+- Equal column width
+- Equalize Character Height
+- Even Height
+- Even Width
+- Fit Width
+- Fixed Column Width
+- Fixed column width:
+- Fixed tab width
+- Footer Height
+- Force equal column width
+- Frame Resize
+- Full-width
+- Full-width...
+- Gap Width
+- Gutter width:
+- Half-width
+- Half-width...
+- Header Height
+- Height
+- Height:
+- JAutomatically resize to fit contents
+- LReplace Full Width Period With a Point
+- Line Width
+- Line width
+- Lock Aspect Ratio
+- Lock aspect ratio
+- Lock picture aspect ratio
+- Logarithmic scale
+- Make Same Height
+- Make Same Width
+- Match full/half width form
+- Match half/full width forms
+- Move/Resize Object
+- New Width:
+- Page Width
+- Page Width",-1
+- Page width
+- Pen width
+- Picture Size
+- Preferred Width
+- Preferred width:
+- RLock aspect ratio when adjusting picture.
+- Reset Picture
+- Reset Picture Color
+- Reset Picture and Size
+- Reset Size
+- Resize Object
+- Resize autoshape to fit text
+- Resize shape to fit text
+- Row height is:
+- Scale
+- Scale Height
+- Scale Tooltip
+- Scale Width
+- Scale X
+- Scale Y
+- Scale bubble size to
+- Scale to paper size:
+- Scale:
+- Shape Height
+- Shape Width
+- Show crop marks
+- Show/Hide Crop Panel
+- Specify height:
+- Stack and Scale with
+- Table Width
+- Text Width
+- Text Width",-2
+- Text width
+- Use full width characters
+- Use the recommended width
+- Width
+- Width and spacing
+- Width of bubbles
+- Width:
+- XSet character scale of the selected content.
+- height
+- width
+
+## Drehen und Spiegeln (35)
+
+- Angle
+- Angle of first slice
+- Automatically layout content, easily flip pages.
+- BAllow text to rotate with object
+- Custom angle
+- Do not rotate text
+- Exit Rotate Mode
+- FDuplex printing - Flip on long edge
+- FRotate or flip the selected object.
+- Flip Horizontal
+- Flip Pages on Long Edge
+- Flip Pages on Short Edge
+- Flip Vertical
+- Flip on long edge
+- Flip on short edge
+- Free Rotate
+- HDuplex printing - Flip on short edge
+- Rotate
+- Rotate 3-D
+- Rotate All Text 270
+- Rotate All Text 90
+- Rotate Asian Characters 270
+- Rotate Asian characters 270
+- Rotate Left 90
+- Rotate Mode
+- Rotate Object
+- Rotate Right 90
+- Rotate Style
+- Rotate all text 270
+- Rotate all text 90
+- Rotate fill effect with shape
+- Rotate or Flip
+- Rotate with shape
+- Size and rotate
+- Text custom angle:
+
+## Textumbruch und Anordnen (138)
+
+- Absolute position
+- Add Group
+- Add Header Footer Group
+- Align
+- Align Bottom
+- Align Bottom Center
+- Align Bottom Justified
+- Align Bottom Right
+- Align Center
+- Align Center Justified
+- Align Center Right
+- Align Distribute
+- Align Left
+- Align Middle
+- Align Middle Center
+- Align Objects
+- Align Right
+- Align Scripts
+- Align Text
+- Align Text Center
+- Align Text Distributed
+- Align Text Justified
+- Align Text Left
+- Align Text Right
+- Align Text Thai Distributed
+- Align ThaiDistribute
+- Align Top
+- Align Top Center
+- Align Top Justified
+- Align Top Right
+- Align or Distribute
+- Align relative to:
+- Align text to the left.
+- Align text to the right.
+- Align the selected objects.
+- Align to Gridlines
+- Auto delete paragraph indent when align center
+- Axis position
+- BDocument mainly send organization
+- Begin Group
+- Behind Text
+- Behind text
+- Bold Hollow Square Bullets
+- Bring Forward
+- Bring In Front of Text
+- Bring To Front
+- Bring in Front of Text
+- Bring to Front
+- Bullet position
+- Bulleted position:
+- Cannot distribute the selected columns evenly.
+- Center Align
+- Content Control Group
+- Content Control Ungroup
+- Custom Group
+- DISTRIBUTE
+- Distribute Columns Evenly
+- Distribute Horizontally
+- Distribute Rows Evenly
+- Distribute Vertically
+- Group
+- Group Authorization
+- Group Properties
+- Group or Ungroup Text Range
+- Gutter position:
+- Header and Footer Group
+- In Front of Text
+- In Line with Text
+- In front of text
+- In line with text
+- LClick to manage, delete or send links.
+- Label Position
+- Large Filled Square Bullets
+- Left Align
+- Legend Position
+- Lock anchor
+- My Group
+- Name" or "Position".
+- New Group
+- Number position
+- Number position:
+- Picture position
+- Please enter group name
+- Position
+- Position:
+- Relative position
+- Reset Position
+- Reset Window Position
+- Right Align
+- Right align page numbers
+- Send Backward
+- Send Behind Text
+- Send By E-mail
+- Send E-mail
+- Send Email
+- Send Mail
+- Send Pictures
+- Send merged content via email.
+- Send out successfully
+- Send records
+- Send report
+- Send to Back
+- Send to group
+- Send to mobile
+- Square
+- Square Accent List
+- Square Bracket Format:
+- Square Dot
+- Square Shadows
+- Tab display position
+- Tab stop position:
+- Table character position:
+- Text anchor point:
+- Text position
+- Text position:
+- This position may not be safe.
+- Through
+- Tight
+- Tight Line Space
+- Tight Line Spacing
+- Tight Reflection, 8 pt offset
+- Tight reflection, 4 pt offset
+- Tight reflection, touching
+- Top and Bottom
+- Top and bottom
+- Ungroup
+- Vertical Page Position
+- Very Tight
+- Word wrap text in autoshape
+- Work Group
+- Wrap
+- Wrap Text
+- Wrap text
+- Wrap text in shape
+- group
+- p, li { white-space: pre-wrap; }
+- to last editing position
+- to previous position
+
+## Farbe und Helligkeit (90)
+
+- Apply a color scheme
+- BRIGHTNESS/CONTRAST
+- BTheme color name cannot be empty.
+- Background color:
+- Black and White
+- Border Color
+- Brightness
+- Brightness/Contrast
+- Brightness:
+- COLOR SATURATION
+- COLOR TONE
+- Change the text color.
+- Click arrow to set custom color.
+- Color
+- Color 1
+- Color 1:
+- Color 2
+- Color 2:
+- Color 3
+- Color 4
+- Color 5
+- Color 6
+- Color Saturation Effect
+- Color Scheme
+- Color Schemes
+- Color Tone Effect
+- Color mode
+- Color only
+- Color:
+- Coloring By Fan Color
+- Comments color:
+- Contrast
+- Contrast:
+- Custom Color
+- Custom color
+- Customize Color and Style
+- D Color
+- Default Color
+- Fill Color
+- Fill Color Picker
+- Fill the selected 3-D shape with color.
+- Fill the selected graphic with color.
+- Font Color
+- Font Color:
+- Font color
+- Font color:
+- Grayscale
+- Grid color:
+- Header Line Color
+- Hyperlink Color
+- Ink Color
+- JBending Picture Semi-Transparent Text
+- Less Brightness
+- Less Contrast
+- Line Color
+- More Brightness
+- More Color Schemes
+- More Contrast
+- More color
+- Multi color
+- NChange the color scheme of the diagram.
+- No Color
+- Numbering color:
+- One color
+- PShade the selected text with gray color.
+- Page Color
+- Recent Fill Color
+- Recent Line Color
+- Recolor
+- SHARPEN/SOFTEN
+- Saturation
+- Saturation:
+- Set Transparent Color
+- Set as Black and White
+- Shading Color
+- Shadow Color
+- Sharpen
+- Snap color
+- Text Color
+- Text Fill Color
+- Text Highlight Color
+- Text color:
+- Theme Color
+- Theme color
+- UnderLine Color
+- Underline Color
+- Underline color
+- Underline color:
+- Washout
+- Water color pen
+
+## Bildeffekte (88)
+
+- Add a 3-D effect to the shape.
+- Artistic Effects
+- Bevel
+- Bottom bevel
+- Change Theme Effect
+- Custom 3-D
+- Document theme effect
+- Emboss 3D
+- Engrave 3D
+- FChange the effect of current Theme.
+- Full Reflection, 8 pt offset
+- Full reflection, 4 pt offset
+- Full reflection, touching
+- GLOW
+- Glow
+- Glow Variations
+- Half reflection, 4 pt offset
+- Half reflection, 8 pt offset
+- Half reflection, touching
+- Inner Shadow
+- Intense Effect
+- Intense Effect -
+- Moderate Effect
+- Moderate Effect -
+- More 3-D Colors
+- More Shadow Colors
+- No 3-D
+- No Bevel
+- No Glow
+- No Reflection
+- No Shadow
+- Nudge Shadow
+- Nudge Shadow Down
+- Nudge Shadow Left
+- Nudge Shadow Right
+- Nudge Shadow Up
+- Preset
+- Preset Bullet Animations
+- Preset Line
+- Preset Styles
+- Preset Texture
+- Preset colors:
+- RApproved. User permissions are in effect.
+- REFLECTION
+- RSet shadow effect to the selected object.
+- Reflection
+- Reflection Variations
+- SHADOW
+- Semitransparent Shadow
+- Shadow
+- Shadow Effects
+- Shadow On
+- Shadow On/Off
+- Shadow Setting
+- Shadow Settings
+- Shadow Style
+- Shadow Style 1
+- Shadow Style 10
+- Shadow Style 11
+- Shadow Style 12
+- Shadow Style 13
+- Shadow Style 14
+- Shadow Style 15
+- Shadow Style 16
+- Shadow Style 17
+- Shadow Style 18
+- Shadow Style 19
+- Shadow Style 2
+- Shadow Style 20
+- Shadow Style 3
+- Shadow Style 4
+- Shadow Style 5
+- Shadow Style 6
+- Shadow Style 7
+- Shadow Style 8
+- Shadow Style 9
+- Soft Edge
+- Special Effect
+- Subtle Effect
+- Subtle Effect -
+- Table 3D effects 1
+- Table 3D effects 2
+- Table 3D effects 3
+- Text Outline Effect
+- Text Shadow
+- Toggle 3-D
+- Toggle Shadow
+- Top bevel
+
+## Rahmen und Rand (96)
+
+- Add Horizontal Border
+- Add Vertical Border
+- Adjust Outline Level
+- Border
+- Border Bottom
+- Border Left
+- Border Right
+- Border Top
+- Border and Shading Options
+- Border spacing
+- Border...
+- Bottom Border
+- Change Outline Level
+- Character Border
+- Clear Picture Frame
+- Colored Outline -
+- Customize Outline Numbered List
+- Dash
+- Dash Dot
+- Dash Long Heavy Line
+- Dash dot
+- Dash dot dot
+- Dash type
+- Diagonal Border
+- Dot Dash Heavy
+- Dot Dot Dash Heavy Line
+- Dot Dot Dash Line
+- Dot-dash heavy underline
+- Dot-dash underline
+- Dot-dot-dash heavy underline
+- Dot-dot-dash underline
+- Double Outline
+- Em Dash
+- Em dash)
+- En Dash
+- En dash)
+- Format Frame
+- Frame
+- Frame Context Menu
+- Frame Move
+- Graphic Outline
+- Half Frame
+- Heavy Dash
+- Identify by Title/Outline
+- Inside Border
+- Inside Horizontal Border
+- Inside Vertical Border
+- Left Border
+- Left border
+- Light 1 Outline, Colored Fill -
+- Long Dash
+- Long Dash Dash
+- Long Dash Dot
+- Long Dash Dot Dot
+- Match minus/dash/cho-on
+- More Outline Colors
+- No Border
+- No Outline
+- No border
+- OUTLINE
+- Outline
+- Outline Demote
+- Outline Level
+- Outline Numbered
+- Outline Promote
+- Outline Promote Heading 1
+- Outline View
+- Outline level:
+- Outline levels
+- Outline-
+- Outside border
+- Page Border
+- Pen Weight
+- Picture Frame
+- Picture Outline
+- Pub Half Frame
+- Remove Frame
+- Right Border
+- Right border
+- Set Border Properties
+- Shape Fill and Outline
+- Shape Outline
+- System Dash
+- TEXT OUTLINE
+- Text Outline
+- Thick Outline
+- Top Border
+- View the document as an outline.
+- Weight
+- Weight:
+- White Outline
+- Wire Frame
+- WordArt Outline
+- em-dash)
+- en-dash)
+- pages, and margin to the border.
+
+## Datei und Größe der Datei (15)
+
+- Change resolution
+- Compress
+- Compress Pictures
+- Compress current paragraph
+- Compress initial punctuation
+- Compress only punctuation
+- Compress pictures
+- Compress...
+- DDon't compress initial punctuation
+- Do not compress
+- Do not compress images in file
+- Low-quality printing
+- Resolution
+- Resolution:
+- Save as Picture
+
+## Sonstiges (74)
+
+- ALT TEXT
+- BInsert a picture content control.
+- BInsert an image as your signature
+- BRepeating Section Content Control
+- Bending Picture Caption
+- Bending Picture Caption List
+- Caption
+- Caption Numbering
+- Caption:
+- Check Box Content Control
+- Choose outward watermark
+- Combo Box Content Control
+- Comment Hyperlink Context Menu
+- Content Control Properties
+- Convert Picture to Text
+- Convert picture to text format.
+- Copy Hyperlink
+- Create Content Control
+- Create signature
+- Date Picker Content Control
+- Delete Content Control
+- Delete Watermark
+- Drop-Down List Content Control
+- Edit Hyperlink
+- Edit Watermark
+- Endnotes Hyperlink Context Menu
+- Entire caption
+- Exclude label from caption
+- FInsert a check box content control.
+- FInsert a combo box content control.
+- FInsert a rich text content control.
+- Follow Hyperlink
+- Footnotes Hyperlink Context Menu
+- For which caption:
+- HInsert a plain text content control.
+- Hyperlink
+- Hyperlink Context Menu
+- Hyperlink:
+- Insert Caption
+- Insert Content Control
+- Insert Hyperlink
+- Insert Signature
+- Insert Watermark
+- Insert a building block gallery content control.
+- Insert a date content control.
+- Insert as hyperlink
+- LBuilding Block Gallery Content Control
+- LError! Hyperlink reference is invalid.
+- Map to Selected Content Control
+- NPlease input the text of the watermark.
+- Only caption text
+- Open Hyperlink
+- PInsert a drop-down list content control.
+- Picture Caption List
+- Picture Content Control
+- Picture to Text
+- Picture watermark
+- Plain Text Content Control
+- Please change a watermark name!
+- RDocument organization or issuer signature
+- Remove Hyperlink
+- Remove Watermark
+- Remove content control when contents are edited
+- Rich Text Content Control
+- Select Hyperlink
+- Set Hyperlink ScreenTip
+- Show plain watermark
+- Signature
+- Text watermark
+- This caption label is not valid.
+- WPS Signature
+- Watermark
+- Watermark Protection
+- Watermark setup
+
