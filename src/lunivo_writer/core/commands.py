@@ -1263,7 +1263,7 @@ class Befehle:
         if not pfad:
             return
         basis, _e = os.path.splitext(pfad)
-        bilder = list(seiten_bilder(t.editor.document(), t.page, t.editor.noten, 1.5))
+        bilder = list(seiten_bilder(t.editor.document(), t.page, t.editor.noten, self.w.ausgabe_ppi() / 96))
         n = len(bilder)
         for i, img, _ps in bilder:
             img.save(basis + (f"-{i}" if n > 1 else "") + ".png", "PNG")

@@ -322,6 +322,9 @@ class OptionenDialog(QDialog):
         f = p.gruppe("Webseite")
         from lunivo_writer.services import file_service as _f
         p.auswahl(f, "speichern/codierung", "Webseitencodierung (Speichern als .html)", _f.WEB_CODIERUNGEN, "UTF-8")
+        f = p.gruppe("Ausgabe als Bild")
+        p.auswahl(f, "ausgabe/ppi", "Standard-Ausgabeziel (Auflösung für „Als Bild exportieren“)",
+                  ["96 ppi (Bildschirm)", "150 ppi (Web, Entwurf)", "220 ppi (Druck)", "330 ppi (hohe Qualität)"], "150 ppi (Web, Entwurf)")
         f = p.gruppe("PDF")
         p.haken(f, "pdf/oeffnen", "PDF nach dem Export öffnen", False)
         p.haken(f, "pdf/eigenschaften", "Dokumenteigenschaften (Autor) in das PDF übernehmen", True)
@@ -389,8 +392,9 @@ class OptionenDialog(QDialog):
         QMessageBox.information(self, "Zurückholen", "Zurückgeholt.")
 
     def _drucken(self, titel):
-        p = _Seite(self.w, titel, ["Womit das Druckfenster aufgeht", "Textbegrenzungen / Zuschnittsmarken drucken"])
+        p = _Seite(self.w, titel, ["Textbegrenzungen / Zuschnittsmarken drucken"])
         f = p.gruppe("Drucken")
+        p.auswahl(f, "drucken/vorgabe", "Das Druckfenster öffnet mit", ["Alle Seiten", "Aktuelle Seite"], "Alle Seiten")
         p.haken(f, "drucken/hoch", "Hohe Qualität (Druckerauflösung)", True)
         p.haken(f, "drucken/umgekehrt", "Seiten in umgekehrter Reihenfolge drucken", False)
         p.haken(f, "drucken/hintergrund", "Hintergrundfarben und Bilder drucken", True)

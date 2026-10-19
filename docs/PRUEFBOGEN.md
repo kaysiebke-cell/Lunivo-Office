@@ -1,6 +1,6 @@
 # Prüfbogen ↔ native Fassung
 
-Erzeugt von `werkzeug/pruefbogen-abgleich.py` aus dem Prüfkatalog (415 Punkte). **✅ 334 · ◐ 65 · ⬜ 16**. ✅ = Befehl/Funktion vorhanden (einzeln getestet nur, wo `tests/` es belegt); ◐ = teilweise oder anders gelöst; ⬜ = offen.
+Erzeugt von `werkzeug/pruefbogen-abgleich.py` aus dem Prüfkatalog (415 Punkte). **✅ 342 · ◐ 65 · ⬜ 8**. ✅ = Befehl/Funktion vorhanden (einzeln getestet nur, wo `tests/` es belegt); ◐ = teilweise oder anders gelöst; ⬜ = offen.
 Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `docs/pruefbogen/bilder/`.
 
 ## DATEI
@@ -43,7 +43,7 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `docs/pruefbogen/bilder/`.
 ## START > Zwischenablage
 
 - ✅ Einfügen — Band: Start ▸ Zwischenablage
-- ⬜ Einfügen ohne Formatierung — (noch nicht zugeordnet)
+- ✅ Einfügen ohne Formatierung — Strg+Umschalt+V (main_window.paste_plain)
 - ✅ Ausschneiden — Band: Start ▸ Zwischenablage
 - ✅ Kopieren — Band: Start ▸ Zwischenablage
 - ✅ Format übertragen — Band: Start ▸ Zwischenablage
@@ -102,7 +102,7 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `docs/pruefbogen/bilder/`.
 - ✅ Formatvorlagen verwalten — editor/stile.py + StileVerwaltenDialog; wirkt auf alle Absätze der Vorlage (test_editor)
 - ✅ Suchen — Band: Start ▸ Suchen ▸ Suchen oder ersetzen
 - ✅ Ersetzen — Band: Start ▸ Suchen ▸ Suchen oder ersetzen
-- ⬜ Suchen und Ersetzen — (noch nicht zugeordnet)
+- ✅ Suchen und Ersetzen — Strg+F / Strg+H (FindReplaceDialog)
 - ✅ Alles auswählen — Band: Start ▸ Auswählen ▸ Auswählen
 - ✅ Objekte auswählen — befehle.objekteWaehlen (test_main_window)
 
@@ -213,7 +213,7 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `docs/pruefbogen/bilder/`.
 - ✅ Vorlesen > Ab hier vorlesen — Band: Schreibhilfe ▸ Vorlesen ▸ Vorlesen
 - ✅ Vorlesen > Anhalten — Band: Schreibhilfe ▸ Vorlesen ▸ Vorlesen
 - ✅ Vorlesen > Stimme und Tempo — Band: Schreibhilfe ▸ Vorlesen ▸ Vorlesen
-- ⬜ KI > KI-Korrektur — (noch nicht zugeordnet)
+- ✅ KI > KI-Korrektur — F8 / Schreibhilfe ▸ KI-Korrektur (Befehle.kiKorrektur)
 - ✅ KI > Vorschläge — Seitenleiste / KI-Reiter (test_schreibhilfe)
 - ✅ Anzeigen > Seitenleiste Schreibhilfe — Band: Schreibhilfe ▸ Anzeigen
 - ✅ Anzeigen > Optionen — Seitenleiste / KI-Reiter (test_schreibhilfe)
@@ -292,7 +292,7 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `docs/pruefbogen/bilder/`.
 ## LANGUAGE BRIDGE (Spelling Engine)
 
 - ✅ Native Browser-Spellcheck deaktiviert — gegenstandslos: kein Browser
-- ⬜ Lunivo-Regeln verwenden statt Browser — (noch nicht zugeordnet)
+- ✅ Lunivo-Regeln verwenden statt Browser — services/pruefung.py (test_schreibhilfe)
 - ✅ Benutzerwörter in Rechtschreibung beachten — services/pruefung.py (test_schreibhilfe)
 - ◐ Ignorierte Wörter in Rechtschreibung beachten — inRuhe/weggewinkt beachtet; einheitliches Fund-dict
 - ◐ Fehler als unified language-issue — inRuhe/weggewinkt beachtet; einheitliches Fund-dict
@@ -370,7 +370,7 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `docs/pruefbogen/bilder/`.
 - ✅ Statusleiste — Optionen ▸ Wie im WPS Writer ▸ Ansicht (ui/statusleiste → ansicht_optionen_anwenden)
 - ✅ Seitenleiste beim Start — Optionen ▸ Wie im WPS Writer ▸ Ansicht (ui/seitenleiste, main_window)
 - ◐ QuickInfo — Qt zeigt Kurzinfos immer; kein Schalter
-- ⬜ Live-Vorschau — nicht übertragen (in den Optionen als gesperrte Zeile sichtbar)
+- ✅ Live-Vorschau — ui/widgets/live_vorschau.py: Format beim Überfahren der Stilgalerie schon im Dokument; Option ui/live_vorschau
 - ✅ Minisymbolleiste bei Auswahl — widgets/mini_leiste.py; ui/mini_auswahl, ui/mini_rechtsklick (test_schreibhilfe)
 - ✅ Minisymbolleiste bei Rechtsklick — widgets/mini_leiste.py; ui/mini_auswahl, ui/mini_rechtsklick (test_schreibhilfe)
 - ✅ Tipp für Kopf- bzw. Fußzeile — ui/kopffuss_tipp, ui/kopffuss_anzeigen: Kopf-/Fußzeile im Rand, Tipp und Doppelklick (editor_widget; test_anzeige_extra)
@@ -455,7 +455,7 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `docs/pruefbogen/bilder/`.
 
 - ✅ Maßeinheit — ui/masseinheit → dialogs._MassSpin (Seitenränder, Einzüge; intern mm)
 - ◐ Bilder in der Datei nicht komprimieren — Bilder werden nie komprimiert; kein Schalter
-- ⬜ Standard-Ausgabeziel — nicht übertragen
+- ✅ Standard-Ausgabeziel — Optionen ▸ Speichern ▸ Ausgabe als Bild (96/150/220/330 ppi) steuert „Als Bild exportieren“ (tests/test_ausgabe.py)
 
 ## OPTIONEN > Allgemein und Speichern > Webseite
 
@@ -533,7 +533,7 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `docs/pruefbogen/bilder/`.
 
 ## OPTIONEN > Drucken > Druckoptionen
 
-- ⬜ Womit das Druckfenster aufgeht — nicht übertragen
+- ✅ Womit das Druckfenster aufgeht — Optionen ▸ Drucken: Alle Seiten / Aktuelle Seite (main_window.print_dialog)
 - ◐ Hohe Qualität — pagination.render/print_document, main_window.druckoptionen — seiten_liste getestet, übrige nur verdrahtet
 - ◐ Umgekehrte Reihenfolge — pagination.render/print_document, main_window.druckoptionen — seiten_liste getestet, übrige nur verdrahtet
 - ✅ Zeichnungsobjekte drucken — drucken/zeichnungen, drucken/felder_code, drucken/versteckt → pagination.render (test_anzeige_extra)
@@ -546,7 +546,7 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `docs/pruefbogen/bilder/`.
 
 ## OPTIONEN > Drucken > Nur für das aktuelle Dokument
 
-- ⬜ Nur Formulardaten drucken — Formulare nicht übertragen
+- ✅ Nur Formulardaten drucken — editor/formular.nur_formulardaten, Option drucken/nur_formular (tests/test_formular.py)
 
 ## OPTIONEN > Drucken > Duplexdruck
 

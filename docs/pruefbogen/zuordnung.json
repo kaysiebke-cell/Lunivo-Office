@@ -247,6 +247,18 @@
   "status": "◐",
   "wo": "als formatierter Text ohne Funktion (Qt kennt keine Formularsteuerelemente)"
  },
+ "START > Zwischenablage|Einfügen ohne Formatierung": {
+  "status": "✅",
+  "wo": "Strg+Umschalt+V (main_window.paste_plain)"
+ },
+ "START > Stile & Bearbeiten|Suchen und Ersetzen": {
+  "status": "✅",
+  "wo": "Strg+F / Strg+H (FindReplaceDialog)"
+ },
+ "SCHREIBHILFE (Lunivo)|KI > KI-Korrektur": {
+  "status": "✅",
+  "wo": "F8 / Schreibhilfe ▸ KI-Korrektur (Befehle.kiKorrektur)"
+ },
  "KONTEXTTABELLEN|Tabellenwerkzeuge": {
   "status": "◐",
   "wo": "Reiter erscheint in der Tabelle (test_tabellentools_wirken); ohne Tabellenformatvorlagen"
@@ -312,6 +324,10 @@
   "wo": "gegenstandslos: kein Browser"
  },
  "LANGUAGE BRIDGE (Spelling Engine)|Lunivo-Regeln verwenden": {
+  "status": "✅",
+  "wo": "services/pruefung.py (test_schreibhilfe)"
+ },
+ "LANGUAGE BRIDGE (Spelling Engine)|Lunivo-Regeln verwenden statt Browser": {
   "status": "✅",
   "wo": "services/pruefung.py (test_schreibhilfe)"
  },
@@ -528,8 +544,8 @@
   "wo": "ui/kopffuss_tipp, ui/kopffuss_anzeigen: Kopf-/Fußzeile im Rand, Tipp und Doppelklick (editor_widget; test_anzeige_extra)"
  },
  "OPTIONEN > Ansicht > Anzeigen|Live-Vorschau": {
-  "status": "⬜",
-  "wo": "nicht übertragen (in den Optionen als gesperrte Zeile sichtbar)"
+  "status": "✅",
+  "wo": "ui/widgets/live_vorschau.py: Format beim Überfahren der Stilgalerie schon im Dokument; Option ui/live_vorschau"
  },
  "OPTIONEN > Ansicht > Druckoptionen|Hervorhebungen drucken": {
   "status": "✅",
@@ -716,8 +732,8 @@
   "wo": "ui/masseinheit → dialogs._MassSpin (Seitenränder, Einzüge; intern mm)"
  },
  "OPTIONEN > Allgemein und Speichern > Allgemeine Optionen|Standard-Ausgabeziel": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "✅",
+  "wo": "Optionen ▸ Speichern ▸ Ausgabe als Bild (96/150/220/330 ppi) steuert „Als Bild exportieren“ (tests/test_ausgabe.py)"
  },
  "OPTIONEN > Allgemein und Speichern > Webseite|Webseitencodierung": {
   "status": "✅",
@@ -908,12 +924,12 @@
   "wo": "sprechblasen/drucken: Blasen mit Autor und Datum im Ausdruck/PDF"
  },
  "OPTIONEN > Drucken > Druckoptionen|Womit das Druckfenster aufgeht": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "✅",
+  "wo": "Optionen ▸ Drucken: Alle Seiten / Aktuelle Seite (main_window.print_dialog)"
  },
  "OPTIONEN > Drucken > Nur für das aktuelle Dokument|Nur Formulardaten drucken": {
-  "status": "⬜",
-  "wo": "Formulare nicht übertragen"
+  "status": "✅",
+  "wo": "editor/formular.nur_formulardaten, Option drucken/nur_formular (tests/test_formular.py)"
  },
  "OPTIONEN > Drucken > Duplexdruck|Blattvorderseite": {
   "status": "✅",

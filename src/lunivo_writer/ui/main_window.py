@@ -584,6 +584,9 @@ class MainWindow(QMainWindow):
         dlg = QPrintDialog(pr, self)
         dlg.setOption(QPrintDialog.PrintPageRange, True)
         dlg.setMinMax(1, t.editor.page_count)
+        if self.settings.get("drucken/vorgabe", "Alle Seiten") == "Aktuelle Seite":
+            pr.setPrintRange(QPrinter.PageRange)
+            pr.setFromTo(t.editor.current_page(), t.editor.current_page())
         if dlg.exec():
             self._vor_dem_drucken(t)
             print_document(pr, t.editor.document(), t.page, dict(self.druckoptionen(), noten=t.editor.noten))
@@ -598,6 +601,13 @@ class MainWindow(QMainWindow):
         dlg.paintRequested.connect(lambda p: print_document(p, t.editor.document(), t.page, dict(self.druckoptionen(), noten=t.editor.noten)))
         dlg.resize(1000, 800)
         dlg.exec()
+
+    def ausgabe_ppi(self) -> int:
+        """Standard-Ausgabeziel: Auflösung für „Als Bild exportieren“."""
+        try:
+            return int(str(self.settings.get("ausgabe/ppi", "150")).split()[0])
+        except (ValueError, IndexError):
+            return 150
 
     def druckoptionen(self) -> dict:
         return {"umgekehrt": self.settings.get_bool("drucken/umgekehrt", False),
