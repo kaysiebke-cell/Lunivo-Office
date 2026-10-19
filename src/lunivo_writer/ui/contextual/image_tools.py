@@ -18,16 +18,16 @@ BILDTOOLS = {"name": "Bildtools", "kontext": "bild", "gruppen": [
 
 FORMTOOLS = {"name": "Form- und WordArt-Tools", "kontext": "form", "gruppen": [
     {"name": "Formvorlagen", "knoepfe": [_k("stift", "Formvorlagen", klappe="formVorlagen", gross=True)]},
-    {"name": "Formenstile", "knoepfe": [_k("toenung", "Formfüllung", klappe="formFuellung"),
-                                         _k("linie", "Formkontur", klappe="formKontur"),
-                                         _k("notiz", "Text in der Form …", "formText")]},
-    {"name": "Anordnen", "knoepfe": [_k("gruppieren", "Gruppieren", "gruppieren"),
-                                     _k("gruppieren", "Gruppierung aufheben", "gruppeAufheben"),
-                                     _k("textflussumbruch", "Textumbruch / Position", "anordnen")]}]}
+    {"name": "Formenstile", "knoepfe": [_k("toenung", "Formfüllung", klappe="formFuellung", text=True),
+                                         _k("linie", "Formkontur", klappe="formKontur", text=True),
+                                         _k("notiz", "Text in der Form …", "formText", text=True)]},
+    {"name": "Anordnen", "knoepfe": [_k("gruppieren", "Gruppieren", "gruppieren", text=True),
+                                     _k("gruppieren", "Gruppierung aufheben", "gruppeAufheben", text=True),
+                                     _k("textflussumbruch", "Textumbruch / Position", "anordnen", text=True)]}]}
 
 
 SMARTARTTOOLS = {"name": "SmartArt-Tools", "kontext": "smartart", "gruppen": [
     {"name": "Inhalt", "knoepfe": [_k("notiz", "Text und Layout bearbeiten …", "smartartText", True)]},
     {"name": "Darstellung", "knoepfe": [_k("smartart", "Layout ändern", klappe="smartartLayout", gross=True),
                                          _k("farbe", "Farben ändern", klappe="smartartFarben", gross=True)]},
-    {"name": "Position", "knoepfe": [_k("textflussumbruch", "Textumbruch / Position", "anordnen")]}]}
+    {"name": "Position", "knoepfe": [_k("textflussumbruch", "Textumbruch / Position", "anordnen", text=True)]}]}

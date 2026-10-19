@@ -1065,7 +1065,7 @@ class Befehle:
         if not self.ed:
             return
         nr = self.ed.abschnitt_einfuegen(self.ABSCHNITT_ART.get(art, "naechste"))
-        self.w.statusBar().showMessage(f"Abschnitt {nr + 1} beginnt hier — er übernimmt die Einrichtung des vorigen (Abschnitt ▸ Orientierung, Größe, Ränder gelten ab jetzt für den Abschnitt, in dem die Schreibmarke steht).", 7000)
+        self.w.statusBar().showMessage(f"Abschnitt {nr + 1} beginnt hier (Einrichtung wie der vorige; Orientierung, Größe, Ränder gelten für den Abschnitt der Schreibmarke).", 7000)
 
     def abschnittLoeschen(self, k=None):
         if self.ed:

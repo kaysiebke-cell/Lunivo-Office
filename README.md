@@ -184,6 +184,25 @@ Verfasser und Titel.
 
 ![Eine A4-Seite mit zwei Spalten im Reiter Seitenlayout](assets/images/qt-spalten.png)
 
+**Abschnitte** gehören jetzt dazu: Hier beginnt ab „Sehr geehrte Damen und Herren“ ein zweiter Abschnitt auf einer neuen Seite
+(gestrichelte Linie im Text), der im Reiter **Abschnitt** quer eingerichtet werden kann. Seitenansicht, Druck, PDF und DOCX setzen jeden
+Abschnitt in seinen eigenen Maßen; die Bearbeitungsansicht zeigt alle in der Geometrie des ersten.
+
+![Der Reiter Abschnitt mit einem Abschnittsumbruch im Text und der Statusmeldung dazu](assets/images/qt-abschnitte.png)
+
+**Kontext-Reiter** erscheinen, wenn man etwas Passendes anfasst: bei einer Form die *Form- und WordArt-Tools* (Vorlagen, Füllung, Kontur,
+Gruppieren), bei einer Tabelle die *Tabellentools* mit Formatvorlagen, bei einem SmartArt die *SmartArt-Tools*.
+
+![Die Form- und WordArt-Tools bei einer markierten Raute](assets/images/qt-formtools.png)
+
+![Die Tabellentools mit Tabellenformatvorlage Blau, Kopfzeile und gebänderten Zeilen](assets/images/qt-tabellentools.png)
+
+![SmartArt als Prozess mit vier Schritten und den SmartArt-Tools](assets/images/qt-smartart.png)
+
+**Überprüfen** vergleicht zwei Dokumente und führt mehrere überarbeitete Fassungen zusammen; die Unterschiede stehen als verfolgte Änderungen darin.
+
+![Der Reiter Überprüfen mit den Gruppen Dokument, Kommentare, Änderungen, Schützen und Vergleichen](assets/images/qt-ueberpruefen.png)
+
 Die **Optionen** (**F9**) haben drei Zweige. Jede Wahl der Lesehilfe wirkt sofort auf dem Blatt.
 
 ![Die Optionen mit der Seite Lesehilfe: Papierton, Buchstaben- und Wortabstand, Zeilenfokus, Vorlesen, farbige Silben und Silbentrennung; links der Baum mit den drei Zweigen](assets/images/qt-optionen-lesehilfe.png)

@@ -125,5 +125,67 @@ def main():
         schliessen(w)
 
 
+def zusatzbilder(app):
+    """Abschnitte, SmartArt, Form- und Tabellenwerkzeuge, Überprüfen (Vergleichen)."""
+    from PySide6.QtGui import QTextCursor
+    from lunivo_writer.editor import formen, smartart as SA, tabellenstil as TS
+    from lunivo_writer.editor import einfuegen as E
+    from PySide6.QtGui import QTextTableFormat
+
+    w = fenster(app, "light")
+    ed = w.current_editor()
+    c = QTextCursor(ed.document()); c.setPosition(ed.document().toPlainText().index("Sehr geehrte")); ed.setTextCursor(c)
+    w.befehle.tun('abschnittsumbruch:["NextPage"]')
+    ps = ed.abschnitt_seite(); ps.set_orientation(True); ed.page_settings_changed(ps)
+    reiter(w, "Abschnitt")
+    warte(400)
+    foto(w, "qt-abschnitte.png")
+    schliessen(w)
+
+    w = fenster(app, "light", "Unser Vorgehen in vier Schritten:\n")
+    ed = w.current_editor()
+    SA.einfuegen(ed, {"layout": "Prozess", "farben": "Blau", "text": "Planen\nUmsetzen\nPrüfen\nAbschließen"})
+    c = QTextCursor(ed.document()); c.setPosition(ed.document().toPlainText().index("\ufffc")); ed.setTextCursor(c)
+    w._sync_format()
+    reiter(w, "SmartArt-Tools")
+    warte(400)
+    foto(w, "qt-smartart.png")
+    schliessen(w)
+
+    w = fenster(app, "light", "Formen im Text:\n")
+    ed = w.current_editor()
+    E.qimage_einfuegen(ed, E.form_bild("Raute"), "Form: Raute", "form", {"form": "Raute"})
+    c = QTextCursor(ed.document()); c.setPosition(ed.document().toPlainText().index("\ufffc")); ed.setTextCursor(c)
+    formen.vorlage(ed, "Orange")
+    w._sync_format()
+    reiter(w, "Form- und WordArt-Tools")
+    warte(400)
+    foto(w, "qt-formtools.png")
+    schliessen(w)
+
+    w = fenster(app, "light", "Quartalszahlen:\n")
+    ed = w.current_editor()
+    c = ed.textCursor(); c.movePosition(QTextCursor.End)
+    ed.setTextCursor(c)
+    t = c.insertTable(4, 3, QTextTableFormat())
+    for r, zeile in enumerate((("Quartal", "Umsatz", "Kosten"), ("Q1", "120", "80"), ("Q2", "150", "90"), ("Q3", "170", "110"))):
+        for k, x in enumerate(zeile):
+            t.cellAt(r, k).firstCursorPosition().insertText(x)
+    TS.anwenden(t, "Blau")
+    ed.setTextCursor(t.cellAt(1, 1).firstCursorPosition())
+    w._sync_format()
+    reiter(w, "Tabellentools")
+    warte(400)
+    foto(w, "qt-tabellentools.png")
+    schliessen(w)
+
+    w = fenster(app, "light")
+    reiter(w, "Überprüfen")
+    warte(300)
+    foto(w, "qt-ueberpruefen.png")
+    schliessen(w)
+
+
 if __name__ == "__main__":
     main()
+    zusatzbilder(QApplication.instance())
