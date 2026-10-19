@@ -369,6 +369,13 @@ class MainWindow(QMainWindow):
         f["font"].blockSignals(True); f["font"].setCurrentFont(QFont(fam)); f["font"].blockSignals(False)
         size = cf.fontPointSize() or e.document().defaultFont().pointSizeF() or 11
         f["groesse"].blockSignals(True); f["groesse"].setEditText(f"{size:g}"); f["groesse"].blockSignals(False)
+        t = self.current_tab()
+        if t is not None and "rand_oben" in f:                       # Maßfelder im Reiter Seitenlayout
+            p = t.page
+            for schl, wert in (("oben", p.margin_top_mm), ("unten", p.margin_bottom_mm), ("links", p.margin_left_mm), ("rechts", p.margin_right_mm)):
+                sp = f["rand_" + schl]
+                if not sp.hasFocus():
+                    sp.blockSignals(True); sp.setValue(wert); sp.blockSignals(False)
         st = e.current_style()
         f["stil"].blockSignals(True); f["stil"].setCurrentText("Fließtext" if st == "Standard" else st); f["stil"].blockSignals(False)
 

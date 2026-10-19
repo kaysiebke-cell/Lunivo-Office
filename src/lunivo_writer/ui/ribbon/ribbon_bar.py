@@ -298,7 +298,36 @@ class RegisterBand(QWidget):
         v.addStretch(1)
         inhalt.addLayout(v)
 
+    def _knoepfe_raender(self, g: dict, inhalt: QHBoxLayout):
+        """Der Rand-Knopf und daneben wie bei WPS die vier Maßfelder Oben/Unten/Links/Rechts (in der gewählten Maßeinheit)."""
+        from lunivo_writer.ui.dialogs.dokument_dialoge import _MassSpin
+        self._knoepfe_geordnet(g, inhalt)
+        host = QWidget()
+        gitter = QGridLayout(host)
+        gitter.setContentsMargins(0, 0, 0, 0)
+        gitter.setHorizontalSpacing(4)
+        gitter.setVerticalSpacing(2)
+        spins = {}
+        for zeile, spalte, schl, name in ((0, 0, "oben", "Oben:"), (0, 2, "unten", "Unten:"), (1, 0, "links", "Links:"), (1, 2, "rechts", "Rechts:")):
+            sp = _MassSpin()
+            sp.setRange(0.0, 200.0)
+            sp.setDecimals(1)
+            sp.setSingleStep(1.0)
+            sp.setKeyboardTracking(False)
+            sp.setFixedWidth(80)
+            gitter.addWidget(QLabel(name), zeile, spalte)
+            gitter.addWidget(sp, zeile, spalte + 1)
+            spins[schl] = sp
+            self.felder["rand_" + schl] = sp
+            self.knoepfe.append((sp, None, True))
+        for sp in spins.values():
+            sp.valueChanged.connect(lambda _v, sps=spins: self.b.w.set_margins(
+                sps["oben"].value(), sps["unten"].value(), sps["links"].value(), sps["rechts"].value()))
+        inhalt.addWidget(host, 0, Qt.AlignTop)
+
     def _knoepfe(self, g: dict, inhalt: QHBoxLayout):
+        if g.get("felder") == "raender":
+            return self._knoepfe_raender(g, inhalt)
         if g.get("felder") == "zeile":
             return self._knoepfe_schrift(g, inhalt)
         if g.get("reihenfolge"):
