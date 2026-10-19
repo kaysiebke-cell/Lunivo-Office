@@ -4,24 +4,24 @@ from __future__ import annotations
 import os
 from datetime import datetime
 
-from PySide6.QtCore import QSize, Qt, QTimer
-from PySide6.QtGui import QAction, QActionGroup, QColor, QFont, QKeySequence, QTextCursor, QTextFormat
+from PySide6.QtCore import Qt, QTimer
+from PySide6.QtGui import QAction, QActionGroup, QColor, QFont, QKeySequence, QTextFormat
 from PySide6.QtPrintSupport import QPrintDialog, QPrintPreviewDialog, QPrinter
 from PySide6.QtWidgets import (
-    QApplication, QColorDialog, QComboBox, QFileDialog, QFontComboBox, QInputDialog, QLabel, QLineEdit,
-    QMainWindow, QMenu, QMessageBox, QSlider, QStatusBar, QTabWidget, QToolBar, QToolButton, QWidget,
+    QApplication, QColorDialog, QFileDialog, QInputDialog, QLineEdit, QMainWindow, QMenu, QMessageBox, QWidget,
 )
 
 from lunivo_writer import __version__
 from lunivo_writer.services import file_service as formats
 from lunivo_writer.models.report import DocumentIOError, IOReport, PasswortNoetig
-from lunivo_writer.ui.document.document_editor import STYLES, DocumentEditor
-from lunivo_writer.models.page import PAPER_MM, HeaderFooter, PageSettings, px_to_mm
+from lunivo_writer.ui.document.document_editor import DocumentEditor
+from lunivo_writer.models.page import HeaderFooter, PageSettings, px_to_mm
 from lunivo_writer.editor.pagination import export_pdf, print_document
-from lunivo_writer.services import recovery
 from lunivo_writer.services.settings_service import Settings
 from lunivo_writer.ai.ai_service import KIDienst
 from lunivo_writer.proofing.proofing_service import WritingAssistant
+from lunivo_writer.core.document_manager import DocumentManager
+from lunivo_writer.ui.statusbar.status_bar import StatusBar
 from lunivo_writer.ui.dialogs.dokument_dialoge import FindReplaceDialog, HeaderFooterDialog, PageSetupDialog, ParagraphDialog, TableDialog
 from lunivo_writer.ui.document.document_tabs import DocTabs
 from lunivo_writer.ui.document.document_area import DocumentTab
@@ -69,6 +69,7 @@ class MainWindow(QMainWindow):
         _dlg.set_einheit(self.settings.get("ui/masseinheit", "Millimeter"))
         from lunivo_writer.ui.widgets.live_vorschau import LiveVorschau
         self.vorschau = LiveVorschau(self)
+        self.dokumente = DocumentManager(self.settings)
         self.befehle = Befehle(self)
         self._build_actions()
         self._zusatz_kuerzel()
@@ -257,27 +258,15 @@ class MainWindow(QMainWindow):
 
     # ==== Statusleiste ============================================================
     def _build_status(self):
-        sb = QStatusBar(); self.setStatusBar(sb)
-        sb.setSizeGripEnabled(True)
-        self.lbl_msg = QLabel("")
-        sb.addWidget(self.lbl_msg, 1)
-        self.lbl_words = QLabel("0 Wörter, 0 Zeichen")
-        self.lbl_page = QLabel("Seite 1 von 1")
-        self.lbl_state = QLabel("")
-        for w in (self.lbl_words, self.lbl_page):
-            w.setContentsMargins(10, 0, 10, 0); sb.addPermanentWidget(w)
-        self.zoom_minus = QToolButton(); self.zoom_minus.setText("−"); self.zoom_minus.setAutoRaise(True)
-        self.zoom_plus = QToolButton(); self.zoom_plus.setText("+"); self.zoom_plus.setAutoRaise(True)
-        self.zoom_regler = QSlider(Qt.Horizontal); self.zoom_regler.setRange(10, 500); self.zoom_regler.setValue(100)
-        self.zoom_regler.setFixedWidth(120)
-        self.lbl_zoom = QToolButton(); self.lbl_zoom.setText("100 %"); self.lbl_zoom.setAutoRaise(True)
-        self.lbl_zoom.setToolTip("Zoom …"); self.lbl_zoom.setMinimumWidth(52)
-        self.zoom_minus.clicked.connect(lambda: self.befehle.kleiner())
-        self.zoom_plus.clicked.connect(lambda: self.befehle.groesser())
-        self.lbl_zoom.clicked.connect(lambda: self.befehle.zoomStufe())
-        self.zoom_regler.valueChanged.connect(self._regler_bewegt)
-        for w in (self.zoom_minus, self.zoom_regler, self.zoom_plus, self.lbl_zoom):
-            sb.addPermanentWidget(w)
+        sb = StatusBar()
+        self.setStatusBar(sb)
+        self.statusleiste = sb
+        self.lbl_msg, self.lbl_words, self.lbl_page, self.lbl_zoom = sb.lbl_msg, sb.lbl_words, sb.lbl_page, sb.lbl_zoom
+        self.zoom_regler = sb.zoom_regler
+        sb.zoom_kleiner.connect(lambda: self.befehle.kleiner())
+        sb.zoom_groesser.connect(lambda: self.befehle.groesser())
+        sb.zoom_stufe.connect(lambda: self.befehle.zoomStufe())
+        sb.zoom_geaendert.connect(self._regler_bewegt)
 
     # ==== Hilfen ====================================================================
     def current_tab(self) -> DocumentTab | None:
@@ -340,10 +329,7 @@ class MainWindow(QMainWindow):
     def _zoom_anzeigen(self, f: float | None = None):
         e = self.current_editor()
         f = f if f is not None else (e.zoom if e else 1.0)
-        self.lbl_zoom.setText(f"{round(f * 100)} %")
-        self.zoom_regler.blockSignals(True)
-        self.zoom_regler.setValue(int(round(f * 100)))
-        self.zoom_regler.blockSignals(False)
+        self.statusleiste.zoom_zeigen(f)
 
     def _connect_tab(self, tab: DocumentTab):
         e = tab.editor
@@ -389,11 +375,11 @@ class MainWindow(QMainWindow):
     def _sync_status(self):
         e = self.current_editor()
         if e is None:
-            self.lbl_page.setText("Seite – von –"); self.lbl_words.setText("0 Wörter, 0 Zeichen")
+            self.statusleiste.seite(None, None); self.statusleiste.zaehler(0, 0)
             return
         txt = e.document().toPlainText()
-        self.lbl_page.setText(f"Seite {e.current_page()} von {e.page_count}")
-        self.lbl_words.setText(f"{len(txt.split())} Wörter, {len(txt)} Zeichen")
+        self.statusleiste.seite(e.current_page(), e.page_count)
+        self.statusleiste.zaehler(len(txt.split()), len(txt))
 
     def _verbinde_felder(self):
         f = self.band.felder
@@ -448,7 +434,7 @@ class MainWindow(QMainWindow):
         kennwort = None
         while True:
             try:
-                loaded = formats.load(path, kennwort)
+                loaded = self.dokumente.laden(path, kennwort)
                 break
             except PasswortNoetig as e:
                 kennwort, ok = QInputDialog.getText(
@@ -462,12 +448,11 @@ class MainWindow(QMainWindow):
                 break
         if loaded is None:
             QMessageBox.warning(self, "Öffnen nicht möglich", f"{os.path.basename(path)}\n\n{fehler}")
-            self.settings.remove_recent(path); self.start.set_recent(self.settings.recent())
+            self.dokumente.vergessen(path); self.start.set_recent(self.dokumente.zuletzt())
             return False
         tab = DocumentTab(loaded, path)
         self._add_tab(tab)
-        self.settings.set("last_dir", os.path.dirname(path))
-        self.settings.add_recent(path); self.start.set_recent(self.settings.recent())
+        self.dokumente.gelesen(path); self.start.set_recent(self.dokumente.zuletzt())
         self._show_report(loaded.report, f"Hinweise zu „{os.path.basename(path)}“", "beim Öffnen")
         return True
 
@@ -518,23 +503,14 @@ class MainWindow(QMainWindow):
         self._update_tab_titles()
         return True
 
-    def _meta_fuer_speichern(self, tab: DocumentTab) -> dict:
-        m = dict(tab.meta)
-        m["codierung"] = self.settings.get("speichern/codierung", "UTF-8")
-        if self.settings.get_bool("sicherheit/personendaten_weg", False) or not self.settings.get_bool("benutzer/verwenden", True):
-            m["author"] = ""
-        elif self.settings.get("benutzer/name", ""):
-            m["author"] = self.settings.get("benutzer/name", "")
-        return m
-
     def _write(self, tab: DocumentTab, path: str, mark_saved: bool = True) -> bool:
         try:
-            rep = formats.save(path, tab.editor.document(), tab.page, self._meta_fuer_speichern(tab))
+            rep = self.dokumente.speichern(path, tab.editor.document(), tab.page, tab.meta)
         except DocumentIOError as e:
             QMessageBox.critical(self, "Speichern fehlgeschlagen", str(e)); return False
         if mark_saved:
             tab.editor.document().setModified(False)
-            recovery.discard(tab.token)
+            self.dokumente.verwerfen(tab.token)
         self.statusBar().showMessage(f"Gespeichert: {path}", 4000)
         self._show_report(rep, "Hinweise zum Speichern", "beim Speichern")
         return True
@@ -563,7 +539,7 @@ class MainWindow(QMainWindow):
         if not path.lower().endswith(".pdf"):
             path += ".pdf"
         try:
-            autor = self._meta_fuer_speichern(t).get("author", "") if self.settings.get_bool("pdf/eigenschaften", True) else ""
+            autor = self.dokumente.meta_fuer_speichern(t.meta).get("author", "") if self.settings.get_bool("pdf/eigenschaften", True) else ""
             lz = None
             sg = self.settings.get_bool
             if sg("pdf/lz_ueberschriften", False) or sg("pdf/lz_textmarken", False) or sg("pdf/lz_andere", False):
@@ -667,7 +643,7 @@ class MainWindow(QMainWindow):
                 return False
             if r == QMessageBox.Save and not self._save_tab(w):
                 return False
-        recovery.discard(w.token)
+        self.dokumente.verwerfen(w.token)
         self.tabs.removeTab(index)
         w.deleteLater()
         self._refresh_ui()
@@ -797,23 +773,11 @@ class MainWindow(QMainWindow):
 
     # ==== Wiederherstellung ================================================================
     def autosave_now(self):
-        if not self.settings.get_bool("sicherung/aktiv", True):
-            return
-        for t in self._doc_tabs():
-            if not t.is_modified():
-                continue
-            docx_path, _ = recovery.paths(t.token)
-            try:
-                formats.save(docx_path, t.editor.document(), t.page, t.meta)
-                recovery.write_meta(t.token, t.path or "", t.title)
-                if self.settings.get_bool("sicherung/staende", False):
-                    recovery.zwischenstand(t.token, t.title, self.settings.get_int("sicherung/tage", 7))
-            except Exception:
-                pass            # Sicherung darf nie die Arbeit stören
+        self.dokumente.sichern(self._doc_tabs())
 
     def offer_recovery(self):
         open_tokens = {t.token for t in self._doc_tabs()}
-        entries = recovery.pending(exclude=open_tokens)
+        entries = self.dokumente.wiederherstellbar(open_tokens)
         if not entries:
             return
         names = "\n".join(f"• {e.title} ({datetime.fromtimestamp(e.saved_at):%d.%m.%Y %H:%M})" for e in entries)
@@ -824,7 +788,7 @@ class MainWindow(QMainWindow):
         if box.exec() == QMessageBox.Yes:
             for e in entries:
                 try:
-                    loaded = formats.load(e.docx_path)
+                    loaded = self.dokumente.laden(e.docx_path)
                 except DocumentIOError:
                     continue
                 tab = DocumentTab(loaded, None, title=f"Wiederhergestellt – {e.title}")
@@ -833,7 +797,7 @@ class MainWindow(QMainWindow):
                 self._add_tab(tab)
         else:
             for e in entries:
-                recovery.discard(e.token)
+                self.dokumente.verwerfen(e.token)
 
     # ==== Bearbeiten/Einfügen ===================================================================
     def paste_plain(self):
@@ -1038,7 +1002,7 @@ class MainWindow(QMainWindow):
         self.neu_bauen_band()
 
     def _bereiche_bauen(self):
-        from lunivo_writer.ui.ribbon.plan import KI
+        from lunivo_writer.ui.ribbon.tabs.ai_tab import KI
         self.sidebar.setze_bereiche(self.band, KI["gruppen"])
 
     # ---- Oberfläche: Register oder Symbolleisten, angepasst ----------------------------------------------------

@@ -1,177 +1,22 @@
-"""Die Reiterleiste nach der Struktur „LUNIVO WRITER“ (Datei, Start, Einfügen, Seitenlayout, Verweise,
-Überprüfen, Schreibhilfe, Ansicht + kontextabhängige Register).
+"""Die Reiterleiste nach der Struktur „LUNIVO WRITER“: Datei, Start, Einfügen, Seitenlayout, Verweise, Überprüfen,
+Schreibhilfe, Ansicht (+ „Sendungen“ nach Register anpassen) und die Kontext-Reiter für Tabellen, Bilder/Formen und Kopf-/Fußzeile.
 
-Start, Einfügen, Seitenlayout, Verweise, Überprüfen und Ansicht kommen aus register.json. Datei, Schreibhilfe und die Kontext-Register sind hier ergänzt.
-Die Prüfungen der Schreibhilfe stehen zusätzlich in der rechten Seitenleiste (Bereich „Schreibhilfe“);
-„Sendungen“ ist in der Struktur nicht vorgesehen und bleibt in register.json erhalten.
+Jeder Reiter hat sein Modul unter ribbon/tabs/ bzw. contextual/; hier werden sie in der Reihenfolge der Struktur zusammengesetzt.
+Die Prüfungen der Schreibhilfe stehen zusätzlich in der rechten Seitenleiste.
 """
 from __future__ import annotations
 
-
-def _k(symbol, name, tun=None, gross=False, **kw):
-    e = {"symbol": symbol, "name": name, "gross": gross}
-    if tun:
-        e["tun"] = tun
-    e.update(kw)
-    return e
-
-
-DATEI = {"name": "Datei", "gruppen": [
-    {"name": "Neu", "knoepfe": [_k("neu", "Leeres Dokument", "neu", True),
-                                _k("vorlage", "Aus Vorlage erstellen", "neuAusVorlage"),
-                                _k("lupe", "Vorlagen durchsuchen", "vorlagenDurchsuchen")]},
-    {"name": "Öffnen", "knoepfe": [_k("oeffnen", "Öffnen", "oeffnen", True),
-                                   _k("zuletzt", "Zuletzt verwendete Dokumente", klappe="zuletzt")]},
-    {"name": "Speichern", "knoepfe": [_k("speichern", "Speichern", "speichern", True),
-                                      _k("speichern", "Speichern unter", "speichernUnter"),
-                                      _k("kopie", "Kopie speichern", "kopieSpeichern")]},
-    {"name": "Exportieren", "knoepfe": [_k("pdf", "Als PDF exportieren", "speichernPdf", True),
-                                        _k("ausdatei", "Als DOCX exportieren", "exportierenDocx"),
-                                        _k("ausdatei", "Als DOC exportieren (optional)", "exportierenDoc"),
-                                        _k("//", "x"),
-                                        _k("ausdatei", "Als RTF exportieren", "exportierenRtf"),
-                                        _k("notiz", "Als TXT exportieren", "exportierenTxt"),
-                                        _k("buch", "Als ODT exportieren", "exportierenOdt"),
-                                        _k("bild", "Als Bild exportieren (PNG)", "exportierenPng")]},
-    {"name": "Drucken", "knoepfe": [_k("drucken", "Drucken", "drucken", True),
-                                    _k("vorschau", "Druckvorschau", "vorschau"),
-                                    _k("drucker2", "Drucker auswählen", "druckerWaehlen"),
-                                    _k("//", "x"),
-                                    _k("abschnitt", "Seitenbereich", "druckerWaehlen"),
-                                    _k("einstellungen", "Druckeinstellungen", "druckerWaehlen")]},
-    {"name": "Dokument", "knoepfe": [_k("inhalt", "Dokumentinformationen", "eigenschaften", True),
-                                     _k("sperren", "Dokument schützen", "dokumentSchuetzen"),
-                                     _k("verknuepft", "Dokument teilen (optional)", "dokumentTeilen"),
-                                     _k("//", "x"),
-                                     _k("buch", "Mit WPS Writer öffnen", "mitWpsOeffnen"),
-                                     _k("buch", "Mit LibreOffice öffnen", "mitLibreOfficeOeffnen")]},
-    {"name": "Programm", "knoepfe": [_k("optionen", "Optionen / Einstellungen", "w.optionenOeffnen", True),
-                                     _k("schliessen", "Schließen", "schliessen")]},
-]}
-
-KI = {"name": "KI", "gruppen": [
-    {"name": "KI-Schreibwerkzeuge", "knoepfe": [_k("ki", "Text entwerfen", "kiEntwerfen", True),
-                                                _k("zusammenfassen", "Text umformulieren", "kiUmformulieren"),
-                                                _k("zusammenfassen", "Text zusammenfassen", "kiZusammenfassen"),
-                                                _k("uebersetzen", "Text übersetzen", "w.kiUebersetzen"),
-                                                _k("bild", "Text in Bild", "kiTextInBild")]},
-    {"name": "Korrektur", "knoepfe": [_k("assistent", "KI-Korrektur", "kiKorrektur", True),
-                                      _k("vorschlag", "Verbesserungsvorschläge", "kiVorschlaege", True)]},
-    {"name": "Seitenleiste", "knoepfe": [_k("tafel", "Schreibhilfe-Seitenleiste", "tafelZeigen", True),
-                                         _k("chat", "KI-Chat", "w.chatUmschalten", True)]},
-    {"name": "Einrichten", "knoepfe": [_k("assistent", "Eigene Assistenten", klappe="assistenten", gross=True),
-                                       _k("assistent", "Eigenen Assistenten erstellen", "w.assistentErstellen"),
-                                       _k("kombination", "Eigenen Anbieter hinzufügen", "w.eigenenAnbieterHinzufuegen"),
-                                       _k("zahnrad", "KI-Konfiguration", "w.kiKonfiguration")]},
-]}
-
-TABELLENTOOLS = {"name": "Tabellentools", "kontext": "tabelle", "gruppen": [
-    {"name": "Entwurf: Rahmen und Farbe", "knoepfe": [
-        _k("rahmen", "Rahmenlinien ein/aus", "tabelleRahmen", True, haken=True),
-        _k("toenung", "Zellenschattierung", klappe="tabelleSchattierung", gross=True)]},
-    {"name": "Layout: Zeilen und Spalten", "knoepfe": [
-        _k("kanteOben", "Zeile oberhalb einfügen", "tabelleZeileOben"),
-        _k("kanteUnten", "Zeile unterhalb einfügen", "tabelleZeileUnten"),
-        _k("kanteLinks", "Spalte links einfügen", "tabelleSpalteLinks"),
-        _k("kanteRechts", "Spalte rechts einfügen", "tabelleSpalteRechts"),
-        _k("//", "x"),
-        _k("kanteKeine", "Zeile löschen", "tabelleZeileLoeschen"),
-        _k("kanteKeine", "Spalte löschen", "tabelleSpalteLoeschen"),
-        _k("kanteKeine", "Tabelle löschen", "tabelleLoeschen")]},
-    {"name": "Zellen", "knoepfe": [
-        _k("kanteAlle", "Zellen verbinden", "tabelleVerbinden"),
-        _k("kanteInnen", "Zelle teilen", "tabelleTeilen"),
-        _k("sortieren", "Tabelle sortieren", "tabelleSortieren")]},
-    {"name": "Ausrichtung", "knoepfe": [
-        _k("links", "Oben ausrichten", "zelleOben"),
-        _k("mitte", "Mittig ausrichten", "zelleMitte"),
-        _k("rechts", "Unten ausrichten", "zelleUnten")]},
-]}
-
-BILDTOOLS = {"name": "Bildtools", "kontext": "bild", "gruppen": [
-    {"name": "Format: Größe", "knoepfe": [
-        _k("bild", "Größe und Seitenverhältnis …", "bildGroesse", True),
-        _k("einpassen", "Auf Seitenbreite", "bildBreite"),
-        _k("bild", "Originalgröße", "bildOriginal")]},
-    {"name": "Beschreibung", "knoepfe": [_k("notiz", "Alternativtext …", "bildAltText", True)]},
-    {"name": "Bearbeiten", "knoepfe": [_k("kanteKeine", "Bild entfernen", "bildEntfernen"),
-                                       _k("bild", "Zuschneiden", "bildZuschneiden"),
-                                       _k("farbe", "Helligkeit / Kontrast / Farbe", "bildFarbe"),
-                                       _k("textflussumbruch", "Textumbruch / Position", "anordnen")]},
-]}
-
-FORMTOOLS = {"name": "Form- und WordArt-Tools", "kontext": "form", "gruppen": [
-    {"name": "Format", "knoepfe": [_k("stift", "Formvorlagen", "formVorlagen", True),
-                                    _k("toenung", "Formfüllung", "formFuellung"),
-                                    _k("linie", "Formkontur", "formKontur"),
-                                    _k("anordnen", "Anordnen / Gruppieren", "gruppieren")]}]}
-
-KOPFFUSS = {"name": "Kopf- und Fußzeilentools", "kontext": "kopffuss", "gruppen": [
-    {"name": "Entwurf", "knoepfe": [_k("kopfz", "Kopfzeile bearbeiten", "kopfFussZeigen", True),
-                                    _k("fussz", "Fußzeile bearbeiten", "fusszeileBearbeiten", True),
-                                    _k("seitenzahl", "Seitenzahl einfügen", "seitenzahlKlappe"),
-                                    _k("kopffuss", "Erste Seite anders", "ersteSeiteAnders"),
-                                    _k("kopffuss", "Gerade/ungerade Seiten unterschiedlich", "geradeUngerade"),
-                                    _k("schliessen", "Kopf- und Fußzeile schließen", "kopfFussSchliessen")]}]}
-
-
-def _start_wie_wps(start: dict) -> dict:
-    """Reiter Start in der Anordnung von WPS Office: Zwischenablage (Einfügen, Ausschneiden/Kopieren, Format übertragen), Schriftart mit
-    Name und Größe in einer Zeile, Absatz, Stile, dann Wort-Extras, Suchen oder ersetzen, Auswählen und Einstellungen als große Knöpfe."""
-    alt = {g["name"]: g for g in start["gruppen"]}
-    ablage = {"name": "Zwischenablage", "reihenfolge": True, "knoepfe": [
-        _k("kleben", "Einfügen", "einfuegen", True, klappe="einfuegenKlappe"),
-        _k("schere", "Ausschneiden", "ausschneiden", text=True),
-        _k("kopie", "Kopieren", "kopieren", text=True),
-        _k("pinsel", "Format übertragen", "formatUebertragen", True)]}
-    schrift = dict(alt["Schriftart"], felder="zeile")
-    absatz = dict(alt["Absatz"])
-    extras = {"name": "Extras", "reihenfolge": True, "knoepfe": [
-        _k("wortextras", "Wort-Extras", "wortExtras", True)]}
-    suchen = {"name": "Suchen", "reihenfolge": True, "knoepfe": [
-        _k("lupe", "Suchen oder ersetzen", gross=True, menue=[{"name": "Suchen …", "tun": "suchen"},
-                                                              {"name": "Ersetzen …", "tun": "ersetzen"}])]}
-    waehlen = {"name": "Auswählen", "reihenfolge": True, "knoepfe": [
-        _k("objekte", "Auswählen", gross=True, menue=[{"name": "Alles auswählen", "tun": "allesMarkieren"},
-                                                      {"name": "Objekte auswählen", "tun": "objekteWaehlen"}])]}
-    einst = {"name": "Einstellungen", "reihenfolge": True, "knoepfe": [
-        _k("zahnrad", "Einstellungen", gross=True, menue=[{"name": "Optionen …", "tun": "w.optionenOeffnen"}])]}
-    return dict(start, gruppen=[ablage, schrift, absatz, alt["Stile"], extras, suchen, waehlen, einst])
+from lunivo_writer.ui.contextual.header_footer_tools import KOPFFUSS
+from lunivo_writer.ui.contextual.image_tools import BILDTOOLS, FORMTOOLS
+from lunivo_writer.ui.contextual.table_tools import TABELLENTOOLS
+from lunivo_writer.ui.ribbon.tabs import (ai_tab, file_tab, home_tab, insert_tab, layout_tab, mailings_tab, references_tab,
+                                          review_tab, view_tab)
 
 
 def plan(register: dict) -> list[dict]:
     """Die Reiter in der Reihenfolge der Struktur; Kontext-Register stehen am Ende (zunächst verborgen)."""
-    nach = {t["name"]: t for t in register["register"]}
-    sh = nach["Schreibhilfe"] = dict(nach["Schreibhilfe"])
-    sh["gruppen"] = [dict(g) for g in sh["gruppen"]]
-    lesen = next(g for g in sh["gruppen"] if g["name"] == "Lesen")
-    if not any(k.get("tun") == "silbenfarben" for k in lesen["knoepfe"]):          # Lesehilfe für Legasthenie
-        lesen["knoepfe"] = lesen["knoepfe"] + [_k("farbe", "Silben farbig", "silbenfarben", haken=True),
-                                               _k("zahnrad", "Silben einstellen …", "silbenEinstellen")]
-    vorhanden = {k.get("tun") for g in sh["gruppen"] for k in g["knoepfe"]}
-    ki_gruppe = next((g for g in sh["gruppen"] if g["name"] == "KI"), None)
-    for g in KI["gruppen"]:                                  # KI-Funktionen gehören in den Reiter Schreibhilfe (kein eigener KI-Reiter)
-        if g["name"] in ("Seitenleiste", "Korrektur"):           # beides steht schon in der Seitenleiste
-            continue
-        neu = [k for k in g["knoepfe"] if k.get("tun") not in vorhanden or not k.get("tun")]
-        if g["name"] == "Einrichten" and ki_gruppe is not None:
-            sh["gruppen"][sh["gruppen"].index(ki_gruppe)] = dict(ki_gruppe, knoepfe=ki_gruppe["knoepfe"] + neu)
-        elif neu:
-            ki_pos = sh["gruppen"].index(ki_gruppe) if ki_gruppe else len(sh["gruppen"])
-            sh["gruppen"].insert(ki_pos, dict(g, knoepfe=neu))
-    nach["Start"] = _start_wie_wps(nach["Start"])
-    ans = nach["Ansicht"] = dict(nach["Ansicht"])
-    ans["gruppen"] = [dict(g) for g in ans["gruppen"]]
-    anz = next(g for g in ans["gruppen"] if g["name"] == "Anzeigen")
-    if not any(k.get("tun") == "versteckteZeigen" for k in anz["knoepfe"]):
-        anz["knoepfe"] = anz["knoepfe"] + [_k("vorschau", "Ausgeblendeter Text", "versteckteZeigen", haken=True)]
-    sen = nach["Sendungen"] = dict(nach["Sendungen"])
-    sen["gruppen"] = [dict(g) for g in sen["gruppen"]]
-    form = next(g for g in sen["gruppen"] if g["name"] == "Formular")
-    if not any(k.get("tun") == "formAuswahl" for k in form["knoepfe"]):
-        form["knoepfe"] = form["knoepfe"] + [_k("punkte", "Auswahlliste", "formAuswahl"), _k("datum", "Datumsfeld", "formDatum"),
-                                              _k("schliessen", "Felder zurücksetzen", "formLeeren")]
-    verweise = dict(nach["Referenzen"], name="Verweise")
-    reiter = [DATEI, nach["Start"], nach["Einfügen"], nach["Seitenlayout"], verweise, nach["Überprüfen"],
-              nach["Schreibhilfe"], nach["Ansicht"], nach["Sendungen"]]
+    start = home_tab.bauen(next(t for t in register["register"] if t["name"] == "Start"))
+    reiter = [file_tab.bauen(register), start, insert_tab.bauen(register), layout_tab.bauen(register),
+              references_tab.bauen(register), review_tab.bauen(register), ai_tab.bauen(register), view_tab.bauen(register),
+              mailings_tab.bauen(register)]
     return reiter + [TABELLENTOOLS, BILDTOOLS, FORMTOOLS, KOPFFUSS]

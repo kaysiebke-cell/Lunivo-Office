@@ -6,7 +6,7 @@ import json
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtWidgets import (
-    QCheckBox, QComboBox, QDialog, QDialogButtonBox, QHBoxLayout, QLabel, QLineEdit, QListWidget, QListWidgetItem,
+    QCheckBox, QColorDialog, QComboBox, QDialog, QDialogButtonBox, QHBoxLayout, QLabel, QLineEdit, QListWidget, QListWidgetItem,
     QMessageBox, QPushButton, QRadioButton, QVBoxLayout,
 )
 

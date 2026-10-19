@@ -24,6 +24,7 @@ Nicht *für* Menschen mit Legasthenie gebaut, sondern *von* einem. Kein Konto, k
 
 ```bash
 sudo apt install python3 python3-venv libxcb-cursor0 libegl1 libxkbcommon-x11-0 libxcb-icccm4 libxcb-keysyms1 libxcb-shape0
+python3 main.py                 # direkt aus dem Projektordner (PySide6, python-docx nötig)
 ./starten-qt.sh                 # legt beim ersten Mal eine eigene Umgebung (.venv) an und startet
 ./starten-qt.sh --eintrag       # zusätzlich ein Menüeintrag
 ./starten-qt.sh --test          # Tests

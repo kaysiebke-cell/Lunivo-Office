@@ -12,7 +12,8 @@ from PySide6.QtWidgets import (
 )
 
 from lunivo_writer.ui.widgets import icons
-from lunivo_writer.ui.ribbon.plan import BILDTOOLS, TABELLENTOOLS
+from lunivo_writer.ui.contextual.image_tools import BILDTOOLS
+from lunivo_writer.ui.contextual.table_tools import TABELLENTOOLS
 from lunivo_writer.ui.ribbon.ribbon_bar import NICHT_DA, STILE_KATALOG
 
 T = "trenner"

@@ -6,7 +6,7 @@ das ist offen (siehe 6). Der Prüfbogen ([PRUEFBOGEN.md](PRUEFBOGEN.md)) ist der
 „✅“ heißt „Befehl/Funktion vorhanden“, einzeln durch `tests/` belegt nur dort, wo im Eintrag ein Test genannt ist.
 
 ## 1. Dateien
-`native_qt/` (≈ 15 700 Zeilen Python in 7 Paketen), `tests/` (22 Testdateien, 171 Tests), `werkzeug/` (Abgleich-Skripte für Prüfbogen und Knöpfe), `starten-qt.sh`, `requirements*.txt`, `docs/*`.
+`src/lunivo_writer/` (Python-Paket mit core, ui, editor, models, services, ai, proofing), `tests/` (22 Testdateien, 171 Tests), `werkzeug/` (Abgleich-Skripte für Prüfbogen und Knöpfe), `starten-qt.sh`, `requirements*.txt`, `docs/*`.
 
 
 ## 2. Tatsächlich umgesetzt
