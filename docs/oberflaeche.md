@@ -6,12 +6,18 @@ Band und Symbolleisten, das Lineal, Formatvorlagen, Anpassen.
 Symbolleisten (zwei Zeilen, alles sichtbar) und Registern (Reiter wie in
 Word) um. Dieselben Befehle, anders sortiert.
 
-Das Register hat acht Reiter — Start, Einfügen, Seitenlayout,
-Referenzen, Überprüfen, Schreibhilfe, Sendungen, Ansicht — und sechs
-weitere, die nur da sind, wenn sie etwas zu sagen haben.
+Das Register hat acht Reiter — Datei, Start, Einfügen, Seitenlayout,
+Verweise, Überprüfen, Schreibhilfe, Ansicht (*Sendungen* lässt sich über
+*Register anpassen* dazuholen) — und vier weitere, die nur da sind, wenn sie
+etwas zu sagen haben: Tabellentools, Bildtools, Form- und WordArt-Tools sowie
+Kopf- und Fußzeilentools.
 
-**Einen Datei-Reiter gibt es nicht**, so wenig wie im WPS Writer. Links
-davor steht **☰ Menü**: Neu, Öffnen, Speichern, Speichern unter, Als PDF
+**Der Reiter Datei ist eine Backstage-Ansicht**, wie bei ONLYOFFICE: Ein Klick darauf ersetzt das
+Dokument durch zwei Spalten — links die Befehle (Neues Dokument, Von Vorlage, Öffnen, Zuletzt benutzte,
+Speichern, Speichern als, Drucken, Schützen, Info, Öffnen mit …, Schließen, Erweiterte Einstellungen, Hilfe),
+rechts die Seite dazu. Zurück geht es mit **Esc**, *Zurück zum Dokument* oder einem anderen Reiter.
+
+Links davor steht weiterhin **☰ Menü**: Neu, Öffnen, Speichern, Speichern unter, Als PDF
 exportieren, Als Bild exportieren, Drucken, Dokumentverschlüsselung,
 Hilfe, Optionen, Beenden. Es klappt als Tafel mit zwei Spalten auf —
 links die Befehle, rechts die zuletzt benutzten Dateien. Ein Punkt mit
@@ -29,9 +35,9 @@ wo Text steht, und wandert beim Ziehen mit. Das **senkrechte** misst von
 der ersten Zeile abwärts und scrollt mit dem Blatt; es lässt sich einzeln
 ein- und ausschalten, so wie WPS es hält.
 
-**Schnellzugriff.** Unter dem Prüfen-Knopf stehen drei Marken — Wellen,
-Vorhersage, AutoKorrektur. Grün heißt an, ein Klick schaltet. Sie lagen
-vorher in *Extras ▸ Beim Schreiben*, wo sie niemand fand. Daneben führt
+**Die drei Marken.** Im Kopf der Schreibhilfe, neben *Prüfen*, stehen **We**, **Vo** und **Ko** —
+Wellen, Vorhersage, AutoKorrektur. Grün heißt an, ein Klick schaltet. Sie lagen
+vorher in *Extras ▸ Beim Schreiben*, wo sie niemand fand.
 
 **Die rechte Maustaste.** Zwei Kästen, wie im WPS Writer: oben eine
 schwebende Formatleiste — Schriftart, Größe, fett, kursiv, Farbe, Marker,
@@ -47,17 +53,18 @@ Auf einem Wort sieht das Programm auch dann nach, wenn noch gar nicht
 geprüft wurde: Wer auf *garnicht* klickt, bekommt *gar nicht* — nicht eine
 Liste ähnlich klingender Wörter.
 
-![Rechtsklick auf „garnicht“: oben die schwebende Formatleiste mit Schriftart, Größe und fett/kursiv/unterstrichen, darunter das Menü mit dem Vorschlag „gar nicht“ und den Befehlen samt Tastenkombinationen](../bilder/rechtsklick.png)
+![Rechtsklick auf „garnicht“: oben die schwebende Formatleiste mit Schriftart, Größe und fett/kursiv/unterstrichen, darunter das Menü mit dem Vorschlag „gar nicht“ und den Befehlen samt Tastenkombinationen](../assets/images/rechtsklick.png)
 
 **Tabellenwerkzeuge** erscheinen, sobald der Zeiger in einer Tabelle steht,
-und verschwinden wieder; dazu Zeichentools, Diagrammtools, SmartArt-Tools,
-Gleichungswerkzeuge und Kopf- und Fußzeilenwerkzeuge. Die Gruppen folgen
-dem Menüband von Word: *Start* trägt Zwischenablage, Schriftart, Absatz,
-Formatvorlagen und Bearbeiten, *Ansicht* beginnt mit den Ansichten und
-nicht mit dem Zoom. Jeder der 191 Befehle ist von dort erreichbar. Auf *Start* steht der
+und verschwinden wieder; dazu Bildtools, Form- und WordArt-Tools und Kopf- und
+Fußzeilenwerkzeuge. Zeichen-, Diagramm-, SmartArt- und Gleichungswerkzeuge gibt es noch
+nicht (siehe [PRUEFBOGEN.md](PRUEFBOGEN.md)). Die Gruppen folgen
+dem Menüband von WPS: *Start* trägt Zwischenablage, Schriftart mit Name und Größe in einer Zeile,
+Absatz, Formatvorlagen, Wort-Extras, Suchen oder ersetzen, Auswählen und Einstellungen. Was es nativ
+noch nicht gibt, steht ausgegraut da statt zu fehlen.
 
-**Formatvorlagen-Katalog**: Er zeigt die Vorlage, statt sie zu benennen —
-acht Kacheln in zwei Zeilen. Der Pfeil daneben klappt sie groß auf — an
+Auf *Start* steht der **Formatvorlagen-Katalog**: Er zeigt die Vorlage, statt sie zu benennen —
+sechs Kacheln in zwei Zeilen. Der Pfeil daneben klappt sie groß auf — an
 derselben Stelle, so dass das Menü die Gruppe verdeckt und nichts doppelt
 dasteht. Darin alle Vorlagen samt den eigenen, dazu *Neue Formatvorlage*,
 *löschen* und *verwalten*.
@@ -68,7 +75,9 @@ fragt nach Name und worauf sie aufbaut; die Formatierung steht darunter in
 zwei Leisten — oben die Schrift, darunter der Absatz — und ganz unten eine
 Vorschau, die sich beim Tippen mitändert. Wer „baut auf" umstellt, sieht
 die übrigen Felder mitgehen. Eigene Vorlagen gehören zum Dokument und
-wandern mit dem Reiter.
+wandern mit dem Reiter. *Hinweis zum Stand:* Vorhandene Vorlagen lassen sich verwalten und ändern; das Anlegen
+und Löschen eigener Vorlagen ist in der Qt-Fassung noch offen.
+
 Wo eine Gruppe nicht alles zeigt, was es gibt, steht unten rechts ein
 
 **Pfeil ⭨** zum vollen Dialog. Ein **Doppelklick auf den Reiter** klappt
@@ -76,8 +85,8 @@ das Band weg und wieder auf.
 
 Im Register **tritt die Reiterzeile an die Stelle der Menüleiste** — sie
 kommt nicht dazu. Beides übereinander fräße genau den Platz, den das
-Register gewinnen soll. Das Menü bleibt über das Zeichen ☰ rechts in der
-Reiterzeile erreichbar, oder über die Alt-Taste. In der Symbolleisten-Ansicht lässt sich
+Register gewinnen soll. Das Menü bleibt über das Zeichen ☰ links in der
+Reiterzeile erreichbar. In der Symbolleisten-Ansicht lässt sich
 die Menüleiste ebenfalls ausblenden. Symbolgröße und die Schrift der
 Bedienung sind einstellbar — wer die Leisten nicht lesen kann, benutzt sie
 nicht.
@@ -93,7 +102,8 @@ stehen, damit man es zurückholen kann.
 den Symbolleisten. Ein Fenster zeigt, wo die Zeichnung überall benutzt
 wird, dazu ein Suchfeld und **1801 Zeichnungen** zur Wahl. Ein Klick, und
 sie ist getauscht; „Zurücksetzen" holt die alte zurück. LibreOffice kann
-das für seine Symbolleisten, für sein Symbolband nicht — hier geht beides.
+das für seine Symbolleisten, für sein Symbolband nicht — hier geht beides. Ein getauschtes Symbol
+erscheint in der Strichzeichnung der Auswahl statt im Fluent-Stil der übrigen.
 
 ---
 

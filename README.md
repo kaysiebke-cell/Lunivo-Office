@@ -94,22 +94,25 @@ und warum unter *Neu aus Vorlage* fertige Gerüste liegen.
 ## Was es kann
 
 **Für Menschen, denen Lesen und Schreiben schwerfallen.** Die Grundschrift
-ist OpenDyslexic, die Lesehilfe liegt auf **F2**, und alles, was dabei
-hilft, steht im Reiter *Schreibhilfe* beieinander statt über fünf Reiter
-verteilt.
+ist OpenDyslexic, die Lesehilfe sitzt im Reiter *Schreibhilfe* — dort steht auch
+alles andere beieinander, was dabei hilft: farbige Silben zum Einstellen, Vorlesen
+(**F4**), Prüfen, KI — statt über fünf Reiter verteilt.
 
 **Prüfung ohne Internet.** 355.322 Wörter und eigene Regeln finden, was ein
 Rechtschreibprüfer nicht findet — das/dass, wider/wieder, Kommas. Die KI ist
 freiwillig und braucht einen eigenen Schlüssel; ohne sie läuft alles Übrige.
 
-**Ein vollständiges Schreibprogramm.** Neun Register nach dem Vorbild des
-WPS Writer, zwei Oberflächen zur Wahl, Formatvorlagen, Tabellen, Kopf- und
-Fußzeilen, Seriendruck, Druckvorschau, PDF-Export. Die Optionen tragen alle
-dreizehn Seiten von WPS, dazu drei eigene.
+**Ein vollständiges Schreibprogramm.** Acht Reiter nach dem Vorbild des
+WPS Writer — *Datei* öffnet als Backstage-Ansicht wie bei ONLYOFFICE —, zwei
+Oberflächen zur Wahl, Formatvorlagen, Tabellen, Spalten (live auf der Seite),
+Fuß- und Endnoten, Kommentare als Sprechblasen, Formularfelder, Kopf- und
+Fußzeilen, Seriendruck, Druckvorschau, PDF-Export. Die Optionen haben 17 Seiten
+in drei Zweigen: *Leichter lesen*, *Wie im WPS Writer* und *Nur bei Lunivo*.
+Das Hauptformat ist **DOCX**.
 
 **Was geschrieben wird, bleibt hier.** Kein Konto, keine Cloud, kein
 Mitlesen. Die Einstellungen liegen als lesbare Datei unter
-`~/.config/lunivo-office/einstellungen.conf`.
+`~/.config/Lunivo/Lunivo Writer.conf`.
 
 ---
 
@@ -127,8 +130,8 @@ darin, was er sucht.
 | 4 · [Die Oberfläche](docs/oberflaeche.md)                      | Band und Leisten, Lineale, Formatvorlagen, Anpassen |
 | 5 · [Die Einstellungen](docs/einstellungen.md)                 | Das Optionen-Fenster, Sprachen, Kennwort            |
 
-Dazu im Programm selbst: **☰ Menü → Hilfe → Handbuch** — ausführlicher als alles
-hier, mit Bildern und Tastenkürzeln.
+Dazu im Programm selbst: **☰ Menü → Hilfe → Handbuch** und **Datei → Hilfe**
+(Tastenkürzel) — die kurze Einführung für die Qt-Oberfläche.
 
 | Weiteres                                            |                                                   |
 | --------------------------------------------------- | ------------------------------------------------- |
@@ -137,19 +140,18 @@ hier, mit Bildern und Tastenkürzeln.
 | [Die lange Fassung](docs/LIESMICH.md)               | Alles ausführlich, auf Deutsch                    |
 | [Wie es entstanden ist](docs/ENTSTEHUNG.md)         | Die Geschichte dahinter                           |
 | [Wohin es geht](docs/RICHTUNG.md)                   | Was noch kommen soll                              |
-| [Der Aufbau des Bandes](docs/aufbau-band.md)        | Alle acht Reiter, mit Tabelle „wo finde ich was"  |
+| [Der Aufbau des Bandes](docs/aufbau-band.md)        | Alle Reiter, mit Tabelle „wo finde ich was" (Stand der früheren Fassung) |
 | [Der Aufbau der Optionen](docs/aufbau-optionen.md)  | Alle Seiten und Felder, ebenso                    |
-| [Der Ist-Stand am Stück](docs/aufbau-ist-stand.md)  | Bänder und Optionen zusammen, wie sie gerade sind |
+| [Der Ist-Stand am Stück](docs/aufbau-ist-stand.md)  | Bänder und Optionen zusammen (Stand der früheren Fassung) |
 | [Stand der Qt-Fassung (Bericht)](docs/BERICHT.md) | Was geht, was nicht, was ungetestet ist |
 | [Prüfbogen-Abgleich](docs/PRUEFBOGEN.md) | 415 Punkte, jeder mit Beleg |
 | [Aufbau der Qt-Fassung](docs/README.md) | Ordner und Zuständigkeiten |
 | [Installation](docs/INSTALLATION.md) | Pakete und optionale Bausteine |
 
-Diese drei werden **erzeugt**, nicht geschrieben —
-`python3 werkzeug/aufbau-schreiben.py` liest sie aus dem Programm. Die
-Vorgabe daneben, `WPS Office/Lunivo-Office_WPS-Writer-Struktur.md`, ist
-von Hand geschrieben und sagt, wie es sein **soll**. Weichen die beiden
-voneinander ab, zieht der Code nach — nie die Vorgabe.
+Diese drei wurden aus dem Programm **erzeugt**, nicht geschrieben, und halten
+den Stand der früheren Fassung fest. Wie die Qt-Fassung heute dasteht —
+Reiter für Reiter gegen den Prüfbogen —, steht in [PRUEFBOGEN.md](docs/PRUEFBOGEN.md)
+und [BERICHT.md](docs/BERICHT.md); beides wird mit `werkzeug/pruefbogen-*.py` aus dem Code abgeglichen.
 
 ## So sieht es aus
 
@@ -169,7 +171,7 @@ ihrer eigenen Schrift — man muss ihren Namen nicht kennen.
 
 ![Die Seite Schriftarten mit der Schriftwahl und den drei Knöpfen OpenDyslexic, Lexend und Atkinson Hyperlegible, jeder in seiner eigenen Schrift](assets/images/schriften.png)
 
-Die Optionen tragen **alle dreizehn Seiten** des WPS Writer, zweispaltig
+Die Optionen übernehmen die Seiten des WPS Writer, zweispaltig
 und kompakt wie dort — hier die Seite *Ansicht*.
 
 ![Die Seite Ansicht der Optionen, zweispaltig: Anzeigen, Druckoptionen, Formatierungszeichen, Menübandoptionen und Darstellung](assets/images/einstellungen.png)
@@ -219,7 +221,7 @@ nächsten, wenn gerade niemand da ist.
 SmartArt in Word-Qualität, 3D-Modelle, eingebettete Tabellenkalkulation,
 Design-Themes, Bildumfluss mit Ebenen, Endnoten-Querverweise nach APA im
 vollen Umfang, Barrierefreiheitsprüfung über das Geprüfte hinaus,
-Dokumentschutz mit Kennwort, Gliederungsansicht zum Verschieben,
+Gliederungsansicht zum Verschieben,
 Fenster teilen mit Synchronscrollen.
 
 Bei den meisten wäre der Aufwand groß und der Nutzen für einen Brief gering.
@@ -234,7 +236,7 @@ Die Prüfung und der Wortschatz stammen aus der
 über viele Fassungen gewachsen. Sie liegen hier als eigene Kopie: Dieses
 Programm ist eigenständig und braucht jenes Projekt nicht, um zu laufen.
 
-Die Wörterliste (`oberflaeche/daten/woerter.txt`, 355.324 Wörter) ist über viele Sitzungen
+Die Wörterliste (`src/lunivo_writer/resources/daten/woerter.txt`, 355.324 Wörter) ist über viele Sitzungen
 selbst aufgebaut worden. Sie stammt aus keiner fremden Quelle und steht
 deshalb wie der übrige Code unter MIT.
 
@@ -246,9 +248,11 @@ gewerblich. Der Urhebervermerk muss mitgehen.
 LanguageTool und LibreOffice stehen unter eigenen Lizenzen (LGPL-2.1 und
 MPL-2.0) und werden als eigene Prozesse aufgerufen, nicht eingebunden.
 
-Die Zeichnungen der Knöpfe stammen größtenteils aus
-[Lucide](https://lucide.dev) und stehen unter der ISC-Lizenz; der
-Lizenztext liegt in [docs/LIZENZ-LUCIDE.txt](docs/LIZENZ-LUCIDE.txt).
+Die Zeichnungen der Knöpfe stammen aus den
+[Fluent UI System Icons](https://github.com/microsoft/fluentui-system-icons)
+(Microsoft, MIT; Lizenztext in [assets/icons/fluent/LIZENZ.txt](assets/icons/fluent/LIZENZ.txt))
+und zum Teil aus [Lucide](https://lucide.dev) (ISC; Lizenztext in
+[docs/LIZENZ-LUCIDE.txt](docs/LIZENZ-LUCIDE.txt)).
 Ein paar sind von Hand gezeichnet — Kopfzeile, Fußzeile, Seitenzahl,
 Textbegrenzungen: die kennt nur ein Schreibprogramm.
 

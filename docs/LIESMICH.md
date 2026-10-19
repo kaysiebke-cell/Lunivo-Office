@@ -17,25 +17,20 @@ schickt.
 
 ## Starten
 
-    ./starten.sh
+    ./starten-qt.sh
 
-Das legt beim ersten Mal auch den Menüeintrag an. Danach steht
-*Lunivo-Office* im Startmenü unter „Büro". Einen alten Eintrag
-*Schreibprogramm* räumt der Start still mit weg.
+Beim ersten Mal legt das Skript eine eigene Python-Umgebung (`.venv`) an und
+installiert PySide6 und die übrigen Pakete; `./starten-qt.sh --eintrag` legt
+zusätzlich den Menüeintrag an, danach steht *Lunivo Writer* im Startmenü unter „Büro".
+Direkt aus dem Projektordner geht auch `python3 main.py`.
 
-Gebraucht wird dafür GTK mit WebKit:
+Gebraucht werden nur ein paar Qt-Systembibliotheken:
 
-    sudo apt install python3-gi gir1.2-webkit2-4.1
+    sudo apt install python3 python3-venv libxcb-cursor0 libegl1 libxkbcommon-x11-0 libxcb-icccm4 libxcb-keysyms1 libxcb-shape0
 
-Ohne das geht es auch im Browser — einmal einen Server starten und die
-Adresse aufmachen:
-
-    python3 -m http.server 8322
-    # dann http://localhost:8322/ öffnen
-
-Der Umweg über einen Server statt `file://` hat einen Grund: Unter `file://`
-gilt die Seite nicht als sicherer Ursprung, und dann merkt sich das Programm
-nichts.
+Das Programm ist eine **native Qt-Anwendung** — kein Browser, kein WebKit und kein
+Server. Einzelheiten und die freiwilligen Teile (LibreOffice, LanguageTool, Piper, Ollama):
+[INSTALLATION.md](INSTALLATION.md).
 
 ## Was es kann
 
@@ -64,9 +59,8 @@ ordnet um. Jedes bringt seine ganze Seite mit — Papier, Ränder, Kopf- und
 Fußzeile, Abschnitte, Formatvorlagen. Was dem Menschen gehört, wechselt
 nicht mit: Vergrößerung, Helligkeit, welche Leisten er mag.
 
-Auch mehrere **Fenster** kommen einander nicht ins Gehege, obwohl sie sich
-denselben Server teilen: Jedes nimmt beim Aufgehen einen Platz und schreibt
-nur dort hinein.
+Auch mehrere **Fenster** (*Ansicht ▸ Fenster ▸ Neues Fenster*) kommen einander nicht ins Gehege:
+Jedes hat seine eigene Reiterzeile, und was im einen geschrieben wird, steht nur dort.
 
 **Prüfen.** Der Knopf *Prüfen* (oder F7) legt jeden Fund als eigene Karte in
 die Seitenleiste. Drei Sorten, und welche es ist, steht als Wort auf der
@@ -115,42 +109,30 @@ Seitenumbrüche.
 
 ## Wie die Menüs aufgebaut sind
 
-Neun Menüs, und sie tragen dieselben Namen wie die Reiter im Register —
+Acht Reiter und neun Menüs (*Sendungen* gehört dazu, ist im Register aber erst nach *Anpassen* sichtbar), und sie tragen dieselben Namen —
 die Vorlage dafür ist WPS Writer. Was zusammengehört, steht in einem
 Untermenü statt untereinander: Das *Format*-Menü hatte zwischenzeitlich
 einunddreißig Zeilen, und darin sucht man, statt zu finden.
 
-    Datei · Start · Einfügen · Seitenlayout · Referenzen
-    Überprüfen · Schreibhilfe · Sendungen · Ansicht
+    Datei · Start · Einfügen · Seitenlayout · Verweise
+    Überprüfen · Schreibhilfe · Ansicht · (Sendungen)
 
 Makros gibt es nicht. In einem Textdokument wird nicht programmiert —
 alles, was damit zu tun hatte, ist wieder heraus.
 
-## Der Motor für Word und PDF
+## Word-Dateien und PDF
 
-Word-Dateien und PDF macht dieses Programm nicht selbst. Die Filter, die eine
-Word-Datei richtig lesen, sind das Ergebnis von Jahrzehnten; sie nachzubauen
-wäre aussichtslos. Also erledigt es **LibreOffice im Hintergrund** — ohne
-Fenster, ohne dass man es merkt.
+**DOCX** liest und schreibt das Programm **selbst** (python-docx und eigenes XML) — es ist das Hauptformat.
+Auch PDF entsteht ohne Fremdprogramm: Das Programm rechnet den Seitenumbruch selbst und schreibt das PDF
+mit Lesezeichen, Kommentaren und Fußnoten-Verknüpfungen.
 
-Das Programm bringt seinen eigenen mit. Er liegt ausgepackt unter
+**LibreOffice im Hintergrund** (ohne Fenster) braucht es nur für `.odt`, `.doc` und `.rtf`. Es wird
+benutzt, wenn es auf dem Rechner installiert ist; ist es nicht da, sagen die Menüpunkte das — statt
+stillschweigend eine kaputte Datei zu schreiben. Ein eigener mitgelieferter Motor wie früher
+(gut 700 MB) ist nicht mehr nötig.
 
-    ~/.local/share/schreibprogramm/libreoffice/
-
-und wird bevorzugt benutzt. Ist er nicht da, nimmt das Programm das
-LibreOffice des Systems. Ist auch das nicht da, sagen die beiden Menüpunkte
-das — statt stillschweigend eine kaputte Datei zu schreiben.
-
-Der eigene Motor hat einen Grund: So hängt das Programm nicht daran, was
-gerade installiert ist, und ein Update des Systems nimmt ihm nichts weg.
-Er belegt allerdings gut 700 MB. Wer das nicht will, löscht den Ordner —
-dann übernimmt das LibreOffice des Systems.
-
-Gebraucht wird der Motor nur für `.docx`, `.doc`, `.rtf` und PDF. Alles
-andere — schreiben, prüfen, `.odt`, `.fodt`, `.html`, `.txt` — läuft ohne ihn.
-
-Geöffnet werden alle vier. *Drucken* (Strg+P) druckt das Blatt ohne Menü,
-Leiste und Seitenleiste — und über „In Datei drucken" wird daraus ein PDF.
+Gelesen werden `.docx`, `.odt`, `.doc`, `.rtf`, `.html` und `.txt`. *Drucken* (Strg+P) druckt das Blatt ohne
+Menü, Leiste und Seitenleiste; was dabei nicht übernommen werden kann, meldet ein Bericht.
 
 ## Tasten
 
@@ -175,105 +157,28 @@ Leiste und Seitenleiste — und über „In Datei drucken" wird daraus ein PDF.
 
 ## Was wo liegt
 
-    start.py          das Fenster (GTK + WebKit), der kleine Server,
-                      die Schriftliste und der Weg zu LibreOffice
-    starten.sh        startet es und schreibt den Menüeintrag neu
+Die ausführliche Fassung steht in [README.md](README.md) (Aufbau der Qt-Fassung) und im
+Kapitel [Der Aufbau des Projekts](projektaufbau.md). Kurz:
 
-    oberflaeche/      alles, was im Fenster zu sehen ist — und nur das
-                      liefert der kleine Server aus
-      index.html      die Oberfläche
-      css/programm.css  das Aussehen
-      js/programm.js  Menüs, Werkzeuge, Seitenleiste, Statuszeile
-      js/dokument.js  das Dokument: lesen, zeigen, ersetzen, formatieren
-      js/dokumente.js welche Dokumente offen sind, welches vorn liegt —
-                      die Reiterzeile oben und die Trennung der Fenster
-      js/dokumentmodell.js  Abschnitte, Seitenaufbau, Kopf- und Fußzeilen
-      js/language-bridge.js  hält den Fehlerstand: welche Fassung geprüft
-                      wurde, was weggewinkt und was angenommen ist
-      js/dateien.js   öffnen und speichern — .odt, .fodt, .docx, .doc,
-                      .rtf, .pdf, .epub, .html, .txt
-      js/pruefung.js  die Prüfung selbst
-      js/ki.js        Claude und Ollama, das Gedächtnis, die Sicherung
-      js/kiteil.js    die KI im Programm: korrigieren, vorschlagen,
-                      übersetzen, die Marken „Für wen?"
-      js/drucken.js   Seitenumbruch, Druckvorschau, Druckfenster
-      js/referenzen.js  Fußnoten, Zitate, Verzeichnisse
-      js/bausteine.js Textbausteine und die Lücken zum Ausfüllen
-      js/vorlagen.js  die Seite „Neu" mit den Vorlagen
-      js/einstellungen.js  die Einstellungsseite
-      daten/regeln.js   der Wortschatz der Prüfung
-      daten/woerter.txt die deutsche Wörterliste (355.324 Wörter)
-
-    werkzeug/         Prüfungen für den Quelltext, nicht für den Text
-      namen-pruefen.py  sucht Namen, die zweimal im selben Bereich stehen
-      haken-an.sh       schaltet die Prüfung vor jedem Commit ein
-      git-haken/        die Haken selbst — im Projekt, nicht in .git
-
-    symbole/icon.svg  das Symbol des Programms
-    symbole/          dasselbe in allen Größen (16 bis 512)
-    bilder/marke.png  das freigestellte Zeichen, aus dem sie gerechnet sind
-    doku/             diese Seite, ENTSTEHUNG und RICHTUNG
+    main.py, starten-qt.sh   starten das Programm
+    src/lunivo_writer/       das Programm: core (Kern), ui (alles Sichtbare: ribbon, document,
+                             sidebar, contextual, dialogs, statusbar), editor, models, services,
+                             ai, proofing, resources
+    assets/                  Zeichnungen (Fluent, Lucide), Logo, Bilder
+    docs/                    diese Seite, ENTSTEHUNG, RICHTUNG, die Mini-Dateien, Bericht, Prüfbogen
+    werkzeug/                Abgleich-Skripte (Prüfbogen gegen das Programm)
+    tests/                   automatische Tests
 
 ## Prüfläufe
 
-Drei Stücke prüfen sich selbst, ohne Fenster und ohne Browser:
+Die Tests laufen ohne Fenster:
 
-    node oberflaeche/js/dokumente.test.js        die offenen Dokumente
-    node oberflaeche/js/dokumentmodell.test.js   Abschnitte und Seitenaufbau
-    node oberflaeche/js/language-bridge.test.js  der Fehlerstand
+    ./starten-qt.sh --test
 
-Sie brauchen nichts als Node und laufen in Sekunden. Was sie nicht prüfen
-können, ist alles, was ein Fenster braucht — dafür gibt es keinen Ersatz
-außer Hinsehen.
-
-## Namen prüfen, bevor man sich wundert
-
-    ./werkzeug/namen-pruefen.py
-
-In JavaScript ist das hier kein Fehler, den irgendwer meldet:
-
-    function aenderungen() { ... }          // die Liste der Änderungen
-    function aenderungen(alt, neu) { ... }  // die Rechnung, die vergleicht
-
-Die spätere Deklaration gewinnt stillschweigend. Genau so waren „Nächste
-Änderung", „Annehmen" und „Ablehnen" monatelang kaputt: Sie riefen die
-Vergleichsrechnung ohne Argumente auf, und die warf jedes Mal — in die
-Konsole, wo es niemand sieht.
-
-Bei `const` und `let` fällt so etwas auf, weil das Programm gar nicht
-erst lädt. Bei `function` und `var` nicht. Und über Dateigrenzen hinweg
-fällt gar nichts auf: Klassische Skripte teilen sich einen Namensraum,
-also kann eine Datei einer anderen einen Namen wegnehmen.
-
-Der Prüfer geht den Quelltext Zeichen für Zeichen durch und zählt die
-Klammertiefe mit — Zeichenketten, Kommentare und reguläre Ausdrücke
-werden übersprungen. Er meldet, was zweimal im selben Block steht, und
-sagt dazu, ob es beim Laden auffällt oder eben nicht. Er gibt 1 zurück,
-wenn er etwas findet.
-
-Er kann sich irren, und zwar zugunsten von zu viel: Wer einen Treffer
-nicht versteht, sieht sich die genannten Zeilen an.
-
-### Vor jedem Commit von selbst
-
-    ./werkzeug/haken-an.sh
-
-Danach läuft die Prüfung bei jedem `git commit`. Findet sie etwas, wird
-nicht committet, und die Fundstellen stehen da. Wenn es Absicht ist:
-`git commit --no-verify`. Abschalten mit `./werkzeug/haken-an.sh --weg`.
-
-Geprüft wird der Stand, der **wirklich committet wird** — nicht der, der
-gerade auf der Platte liegt. Wer nur die Hälfte seiner Änderungen mit
-`git add` vormerkt, bekäme sonst grünes Licht für etwas, das so nie
-geprüft wurde.
-
-Der Haken liegt in `werkzeug/git-haken/` und damit im Projekt. Git sucht
-seine Haken sonst in `.git/hooks`, und was dort liegt, hat nur der eine
-Rechner, auf dem es angelegt wurde — deshalb der Umweg über
-`core.hooksPath`. Wer mitarbeitet, ruft `haken-an.sh` einmal auf.
-
-Ein Commit ohne JavaScript kostet nichts: Dann läuft die Prüfung gar
-nicht erst an.
+Sie prüfen den Editor, DOCX-Lesen und -Schreiben (auch gegen LibreOffice), das Band, die
+Backstage-Ansicht, die Schreibhilfe, PDF und Druck. Was sie nicht prüfen können, ist alles,
+was einen echten Bildschirm, Drucker oder Dienst braucht — dafür gibt es keinen Ersatz
+außer Hinsehen. Welche Punkte belegt und welche offen sind, steht in [PRUEFBOGEN.md](PRUEFBOGEN.md).
 
 ## Das Symbol
 
@@ -295,8 +200,8 @@ Es liegt in neun Größen bereit statt nur in einer. Eine große Datei würde
 davon ab, wer rechnet. Die neun Dateien sind einmal sauber gerechnet und bleiben
 überall dieselben.
 
-`./starten.sh` legt alle Größen unter `~/.local/share/icons/hicolor/` ab.
-`./starten.sh --weg` räumt sie wieder fort.
+`./starten-qt.sh --eintrag` legt alle Größen unter `~/.local/share/icons/hicolor/` ab.
+`./starten-qt.sh --weg` räumt sie wieder fort.
 
 ## Herkunft
 
@@ -345,23 +250,17 @@ bleibt bewusst draußen; er gehört nicht in einen Text, den man verschickt.
 
 ## Einstellungen
 
-Über **Schreibhilfe → Einstellungen** oder **F9**. Vier Gruppen: KI-Werkzeuge
-(Schlüssel, Modell, Verbrauch, Zielsprache), Beim Schreiben
-(Textbegrenzungen, rote Wellenlinien), Gedächtnis und Darstellung
-(Schriftgröße, hell/dunkel).
+Über **Datei ▸ Erweiterte Einstellungen**, **☰ Menü ▸ Optionen** oder **F9**. Drei Zweige:
+*Leichter lesen*, *Wie im WPS Writer* und *Nur bei Lunivo* (Schreibhilfe und KI, Gedächtnis, Erweitert).
+Mehr dazu in [einstellungen.md](einstellungen.md).
 
 ## Was noch fehlt
 
 Der Zurück-Eimer der App — dort landet gelöschter Text und lässt sich
 zurückholen. Hier tut das Strg+Z, aber nur solange das Fenster offen ist.
 
-Kopf- und Fußzeile erscheinen im Blatt und im Druck, gehen aber noch nicht
-in die `.odt`.
-
-Aus dem Funktionsumfang von Word fehlen mit Absicht: SmartArt, Piktogramme,
-3D-Modelle, Screenshots und eingebettete Tabellenblätter; Design-Themes; das
-Anordnen von Bildern mit Textumbruch und Ebenen; Zitate und
-Literaturverzeichnis nach APA oder MLA; Endnoten; Umschläge und Etiketten;
-die Barrierefreiheitsprüfung; der Dokumentschutz; die Gliederungsansicht;
-Fenster teilen und nebeneinander mit Synchronscrollen. Bei den meisten wäre
-der Aufwand groß und der Nutzen für einen Brief gering.
+Mit Absicht fehlen: 3D-Modelle, eingebettete Tabellenblätter und Design-Themes.
+Noch offen sind SmartArt, die Zeichen-, Diagramm- und Gleichungswerkzeuge, das Anlegen eigener
+Formatvorlagen und Fenster teilen mit Synchronscrollen. Wo die Qt-Fassung steht — Punkt für Punkt
+gegen den Prüfbogen —, steht in [PRUEFBOGEN.md](PRUEFBOGEN.md) und [BERICHT.md](BERICHT.md). Bei den meisten
+fehlenden Dingen wäre der Aufwand groß und der Nutzen für einen Brief gering.

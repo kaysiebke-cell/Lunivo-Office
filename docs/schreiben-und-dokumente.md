@@ -11,8 +11,8 @@ Zitate mit Quellenverwaltung, Seriendruck, Umschläge, Etiketten.
 
 **Mehrere Dokumente in einem Fenster.** Ganz oben steht für jedes offene
 Dokument ein Reiter — wie im WPS Writer. `Strg+N` legt eins an, `Strg+W`
-schließt es, `Strg+Tab` wechselt; Ziehen ordnet um, die mittlere Maustaste
-schließt. Ein Punkt auf dem Reiter heißt: Hier steht etwas, das in keiner
+schließt es, `Strg+Tab` wechselt; Ziehen ordnet um, das **×** am Reiter
+schließt. Ein Punkt (●) auf dem Reiter heißt: Hier steht etwas, das in keiner
 Datei steht.
 
 Jedes Dokument bringt seine ganze Seite mit — Papierformat, Ränder, Kopf-
@@ -24,7 +24,7 @@ nicht mit: Vergrößerung, Helligkeit, welche Leisten er mag.
 eigener Reiterzeile. Auch die kommen einander nicht ins Gehege: Was im
 einen geschrieben wird, steht nur dort.
 
-**Nicht vor dem leeren Blatt stehen.** *☰ Menü ▸ Neu ▸ Neu aus Vorlage* legt alle
+**Nicht vor dem leeren Blatt stehen.** *Datei ▸ Von Vorlage erstellen* (oder *☰ Menü ▸ Neu ▸ Neu aus Vorlage*) legt alle
 Vorlagen als Blätter nebeneinander, mit Suchfeld — so, wie man es aus Word
 kennt. Zehn Gerüste sind dabei: Brief, Brief an eine Behörde, Widerspruch,
 Bewerbung, Lebenslauf, Krankmeldung, Kündigung, Rechnung, Einladung,
@@ -43,33 +43,28 @@ bekommt.
 Die Gerüste werden **nicht** in `~/Vorlagen` geschrieben — der Ordner
 gehört dem Menschen. Was dort liegt, steht im zweiten Reiter daneben.
 
-**Speichern.** `.odt`, `.docx`, `.doc`, `.rtf`, `.fodt`, `.html`, `.txt`,
-PDF und EPUB. Word-Dateien öffnen und wieder als Word speichern.
+**Speichern.** Das Hauptformat ist **`.docx`**. Dazu `.odt`, `.doc`, `.rtf`, `.txt`, `.html` (Webseite),
+PDF (mit Lesezeichen) und ein Bild je Seite (PNG) — alle unter *Datei ▸ Speichern als*.
+Word-Dateien öffnen und wieder als Word speichern; was dabei nicht übernommen werden kann,
+meldet ein Bericht, statt es still zu verlieren.
 
 **Drucken.** Das Programm rechnet den Seitenumbruch selbst aus, statt ihn
-dem Browser zu überlassen: Es füllt ein Blatt, bis es voll ist, und fängt
+dem Textfeld zu überlassen: Es füllt ein Blatt, bis es voll ist, und fängt
 ein neues an. Kopfzeile, Fußzeile und die *wirkliche* Seitenzahl stehen
 deshalb auf jeder Seite. Die **Druckvorschau** zeigt den ganzen Stapel zum
 Durchblättern — eine, zwei oder vier Seiten nebeneinander, oder als
 aufgeschlagenes Buch.
 
-Das **Druckfenster** ist aufgeteilt wie im Writer: links das Blatt, rechts
-in drei Reitern die Einstellungen, unten die Knöpfe. Seitenbereich („1-3,
-5"), Kopien, Sortieren, nur gerade oder ungerade Blattseiten, Seiten pro
-Blatt. Dazu, was auf das Papier kommt: Seitenhintergrund, Bilder,
-Formularfelder, Kommentare, Text schwarz drucken, leere Seiten.
+Das **Druckfenster** ist das des Systems (Qt, mit CUPS als Druckerdienst): Drucker, Seitenbereich
+(„1-3, 5"), Kopien, Sortieren, beidseitiger Druck, Papierformat. Was auf das
+Papier kommt, steht unter *Optionen ▸ Drucken*: Seitenhintergrund, leere Seiten, ausgeblendeter
+Text, Zeichnungsobjekte, Hervorhebungen, Textbegrenzungen, Zuschnittsmarken, bei Bedarf
+*nur Formulardaten* für vorgedruckte Formulare — und, wenn Sprechblasen an sind, die Papierausrichtung
+dafür. Farbige Silben lassen sich ebenfalls mitdrucken.
 
-Im dritten Reiter steht der **Drucker** selbst — Name, Zustand, Typ, Ort,
-mit Papierformat, beidseitigem Druck, Schacht und Auflösung. Diese Angaben
-sind nicht erfunden: Sie kommen von CUPS, dem Druckerdienst des Systems,
-derselben Quelle, aus der auch LibreOffice sie hat. Meldet ein Drucker
-keine Duplexeinheit, bleibt der Schalter dafür grau. Gedruckt wird direkt
-über den Druckerdienst; ist keiner eingerichtet, öffnet das Fenster des
-Systems.
-
-**Zuletzt verwendet.** Unter *Datei* stehen die letzten zehn Dokumente mit
-Namen — ein Klick, und das Blatt ist wieder da. Wer eine Datei inzwischen
-verschoben oder weggeworfen hat, findet sie nicht mehr in der Liste: Geprüft
+**Zuletzt verwendet.** Unter *Datei ▸ Zuletzt benutzte Dokumente* stehen die letzten Dokumente mit
+Namen und Ordner — ein Klick, und das Blatt ist wieder da. Wer eine Datei inzwischen
+verschoben oder weggeworfen hat, findet sie ausgegraut: Geprüft
 wird beim Aufklappen, nicht beim Merken.
 
 ---

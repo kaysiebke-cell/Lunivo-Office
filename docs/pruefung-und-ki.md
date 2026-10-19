@@ -25,7 +25,10 @@ nicht — der Klang schon (Kölner Phonetik).
 **KI, wenn man will.** Korrigieren, Umformulieren, Übersetzen — über Claude
 im Netz oder über ein Modell auf dem eigenen Rechner (Ollama). Die Korrektur
 richtet sich danach, **für wen** der Text ist: Ein Brief ans Amt wird anders
-korrigiert als eine Nachricht an einen Freund.
+korrigiert als eine Nachricht an einen Freund. Anbieter und Modelle legt man unter
+*Schreibhilfe ▸ KI-Konfiguration* oder in den Optionen fest; ein eigener Anbieter
+lässt sich hinzufügen, und *Text in Bild* erzeugt aus einem Text ein Bild. Die KI ist
+freiwillig: Ohne Schlüssel oder Ollama bleiben ihre Knöpfe grau, alles Übrige läuft.
 
 ---
 

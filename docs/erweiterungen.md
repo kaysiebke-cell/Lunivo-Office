@@ -1,15 +1,14 @@
 # Was zusätzlich geholt wird
 
-Drei Dinge liegen außerhalb des Programms, weil sie zu groß sind. Ohne sie läuft alles Übrige weiter.
+Vier Dinge liegen außerhalb des Programms, weil sie zu groß sind. Ohne sie läuft alles Übrige weiter.
 
-Zwei Dinge liegen **nicht** in diesem Verzeichnis, weil sie zu groß sind, und
-werden bei Bedarf nach `~/.local/share/schreibprogramm/` gelegt — der
-Ordner behält seinen alten Namen mit Absicht, denn dort liegt auch alles
-Geschriebene und Gelernte:
+Sie liegen **nicht** im Projektordner und werden bei Bedarf unter `~/.local/share/` abgelegt
+(LanguageTool unter `~/.local/share/Lunivo Writer/languagetool` — dort liegt auch alles
+Geschriebene und Gelernte):
 
 | | wofür | Größe | nötig? |
 |---|---|---|---|
-| LibreOffice | Word-Dateien, PDF, EPUB | ~700 MB | nur dafür |
+| LibreOffice | ODT, DOC und RTF öffnen und speichern | ~700 MB | nur dafür |
 | [LanguageTool](https://languagetool.org/) | „Gründlich prüfen" | ~400 MB | nein, freiwillig |
 | [Piper](https://github.com/rhasspy/piper) + Thorsten | eine Stimme, die nicht nach Maschine klingt | ~90 MB | nein, `./stimme-holen.sh` |
 | Schriften zum leichteren Lesen | OpenDyslexic, Lexend, Atkinson Hyperlegible | ~4 MB | nein, `./schrift-holen.sh` |
@@ -17,7 +16,7 @@ Geschriebene und Gelernte:
 Ist LibreOffice im System installiert, genügt das auch. LanguageTool läuft
 als **eigener Prozess** — seine LGPL-Lizenz berührt dieses Programm nicht.
 
-Schreiben, Prüfen, Vorlesen und die ODF-Formate gehen ohne alles davon.
+Schreiben, Prüfen, Speichern als DOCX, PDF-Export und Drucken gehen ohne alles davon.
 
 **Die Schriften** landen unter `~/.local/share/fonts/lunivo-office` und
 stehen danach oben in der Schriftliste unter *Leichter zu lesen*:

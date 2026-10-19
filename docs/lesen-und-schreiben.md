@@ -6,15 +6,27 @@ Wofür Lunivo gebaut ist: die Lesehilfe, die Schriften, das Vorlesen.
 Buchstaben sind unten schwerer als oben, damit sie nicht kippen, und b/d
 und p/q sehen verschieden aus statt gespiegelt gleich. Georgia steht als
 Rückfall dahinter, falls sie auf einem Rechner fehlt. Daneben liegen
+**Lexend** und **Atkinson Hyperlegible**; in den Optionen unter
+*Schriftarten* stehen alle drei als Knöpfe, jeder in seiner eigenen
+Schrift und mit einem Satz dazu, was sie tut — man muss ihren Namen nicht
+kennen.
 
 **Alles an einer Stelle.** Der Reiter **Schreibhilfe** trägt, was das
 Lesen und Schreiben erleichtert: Lesehilfe, Zeilenfokus, Lesemodus,
 Schriftwahl, Prüfung, Wortvorhersage, AutoKorrektur, Vorlesen,
-Silbentrennung, Übersetzen, Thesaurus, KI. Vorher lag das über fünf
+farbige Silben, Silbentrennung, Übersetzen, Thesaurus, KI. Vorher lag das über fünf
 Reiter verstreut — jedes an seinem sachlich richtigen Platz, zusammen
-aber nur zu finden, wenn man wusste, wo man suchen muss. Die
+aber nur zu finden, wenn man wusste, wo man suchen muss.
 
-**Lesehilfe** hat dazu die Taste **F2**.
+Die **Lesehilfe** schaltet man im Reiter *Schreibhilfe ▸ Lesen* ein; ihre Einstellungen
+(Papierton, Buchstaben-, Wort- und Zeilenabstand, Zeilenfokus) stehen in den Optionen
+unter *Leichter lesen ▸ Lesehilfe* (**F9**).
+
+**Farbige Silben.** *Silben farbig* färbt die Silben eines Worts abwechselnd ein — nur in
+der Anzeige: Das Dokument selbst bleibt unverändert. *Silben einstellen …* legt fest, welche
+Farben und wie viele es sind und ob die Silben auch gedruckt und im PDF so erscheinen sollen.
+Die Silben erkennt das Programm nach deutschen Sprechsilben-Regeln, nicht nach
+Trennstellen; bei seltenen Fremd- und Eigennamen kann es danebenliegen.
 
 **Vorlesen** (F4). Über einen Fehler liest das Auge hinweg; das Ohr stolpert
 darüber. Tempo einstellbar.
@@ -39,11 +51,6 @@ Es gibt sieben deutsche Stimmen, männlich und weiblich:
 Nach jedem Laden kommt eine Probe. Gewählt wird unter *Schreibhilfe ▸
 Vorlesen ▸ Stimme und Tempo*; die espeak-Stimmen bleiben darunter stehen.
 Zum Entfernen genügt es, die `.onnx`-Datei zu löschen.
-
-**Lexend** und **Atkinson Hyperlegible**; in den Optionen unter
-*Schriftarten* stehen alle drei als Knöpfe, jeder in seiner eigenen
-Schrift und mit einem Satz dazu, was sie tut — man muss ihren Namen nicht
-kennen.
 
 ---
 
