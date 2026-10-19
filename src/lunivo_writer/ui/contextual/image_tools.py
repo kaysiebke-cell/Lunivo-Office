@@ -24,3 +24,10 @@ FORMTOOLS = {"name": "Form- und WordArt-Tools", "kontext": "form", "gruppen": [
     {"name": "Anordnen", "knoepfe": [_k("gruppieren", "Gruppieren", "gruppieren"),
                                      _k("gruppieren", "Gruppierung aufheben", "gruppeAufheben"),
                                      _k("textflussumbruch", "Textumbruch / Position", "anordnen")]}]}
+
+
+SMARTARTTOOLS = {"name": "SmartArt-Tools", "kontext": "smartart", "gruppen": [
+    {"name": "Inhalt", "knoepfe": [_k("notiz", "Text und Layout bearbeiten …", "smartartText", True)]},
+    {"name": "Darstellung", "knoepfe": [_k("smartart", "Layout ändern", klappe="smartartLayout", gross=True),
+                                         _k("farbe", "Farben ändern", klappe="smartartFarben", gross=True)]},
+    {"name": "Position", "knoepfe": [_k("textflussumbruch", "Textumbruch / Position", "anordnen")]}]}

@@ -85,6 +85,42 @@ class FormDialog(QDialog, VorschauMixin):
         self._zeige(self.bild())
 
 
+class SmartArtDialog(QDialog, VorschauMixin):
+    """SmartArt anlegen oder bearbeiten: Layout, Farben und der eingerückte Text (zwei Leerzeichen = eine Ebene tiefer)."""
+    def __init__(self, parent, daten: dict | None = None):
+        super().__init__(parent)
+        from lunivo_writer.editor import smartart as SA
+        self.SA = SA
+        self.setWindowTitle("SmartArt")
+        v = QVBoxLayout(self); f = QFormLayout(); v.addLayout(f)
+        daten = daten or {}
+        self.layout_ = QComboBox(); self.layout_.addItems(SA.LAYOUTS)
+        self.layout_.setCurrentText(daten.get("layout", "Prozess"))
+        self.farben = QComboBox(); self.farben.addItems(list(SA.FARBEN))
+        self.farben.setCurrentText(daten.get("farben", "Blau"))
+        self.text = QPlainTextEdit(daten.get("text") or SA.MUSTER[self.layout_.currentText()])
+        self.text.setMinimumHeight(110)
+        f.addRow("Layout", self.layout_); f.addRow("Farben", self.farben); f.addRow("Text (eine Zeile je Punkt)", self.text)
+        self._vorschau_bauen(v)
+        v.addWidget(_ok(self))
+        self.layout_.currentTextChanged.connect(self._layout)
+        self.farben.currentTextChanged.connect(self.aktualisieren)
+        self.text.textChanged.connect(self.aktualisieren)
+        self._eigener_text = bool(daten.get("text"))
+        self.aktualisieren()
+
+    def _layout(self, name):
+        if not self._eigener_text or self.text.toPlainText() in self.SA.MUSTER.values():
+            self.text.blockSignals(True); self.text.setPlainText(self.SA.MUSTER.get(name, "")); self.text.blockSignals(False)
+        self.aktualisieren()
+
+    def daten(self):
+        return {"layout": self.layout_.currentText(), "farben": self.farben.currentText(), "text": self.text.toPlainText()}
+
+    def aktualisieren(self, *_):
+        self._zeige(self.SA.zeichnen(self.daten()))
+
+
 class WordArtDialog(QDialog, VorschauMixin):
     def __init__(self, parent):
         super().__init__(parent)

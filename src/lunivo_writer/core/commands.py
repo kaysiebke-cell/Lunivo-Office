@@ -830,6 +830,41 @@ class Befehle:
             if d.exec():
                 self._bild_einfuegen(d.bild(), f"Form: {d.art.currentText()}", "form", d.daten())
 
+    def smartart(self, k=None):
+        if self.ed:
+            from lunivo_writer.editor import smartart as SA
+            from lunivo_writer.ui.dialogs.einfuegen_dialoge import SmartArtDialog
+            d = SmartArtDialog(self.w)
+            if d.exec():
+                SA.einfuegen(self.ed, d.daten())
+
+    def smartartText(self, k=None):
+        if not self.ed:
+            return
+        from lunivo_writer.editor import smartart as SA
+        from lunivo_writer.ui.dialogs.einfuegen_dialoge import SmartArtDialog
+        daten = SA.daten_der_auswahl(self.ed)
+        if daten is None:
+            self.w.statusBar().showMessage("Bitte zuerst ein SmartArt-Bild auswählen (Schreibmarke davor oder Bild markieren).", 5000)
+            return
+        d = SmartArtDialog(self.w, daten)
+        if d.exec():
+            SA.aendern(self.ed, **d.daten())
+
+    def menue_smartartLayout(self):
+        from lunivo_writer.editor import smartart as SA
+        m = QMenu()
+        for n in SA.LAYOUTS:
+            m.addAction(n, lambda _=False, n=n: self.ed and SA.aendern(self.ed, layout=n))
+        return m
+
+    def menue_smartartFarben(self):
+        from lunivo_writer.editor import smartart as SA
+        m = QMenu()
+        for n, f in SA.FARBEN.items():
+            m.addAction(_farbfeld(f[0]), n, lambda _=False, n=n: self.ed and SA.aendern(self.ed, farben=n))
+        return m
+
     def wordart(self, k=None):
         if self.ed:
             from lunivo_writer.ui.dialogs.einfuegen_dialoge import WordArtDialog

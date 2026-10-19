@@ -1,6 +1,6 @@
 # Menüstruktur ↔ Programm
 
-**✅ 71 · ◐ 26 · ⬜ 13** (zusammengefasste Zeilen).
+**✅ 71 · ◐ 27 · ⬜ 12** (zusammengefasste Zeilen).
 Erzeugt von `werkzeug/menuestruktur-abgleich.py`. Die vorgegebene Struktur (12 Bereiche) Punkt für Punkt gegen das Programm: ✅ vorhanden · ◐ teilweise oder anders gelöst · ⬜ fehlt. Reiter-Reihenfolge und -Anordnung folgen den WPS-Bildschirmfotos; wo die Struktur davon abweicht (eigener KI-Reiter, Rechtschreibung unter Überprüfen), gilt die Anordnung nach WPS: Rechtschreibung und KI stehen im Reiter Schreibhilfe.
 
 ## 1. Datei
@@ -49,7 +49,7 @@ Erzeugt von `werkzeug/menuestruktur-abgleich.py`. Die vorgegebene Struktur (12 B
 | ✅ | Tabellen: Raster · Schnelltabelle | Einfügen ▸ Tabellen |
 | ⬜ | Tabellen: einzeichnen · aus Text · Excel-Objekt | Excel-/Tabellenblatt-Objekte sind per Projektvorgabe ausgeschlossen |
 | ✅ | Illustrationen: Bild aus Datei · Formen · Diagramm · Screenshot | Einfügen ▸ Illustrationen (+ Piktogramm) |
-| ⬜ | Illustrationen: Online-Bilder (optional) · SmartArt | SmartArt: Knopf ausgegraut (Batch 6) |
+| ◐ | Illustrationen: Online-Bilder (optional) · SmartArt | SmartArt: 5 Layouts, bearbeitbar (SmartArt-Tools); in DOCX ein Bild; Online-Bilder fehlen |
 | ✅ | Illustrationen: Bildunterschrift · Alternativtext | Verweise ▸ Beschriftung; Bildtools ▸ Alternativtext |
 | ✅ | Links: Hyperlink einfügen/bearbeiten/entfernen · Textmarke · Querverweis | Einfügen ▸ Links; Rechtsklick auf den Link |
 | ✅ | Kopf- und Fußzeile: Kopfzeile · Fußzeile · Seitenzahl | Einfügen ▸ Kopf- und Fußzeile; Rand-Doppelklick |

@@ -47,7 +47,7 @@ s("SCHREIBHILFE (Lunivo)", "KI > Vorschläge; Anzeigen > Optionen", OK, "Seitenl
 s("SENDUNGEN (Lunivo)", "Umschlag; Etiketten; Seriendruck-Assistent; Seriendruckfeld; Adressblock; Regeln; Ergebnisse anzeigen; Formular > Kontrollkästchen; Formular > Schaltfläche", OFFEN, "Reiter „Sendungen“ nicht in der neuen Struktur; Daten in register.json erhalten")
 s("KONTEXTTABELLEN", "Tabellenwerkzeuge", TEIL, "Reiter erscheint in der Tabelle (test_tabellentools_wirken); ohne Tabellenformatvorlagen")
 s("KONTEXTTABELLEN", "Kopf- und Fußzeilenwerkzeuge", TEIL, "Reiter vorhanden, Kopf/Fuß über Dialog statt am Blatt")
-s("KONTEXTTABELLEN", "Zeichentools; Diagrammtools; SmartArt-Tools; Gleichungswerkzeuge", OFFEN, "nicht übertragen")
+s("KONTEXTTABELLEN", "Zeichentools; Diagrammtools; SmartArt-Tools; Gleichungswerkzeuge", TEIL, "SmartArt-Tools ja (ui/contextual/image_tools.py); Zeichen-, Diagramm- und Gleichungswerkzeuge nicht")
 # ---------------------------------------------------------------- LANGUAGE BRIDGE
 LB = "services/writing_assistant.py"
 s("LANGUAGE BRIDGE (Architektur)", "Zentrale Sprachkontext-Verwaltung; Keine parallelen Wörterbücher; Benutzerwörter zentral speichern; Akzeptierte Korrektionen speichern", OK, LB + ", storage/gelernt.py")
@@ -167,7 +167,7 @@ s("EINFÜGEN", "Formel", TEIL, "einfache Schreibweise (hoch/tief, Wurzel, Bruch,
 s("EINFÜGEN", "Initiale", TEIL, "erster Buchstabe vergrößert in der Zeile; hängende Initiale kennt Qt nicht")
 s("EINFÜGEN", "Textfeld", TEIL, "einzellige Tabelle mit Rahmen; frei schwebende Textfelder kennt Qt nicht")
 s("EINFÜGEN", "Tabellenblatt", OFFEN, "ausgeschlossen: nur Textverarbeitung (Vorgabe des Projekts)")
-s("EINFÜGEN", "SmartArt", OFFEN, "nicht übertragen (Grafik-Vorlagen; keine Entsprechung in Qt)")
+s("EINFÜGEN", "SmartArt", TEIL, "editor/smartart.py: Liste, Prozess, Hierarchie, Zyklus, Pyramide; bearbeitbar; in DOCX ein Bild (tests/test_smartart.py)")
 s("REFERENZEN", "Fußnote; Endnote", OK, "echte DOCX-Fuß-/Endnoten (gelesen und geschrieben, mit LibreOffice geprüft); Fußnoten am Seitenfuß in Seitenansicht, Druck und PDF (bei mehreren Spalten gesammelt am Ende)")
 s("OPTIONEN > Ansicht > Anzeigen", "Lineal; Vertikales Lineal", OK, "widgets/lineal.py: Millimeter, Ränder und Einzüge ziehbar (test_main_window)")
 s("OPTIONEN > Ansicht > Anzeigen", "Gitternetzlinien", OK, "befehle.netzlinien, editor._gitter_zeichnen")

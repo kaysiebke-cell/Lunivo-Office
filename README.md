@@ -255,7 +255,7 @@ nächsten, wenn gerade niemand da ist.
 
 ## Was nicht drin ist
 
-SmartArt in Word-Qualität, 3D-Modelle, eingebettete Tabellenkalkulation,
+SmartArt als echtes Word-Diagramm (Lunivo-SmartArt ist ein bearbeitbares Bild), 3D-Modelle, eingebettete Tabellenkalkulation,
 Design-Themes, Bildumfluss mit Ebenen, Endnoten-Querverweise nach APA im
 vollen Umfang, Barrierefreiheitsprüfung über das Geprüfte hinaus,
 Gliederungsansicht zum Verschieben,

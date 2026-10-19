@@ -65,7 +65,7 @@ Liste ähnlich klingender Wörter.
 
 **Tabellenwerkzeuge** erscheinen, sobald der Zeiger in einer Tabelle steht,
 und verschwinden wieder; dazu Bildtools, Form- und WordArt-Tools und Kopf- und
-Fußzeilenwerkzeuge. Zeichen-, Diagramm-, SmartArt- und Gleichungswerkzeuge gibt es noch
+Fußzeilenwerkzeuge und SmartArt-Tools. Zeichen-, Diagramm- und Gleichungswerkzeuge gibt es noch
 nicht (siehe [PRUEFBOGEN.md](PRUEFBOGEN.md)). Die Gruppen folgen
 dem Menüband von WPS: *Start* trägt Zwischenablage, Schriftart mit Name und Größe in einer Zeile,
 Absatz, Formatvorlagen, Wort-Extras, Suchen oder ersetzen, Auswählen und Einstellungen. Was es nativ

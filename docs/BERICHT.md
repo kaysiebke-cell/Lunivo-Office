@@ -72,6 +72,12 @@ LibreOffice-erzeugte DOCX-Datei. **Nicht** durch Tests belegt: Bildschirmfoto am
 Druckoptionen am Drucker, Zwischenstände, Sichern/Zurückholen, Gitternetz, Dunkelmodus (nur per Screenshot gesehen).
 
 ## 6. Offen und bekannte Einschränkungen
+* **SmartArt (neu):** Liste, Prozess, Hierarchie, Zyklus, Pyramide aus eingerücktem Text, fünf Farbschemata, bearbeitbar über den Reiter
+  SmartArt-Tools und nach DOCX-Speichern/Öffnen in Lunivo weiter bearbeitbar. **Grenze:** In DOCX steht es als Bild — Word und LibreOffice zeigen es,
+  bearbeiten es aber nicht als SmartArt (kein DrawingML-Diagramm).
+* **Vergleichen/Zusammenführen (neu):** Überprüfen ▸ Vergleichen (zwei Dokumente) und Zusammenführen (mehrere Fassungen mit je einem Autor)
+  schreiben Unterschiede als verfolgte Änderungen. **Grenzen:** nur Text und Absätze (keine Formatänderungen, keine Tabellenstruktur);
+  ein zusammengeführter Absatz erscheint als gelöscht + neu; bei Überschneidung verschiedener Autoren gilt der erste, der andere wird als Konflikt gemeldet.
 * **Abschnitte (neu):** mehrere Abschnitte mit eigener Seitengröße, Orientierung, Rändern, Spalten und Kopf-/Fußzeilen; DOCX-Rundreise
   (`w:sectPr` im letzten Absatz jedes Abschnitts) und Ausgabe als PDF mit LibreOffice gegengeprüft. **Grenzen:** Bearbeitungsansicht in der
   Geometrie des ersten Abschnitts; fortlaufender Umbruch mit anderer Geometrie → in der Ausgabe neue Seite; Noten je Abschnitt neu
@@ -83,7 +89,7 @@ Druckoptionen am Drucker, Zwischenstände, Sichern/Zurückholen, Gitternetz, Dun
   Rückgängig-Stapels, ausgeblendeter Text, Objektanker. Formen, WordArt, Diagramm, Piktogramm, Formel (als Bild bzw. Text) sind nach dem
   Einfügen nicht als Objekt bearbeitbar; das Wasserzeichen wird in DOCX **nicht** gespeichert (Warnung beim Speichern).
 * **Fußnoten** stehen im PDF/Druck gesammelt am Textende, nicht am Seitenfuß; im DOCX sind es echte Fußnoten.
-* **Nicht übertragen:** Tabellenblatt/Diagramm-Tools/SmartArt/Gleichungswerkzeuge/Zeichentools (Tabellenkalkulation und
+* **Nicht übertragen:** Tabellenblatt/Diagramm-Tools/Gleichungswerkzeuge/Zeichentools (Tabellenkalkulation und
   Präsentation sind ausgeschlossen), Sprechblasen bei Änderungen, „Gerade/ungerade Seiten“, „Dokument teilen“, Maßeinheit,
   Zuschnittsmarken drucken, Live-Vorschau/Minisymbolleiste, Wort-Extras.
 * **Optionen** (Rest): siehe `PRUEFBOGEN.md` (Abschnitt OPTIONEN) — 21 Punkte insgesamt offen.

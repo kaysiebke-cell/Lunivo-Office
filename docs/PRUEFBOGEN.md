@@ -1,6 +1,6 @@
 # Prüfbogen ↔ native Fassung
 
-Erzeugt von `werkzeug/pruefbogen-abgleich.py` aus dem Prüfkatalog (415 Punkte). **✅ 334 · ◐ 60 · ⬜ 21**. ✅ = Befehl/Funktion vorhanden (einzeln getestet nur, wo `tests/` es belegt); ◐ = teilweise oder anders gelöst; ⬜ = offen.
+Erzeugt von `werkzeug/pruefbogen-abgleich.py` aus dem Prüfkatalog (415 Punkte). **✅ 334 · ◐ 65 · ⬜ 16**. ✅ = Befehl/Funktion vorhanden (einzeln getestet nur, wo `tests/` es belegt); ◐ = teilweise oder anders gelöst; ⬜ = offen.
 Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `docs/pruefbogen/bilder/`.
 
 ## DATEI
@@ -118,7 +118,7 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `docs/pruefbogen/bilder/`.
 - ◐ Zeichnen — entsteht als Bild mit Alternativtext (Formen, Verläufe, QtCharts) — nachträglich nicht als Zeichnung/Diagramm bearbeitbar (test_einfuegen)
 - ◐ Diagramm — entsteht als Bild mit Alternativtext (Formen, Verläufe, QtCharts) — nachträglich nicht als Zeichnung/Diagramm bearbeitbar (test_einfuegen)
 - ◐ Bildschirmfoto — ganzer Bildschirm oder Bereich (befehle.screenshot); nur der Einfügeweg ist getestet, nicht die Aufnahme am echten Bildschirm
-- ⬜ SmartArt — nicht übertragen (Grafik-Vorlagen; keine Entsprechung in Qt)
+- ◐ SmartArt — editor/smartart.py: Liste, Prozess, Hierarchie, Zyklus, Pyramide; bearbeitbar; in DOCX ein Bild (tests/test_smartart.py)
 - ✅ Piktogramm — befehle.piktogramm: 1800 Lucide-Symbole als Bild mit Alternativtext (test_einfuegen)
 - ◐ WordArt — entsteht als Bild mit Alternativtext (Formen, Verläufe, QtCharts) — nachträglich nicht als Zeichnung/Diagramm bearbeitbar (test_einfuegen)
 - ✅ Hyperlink — Band: Einfügen ▸ Links
@@ -271,10 +271,10 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `docs/pruefbogen/bilder/`.
 ## KONTEXTTABELLEN
 
 - ◐ Tabellenwerkzeuge — Reiter erscheint in der Tabelle (test_tabellentools_wirken); ohne Tabellenformatvorlagen
-- ⬜ Zeichentools — nicht übertragen
-- ⬜ Diagrammtools — nicht übertragen
-- ⬜ SmartArt-Tools — nicht übertragen
-- ⬜ Gleichungswerkzeuge — nicht übertragen
+- ◐ Zeichentools — SmartArt-Tools ja (ui/contextual/image_tools.py); Zeichen-, Diagramm- und Gleichungswerkzeuge nicht
+- ◐ Diagrammtools — SmartArt-Tools ja (ui/contextual/image_tools.py); Zeichen-, Diagramm- und Gleichungswerkzeuge nicht
+- ◐ SmartArt-Tools — SmartArt-Tools ja (ui/contextual/image_tools.py); Zeichen-, Diagramm- und Gleichungswerkzeuge nicht
+- ◐ Gleichungswerkzeuge — SmartArt-Tools ja (ui/contextual/image_tools.py); Zeichen-, Diagramm- und Gleichungswerkzeuge nicht
 - ◐ Kopf- und Fußzeilenwerkzeuge — Reiter mit „Erste Seite anders“ (PDF und DOCX); „Gerade/ungerade“ fehlt
 
 ## LANGUAGE BRIDGE (Architektur)

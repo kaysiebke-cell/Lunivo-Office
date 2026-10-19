@@ -256,20 +256,20 @@
   "wo": "Reiter mit „Erste Seite anders“ (PDF und DOCX); „Gerade/ungerade“ fehlt"
  },
  "KONTEXTTABELLEN|Zeichentools": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "◐",
+  "wo": "SmartArt-Tools ja (ui/contextual/image_tools.py); Zeichen-, Diagramm- und Gleichungswerkzeuge nicht"
  },
  "KONTEXTTABELLEN|Diagrammtools": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "◐",
+  "wo": "SmartArt-Tools ja (ui/contextual/image_tools.py); Zeichen-, Diagramm- und Gleichungswerkzeuge nicht"
  },
  "KONTEXTTABELLEN|SmartArt-Tools": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "◐",
+  "wo": "SmartArt-Tools ja (ui/contextual/image_tools.py); Zeichen-, Diagramm- und Gleichungswerkzeuge nicht"
  },
  "KONTEXTTABELLEN|Gleichungswerkzeuge": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "◐",
+  "wo": "SmartArt-Tools ja (ui/contextual/image_tools.py); Zeichen-, Diagramm- und Gleichungswerkzeuge nicht"
  },
  "LANGUAGE BRIDGE (Architektur)|Zentrale Sprachkontext-Verwaltung": {
   "status": "✅",
@@ -1060,8 +1060,8 @@
   "wo": "ausgeschlossen: nur Textverarbeitung (Vorgabe des Projekts)"
  },
  "EINFÜGEN|SmartArt": {
-  "status": "⬜",
-  "wo": "nicht übertragen (Grafik-Vorlagen; keine Entsprechung in Qt)"
+  "status": "◐",
+  "wo": "editor/smartart.py: Liste, Prozess, Hierarchie, Zyklus, Pyramide; bearbeitbar; in DOCX ein Bild (tests/test_smartart.py)"
  },
  "REFERENZEN|Fußnote": {
   "status": "✅",
