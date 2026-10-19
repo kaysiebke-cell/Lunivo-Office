@@ -6,8 +6,8 @@ Band und Symbolleisten, das Lineal, Formatvorlagen, Anpassen.
 Symbolleisten (zwei Zeilen, alles sichtbar) und Registern (Reiter wie in
 Word) um. Dieselben Befehle, anders sortiert.
 
-Das Register hat acht Reiter — Datei, Start, Einfügen, Seitenlayout,
-Verweise, Überprüfen, Schreibhilfe, Ansicht (*Sendungen* lässt sich über
+Das Register hat neun Reiter — Datei, Start, Einfügen, Seitenlayout,
+Verweise, Überprüfen, Schreibhilfe, Ansicht, Abschnitt (*Sendungen* lässt sich über
 *Register anpassen* dazuholen) — und vier weitere, die nur da sind, wenn sie
 etwas zu sagen haben: Tabellentools, Bildtools, Form- und WordArt-Tools sowie
 Kopf- und Fußzeilentools.
@@ -22,6 +22,11 @@ exportieren, Als Bild exportieren, Drucken, Dokumentverschlüsselung,
 Hilfe, Optionen, Beenden. Es klappt als Tafel mit zwei Spalten auf —
 links die Befehle, rechts die zuletzt benutzten Dateien. Ein Punkt mit
 Pfeil legt kein Fenster darüber, er füllt die rechte Spalte.
+
+**Der Reiter Abschnitt** ist wie bei WPS aufgebaut. Die Qt-Fassung kennt aber nur **einen** Abschnitt je Dokument:
+Deckblätter, Ränder, Orientierung, Größe, Seitenzahl, *Erste Seite anders* und Kopf-/Fußzeile gelten für das ganze Dokument und
+funktionieren. Was mehrere Abschnitte braucht — hinzufügen, löschen, wechseln, Kopf-/Fußzeile mit dem Vorgänger verknüpfen,
+*gerade und ungerade Seiten unterschiedlich* — steht ausgegraut da (Hinweis im Tooltip).
 
 Gleich daneben der **Schnellzugriff**: Öffnen, Speichern, Als PDF,
 Drucken, Druckvorschau, Rückgängig, Wiederholen. Dasselbe ☰ steht auch

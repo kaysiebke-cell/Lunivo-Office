@@ -102,7 +102,7 @@ alles andere beieinander, was dabei hilft: farbige Silben zum Einstellen, Vorles
 Rechtschreibprüfer nicht findet — das/dass, wider/wieder, Kommas. Die KI ist
 freiwillig und braucht einen eigenen Schlüssel; ohne sie läuft alles Übrige.
 
-**Ein vollständiges Schreibprogramm.** Acht Reiter nach dem Vorbild des
+**Ein vollständiges Schreibprogramm.** Neun Reiter nach dem Vorbild des
 WPS Writer — *Datei* öffnet als Backstage-Ansicht wie bei ONLYOFFICE —, zwei
 Oberflächen zur Wahl, Formatvorlagen, Tabellen, Spalten (live auf der Seite),
 Fuß- und Endnoten, Kommentare als Sprechblasen, Formularfelder, Kopf- und

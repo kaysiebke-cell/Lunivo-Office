@@ -126,7 +126,7 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `docs/pruefbogen/bilder/`.
 - ✅ Querverweis — Band: Einfügen ▸ Links, Verweise ▸ Beschriftungen
 - ✅ Kopfzeile — Dialoge (widgets/dialogs.py), PDF/Druck/DOCX getestet
 - ✅ Fußzeile — Dialoge (widgets/dialogs.py), PDF/Druck/DOCX getestet
-- ✅ Seitenzahl — Band: Einfügen ▸ Kopf- und Fußzeile
+- ✅ Seitenzahl — Band: Abschnitt ▸ Kopf- und Fußzeile, Einfügen ▸ Kopf- und Fußzeile
 - ◐ Textfeld — einzellige Tabelle mit Rahmen; frei schwebende Textfelder kennt Qt nicht
 - ✅ Textbaustein — editor/einfuegen.py, storage/bausteine.py (test_einfuegen)
 - ✅ Schnellbaustein — editor/einfuegen.py, storage/bausteine.py (test_einfuegen)
