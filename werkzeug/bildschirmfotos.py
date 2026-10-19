@@ -20,6 +20,7 @@ from lunivo_writer.services.settings_service import Settings  # noqa: E402
 from lunivo_writer.ui.dialogs.optionen import OptionenDialog  # noqa: E402
 from lunivo_writer.ui.main_window import MainWindow  # noqa: E402
 from lunivo_writer.ui.theme import apply_theme  # noqa: E402
+from lunivo_writer.ui.widgets import icons  # noqa: E402
 
 BRIEF = """Anna Meyer
 Bahnhofstraße 12
@@ -57,8 +58,9 @@ def warte(ms):
 
 def fenster(app, theme, text=BRIEF, groesse=(1500, 900)):
     ini = os.path.join(tempfile.mkdtemp(), "s.ini")
+    apply_theme(app, theme)                   # zuerst das Thema, dann das Fenster: Die Symbole übernehmen die Farben beim Bauen
+    icons.leeren()
     w = MainWindow(Settings(QSettings(ini, QSettings.IniFormat)))
-    apply_theme(app, theme)
     w.resize(*groesse)
     w.show()
     w.new_document()
