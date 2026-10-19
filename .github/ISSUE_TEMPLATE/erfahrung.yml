@@ -1,0 +1,34 @@
+name: Wie es sich anfühlt
+description: Erzähl, woran du beim Schreiben hängenbleibst. Das ist hier das Wertvollste.
+title: "Woran ich hängenbleibe: "
+labels: ["erfahrung"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Rechtschreibung ist hier egal.** Wirklich. Schreib es, wie es dir
+        einfällt — ausgerechnet in diesem Projekt wird niemand darauf
+        angesprochen.
+
+        Du brauchst keinen Fachausdruck, keinen Screenshot und keine Lösung.
+        Die Not zu kennen ist der schwierige Teil; das Bauen kommt danach.
+  - type: textarea
+    id: was
+    attributes:
+      label: Was passiert dir beim Schreiben?
+      description: Ein Satz reicht. Mehr ist auch gut.
+      placeholder: |
+        Ich weiß nie, ob das oder dass. Der Kasten erklärt es mir, aber ich
+        verstehe die Erklärung nicht.
+    validations:
+      required: true
+  - type: textarea
+    id: wobei
+    attributes:
+      label: Wobei? (freiwillig)
+      placeholder: Briefe ans Amt, Nachrichten an Freunde, Bewerbungen, in der Arbeit …
+  - type: textarea
+    id: bisher
+    attributes:
+      label: Was machst du bisher dagegen? (freiwillig)
+      placeholder: Ich lasse es jemanden gegenlesen. Oder ich schicke es gar nicht ab.

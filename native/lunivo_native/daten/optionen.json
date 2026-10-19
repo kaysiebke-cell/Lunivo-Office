@@ -1,0 +1,834 @@
+{
+ "lesehilfe": [
+  {
+   "kopf": "Lesestufe",
+   "felder": [
+    {
+     "n": "Wie leicht soll es zu lesen sein?",
+     "t": "radio",
+     "o": [
+      "Standard",
+      "Leichter lesen",
+      "Sehr leicht lesen"
+     ],
+     "v": "Standard"
+    }
+   ]
+  },
+  {
+   "kopf": "Leichter lesen",
+   "felder": [
+    {
+     "n": "Papierton",
+     "h": "Ein warmer Grund nimmt dem Weiß die Schärfe.",
+     "t": "auswahl",
+     "o": [
+      "Weiß",
+      "Creme",
+      "Sandgrau",
+      "Blassgelb",
+      "Blassblau",
+      "Blassgrün",
+      "Blassrosa"
+     ],
+     "v": "Weiß"
+    },
+    {
+     "n": "Buchstabenabstand",
+     "h": "Mehr Luft zwischen den Buchstaben — Wörter zerfallen weniger ineinander.",
+     "t": "auswahl",
+     "o": [
+      "normal",
+      "etwas mehr",
+      "deutlich mehr",
+      "sehr viel"
+     ],
+     "v": "normal"
+    },
+    {
+     "n": "Zeilenluft",
+     "h": "Abstand zwischen den Zeilen — hilft beim Zurückspringen an den Anfang.",
+     "t": "auswahl",
+     "o": [
+      "normal",
+      "etwas mehr",
+      "deutlich mehr",
+      "sehr viel"
+     ],
+     "v": "normal"
+    }
+   ]
+  },
+  {
+   "kopf": "Beim Schreiben",
+   "felder": [
+    {
+     "n": "Zeilenfokus",
+     "h": "Die Zeile, in der du schreibst, tritt hervor. Der Rest bleibt ruhig.",
+     "t": "schalter",
+     "v": false
+    },
+    {
+     "n": "Übriger Text",
+     "h": "Was gerade nicht dran ist, tritt zurück — Hervorheben wirkt erst, wenn das Übrige leiser wird.",
+     "t": "auswahl",
+     "o": [
+      "gleich lassen",
+      "etwas blasser",
+      "deutlich blasser"
+     ],
+     "v": "gleich lassen"
+    }
+   ]
+  },
+  {
+   "kopf": "Schrift und Sprache",
+   "felder": [
+    {
+     "n": "Schrift zum leichteren Lesen",
+     "h": "OpenDyslexic, Lexend und Atkinson Hyperlegible sind dafür gemacht. Sie stehen in derselben Liste wie alle anderen.",
+     "t": "seite",
+     "ziel": "schriften"
+    },
+    {
+     "n": "Silbentrennung",
+     "h": "Lange Wörter werden getrennt statt in die nächste Zeile geschoben. Das hält die Zeilen gleichmäßig.",
+     "t": "schalter",
+     "v": false
+    },
+    {
+     "n": "Rechtschreibung während der Eingabe prüfen",
+     "h": "Rote Wellenlinien im Text. Steht auch unter Rechtschreibprüfung — hier, weil man es hier sucht.",
+     "t": "schalter",
+     "v": true
+    }
+   ]
+  },
+  {
+   "kopf": "Vorlesen",
+   "felder": [
+    {
+     "n": "Den Text hören",
+     "h": "Mit F4, oder unter Schreibhilfe ▸ Vorlesen. Aufgenommene Stimmen stehen zur Wahl, nicht die blecherne Standardstimme.",
+     "t": "befehl",
+     "knopf": "Stimme und Tempo …",
+     "befehl": "stimme_waehlen"
+    }
+   ]
+  }
+ ],
+ "schriften": [
+  {
+   "kopf": "Schrift für neuen Text",
+   "felder": [
+    {
+     "n": "Schrift",
+     "h": "Gilt für ein neues Dokument. Ein geöffnetes bringt seine eigene mit.",
+     "t": "schriftwahl",
+     "v": "Georgia"
+    },
+    {
+     "n": "Größe",
+     "t": "auswahl",
+     "o": [
+      "8 pt",
+      "9 pt",
+      "10 pt",
+      "11 pt",
+      "12 pt",
+      "14 pt",
+      "16 pt",
+      "18 pt",
+      "20 pt",
+      "24 pt",
+      "28 pt",
+      "36 pt"
+     ],
+     "v": "12 pt"
+    }
+   ]
+  },
+  {
+   "kopf": "Zum leichteren Lesen",
+   "felder": [
+    {
+     "n": "Drei Schriften sind dafür gemacht",
+     "h": "Ein Klick stellt sie ein. Was gerade gilt, steht oben.",
+     "t": "lesenschriften"
+    },
+    {
+     "n": "Sind sie da?",
+     "h": "Unter Erweitert steht, was zusätzlich geholt wurde und ob es liegt.",
+     "t": "seite",
+     "ziel": "erweitert"
+    }
+   ]
+  }
+ ],
+ "sprache": [
+  {
+   "kopf": "Sprache",
+   "felder": [
+    {
+     "n": "Sprache für die Prüfung",
+     "h": "Danach richten sich die roten Wellenlinien und die gründliche Prüfung.",
+     "t": "auswahl",
+     "o": [
+      "Deutsch",
+      "Deutsch (Österreich)",
+      "Deutsch (Schweiz)",
+      "Englisch"
+     ],
+     "v": "Deutsch"
+    },
+    {
+     "n": "Übersetzen nach",
+     "h": "Der Knopf steht in der Seitenleiste. Hier steht, wohin übersetzt wird.",
+     "t": "auswahl",
+     "o": [
+      "Englisch",
+      "Französisch",
+      "Spanisch",
+      "Italienisch",
+      "Niederländisch",
+      "Polnisch",
+      "Russisch",
+      "Türkisch",
+      "Arabisch",
+      "Portugiesisch",
+      "Ukrainisch",
+      "Rumänisch",
+      "Griechisch",
+      "Schwedisch"
+     ],
+     "v": "Englisch"
+    }
+   ]
+  },
+  {
+   "kopf": "Was geprüft wird",
+   "felder": [
+    {
+     "n": "Rechtschreibung während der Eingabe",
+     "h": "Rote Wellenlinien im Text, von Lunivo selbst.",
+     "t": "schalter",
+     "v": true
+    },
+    {
+     "n": "Grammatik mitprüfen",
+     "h": "Nicht nur einzelne Wörter, auch Kommas und Satzbau.",
+     "t": "schalter",
+     "v": true
+    },
+    {
+     "n": "Silbentrennung",
+     "h": "Lange Wörter werden getrennt statt in die nächste Zeile geschoben.",
+     "t": "schalter",
+     "v": false
+    },
+    {
+     "n": "Alle Prüfoptionen",
+     "h": "Was ignoriert wird — GROSSBUCHSTABEN, Wörter mit Zahlen, Pfade — steht auf der Seite Rechtschreibprüfung.",
+     "t": "seite",
+     "ziel": "pruefung"
+    }
+   ]
+  },
+  {
+   "kopf": "Wörter, die Lunivo kennt",
+   "felder": [
+    {
+     "n": "Dein eigener Wortschatz",
+     "h": "Wörter, die künftig als richtig gelten, und Schreibweisen, die du selbst gewählt hast. Sie stehen unter Gedächtnis.",
+     "t": "seite",
+     "ziel": "gedaechtnis"
+    },
+    {
+     "n": "Gründlich prüfen",
+     "h": "Über die eigenen Regeln hinaus prüft das Wörterbuch des Systems.",
+     "t": "befehl",
+     "knopf": "Jetzt gründlich prüfen",
+     "befehl": "gruendlich_pruefen"
+    }
+   ]
+  }
+ ],
+ "pruefung": [
+  {
+   "kopf": "Rechtschreibprüfung",
+   "felder": [
+    {
+     "n": "Sprache für die Prüfung",
+     "h": "Danach richten sich die roten Wellenlinien und die gründliche Prüfung.",
+     "t": "auswahl",
+     "o": [
+      "Deutsch",
+      "Deutsch (Österreich)",
+      "Deutsch (Schweiz)",
+      "Englisch"
+     ],
+     "v": "Deutsch"
+    },
+    {
+     "n": "Rechtschreibung während der Eingabe prüfen",
+     "h": "Rote Wellenlinien im Text, von Lunivo. Aus gesehen bleibt das Blatt sauber — die Funde stehen weiter in der Seitenleiste.",
+     "t": "schalter",
+     "v": true
+    },
+    {
+     "n": "Immer Korrekturvorschläge unterbreiten",
+     "h": "Aus gesehen wird nur angestrichen, ohne zu sagen, was stattdessen richtig wäre.",
+     "t": "schalter",
+     "v": true
+    },
+    {
+     "n": "Grammatik mitprüfen",
+     "h": "Nicht nur einzelne Wörter, auch Kommas und Satzbau.",
+     "t": "schalter",
+     "v": true
+    },
+    {
+     "n": "Wörter in GROSSBUCHSTABEN ignorieren",
+     "h": "Abkürzungen und Kürzel. Ein Wörterbuch kennt sie nicht und schlägt Unsinn vor.",
+     "t": "schalter",
+     "v": true
+    },
+    {
+     "n": "Wörter mit Zahlen ignorieren",
+     "h": "Aktenzeichen, Artikelnummern, „A4“.",
+     "t": "schalter",
+     "v": true
+    },
+    {
+     "n": "Internet- und Netzwerkpfade ignorieren",
+     "h": "Adressen und Dateipfade sind kein Fließtext.",
+     "t": "schalter",
+     "v": true
+    },
+    {
+     "n": "Weggewinkte Funde wieder anzeigen",
+     "h": "Was du einmal übergangen hast, steht wieder da — zum Nachsehen, ob es doch ein Fehler war.",
+     "t": "schalter",
+     "v": false
+    }
+   ]
+  },
+  {
+   "kopf": "Benutzerwörterbuch",
+   "felder": [
+    {
+     "n": "Was das Programm gelernt hat",
+     "h": "Wörter, die künftig als richtig gelten, und Schreibweisen, die du selbst gewählt hast. Sie stehen unter Gedächtnis.",
+     "t": "seite",
+     "ziel": "gedaechtnis"
+    }
+   ]
+  }
+ ],
+ "ansicht": [
+  {
+   "kopf": "Anzeigen",
+   "felder": [
+    {
+     "n": "Lineal",
+     "h": "Zentimeter über dem Blatt, mit den Marken für die Einzüge.",
+     "t": "schalter",
+     "v": false
+    },
+    {
+     "n": "Vertikales Lineal",
+     "h": "Zentimeter neben dem Blatt, von der ersten Zeile abwärts gezählt. Es scrollt mit.",
+     "t": "schalter",
+     "v": false
+    },
+    {
+     "n": "Navigationsbereich",
+     "h": "Die Überschriften als Liste zum Anspringen.",
+     "t": "schalter",
+     "v": false
+    },
+    {
+     "n": "Textbegrenzungen",
+     "h": "Die vier Ecken zeigen, wo der bedruckbare Bereich beginnt.",
+     "t": "schalter",
+     "v": true
+    },
+    {
+     "n": "Gitternetzlinien",
+     "h": "Ein Raster über dem Blatt — zum Ausrichten, nicht zum Drucken.",
+     "t": "schalter",
+     "v": false
+    },
+    {
+     "n": "Statusleiste",
+     "h": "Die Zeile ganz unten mit Seitenzahl, Wortzahl und Vergrößerung.",
+     "t": "schalter",
+     "v": true
+    },
+    {
+     "n": "Seitenleiste beim Start",
+     "h": "Ob die Schreibhilfe schon offen steht, wenn das Programm aufgeht.",
+     "t": "schalter",
+     "v": true
+    }
+   ]
+  },
+  {
+   "kopf": "Formatierungszeichen",
+   "felder": [
+    {
+     "n": "Alle anzeigen",
+     "h": "Der Hauptschalter. Aus gesehen bleibt das Blatt sauber.",
+     "t": "schalter",
+     "v": false
+    }
+   ]
+  },
+  {
+   "kopf": "Menübandoptionen",
+   "felder": [
+    {
+     "n": "Doppelklick blendet das Band aus",
+     "h": "Ein Doppelklick auf einen Reiter klappt das Band zu und wieder auf.",
+     "t": "schalter",
+     "v": true
+    },
+    {
+     "n": "Strg+Klick folgt einem Verweis",
+     "h": "Aus gesehen genügt ein Klick. An gesehen braucht es Strg — dann lässt sich ein Verweis anklicken, ohne ihn zu öffnen.",
+     "t": "schalter",
+     "v": true
+    }
+   ]
+  },
+  {
+   "kopf": "Darstellung",
+   "felder": [
+    {
+     "n": "Helligkeit",
+     "h": "Dunkel, hell oder wie das System.",
+     "t": "auswahl",
+     "o": [
+      "Wie das System",
+      "Immer hell",
+      "Immer dunkel"
+     ],
+     "v": "Immer dunkel"
+    },
+    {
+     "n": "Schrift der Bedienung",
+     "h": "Menüs, Leisten und die Statuszeile.",
+     "t": "range",
+     "v": 100,
+     "min": 80,
+     "max": 180
+    }
+   ]
+  }
+ ],
+ "bearbeiten": [
+  {
+   "kopf": "Bearbeitungsoptionen",
+   "felder": [
+    {
+     "n": "Maximale Rückgängig-Schritte",
+     "h": "0 heißt unbegrenzt, solange das Dokument offen ist.",
+     "t": "zahl",
+     "v": 0,
+     "min": 0,
+     "max": 1000
+    }
+   ]
+  },
+  {
+   "kopf": "AutoKorrektur",
+   "felder": [
+    {
+     "n": "AutoKorrektur",
+     "h": "Der Hauptschalter. Aus gesehen läuft keine der Regeln darunter.",
+     "t": "schalter",
+     "v": true
+    },
+    {
+     "n": "Typografische Anführungszeichen",
+     "h": "Aus \" wird „ und “, je nachdem, ob das Wort anfängt oder aufhört.",
+     "t": "schalter",
+     "v": true
+    },
+    {
+     "n": "Gedankenstriche",
+     "h": "Aus -- wird –, und aus „10-20“ wird „10–20“.",
+     "t": "schalter",
+     "v": true
+    },
+    {
+     "n": "Auslassungspunkte",
+     "h": "Aus drei Punkten wird ein einzelnes Zeichen …",
+     "t": "schalter",
+     "v": true
+    },
+    {
+     "n": "Jeden Satz mit einem Großbuchstaben beginnen",
+     "h": "Nach Punkt, Ruf- oder Fragezeichen. Abkürzungen wie „z. B.“ bleiben unberührt.",
+     "t": "schalter",
+     "v": false
+    },
+    {
+     "n": "Wochentage immer großschreiben",
+     "h": "Aus „montag“ wird „Montag“.",
+     "t": "schalter",
+     "v": false
+    },
+    {
+     "n": "Feststelltaste korrigieren",
+     "h": "Aus „fESTSTELLTASTE“ wird „Feststelltaste“ — der Tippfehler, den nur eine eingerastete Taste macht.",
+     "t": "schalter",
+     "v": false
+    },
+    {
+     "n": "Wortvorhersage",
+     "h": "Ab drei Buchstaben stehen passende Wörter zur Wahl. Wiedererkennen ist leichter als Erinnern.",
+     "t": "schalter",
+     "v": true
+    }
+   ]
+  },
+  {
+   "kopf": "Ausschneiden und Einfügen",
+   "felder": [
+    {
+     "n": "Standardeinfügeformat",
+     "h": "Womit Strg+V einfügt, wenn nichts anderes gewählt wird.",
+     "t": "auswahl",
+     "o": [
+      "Ursprüngliche Formatierung beibehalten",
+      "An das Ziel anpassen",
+      "Nur den Text übernehmen"
+     ],
+     "v": "Ursprüngliche Formatierung beibehalten"
+    },
+    {
+     "n": "Ohne Formatierung einfügen",
+     "h": "Kein Schalter, sondern ein eigener Befehl: im Menü unter Bearbeiten, im Band, unter der rechten Maustaste.",
+     "t": "befehl",
+     "knopf": "Jetzt einfügen",
+     "befehl": "einfuegen_ohne"
+    }
+   ]
+  }
+ ],
+ "speichern": [
+  {
+   "kopf": "Speichern",
+   "felder": [
+    {
+     "n": "Dateien als Standard speichern",
+     "h": "Womit „Speichern unter“ aufgeht. Eine geöffnete Datei behält ihr eigenes Format.",
+     "t": "auswahl",
+     "o": [
+      "OpenDocument-Text (.odt)",
+      "Microsoft Word (.docx)",
+      "Rich Text (.rtf)",
+      "Webseite (.html)",
+      "Nur Text (.txt)"
+     ],
+     "v": "Microsoft Word (.docx)"
+    }
+   ]
+  },
+  {
+   "kopf": "Allgemeine Optionen",
+   "felder": [
+    {
+     "n": "Beim Start das zuletzt geschriebene Dokument öffnen",
+     "h": "Aus: Lunivo startet mit einer leeren Seite. An: Der Text vom letzten Mal steht wieder da.",
+     "t": "schalter",
+     "v": true
+    }
+   ]
+  }
+ ],
+ "sicherung": [
+  {
+   "kopf": "Sicherung",
+   "felder": [
+    {
+     "n": "Wann gesichert wird",
+     "h": "„Laufend“ heißt: nach jeder Änderung, ohne Zeitabstand.",
+     "t": "auswahl",
+     "o": [
+      "Laufend, nach jeder Änderung",
+      "In festen Abständen",
+      "Beim Schließen"
+     ],
+     "v": "In festen Abständen"
+    },
+    {
+     "n": "Abstand (Minuten)",
+     "h": "Gilt nur bei „In festen Abständen“.",
+     "t": "zahl",
+     "v": 5,
+     "min": 1,
+     "max": 120
+    },
+    {
+     "n": "Sicherungskopie beim Speichern",
+     "h": "Vor dem Überschreiben bleibt die alte Datei als Name~ liegen.",
+     "t": "schalter",
+     "v": true
+    },
+    {
+     "n": "Wo die Einstellungen liegen",
+     "h": "In einer lesbaren Datei:",
+     "t": "pfadtext",
+     "v": "~/.config/lunivo-office/gtk-einstellungen.json"
+    }
+   ]
+  }
+ ],
+ "pfade": [
+  {
+   "kopf": "Speicherort für Dateien",
+   "felder": [
+    {
+     "n": "Ordner zum Speichern",
+     "h": "Damit „Speichern unter“ dort aufgeht, wo die Briefe liegen — und nicht jedes Mal im Persönlichen Ordner.",
+     "t": "ordner",
+     "v": ""
+    },
+    {
+     "n": "Eigene Vorlagen",
+     "h": "Was in diesem Ordner liegt, steht unter Menü ▸ Neu ▸ Neu aus Vorlage. Hineinlegen genügt.",
+     "t": "befehl",
+     "knopf": "Öffnen",
+     "befehl": "vorlagen_ordner"
+    }
+   ]
+  }
+ ],
+ "verfolgen": [
+  {
+   "kopf": "Änderungen verfolgen",
+   "felder": [
+    {
+     "n": "Änderungen verfolgen",
+     "h": "Was ab jetzt geschrieben wird, steht unterstrichen da; Gelöschtes bleibt durchgestrichen stehen.",
+     "t": "schalter",
+     "v": false
+    },
+    {
+     "n": "Markup anzeigen",
+     "h": "Aus gesehen: Der Text steht so da, wie er nach dem Annehmen aussähe. Die Änderungen sind nicht weg.",
+     "t": "schalter",
+     "v": true
+    },
+    {
+     "n": "Name des Bearbeiters",
+     "h": "Steht an den Änderungen und Kommentaren.",
+     "t": "text",
+     "v": "Ich"
+    }
+   ]
+  }
+ ],
+ "pdf": [
+  {
+   "kopf": "Exportoptionen",
+   "felder": [
+    {
+     "n": "Überschriften als Lesezeichen",
+     "h": "Das PDF bekommt ein Inhaltsverzeichnis zum Anspringen.",
+     "t": "schalter",
+     "v": true
+    },
+    {
+     "n": "PDF nach dem Export öffnen",
+     "h": "Zum Nachsehen, ob alles so steht, wie es soll.",
+     "t": "schalter",
+     "v": false
+    }
+   ]
+  }
+ ],
+ "benutzer": [
+  {
+   "kopf": "Benutzerdaten",
+   "felder": [
+    {
+     "n": "Vorname",
+     "h": "Steht als Verfasser im Dokument und füllt Umschlag, Etiketten und Seriendruck vor.",
+     "t": "text",
+     "v": "",
+     "unter": "benutzer",
+     "schluessel": "vorname"
+    },
+    {
+     "n": "Nachname",
+     "t": "text",
+     "v": "",
+     "unter": "benutzer",
+     "schluessel": "nachname"
+    },
+    {
+     "n": "Straße",
+     "t": "text",
+     "v": "",
+     "unter": "benutzer",
+     "schluessel": "strasse"
+    },
+    {
+     "n": "PLZ",
+     "t": "text",
+     "v": "",
+     "unter": "benutzer",
+     "schluessel": "plz"
+    },
+    {
+     "n": "Ort",
+     "t": "text",
+     "v": "",
+     "unter": "benutzer",
+     "schluessel": "ort"
+    },
+    {
+     "n": "E-Mail",
+     "t": "text",
+     "v": "",
+     "unter": "benutzer",
+     "schluessel": "email"
+    }
+   ]
+  }
+ ],
+ "drucken": [
+  {
+   "kopf": "Druckoptionen",
+   "felder": [
+    {
+     "n": "Womit das Druckfenster aufgeht",
+     "h": "Für den einzelnen Auftrag lässt sich dort alles noch umstellen.",
+     "t": "befehl",
+     "knopf": "Druckereinstellungen …",
+     "befehl": "drucker_einrichten"
+    },
+    {
+     "n": "Umgekehrte Reihenfolge",
+     "h": "Letzte Seite zuerst — für Drucker, die den Stapel verkehrt herum ablegen.",
+     "t": "schalter",
+     "v": false
+    }
+   ]
+  }
+ ],
+ "sicherheit": [
+  {
+   "kopf": "Kennwortschutz",
+   "felder": [
+    {
+     "n": "Dokumentkennwort",
+     "h": "Verschlüsselt den Text, bevor er in die Datei geht — mit AES-256. Ohne das Kennwort ist die Datei nicht mehr lesbar.",
+     "t": "kennwort"
+    },
+    {
+     "n": "Hinweis zum Kennwort",
+     "h": "Wird beim Öffnen angezeigt, wenn das Kennwort fehlt.",
+     "t": "text",
+     "unter": "sicherheit",
+     "schluessel": "hinweis"
+    },
+    {
+     "n": "Bearbeitung sperren",
+     "h": "Etwas anderes als ein Kennwort: Es hält die eigene Hand an, nicht fremde. Steht unter Überprüfen.",
+     "t": "befehl",
+     "knopf": "Sperren / freigeben",
+     "befehl": "bearbeitung_sperren"
+    }
+   ]
+  },
+  {
+   "kopf": "Datenschutzoptionen",
+   "felder": [
+    {
+     "n": "Ausgeblendete Markups beim Öffnen oder Speichern anzeigen",
+     "h": "Änderungen und Kommentare bleiben sichtbar, auch wenn sie ausgeblendet waren.",
+     "t": "schalter",
+     "v": true
+    },
+    {
+     "n": "Beim Speichern persönliche Daten aus den Dateieigenschaften entfernen",
+     "h": "Autor, Firma und Manager werden beim Speichern geleert.",
+     "t": "schalter",
+     "v": false
+    }
+   ]
+  }
+ ],
+ "ki": [
+  {
+   "kopf": "Prüfung und KI",
+   "felder": [
+    {
+     "n": "KI-Konfiguration",
+     "h": "Welches Modell, welcher Anbieter.",
+     "t": "befehl",
+     "knopf": "KI-Konfiguration …",
+     "befehl": "ki_konfiguration"
+    },
+    {
+     "n": "Eigene Anbieter",
+     "h": "Ein Modell bei einem anderen Anbieter — eigene Anschrift, eigener Schlüssel.",
+     "t": "befehl",
+     "knopf": "Anbieter hinzufügen …",
+     "befehl": "anbieter_hinzufuegen"
+    },
+    {
+     "n": "Eigene Assistenten",
+     "h": "Ein eigener Knopf für eine Textaufgabe, die immer wiederkehrt.",
+     "t": "befehl",
+     "knopf": "Assistent erstellen …",
+     "befehl": "assistent_erstellen"
+    },
+    {
+     "n": "Für wen der Text ist",
+     "h": "Steht in der Seitenleiste: „Für wen?“ und der Zettel „Worum geht’s?“ unter den Funden.",
+     "t": "auswahl",
+     "o": [
+      "egal",
+      "Amt",
+      "Arbeit",
+      "Freunde",
+      "Forum",
+      "Bewerbung"
+     ],
+     "v": "egal"
+    }
+   ]
+  }
+ ],
+ "gedaechtnis": [
+  {
+   "kopf": "Gedächtnis",
+   "felder": [
+    {
+     "n": "Gelernte Schreibweisen",
+     "h": "bleiben auf diesem Rechner",
+     "t": "gedaechtnis"
+    }
+   ]
+  }
+ ],
+ "erweitert": [
+  {
+   "kopf": "Erweitert",
+   "felder": [
+    {
+     "n": "Was zusätzlich geholt wurde",
+     "h": "Drei Dinge liegen außerhalb des Programms, weil sie zu groß sind. Ohne sie läuft alles Übrige weiter.",
+     "t": "befehl",
+     "knopf": "Anzeigen",
+     "befehl": "erweiterungen"
+    }
+   ]
+  }
+ ]
+}

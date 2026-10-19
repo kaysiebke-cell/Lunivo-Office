@@ -1,0 +1,51 @@
+# Was bei jedem Push geprüft wird.
+#
+# Hier stand GitHubs Conda-Vorlage. Sie suchte eine environment.yml, die es
+# in diesem Projekt nicht gibt — fünf von fünf Läufen sind daran
+# gescheitert, und das Repository sah kaputt aus, obwohl nichts kaputt war.
+#
+# Lunivo-Office braucht kein Conda: Es ist Python aus der Standardbibliothek
+# plus GTK, und eine Oberfläche aus HTML und JavaScript ohne Baukasten.
+# Geprüft wird deshalb genau das, was es gibt.
+name: Prüfen
+
+on: [push, pull_request]
+
+jobs:
+  pruefen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Python bereitstellen
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # Übersetzt jede Datei, ohne sie auszuführen. Findet Tippfehler und
+      # kaputte Einrückung — mehr kann eine Prüfung ohne GTK nicht.
+      - name: Python übersetzen
+        run: python3 -m compileall -q start.py werkzeug/
+
+      - name: Node bereitstellen
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Die drei Prüfdateien, die im Projekt liegen. Sie laufen ohne
+      # Fenster: node oberflaeche/js/<name>.test.js
+      - name: Die Prüfungen der Oberfläche
+        run: |
+          for datei in oberflaeche/js/*.test.js; do
+            echo "→ $datei"
+            node "$datei"
+          done
+
+      # Ein Syntaxfehler in einer Datei der Oberfläche legt beim Start alles
+      # lahm, was danach kommt — das ist einmal passiert und hat die
+      # Statuszeile leer stehen lassen. Deshalb wird jede Datei gelesen.
+      - name: Die Oberfläche auf Syntax prüfen
+        run: |
+          for datei in oberflaeche/js/*.js oberflaeche/daten/*.js; do
+            node --check "$datei"
+          done

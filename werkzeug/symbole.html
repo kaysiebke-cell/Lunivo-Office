@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Symbolkatalog — Lunivo-Office</title>
+<!--
+  Zum Durchsehen des Katalogs. Diese Seite gehört nicht zum Programm; sie
+  wird von Hand geöffnet, wenn eine Zeichnung gesucht wird.
+
+  Sie zeigt oben, welche Symbole im Programm wirklich benutzt werden, und
+  darunter die vollen 1800 aus Lucide. Ein Klick legt Name und Pfad in die
+  Zwischenablage — von dort in daten/symbole.js einsetzen.
+-->
+<style>
+:root{
+  --grund:#1F2225; --karte:#2A2E32; --rand:#3A3F45;
+  --schrift:#E6E9EC; --schrift-2:#A7AFB7; --schrift-3:#7C858E; --blau:#4A8FD8;
+}
+@media (prefers-color-scheme:light){
+  :root{--grund:#EDEEF0;--karte:#FFFFFF;--rand:#D3D6DA;
+        --schrift:#14181C;--schrift-2:#4C555E;--schrift-3:#79828B;--blau:#2F6FB5}
+}
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--grund);color:var(--schrift);
+  font:15px/1.5 -apple-system,"Segoe UI",Cantarell,Ubuntu,sans-serif;
+}
+header{
+  position:sticky;top:0;z-index:5;background:var(--karte);
+  border-bottom:1px solid var(--rand);padding:14px 20px;
+  display:flex;gap:14px;align-items:center;flex-wrap:wrap;
+}
+h1{margin:0;font-size:18px;font-weight:600}
+input{
+  flex:1 1 240px;min-width:0;font:inherit;
+  padding:8px 14px;border-radius:999px;
+  border:1px solid var(--rand);background:var(--grund);color:var(--schrift);
+}
+input:focus{outline:2px solid var(--blau);outline-offset:1px}
+.zahl{color:var(--schrift-2);font-size:14px;white-space:nowrap}
+h2{
+  margin:26px 20px 10px;font-size:12px;font-weight:700;
+  letter-spacing:.09em;text-transform:uppercase;color:var(--schrift-3);
+}
+.gitter{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));
+  gap:8px;padding:0 20px 20px;
+}
+.feld{
+  background:var(--karte);border:1px solid var(--rand);border-radius:8px;
+  padding:12px 6px 8px;text-align:center;cursor:pointer;
+}
+.feld:hover{border-color:var(--blau)}
+.feld svg{display:block;margin:0 auto 7px}
+.feld span{
+  display:block;font-size:11px;color:var(--schrift-2);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.feld--drin{border-color:var(--blau)}
+.feld--drin span{color:var(--schrift)}
+#meldung{
+  position:fixed;left:50%;bottom:24px;transform:translateX(-50%);
+  background:var(--blau);color:#fff;padding:9px 18px;border-radius:999px;
+  font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;
+}
+#meldung.da{opacity:1}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Symbolkatalog</h1>
+  <input id="suche" type="search" placeholder="Suchen … (englische Namen: table, clock, save)">
+  <span class="zahl" id="zahl"></span>
+</header>
+
+<h2 id="titel-drin">Im Programm benutzt</h2>
+<div class="gitter" id="drin"></div>
+<h2 id="titel-alle">Alle aus Lucide</h2>
+<div class="gitter" id="alle"></div>
+
+<div id="meldung"></div>
+
+<script src="../oberflaeche/daten/symbole.js"></script>
+<script src="../oberflaeche/daten/symbolkatalog.js"></script>
+<script>
+const zeichne = (d) => {
+  const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  s.setAttribute('viewBox', '0 0 24 24');
+  s.setAttribute('width', '26'); s.setAttribute('height', '26');
+  s.setAttribute('fill', 'none'); s.setAttribute('stroke', 'currentColor');
+  s.setAttribute('stroke-width', '1.7');
+  s.setAttribute('stroke-linecap', 'round');
+  s.setAttribute('stroke-linejoin', 'round');
+  const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  p.setAttribute('d', d);
+  s.appendChild(p);
+  return s;
+};
+
+const melde = (text) => {
+  const m = document.getElementById('meldung');
+  m.textContent = text;
+  m.classList.add('da');
+  clearTimeout(melde.uhr);
+  melde.uhr = setTimeout(() => m.classList.remove('da'), 1600);
+};
+
+const feldBauen = (name, d, drin) => {
+  const f = document.createElement('button');
+  f.className = 'feld' + (drin ? ' feld--drin' : '');
+  f.type = 'button';
+  f.title = name;
+  f.dataset.name = name;
+  f.appendChild(zeichne(d));
+  const w = document.createElement('span');
+  w.textContent = name;
+  f.appendChild(w);
+  f.addEventListener('click', () => {
+    const zeile = "  " + name + ": '" + d + "',";
+    navigator.clipboard.writeText(zeile).then(
+      () => melde('Kopiert: ' + name),
+      () => melde('Kopieren ging nicht — Pfad steht in der Konsole'));
+    console.log(zeile);
+  });
+  return f;
+};
+
+const drin = document.getElementById('drin');
+const alle = document.getElementById('alle');
+const eigene = new Set(Object.keys(SYMBOLE));
+
+for (const [name, d] of Object.entries(SYMBOLE)) drin.appendChild(feldBauen(name, d, true));
+for (const [name, d] of Object.entries(SYMBOLKATALOG)) alle.appendChild(feldBauen(name, d, false));
+
+const suche = document.getElementById('suche');
+const zaehlen = () => {
+  const sichtbar = document.querySelectorAll('.feld:not([hidden])').length;
+  document.getElementById('zahl').textContent =
+    sichtbar + ' von ' + (eigene.size + Object.keys(SYMBOLKATALOG).length);
+};
+suche.addEventListener('input', () => {
+  const wort = suche.value.trim().toLowerCase();
+  for (const f of document.querySelectorAll('.feld')) {
+    f.hidden = !!wort && f.dataset.name.toLowerCase().indexOf(wort) === -1;
+  }
+  for (const [kasten, titel] of [[drin, 'titel-drin'], [alle, 'titel-alle']]) {
+    document.getElementById(titel).hidden = !kasten.querySelector('.feld:not([hidden])');
+  }
+  zaehlen();
+});
+zaehlen();
+</script>
+</body>
+</html>

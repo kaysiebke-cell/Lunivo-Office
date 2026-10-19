@@ -1,0 +1,1118 @@
+Arbeite direkt im aktuell geöffneten lokalen Repository von Lunivo Office.
+
+WICHTIG & BINDENDER MASSSTAB
+Die folgenden Bild-Dateien bilden die verbindliche visuelle und funktionale Vorlage für die Umgestaltung.
+Ist-Zustand (Linovo)
+
+* Eigene Asistenten (Linovo).png
+* Eigenen Anbieter Hinzufügen (Linovo) .png
+* Model Ferwenden für (Linovo).png
+* Schreibhielfe Seitenleiste (Linovo) .png
+* Schreibhielfe und Ki (Linovo).png
+* von Hand Eintragen (Linovo).png
+
+Soll-Zustand (ONLYOFFICE)
+
+* Alle Ki konfigurationübersicht (ONLYOFFICE).png
+* Einstellung der Übersetzung (ONLYOFFIC).png
+* KI-Model hinzufügen (ONLYOFFICE).png
+* Kommentare Seitenleiste (ONLYOFFICE).png
+* Überschrieften Seitenleiste (ONLYOFFICE) .png
+* KI-Konfiguration (ONLYOFFICE).png
+* Lieste der KI Modelle (ONLYOFFICE).png
+
+Implementiere die nachfolgenden Anforderungen direkt im bestehenden Code.
+Erstelle keine reine Analyse, keinen Mockup-Code und keine UI-Dummies.
+Arbeite mit der vorhandenen Architektur und erweitere sie, anstatt parallele Systeme aufzubauen.
+Analysiere vor allen Code-Änderungen die bestehende Architektur und deren Abhängigkeiten.
+Die folgenden Aufgaben gehören zusammen und müssen nach der Umsetzung konsistent miteinander funktionieren.
+TEIL A – ZENTRALE KI-INFRASTRUKTUR
+1. Bestehende Architektur analysieren
+Untersuche zunächst das gesamte lokale Projekt und identifiziere:
+
+* zentrale Anwendungseinstellungen
+* Bereich „Optionen“
+* vorhandene KI-Einstellungen
+* bestehendes Schnellmenü/Dropdown
+* Bereich „Schreibhilfe“
+* KI-Komponenten
+* KI-Services
+* Provider-Implementierungen
+* Modellverwaltung
+* API-Konfiguration
+* Plugin-System
+* i18n/Übersetzungssystem
+* Seitenleisten
+* Kommentar-Funktionen
+* Überschriften-/Dokumentfunktionen
+* Persistenz der Einstellungen
+
+Suche insbesondere nach bestehenden Strukturen für:
+
+* KI
+* Provider
+* Modelle
+* API-Keys
+* Endpoints
+* Aufgaben-/Modellzuweisungen
+* KI-Einstellungen
+
+Keine parallele Architektur erstellen, wenn bereits eine geeignete Architektur existiert.
+TEIL A1 – BESTEHENDE MEHRSTUFIGE RECHTSCHREIBPRÜFUNG MUSS ERHALTEN BLEIBEN
+Dies ist eine zentrale und verbindliche Zusatzanforderung.
+Lunivo Office besitzt bereits eine bestehende, mehrstufige Rechtschreib-, Grammatik- und Sprachprüfung.
+Diese bestehende Prüfung ist nicht Teil der Neuimplementierung.
+Sie muss vollständig erhalten und nahtlos in die neue KI-Architektur integriert werden.
+Untersuche insbesondere:
+
+```text
+oberflaeche/js/pruefung.js
+oberflaeche/daten/regeln.js
+oberflaeche/daten/woerter.txt
+
+```
+
+sowie sämtliche Dateien, Funktionen und UI-Komponenten, die von diesen Prüfungen abhängig sind.
+Die bestehende Prüfung darf NICHT:
+
+* ersetzt werden
+* durch eine KI-Rechtschreibprüfung ersetzt werden
+* als zweites paralleles System nachgebaut werden
+* vereinfacht werden
+* ihre Prüfungsstufen verlieren
+* ihre Regeln verlieren
+* ihre Wortlisten verlieren
+* ihre Lernlogik verlieren
+* ihre Ignorierlogik verlieren
+* ihre Einstellungen verlieren
+* ihre Fehlerpositionen verlieren
+* ihre vorhandenen Ergebnisarten verlieren
+
+Die KI ist eine Erweiterung der bestehenden Prüfung und kein Ersatz.
+2. Bestehende Prüfungsarchitektur zuerst verstehen
+Vor Änderungen an der Schreibhilfe oder KI muss festgestellt werden, wie die vorhandene Prüfung tatsächlich funktioniert.
+Untersuche insbesondere:
+
+1. Wo der Dokumenttext übernommen wird.
+2. Wo die Prüfung gestartet wird.
+3. Welche Prüfungsstufen existieren.
+4. In welcher Reihenfolge die Stufen ausgeführt werden.
+5. Welche Regeln in welcher Stufe verwendet werden.
+6. Wie Treffer erzeugt werden.
+7. Wie Treffer intern gespeichert werden.
+8. Wie Fehlerpositionen berechnet werden.
+9. Wie Korrekturvorschläge erzeugt werden.
+10. Wie Vorschläge in der UI dargestellt werden.
+11. Wie Korrekturen übernommen werden.
+12. Wie gelernte Korrekturen gespeichert werden.
+13. Wie ignorierte Wörter gespeichert werden.
+14. Welche Einstellungen die Prüfung beeinflussen.
+15. Welche Komponenten die Prüfung aufrufen.
+
+Erst danach darf die KI-Funktionalität erweitert werden.
+Nicht aufgrund dieses Prompts eine neue Prüfungsarchitektur erfinden.
+3. Vorhandene Fundarten erhalten
+Die vorhandene Prüfung besitzt unterschiedliche Ergebnisarten.
+Insbesondere müssen diese weiterhin korrekt funktionieren:
+
+```text
+fehler
+tipp
+hinweis
+
+```
+
+Ihre bisherige Bedeutung muss erhalten bleiben.
+Sinngemäß:
+
+```text
+fehler
+= sicher falsch
+
+tipp
+= kontextabhängig / erneut prüfen
+
+hinweis
+= Hinweis, ohne zwingende Ersetzung
+
+```
+
+Die KI darf diese Bedeutungen nicht eigenmächtig verändern.
+Ein bestehender `tipp` darf beispielsweise nicht automatisch zu einem sicheren `fehler` werden, nur weil ein KI-Modell eine andere Einschätzung liefert.
+4. Keine zweite Rechtschreibprüfung
+Es darf NICHT folgendes entstehen:
+
+```text
+bestehende Rechtschreibprüfung
++
+neue KI-Rechtschreibprüfung
+
+```
+
+Ebenso darf keine zweite parallele Struktur für folgende Bereiche entstehen:
+
+* Wortlisten
+* Regeln
+* Fehler
+* Treffer
+* Korrekturen
+* Lernzustände
+* ignorierte Wörter
+* Fehlerpositionen
+* Prüfeinstellungen
+
+Die bestehende Prüfung bleibt die zentrale Instanz.
+Wenn eine Erweiterung notwendig ist:
+
+```text
+bestehende Struktur
++
+kleinstmögliche Erweiterung
+
+```
+
+Nicht:
+
+```text
+bestehende Struktur
++
+komplett neues KI-Prüfsystem
+
+```
+
+5. Bestehende Regeln und Lernfunktionen erhalten
+Alle vorhandenen Mechanismen müssen weiter funktionieren.
+Dazu gehören insbesondere:
+
+* Rechtschreibregeln
+* Grammatikregeln
+* Satzbauregeln
+* Wortlisten
+* Wörterbuch
+* gelernte Korrekturen
+* ignorierte Wörter
+* Benutzerentscheidungen
+* Prüfschalter
+* vorhandene Korrekturvorschläge
+* Fehlerpositionen
+* Persistenz
+
+Wenn ein Benutzer eine Korrektur gelernt oder ein Wort ignoriert hat, darf diese Information durch die KI-Erweiterung nicht verloren gehen.
+6. Bestehende Optionen berücksichtigen
+Vorhandene Prüfoptionen müssen weiterhin berücksichtigt werden.
+Beispielsweise vorhandene Schalter wie:
+
+```text
+rsGrossIgnorieren
+rsZahlenIgnorieren
+rsPfadeIgnorieren
+
+```
+
+dürfen durch neue KI-Funktionen nicht umgangen werden.
+Die genaue Liste muss aus dem bestehenden Code ermittelt werden.
+Nicht aus diesem Prompt eine neue Liste erfinden.
+7. Button „Prüfen“ erhalten
+Der vorhandene Button:
+
+```text
+Prüfen
+
+```
+
+muss weiterhin die bestehende Prüfungslogik ausführen.
+Er darf NICHT einfach durch:
+
+```text
+KI → Text prüfen
+
+```
+
+ersetzt werden.
+Die bestehende Prüfung muss weiterhin tatsächlich ausgeführt werden.
+Eine mögliche Integration kann sinngemäß so aussehen:
+
+```text
+Prüfen
+   ↓
+bestehende Prüfungslogik
+   ↓
+bestehende Regeln
+   ↓
+bestehende Wortlisten
+   ↓
+bestehende Kontextprüfung
+   ↓
+bestehende Ergebnisstruktur
+   ↓
+optionale KI-Erweiterung
+
+```
+
+Die tatsächliche Reihenfolge muss jedoch aus dem vorhandenen Code übernommen werden.
+8. KI darf bestehende Prüfung ergänzen
+KI-Funktionen wie:
+
+* Text verbessern
+* Rechtschreibung korrigieren
+* Grammatik korrigieren
+* Text umformulieren
+* Text kürzen
+* Text erweitern
+* professioneller formulieren
+* einfacher formulieren
+* Tonalität ändern
+* zusammenfassen
+* übersetzen
+* eigener KI-Befehl
+
+dürfen die bestehende Prüfung nicht ersetzen.
+Insbesondere darf die Aktion „Text verbessern“ nicht stillschweigend die komplette bestehende Prüfungslogik umgehen.
+9. KI-Korrekturen und bestehende Treffer
+Wenn KI-Korrekturen angeboten werden, müssen bestehende Treffer berücksichtigt werden.
+Die KI darf nicht einfach bestehende sichere Ergebnisse überschreiben oder entfernen.
+Vorhandene Benutzerentscheidungen haben Vorrang.
+Wenn der Benutzer beispielsweise:
+
+* einen Fehler ignoriert,
+* ein Wort gelernt,
+* eine Korrektur übernommen,
+* eine Korrektur abgelehnt
+
+hat, darf die neue KI-Schicht diese Entscheidung nicht ungefragt rückgängig machen.
+TEIL A2 – DREI EBENEN DER KI-BEDIENUNG
+10. Ebene A – Optionen → KI
+Hier befindet sich die vollständige zentrale KI-Konfiguration:
+
+```text
+Optionen
+ └── KI
+      ├── Anbieter
+      ├── Modelle
+      ├── Aufgaben/Zuweisungen
+      ├── API-Konfiguration
+      └── Erweiterte Einstellungen
+
+```
+
+Alle Provider und Modelle werden zentral verwaltet.
+11. Ebene B – KI-Schnellmenü
+Das bestehende Dropdown-/Schnellmenü soll nur häufig verwendete KI-Funktionen anbieten.
+Beispielsweise:
+
+```text
+KI
+──────────────
+Schreibhilfe
+Zusammenfassen
+Text verbessern
+Text analysieren
+Übersetzen
+Frage an KI
+Kommentar beantworten
+Überschrift erzeugen
+──────────────
+KI-Einstellungen
+
+```
+
+Das Schnellmenü darf keine eigene Provider- oder API-Konfiguration besitzen.
+Alle Aktionen greifen auf:
+
+```text
+Optionen → KI
+
+```
+
+zu.
+„KI-Einstellungen“ soll direkt die bestehende zentrale Optionsseite öffnen.
+TEIL A3 – SCHREIBHILFE
+12. Bestehende Schreibhilfe erweitern
+Die vorhandene Schreibhilfe bleibt bestehen.
+Sie ist keine neue KI-Komponente, sondern wird erweitert.
+Erweitere sie – soweit es zur vorhandenen Architektur passt – um:
+
+* Text verbessern
+* Rechtschreibung korrigieren
+* Grammatik korrigieren
+* Text umformulieren
+* Text kürzen
+* Text erweitern
+* professioneller formulieren
+* einfacher formulieren
+* Tonalität ändern
+* zusammenfassen
+* Übersetzen
+* eigenen KI-Befehl ausführen
+
+Alle Funktionen müssen dasselbe zentrale KI-System und die zentrale Modellkonfiguration verwenden.
+Die vorhandene mehrstufige Rechtschreibprüfung bleibt dabei vollständig erhalten.
+TEIL A4 – OLLAMA
+13. Ollama als lokalen Provider integrieren
+Ollama ist lokal installiert und soll als vollwertiger Provider in die bestehende KI-Architektur integriert werden.
+Standardendpoint:
+
+```text
+http://localhost:11434
+
+```
+
+Der Endpoint muss über die KI-Einstellungen änderbar sein.
+Ollama darf nicht als Sonderlösung außerhalb des bestehenden Provider-Systems implementiert werden.
+Ziel:
+
+```text
+AIProvider
+ ├── OpenAI
+ ├── Ollama
+ ├── vorhandene Provider
+ └── zukünftige Provider
+
+```
+
+Falls bereits ein Provider-Interface existiert, dieses erweitern.
+14. Ollama-Verbindung testen
+In:
+
+```text
+Optionen → KI → Anbieter → Ollama
+
+```
+
+muss eine Verbindung getestet werden können.
+Ablauf:
+
+```text
+Ollama auswählen
+      ↓
+Endpoint laden
+      ↓
+Verbindung testen
+      ↓
+installierte Modelle abrufen
+      ↓
+Modelle anzeigen
+
+```
+
+Wenn Ollama nicht erreichbar ist, verständliche Benutzerfehlermeldung anzeigen.
+Beispiel:
+
+```text
+Ollama konnte nicht erreicht werden.
+
+Bitte prüfen Sie, ob der lokale Ollama-Dienst gestartet wurde.
+
+```
+
+Keine technischen Exceptions direkt an Benutzer weitergeben.
+15. Ollama-Modelle automatisch erkennen
+Nutze die vorhandene Ollama-API, um installierte Modelle automatisch abzurufen.
+Die Daten müssen in die bestehende Modellstruktur integriert werden.
+Mindestens sinngemäß:
+
+```text
+Modellname
+Modell-ID
+Provider = Ollama
+lokal verfügbar = true
+Capabilities
+
+```
+
+Keine separate Modellverwaltung nur für Ollama bauen.
+16. „Modelle aktualisieren“
+Der bestehende Button:
+
+```text
+Liste der Modelle aktualisieren
+
+```
+
+muss providerabhängig funktionieren.
+Beispiel:
+
+```text
+OpenAI
+ → OpenAI Model API
+
+Ollama
+ → lokale Ollama API
+
+anderer Provider
+ → jeweilige Provider-API
+
+```
+
+Die UI darf keine hart codierte Providerlogik enthalten.
+Verwende das vorhandene Provider-Interface bzw. erweitere es sinnvoll.
+17. API-Key-Verhalten
+Ollama benötigt in der Standardkonfiguration keinen API-Key.
+Daher muss die Provider-Konfiguration unterschiedliche Anforderungen unterstützen.
+Beispiel:
+
+```text
+OpenAI
+API-Key: erforderlich
+Endpoint: konfigurierbar
+
+Ollama
+API-Key: nicht erforderlich
+Endpoint: http://localhost:11434
+
+```
+
+Bei Ollama:
+
+* API-Key-Feld ausblenden oder
+* eindeutig als „nicht erforderlich“ kennzeichnen.
+
+Keine künstliche Pflicht zur Eingabe eines API-Keys.
+18. Provider-Abstraktion
+Falls bereits vorhanden, erweitere das Provider-System.
+Grundlegende Operationen können beispielsweise sein:
+
+```text
+testConnection()
+listModels()
+generateText()
+analyzeText()
+
+```
+
+Weitere Operationen nur dann hinzufügen, wenn sie architektonisch sinnvoll sind.
+Ein Provider darf Funktionen nur anbieten, wenn er sie tatsächlich unterstützt.
+19. Model Capabilities
+Modelle sollen Fähigkeiten besitzen können, beispielsweise:
+
+```text
+Text
+Code
+Vision
+Image
+Embedding
+Audio
+Moderation
+Realtime
+
+```
+
+Bei Ollama:
+
+* verfügbare Informationen zur Erkennung nutzen
+* vorhandene Modellinformationen verwenden
+* falls automatische Erkennung nicht zuverlässig möglich ist, manuelle Capability-Zuordnung ermöglichen
+
+Die Capability-Struktur muss zur vorhandenen Anwendung passen.
+20. Zentrale Aufgaben-/Modellzuweisung
+In den KI-Einstellungen muss definiert werden können, welches Modell für welche Aufgabe verwendet wird.
+Beispielsweise:
+
+```text
+Chatbot
+ → Ollama / Modell A
+
+Zusammenfassen
+ → Ollama / Modell A
+
+Textanalyse
+ → Ollama / Modell B
+
+Übersetzung
+ → konfiguriertes Übersetzungsmodell
+
+Bildgenerierung
+ → konfigurierter Bildanbieter
+
+Einbettungen
+ → konfiguriertes Embedding-Modell
+
+```
+
+Die Zuweisungen müssen persistent gespeichert werden.
+21. Fallback-System
+Wenn es mit der bestehenden Architektur vereinbar ist, implementiere ein zentrales Fallback-System:
+
+```text
+bevorzugtes Modell
+      ↓
+nicht verfügbar?
+      ↓
+alternatives konfiguriertes Modell
+      ↓
+kein Modell verfügbar?
+      ↓
+verständliche Fehlermeldung
+
+```
+
+Kein automatischer Wechsel zu einem externen Anbieter, wenn dieser nicht ausdrücklich konfiguriert wurde.
+Ein lokales Ollama-Modell muss vom Benutzer bewusst als bevorzugtes Modell ausgewählt werden können.
+22. Lokale KI deutlich kennzeichnen
+Ollama soll in der Benutzeroberfläche als:
+
+```text
+Lokaler Anbieter
+
+```
+
+gekennzeichnet werden.
+Wenn Ollama verwendet wird, soll für den Benutzer erkennbar sein, dass die Verarbeitung lokal erfolgt.
+TEIL B – EIGENE ASSISTENTEN AUS DER SEITENLEISTE ENTFERNEN
+23. Sidebar analysieren
+Durchsuche das Repository nach:
+
+```text
+EIGENE ASSISTENTEN
+Eigene Assistenten
+Noch keiner angelegt.
+Eigenen Anbieter hinzufügen
+ki-eigene
+ki-eigene-neu
+ki-anbieter-link
+assistentErstellen
+eigenenAnbieterHinzufuegen
+
+```
+
+Prüfe insbesondere:
+
+```text
+oberflaeche/index.html
+oberflaeche/js/ki.js
+oberflaeche/js/kiteil.js
+oberflaeche/js/einstellungen.js
+oberflaeche/daten/register.js
+
+```
+
+Unterscheide zwischen:
+
+1. Sidebar-UI
+2. allgemeiner Assistentenlogik
+3. Einstellungen-/Optionslogik
+
+24. „Eigene Assistenten“ vollständig aus der Sidebar entfernen
+Aus der Seitenleiste müssen vollständig verschwinden:
+
+* „Eigene Assistenten“
+* „Noch keiner angelegt.“
+* `+`-Button zum Anlegen
+* Liste eigener Assistenten
+* „Eigenen Anbieter hinzufügen …“
+* weitere UI-Elemente ausschließlich zur Verwaltung eigener Assistenten/Anbieter
+
+Insbesondere prüfen:
+
+```text
+.ki-eigene-kopf
+#ki-eigene-neu
+.ki-eigene
+#ki-eigene
+.ki-anbieter-link
+#ki-anbieter-link
+
+```
+
+Diese Elemente sollen nicht lediglich per CSS versteckt werden.
+Sie müssen aus dem Sidebar-DOM entfernt werden.
+25. Assistentenlogik erhalten
+Nicht unnötig löschen:
+
+```text
+assistentErstellen()
+
+```
+
+sowie:
+
+* gespeicherte Assistenten
+* Laden/Speichern
+* Assistentenverwaltung
+* Anbieterverwaltung
+* Provider-Konfiguration
+* Einstellungen
+
+Die Funktionen müssen erhalten bleiben, wenn sie über die globalen Optionen oder andere Bereiche benötigt werden.
+Nur Sidebar-spezifischen Code entfernen, wenn er tatsächlich nicht mehr benötigt wird.
+26. Verwaltung ausschließlich über Optionen
+Die Verwaltung eigener Assistenten und Anbieter darf künftig ausschließlich über:
+
+```text
+Optionen
+
+```
+
+erreichbar sein.
+Prüfe bestehende Einträge in:
+
+```text
+oberflaeche/daten/register.js
+
+```
+
+und der Einstellungen-Implementierung.
+Keine zweite Verwaltungsoberfläche in der Sidebar erstellen.
+TEIL C – SCHREIBHILFE-HEADER KOMPAKT MACHEN
+27. Erklärtext entfernen
+Entferne aus dem Header den Text:
+„Sucht die Fehler, die ein Rechtschreibprüfer nicht finden kann.“
+Nicht nur verstecken, sondern aus dem Markup entfernen, wenn er ausschließlich zu diesem Header gehört.
+Wichtig:
+Die zugrunde liegende Rechtschreibprüfung selbst darf dadurch selbstverständlich NICHT entfernt oder verändert werden.
+28. Titel und Prüfen in einer Zeile
+„Schreibhilfe“ und „Prüfen“ müssen in einer einzigen kompakten horizontalen Zeile stehen.
+Sinngemäß:
+
+```text
+Schreibhilfe                    [Prüfen]
+
+```
+
+Keine zweite Zeile.
+Der Button „Prüfen“ muss vollständig funktional bleiben und weiterhin die bestehende mehrstufige Prüfung ausführen.
+29. Status-Badges kompakt machen
+Prüfe die bestehenden Statusanzeigen:
+
+* „Wellen“
+* „Vorhersage“
+* „AutoKorr“
+
+Sie dürfen keinen zusätzlichen vertikalen Platz mehr verbrauchen.
+Bevorzugt:
+
+```text
+Schreibhilfe   • • •             [Prüfen]
+
+```
+
+oder eine vergleichbar dezente kompakte Darstellung.
+Alternativ können sie – sofern dies mit der bestehenden Architektur sinnvoll möglich ist – hinter einem kleinen Einstellungen-/Zahnrad-Element erreichbar sein.
+Funktionalität und Zustände müssen erhalten bleiben.
+Keine neue parallele Einstellungslogik erstellen.
+30. Header maximal 35–40 px
+Der gesamte obere Schreibhilfe-Header soll ungefähr maximal:
+
+```text
+35–40 px
+
+```
+
+hoch sein.
+Keine unnötigen:
+
+* Leerzeilen
+* großen Margins
+* großen Paddings
+* hohen Buttons
+* Badge-Zeilen
+* Untertitel
+
+Die eigentlichen Korrekturvorschläge sollen dadurch deutlich weiter oben sichtbar werden.
+31. Responsive Verhalten
+Besonders kleine Notebook-Displays berücksichtigen.
+Der Header darf nicht plötzlich umbrechen.
+Achte darauf:
+
+* „Schreibhilfe“ bleibt sichtbar
+* „Prüfen“ bleibt sichtbar
+* keine Flex-Wrap-Zeile
+* Statusanzeigen erzeugen keine zusätzliche Höhe
+* bestehende Sidebar-Breite wird berücksichtigt
+
+Verwende nach Möglichkeit vorhandene CSS-Strukturen.
+Keine unnötigen starren Breiten.
+TEIL D – SCHREIBHILFE UND KI-KONTEXT
+32. Kontextverarbeitung
+„Schreibhilfe“ muss den aktuellen Kontext berücksichtigen.
+Wenn Text markiert ist:
+
+```text
+markierter Text
+      ↓
+Schreibhilfe
+      ↓
+KI-Aktion
+      ↓
+aktuelles konfiguriertes Modell
+
+```
+
+Wenn kein Text markiert ist, kann – sofern mit der bestehenden Architektur sinnvoll – der aktuelle Absatz oder Dokumentkontext verwendet werden.
+Der Benutzer muss erkennen können, welcher Text verarbeitet wird.
+Die bestehende Rechtschreibprüfung darf durch die Kontextverarbeitung nicht umgangen werden.
+TEIL E – KOMMENTAR-KI
+Die Kommentar-Seitenleiste soll – sofern bereits eine entsprechende Infrastruktur vorhanden ist – zentrale KI-Funktionen verwenden können.
+Beispielsweise:
+
+```text
+Kommentar
+   ↓
+KI
+   ├── Zusammenfassen
+   ├── Antwort vorschlagen
+   ├── Antwort formulieren
+   └── Kommentar analysieren
+
+```
+
+Dabei immer das zentral konfigurierte Modell verwenden.
+Keine eigene Kommentar-KI-Konfiguration erstellen.
+TEIL F – ÜBERSCHRIFTEN
+Für Überschriften bzw. Dokumentabschnitte sollen – sofern die bestehende Architektur dies unterstützt – zentrale KI-Funktionen verwendet werden können:
+
+```text
+Abschnitt
+   ↓
+KI
+   ├── Überschrift erzeugen
+   ├── Überschrift verbessern
+   ├── Alternativen erzeugen
+   └── Abschnitt zusammenfassen
+
+```
+
+Den relevanten Dokumentkontext übergeben.
+TEIL G – LOKALISIERUNG
+Alle neuen bzw. geänderten Benutzeroberflächen müssen das bestehende i18n-System verwenden.
+Insbesondere prüfen:
+
+```text
+Translation
+
+```
+
+und ersetzen durch die passende deutsche Bezeichnung, z. B.:
+
+```text
+Übersetzung
+
+```
+
+Ebenso:
+
+```text
+Select language for AI translation.
+
+```
+
+muss in der aktuellen Sprache korrekt dargestellt werden.
+Suche den gesamten KI-Bereich nach weiteren englischen UI-Texten.
+Keine hart codierten deutschen Strings einführen, wenn das Projekt für diesen Bereich bereits i18n verwendet.
+TEIL H – GEMEINSAME ARCHITEKTUR
+Die zentrale Architektur muss nach der Änderung sinngemäß so funktionieren:
+
+```text
+                    ┌────────────────────────┐
+                    │     OPTIONEN → KI      │
+                    │ zentrale Konfiguration │
+                    └───────────┬────────────┘
+                                │
+                 ┌──────────────┴──────────────┐
+                 │                             │
+        ┌────────▼────────┐          ┌─────────▼────────┐
+        │   KI-Services   │          │ Modellverwaltung │
+        └────────┬────────┘          └─────────┬────────┘
+                 │                             │
+                 └──────────────┬──────────────┘
+                                │
+          ┌─────────────────────┼─────────────────────┐
+          │                     │                     │
+     ┌────▼─────┐          ┌────▼─────┐        ┌────▼──────┐
+     │  Ollama  │          │  OpenAI  │        │ weitere   │
+     │  lokal   │          │          │        │ Provider  │
+     └──────────┘          └──────────┘        └───────────┘
+
+                         ▲
+                         │
+              zentrale KI-Services
+                         │
+        ┌────────────────┼────────────────┐
+        │                │                │
+   Schnellmenü      Schreibhilfe      Kontext-KI
+                                    Kommentare/
+                                    Überschriften
+
+```
+
+Alle KI-Funktionen müssen dieselbe zentrale Provider-, Modell- und Konfigurationslogik verwenden.
+Keine separate KI-Konfiguration für:
+
+* Schnellmenü
+* Schreibhilfe
+* Kommentare
+* Überschriften
+* Sidebar
+* einzelne KI-Aktionen
+
+TEIL H1 – INTEGRATION DER BESTEHENDEN RECHTschreibprüfung IN DIESE ARCHITEKTUR
+Die zentrale KI-Architektur darf die bestehende mehrstufige Prüfung nicht umgehen.
+Die Architektur muss sinngemäß ermöglichen:
+
+```text
+Dokument
+   │
+   ├── bestehende Rechtschreib-/Grammatikprüfung
+   │       ├── vorhandene Stufen
+   │       ├── vorhandene Regeln
+   │       ├── vorhandene Wortlisten
+   │       ├── vorhandene Lernlogik
+   │       └── vorhandene Ergebnisse
+   │
+   └── zentrale KI-Funktionen
+           ├── Text verbessern
+           ├── Umformulieren
+           ├── Zusammenfassen
+           ├── Übersetzen
+           └── weitere KI-Aktionen
+
+```
+
+Die KI ist eine zusätzliche Fähigkeit der Schreibhilfe.
+Sie ist nicht die neue Grundlage der vorhandenen Rechtschreibprüfung.
+TEIL I – TESTS
+Nach der Implementierung gründlich testen.
+Ollama
+
+* Ollama läuft
+* Ollama läuft nicht
+* Verbindung testen
+* Endpoint ändern
+* Modelle abrufen
+* Modelle aktualisieren
+* Modell auswählen
+* Modell speichern
+* Modell wieder laden
+* API-Key ist bei Ollama nicht erforderlich
+
+KI-Einstellungen
+
+* Provider hinzufügen
+* Provider bearbeiten
+* Provider speichern
+* Modell auswählen
+* Capability setzen
+* Aufgabenmodell zuweisen
+* Konfiguration neu laden
+
+Schnellmenü
+
+* Schreibhilfe öffnen
+* Text verbessern
+* Zusammenfassen
+* Übersetzen
+* Analysieren
+* KI-Einstellungen öffnen
+
+Schreibhilfe
+
+* markierten Text verwenden
+* Kontext verwenden
+* Prüfen
+* KI-Aktionen ausführen
+* Ergebnis zurück ins Dokument übernehmen
+
+Bestehende Rechtschreibprüfung
+Vor und nach der Änderung vergleichen.
+Prüfen:
+
+* alle bestehenden Prüfungsstufen laufen weiterhin
+* bestehende Rechtschreibregeln funktionieren
+* bestehende Grammatikregeln funktionieren
+* bestehende Satzbauregeln funktionieren
+* bestehende Wortlisten funktionieren
+* gelernte Korrekturen funktionieren
+* ignorierte Wörter funktionieren
+* bestehende Optionen funktionieren
+* `fehler` funktioniert
+* `tipp` funktioniert
+* `hinweis` funktioniert
+* Fehlerpositionen stimmen weiterhin
+* Korrekturvorschläge stimmen weiterhin
+* Benutzerentscheidungen bleiben erhalten
+* „Prüfen“ führt weiterhin die bestehende Prüfung aus
+* KI ersetzt die Prüfung nicht
+* KI erzeugt kein zweites paralleles Prüfsystem
+
+Regression
+Besonders darauf achten, dass eine KI-Korrektur nicht:
+
+* bestehende Fehler entfernt
+* bestehende Tipps entfernt
+* Hinweise verändert
+* gelernte Wörter vergisst
+* ignorierte Wörter erneut markiert
+* Fehlerpositionen verschiebt
+* vorhandene Einstellungen umgeht
+* bestehende Benutzerentscheidungen überschreibt
+
+Sidebar
+
+* „Eigene Assistenten“ ist nicht mehr vorhanden
+* „Noch keiner angelegt.“ ist nicht vorhanden
+* `+`-Button ist nicht vorhanden
+* „Eigenen Anbieter hinzufügen …“ ist nicht vorhanden
+* „Für wen?“ funktioniert
+* „Worum geht’s?“ funktioniert
+* KI-Schnellaktionen funktionieren
+
+Header
+
+* Untertitel entfernt
+* „Schreibhilfe“ und „Prüfen“ in einer Zeile
+* Status-Badges erzeugen keine zusätzliche Zeile
+* Header ca. 35–40 px
+* keine unnötige Leerfläche
+* kleine Notebook-Breiten getestet
+* keine unerwarteten Umbrüche
+
+Kommentare / Überschriften
+Falls die entsprechenden Funktionen vorhanden bzw. implementiert wurden:
+
+* Kommentar analysieren
+* Antwort erzeugen
+* Überschrift erzeugen
+* Überschrift verbessern
+* Alternativen erzeugen
+
+TEIL J – TECHNISCHE ABSCHLUSSPRÜFUNG
+Nach Abschluss:
+
+1. Typechecking ausführen.
+2. Linter ausführen.
+3. Unit-Tests ausführen.
+4. Integrationstests ausführen, sofern vorhanden.
+5. Build ausführen.
+6. JavaScript-Fehler prüfen.
+7. Nach verwaisten DOM-Referenzen suchen.
+8. Nach nicht mehr verwendeten CSS-Klassen suchen.
+9. Prüfen, dass keine doppelte KI-Konfiguration entstanden ist.
+10. Prüfen, dass Ollama über die zentrale Provider-Architektur läuft.
+11. Prüfen, dass Schnellmenü und Schreibhilfe dieselbe Konfiguration verwenden.
+12. Prüfen, dass die globalen Optionen weiterhin funktionieren.
+13. Prüfen, dass die bestehende mehrstufige Rechtschreibprüfung weiterhin vollständig funktioniert.
+14. Prüfen, dass keine bestehende Prüfungsstufe entfernt oder umgangen wurde.
+15. Prüfen, dass keine zweite Rechtschreibprüfung implementiert wurde.
+
+Wenn ein Test oder Build fehlschlägt, analysiere den Fehler und behebe ihn, sofern die Ursache durch deine Änderungen entstanden ist.
+WICHTIGE ENTWICKLUNGSREGELN
+1. Bestehende Architektur bevorzugen
+Bevor du neue Dateien, Services oder Klassen anlegst, suche nach vorhandenen Lösungen.
+2. Keine Duplikation
+Provider-, Modell-, API-, Einstellungs- und Prüfcode darf nicht mehrfach implementiert werden.
+3. Keine UI-Dummies
+Alle angezeigten Funktionen müssen tatsächlich mit der bestehenden Infrastruktur verbunden sein.
+4. Keine unnötigen Änderungen
+Bestehende Funktionen außerhalb des Aufgabenbereichs nicht verändern.
+5. Bestehende Daten erhalten
+Vorhandene Einstellungen, Provider, Modelle, Regeln, Wortlisten und Lernzustände nicht ungefragt löschen oder zurücksetzen.
+6. Abwärtskompatibilität beachten
+Bestehende gespeicherte Konfigurationen müssen nach Möglichkeit weiterhin geladen werden.
+7. Fehler verständlich behandeln
+Technische Fehler intern protokollieren, dem Benutzer aber verständliche Fehlermeldungen anzeigen.
+8. Sicherheit
+API-Keys nicht unnötig im DOM anzeigen oder loggen.
+Lokale Ollama-Verarbeitung klar von externen Providern unterscheiden.
+BESONDERS WICHTIG – REGEL FÜR DIE BESTEHENDE RECHTSCHREIBPRÜFUNG
+Die bestehende mehrstufige Prüfung von Lunivo Office ist Bestandscode und keine zu ersetzende Altlast.
+Die Aufgabe lautet ausdrücklich NICHT:
+Baue eine neue KI-Rechtschreibprüfung.
+Die Aufgabe lautet:
+Erweitere die bestehende mehrstufige Rechtschreib-, Grammatik- und Schreibhilfe-Architektur von Lunivo Office um zentrale KI-Funktionen, ohne die vorhandene Prüfungslogik, ihre Stufen, Regeln, Wortlisten, Daten, Zustände, Einstellungen, Benutzerentscheidungen, Fehlerpositionen und Darstellung zu zerstören oder zu duplizieren.
+Das bedeutet:
+
+```text
+bestehende Lunivo-Prüfung
+        +
+zentrale KI-Infrastruktur
+        =
+erweiterte Schreibhilfe
+
+```
+
+und NICHT:
+
+```text
+bestehende Lunivo-Prüfung
+        +
+zweite KI-Rechtschreibprüfung
+        =
+zwei konkurrierende Prüfsysteme
+
+```
+
+Die vorhandene Prüfung muss nach der Umsetzung weiterhin so funktionieren wie vorher.
+Die neuen KI-Funktionen werden darum herum integriert.
+ABSCHLUSSBERICHT
+Nach der tatsächlichen Umsetzung gib einen kompakten technischen Bericht aus:
+
+```text
+Geänderte Dateien:
+- ...
+
+Neue/geänderte Komponenten:
+- ...
+
+KI-Architektur:
+- ...
+
+Ollama:
+- ...
+
+Modellverwaltung:
+- ...
+
+Capabilities:
+- ...
+
+Schnellmenü:
+- ...
+
+Schreibhilfe:
+- ...
+
+Bestehende Rechtschreibprüfung:
+- welche vorhandenen Komponenten wurden integriert
+- welche Prüfungsstufen wurden erhalten
+- welche bestehenden Regeln wurden berücksichtigt
+- welche Anpassungen waren notwendig
+
+Sidebar:
+- ...
+
+Header:
+- ...
+
+Kommentare:
+- ...
+
+Überschriften:
+- ...
+
+Lokalisierung:
+- ...
+
+Tests:
+- ...
+
+Typecheck:
+- ...
+
+Lint:
+- ...
+
+Build:
+- ...
+
+Regressionstest der bestehenden Rechtschreibprüfung:
+- ...
+
+Offene Punkte:
+- ...
+
+```
+
+Wichtig:
+Erst analysieren, dann implementieren, anschließend testen.
+Nicht nur beschreiben, was geändert werden müsste.
+Die ursprüngliche Aufgabe vollständig umsetzen und die bestehende mehrstufige Rechtschreibprüfung dabei als unveränderlichen Bestandteil der vorhandenen Lunivo-Architektur behandeln.
