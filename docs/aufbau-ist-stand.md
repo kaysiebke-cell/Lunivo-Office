@@ -6,7 +6,7 @@ doku/aufbau-band.md und doku/aufbau-optionen.md.
 
 
 LUNIVO WRITER – VOLLSTÄNDIGE MENÜSTRUKTUR
-
+```
 DIE BÄNDER
 │
 ├── Start
