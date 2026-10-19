@@ -1,9 +1,8 @@
 """Die Reiterleiste nach der Struktur „LUNIVO WRITER“ (Datei, Start, Einfügen, Seitenlayout, Verweise,
-Überprüfen, KI, Ansicht + kontextabhängige Register).
+Überprüfen, Schreibhilfe, Ansicht + kontextabhängige Register).
 
-Start, Einfügen, Seitenlayout, Verweise (= altes „Referenzen“), Überprüfen und Ansicht kommen unverändert
-aus dem alten Register (register.json). Datei, KI und die Kontext-Register sind hier beschrieben.
-Die alten Gruppen des Reiters „Schreibhilfe“ stehen in der rechten Seitenleiste (Bereich „Schreibhilfe“);
+Start, Einfügen, Seitenlayout, Verweise, Überprüfen und Ansicht kommen aus register.json. Datei, Schreibhilfe und die Kontext-Register sind hier ergänzt.
+Die Prüfungen der Schreibhilfe stehen zusätzlich in der rechten Seitenleiste (Bereich „Schreibhilfe“);
 „Sendungen“ ist in der Struktur nicht vorgesehen und bleibt in register.json erhalten.
 """
 from __future__ import annotations
@@ -146,7 +145,7 @@ def plan(register: dict) -> list[dict]:
     sh = nach["Schreibhilfe"] = dict(nach["Schreibhilfe"])
     sh["gruppen"] = [dict(g) for g in sh["gruppen"]]
     lesen = next(g for g in sh["gruppen"] if g["name"] == "Lesen")
-    if not any(k.get("tun") == "silbenfarben" for k in lesen["knoepfe"]):          # Lesehilfe für Legasthenie (nicht im alten Register)
+    if not any(k.get("tun") == "silbenfarben" for k in lesen["knoepfe"]):          # Lesehilfe für Legasthenie
         lesen["knoepfe"] = lesen["knoepfe"] + [_k("farbe", "Silben farbig", "silbenfarben", haken=True),
                                                _k("zahnrad", "Silben einstellen …", "silbenEinstellen")]
     vorhanden = {k.get("tun") for g in sh["gruppen"] for k in g["knoepfe"]}

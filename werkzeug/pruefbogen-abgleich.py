@@ -83,7 +83,7 @@ for k in bogen["items"]:
                 st, wo = "⬜", "(noch nicht zugeordnet)"
         zaehl[st] += 1
         ki = bogen["ki_stand"].get(slug(cat) + "|" + slug(it.rstrip("*")).strip("-"), {}).get("stand", "")
-        zeilen.append(f"- {st} {it.rstrip('*')} — {wo}" + (f"  _(Web-Fassung: {ki})_" if ki else ""))
+        zeilen.append(f"- {st} {it.rstrip('*')} — {wo}")
 kopf = (f"# Prüfbogen ↔ native Fassung\n\nErzeugt von `werkzeug/pruefbogen-abgleich.py` aus dem Prüfkatalog "
         f"(415 Punkte). **✅ {zaehl['✅']} · ◐ {zaehl['◐']} · ⬜ {zaehl['⬜']}**. "
         "✅ = Befehl/Funktion vorhanden (einzeln getestet nur, wo `tests/` es belegt); "

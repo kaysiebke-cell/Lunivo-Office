@@ -1,6 +1,5 @@
 """KI-Konfiguration: Aufgaben-Modellzuweisung, Liste der KI-Modelle, „Eigenen Anbieter hinzufügen“.
 
-Übertragen aus dem alten Lunivo (einstellungen.js: kiKonfiguration, anbieterFenster; ki.js: AUFGABEN, ANBIETER_TAGS).
 Der Anbieter wird hier festgelegt — in „KI-Konfiguration“ (Reiter Schreibhilfe/KI) oder in den Optionen.
 """
 from __future__ import annotations
@@ -110,7 +109,7 @@ class AnbieterDialog(QDialog):
             self.vorlage.setCurrentIndex(i)
             self.vorlage.blockSignals(False)
         elif not bestehend:
-            self.vorlage.setCurrentIndex(1)           # Ollama ist die Vorbelegung, wie im alten Lunivo
+            self.vorlage.setCurrentIndex(1)           # Ollama ist die Vorbelegung
 
     def _vorlage_gewaehlt(self, i: int) -> None:
         url = self.vorlage.itemData(i)

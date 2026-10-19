@@ -86,7 +86,7 @@ def test_hilfe_dialoge_und_kuerzel(app, tmp_path):
     from native_qt.windows.main_window import MainWindow
     w = MainWindow(Settings(QSettings(str(tmp_path / "s.ini"), QSettings.IniFormat)))
     d = hilfe_dialoge.handbuch(w)
-    assert "Das erste Blatt" in d.findChild(QTextBrowser).toPlainText()
+    assert "Aufbau des Fensters" in d.findChild(QTextBrowser).toPlainText()
     assert "F7" in hilfe_dialoge.tastenkuerzel(w).findChild(QTextBrowser).toPlainText()
     t = hilfe_dialoge.erweiterungen(w).findChild(QTextBrowser).toPlainText()
     assert "LibreOffice" in t and "LanguageTool" in t

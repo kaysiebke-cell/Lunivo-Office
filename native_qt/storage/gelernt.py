@@ -11,7 +11,7 @@ import re
 from .settings import data_dir
 
 WORT = re.compile(r"^[A-Za-zÄÖÜäöüß-]+$")
-LERN_SCHWELLE = 5      # so oft darf ein Fund bei ausdrücklichem „Prüfen“ angezeigt und nie geändert werden (wie ki.js)
+LERN_SCHWELLE = 5      # so oft darf ein Fund bei ausdrücklichem „Prüfen“ angezeigt und nie geändert werden
 
 
 class Gelernt:
@@ -54,7 +54,7 @@ class Gelernt:
 
     def merke_gezeigt(self, funde: list) -> None:
         """Beim ausdrücklichen Prüfen: wer denselben Fund fünfmal stehen lässt, meint es so (Wort kommt in Ruhe).
-        Die lebende Prüfung zählt nicht — sonst verschwänden Wellenlinien von selbst (siehe programm.js, zeichneFunde)."""
+        Die lebende Prüfung zählt nicht — sonst verschwänden Wellenlinien von selbst."""
         geaendert = False
         for f in funde:
             if not self.wort_ebene(f):

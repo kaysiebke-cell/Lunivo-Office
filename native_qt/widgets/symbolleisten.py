@@ -1,6 +1,6 @@
 """Oberfläche „Symbolleisten“: ☰ Menü + obere Leiste (Datei/Dokument) + untere Leiste (Text) + Zusammenhangsleiste.
 
-Reihenfolge und Beschriftungen aus werkzeugeBauen() in oberflaeche/js/programm.js übernommen. Gleiche Schnittstelle
+Gleiche Schnittstelle
 wie RegisterBand (aktualisieren, kontext, felder, menue_knopf), damit das Fenster beide gleich behandeln kann.
 """
 from __future__ import annotations
@@ -51,7 +51,7 @@ UNTEN_B = [("rahmen", "Absatzrahmen", "absatzRahmen"), ("toenung", "Absatzschatt
            ("sortieren", "Sortieren", "sortieren"), ("steuerzeichen", "Steuerzeichen", "steuerzeichenZeigen")]
 ZEILENABSTAENDE = [("1.0", "1,0"), ("1.15", "1,15"), ("1.5", "1,5"), ("2.0", "2,0"), ("2.5", "2,5"), ("3.0", "3,0")]
 GROESSEN = [8, 9, 10, 10.5, 11, 12, 14, 16, 18, 20, 24, 28, 36, 48, 72]
-# Zeichen, die gar kein Symbol sind (F K U S) — wie im alten Programm als Buchstabe gezeigt
+# Zeichen, die gar kein Symbol sind (F K U S) — als Buchstabe gezeigt
 BUCHSTABEN = {"F": ("F", "bold"), "K": ("K", "italic"), "U": ("U", "underline"), "S": ("S", "strike")}
 
 

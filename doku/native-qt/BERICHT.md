@@ -6,9 +6,8 @@ das ist offen (siehe 6). Der Prüfbogen ([PRUEFBOGEN.md](PRUEFBOGEN.md)) ist der
 „✅“ heißt „Befehl/Funktion vorhanden“, einzeln durch `tests/` belegt nur dort, wo im Eintrag ein Test genannt ist.
 
 ## 1. Dateien
-`native_qt/` (≈ 15 700 Zeilen Python in 7 Paketen), `tests/` (22 Testdateien, 171 Tests), `werkzeug/` (Exportskripte für Register,
-Symbolkatalog, Vorlagen, Handbuch; Abgleich-Skripte), `starten-qt.sh`, `requirements*.txt`, `doku/native-qt/*`. Die alte
-Web-Oberfläche (`oberflaeche/`, `start.py`) ist unverändert; auf `main` wurde nichts geändert.
+`native_qt/` (≈ 15 700 Zeilen Python in 7 Paketen), `tests/` (22 Testdateien, 171 Tests), `werkzeug/` (Abgleich-Skripte für Prüfbogen und Knöpfe), `starten-qt.sh`, `requirements*.txt`, `doku/native-qt/*`.
+
 
 ## 2. Tatsächlich umgesetzt
 * **Dokumente:** neu, öffnen, speichern (atomar), speichern unter, Kopie, Export (DOCX, ODT, DOC, RTF, TXT, HTML mit Codierung,
@@ -40,9 +39,8 @@ Web-Oberfläche (`oberflaeche/`, `start.py`) ist unverändert; auf `main` wurde 
 * **Oberfläche (modern, flach, Hell/Dunkel):** Register **Datei · Start · Einfügen · Seitenlayout · Verweise · Überprüfen · KI ·
   Ansicht** (+ Kontext-Register; „Sendungen“ nach Register anpassen), alternativ **Symbolleisten** mit Menüleiste; Register anpassen,
   Schnellzugriff, Symbole austauschen; Optionen-Fenster (3 Zweige, 17 Seiten); Hilfe (Handbuch, Tastenkürzel, Erweiterungen).
-* **Schreibhilfe-Seitenleiste (rechts):** *Überprüfen / Schreibhilfe / KI*. Prüfregeln der Web-Fassung (Python nachweislich gleich:
-  `tests/test_pruefung_paritaet.py` vergleicht gegen `pruefung.js` in Node), Wellenlinien, Karten (Ändern/Lassen), Wortvorhersage,
-  Gedächtnis (Zählung wie in `ki.js`), Vorlesen, Lesehilfe, Zeilenfokus, **Barrierefreiheit-Prüfung**, **Thesaurus** (KI).
+* **Schreibhilfe-Seitenleiste (rechts):** *Überprüfen / Schreibhilfe / KI*. Prüfregeln (Rechtschreibung, Grammatik, Zeichensetzung), Wellenlinien, Karten (Ändern/Lassen), Wortvorhersage,
+  Gedächtnis (Zählung je Fund), Vorlesen, Lesehilfe, Zeilenfokus, **Barrierefreiheit-Prüfung**, **Thesaurus** (KI).
 * **KI (freiwillig):** Korrigieren, Vorschläge, Übersetzen, Zusammenfassen, Text bearbeiten, Chat, Thesaurus, **eigene
   Assistenten**; Ollama / Claude / eigener Anbieter; Ergebnis wortweise eingesetzt; Zustimmung vor jedem Weg ins Internet.
 
@@ -84,7 +82,7 @@ Druckoptionen am Drucker, Zwischenstände, Sichern/Zurückholen, Gitternetz, Dun
   Präsentation sind ausgeschlossen), Sprechblasen bei Änderungen, „Gerade/ungerade Seiten“, „Dokument teilen“, Maßeinheit,
   Zuschnittsmarken drucken, Live-Vorschau/Minisymbolleiste, Wort-Extras.
 * **Optionen** (Rest): siehe `PRUEFBOGEN.md` (Abschnitt OPTIONEN) — 21 Punkte insgesamt offen.
-* Das **Handbuch** ist das der Web-Fassung (als Markdown); es beschreibt teils die Web-Oberfläche.
+* Das **Handbuch** (Hilfe ▸ Handbuch) ist eine kurze Einführung; Einzelheiten stehen in dieser Dokumentation.
 * Keine Behauptung vollständiger Word- oder WPS-Kompatibilität; Word selbst stand nicht zum Gegenprüfen zur Verfügung
   (geprüft mit LibreOffice und python-docx).
 
@@ -135,3 +133,7 @@ Anbieters mit „Bilder“. Getestet gegen einen gefälschten OpenAI-Server; **n
   Im Druck/PDF: Seite verkleinert neben den Blasen, Papierausrichtung automatisch/beibehalten/Querformat. Markup (Einfügungen, Löschungen,
   Farbe, Änderungsbalken) einstellbar. **Grenzen:** Blasen für Formatänderungen gibt es nicht; mit mehreren Spalten stehen die Blasen neben der
   ganzen Seite; im Druck ist die Anordnung eine Näherung an Word (Seite verkleinert statt Text umbrochen).
+
+## Symbole (Fluent-Stil)
+
+Die Symbole der Oberfläche stammen aus den **Fluent UI System Icons** (Microsoft, MIT; `native_qt/resources/fluent/`, Lizenztext in `LIZENZ.txt`) — derselben Formensprache wie die Segoe-Fluent-Symbole, die RibbonSpace benutzt (RibbonSpace selbst liefert keine Symboldateien, nur Schriftzeichen-Codes der Windows-Schrift). Zuordnung Symbolname → Fluent-Datei: `resources/fluent/zuordnung.json` (229 Symbole, je kleine 20-px- und große 28-px-Fassung). Ohne Zuordnung oder nach „Symbol austauschen“ greift weiter der Lucide-Strich. Einzelne Zuordnungen sind Annäherungen (z. B. „Sonderzeichen“) und können in der Datei geändert werden.

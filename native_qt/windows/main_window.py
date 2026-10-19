@@ -95,6 +95,8 @@ class MainWindow(QMainWindow):
         self.band_lay = lay
         lay.addWidget(self.band)
         mitte = QHBoxLayout(); mitte.setSpacing(0)
+        self.arbeit = QWidget()
+        mitte.setContentsMargins(0, 0, 0, 0)
         self.navigation = NavigationPanel(self.current_editor)
         self.navigation.aktion = self._nav_aktion
         self.navigation.hide()
@@ -102,7 +104,14 @@ class MainWindow(QMainWindow):
         mitte.addWidget(self.docs.stack, 1)
         mitte.addWidget(self.sidebar)
         mitte.addWidget(self._leiste_rechts())
-        lay.addLayout(mitte, 1)
+        self.arbeit.setLayout(mitte)
+        lay.addWidget(self.arbeit, 1)
+        from ..widgets.backstage import Backstage
+        self.backstage = Backstage(self)
+        self.backstage.schliessen.connect(self.backstage_schliessen)
+        self.backstage.hide()
+        lay.addWidget(self.backstage, 1)
+        self._backstage_verbinden()
         self.setCentralWidget(central)
         geo = self.settings.get("window/geometry")
         if geo:
@@ -1072,9 +1081,63 @@ class MainWindow(QMainWindow):
         self.band.menue_knopf.clicked.connect(self.show_main_menu)
         self.band_lay.insertWidget(idx, self.band)
         alt.setParent(None); alt.deleteLater()
+        self._backstage_verbinden()
         self._verbinde_felder()
         self._bereiche_bauen()
         self._refresh_ui()
+
+    # ---- Backstage (Reiter „Datei“) ------------------------------------------------------------------------------
+    _letzter_reiter = 1
+    _bs_zeit = 0.0
+
+    def _backstage_verbinden(self):
+        r = getattr(self.band, "reiter", None)
+        if r is None:
+            return
+        self.backstage.hide()
+        self.arbeit.show()
+        r.currentChanged.connect(self._reiter_gewechselt)
+        r.tabBarClicked.connect(self._reiter_angeklickt)
+
+    def _ist_datei(self, i: int) -> bool:
+        r = self.band.reiter
+        return 0 <= i < r.count() and r.tabText(i) == "Datei"
+
+    def _reiter_gewechselt(self, i: int):
+        if self._ist_datei(i):
+            self.backstage_oeffnen()
+        else:
+            self._letzter_reiter = i
+            self.backstage_zu()
+
+    def _reiter_angeklickt(self, i: int):
+        import time
+        if self._ist_datei(i) and self.backstage.isVisible() and time.monotonic() - self._bs_zeit > 0.4:   # zweiter Klick schließt
+            self.backstage_schliessen()
+
+    def backstage_oeffnen(self, seite: str = "zuletzt"):
+        import time
+        self._bs_zeit = time.monotonic()
+        self.band.stapel.hide()
+        self.band.linie.hide()
+        self.arbeit.hide()
+        self.backstage.oeffnen(seite)
+        self.backstage.show()
+
+    def backstage_zu(self):
+        if not self.backstage.isVisible():
+            return
+        self.backstage.hide()
+        self.arbeit.show()
+        if not self.band._eingeklappt:
+            self.band.stapel.show()
+        self.band.linie.show()
+
+    def backstage_schliessen(self):
+        r = self.band.reiter
+        if self._ist_datei(r.currentIndex()):
+            r.setCurrentIndex(self._letzter_reiter if not self._ist_datei(self._letzter_reiter) else 1)
+        self.backstage_zu()
 
     def show_main_menu(self):
         daten = next(m for m in self.band.daten["menues"] if m["name"] == "Datei")
@@ -1082,7 +1145,7 @@ class MainWindow(QMainWindow):
         self._tafel.zeigen_unter(self.band.menue_knopf)
 
     def _leiste_rechts(self):
-        """Schmale Leiste rechts wie im alten Lunivo: Chat und Schreibhilfe schalten die Seitenleiste um."""
+        """Schmale Leiste rechts: Chat und Schreibhilfe schalten die Seitenleiste um."""
         from PySide6.QtWidgets import QFrame, QToolButton, QVBoxLayout
         from ..widgets import icons
         leiste = QFrame()

@@ -69,7 +69,7 @@
  },
  "DATEI|Hilfe > Handbuch": {
   "status": "◐",
-  "wo": "das Handbuch der Web-Fassung (als Markdown) im Hilfefenster; beschreibt zum Teil die Web-Oberfläche"
+  "wo": "Handbuch (Markdown) im Hilfefenster"
  },
  "DATEI|Hilfe > Tastenkürzel": {
   "status": "✅",
@@ -311,13 +311,13 @@
   "status": "✅",
   "wo": "gegenstandslos: kein Browser"
  },
- "LANGUAGE BRIDGE (Spelling Engine)|Lunivo-Regeln verwenden statt Browser": {
+ "LANGUAGE BRIDGE (Spelling Engine)|Lunivo-Regeln verwenden": {
   "status": "✅",
-  "wo": "services/pruefung.py (Parität zu pruefung.js getestet)"
+  "wo": "services/pruefung.py (test_schreibhilfe)"
  },
  "LANGUAGE BRIDGE (Spelling Engine)|Benutzerwörter in Rechtschreibung beachten": {
   "status": "✅",
-  "wo": "services/pruefung.py (Parität zu pruefung.js getestet)"
+  "wo": "services/pruefung.py (test_schreibhilfe)"
  },
  "LANGUAGE BRIDGE (Spelling Engine)|Ignorierte Wörter in Rechtschreibung beachten": {
   "status": "◐",
@@ -329,11 +329,11 @@
  },
  "LANGUAGE BRIDGE (Grammar Engine)|Dieselbe Sprachkontext wie Spelling": {
   "status": "✅",
-  "wo": "gleiche Engine, regeln.js gelesen"
+  "wo": "gleiche Engine, regeln.json gelesen"
  },
  "LANGUAGE BRIDGE (Grammar Engine)|Grammatikregeln aus regeln.js nutzen": {
   "status": "✅",
-  "wo": "gleiche Engine, regeln.js gelesen"
+  "wo": "gleiche Engine, regeln.json gelesen"
  },
  "LANGUAGE BRIDGE (Grammar Engine)|Benutzerwörter in Grammatik beachten": {
   "status": "◐",
@@ -925,23 +925,23 @@
  },
  "OPTIONEN > Rechtschreibprüfung > Rechtschreibprüfung|Rechtschreibung während der Eingabe prüfen": {
   "status": "✅",
-  "wo": "Optionen ▸ Rechtschreibprüfung (test_schreibhilfe, test_pruefung_paritaet)"
+  "wo": "Optionen ▸ Rechtschreibprüfung (test_schreibhilfe)"
  },
  "OPTIONEN > Rechtschreibprüfung > Rechtschreibprüfung|Wörter in GROSSBUCHSTABEN ignorieren": {
   "status": "✅",
-  "wo": "Optionen ▸ Rechtschreibprüfung (test_schreibhilfe, test_pruefung_paritaet)"
+  "wo": "Optionen ▸ Rechtschreibprüfung (test_schreibhilfe)"
  },
  "OPTIONEN > Rechtschreibprüfung > Rechtschreibprüfung|Wörter mit Zahlen ignorieren": {
   "status": "✅",
-  "wo": "Optionen ▸ Rechtschreibprüfung (test_schreibhilfe, test_pruefung_paritaet)"
+  "wo": "Optionen ▸ Rechtschreibprüfung (test_schreibhilfe)"
  },
  "OPTIONEN > Rechtschreibprüfung > Rechtschreibprüfung|Internet- und Netzwerkpfade ignorieren": {
   "status": "✅",
-  "wo": "Optionen ▸ Rechtschreibprüfung (test_schreibhilfe, test_pruefung_paritaet)"
+  "wo": "Optionen ▸ Rechtschreibprüfung (test_schreibhilfe)"
  },
  "OPTIONEN > Rechtschreibprüfung > Rechtschreibprüfung|Weggewinkte Funde wieder anzeigen": {
   "status": "✅",
-  "wo": "Optionen ▸ Rechtschreibprüfung (test_schreibhilfe, test_pruefung_paritaet)"
+  "wo": "Optionen ▸ Rechtschreibprüfung (test_schreibhilfe)"
  },
  "OPTIONEN > Rechtschreibprüfung > Rechtschreibprüfung|Sprache für die Prüfung": {
   "status": "◐",

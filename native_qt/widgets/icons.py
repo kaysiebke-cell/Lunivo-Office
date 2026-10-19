@@ -1,4 +1,4 @@
-"""Symbole: dieselben 24×24-Strichzeichnungen wie im alten Programm (Lucide, ISC), mit Qt gerendert."""
+"""Symbole: 24×24-Strichzeichnungen (Lucide, ISC) und Fluent-Symbole (Microsoft, MIT), mit Qt gerendert."""
 from __future__ import annotations
 
 import json
@@ -70,6 +70,50 @@ def katalog_bild(name: str, px: int = 96, farbe: str = "#1f2328", strich: float 
     return img
 
 
+# Farbstriche unter Symbolen wie in Word: Name → Farbe (Schriftfarbe rot, Hervorheben gelb, Tönung blau, Rahmen/Schatten bleiben neutral)
+AKZENT = {"schriftfarbe": "#e03131", "marker": "#fcc419", "absatztoenung": "#74c0fc", "toenung": "#74c0fc"}
+
+_FLUENT: dict | None = None
+_SVG_TEXT: dict = {}
+
+
+def fluent_zuordnung() -> dict:
+    """Symbolname → Name der Fluent-UI-System-Icons-Datei (Microsoft, MIT; siehe resources/fluent/LIZENZ.txt)."""
+    global _FLUENT
+    if _FLUENT is None:
+        try:
+            with open(os.path.join(_HIER, "..", "resources", "fluent", "zuordnung.json"), encoding="utf-8") as fh:
+                _FLUENT = json.load(fh)
+        except OSError:
+            _FLUENT = {}
+    return _FLUENT
+
+
+def _fluent_svg(name: str, px: int, farbe: str) -> bytes | None:
+    """Das Fluent-Symbol in Palettenfarbe; None, wenn es keines gibt oder der Nutzer das Symbol ausgetauscht hat."""
+    f = fluent_zuordnung().get(name)
+    if f is None or pfade().get(name) != pfade_original().get(name):
+        return None
+    art = "g" if px >= 24 else "k"
+    key = (f, art)
+    if key not in _SVG_TEXT:
+        try:
+            with open(os.path.join(_HIER, "..", "resources", "fluent", f"{f}_{art}.svg"), encoding="utf-8") as fh:
+                _SVG_TEXT[key] = fh.read()
+        except OSError:
+            _SVG_TEXT[key] = ""
+    t = _SVG_TEXT[key]
+    if not t:
+        return None
+    t = t.replace("<svg ", f'<svg fill="{farbe}" ', 1)
+    if name in AKZENT:                                       # Farbstrich am unteren Rand; das Symbol selbst steht darüber
+        gr = 20 if art == "k" else 28
+        h = gr * 0.15
+        t = t.replace("</svg>", f'<rect x="{gr * 0.14:.2f}" y="{gr - h - gr * 0.02:.2f}" width="{gr * 0.72:.2f}" height="{h:.2f}" '
+                                f'rx="{h / 3:.2f}" fill="{AKZENT[name]}"/></svg>')
+    return t.encode()
+
+
 def hat(name: str) -> bool:
     return name in pfade()
 
@@ -86,7 +130,7 @@ def _pixmap(name: str, farbe: str, px: int) -> QPixmap:
     ratio = 2
     img = QImage(px * ratio, px * ratio, QImage.Format_ARGB32_Premultiplied)
     img.fill(Qt.transparent)
-    r = QSvgRenderer(QByteArray(_svg(pfade()[name], farbe)))
+    r = QSvgRenderer(QByteArray(_fluent_svg(name, px, farbe) or _svg(pfade()[name], farbe)))
     p = QPainter(img)
     r.render(p, QRectF(0, 0, px * ratio, px * ratio))
     p.end()

@@ -1,7 +1,6 @@
 """Das Band (Register): Reiter → Gruppen → Knöpfe, gebaut aus resources/register.json.
 
-register.json wird von werkzeug/register-exportieren.js aus oberflaeche/daten/register.js erzeugt —
-dieselbe Liste, derselbe Aufbau wie im alten Programm. Was `Befehle` nicht kennt, steht ausgegraut da.
+register.json beschreibt Reiter, Gruppen und Knöpfe. Was `Befehle` nicht kennt, steht ausgegraut da.
 """
 from __future__ import annotations
 
@@ -94,7 +93,7 @@ class RegisterBand(QWidget):
         self.stapel.setObjectName("bandStapel")
         self.stapel.setFixedHeight(112)
         lay.addWidget(self.stapel)
-        linie = QFrame()
+        linie = self.linie = QFrame()
         linie.setFrameShape(QFrame.HLine)
         linie.setFrameShadow(QFrame.Sunken)
         lay.addWidget(linie)

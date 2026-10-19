@@ -39,7 +39,7 @@ Rückmeldung „bei mir startet es nicht, hier ist die Fehlermeldung" ist
 brauchbar.
 
 **Verpacken.** Es gibt kein Flatpak, kein AppImage, kein `.deb`. Wer so
-etwas kann, hilft damit allen, die `./starten.sh` nicht zumutbar finden.
+etwas kann, hilft damit allen, die `./starten-qt.sh` nicht zumutbar finden.
 
 **Schriften und Lesbarkeit.** Die Bedienung lässt sich größer stellen, das
 Blatt auch. Ob das reicht, weiß ich nicht — ich sehe mit meinen Augen.
@@ -61,11 +61,10 @@ Drei Bitten:
 2. **Kommentare erklären das Warum, nicht das Was.** `i++ // erhöht i` hilft
    niemandem. `// Ab dem zweiten Zeichen, sonst bleiben „ambesten" und
    „esgibt" liegen` schon.
-3. **Keine neuen Abhängigkeiten ohne Grund.** Das Programm ist HTML, CSS,
-   JavaScript und Python — nichts wird nachgeladen, nichts gebaut. Wer das
-   ändert, sollte einen guten Grund nennen.
+3. **Keine neuen Abhängigkeiten ohne Grund.** Das Programm ist Python mit Qt (PySide6) —
+   nichts wird nachgeladen. Wer das ändert, sollte einen guten Grund nennen.
 
-Es gibt keinen Testlauf und keine Formatvorschrift. Prüf, ob es tut, was du
+Die Tests laufen mit `./starten-qt.sh --test`. Prüf, ob es tut, was du
 willst, und ob es das Übrige nicht kaputt macht.
 
 ## Der Ton hier

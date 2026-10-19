@@ -1,22 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-Die Prüfung ohne Internet — Wort für Wort dieselbe wie oberflaeche/js/pruefung.js.
+Die Prüfung ohne Internet: Regeln, Listen und Begründungen für Rechtschreibung, Grammatik und Zeichensetzung.
 
-Übernommen aus der LibreOffice-Erweiterung des Projekts „schreibhilfe“ (MIT, Kay Siebke)
-und gegen pruefung.js geprüft (tests/test_pruefung_parität.py).
+Übernommen aus der LibreOffice-Erweiterung des Projekts „schreibhilfe“ (MIT, Kay Siebke).
 
-Das ist eine Übersetzung, keine Neuerfindung: dieselben Listen, dieselben
-Muster, dieselbe Reihenfolge, dieselben Begründungen. Beide Fassungen werden
-gegeneinander geprüft (siehe libreoffice/vergleiche.py); was hier anders
-herauskäme, wäre ein Fehler.
-
-Den Wortschatz trägt diese Datei nicht mehr selbst: Er steht einmal in
-online/daten/regeln.js und wird von dort gelesen — von hier wie von app.js.
-Eine Abschrift kann auseinanderlaufen, eine Datei nicht. Was hier bleibt, sind
-die Regeln selbst; die tragen Baustücke als Code und lassen sich nicht als
-Daten hinschreiben.
-
-Wo JavaScript und Python auseinandergehen, steht es im Kommentar dabei.
+Den Wortschatz trägt diese Datei nicht selbst: Er steht einmal in native_qt/resources/daten/regeln.json.
+Was hier bleibt, sind die Regeln selbst; die tragen Baustücke als Code und lassen sich nicht als Daten hinschreiben.
 """
 
 import json
@@ -27,78 +16,28 @@ _HIER = os.path.dirname(os.path.abspath(__file__))
 
 
 def daten_ordner():
-    """Wo regeln.js und woerter.txt liegen — eine Quelle, nicht zwei Abschriften.
+    """Wo regeln.json und woerter.txt liegen.
 
-    Reihenfolge: Umgebungsvariable LUNIVO_DATEN, native_qt/resources/daten,
-    dann oberflaeche/daten im Projekt (dort liegen die Dateien heute).
+    Reihenfolge: Umgebungsvariable LUNIVO_DATEN, dann native_qt/resources/daten.
     """
     wurzel = os.path.abspath(os.path.join(_HIER, '..', '..'))
     kandidaten = [os.environ.get('LUNIVO_DATEN', ''),
-                  os.path.join(wurzel, 'native_qt', 'resources', 'daten'),
-                  os.path.join(wurzel, 'oberflaeche', 'daten')]
+                  os.path.join(wurzel, 'native_qt', 'resources', 'daten')]
     return [k for k in kandidaten if k]
 
 
-def _ohne_kommentare(text):
-    """Nimmt /* … */ und // … aus JavaScript heraus — Zeichenketten bleiben heil.
-
-    Ein grobes Suchen-und-Ersetzen ginge irgendwann schief, sobald einmal ein
-    Schrägstrich in einem Wort steht. Deshalb Zeichen für Zeichen, mit Blick
-    darauf, ob wir gerade mitten in einer Zeichenkette stehen.
-    """
-    raus, i, n, in_kette = [], 0, len(text), False
-    while i < n:
-        z = text[i]
-        if in_kette:
-            raus.append(z)
-            if z == '\\' and i + 1 < n:
-                raus.append(text[i + 1])
-                i += 2
-                continue
-            if z == '"':
-                in_kette = False
-            i += 1
-            continue
-        if z == '"':
-            in_kette = True
-            raus.append(z)
-            i += 1
-            continue
-        if z == '/' and i + 1 < n and text[i + 1] == '*':
-            ende = text.find('*/', i + 2)
-            i = n if ende < 0 else ende + 2
-            raus.append(' ')
-            continue
-        if z == '/' and i + 1 < n and text[i + 1] == '/':
-            ende = text.find('\n', i)
-            i = n if ende < 0 else ende
-            continue
-        raus.append(z)
-        i += 1
-    return ''.join(raus)
-
-
 def _lies_regeln():
-    """Holt den gemeinsamen Wortschatz aus regeln.js.
+    """Holt den gemeinsamen Wortschatz aus regeln.json.
 
-    Zwei Orte: gepackt liegt die Datei neben dieser hier (bauen.sh kopiert sie
-    hinein), im Arbeitsbaum unter online/daten/. Fehlt sie an beiden, bricht das
-    Laden ab — LAUT. Ein stilles Ausweichen auf leere Listen ließe die Prüfung
-    scheinbar laufen und einfach nichts mehr finden; genau so eine stille
-    Notlösung hat schon einmal einen grünen, aber wertlosen Vergleich erzeugt.
+    Fehlt die Datei, bricht das Laden ab — LAUT. Ein stilles Ausweichen auf leere Listen ließe die Prüfung
+    scheinbar laufen und einfach nichts mehr finden.
     """
-    kandidaten = [os.path.join(d, 'regeln.js') for d in daten_ordner()]
+    kandidaten = [os.path.join(d, 'regeln.json') for d in daten_ordner()]
     for k in kandidaten:
         if not os.path.exists(k):
             continue
         with open(k, 'r', encoding='utf-8') as datei:
-            text = datei.read()
-        marke = text.find('REGELDATEN')
-        anfang = text.find('{', marke) if marke >= 0 else -1
-        ende = text.rfind('}')
-        if anfang < 0 or ende < anfang:
-            raise ValueError('%s enthält kein REGELDATEN-Objekt.' % k)
-        return json.loads(_ohne_kommentare(text[anfang:ende + 1]))
+            return json.load(datei)
     raise IOError('Der gemeinsame Wortschatz fehlt. Gesucht wurde in:\n  %s'
                   % '\n  '.join(kandidaten))
 
@@ -109,7 +48,7 @@ _REGELN = _lies_regeln()
 # a) Wörter, die ein Rechtschreibprüfer NICHT finden kann
 #    — weil beide Schreibweisen für sich genommen richtig sind.
 #
-# Die Wörter stehen in online/daten/regeln.js, zusammen mit dem übrigen
+# Die Wörter stehen in native_qt/resources/daten/regeln.txt, zusammen mit dem übrigen
 # Wortschatz und der Begründung zu jedem Eintrag.
 # --------------------------------------------------------------------------
 
@@ -155,7 +94,7 @@ KEIN_HAUPTWORT = set(_REGELN['KEIN_HAUPTWORT'])
 ABKUERZUNG = re.compile(
     r'(?:^|[\s(„"])(?:[A-Za-zÄÖÜäöüß]|ca|bzw|usw|evtl|ggf|inkl|exkl|vgl|bspw|'
     r'Nr|Dr|Prof|Abs|Mio|Mrd|Tel|Str)\.$')
-# Gefragt wird das WORT an dieser Stelle, nicht die Nachbarschaft (wie wortUm/istAdresse in pruefung.js).
+# Gefragt wird das WORT an dieser Stelle, nicht die Nachbarschaft.
 ADR_A = re.compile(r'[@]|https?:|^www\.', re.I)
 ADR_B = re.compile(r'[A-Za-zÄÖÜäöü0-9_-]/[A-Za-zÄÖÜäöü0-9_-]')
 ADR_C = re.compile(r'\.(de|com|org|net|eu|git|io|dev)\b', re.I)
@@ -387,7 +326,7 @@ def trenne_zusammen(wort):
         return None
     # Ab dem ZWEITEN Zeichen — sonst bleiben „ambesten“, „esgibt“, „zuviel“
     # liegen. Zwei-Zeichen-Teile nur aus TRENN_KURZ, die große Liste wäre
-    # hier zu großzügig. (Gleiche Regel wie in online/js/app.js.)
+    # hier zu großzügig.
     for i in range(2, len(w) - 1):
         vorn, hinten = w[:i], w[i:]
         if vorn not in woerter or hinten not in woerter:
@@ -431,10 +370,8 @@ def nachbar_woerter(w):
     return aus
 
 
-# JavaScript sortiert mit localeCompare('de'): ä zählt wie a, ö wie o,
-# ü wie u, ß wie ss. Pythons eigener Vergleich sortiert nach Zahlenwert und
-# stellte alle Umlaute ans Ende — bei gleichrangigen Vorschlägen käme dann ein
-# anderer heraus als am Handy.
+# Deutsche Sortierung: ä zählt wie a, ö wie o, ü wie u, ß wie ss. Pythons eigener Vergleich sortiert nach
+# Zahlenwert und stellte alle Umlaute ans Ende.
 _DE_ERSATZ = {'ä': 'a', 'ö': 'o', 'ü': 'u', 'ß': 'ss'}
 
 
@@ -508,7 +445,7 @@ def pruefe_tippfehler(text, funde, gelernt=None):
 def wort_abstand(a, b):
     """Wie viele Handgriffe liegen zwischen zwei Wörtern? Zwei vertauschte
     Buchstaben zählen als EINER — „shcon“ ist ein Vertipper, kein anderes
-    Wort. (Gleiches Maß wie wortAbstand() in online/js/app.js.)"""
+    Wort."""
     zeilen = [list(range(len(b) + 1))]
     for i in range(1, len(a) + 1):
         zeile = [i] + [0] * len(b)
@@ -534,7 +471,7 @@ def ist_korrektur(falsch, richtig):
     return wort_abstand(a, b) <= erlaubt
 
 
-# Was gar nicht erst geprüft wird (Optionen ▸ Rechtschreibprüfung; Vorgabe: alle drei an, wie in pruefung.js)
+# Was gar nicht erst geprüft wird (Optionen ▸ Rechtschreibprüfung; Vorgabe: alle drei an)
 SCHALTER_STANDARD = {'rsGrossIgnorieren': True, 'rsZahlenIgnorieren': True, 'rsPfadeIgnorieren': True}
 
 
@@ -686,8 +623,7 @@ def finde_probleme(text, gelernt=None, schalter=None):
 
 
 # --------------------------------------------------------------------------
-# Vorschläge für ein einzelnes Wort (Rechtsklick-Menü) — Übertragung aus pruefung.js:
-# vorschlaegeFuer, klingtWie, koelnerPhonetik, abstand
+# Vorschläge für ein einzelnes Wort (Rechtsklick-Menü) (Vorschläge, Klangvergleich, Kölner Phonetik, Abstand)
 # --------------------------------------------------------------------------
 from .haeufig import HAEUFIG  # noqa: E402
 
