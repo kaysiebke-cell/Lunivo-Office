@@ -76,7 +76,7 @@ class Backstage(QWidget):
         links.setFixedWidth(340)
         ll = QVBoxLayout(links)
         ll.setContentsMargins(0, 8, 0, 8)
-        zurueck = QPushButton(icons.icon("zurueck", 18), "  Zurück zum Dokument")
+        zurueck = QPushButton(icons.icon("voriges", 18), "  Zurück zum Dokument")
         zurueck.setObjectName("bsKnopf")
         zurueck.setCursor(Qt.PointingHandCursor)
         zurueck.clicked.connect(self.schliessen)

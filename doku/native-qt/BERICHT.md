@@ -135,3 +135,7 @@ Anbieters mit „Bilder“. Getestet gegen einen gefälschten OpenAI-Server; **n
   Im Druck/PDF: Seite verkleinert neben den Blasen, Papierausrichtung automatisch/beibehalten/Querformat. Markup (Einfügungen, Löschungen,
   Farbe, Änderungsbalken) einstellbar. **Grenzen:** Blasen für Formatänderungen gibt es nicht; mit mehreren Spalten stehen die Blasen neben der
   ganzen Seite; im Druck ist die Anordnung eine Näherung an Word (Seite verkleinert statt Text umbrochen).
+
+## Symbole (Fluent-Stil)
+
+Die Symbole der Oberfläche stammen jetzt aus den **Fluent UI System Icons** (Microsoft, MIT; `native_qt/resources/fluent/`, Lizenztext in `LIZENZ.txt`) — derselben Formensprache wie die Segoe-Fluent-Symbole, die RibbonSpace benutzt (RibbonSpace selbst liefert keine Symboldateien, nur Schriftzeichen-Codes der Windows-Schrift). Zuordnung Symbolname → Fluent-Datei: `resources/fluent/zuordnung.json` (229 Symbole, je kleine 20-px- und große 28-px-Fassung). Ohne Zuordnung oder nach „Symbol austauschen“ greift weiter der Lucide-Strich. Einzelne Zuordnungen sind Annäherungen (z. B. „Sonderzeichen“) und können in der Datei geändert werden.
