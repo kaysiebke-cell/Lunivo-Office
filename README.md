@@ -1,52 +1,254 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="bilder/lunivo-office-dunkel.png">
-    <img src="bilder/lunivo-office.png" style="max-width: 100%; height: auto;" alt="Lunivo Writer Logo">
+    <source media="(prefers-color-scheme: dark)" srcset="assets/images/lunivo-office-dunkel.png">
+    <img src="assets/images/lunivo-office.png"
+         style="max-width: 100%; height: auto;"
+         alt="Lunivo-Office Logo">
   </picture>
-</p>
-
 <p align="center">
   Was geschrieben wird, bleibt auf diesem Rechner.<br>
   Nichts geht hinaus, ohne dass du es selbst schickst.
 </p>
 
-# Lunivo Writer
+<hr>
 
-Eine **native Textverarbeitung für Linux** (Python 3 + Qt 6 / PySide6) — ohne Browser und ohne Webserver.
-**DOCX** ist das Hauptformat. Die **Schreibhilfe** sitzt fest an der Seite und sucht die Fehler, die ein Rechtschreibprüfer
-**nicht** findet (das/dass, seit/seid, fehlende Kommas, zusammengetippte oder doppelte Wörter …). Dazu Lesehilfen für Menschen
-mit Legasthenie (farbige Silben, Vorlesen, Lesefenster) und optional eine KI (Ollama lokal oder Claude), die nur auf
-ausdrücklichen Wunsch etwas verschickt.
+Ein Schreibprogramm wie LibreOffice Writer oder Word — mit einem Unterschied:
+Die **Schreibhilfe** sitzt fest an der Seite und sucht die Fehler, die ein
+Rechtschreibprüfer **nicht** finden kann.
 
-Nicht *für* Menschen mit Legasthenie gebaut, sondern *von* einem. Kein Konto, keine Anmeldung, kein Internet nötig.
+```text
+das / dass       seit / seid       wider / wieder
+„wir hat"  →  „wir haben"          „größer wie"  →  „größer als"
+fehlende Kommas vor weil, dass, wenn, aber
+zusammengetippte Wörter, doppelte Wörter, Satzanfänge
+```
+
+Nicht *für* Menschen mit Legasthenie gebaut, sondern *von* einem —
+[wie es dazu kam](docs/ENTSTEHUNG.md).
+Kein Konto, keine Anmeldung, kein Internet nötig.
+
+![Lunivo-Office mit zwei Dokumenten als Reiter oben, einem Widerspruchsbrief im Blatt und der Schreibhilfe rechts an der Seite](assets/images/uebersicht.png)
+
+## Mach mit
+
+Dieses Projekt sucht Leute — **nicht in erster Linie Programmierer.**
+
+Wenn dir Schreiben schwerfällt, bist du hier die wichtigste Person. Nicht
+weil das nett klingt, sondern weil niemand ein Werkzeug bauen kann für eine
+Not, von der er nichts weiß. Ein Satz darüber, woran du hängenbleibst, ist
+mehr wert als der schönste Quelltext.
+
+> [**Erzähl, woran du hängenbleibst**](../../issues/new?template=erfahrung.yml)
+> · [Etwas geht nicht](../../issues/new?template=fehler.yml)
+> · [Etwas fehlt](../../issues/new?template=wunsch.yml)
+> · [Reden statt melden](../../discussions)
+
+**Rechtschreibung ist dabei egal.** Wirklich — ausgerechnet hier wird
+niemand darauf angesprochen.
+
+Gebraucht wird außerdem: Regeln für die Prüfung (samt der Frage, wann sie
+falsch wären), Ausprobieren auf anderen Linux-Systemen, ein Flatpak oder
+AppImage, und andere Sprachen von Leuten, die sie sprechen.
+
+## Deine Erfahrung zählt
+
+Du möchtest erst einmal lesen, was hinter Lunivo-Office steckt, Fragen
+stellen oder deine Erfahrungen teilen?
+
+Dann komm in die [**GitHub Discussions**](../../discussions).
+
+Dort kannst du erzählen, was dir beim Schreiben schwerfällt, Fragen stellen,
+Vorschläge machen oder einfach mit anderen über das Projekt sprechen.
+
+**Besonders wichtig:** Du musst dafür kein Programmierer sein. Und deine
+Rechtschreibung spielt hier keine Rolle.
+
+* [**RICHTUNG.md**](docs/RICHTUNG.md) — wohin das gehen soll, und was es *nicht* wird
+* [MITMACHEN](.github/CONTRIBUTING.md) — wie, im Einzelnen
+* [Der Ton hier](.github/CODE_OF_CONDUCT.md) — eine Seite statt fünf
+
+## Warum noch ein Schreibprogramm?
+
+Weil die vorhandenen an der falschen Stelle helfen. Ein Rechtschreibprüfer
+findet Wörter, die es nicht gibt. Er findet nicht „das" statt „dass" — beide
+Wörter gibt es ja. Genau daran scheitert man aber, wenn Schreiben schwerfällt.
+
+Und weil die Prüfung hier **mit Absicht lückenhaft** ist. Regeln, die auch
+richtige Sätze anmeckern würden, stehen nicht drin. Wer ohnehin unsicher ist,
+den bringt ein falscher Alarm weiter vom Weg ab als eine übersehene Stelle.
+
+Vor allem aber, weil das Problem bei den Wörtern nicht aufhört. Wer auf seine
+Rechtschreibung angesprochen wird, wo es um etwas ganz anderes ging, schreibt
+irgendwann lieber nichts mehr. Ein Text, der wegen seiner Form nicht gelesen
+wird, kommt nicht an — gleich, was drinsteht.
+
+Deshalb ist dieses Programm nicht *für* Menschen mit Legasthenie gebaut,
+sondern *von* einem. Das ist kein Werbespruch, sondern der Grund, warum die
+Vorschlagsleiste von selbst erscheint, warum auf jeder Karte ein Ohr sitzt
+und warum unter *Neu aus Vorlage* fertige Gerüste liegen.
+
+> **Wie das alles entstanden ist**, steht in
+> [ENTSTEHUNG.md](docs/ENTSTEHUNG.md) — vom zu kleinen Textfeld auf dem
+> Handy bis hierher, aufgeschrieben von dem, der es gebaut hat.
+
+## Was es kann
+
+**Für Menschen, denen Lesen und Schreiben schwerfallen.** Die Grundschrift
+ist OpenDyslexic, die Lesehilfe liegt auf **F2**, und alles, was dabei
+hilft, steht im Reiter *Schreibhilfe* beieinander statt über fünf Reiter
+verteilt.
+
+**Prüfung ohne Internet.** 355.322 Wörter und eigene Regeln finden, was ein
+Rechtschreibprüfer nicht findet — das/dass, wider/wieder, Kommas. Die KI ist
+freiwillig und braucht einen eigenen Schlüssel; ohne sie läuft alles Übrige.
+
+**Ein vollständiges Schreibprogramm.** Neun Register nach dem Vorbild des
+WPS Writer, zwei Oberflächen zur Wahl, Formatvorlagen, Tabellen, Kopf- und
+Fußzeilen, Seriendruck, Druckvorschau, PDF-Export. Die Optionen tragen alle
+dreizehn Seiten von WPS, dazu drei eigene.
+
+**Was geschrieben wird, bleibt hier.** Kein Konto, keine Cloud, kein
+Mitlesen. Die Einstellungen liegen als lesbare Datei unter
+`~/.config/lunivo-office/einstellungen.conf`.
+
+---
+
+## Die Dokumentation
+
+Der README sagt, was es ist. Was es im Einzelnen tut, steht in den fünf
+Dateien darunter — sonst wäre er dreißig Seiten lang und niemand fände
+darin, was er sucht.
+
+|                                                                | Worum es geht                                       |
+| -------------------------------------------------------------- | --------------------------------------------------- |
+| 1 · [Lesen und Schreiben](docs/lesen-und-schreiben.md)         | Lesehilfe, Schriften für Legasthenie, Vorlesen      |
+| 2 · [Prüfung, Vorhersage und KI](docs/pruefung-und-ki.md)      | Was gefunden wird, und was die KI dabei tut         |
+| 3 · [Schreiben und Dokumente](docs/schreiben-und-dokumente.md) | Das Blatt, Vorlagen, Speichern, Drucken             |
+| 4 · [Die Oberfläche](docs/oberflaeche.md)                      | Band und Leisten, Lineale, Formatvorlagen, Anpassen |
+| 5 · [Die Einstellungen](docs/einstellungen.md)                 | Das Optionen-Fenster, Sprachen, Kennwort            |
+
+Dazu im Programm selbst: **☰ Menü → Hilfe → Handbuch** — ausführlicher als alles
+hier, mit Bildern und Tastenkürzeln.
+
+| Weiteres                                            |                                                   |
+| --------------------------------------------------- | ------------------------------------------------- |
+| [Was zusätzlich geholt wird](docs/erweiterungen.md) | LibreOffice, LanguageTool, Stimmen, Schriften     |
+| [Der Aufbau des Projekts](docs/projektaufbau.md)    | Welche Datei was tut                              |
+| [Die lange Fassung](docs/LIESMICH.md)               | Alles ausführlich, auf Deutsch                    |
+| [Wie es entstanden ist](docs/ENTSTEHUNG.md)         | Die Geschichte dahinter                           |
+| [Wohin es geht](docs/RICHTUNG.md)                   | Was noch kommen soll                              |
+| [Der Aufbau des Bandes](docs/aufbau-band.md)        | Alle acht Reiter, mit Tabelle „wo finde ich was"  |
+| [Der Aufbau der Optionen](docs/aufbau-optionen.md)  | Alle Seiten und Felder, ebenso                    |
+| [Der Ist-Stand am Stück](docs/aufbau-ist-stand.md)  | Bänder und Optionen zusammen, wie sie gerade sind |
+| [Stand der Qt-Fassung (Bericht)](docs/BERICHT.md) | Was geht, was nicht, was ungetestet ist |
+| [Prüfbogen-Abgleich](docs/PRUEFBOGEN.md) | 415 Punkte, jeder mit Beleg |
+| [Aufbau der Qt-Fassung](docs/README.md) | Ordner und Zuständigkeiten |
+| [Installation](docs/INSTALLATION.md) | Pakete und optionale Bausteine |
+
+Diese drei werden **erzeugt**, nicht geschrieben —
+`python3 werkzeug/aufbau-schreiben.py` liest sie aus dem Programm. Die
+Vorgabe daneben, `WPS Office/Lunivo-Office_WPS-Writer-Struktur.md`, ist
+von Hand geschrieben und sagt, wie es sein **soll**. Weichen die beiden
+voneinander ab, zieht der Code nach — nie die Vorgabe.
+
+## So sieht es aus
+
+Der Reiter **Schreibhilfe** trägt alles, was das Lesen und Schreiben
+erleichtert. Der Text steht in OpenDyslexic.
+
+![Das Fenster mit dem offenen Reiter Schreibhilfe: die Gruppen Lesen, Prüfen, Beim Schreiben, Vorlesen, Sprache, KI und Anzeigen, rechts die Seitenleiste](assets/images/uebersicht.png)
+
+Die **Lesehilfe** ist die erste Seite der Optionen (**F9**). Jede Wahl
+wirkt sofort auf dem Blatt — kein „Übernehmen", kein Fenster, das über dem
+Text liegt, den man beurteilen will.
+
+![Die Optionen mit der offenen Seite Lesehilfe: Papierton, Buchstabenabstand, Wortabstand, Zeilenluft, Zeilenfokus und Vorlesen; links der Baum mit den drei Zweigen](assets/images/lesehilfe.png)
+
+Unter **Schriftarten** stehen die drei Leseschriften als Knöpfe, jede in
+ihrer eigenen Schrift — man muss ihren Namen nicht kennen.
+
+![Die Seite Schriftarten mit der Schriftwahl und den drei Knöpfen OpenDyslexic, Lexend und Atkinson Hyperlegible, jeder in seiner eigenen Schrift](assets/images/schriften.png)
+
+Die Optionen tragen **alle dreizehn Seiten** des WPS Writer, zweispaltig
+und kompakt wie dort — hier die Seite *Ansicht*.
+
+![Die Seite Ansicht der Optionen, zweispaltig: Anzeigen, Druckoptionen, Formatierungszeichen, Menübandoptionen und Darstellung](assets/images/einstellungen.png)
+
+Wer die Reiter aus Word gewohnt ist, findet sie unter *Ansicht ▸
+Darstellung ▸ Benutzeroberfläche*. Über dem Blatt liegt das Lineal mit den
+Einzugsmarken, links das senkrechte.
+
+![Das Register mit dem Reiter Start: Zwischenablage, Schriftart, Absatz, Absatzlayout und Bearbeiten](assets/images/register.png)
+
+Hell oder dunkel, je nachdem, was den Augen bekommt.
+
+![Dasselbe Fenster im hellen Thema](assets/images/hell.png)
 
 ## Starten
 
-```bash
+Lunivo Writer ist eine **native Qt-Anwendung** (Python 3 + PySide6) — ohne Browser, ohne WebKit.
+
+```text
 sudo apt install python3 python3-venv libxcb-cursor0 libegl1 libxkbcommon-x11-0 libxcb-icccm4 libxcb-keysyms1 libxcb-shape0
-python3 main.py                 # direkt aus dem Projektordner (PySide6, python-docx nötig)
-./starten-qt.sh                 # legt beim ersten Mal eine eigene Umgebung (.venv) an und startet
-./starten-qt.sh --eintrag       # zusätzlich ein Menüeintrag
-./starten-qt.sh --test          # Tests
+./starten-qt.sh
 ```
 
-Genaueres, optionale Teile (LibreOffice, LanguageTool, Piper-Stimme, Leseschriften, Ollama): [docs/INSTALLATION.md](docs/INSTALLATION.md).
+Beim ersten Start legt das Skript eine eigene Umgebung (`.venv`) an und installiert PySide6 und die übrigen Pakete;
+`./starten-qt.sh --eintrag` legt zusätzlich einen Menüeintrag an. Genaueres und optionale Teile:
+[docs/INSTALLATION.md](docs/INSTALLATION.md). Direkt aus dem Projektordner geht auch `python3 main.py`.
 
-## Oberfläche
+> Die Bilder in diesem Dokument zeigen noch die frühere Oberfläche; neue Bilder der Qt-Oberfläche folgen.
 
-* Reiterleiste **Datei · Start · Einfügen · Seitenlayout · Verweise · Überprüfen · Schreibhilfe · Ansicht**; „Datei“ öffnet die
-  Backstage-Ansicht. Kontext-Reiter (Tabelle, Bild, Form, Kopf-/Fußzeile) erscheinen bei Bedarf.
-* Hell und dunkel, Symbole im Fluent-Stil, Schreibhilfe-Seitenleiste mit KI-Chat.
-* Spalten (1–4) live auf der Seite, Fußnoten am Seitenfuß, Sprechblasen für Kommentare, Formularfelder, Serienbriefe, PDF mit
-  Lesezeichen.
+## Eine Hilfe, kein Ersatz
 
-## Dokumentation
+> Lunivo-Office ist eine Hilfe und kein Ersatz für eine Kontrolle durch
+> eine andere Person. Es kann nicht garantieren, dass der Text oder sein Inhalt
+> am Ende vollständig korrekt ist.
+>
+> Gerade für Menschen mit Legasthenie ist eine zusätzliche Kontrolle durch eine
+> zweite Person wichtig. Eigene Fehler werden beim späteren Lesen nicht immer
+> erkannt, weil das Gehirn das Geschriebene teilweise so wahrnimmt, wie es
+> gemeint war.
 
-| | |
-|---|---|
-| [docs/README.md](docs/README.md) | Aufbau des Programms |
-| [docs/BERICHT.md](docs/BERICHT.md) | Stand, ehrlich: was geht, was nicht, was ungetestet ist |
-| [docs/PRUEFBOGEN.md](docs/PRUEFBOGEN.md) | Abgleich mit dem Prüfbogen (415 Punkte) |
-| [docs/INSTALLATION.md](docs/INSTALLATION.md) | Installation und optionale Bausteine |
+Deshalb gibt es *Vorlesen* (F4): Über einen Fehler liest das Auge hinweg, das
+Ohr stolpert darüber. Es ersetzt die zweite Person nicht — es kommt ihr nur am
+nächsten, wenn gerade niemand da ist.
 
-Lizenz: siehe [LICENSE](LICENSE). Symbole: Fluent UI System Icons (Microsoft, MIT) und Lucide (ISC), siehe `assets/icons/`.
+## Was nicht drin ist
+
+SmartArt in Word-Qualität, 3D-Modelle, eingebettete Tabellenkalkulation,
+Design-Themes, Bildumfluss mit Ebenen, Endnoten-Querverweise nach APA im
+vollen Umfang, Barrierefreiheitsprüfung über das Geprüfte hinaus,
+Dokumentschutz mit Kennwort, Gliederungsansicht zum Verschieben,
+Fenster teilen mit Synchronscrollen.
+
+Bei den meisten wäre der Aufwand groß und der Nutzen für einen Brief gering.
+
+## Herkunft
+
+Wie das alles entstanden ist, steht in
+[ENTSTEHUNG.md](docs/ENTSTEHUNG.md) — siehe oben.
+
+Die Prüfung und der Wortschatz stammen aus der
+[Schreibhilfe](https://github.com/kaysiebke-cell/schreibhilfe) und sind dort
+über viele Fassungen gewachsen. Sie liegen hier als eigene Kopie: Dieses
+Programm ist eigenständig und braucht jenes Projekt nicht, um zu laufen.
+
+Die Wörterliste (`oberflaeche/daten/woerter.txt`, 355.324 Wörter) ist über viele Sitzungen
+selbst aufgebaut worden. Sie stammt aus keiner fremden Quelle und steht
+deshalb wie der übrige Code unter MIT.
+
+## Lizenz
+
+[MIT](LICENSE) — benutzen, ändern und weitergeben ist erlaubt, auch
+gewerblich. Der Urhebervermerk muss mitgehen.
+
+LanguageTool und LibreOffice stehen unter eigenen Lizenzen (LGPL-2.1 und
+MPL-2.0) und werden als eigene Prozesse aufgerufen, nicht eingebunden.
+
+Die Zeichnungen der Knöpfe stammen größtenteils aus
+[Lucide](https://lucide.dev) und stehen unter der ISC-Lizenz; der
+Lizenztext liegt in [docs/LIZENZ-LUCIDE.txt](docs/LIZENZ-LUCIDE.txt).
+Ein paar sind von Hand gezeichnet — Kopfzeile, Fußzeile, Seitenzahl,
+Textbegrenzungen: die kennt nur ein Schreibprogramm.
+
