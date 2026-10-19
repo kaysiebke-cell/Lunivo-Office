@@ -1,272 +1,362 @@
-WPS WRITER + LUNIVO OFFICE — der Aufbau
+```text
+LUNIVO OFFICE — der Aufbau
 
 Erzeugt von werkzeug/aufbau-schreiben.py, nicht von Hand geschrieben.
 Nach Themen aufgeteilt und mit einer Suchtabelle steht dasselbe in
 doku/aufbau-band.md und doku/aufbau-optionen.md.
 
-DIE BÄNDER
+
+LUNIVO WRITER – VOLLSTÄNDIGE MENÜSTRUKTUR
+
+├── 1. DATEI
+│   ├── Neu
+│   │   ├── Leeres Dokument
+│   │   ├── Aus Vorlage erstellen
+│   │   └── Vorlagen durchsuchen
+│   ├── Öffnen
+│   ├── Zuletzt verwendete Dokumente
+│   ├── Speichern
+│   ├── Speichern unter
+│   ├── Kopie speichern
+│   ├── Exportieren
+│   │   ├── Als PDF exportieren
+│   │   ├── Als DOCX exportieren
+│   │   ├── Als DOC exportieren (optional)
+│   │   ├── Als RTF exportieren
+│   │   └── Als TXT exportieren
+│   ├── Drucken
+│   │   ├── Druckvorschau
+│   │   ├── Drucker auswählen
+│   │   ├── Seitenbereich
+│   │   └── Druckeinstellungen
+│   ├── Dokumentinformationen
+│   ├── Dokument schützen
+│   ├── Dokument teilen (optional)
+│   ├── Optionen / Einstellungen
+│   └── Schließen
 │
-├── Start
+├── 2. START
 │   ├── Zwischenablage
 │   │   ├── Einfügen
+│   │   ├── Inhalte einfügen
 │   │   ├── Einfügen ohne Formatierung
 │   │   ├── Ausschneiden
 │   │   ├── Kopieren
 │   │   ├── Format übertragen
-│   │   └── Wort-Extras
+│   │   └── Wort-Extras (versionsabhängig)
 │   ├── Schriftart
-│   │   ├── Schrift vergrößern
-│   │   ├── Schrift verkleinern
+│   │   ├── Schriftart / Schriftgrad
+│   │   ├── Schrift vergrößern / verkleinern
 │   │   ├── Formatierung löschen
 │   │   ├── Groß-/Kleinschreibung
-│   │   ├── Fett
-│   │   ├── Kursiv
-│   │   ├── Unterstrichen
+│   │   ├── Fett / Kursiv / Unterstrichen
 │   │   ├── Durchgestrichen
-│   │   ├── Hochgestellt
-│   │   ├── Tiefgestellt
-│   │   ├── Zeichenumriss
-│   │   ├── Hervorheben
-│   │   ├── Schriftfarbe
-│   │   └── Texteffekte
+│   │   ├── Hochgestellt / Tiefgestellt
+│   │   ├── Texthervorhebungsfarbe
+│   │   ├── Textfarbe
+│   │   ├── Zeichenabstand (optional)
+│   │   ├── Textkontur / Texteffekte (optional)
+│   │   └── Schriftart-Dialog / Effekte
 │   ├── Absatz
-│   │   ├── Aufzählung
-│   │   ├── Nummerierung
-│   │   ├── Einzug & Listenebene
-│   │   ├── Sortieren
-│   │   ├── Steuerzeichen
-│   │   ├── Linksbündig
-│   │   ├── Zentriert
-│   │   ├── Rechtsbündig
-│   │   ├── Blocksatz
-│   │   ├── Verteilt
+│   │   ├── Aufzählungszeichen / Nummerierung
+│   │   ├── Mehrstufige Liste
+│   │   ├── Einzug verkleinern / vergrößern
+│   │   ├── Linksbündig / Zentriert / Rechtsbündig / Blocksatz
 │   │   ├── Zeilenabstand
-│   │   ├── Absatzschattierung
-│   │   ├── Absatzrahmen
-│   │   ├── Einzug vergrößern
-│   │   ├── Einzug verringern
-│   │   ├── Genaues Maß…
-│   │   ├── Listenebene verringern
-│   │   └── Listenebene erhöhen
-│   ├── Stile
-│   │   └── katalog
+│   │   ├── Absatzabstand
+│   │   ├── Tabstopps
+│   │   ├── Schattierung / Rahmenlinien
+│   │   └── Formatierungszeichen ein-/ausblenden
+│   ├── Formatvorlagen
+│   │   ├── Standard
+│   │   ├── Überschrift 1–9
+│   │   ├── Titel / Untertitel
+│   │   ├── Zitat / Listenformatvorlagen
+│   │   ├── Formatvorlage erstellen / ändern
+│   │   └── Formatvorlagen-Aufgabenbereich
 │   └── Bearbeiten
-│       ├── Suchen
-│       ├── Ersetzen
-│       ├── Suchen und Ersetzen
-│       ├── Alles auswählen
-│       └── Objekte auswählen
-├── Einfügen
+│       ├── Suchen / Ersetzen / Weitersuchen
+│       ├── Gehe zu: Seite / Abschnitt / Zeile / Objekt
+│       └── Auswählen: Alles / Objekte
+│
+├── 3. EINFÜGEN
 │   ├── Seiten
-│   │   ├── Deckblatt
+│   │   ├── Deckblatt (optional)
 │   │   ├── Leere Seite
 │   │   ├── Seitenumbruch
-│   │   ├── Hochformat
-│   │   └── Querformat
+│   │   └── Abschnittsumbruch
 │   ├── Tabellen
-│   │   ├── Tabelle einfügen
-│   │   ├── Schnelltabelle
-│   │   ├── Tabellenblatt
-│   │   └── Eigenschaften
+│   │   ├── Tabelle über Raster einfügen
+│   │   ├── Tabelle einzeichnen
+│   │   ├── Tabelle aus Text erstellen (optional)
+│   │   ├── Excel-Tabelle / eingebettetes Objekt (optional)
+│   │   └── Schnelltabellen (optional)
 │   ├── Illustrationen
-│   │   ├── Bild
+│   │   ├── Bild aus Datei / Online-Bilder (optional)
 │   │   ├── Formen
-│   │   ├── Diagramm
-│   │   ├── SmartArt
-│   │   ├── WordArt
-│   │   ├── Form mit eigener Farbe…
-│   │   ├── Bildschirmfoto
-│   │   └── Piktogramm
+│   │   ├── SmartArt / Diagrammelemente (optional)
+│   │   ├── Diagramm / Screenshot (optional)
+│   │   └── Bildunterschrift / Alternativtext
 │   ├── Links
-│   │   ├── Hyperlink
-│   │   ├── Lesezeichen / Textmarke
+│   │   ├── Hyperlink einfügen / bearbeiten / entfernen
+│   │   ├── Textmarke
 │   │   └── Querverweis
 │   ├── Kopf- und Fußzeile
-│   │   ├── Kopf- und Fußzeile
-│   │   └── Seitenzahl
+│   │   ├── Kopfzeile / Fußzeile
+│   │   ├── Seitenzahl
+│   │   └── Seitenzahlen formatieren / entfernen
 │   ├── Text
 │   │   ├── Textfeld
-│   │   ├── Initiale
+│   │   ├── Schnellbausteine (optional)
+│   │   ├── WordArt / dekorativer Text
+│   │   ├── Initiale (optional)
 │   │   ├── Datum und Uhrzeit
-│   │   └── Text aus Datei
+│   │   ├── Dokumentinformationen / Feld
+│   │   ├── Signaturzeile (optional)
+│   │   └── Objekt einfügen
 │   └── Symbole
-│       ├── Sonderzeichen
-│       └── Formel
-├── Seitenlayout
-│   ├── Designs
-│   │   ├── Designs
-│   │   ├── Farben
-│   │   ├── Schriftarten
-│   │   └── Effekte
-│   ├── Ränder
-│   │   └── Ränder
-│   ├── Seitenränder
-│   │   └── raender
+│       ├── Formel
+│       ├── Symbol
+│       └── Sonderzeichen
+│
+├── 4. SEITENLAYOUT
 │   ├── Seite einrichten
-│   │   ├── Ausrichtung
-│   │   ├── Größe
-│   │   ├── Spalten
-│   │   ├── Textrichtung
-│   │   ├── Umbrüche
-│   │   └── Zeilennummern
-│   ├── Absatz
-│   │   ├── Einzug
-│   │   ├── Absatzabstand
-│   │   └── Silbentrennung
+│   │   ├── Seitenränder
+│   │   ├── Hochformat / Querformat
+│   │   ├── Papierformat
+│   │   ├── Spalten / Umbrüche
+│   │   ├── Zeilennummern / Silbentrennung
+│   │   ├── Vertikale Seitenausrichtung (optional)
+│   │   └── Dialog: Seite einrichten
 │   ├── Seitenhintergrund
-│   │   ├── Seitenfarbe
 │   │   ├── Wasserzeichen
-│   │   └── Seitenränder
+│   │   ├── Seitenfarbe
+│   │   └── Seitenrand
+│   ├── Absatz
+│   │   ├── Einzug links / rechts
+│   │   ├── Abstand vor / nach
+│   │   └── Tabstopps / Absatzdialog
 │   └── Anordnen
-│       ├── Textfluss
+│       ├── Position / Textumbruch
+│       ├── Nach vorne bringen / Nach hinten senden
+│       ├── Auswahlbereich
 │       ├── Ausrichten
-│       ├── Gruppieren
-│       └── Drehen
-├── Referenzen
+│       ├── Gruppieren / Gruppierung aufheben
+│       ├── Drehen
+│       ├── Größe / Seitenverhältnis
+│       └── Position sperren (optional)
+│
+├── 5. ABSCHNITT
+│   ├── Abschnitt erstellen
+│   │   ├── Abschnittsumbruch einfügen
+│   │   ├── Nächste Seite
+│   │   ├── Fortlaufend
+│   │   ├── Gerade Seite
+│   │   └── Ungerade Seite
+│   ├── Abschnitt auswählen und verwalten
+│   │   ├── Vorheriger Abschnitt
+│   │   ├── Nächster Abschnitt
+│   │   ├── Abschnitt markieren / auswählen
+│   │   ├── Abschnitt umbenennen (optional)
+│   │   └── Abschnitt löschen
+│   ├── Abschnittslayout
+│   │   ├── Seitenränder
+│   │   ├── Hochformat / Querformat
+│   │   ├── Papierformat
+│   │   ├── Spalten
+│   │   └── Vertikale Seitenausrichtung
+│   ├── Kopf- und Fußzeilen
+│   │   ├── Mit vorherigem Abschnitt verknüpfen
+│   │   ├── Erste Seite anders
+│   │   ├── Gerade / ungerade Seiten unterschiedlich
+│   │   └── Kopf- und Fußzeilen pro Abschnitt
+│   ├── Seitennummerierung
+│   │   ├── Seitennummerierung beginnen / fortsetzen
+│   │   ├── Nummerierungsformat auswählen
+│   │   └── Anfangsseitenzahl festlegen
+│   ├── Abschnittsumbrüche anzeigen
+│   └── Abschnittseinstellungen
+│
+├── 6. VERWEISE
 │   ├── Inhaltsverzeichnis
-│   │   ├── Inhaltsverzeichnis
-│   │   └── Verzeichnisse aktualisieren
+│   │   ├── Inhaltsverzeichnis einfügen / formatieren
+│   │   ├── Text zur Gliederung hinzufügen
+│   │   └── Gesamtes Verzeichnis / Seitenzahlen aktualisieren
 │   ├── Fußnoten
-│   │   ├── Fußnote
-│   │   ├── Endnote
-│   │   ├── Nächste Note
-│   │   ├── Vorige Note
-│   │   └── Notenbereich
-│   ├── Zitate und Literatur
-│   │   ├── Zitat einfügen
-│   │   ├── Neue Quelle
+│   │   ├── Fußnote / Endnote einfügen
+│   │   ├── Zur nächsten Fußnote
+│   │   └── Fußnotenoptionen / Nummerierung
+│   ├── Zitieren und Literatur
+│   │   ├── Zitierstil auswählen
+│   │   ├── Quelle einfügen / bearbeiten
 │   │   ├── Quellen verwalten
-│   │   ├── Zitierweise
-│   │   └── Literaturverzeichnis
-│   ├── Beschriftungen
-│   │   ├── Beschriftung
-│   │   ├── Abbildungsverzeichnis
-│   │   └── Querverweis
-│   └── Index
-│       ├── Indexeintrag
-│       └── Stichwortverzeichnis
-├── Überprüfen
-│   ├── Dokumentprüfung
-│   │   ├── Prüfen
-│   │   ├── Gründlich prüfen
-│   │   ├── Rechtschreibung
-│   │   ├── Thesaurus
-│   │   └── Wörter zählen
-│   ├── Sprache
-│   │   └── Korrektursprache
-│   ├── Barrierefreiheit
-│   │   └── Barrierefreiheit prüfen
-│   ├── Kommentare
-│   │   ├── Neuer Kommentar
-│   │   ├── Nächster Kommentar
-│   │   ├── Voriger Kommentar
-│   │   ├── Kommentar löschen
-│   │   └── Alle Kommentare löschen
-│   ├── Änderungen
-│   │   ├── Änderungen verfolgen
-│   │   ├── Markup anzeigen
-│   │   ├── Überarbeitungsbereich
-│   │   ├── Änderung annehmen
-│   │   ├── Änderung ablehnen
-│   │   ├── Nächste Änderung
-│   │   ├── Vorige Änderung
-│   │   ├── Alle annehmen
-│   │   └── Alle verwerfen
-│   └── Schützen
-│       └── Bearbeitung sperren
-├── Schreibhilfe
-│   ├── Lesen
-│   │   ├── Lesehilfe
-│   │   ├── Zeilenfokus
-│   │   ├── Lesemodus
-│   │   └── Schrift zum Lesen
-│   ├── Prüfen
-│   │   ├── Dokumentprüfung
-│   │   ├── Prüfen
-│   │   ├── Gründlich prüfen
-│   │   └── Welche Hilfe wann
-│   ├── Beim Schreiben
+│   │   └── Literaturverzeichnis einfügen
+│   └── Beschriftungen und Verzeichnisse
+│       ├── Beschriftung einfügen
+│       ├── Abbildungsverzeichnis einfügen / aktualisieren
+│       ├── Index / Stichwortverzeichnis
+│       └── Querverweis einfügen
+│
+├── 7. ÜBERPRÜFEN
+│   ├── Korrekturhilfen
 │   │   ├── Rechtschreibprüfung
-│   │   ├── Wortvorhersage
-│   │   └── AutoKorrektur
-│   ├── Vorlesen
-│   │   ├── Vorlesen
-│   │   ├── Ab hier vorlesen
-│   │   ├── Anhalten
-│   │   └── Stimme und Tempo
+│   │   ├── Automatische Rechtschreibprüfung
+│   │   ├── Thesaurus / Synonyme
+│   │   ├── Wortanzahl
+│   │   └── Sprache des Korrekturwörterbuchs
 │   ├── Sprache
-│   │   ├── Silbentrennung
-│   │   ├── Übersetzen
-│   │   ├── Thesaurus
-│   │   └── Sprache und Prüfung
-│   ├── Bausteine
-│   │   ├── Textbausteine
-│   │   ├── Bausteine verwalten…
-│   │   └── Schnellbaustein einfügen
-│   ├── KI
-│   │   ├── KI-Korrektur
-│   │   └── Vorschläge
-│   └── Anzeigen
-│       ├── Seitenleiste Schreibhilfe
-│       └── Optionen
-├── Sendungen
-│   ├── Erstellen
-│   │   ├── Umschlag
-│   │   └── Etiketten
-│   ├── Seriendruck
-│   │   ├── Seriendruck-Assistent
-│   │   ├── Seriendruckfeld
-│   │   ├── Adressblock
-│   │   └── Regeln
-│   ├── Vorschau
-│   │   └── Ergebnisse anzeigen
-│   └── Formular
-│       ├── Textfeld
-│       ├── Kontrollkästchen
-│       └── Schaltfläche
-└── Ansicht
-    ├── Dokumentansichten
-    │   ├── Drucklayout
-    │   ├── Lesemodus
-    │   ├── Zwei Seiten
-    │   ├── Weblayout
-    │   └── Gliederung
-    ├── Anzeigen
-    │   ├── Lineal
-    │   ├── Vertikales Lineal
-    │   ├── Gitternetzlinien
-    │   ├── Navigationsbereich
-    │   └── Textbegrenzungen
-    ├── Zoom
-    │   ├── Vergrößern
-    │   ├── Verkleinern
-    │   ├── Seitenbreite
-    │   ├── Eine Seite
-    │   └── Zoom
-    ├── Fenster
-    │   ├── Neues Fenster
-    │   ├── Anordnen
-    │   ├── Nebeneinander
-    │   ├── Untereinander
-    │   ├── Kacheln
-    │   └── Fensterliste
-    ├── Helligkeit
-    │   ├── Wie das System
-    │   ├── Immer hell
-    │   └── Immer dunkel
-    └── Oberfläche
-        ├── Register anpassen
-        ├── Symbol austauschen
-        ├── Benutzeroberfläche
-        ├── Menüleiste
-        ├── Symbolleisten
-        └── Vorlagen zurücksetzen
+│   │   ├── Sprache festlegen
+│   │   ├── Übersetzen (optional)
+│   │   └── Übersetzungsoptionen (optional)
+│   ├── Kommentare
+│   │   ├── Neuer / Bearbeiten / Löschen
+│   │   ├── Vorheriger / Nächster Kommentar
+│   │   └── Alle Kommentare anzeigen
+│   ├── Änderungen nachverfolgen
+│   │   ├── Nachverfolgung ein / aus
+│   │   ├── Anzeigeoptionen
+│   │   ├── Überarbeitungsbereich
+│   │   ├── Vorherige / Nächste Änderung
+│   │   └── Änderung annehmen / ablehnen
+│   ├── Vergleichen (optional)
+│   │   ├── Dokumente vergleichen
+│   │   └── Dokumente zusammenführen
+│   └── Schützen
+│       ├── Dokument schützen
+│       ├── Bearbeitung einschränken (optional)
+│       └── Schutz aufheben (optional)
+│
+├── 8. KI
+│   └── Öffnet die RECHTE SEITENLEISTE
+│       ├── KI-Schreibwerkzeuge
+│       │   ├── Text entwerfen
+│       │   ├── Text umformulieren
+│       │   ├── Text zusammenfassen
+│       │   └── Text übersetzen
+│       ├── KI-Korrektur
+│       ├── Verbesserungsvorschläge
+│       └── Schreibhilfe
+│
+├── 9. ANSICHT
+│   ├── Ansichten
+│   │   ├── Seitenlayout / Drucklayout
+│   │   ├── Weblayout
+│   │   ├── Lesemodus
+│   │   ├── Gliederung
+│   │   └── Vollbild
+│   ├── Einblenden / Ausblenden
+│   │   ├── Lineal / Gitternetzlinien
+│   │   ├── Navigationsbereich
+│   │   ├── Dokumentstruktur
+│   │   └── Formatierungszeichen
+│   ├── Zoom
+│   │   ├── Zoom-Dialog / 100 %
+│   │   ├── Ganze Seite / Seitenbreite
+│   │   └── Zoomregler
+│   ├── Fenster
+│   │   ├── Neues Fenster / Alle anordnen
+│   │   ├── Teilen / Nebeneinander anzeigen
+│   │   ├── Synchroner Bildlauf (optional)
+│   │   └── Fenster / Dokument wechseln
+│   └── Seitenleiste
+│       ├── Rechte Seitenleiste ein-/ausblenden
+│       └── Seitenleistenbreite anpassen
+│
+├── 10. KONTEXTABHÄNGIGE REGISTERKARTEN
+│   ├── Tabellentools
+│   │   ├── Entwurf
+│   │   │   ├── Tabellenformatvorlagen / Formatoptionen
+│   │   │   ├── Schattierung / Rahmenlinien
+│   │   │   └── Linienstil / Effekte
+│   │   └── Layout
+│   │       ├── Zeilen / Spalten einfügen oder löschen
+│   │       ├── Zellen verbinden / teilen
+│   │       ├── Zellengröße: Höhe / Breite
+│   │       ├── Inhalt ausrichten / Textrichtung
+│   │       ├── Tabelle sortieren
+│   │       ├── Formel einfügen (optional)
+│   │       └── Tabellen- / Zelleneigenschaften
+│   ├── Bildtools
+│   │   └── Format
+│   │       ├── Helligkeit / Kontrast / Farbe / Transparenz
+│   │       ├── Bildstile / Rahmen
+│   │       ├── Zuschneiden
+│   │       ├── Größe / Seitenverhältnis
+│   │       ├── Textumbruch / Position / Ausrichten
+│   │       └── Alternativtext
+│   ├── Form- und WordArt-Tools
+│   │   ├── Design / Format / Formvorlagen
+│   │   ├── Formfüllung / Formkontur / Formeffekte
+│   │   ├── Position / Textumbruch
+│   │   ├── Anordnen / Gruppieren
+│   │   └── Größe
+│   └── Kopf- und Fußzeilentools
+│       └── Entwurf
+│           ├── Kopfzeile / Fußzeile einfügen
+│           ├── Seitenzahl einfügen
+│           ├── Erste Seite anders
+│           ├── Gerade / ungerade Seiten unterschiedlich
+│           ├── Mit vorheriger verknüpfen (optional)
+│           ├── Dokumenttext anzeigen
+│           └── Kopf- und Fußzeile schließen
+│
+├── 11. ZUSÄTZLICHE OBERFLÄCHENELEMENTE
+│   ├── Symbolleiste für den Schnellzugriff
+│   │   ├── Speichern
+│   │   ├── Rückgängig / Wiederholen
+│   │   └── Symbolleiste anpassen
+│   ├── Dokumentregister
+│   │   ├── Zwischen Dokumenten wechseln
+│   │   ├── Neues Dokument öffnen
+│   │   ├── Dokumentregister schließen
+│   │   └── Register-Kontextmenü
+│   ├── Aufgabenbereiche
+│   │   ├── Navigation / Suchen
+│   │   ├── Formatvorlagen
+│   │   ├── Auswahlbereich
+│   │   ├── Zwischenablage
+│   │   └── Vorlagen / Ressourcen (optional)
+│   └── Statusleiste
+│       ├── Aktuelle Seite / Gesamtseiten
+│       ├── Wortanzahl
+│       ├── Dokument- / Korrekturstatus
+│       ├── Ansichtswechsel
+│       ├── Zoomregler
+│       └── Zoom-Prozentanzeige
+│
+└── 12. RECHTE SEITENLEISTE – LUNIVO OFFICE
+    ├── Gemeinsamer Seitenleistenrahmen
+    │   ├── Seitenleiste öffnen / schließen
+    │   ├── Seitenleistenbreite anpassen
+    │   ├── Bereich wechseln
+    │   └── Seitenleisteninhalt anzeigen
+    ├── KI
+    │   ├── Text entwerfen
+    │   ├── Text umformulieren
+    │   ├── Text zusammenfassen
+    │   ├── Text übersetzen
+    │   ├── KI-Korrektur
+    │   └── Vorschläge
+    ├── Überprüfen
+    │   ├── Dokumentprüfung
+    │   ├── Gründlich prüfen
+    │   ├── Prüfergebnisse und Hinweiskarten
+    │   ├── Korrekturvorschläge
+    │   └── Hinweise mit Begründung
+    └── Schreibhilfe
+        ├── Lesehilfe / Lesemodus
+        ├── Zeilenfokus
+        ├── Rechtschreibprüfung
+        ├── Wortvorhersage
+        ├── Vorlesen / Ab hier vorlesen / Anhalten
+        ├── Sprache / Silbentrennung / Thesaurus
+        ├── Textbausteine
+        └── Optionen
 
 
-═══════════════════════════════════════════════════════════════
 
 DAS OPTIONEN-FENSTER — Datei ▸ Optionen (F9)
-│
+
 ├── Leichter lesen
 │   ├── Lesehilfe
 │   │   ├── Lesestufe
