@@ -1,6 +1,6 @@
 # Prüfbogen ↔ native Fassung
 
-Erzeugt von `werkzeug/pruefbogen-abgleich.py` aus dem Prüfkatalog (415 Punkte). **✅ 342 · ◐ 65 · ⬜ 8**. ✅ = Befehl/Funktion vorhanden (einzeln getestet nur, wo `tests/` es belegt); ◐ = teilweise oder anders gelöst; ⬜ = offen.
+Erzeugt von `werkzeug/pruefbogen-abgleich.py` aus dem Prüfkatalog (415 Punkte). **✅ 343 · ◐ 65 · ⬜ 7**. ✅ = Befehl/Funktion vorhanden (einzeln getestet nur, wo `tests/` es belegt); ◐ = teilweise oder anders gelöst; ⬜ = offen.
 Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `docs/pruefbogen/bilder/`.
 
 ## DATEI
@@ -522,7 +522,7 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `docs/pruefbogen/bilder/`.
 - ✅ Verknüpfung von Fuß- und Endnoten — pdf/kommentare → PDF-Notizen; pdf/notenlinks → Sprungverweise Marke ↔ Note (pypdf; test_werkzeuge, test_fussnoten)
 - ✅ Textmarken übernehmen — pagination.lesezeichen_sammeln + gliederung_schreiben (pypdf nach QPdfWriter; test_werkzeuge)
 - ✅ Andere Formatvorlagen in Lesezeichen umwandeln — pdf/lz_andere: Titel, Untertitel, Zitat (test_werkzeuge)
-- ⬜ Eigene Formatvorlagen in Lesezeichen umwandeln — es gibt keine selbst angelegten Formatvorlagen, nur das Ändern der vorhandenen
+- ✅ Eigene Formatvorlagen in Lesezeichen umwandeln — selbst angelegte Vorlagen (editor/stile.py) zählen bei „andere Formatvorlagen“ (tests/test_eigene_stile.py, pagination.lesezeichen_sammeln)
 - ✅ PDF nach dem Export öffnen — pdf/eigenschaften, pdf/oeffnen (export_pdf author)
 
 ## OPTIONEN > Benutzerinformationen > Benutzerdaten

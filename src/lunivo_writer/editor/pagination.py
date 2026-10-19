@@ -664,7 +664,8 @@ def lesezeichen_sammeln(d: QTextDocument, ch: float, liste: list[int], was: dict
             if was.get("ueberschriften", True) and lv and b.text().strip():
                 out.append((lv, b.text().strip(), liste.index(seite), b.position()))
             if was.get("andere") and b.text().strip() and b.blockFormat().hasProperty(STYLE_PROP) \
-                    and b.blockFormat().property(STYLE_PROP) in ("title", "subtitle", "quote", "Title", "Subtitle", "Quote"):
+                    and (b.blockFormat().property(STYLE_PROP) in ("title", "subtitle", "quote", "Title", "Subtitle", "Quote")
+                                                                          or str(b.blockFormat().property(STYLE_PROP)).startswith("x:")):
                 out.append((1, b.text().strip()[:120], liste.index(seite), b.position()))
             if was.get("textmarken"):
                 it = b.begin()

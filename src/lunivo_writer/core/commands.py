@@ -634,11 +634,17 @@ class Befehle:
 
         def speichern():
             self.w.settings.set("stile/aenderungen", stile.als_json())
+            self.w.settings.set("stile/eigene", stile.als_json_neu())
 
         def anwenden(name):
             for t in self.w._doc_tabs():
                 t.editor.stil_neu_anwenden(name)
-        StileVerwaltenDialog(self.w, speichern, anwenden).exec()
+
+        def entfernen(name):
+            for t in self.w._doc_tabs():
+                t.editor.stil_entfernen(name)
+        StileVerwaltenDialog(self.w, speichern, anwenden, auswahl=(self.ed.stil_aus_auswahl if self.ed else None), entfernen=entfernen,
+                             aktualisiert=getattr(self.w.band, "stile_aktualisieren", lambda: None)).exec()
 
     # ==== Einfügen ===========================================================================================================
     def leereSeite(self, k=None, quer=False):

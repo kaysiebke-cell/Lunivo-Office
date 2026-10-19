@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
 )
 
 from lunivo_writer import __version__
+from lunivo_writer.editor import stile
 from lunivo_writer.services import file_service as formats
 from lunivo_writer.models.report import DocumentIOError, IOReport, PasswortNoetig
 from lunivo_writer.ui.document.document_editor import DocumentEditor
@@ -75,8 +76,8 @@ class MainWindow(QMainWindow):
         self._build_actions()
         self._zusatz_kuerzel()
         self._build_status()
-        from lunivo_writer.editor import stile
         stile.laden(self.settings.get("stile/aenderungen", ""))
+        stile.laden_neu(self.settings.get("stile/eigene", ""))
         self.menubar_wanted = self.settings.get_bool("ui/menueleiste", False)
         self._symbole_anwenden()
         self.band = self._band_erzeugen()
@@ -467,6 +468,9 @@ class MainWindow(QMainWindow):
             return False
         tab = DocumentTab(loaded, path)
         self._add_tab(tab)
+        if stile.als_json_neu() != self.settings.get("stile/eigene", ""):       # das Dokument brachte eigene Formatvorlagen mit
+            self.settings.set("stile/eigene", stile.als_json_neu())
+            getattr(self.band, "stile_aktualisieren", lambda: None)()
         self.dokumente.gelesen(path); self.start.set_recent(self.dokumente.zuletzt())
         self._show_report(loaded.report, f"Hinweise zu „{os.path.basename(path)}“", "beim Öffnen")
         return True

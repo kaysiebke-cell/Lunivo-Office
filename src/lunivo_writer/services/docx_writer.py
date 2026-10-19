@@ -268,6 +268,32 @@ class _Writer:
                     self.write_frame(fr, container)
             it += 1
 
+    def _eigener_stil(self, name: str):
+        """Selbst angelegte Formatvorlage als echte Word-Absatzvorlage (Schrift, Größe, Farbe, Abstände, Ausrichtung)."""
+        from lunivo_writer.editor import stile
+        if not stile.ist_eigen(name):
+            return None
+        if name in [x.name for x in self.d.styles]:
+            return self.d.styles[name]
+        d = stile.definition(name)
+        st = self.d.styles.add_style(name, WD_STYLE_TYPE.PARAGRAPH)
+        st.base_style = self.d.styles["Normal"]
+        if d["groesse"]:
+            st.font.size = Pt(d["groesse"])
+        if d["fett"]:
+            st.font.bold = True
+        if d["kursiv"]:
+            st.font.italic = True
+        if d["schrift"]:
+            st.font.name = d["schrift"]
+        if d["farbe"]:
+            st.font.color.rgb = RGBColor.from_string(d["farbe"].lstrip("#").upper())
+        st.paragraph_format.space_before, st.paragraph_format.space_after = Pt(d["vor"]), Pt(d["nach"])
+        if d["ausr"]:
+            st.paragraph_format.alignment = {"links": WD_ALIGN_PARAGRAPH.LEFT, "mitte": WD_ALIGN_PARAGRAPH.CENTER,
+                                             "rechts": WD_ALIGN_PARAGRAPH.RIGHT, "block": WD_ALIGN_PARAGRAPH.JUSTIFY}[d["ausr"]]
+        return st
+
     def write_block(self, blk: QTextBlock, para):
         bf = blk.blockFormat()
         style_name = bf.property(STYLE_PROP) if _has(bf, STYLE_PROP) else None
@@ -288,6 +314,8 @@ class _Writer:
             para.style = self.d.styles[style_name]
         elif lst is not None:
             self._apply_list(para, lst)
+        elif style_name and str(style_name).startswith("x:") and self._eigener_stil(str(style_name)[2:]) is not None:
+            para.style = self._eigener_stil(str(style_name)[2:])
         pf = para.paragraph_format
         a = bf.alignment()
         if a & Qt.AlignHCenter:

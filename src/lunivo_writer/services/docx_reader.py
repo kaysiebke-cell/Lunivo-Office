@@ -123,6 +123,7 @@ class _Reader:
         self.last_list = None             # (key, QTextList)
         self.pending_break = False
         self._ab_zaehler = 0
+        self.neue_vorlagen: list[str] = []
         self._erste_seite = None
         self.deferred_break = False       # Seitenumbruch im Absatz, danach folgt noch nichts
         self.img_n = 0
@@ -445,6 +446,8 @@ class _Reader:
             b.setHeadingLevel(lvl)
         if st is not None and st.name in ("Title", "Subtitle", "Quote", "No Spacing"):
             b.setProperty(STYLE_PROP, st.name)
+        elif st is not None and not lvl and not st.builtin and st.name != "Normal":
+            self._eigene_vorlage(st, b)
         if para._p.xpath("w:pPr/w:sectPr"):                       # letzter Absatz eines Abschnitts: der folgende Abschnitt wird hier beschrieben
             from lunivo_writer.editor import abschnitte as AB
             k, secs = self._ab_zaehler, self.d.sections
@@ -830,6 +833,31 @@ class _Reader:
                     inhalt = 600.0
                 return "rechts" if _emu_to_px(off[0]) + breite_px / 2 > inhalt / 2 else "links"
         return "links"
+
+    EIGENE_MAX = 20                                                  # so viele Vorlagen nimmt ein Dokument höchstens in den Katalog auf
+
+    def _eigene_vorlage(self, st, b) -> None:
+        """Eine selbst angelegte Absatzvorlage des Dokuments: der Absatz behält ihren Namen; fehlt sie im Katalog, wird sie übernommen."""
+        from docx.enum.style import WD_STYLE_TYPE
+        from lunivo_writer.editor import stile
+        if st.type != WD_STYLE_TYPE.PARAGRAPH or not st.name or "|" in st.name:
+            return
+        if not stile.ist_eigen(st.name):
+            if st.name in stile.VORGABE or len(stile._NEU) >= self.EIGENE_MAX:
+                return
+            f, pf = st.font, st.paragraph_format
+            try:
+                farbe = ("#" + str(f.color.rgb)) if f.color is not None and f.color.type is not None and f.color.rgb is not None else ""
+            except Exception:
+                farbe = ""
+            ausr = {WD_ALIGN_PARAGRAPH.LEFT: "links", WD_ALIGN_PARAGRAPH.CENTER: "mitte", WD_ALIGN_PARAGRAPH.RIGHT: "rechts",
+                    WD_ALIGN_PARAGRAPH.JUSTIFY: "block"}.get(pf.alignment, "")
+            stile.anlegen(st.name, groesse=f.size.pt if f.size else 0, fett=bool(f.bold), kursiv=bool(f.italic), farbe=farbe,
+                          schrift=f.name or "", vor=pf.space_before.pt if pf.space_before is not None else 0,
+                          nach=pf.space_after.pt if pf.space_after is not None else 0, ausr=ausr)
+            self.neue_vorlagen.append(st.name)
+        if stile.ist_eigen(st.name):
+            b.setProperty(STYLE_PROP, stile.PRAEFIX + st.name)
 
     # ---- Tabellen ----------------------------------------------------
     @staticmethod

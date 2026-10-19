@@ -19,7 +19,7 @@ from lunivo_writer.editor.pagination import bind_layout, paginated_copy
 from lunivo_writer.editor import stile
 from lunivo_writer.ui.document.zusatz_editor import ZusatzMixin
 
-STYLES = dict.fromkeys(stile.NAMEN)            # Namen der Formatvorlagen (Definitionen: editor/stile.py)
+STYLES = dict.fromkeys(stile.NAMEN)       # nur die eingebauten; selbst angelegte: stile.namen()            # Namen der Formatvorlagen (Definitionen: editor/stile.py)
 
 
 EINFUEGE_MODI = ["Quellformatierung beibehalten", "Zielformatierung verwenden", "Nur Text"]
@@ -1028,7 +1028,33 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         for pfad in ("Title", "Subtitle", "Quote", "No Spacing"):
             if key == pfad:
                 return stile.key_zu_name(pfad)
+        if key and str(key).startswith(stile.PRAEFIX):
+            return stile.key_zu_name(str(key)) or "Standard"
         return "Standard"
+
+    def stil_aus_auswahl(self) -> dict:
+        """Definition für eine neue Formatvorlage nach dem Absatz, in dem die Schreibmarke steht."""
+        c = self.textCursor()
+        bf, cf = c.blockFormat(), c.charFormat()
+        ausr = {Qt.AlignHCenter: "mitte", Qt.AlignRight: "rechts", Qt.AlignJustify: "block"}
+        a = next((v for k, v in ausr.items() if bf.alignment() & k), "")
+        fam = cf.fontFamilies()
+        return {"groesse": round(cf.fontPointSize(), 1) if cf.fontPointSize() > 0 else 0, "fett": cf.fontWeight() >= 600,
+                "kursiv": cf.fontItalic(), "farbe": cf.foreground().color().name() if cf.foreground().style() != Qt.NoBrush and cf.hasProperty(QTextFormat.ForegroundBrush) else "",
+                "schrift": fam[0] if fam else "", "vor": round(bf.topMargin() * 0.75, 1), "nach": round(bf.bottomMargin() * 0.75, 1), "ausr": a}
+
+    def stil_entfernen(self, name: str) -> int:
+        """Eine gelöschte eigene Vorlage: die Absätze behalten ihr Aussehen, verlieren aber die Zuordnung."""
+        n = 0
+        cur = QTextCursor(self.document())
+        cur.beginEditBlock()
+        blk = self.document().firstBlock()
+        while blk.isValid():
+            if blk.blockFormat().hasProperty(STYLE_PROP) and blk.blockFormat().property(STYLE_PROP) == stile.PRAEFIX + name:
+                c = QTextCursor(blk); bf = c.blockFormat(); bf.clearProperty(STYLE_PROP); c.setBlockFormat(bf); n += 1
+            blk = blk.next()
+        cur.endEditBlock()
+        return n
 
     def current_style(self) -> str:
         return self._stil_name(self.textCursor().blockFormat())

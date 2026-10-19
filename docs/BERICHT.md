@@ -72,6 +72,10 @@ LibreOffice-erzeugte DOCX-Datei. **Nicht** durch Tests belegt: Bildschirmfoto am
 Druckoptionen am Drucker, Zwischenstände, Sichern/Zurückholen, Gitternetz, Dunkelmodus (nur per Screenshot gesehen).
 
 ## 6. Offen und bekannte Einschränkungen
+* **Eigene Formatvorlagen (neu):** Start ▸ Stile ▸ Formatvorlagen verwalten ▸ „Neue Vorlage aus der Auswahl“, ändern, löschen. In DOCX echte Absatzvorlagen;
+  Vorlagen aus fremden DOCX-Dateien (bis 20) werden in den Katalog übernommen. **Grenzen:** die Vorlagen gelten für das Programm, nicht je Dokument;
+  eigene Vorlagen sind Absatzvorlagen ohne Überschriftsebene; Änderungen wirken auf Absätze beim Übernehmen, nicht als lebende Verknüpfung in Word.
+* **Rückgängig-Limit:** weiter offen — Qt kann den ältesten Schritt nicht verwerfen, nur den ganzen Stapel leeren.
 * **SmartArt (neu):** Liste, Prozess, Hierarchie, Zyklus, Pyramide aus eingerücktem Text, fünf Farbschemata, bearbeitbar über den Reiter
   SmartArt-Tools und nach DOCX-Speichern/Öffnen in Lunivo weiter bearbeitbar. **Grenze:** In DOCX steht es als Bild — Word und LibreOffice zeigen es,
   bearbeiten es aber nicht als SmartArt (kein DrawingML-Diagramm).

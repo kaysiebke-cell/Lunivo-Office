@@ -194,19 +194,20 @@ class OberflaecheDialog(QDialog):
 class StileVerwaltenDialog(QDialog):
     """Start ▸ Stile ▸ Formatvorlagen verwalten: ändern, wie eine Vorlage aussieht — wirkt auf jeden Absatz, der sie trägt."""
 
-    def __init__(self, parent, speichern, anwenden):
+    def __init__(self, parent, speichern, anwenden, auswahl=None, entfernen=None, aktualisiert=None):
         super().__init__(parent)
         from PySide6.QtWidgets import QCheckBox, QColorDialog, QDoubleSpinBox, QFontComboBox, QFormLayout
         from lunivo_writer.editor import stile
         self.stile = stile
         self._speichern = speichern
         self._anwenden = anwenden
+        self._auswahl, self._entfernen, self._aktualisiert = auswahl, entfernen, aktualisiert
         self._farbe = ""
         self.setWindowTitle("Formatvorlagen verwalten")
         self.resize(640, 420)
         h = QHBoxLayout(self)
         self.liste = QListWidget(); self.liste.setFixedWidth(170)
-        for n in stile.NAMEN:
+        for n in stile.namen():
             self.liste.addItem(n)
         h.addWidget(self.liste)
         rechts = QVBoxLayout(); h.addLayout(rechts, 1)
@@ -229,6 +230,12 @@ class StileVerwaltenDialog(QDialog):
         for text, fn in (("Übernehmen", self._uebernehmen), ("Diese Vorlage zurücksetzen", self._zurueck), ("Alle zurücksetzen", self._alle_zurueck)):
             b = QPushButton(text); b.clicked.connect(fn); z.addWidget(b)
         rechts.addLayout(z)
+        z2 = QHBoxLayout()
+        self.neu_knopf = QPushButton("Neue Vorlage aus der Auswahl …"); self.neu_knopf.clicked.connect(self._neu)
+        self.neu_knopf.setEnabled(auswahl is not None)
+        self.weg_knopf = QPushButton("Eigene Vorlage löschen"); self.weg_knopf.clicked.connect(self._weg)
+        z2.addWidget(self.neu_knopf); z2.addWidget(self.weg_knopf)
+        rechts.addLayout(z2)
         bb = QDialogButtonBox(QDialogButtonBox.Close); bb.rejected.connect(self.accept); rechts.addWidget(bb)
         self.liste.currentTextChanged.connect(self._lade)
         self.liste.setCurrentRow(0)
@@ -239,6 +246,10 @@ class StileVerwaltenDialog(QDialog):
         self.schrift.currentFontChanged.connect(self._zeige)
 
     def _lade(self, name):
+        if not name:
+            return
+        eigen = self.stile.ist_eigen(name)
+        self.weg_knopf.setEnabled(eigen)
         d = self.stile.definition(name)
         self.groesse.setValue(d["groesse"]); self.fett.setChecked(d["fett"]); self.kursiv.setChecked(d["kursiv"])
         self.eigene_schrift.setChecked(bool(d["schrift"]))
@@ -271,8 +282,41 @@ class StileVerwaltenDialog(QDialog):
         self._speichern()
         self._anwenden(n)
 
+    def _neu(self):
+        from PySide6.QtWidgets import QInputDialog, QMessageBox
+        name, ok = QInputDialog.getText(self, "Neue Formatvorlage", "Name der Vorlage (sie übernimmt Schrift und Absatzformat des Absatzes, in dem die Schreibmarke steht):")
+        if not ok:
+            return
+        grund = self.stile.anlegen(name, **self._auswahl())
+        if grund:
+            QMessageBox.warning(self, "Neue Formatvorlage", grund)
+            return
+        name = " ".join(name.split())
+        self._speichern()
+        self.liste.addItem(name)
+        self.liste.setCurrentRow(self.liste.count() - 1)
+        if self._aktualisiert:
+            self._aktualisiert()
+
+    def _weg(self):
+        from PySide6.QtWidgets import QMessageBox
+        n = self.liste.currentItem().text()
+        if not self.stile.ist_eigen(n):
+            return
+        if QMessageBox.question(self, "Formatvorlage löschen", f"„{n}“ löschen? Absätze behalten ihr Aussehen, gelten aber wieder als „Standard“.") != QMessageBox.Yes:
+            return
+        if self._entfernen:
+            self._entfernen(n)
+        self.stile.loeschen(n)
+        self._speichern()
+        self.liste.takeItem(self.liste.currentRow())
+        if self._aktualisiert:
+            self._aktualisiert()
+
     def _zurueck(self):
         n = self.liste.currentItem().text()
+        if self.stile.ist_eigen(n):
+            return
         self.stile.zuruecksetzen(n); self._speichern(); self._lade(n); self._anwenden(n)
 
     def _alle_zurueck(self):

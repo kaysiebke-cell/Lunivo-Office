@@ -134,7 +134,7 @@ s(O+"In PDF exportieren > Exportoptionen", "Hyperlinks", OK, "Qt schreibt Link-A
 s(O+"In PDF exportieren > Exportoptionen", "Dokumenteigenschaften mitnehmen; PDF nach dem Export öffnen", OK, "pdf/eigenschaften, pdf/oeffnen (export_pdf author)")
 s(O+"In PDF exportieren > Exportoptionen", "Überschriften als Lesezeichen; Textmarken übernehmen", OK, "pagination.lesezeichen_sammeln + gliederung_schreiben (pypdf nach QPdfWriter; test_werkzeuge)")
 s(O+"In PDF exportieren > Exportoptionen", "Andere Formatvorlagen in Lesezeichen umwandeln", OK, "pdf/lz_andere: Titel, Untertitel, Zitat (test_werkzeuge)")
-s(O+"In PDF exportieren > Exportoptionen", "Eigene Formatvorlagen in Lesezeichen umwandeln", OFFEN, "es gibt keine selbst angelegten Formatvorlagen, nur das Ändern der vorhandenen")
+s(O+"In PDF exportieren > Exportoptionen", "Eigene Formatvorlagen in Lesezeichen umwandeln", OK, "selbst angelegte Vorlagen (editor/stile.py) zählen bei „andere Formatvorlagen“ (tests/test_eigene_stile.py, pagination.lesezeichen_sammeln)")
 s(O+"In PDF exportieren > Exportoptionen", "Kommentare mitnehmen", OK, "pdf/kommentare → PDF-Notizen (pypdf, test_werkzeuge)")
 s(O+"In PDF exportieren > Exportoptionen", "Verknüpfung von Fuß- und Endnoten", OK, "pdf/notenlinks: Sprungverweise Marke ↔ Note (pagination.notenlinks_sammeln; test_fussnoten); bei mehreren Spalten stehen die Noten am Ende ohne Verweise")
 s(O+"Benutzerinformationen > Benutzerdaten", "Wer schreibt; Diese Benutzerinformationen verwenden", OK, "benutzer/name, benutzer/verwenden (_meta_fuer_speichern)")

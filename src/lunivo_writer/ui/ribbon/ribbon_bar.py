@@ -390,26 +390,8 @@ class RegisterBand(QWidget):
         g = QGridLayout(host)
         g.setSpacing(1)
         g.setContentsMargins(0, 0, 0, 0)
-        for i, name in enumerate(STILE_KATALOG):
-            k = QToolButton()
-            k.setAutoRaise(True)
-            k.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
-            k.setText(f"Aa\n{name}")
-            f = k.font()
-            f.setPointSizeF(8)
-            if name.startswith("Überschrift") or name == "Titel":
-                f.setBold(True)
-            if name in ("Untertitel", "Zitat"):
-                f.setItalic(True)
-            k.setFont(f)
-            k.setFixedWidth(84)
-            k.clicked.connect(lambda _=False, n=name: self.b.w.stil_anwenden(n))
-            from lunivo_writer.ui.widgets.live_vorschau import Ueberfahren
-            fl = Ueberfahren(self.b.w.vorschau, lambda e, n=name: e.apply_style("Standard" if n == "Fließtext" else n))
-            k.installEventFilter(fl)
-            k._ueberfahren = fl                                  # am Knopf festhalten, sonst räumt Python den Filter ab
-            g.addWidget(k, i % 2, i // 2)
-            self.knoepfe.append((k, None, True))
+        self._stile_host, self._stile_gitter, self._stil_knoepfe = host, g, []
+        self.stile_aktualisieren()
         # wie im WPS: drei Spalten sichtbar, der Rest wird durchgescrollt
         sa = QScrollArea()
         sa.setObjectName("stileGalerie")
@@ -432,6 +414,40 @@ class RegisterBand(QWidget):
         h = QHBoxLayout(aussen); h.setContentsMargins(0, 0, 0, 0); h.setSpacing(0)
         h.addWidget(sa); h.addWidget(pfeil, 0, Qt.AlignVCenter)
         return aussen
+
+    def stile_aktualisieren(self) -> None:
+        """Die Galerie neu füllen — die eingebauten Vorlagen und die selbst angelegten (editor/stile.py)."""
+        from lunivo_writer.editor import stile
+        from lunivo_writer.ui.widgets.live_vorschau import Ueberfahren
+        g = self._stile_gitter
+        alt = {id(k) for k in self._stil_knoepfe}
+        self.knoepfe = [e for e in self.knoepfe if id(e[0]) not in alt]
+        for k in self._stil_knoepfe:
+            g.removeWidget(k); k.hide(); k.setParent(None); k.deleteLater()
+        self._stil_knoepfe = []
+        for i, name in enumerate(STILE_KATALOG + [n for n in stile.namen() if n not in STILE_KATALOG]):
+            k = QToolButton()
+            k.setAutoRaise(True)
+            k.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+            d = stile.definition(name)
+            k.setText(f"Aa\n{name}")
+            f = k.font()
+            f.setPointSizeF(8)
+            if name.startswith("Überschrift") or name == "Titel" or (stile.ist_eigen(name) and d["fett"]):
+                f.setBold(True)
+            if name in ("Untertitel", "Zitat") or (stile.ist_eigen(name) and d["kursiv"]):
+                f.setItalic(True)
+            k.setFont(f)
+            k.setFixedWidth(84)
+            k.setToolTip(name + (" (eigene Vorlage)" if stile.ist_eigen(name) else ""))
+            k.clicked.connect(lambda _=False, n=name: self.b.w.stil_anwenden(n))
+            fl = Ueberfahren(self.b.w.vorschau, lambda e, n=name: e.apply_style("Standard" if n == "Fließtext" else n))
+            k.installEventFilter(fl)
+            k._ueberfahren = fl                                  # am Knopf festhalten, sonst räumt Python den Filter ab
+            g.addWidget(k, i % 2, i // 2)
+            self.knoepfe.append((k, None, True))
+            self._stil_knoepfe.append(k)
+        self._stile_host.adjustSize()
 
     def eventFilter(self, obj, ev):
         from PySide6.QtCore import QEvent

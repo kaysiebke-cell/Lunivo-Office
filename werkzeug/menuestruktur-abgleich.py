@@ -42,7 +42,7 @@ bereich("2. Start",
     ("Absatz: Tabstopps", OK, "Dialog (links/zentriert/rechts/dezimal, mm); wird als DOCX-Tabstopp gespeichert — keine Füllzeichen (Punkte/Linie)"),
     ("Formatvorlagen: Standard · Überschrift · Titel · Untertitel · Zitat", OK, "Standard, Überschrift 1–9, Titel, Untertitel, Zitat, Kein Abstand"),
     ("Formatvorlagen: Listenformatvorlagen", FEHLT, "—"),
-    ("Formatvorlagen: erstellen / ändern · Aufgabenbereich", TEIL, "vorhandene verwalten und ändern (Dialog); Anlegen/Löschen offen (Batch 7); kein Seitenbereich"),
+    ("Formatvorlagen: erstellen / ändern · Aufgabenbereich", TEIL, "anlegen aus der Auswahl, ändern, löschen (Formatvorlagen verwalten); in DOCX echte Absatzvorlagen; kein Seitenbereich; keine Überschrift-/Listenvorlagen als eigene (tests/test_eigene_stile.py)"),
     ("Bearbeiten: Suchen · Ersetzen · Weitersuchen · Alles/Objekte auswählen", OK, "Start ▸ Suchen oder ersetzen, Auswählen"),
     ("Bearbeiten: Gehe zu (Seite/Abschnitt/Zeile/Objekt)", TEIL, "Strg+G: Seite, Zeile, Überschrift, Textmarke, Beschriftung, Kommentar, Fuß-/Endnote, Tabelle, Bild; Abschnitt: alle Abschnitte; Gleichungen/Felder fehlen"))
 
