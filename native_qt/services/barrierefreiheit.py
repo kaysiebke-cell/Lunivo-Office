@@ -1,4 +1,4 @@
-"""Barrierefreiheit prüfen — was Menschen mit Sehbehinderung den Text unlesbar macht (wie programm.js, B.barrierefrei)."""
+"""Barrierefreiheit prüfen — was Menschen mit Sehbehinderung den Text unlesbar macht."""
 from __future__ import annotations
 
 import re

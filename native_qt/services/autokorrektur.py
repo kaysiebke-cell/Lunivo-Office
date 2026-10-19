@@ -1,4 +1,4 @@
-"""AutoKorrektur beim Tippen (aus programm.js: AUTOKORREKTUR). Greift erst, wenn ein Wort abgeschlossen ist."""
+"""AutoKorrektur beim Tippen. Greift erst, wenn ein Wort abgeschlossen ist."""
 from __future__ import annotations
 
 import re

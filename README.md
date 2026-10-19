@@ -12,7 +12,7 @@
 
 # Lunivo Writer
 
-Eine **native Textverarbeitung für Linux** (Python 3 + Qt 6 / PySide6) — keine Web-Oberfläche, kein Browser, kein Webserver.
+Eine **native Textverarbeitung für Linux** (Python 3 + Qt 6 / PySide6) — ohne Browser und ohne Webserver.
 **DOCX** ist das Hauptformat. Die **Schreibhilfe** sitzt fest an der Seite und sucht die Fehler, die ein Rechtschreibprüfer
 **nicht** findet (das/dass, seit/seid, fehlende Kommas, zusammengetippte oder doppelte Wörter …). Dazu Lesehilfen für Menschen
 mit Legasthenie (farbige Silben, Vorlesen, Lesefenster) und optional eine KI (Ollama lokal oder Claude), die nur auf
@@ -47,11 +47,5 @@ Genaueres, optionale Teile (LibreOffice, LanguageTool, Piper-Stimme, Leseschrift
 | [doku/native-qt/BERICHT.md](doku/native-qt/BERICHT.md) | Stand, ehrlich: was geht, was nicht, was ungetestet ist |
 | [doku/native-qt/PRUEFBOGEN.md](doku/native-qt/PRUEFBOGEN.md) | Abgleich mit dem Prüfbogen (415 Punkte) |
 | [doku/native-qt/INSTALLATION.md](doku/native-qt/INSTALLATION.md) | Installation und optionale Bausteine |
-
-## Hinweis zur Geschichte
-
-Das Projekt begann als Web-Oberfläche (HTML/JavaScript mit GTK-Fenster). Diese Fassung liegt nur noch im Zweig `main` bzw. in
-der Git-Geschichte; dieser Zweig (`native-qt6-port`) enthält ausschließlich die native Qt-Fassung. Die Rechtschreib-Regeln
-(`native_qt/resources/daten/regeln.txt`) und das Wörterbuch stammen von dort.
 
 Lizenz: siehe [LICENSE](LICENSE). Symbole: Fluent UI System Icons (Microsoft, MIT) und Lucide (ISC), siehe `native_qt/resources/`.

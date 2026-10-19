@@ -1,6 +1,6 @@
 # Prüfbogen ↔ native Fassung
 
-Erzeugt von `werkzeug/pruefbogen-abgleich.py` aus dem Prüfkatalog (415 Punkte). **✅ 328 · ◐ 66 · ⬜ 21**. ✅ = Befehl/Funktion vorhanden (einzeln getestet nur, wo `tests/` es belegt); ◐ = teilweise oder anders gelöst; ⬜ = offen.
+Erzeugt von `werkzeug/pruefbogen-abgleich.py` aus dem Prüfkatalog (415 Punkte). **✅ 324 · ◐ 66 · ⬜ 25**. ✅ = Befehl/Funktion vorhanden (einzeln getestet nur, wo `tests/` es belegt); ◐ = teilweise oder anders gelöst; ⬜ = offen.
 Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/bilder/`.
 
 ## DATEI
@@ -12,7 +12,7 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 - ✅ Vorlagenordner — editor/vorlagen.py + widgets/vorlagen_dialog.py: 10 mitgelieferte Gerüste mit Lücken, eigene Vorlagen aus dem Ordner (test_vorlagen)
 - ✅ Speichern — Datei-Reiter, ☰-Menü, Schnellzugriff; windows/main_window.py (test_main_window)
 - ✅ Speichern unter — Datei-Reiter, ☰-Menü, Schnellzugriff; windows/main_window.py (test_main_window)
-- ✅ Drucken — Datei-Reiter, ☰-Menü, Schnellzugriff; windows/main_window.py (test_main_window)  _(Web-Fassung: fertig)_
+- ✅ Drucken — Datei-Reiter, ☰-Menü, Schnellzugriff; windows/main_window.py (test_main_window)
 - ✅ Druckvorschau — Datei-Reiter, ☰-Menü, Schnellzugriff; windows/main_window.py (test_main_window)
 - ✅ Als PDF exportieren — Datei-Reiter, ☰-Menü, Schnellzugriff; windows/main_window.py (test_main_window)
 - ◐ Druckereinstellungen — Drucken öffnet den Systemdialog; Dokumentinformationen nur lesend
@@ -21,7 +21,7 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 - ✅ Optionen (F9) — ☰-Menü (widgets/menue_tafel.py), Optionen F9
 - ✅ Schließen — Datei-Reiter, ☰-Menü, Schnellzugriff; windows/main_window.py (test_main_window)
 - ✅ Beenden — ☰-Menü (widgets/menue_tafel.py), Optionen F9
-- ◐ Hilfe > Handbuch — das Handbuch der Web-Fassung (als Markdown) im Hilfefenster; beschreibt zum Teil die Web-Oberfläche
+- ◐ Hilfe > Handbuch — Handbuch (Markdown) im Hilfefenster
 - ✅ Hilfe > Tastenkürzel — widgets/hilfe_dialoge.py (test_vorlagen: Hilfe-Dialoge und Funktionstasten)
 - ✅ Hilfe > Erweiterungen — widgets/hilfe_dialoge.py (test_vorlagen: Hilfe-Dialoge und Funktionstasten)
 - ✅ Hilfe > Über Lunivo Office — ☰-Menü ▸ Hilfe ▸ Über
@@ -36,61 +36,61 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 - ✅ Liste zuletzt verwendeter Dateien rechts — widgets/menue_tafel.py, widgets/register_band.py
 - ✅ × nimmt einen Eintrag aus der Liste — widgets/menue_tafel.py, widgets/register_band.py
 - ✅ ↻ holt die Liste neu — widgets/menue_tafel.py, widgets/register_band.py
-- ✅ Als Bild exportieren (PNG) — befehle.exportierenPng: eine PNG je Seite (test_werkzeuge)  _(Web-Fassung: teil)_
-- ✅ Dokumentverschlüsselung — Datei ▸ Dokument schützen: DOCX-Verschlüsselung mit msoffcrypto-tool (test_formats, test_werkzeuge)  _(Web-Fassung: fertig)_
+- ✅ Als Bild exportieren (PNG) — befehle.exportierenPng: eine PNG je Seite (test_werkzeuge)
+- ✅ Dokumentverschlüsselung — Datei ▸ Dokument schützen: DOCX-Verschlüsselung mit msoffcrypto-tool (test_formats, test_werkzeuge)
 - ✅ Schnellzugriff in der Reiterzeile — widgets/menue_tafel.py, widgets/register_band.py
 
 ## START > Zwischenablage
 
-- ✅ Einfügen — Band: Start ▸ Zwischenablage  _(Web-Fassung: fertig)_
-- ✅ Einfügen ohne Formatierung — Band: Start ▸ Zwischenablage  _(Web-Fassung: fertig)_
+- ✅ Einfügen — Band: Start ▸ Zwischenablage
+- ⬜ Einfügen ohne Formatierung — (noch nicht zugeordnet)
 - ✅ Ausschneiden — Band: Start ▸ Zwischenablage
 - ✅ Kopieren — Band: Start ▸ Zwischenablage
-- ✅ Format übertragen — Band: Start ▸ Zwischenablage  _(Web-Fassung: fertig)_
-- ✅ Verlauf > Rückgängig — Schnellzugriff (wie im Bogen: dort statt im Reiter)  _(Web-Fassung: fertig)_
-- ✅ Verlauf > Wiederholen — Schnellzugriff (wie im Bogen: dort statt im Reiter)  _(Web-Fassung: fertig)_
+- ✅ Format übertragen — Band: Start ▸ Zwischenablage
+- ✅ Verlauf > Rückgängig — Schnellzugriff (wie im Bogen: dort statt im Reiter)
+- ✅ Verlauf > Wiederholen — Schnellzugriff (wie im Bogen: dort statt im Reiter)
 
 ## START > Schriftart
 
 - ✅ Schriftart — Felder im Band (widgets/register_band.py)
 - ✅ Schriftgröße — Felder im Band (widgets/register_band.py)
-- ✅ Schrift vergrößern — Band: Start ▸ Schriftart  _(Web-Fassung: fertig)_
-- ✅ Schrift verkleinern — Band: Start ▸ Schriftart  _(Web-Fassung: fertig)_
+- ✅ Schrift vergrößern — Band: Start ▸ Schriftart
+- ✅ Schrift verkleinern — Band: Start ▸ Schriftart
 - ✅ Formatierung löschen — Band: Start ▸ Schriftart
-- ✅ Fett — Band: Start ▸ Schriftart  _(Web-Fassung: fertig)_
-- ✅ Kursiv — Band: Start ▸ Schriftart  _(Web-Fassung: fertig)_
-- ✅ Unterstrichen — Band: Start ▸ Schriftart  _(Web-Fassung: fertig)_
-- ✅ Durchgestrichen — Band: Start ▸ Schriftart  _(Web-Fassung: fertig)_
-- ✅ Hochgestellt — Band: Start ▸ Schriftart  _(Web-Fassung: fertig)_
-- ✅ Tiefgestellt — Band: Start ▸ Schriftart  _(Web-Fassung: fertig)_
-- ✅ Hervorheben — Band: Start ▸ Schriftart  _(Web-Fassung: fertig)_
-- ✅ Schriftfarbe — Band: Start ▸ Schriftart  _(Web-Fassung: fertig)_
-- ✅ Groß-/Kleinschreibung — Band: Start ▸ Schriftart  _(Web-Fassung: fertig)_
-- ✅ Unterstreichungsart — befehle.menue_unterstrichKlappe (Einfach, gestrichelt, gepunktet, Strich-Punkt, Wellenlinie); DOCX-Roundtrip getestet (test_docx_roundtrip)  _(Web-Fassung: fertig)_
-- ✅ Texteffekte — Band: Start ▸ Schriftart  _(Web-Fassung: fertig)_
+- ✅ Fett — Band: Start ▸ Schriftart
+- ✅ Kursiv — Band: Start ▸ Schriftart
+- ✅ Unterstrichen — Band: Start ▸ Schriftart
+- ✅ Durchgestrichen — Band: Start ▸ Schriftart
+- ✅ Hochgestellt — Band: Start ▸ Schriftart
+- ✅ Tiefgestellt — Band: Start ▸ Schriftart
+- ✅ Hervorheben — Band: Start ▸ Schriftart
+- ✅ Schriftfarbe — Band: Start ▸ Schriftart
+- ✅ Groß-/Kleinschreibung — Band: Start ▸ Schriftart
+- ✅ Unterstreichungsart — befehle.menue_unterstrichKlappe (Einfach, gestrichelt, gepunktet, Strich-Punkt, Wellenlinie); DOCX-Roundtrip getestet (test_docx_roundtrip)
+- ✅ Texteffekte — Band: Start ▸ Schriftart
 
 ## START > Absatz
 
-- ✅ Aufzählung — Band: Start ▸ Absatz  _(Web-Fassung: fertig)_
-- ✅ Nummerierung — Band: Start ▸ Absatz  _(Web-Fassung: fertig)_
-- ✅ Einzug verringern — Band: Start ▸ Absatz ▸ Einzug & Listenebene  _(Web-Fassung: fertig)_
-- ✅ Einzug vergrößern — Band: Start ▸ Absatz ▸ Einzug & Listenebene  _(Web-Fassung: fertig)_
+- ✅ Aufzählung — Band: Start ▸ Absatz
+- ✅ Nummerierung — Band: Start ▸ Absatz
+- ✅ Einzug verringern — Band: Start ▸ Absatz ▸ Einzug & Listenebene
+- ✅ Einzug vergrößern — Band: Start ▸ Absatz ▸ Einzug & Listenebene
 - ✅ Listenebene erhöhen — Band: Start ▸ Absatz ▸ Einzug & Listenebene
 - ✅ Listenebene verringern — Band: Start ▸ Absatz ▸ Einzug & Listenebene
 - ✅ Linksbündig — Band: Start ▸ Absatz
 - ✅ Zentriert — Band: Start ▸ Absatz
 - ✅ Rechtsbündig — Band: Start ▸ Absatz
 - ✅ Blocksatz — Band: Start ▸ Absatz
-- ✅ Zeilenabstand — Band: Start ▸ Absatz  _(Web-Fassung: fertig)_
-- ✅ Sortieren — Band: Start ▸ Absatz  _(Web-Fassung: fertig)_
+- ✅ Zeilenabstand — Band: Start ▸ Absatz
+- ✅ Sortieren — Band: Start ▸ Absatz
 - ✅ Steuerzeichen — Band: Start ▸ Absatz
 
 ## START > Absatzlayout
 
-- ✅ Zeilenabstand — Band: Start ▸ Absatz  _(Web-Fassung: fertig)_
-- ✅ Einzug genau — Absatz-Dialog mit zwei Karteireitern und Vorschau; „Absatz nicht trennen“ u. ä. sind Qt-bedingt gesperrt  _(Web-Fassung: fertig)_
-- ✅ Absatzrahmen — B_RAHMEN: Editor, PDF/Druck und DOCX pBdr (test_werkzeuge, mit LibreOffice geprüft)  _(Web-Fassung: fertig)_
-- ✅ Absatzschattierung — Band: Start ▸ Absatz  _(Web-Fassung: fertig)_
+- ✅ Zeilenabstand — Band: Start ▸ Absatz
+- ✅ Einzug genau — Absatz-Dialog mit zwei Karteireitern und Vorschau; „Absatz nicht trennen“ u. ä. sind Qt-bedingt gesperrt
+- ✅ Absatzrahmen — B_RAHMEN: Editor, PDF/Druck und DOCX pBdr (test_werkzeuge, mit LibreOffice geprüft)
+- ✅ Absatzschattierung — Band: Start ▸ Absatz
 
 ## START > Einstellungen
 
@@ -100,61 +100,61 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 
 - ✅ Formatvorlage auswählen — Stilkatalog + Feld im Band
 - ✅ Formatvorlagen verwalten — editor/stile.py + StileVerwaltenDialog; wirkt auf alle Absätze der Vorlage (test_editor)
-- ✅ Suchen — Band: Start ▸ Bearbeiten  _(Web-Fassung: fertig)_
-- ✅ Ersetzen — Band: Start ▸ Bearbeiten  _(Web-Fassung: fertig)_
-- ✅ Suchen und Ersetzen — Band: Start ▸ Bearbeiten  _(Web-Fassung: fertig)_
-- ✅ Alles auswählen — Band: Start ▸ Bearbeiten
+- ✅ Suchen — Band: Start ▸ Suchen ▸ Suchen oder ersetzen
+- ✅ Ersetzen — Band: Start ▸ Suchen ▸ Suchen oder ersetzen
+- ⬜ Suchen und Ersetzen — (noch nicht zugeordnet)
+- ✅ Alles auswählen — Band: Start ▸ Auswählen ▸ Auswählen
 - ✅ Objekte auswählen — befehle.objekteWaehlen (test_main_window)
 
 ## EINFÜGEN
 
 - ✅ Deckblatt — editor/einfuegen.py, storage/bausteine.py (test_einfuegen)
-- ✅ Leere Seite — Band: Einfügen ▸ Seiten  _(Web-Fassung: fertig)_
-- ✅ Seitenumbruch — Band: Einfügen ▸ Seiten, Seitenlayout ▸ Seite einrichten ▸ Umbrüche  _(Web-Fassung: fertig)_
-- ✅ Tabelle einfügen — Band: Einfügen ▸ Tabellen  _(Web-Fassung: fertig)_
+- ✅ Leere Seite — Band: Einfügen ▸ Seiten
+- ✅ Seitenumbruch — Band: Einfügen ▸ Seiten, Seitenlayout ▸ Seite einrichten ▸ Umbrüche
+- ✅ Tabelle einfügen — Band: Einfügen ▸ Tabellen
 - ✅ Schnelltabelle — editor/einfuegen.py, storage/bausteine.py (test_einfuegen)
 - ⬜ Tabellenblatt — ausgeschlossen: nur Textverarbeitung (Vorgabe des Projekts)
-- ✅ Bild — Band: Einfügen ▸ Illustrationen  _(Web-Fassung: teil)_
-- ◐ Zeichnen — entsteht als Bild mit Alternativtext (Formen, Verläufe, QtCharts) — nachträglich nicht als Zeichnung/Diagramm bearbeitbar (test_einfuegen)  _(Web-Fassung: fertig)_
-- ◐ Diagramm — entsteht als Bild mit Alternativtext (Formen, Verläufe, QtCharts) — nachträglich nicht als Zeichnung/Diagramm bearbeitbar (test_einfuegen)  _(Web-Fassung: fertig)_
+- ✅ Bild — Band: Einfügen ▸ Illustrationen
+- ◐ Zeichnen — entsteht als Bild mit Alternativtext (Formen, Verläufe, QtCharts) — nachträglich nicht als Zeichnung/Diagramm bearbeitbar (test_einfuegen)
+- ◐ Diagramm — entsteht als Bild mit Alternativtext (Formen, Verläufe, QtCharts) — nachträglich nicht als Zeichnung/Diagramm bearbeitbar (test_einfuegen)
 - ◐ Bildschirmfoto — ganzer Bildschirm oder Bereich (befehle.screenshot); nur der Einfügeweg ist getestet, nicht die Aufnahme am echten Bildschirm
-- ⬜ SmartArt — nicht übertragen (Grafik-Vorlagen; keine Entsprechung in Qt)  _(Web-Fassung: fertig)_
+- ⬜ SmartArt — nicht übertragen (Grafik-Vorlagen; keine Entsprechung in Qt)
 - ✅ Piktogramm — befehle.piktogramm: 1800 Lucide-Symbole als Bild mit Alternativtext (test_einfuegen)
-- ◐ WordArt — entsteht als Bild mit Alternativtext (Formen, Verläufe, QtCharts) — nachträglich nicht als Zeichnung/Diagramm bearbeitbar (test_einfuegen)  _(Web-Fassung: fertig)_
+- ◐ WordArt — entsteht als Bild mit Alternativtext (Formen, Verläufe, QtCharts) — nachträglich nicht als Zeichnung/Diagramm bearbeitbar (test_einfuegen)
 - ✅ Hyperlink — Band: Einfügen ▸ Links
-- ✅ Lesezeichen / Textmarke — Band: Einfügen ▸ Links  _(Web-Fassung: fertig)_
-- ✅ Querverweis — Band: Einfügen ▸ Links, Verweise ▸ Beschriftungen  _(Web-Fassung: fertig)_
-- ✅ Kopfzeile — Dialoge (widgets/dialogs.py), PDF/Druck/DOCX getestet  _(Web-Fassung: fertig)_
-- ✅ Fußzeile — Dialoge (widgets/dialogs.py), PDF/Druck/DOCX getestet  _(Web-Fassung: fertig)_
-- ✅ Seitenzahl — Band: Einfügen ▸ Kopf- und Fußzeile  _(Web-Fassung: fertig)_
-- ◐ Textfeld — einzellige Tabelle mit Rahmen; frei schwebende Textfelder kennt Qt nicht  _(Web-Fassung: fertig)_
-- ✅ Textbaustein — editor/einfuegen.py, storage/bausteine.py (test_einfuegen)  _(Web-Fassung: fertig)_
-- ✅ Schnellbaustein — editor/einfuegen.py, storage/bausteine.py (test_einfuegen)  _(Web-Fassung: fertig)_
-- ◐ Initiale — erster Buchstabe vergrößert in der Zeile; hängende Initiale kennt Qt nicht  _(Web-Fassung: teil)_
-- ◐ Datum — Datum einfügen; Fenster mit Formatliste/Sprache fehlt  _(Web-Fassung: fertig)_
-- ◐ Uhrzeit — Datum einfügen; Fenster mit Formatliste/Sprache fehlt  _(Web-Fassung: fertig)_
-- ✅ Text aus Datei — editor/einfuegen.py, storage/bausteine.py (test_einfuegen)  _(Web-Fassung: fertig)_
+- ✅ Lesezeichen / Textmarke — Band: Einfügen ▸ Links
+- ✅ Querverweis — Band: Einfügen ▸ Links, Verweise ▸ Beschriftungen
+- ✅ Kopfzeile — Dialoge (widgets/dialogs.py), PDF/Druck/DOCX getestet
+- ✅ Fußzeile — Dialoge (widgets/dialogs.py), PDF/Druck/DOCX getestet
+- ✅ Seitenzahl — Band: Einfügen ▸ Kopf- und Fußzeile
+- ◐ Textfeld — einzellige Tabelle mit Rahmen; frei schwebende Textfelder kennt Qt nicht
+- ✅ Textbaustein — editor/einfuegen.py, storage/bausteine.py (test_einfuegen)
+- ✅ Schnellbaustein — editor/einfuegen.py, storage/bausteine.py (test_einfuegen)
+- ◐ Initiale — erster Buchstabe vergrößert in der Zeile; hängende Initiale kennt Qt nicht
+- ◐ Datum — Datum einfügen; Fenster mit Formatliste/Sprache fehlt
+- ◐ Uhrzeit — Datum einfügen; Fenster mit Formatliste/Sprache fehlt
+- ✅ Text aus Datei — editor/einfuegen.py, storage/bausteine.py (test_einfuegen)
 - ✅ Sonderzeichen — Band: Einfügen ▸ Symbole
-- ◐ Formel — einfache Schreibweise (hoch/tief, Wurzel, Bruch, Griechisch) als Text mit Formatierung; kein Formeleditor wie in Word  _(Web-Fassung: fertig)_
+- ◐ Formel — einfache Schreibweise (hoch/tief, Wurzel, Bruch, Griechisch) als Text mit Formatierung; kein Formeleditor wie in Word
 
 ## SEITENLAYOUT
 
-- ✅ Seitenränder — Band: Seitenlayout ▸ Seitenhintergrund  _(Web-Fassung: fertig)_
+- ✅ Seitenränder — Band: Seitenlayout ▸ Seitenhintergrund
 - ✅ Ausrichtung — Band: Seitenlayout ▸ Seite einrichten
-- ✅ Papierformat — Reiter Seitenlayout ▸ Größe (Befehle.w_setzePapier)  _(Web-Fassung: fertig)_
+- ✅ Papierformat — Reiter Seitenlayout ▸ Größe (Befehle.w_setzePapier)
 - ✅ Spalten — 1–4 Spalten live im Editor (editor_widget._sp_*), Seitenansicht, Druck, PDF, DOCX w:cols/Spaltenumbruch (test_spalten_editor, test_werkzeuge; mit LibreOffice geprüft). Gilt für das ganze Dokument; bei mehreren Spalten wirkt ein Seitenumbruch wie ein Spaltenumbruch
-- ✅ Umbruch > Seitenumbruch — Band: Einfügen ▸ Seiten, Seitenlayout ▸ Seite einrichten ▸ Umbrüche  _(Web-Fassung: fertig)_
+- ✅ Umbruch > Seitenumbruch — Band: Einfügen ▸ Seiten, Seitenlayout ▸ Seite einrichten ▸ Umbrüche
 - ✅ Umbruch > Spaltenumbruch — 1–4 Spalten live im Editor (editor_widget._sp_*), Seitenansicht, Druck, PDF, DOCX w:cols/Spaltenumbruch (test_spalten_editor, test_werkzeuge; mit LibreOffice geprüft). Gilt für das ganze Dokument; bei mehreren Spalten wirkt ein Seitenumbruch wie ein Spaltenumbruch
 - ◐ Umbruch > Abschnittsumbruch — nur „Nächste Seite“ (Seitenumbruch); Abschnitte kennt Qt nicht
 - ✅ Einzug — Band: Seitenlayout ▸ Absatz
 - ✅ Absatzabstand — Band: Seitenlayout ▸ Absatz
 - ✅ Zeilennummern — Band: Seitenlayout ▸ Seite einrichten
-- ◐ Silbentrennung — pyphen setzt weiche Trennstellen in Seitenansicht, Druck, PDF; DOCX autoHyphenation (test_werkzeuge). Die Bearbeitungsansicht zeigt keine Trennstriche  _(Web-Fassung: teil)_
+- ◐ Silbentrennung — pyphen setzt weiche Trennstellen in Seitenansicht, Druck, PDF; DOCX autoHyphenation (test_werkzeuge). Die Bearbeitungsansicht zeigt keine Trennstriche
 - ◐ Textumbruch — Bild links/rechts vom Text umflossen oder in eigener Zeile (editor/umbruch.py, DOCX wp:anchor wrapSquare, test_werkzeuge); „Hinter/vor dem Text“ und freie Position fehlen
-- ✅ Seitenfarbe — Band: Seitenlayout ▸ Seitenhintergrund  _(Web-Fassung: fertig)_
+- ✅ Seitenfarbe — Band: Seitenlayout ▸ Seitenhintergrund
 - ✅ Wasserzeichen — Band: Seitenlayout ▸ Seitenhintergrund
-- ✅ Seitenrahmen — befehle.seitenrahmen, pagination.seitenschmuck, DOCX pgBorders (test_docx_roundtrip, test_pdf)  _(Web-Fassung: fertig)_
-- ◐ Bild/Objekt anordnen — nur Ausrichten und Drehen/Spiegeln (Bildtools); kein Gruppieren, keine Ebenen  _(Web-Fassung: fertig)_
+- ✅ Seitenrahmen — befehle.seitenrahmen, pagination.seitenschmuck, DOCX pgBorders (test_docx_roundtrip, test_pdf)
+- ◐ Bild/Objekt anordnen — nur Ausrichten und Drehen/Spiegeln (Bildtools); kein Gruppieren, keine Ebenen
 
 ## REFERENZEN
 
@@ -183,7 +183,7 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 - ✅ Rechtschreibung — Band: Überprüfen ▸ Dokumentprüfung
 - ✅ Thesaurus — Band: Schreibhilfe ▸ Sprache, Überprüfen ▸ Dokumentprüfung
 - ✅ Wörter zählen — Band: Überprüfen ▸ Dokumentprüfung
-- ✅ Korrektursprache — Band: Überprüfen ▸ Sprache  _(Web-Fassung: fertig)_
+- ✅ Korrektursprache — Band: Überprüfen ▸ Sprache
 - ✅ Barrierefreiheit prüfen — Band: Überprüfen ▸ Barrierefreiheit
 - ✅ Neuer Kommentar — Band: Überprüfen ▸ Kommentare
 - ✅ Nächster Kommentar — Band: Überprüfen ▸ Kommentare
@@ -213,9 +213,9 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 - ✅ Vorlesen > Ab hier vorlesen — Band: Schreibhilfe ▸ Vorlesen ▸ Vorlesen
 - ✅ Vorlesen > Anhalten — Band: Schreibhilfe ▸ Vorlesen ▸ Vorlesen
 - ✅ Vorlesen > Stimme und Tempo — Band: Schreibhilfe ▸ Vorlesen ▸ Vorlesen
-- ✅ KI > KI-Korrektur — Band: KI ▸ Korrektur
+- ⬜ KI > KI-Korrektur — (noch nicht zugeordnet)
 - ✅ KI > Vorschläge — Seitenleiste / KI-Reiter (test_schreibhilfe)
-- ✅ Anzeigen > Seitenleiste Schreibhilfe — Band: Schreibhilfe ▸ Anzeigen  _(Web-Fassung: fertig)_
+- ✅ Anzeigen > Seitenleiste Schreibhilfe — Band: Schreibhilfe ▸ Anzeigen
 - ✅ Anzeigen > Optionen — Seitenleiste / KI-Reiter (test_schreibhilfe)
 
 ## SENDUNGEN (Lunivo)
@@ -229,7 +229,7 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 - ✅ Ergebnisse anzeigen — editor/sendungen.py + widgets/sendungen_dialoge.py (test_sendungen); Reiter „Sendungen“ ist nach Register anpassen sichtbar, sonst über die Menüleiste
 - ◐ Formular > Textfeld — als formatierter Text ohne Funktion (Qt kennt keine Formularsteuerelemente)
 - ✅ Formular > Kontrollkästchen — editor/sendungen.py + widgets/sendungen_dialoge.py (test_sendungen); Reiter „Sendungen“ ist nach Register anpassen sichtbar, sonst über die Menüleiste
-- ◐ Formular > Schaltfläche — als formatierter Text ohne Funktion (Qt kennt keine Formularsteuerelemente)  _(Web-Fassung: fertig)_
+- ◐ Formular > Schaltfläche — als formatierter Text ohne Funktion (Qt kennt keine Formularsteuerelemente)
 
 ## ANSICHT
 
@@ -240,10 +240,10 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 - ✅ Gliederung — Band: Ansicht ▸ Dokumentansichten
 - ✅ Lineal — Band: Ansicht ▸ Anzeigen
 - ✅ Vertikales Lineal — Band: Ansicht ▸ Anzeigen
-- ✅ Gitternetzlinien — Band: Ansicht ▸ Anzeigen  _(Web-Fassung: fertig)_
+- ✅ Gitternetzlinien — Band: Ansicht ▸ Anzeigen
 - ✅ Navigationsbereich — Band: Ansicht ▸ Anzeigen
-- ✅ Textbegrenzungen — Band: Ansicht ▸ Anzeigen  _(Web-Fassung: fertig)_
-- ✅ Seitenleiste Schreibhilfe — Band: Schreibhilfe ▸ Anzeigen  _(Web-Fassung: fertig)_
+- ✅ Textbegrenzungen — Band: Ansicht ▸ Anzeigen
+- ✅ Seitenleiste Schreibhilfe — Band: Schreibhilfe ▸ Anzeigen
 - ✅ Lesehilfe — Band: Schreibhilfe ▸ Lesen
 - ✅ Zeilenfokus — Band: Schreibhilfe ▸ Lesen
 - ✅ Vergrößern — Band: Ansicht ▸ Zoom
@@ -265,17 +265,17 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 - ✅ Oberfläche > Symbol austauschen — widgets/oberflaeche_dialoge.py, Ansicht ▸ Oberfläche (test_main_window)
 - ✅ Oberfläche > Benutzeroberfläche — widgets/oberflaeche_dialoge.py, Ansicht ▸ Oberfläche (test_main_window)
 - ✅ Oberfläche > Menüleiste — Band: Ansicht ▸ Oberfläche
-- ✅ Oberfläche > Symbolleisten — widgets/oberflaeche_dialoge.py, Ansicht ▸ Oberfläche (test_main_window)  _(Web-Fassung: fertig)_
+- ✅ Oberfläche > Symbolleisten — widgets/oberflaeche_dialoge.py, Ansicht ▸ Oberfläche (test_main_window)
 - ✅ Oberfläche > Vorlagen zurücksetzen — widgets/oberflaeche_dialoge.py, Ansicht ▸ Oberfläche (test_main_window)
 
 ## KONTEXTTABELLEN
 
 - ◐ Tabellenwerkzeuge — Reiter erscheint in der Tabelle (test_tabellentools_wirken); ohne Tabellenformatvorlagen
-- ⬜ Zeichentools — nicht übertragen  _(Web-Fassung: teil)_
+- ⬜ Zeichentools — nicht übertragen
 - ⬜ Diagrammtools — nicht übertragen
 - ⬜ SmartArt-Tools — nicht übertragen
-- ⬜ Gleichungswerkzeuge — nicht übertragen  _(Web-Fassung: fertig)_
-- ◐ Kopf- und Fußzeilenwerkzeuge — Reiter mit „Erste Seite anders“ (PDF und DOCX); „Gerade/ungerade“ fehlt  _(Web-Fassung: teil)_
+- ⬜ Gleichungswerkzeuge — nicht übertragen
+- ◐ Kopf- und Fußzeilenwerkzeuge — Reiter mit „Erste Seite anders“ (PDF und DOCX); „Gerade/ungerade“ fehlt
 
 ## LANGUAGE BRIDGE (Architektur)
 
@@ -292,15 +292,15 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 ## LANGUAGE BRIDGE (Spelling Engine)
 
 - ✅ Native Browser-Spellcheck deaktiviert — gegenstandslos: kein Browser
-- ✅ Lunivo-Regeln verwenden statt Browser — services/pruefung.py (Parität zu pruefung.js getestet)
-- ✅ Benutzerwörter in Rechtschreibung beachten — services/pruefung.py (Parität zu pruefung.js getestet)
+- ⬜ Lunivo-Regeln verwenden statt Browser — (noch nicht zugeordnet)
+- ✅ Benutzerwörter in Rechtschreibung beachten — services/pruefung.py (test_schreibhilfe)
 - ◐ Ignorierte Wörter in Rechtschreibung beachten — inRuhe/weggewinkt beachtet; einheitliches Fund-dict
 - ◐ Fehler als unified language-issue — inRuhe/weggewinkt beachtet; einheitliches Fund-dict
 
 ## LANGUAGE BRIDGE (Grammar Engine)
 
-- ✅ Dieselbe Sprachkontext wie Spelling — gleiche Engine, regeln.js gelesen
-- ✅ Grammatikregeln aus regeln.js nutzen — gleiche Engine, regeln.js gelesen
+- ✅ Dieselbe Sprachkontext wie Spelling — gleiche Engine, regeln.json gelesen
+- ✅ Grammatikregeln aus regeln.js nutzen — gleiche Engine, regeln.json gelesen
 - ◐ Benutzerwörter in Grammatik beachten — gemeinsame Funde
 - ◐ Fehler als unified language-issue — gemeinsame Funde
 
@@ -330,7 +330,7 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 
 - ✅ Fehler aus Language Bridge anzeigen — widgets/schreibhilfe_panel.py, editor_widget.set_wellen
 - ✅ Rote Wellenlinien aus Bridge-Status — widgets/schreibhilfe_panel.py, editor_widget.set_wellen
-- ✅ Kontextmenü für Fehler-Aktionen — editor_widget.contextMenuEvent + WritingAssistant.erweitere_menue (test_schreibhilfe)  _(Web-Fassung: fertig)_
+- ✅ Kontextmenü für Fehler-Aktionen — editor_widget.contextMenuEvent + WritingAssistant.erweitere_menue (test_schreibhilfe)
 - ✅ Fehler annehmen/ignorieren/korrigieren — widgets/schreibhilfe_panel.py, editor_widget.set_wellen
 - ◐ Schalter 'Rote Wellenlinien' zeigt/versteckt nur — Schalter hält auch die Prüfung an
 
@@ -556,13 +556,13 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/
 ## OPTIONEN > Rechtschreibprüfung > Rechtschreibprüfung
 
 - ◐ Sprache für die Prüfung — nur Deutsch
-- ✅ Rechtschreibung während der Eingabe prüfen — Optionen ▸ Rechtschreibprüfung (test_schreibhilfe, test_pruefung_paritaet)
+- ✅ Rechtschreibung während der Eingabe prüfen — Optionen ▸ Rechtschreibprüfung (test_schreibhilfe)
 - ✅ Immer Korrekturvorschläge unterbreiten — schreibhilfe/vorschlaege → writing_assistant.erweitere_menue
 - ◐ Grammatik mitprüfen — nur über „Gründlich prüfen“ mit LanguageTool (optional)
-- ✅ Wörter in GROSSBUCHSTABEN ignorieren — Optionen ▸ Rechtschreibprüfung (test_schreibhilfe, test_pruefung_paritaet)
-- ✅ Wörter mit Zahlen ignorieren — Optionen ▸ Rechtschreibprüfung (test_schreibhilfe, test_pruefung_paritaet)
-- ✅ Internet- und Netzwerkpfade ignorieren — Optionen ▸ Rechtschreibprüfung (test_schreibhilfe, test_pruefung_paritaet)
-- ✅ Weggewinkte Funde wieder anzeigen — Optionen ▸ Rechtschreibprüfung (test_schreibhilfe, test_pruefung_paritaet)
+- ✅ Wörter in GROSSBUCHSTABEN ignorieren — Optionen ▸ Rechtschreibprüfung (test_schreibhilfe)
+- ✅ Wörter mit Zahlen ignorieren — Optionen ▸ Rechtschreibprüfung (test_schreibhilfe)
+- ✅ Internet- und Netzwerkpfade ignorieren — Optionen ▸ Rechtschreibprüfung (test_schreibhilfe)
+- ✅ Weggewinkte Funde wieder anzeigen — Optionen ▸ Rechtschreibprüfung (test_schreibhilfe)
 
 ## OPTIONEN > Rechtschreibprüfung > Benutzerwörterbuch
 

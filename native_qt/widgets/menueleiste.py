@@ -1,4 +1,4 @@
-"""Menüleiste aus der alten Menüstruktur (MENUES in programm.js → register.json „menues“)."""
+"""Menüleiste, gebaut aus register.json („menues“)."""
 from __future__ import annotations
 
 from PySide6.QtGui import QAction, QKeySequence

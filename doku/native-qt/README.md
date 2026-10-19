@@ -1,8 +1,7 @@
 # Lunivo Writer — native Qt-Fassung
 
 Eine Textverarbeitung für Linux Mint in **Python 3 + PySide6 (Qt 6 Widgets)**. Keine HTML-, CSS- oder JavaScript-Oberfläche,
-keine WebView, kein lokaler Webserver. Die alte Web-Oberfläche ist in diesem Zweig **entfernt**; sie liegt nur noch im Zweig `main`
-(Git-Geschichte). Startpfad: `starten-qt.sh` → `python -m native_qt`.
+keine WebView, kein lokaler Webserver. Startpfad: `starten-qt.sh` → `python -m native_qt`.
 Ein Test (`tests/test_main_window.py::test_no_web_modules_loaded`) prüft in einem frischen Prozess, dass weder
 QtWebEngine/WebKit noch ein Webserver geladen wird.
 
@@ -28,7 +27,7 @@ native_qt/
                 zusatz.py + zusatz_editor.py (Kommentare, Noten, Änderungen), verweise.py, literatur.py, einfuegen.py,
                 sendungen.py, vorlagen.py, stile.py
   document_io/  docx_reader.py, docx_writer.py, formats.py (DOCX/ODT/DOC/RTF/TXT), report.py
-  services/     pruefung.py (Regeln, aus der Web-Fassung), writing_assistant.py, vorhersage.py, autokorrektur.py,
+  services/     pruefung.py (Regeln), writing_assistant.py, vorhersage.py, autokorrektur.py,
                 ki.py + ki_dienst.py, vorlesen.py
   integrations/ libreoffice.py, languagetool.py, wps.py
   storage/      settings.py, recovery.py, gelernt.py
@@ -39,7 +38,7 @@ tests/                             pytest
 ```
 
 ## Grundsätze
-* **Keine stille Abweichung:** Das Band wird aus dem alten Register *erzeugt*. Ein Knopf, den es nativ noch nicht gibt,
+* **Keine stille Abweichung:** Das Band wird aus `resources/register.json` *erzeugt*. Ein Knopf, den es nativ noch nicht gibt,
   steht ausgegraut da (Hinweis im Tooltip) — nicht fehlend, nicht als Attrappe.
 * **Keine stillen Verluste:** Beim Öffnen/Speichern meldet ein Bericht alles, was nicht übernommen werden konnte
   (Textfelder, Formeln, Formen, mehrere Abschnitte, Wasserzeichen …). Fußnoten, Kommentare und nachverfolgte Änderungen werden

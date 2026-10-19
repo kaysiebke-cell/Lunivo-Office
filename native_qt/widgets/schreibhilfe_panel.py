@@ -145,7 +145,7 @@ class SchreibhilfePanel(QWidget):
         v = QVBoxLayout(seite0)
         v.setContentsMargins(14, 12, 14, 10)
         v.setSpacing(8)
-        # Kopf wie im alten Lunivo: Titel, die drei Schalter der Schreibbrücke (We/Vo/Ko), rechts „Prüfen“
+        # Kopf: Titel, die drei Schalter der Schreibbrücke (We/Vo/Ko), rechts „Prüfen“
         kopf = QHBoxLayout()
         kopf.setSpacing(6)
         t = QLabel("<b style='font-size:12pt'>Schreib <span style='color:#2f6fb5'>|</span> hilfe</b>")
@@ -332,7 +332,7 @@ class SchreibhilfePanel(QWidget):
         self.bereich_geaendert.emit(i)
 
     def setze_bereiche(self, band, ki_gruppen: list) -> None:
-        """Den KI-Bereich aus den Gruppen des alten Registers bauen (Chat und KI-Gruppen)."""
+        """Den KI-Bereich aus den Gruppen des Reiters Schreibhilfe bauen (Chat und KI-Gruppen)."""
         host = QWidget()
         lay = QVBoxLayout(host)
         lay.setContentsMargins(12, 10, 12, 10)

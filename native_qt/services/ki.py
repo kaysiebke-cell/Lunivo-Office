@@ -1,6 +1,5 @@
 """Die KI-Ebene: Korrigieren, Vorschläge, Übersetzen, Zusammenfassen, Text bearbeiten, Chat.
 
-Übertragen aus der alten Web-Fassung (ki.js im Zweig main) (Anweisungen, Empfänger, Anbieter, Fehlertexte).
 Freiwillig und nach außen nur auf ausdrücklichen Knopfdruck:
   · Ollama — läuft auf diesem Rechner (127.0.0.1:11434), der Text verlässt das Gerät nicht.
   · Claude — Anthropic-API, nur mit eigenem Schlüssel und nur nach Ihrer Zustimmung (siehe KIKonfig.claude_erlaubt).
@@ -454,7 +453,7 @@ class KI:
         return {"vorschlaege": gut, "cent": r.get("cent")}
 
     def synonyme(self, wort: str, umgebung: str = "") -> dict:
-        """Wörter, die statt `wort` an dieser Stelle stehen könnten (Thesaurus — geht nur mit KI, wie in ki.js)."""
+        """Wörter, die statt `wort` an dieser Stelle stehen könnten (Thesaurus — geht nur mit KI)."""
         anweisung = (f"Nenne gebräuchliche deutsche Wörter, die statt „{wort}“ an dieser Stelle stehen könnten. "
                      "Achte auf den Zusammenhang: Dasselbe Wort bedeutet je nach Satz Verschiedenes. "
                      "Nimm einfache, geläufige Wörter — dieser Text wird von einem Menschen mit Legasthenie geschrieben, "

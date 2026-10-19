@@ -178,7 +178,7 @@ class OberflaecheDialog(QDialog):
         v = QVBoxLayout(self)
         v.addWidget(QLabel("Wie sollen die Befehle angeordnet sein?"))
         self.reg = QRadioButton("Register (Menüband mit Reitern, wie in WPS Office)")
-        self.sym = QRadioButton("Symbolleisten (zwei Zeilen mit Knöpfen, wie im früheren Lunivo)")
+        self.sym = QRadioButton("Symbolleisten (zwei Zeilen mit Knöpfen)")
         (self.sym if settings.get("ui/oberflaeche", "register") == "symbolleisten" else self.reg).setChecked(True)
         v.addWidget(self.reg); v.addWidget(self.sym)
         self.menue = QCheckBox("Menüleiste zusätzlich anzeigen")

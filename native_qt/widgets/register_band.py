@@ -1,7 +1,6 @@
 """Das Band (Register): Reiter → Gruppen → Knöpfe, gebaut aus resources/register.json.
 
-register.json stammt aus dem alten Register der Web-Fassung (Zweig main) —
-dieselbe Liste, derselbe Aufbau wie im alten Programm. Was `Befehle` nicht kennt, steht ausgegraut da.
+register.json beschreibt Reiter, Gruppen und Knöpfe. Was `Befehle` nicht kennt, steht ausgegraut da.
 """
 from __future__ import annotations
 

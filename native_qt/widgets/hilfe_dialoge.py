@@ -31,9 +31,6 @@ def handbuch(parent) -> QDialog:
     such.returnPressed.connect(lambda: b.find(such.text()) or (b.moveCursor(b.textCursor().Start), b.find(such.text())))
     z.addWidget(such)
     v.addLayout(z)
-    hinweis = QPushButton("Hinweis: Das Handbuch stammt aus der Web-Fassung. Abweichungen der nativen Fassung: doku/native-qt/")
-    hinweis.setFlat(True); hinweis.setEnabled(False)
-    v.addWidget(hinweis)
     bb = QDialogButtonBox(QDialogButtonBox.Close); bb.rejected.connect(d.reject); v.addWidget(bb)
     return d
 

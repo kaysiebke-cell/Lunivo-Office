@@ -1,6 +1,6 @@
 """Die Schreibhilfe: prüft im Hintergrund, hält den Stand, setzt Korrekturen ein.
 
-Orientiert an language-bridge.js: Die Prüfung besitzt die Regeln, die Brücke den
+Die Prüfung besitzt die Regeln, die Brücke den
 Zustand — welche Fassung des Textes geprüft wurde, was angenommen oder
 weggewinkt wurde. Ein spätes Ergebnis für einen längst geänderten Text wird
 verworfen und neu angestoßen.

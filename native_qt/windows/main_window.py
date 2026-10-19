@@ -1145,7 +1145,7 @@ class MainWindow(QMainWindow):
         self._tafel.zeigen_unter(self.band.menue_knopf)
 
     def _leiste_rechts(self):
-        """Schmale Leiste rechts wie im alten Lunivo: Chat und Schreibhilfe schalten die Seitenleiste um."""
+        """Schmale Leiste rechts: Chat und Schreibhilfe schalten die Seitenleiste um."""
         from PySide6.QtWidgets import QFrame, QToolButton, QVBoxLayout
         from ..widgets import icons
         leiste = QFrame()

@@ -1,7 +1,7 @@
-"""Optionen — das Fenster hinter „☰ Menü ▸ Optionen“ (F9), aufgebaut wie im alten Programm in drei Zweigen:
+"""Optionen — das Fenster hinter „☰ Menü ▸ Optionen“ (F9), aufgebaut in drei Zweigen:
 Leichter lesen · Wie im WPS Writer · Nur bei Lunivo. Links der Baum, rechts die Seite.
 
-Was hier steht, wirkt. Was aus dem alten Fenster noch keine Wirkung hat, steht je Seite unter „Noch nicht umgesetzt“,
+Was hier steht, wirkt. Was noch keine Wirkung hat, steht je Seite unter „Noch nicht umgesetzt“,
 damit nichts stillschweigend verschwindet.
 """
 from __future__ import annotations
@@ -98,7 +98,7 @@ class _Seite(QWidget):
 
     def abschluss(self):
         if self._offen:
-            self.hinweis("<b>Noch nicht umgesetzt</b> (im alten Programm vorhanden): " + "; ".join(self._offen) + ".")
+            self.hinweis("<b>Noch nicht umgesetzt</b> (Einstellung ohne Wirkung): " + "; ".join(self._offen) + ".")
         self.lay.addStretch(1)
 
 

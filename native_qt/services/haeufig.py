@@ -1,4 +1,4 @@
-"""Häufige deutsche Wörter — aus der alten Web-Fassung (Zweig main) übernommen."""
+"""Häufige deutsche Wörter."""
 
 HAEUFIG = frozenset((
     "der die das den dem des ein eine einen einem einer eines und oder aber ich du er sie es "

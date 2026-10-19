@@ -1,4 +1,4 @@
-"""Symbole: dieselben 24×24-Strichzeichnungen wie im alten Programm (Lucide, ISC), mit Qt gerendert."""
+"""Symbole: 24×24-Strichzeichnungen (Lucide, ISC) und Fluent-Symbole (Microsoft, MIT), mit Qt gerendert."""
 from __future__ import annotations
 
 import json
