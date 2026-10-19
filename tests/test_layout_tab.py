@@ -54,3 +54,22 @@ def test_reiter_einfuegen_verweise_ansicht_wie_wps(app, tmp_path):
         titel = [l.text() for l in seite.findChildren(QLabel) if l.text().isupper() and l.text() in soll]
         assert titel == soll, (name, titel)
     assert w.befehle.hat("vollbild")
+
+
+def test_pruefung_steht_in_der_schreibhilfe_und_ueberpruefen_hat_den_rest(app, tmp_path):
+    from PySide6.QtWidgets import QToolButton
+    w = fenster(tmp_path)
+    r = w.band.reiter
+    texte = {}
+    for name in ("Schreibhilfe", "Überprüfen"):
+        i = next(i for i in range(r.count()) if r.tabText(i) == name)
+        seite = w.band.stapel.widget(i).widget()
+        texte[name] = [k.toolTip() for k in seite.findChildren(QToolButton)]
+        if name == "Schreibhilfe":
+            knopf = next(k for k in seite.findChildren(QToolButton) if k.toolTip().startswith("Dokumentprüfung"))
+            assert knopf.isEnabled() and knopf.menu() is not None          # früher: Menü fehlte, Knopf war grau
+            namen = [a.text() for a in knopf.menu().actions()]
+            assert {"Prüfen", "Rechtschreibung", "Thesaurus", "Barrierefreiheit prüfen"} <= set(namen)
+    for verboten in ("Rechtschreibung", "Thesaurus", "Gründlich prüfen", "Korrektursprache", "Barrierefreiheit prüfen"):
+        assert not any(t.startswith(verboten) for t in texte["Überprüfen"]), verboten
+    assert any(t.startswith("Neuer Kommentar") for t in texte["Überprüfen"])

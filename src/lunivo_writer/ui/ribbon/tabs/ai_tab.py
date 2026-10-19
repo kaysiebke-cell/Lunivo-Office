@@ -39,4 +39,16 @@ def bauen(register: dict) -> dict:
         elif neu:
             ki_pos = sh["gruppen"].index(ki_gruppe) if ki_gruppe else len(sh["gruppen"])
             sh["gruppen"].insert(ki_pos, dict(g, knoepfe=neu))
+    for g in sh["gruppen"]:                                   # Menü „Dokumentprüfung“: alles zur Rechtschreibung an einer Stelle
+        g["knoepfe"] = [_pruefen_menue(e) if e.get("name") == "Dokumentprüfung" else e for e in g["knoepfe"]]
     return sh
+
+
+def _pruefen_menue(e: dict) -> dict:
+    e = {k: v for k, v in e.items() if k != "klappe"}
+    e["menue"] = [
+        {"name": "Prüfen", "tun": "w.pruefen"}, {"name": "Gründlich prüfen", "tun": "gruendlichPruefen"},
+        {"name": "Rechtschreibung", "tun": "rechtschreibung"}, {"name": "Thesaurus", "tun": "thesaurus"},
+        {"name": "Barrierefreiheit prüfen", "tun": "barrierefrei"}, {"name": "Welche Hilfe wann", "tun": "welcheHilfe"}, {"trenner": True},
+        {"name": "Korrektursprache …", "tun": "pruefsprache"}]
+    return e

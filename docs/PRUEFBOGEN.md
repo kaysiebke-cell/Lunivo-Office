@@ -178,13 +178,13 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `docs/pruefbogen/bilder/`.
 
 ## ÜBERPRÜFEN
 
-- ✅ Prüfen — Band: Schreibhilfe ▸ Prüfen ▸ Dokumentprüfung, Überprüfen ▸ Dokumentprüfung
-- ✅ Gründlich prüfen — Band: Schreibhilfe ▸ Prüfen ▸ Dokumentprüfung, Überprüfen ▸ Dokumentprüfung
-- ✅ Rechtschreibung — Band: Überprüfen ▸ Dokumentprüfung
-- ✅ Thesaurus — Band: Schreibhilfe ▸ Sprache, Überprüfen ▸ Dokumentprüfung
-- ✅ Wörter zählen — Band: Überprüfen ▸ Dokumentprüfung
-- ✅ Korrektursprache — Band: Überprüfen ▸ Sprache
-- ✅ Barrierefreiheit prüfen — Band: Überprüfen ▸ Barrierefreiheit
+- ✅ Prüfen — Band: Schreibhilfe ▸ Prüfen ▸ Dokumentprüfung
+- ✅ Gründlich prüfen — Band: Schreibhilfe ▸ Prüfen ▸ Dokumentprüfung
+- ✅ Rechtschreibung — Band: Schreibhilfe ▸ Prüfen ▸ Dokumentprüfung
+- ✅ Thesaurus — Band: Schreibhilfe ▸ Prüfen ▸ Dokumentprüfung, Schreibhilfe ▸ Sprache
+- ✅ Wörter zählen — Band: Überprüfen ▸ Dokument
+- ✅ Korrektursprache — Band: Schreibhilfe ▸ Prüfen ▸ Dokumentprüfung
+- ✅ Barrierefreiheit prüfen — Band: Schreibhilfe ▸ Prüfen ▸ Dokumentprüfung
 - ✅ Neuer Kommentar — Band: Überprüfen ▸ Kommentare
 - ✅ Nächster Kommentar — Band: Überprüfen ▸ Kommentare
 - ✅ Voriger Kommentar — Band: Überprüfen ▸ Kommentare
@@ -203,8 +203,8 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `docs/pruefbogen/bilder/`.
 
 ## SCHREIBHILFE (Lunivo)
 
-- ✅ Dokumentprüfung > Prüfen — Band: Schreibhilfe ▸ Prüfen ▸ Dokumentprüfung, Überprüfen ▸ Dokumentprüfung
-- ✅ Dokumentprüfung > Gründlich prüfen — Band: Schreibhilfe ▸ Prüfen ▸ Dokumentprüfung, Überprüfen ▸ Dokumentprüfung
+- ✅ Dokumentprüfung > Prüfen — Band: Schreibhilfe ▸ Prüfen ▸ Dokumentprüfung
+- ✅ Dokumentprüfung > Gründlich prüfen — Band: Schreibhilfe ▸ Prüfen ▸ Dokumentprüfung
 - ✅ Dokumentprüfung > Welche Hilfe wann — Band: Schreibhilfe ▸ Prüfen ▸ Dokumentprüfung
 - ✅ Beim Schreiben > Rechtschreibprüfung — Band: Schreibhilfe ▸ Beim Schreiben
 - ✅ Beim Schreiben > Wortvorhersage — Band: Schreibhilfe ▸ Beim Schreiben
