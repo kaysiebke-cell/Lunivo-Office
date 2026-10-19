@@ -1,9 +1,9 @@
-# Alles, was WPS Writer zu Bildern kennt
+# Alles, was Writer zu Bildern kennt
 
-**Wiederholbar:** `python3 werkzeug/wps-befehle-lesen.py`
+**Wiederholbar:** `python3 werkzeug/befehle-lesen.py`
 
-Ausgelesen aus `/opt/kingsoft/wps-office/office6/mui/en_US/` —
-`wps.qm`, `wpstips.qm`, `kso.qm`, `ksotips.qm`. Das sind die
+Ausgelesen aus `/opt/kingsoft/office/office6/mui/en_US/` —
+`qm-datei.qm`, `qmtips.qm`, `kso.qm`, `ksotips.qm`. Das sind die
 Beschriftungen des Programms selbst, nicht meine Auswahl.
 
 Kay am 12.09.2026: *„wozu sage ich, du sollst in den Ordner und
@@ -697,7 +697,7 @@ jetzt, was da ist. Was davon gebaut wird, entscheidet er.
 - Signature
 - Text watermark
 - This caption label is not valid.
-- WPS Signature
+- Signature
 - Watermark
 - Watermark Protection
 - Watermark setup

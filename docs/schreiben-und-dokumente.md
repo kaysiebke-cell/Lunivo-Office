@@ -10,7 +10,7 @@ Fußnoten, Endnoten, Inhalts-, Abbildungs- und Stichwortverzeichnis,
 Zitate mit Quellenverwaltung, Seriendruck, Umschläge, Etiketten.
 
 **Mehrere Dokumente in einem Fenster.** Ganz oben steht für jedes offene
-Dokument ein Reiter — wie im WPS Writer. `Strg+N` legt eins an, `Strg+W`
+Dokument ein Reiter — wie im Writer. `Strg+N` legt eins an, `Strg+W`
 schließt es, `Strg+Tab` wechselt; Ziehen ordnet um, die mittlere Maustaste
 schließt. Ein Punkt auf dem Reiter heißt: Hier steht etwas, das in keiner
 Datei steht.
@@ -62,7 +62,7 @@ Formularfelder, Kommentare, Text schwarz drucken, leere Seiten.
 Im dritten Reiter steht der **Drucker** selbst — Name, Zustand, Typ, Ort,
 mit Papierformat, beidseitigem Druck, Schacht und Auflösung. Diese Angaben
 sind nicht erfunden: Sie kommen von CUPS, dem Druckerdienst des Systems,
-derselben Quelle, aus der auch LibreOffice sie hat. Meldet ein Drucker
+derselben Quelle, aus der auch sie hat. Meldet ein Drucker
 keine Duplexeinheit, bleibt der Schalter dafür grau. Gedruckt wird direkt
 über den Druckerdienst; ist keiner eingerichtet, öffnet das Fenster des
 Systems.

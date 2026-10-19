@@ -11,7 +11,7 @@ Das System-Python bleibt unberührt. Fehlt `python3-venv`, nennt das Skript den 
 ## Optional
 | Wofür | Wie | Ohne |
 |---|---|---|
-| ODT/DOC/RTF öffnen und speichern | `sudo apt install libreoffice-writer` | DOCX/TXT gehen weiter, ODT-Export über Qt (ohne Kopf-/Fußzeile) |
+| ODT/DOC/RTF öffnen und speichern | `sudo apt install -writer` | DOCX/TXT gehen weiter, ODT-Export über Qt (ohne Kopf-/Fußzeile) |
 | Gründliche Prüfung (Grammatik) | LanguageTool entpacken nach `~/.local/share/<App>/languagetool` und `sudo apt install default-jre` | eigene Regeln bleiben aktiv |
 | Vorlesen | `sudo apt install speech-dispatcher` oder `./stimme-holen.sh` (Piper) | Meldung „keine Sprachausgabe“ |
 | KI lokal | Ollama installieren, `ollama pull <modell>` | KI-Knöpfe bleiben grau |

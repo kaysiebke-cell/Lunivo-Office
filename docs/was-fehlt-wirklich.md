@@ -52,23 +52,23 @@ es kommt nicht einmal eine Meldung.
 | **Einfügen** | Zwei greifen ins Leere: Textmarke, Querverweis. |
 | **Seitenlayout** | Alle Befehle haben eine Umsetzung. |
 
-Das heißt nicht, dass dort alles so tief geht wie in WPS — ein Befehl
+Das heißt nicht, dass dort alles so tief geht wie in — ein Befehl
 kann vorhanden und trotzdem dünner sein als sein Vorbild. Es heißt: Der
 Knopf tut etwas.
 
 ## Die Reihenfolge, in der ich es angehen würde
 
 1. **Fußnote und Endnote.** Der meistgebrauchte der siebzehn, und ohne
-   ihn ist kein Schreiben mit Belegen möglich.
+ ihn ist kein Schreiben mit Belegen möglich.
 2. **Lesezeichen und Querverweis.** Beide stehen doppelt (Einfügen und
-   Referenzen) und sind der Weg zurück an eine Stelle.
+ Referenzen) und sind der Weg zurück an eine Stelle.
 3. **Inhaltsverzeichnis.** Lunivo kennt die Überschriften bereits — die
-   Gliederung zeigt sie. Daraus ein Verzeichnis zu bauen ist weniger
-   Arbeit, als es aussieht.
+ Gliederung zeigt sie. Daraus ein Verzeichnis zu bauen ist weniger
+ Arbeit, als es aussieht.
 4. **Beschriftung** für Bilder und Tabellen, dann darauf aufbauend das
-   **Abbildungsverzeichnis**.
+ **Abbildungsverzeichnis**.
 5. Zitate, Quellen, Stichwortverzeichnis — das ist wissenschaftliches
-   Schreiben und kommt zuletzt.
+ Schreiben und kommt zuletzt.
 
 ---
 

@@ -10,7 +10,7 @@ Das Register hat acht Reiter — Start, Einfügen, Seitenlayout,
 Referenzen, Überprüfen, Schreibhilfe, Sendungen, Ansicht — und sechs
 weitere, die nur da sind, wenn sie etwas zu sagen haben.
 
-**Einen Datei-Reiter gibt es nicht**, so wenig wie im WPS Writer. Links
+**Einen Datei-Reiter gibt es nicht**, so wenig wie im Writer. Links
 davor steht **☰ Menü**: Neu, Öffnen, Speichern, Speichern unter, Als PDF
 exportieren, Als Bild exportieren, Drucken, Dokumentverschlüsselung,
 Hilfe, Optionen, Beenden. Es klappt als Tafel mit zwei Spalten auf —
@@ -27,13 +27,13 @@ Satzspiegel aus gezählt wie im Writer, und drei Marken für die Einzüge,
 die sich ziehen lassen — erste Zeile, links, rechts. Das helle Band zeigt,
 wo Text steht, und wandert beim Ziehen mit. Das **senkrechte** misst von
 der ersten Zeile abwärts und scrollt mit dem Blatt; es lässt sich einzeln
-ein- und ausschalten, so wie WPS es hält.
+ein- und ausschalten, so wie es hält.
 
 **Schnellzugriff.** Unter dem Prüfen-Knopf stehen drei Marken — Wellen,
 Vorhersage, AutoKorrektur. Grün heißt an, ein Klick schaltet. Sie lagen
 vorher in *Extras ▸ Beim Schreiben*, wo sie niemand fand. Daneben führt
 
-**Die rechte Maustaste.** Zwei Kästen, wie im WPS Writer: oben eine
+**Die rechte Maustaste.** Zwei Kästen, wie im Writer: oben eine
 schwebende Formatleiste — Schriftart, Größe, fett, kursiv, Farbe, Marker,
 Ausrichtung, Pinsel —, darunter ein kurzes Menü mit Bild links und
 Tastenkombination rechts.
@@ -92,7 +92,7 @@ stehen, damit man es zurückholen kann.
 **Ein Symbol austauschen.** Rechtsklick auf einen Knopf — im Band wie in
 den Symbolleisten. Ein Fenster zeigt, wo die Zeichnung überall benutzt
 wird, dazu ein Suchfeld und **1801 Zeichnungen** zur Wahl. Ein Klick, und
-sie ist getauscht; „Zurücksetzen" holt die alte zurück. LibreOffice kann
+sie ist getauscht; „Zurücksetzen" holt die alte zurück. kann
 das für seine Symbolleisten, für sein Symbolband nicht — hier geht beides.
 
 ---

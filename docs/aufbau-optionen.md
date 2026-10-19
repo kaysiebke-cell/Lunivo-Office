@@ -12,8 +12,8 @@ Links ein Baum mit drei Zweigen, rechts der Bereich.
 | Zweig | Wofür |
 |---|---|
 | [Leichter lesen](#leichter-lesen) | Wofür dieses Programm gebaut ist — steht deshalb zuoberst |
-| [Wie im WPS Writer](#wie-im-wps-writer) | Alle dreizehn Seiten in seiner Reihenfolge und mit seinen Namen |
-| [Nur bei Lunivo](#nur-bei-lunivo) | Was WPS nicht hat |
+| [Wie im Writer](#wie-im-writer) | Alle dreizehn Seiten in seiner Reihenfolge und mit seinen Namen |
+| [Nur bei Lunivo](#nur-bei-lunivo) | Was nicht hat |
 
 ---
 
@@ -23,260 +23,260 @@ Links ein Baum mit drei Zweigen, rechts der Bereich.
 
 ```
 ├── Lesestufe
-│   └── Wie leicht soll es zu lesen sein?
+│ └── Wie leicht soll es zu lesen sein?
 ├── Leichter lesen
-│   ├── Papierton
-│   ├── Buchstabenabstand
-│   ├── Wortabstand
-│   └── Zeilenluft
+│ ├── Papierton
+│ ├── Buchstabenabstand
+│ ├── Wortabstand
+│ └── Zeilenluft
 ├── Beim Schreiben
-│   ├── Zeilenfokus
-│   ├── Absatz beim Schreiben
-│   └── Übriger Text
+│ ├── Zeilenfokus
+│ ├── Absatz beim Schreiben
+│ └── Übriger Text
 ├── Schrift und Sprache
-│   ├── Schrift zum leichteren Lesen
-│   ├── Silbentrennung
-│   └── Rechtschreibung während der Eingabe prüfen
+│ ├── Schrift zum leichteren Lesen
+│ ├── Silbentrennung
+│ └── Rechtschreibung während der Eingabe prüfen
 └── Vorlesen
-    └── Den Text hören
+ └── Den Text hören
 ```
 
 ### Schriftarten
 
 ```
 ├── Schrift für neuen Text
-│   ├── Schrift
-│   └── Größe
+│ ├── Schrift
+│ └── Größe
 └── Zum leichteren Lesen
-    ├── Drei Schriften sind dafür gemacht
-    └── Sind sie da?
+ ├── Drei Schriften sind dafür gemacht
+ └── Sind sie da?
 ```
 
 ### Sprache
 
 ```
 ├── Sprache
-│   ├── Sprache für die Prüfung
-│   └── Übersetzen nach
+│ ├── Sprache für die Prüfung
+│ └── Übersetzen nach
 ├── Was geprüft wird
-│   ├── Rechtschreibung während der Eingabe
-│   ├── Grammatik mitprüfen
-│   ├── Silbentrennung
-│   └── Alle Prüfoptionen
+│ ├── Rechtschreibung während der Eingabe
+│ ├── Grammatik mitprüfen
+│ ├── Silbentrennung
+│ └── Alle Prüfoptionen
 └── Wörter, die Lunivo kennt
-    ├── Dein eigener Wortschatz
-    └── Gründlich prüfen
+ ├── Dein eigener Wortschatz
+ └── Gründlich prüfen
 ```
 
 ### Rechtschreibprüfung
 
 ```
 ├── Rechtschreibprüfung
-│   ├── Sprache für die Prüfung
-│   ├── Rechtschreibung während der Eingabe prüfen
-│   ├── Immer Korrekturvorschläge unterbreiten
-│   ├── Grammatik mitprüfen
-│   ├── Wörter in GROSSBUCHSTABEN ignorieren
-│   ├── Wörter mit Zahlen ignorieren
-│   ├── Internet- und Netzwerkpfade ignorieren
-│   └── Weggewinkte Funde wieder anzeigen
+│ ├── Sprache für die Prüfung
+│ ├── Rechtschreibung während der Eingabe prüfen
+│ ├── Immer Korrekturvorschläge unterbreiten
+│ ├── Grammatik mitprüfen
+│ ├── Wörter in GROSSBUCHSTABEN ignorieren
+│ ├── Wörter mit Zahlen ignorieren
+│ ├── Internet- und Netzwerkpfade ignorieren
+│ └── Weggewinkte Funde wieder anzeigen
 └── Benutzerwörterbuch
-    └── Was das Programm gelernt hat
+ └── Was das Programm gelernt hat
 ```
 
-## Wie im WPS Writer
+## Wie im Writer
 
 ### Ansicht
 
 ```
 ├── Anzeigen
-│   ├── Lineal
-│   ├── Vertikales Lineal
-│   ├── Navigationsbereich
-│   ├── Textbegrenzungen
-│   ├── Gitternetzlinien
-│   ├── Statusleiste
-│   ├── Seitenleiste beim Start
-│   ├── QuickInfo
-│   ├── Live-Vorschau
-│   ├── Minisymbolleiste bei Auswahl
-│   ├── Minisymbolleiste bei Rechtsklick
-│   └── Tipp für Kopf- bzw. Fußzeile
+│ ├── Lineal
+│ ├── Vertikales Lineal
+│ ├── Navigationsbereich
+│ ├── Textbegrenzungen
+│ ├── Gitternetzlinien
+│ ├── Statusleiste
+│ ├── Seitenleiste beim Start
+│ ├── QuickInfo
+│ ├── Live-Vorschau
+│ ├── Minisymbolleiste bei Auswahl
+│ ├── Minisymbolleiste bei Rechtsklick
+│ └── Tipp für Kopf- bzw. Fußzeile
 ├── Druckoptionen
-│   ├── Hervorhebungen drucken
-│   ├── Textbegrenzungen drucken
-│   ├── Zuschnittsmarken anzeigen
-│   ├── Feldfunktionen drucken
-│   ├── Textmarken drucken
-│   └── Feldschattierung
+│ ├── Hervorhebungen drucken
+│ ├── Textbegrenzungen drucken
+│ ├── Zuschnittsmarken anzeigen
+│ ├── Feldfunktionen drucken
+│ ├── Textmarken drucken
+│ └── Feldschattierung
 ├── Formatierungszeichen
-│   ├── Alle anzeigen
-│   ├── Absatzmarken
-│   ├── Leerzeichen
-│   ├── Tabstoppzeichen
-│   ├── Objektanker
-│   └── Ausgeblendeter Text
+│ ├── Alle anzeigen
+│ ├── Absatzmarken
+│ ├── Leerzeichen
+│ ├── Tabstoppzeichen
+│ ├── Objektanker
+│ └── Ausgeblendeter Text
 ├── Menübandoptionen
-│   ├── Doppelklick blendet das Band aus
-│   └── Strg+Klick folgt einem Verweis
+│ ├── Doppelklick blendet das Band aus
+│ └── Strg+Klick folgt einem Verweis
 └── Darstellung
-    ├── Schrift und Helligkeit
-    ├── Weicher Kontrast
-    ├── Größe der Symbole
-    ├── Schrift der Bedienung
-    └── Benutzeroberfläche
+ ├── Schrift und Helligkeit
+ ├── Weicher Kontrast
+ ├── Größe der Symbole
+ ├── Schrift der Bedienung
+ └── Benutzeroberfläche
 ```
 
 ### Bearbeiten
 
 ```
 ├── Bearbeitungsoptionen
-│   ├── Wortweise markieren
-│   ├── Text mit der Maus verschieben
-│   ├── Tippen ersetzt die Auswahl
-│   └── Maximale Rückgängig-Schritte
+│ ├── Wortweise markieren
+│ ├── Text mit der Maus verschieben
+│ ├── Tippen ersetzt die Auswahl
+│ └── Maximale Rückgängig-Schritte
 ├── AutoFormat
-│   ├── Automatisch nummerierte Listen
-│   ├── Aufzählungen erkennen
-│   └── Zahl automatisch im Kreis
+│ ├── Automatisch nummerierte Listen
+│ ├── Aufzählungen erkennen
+│ └── Zahl automatisch im Kreis
 ├── AutoKorrektur
-│   ├── AutoKorrektur
-│   ├── Typografische Anführungszeichen
-│   ├── Gedankenstriche
-│   ├── Auslassungspunkte
-│   ├── Jeden Satz mit einem Großbuchstaben beginnen
-│   ├── Wochentage immer großschreiben
-│   ├── Englische Ordnungszahlen hochstellen
-│   ├── Feststelltaste korrigieren
-│   ├── Internet- und Netzwerkpfade durch Hyperlinks ersetzen
-│   ├── Leerzeichen am Absatzanfang mit Erstzeileneinzug
-│   ├── Leerzeichenformat am Ende rechtsbündiger Zeilen anpassen
-│   ├── Bei zentriertem Ausrichten Erstzeileneinzug löschen
-│   ├── Tabulator und Rücktaste setzen den Einzug
-│   └── Wortvorhersage
+│ ├── AutoKorrektur
+│ ├── Typografische Anführungszeichen
+│ ├── Gedankenstriche
+│ ├── Auslassungspunkte
+│ ├── Jeden Satz mit einem Großbuchstaben beginnen
+│ ├── Wochentage immer großschreiben
+│ ├── Englische Ordnungszahlen hochstellen
+│ ├── Feststelltaste korrigieren
+│ ├── Internet- und Netzwerkpfade durch Hyperlinks ersetzen
+│ ├── Leerzeichen am Absatzanfang mit Erstzeileneinzug
+│ ├── Leerzeichenformat am Ende rechtsbündiger Zeilen anpassen
+│ ├── Bei zentriertem Ausrichten Erstzeileneinzug löschen
+│ ├── Tabulator und Rücktaste setzen den Einzug
+│ └── Wortvorhersage
 └── Ausschneiden und Einfügen
-    ├── Schaltfläche nach dem Einfügen
-    ├── Mittlere Maustaste fügt ein
-    ├── Standardeinfügeformat
-    └── Ohne Formatierung einfügen
+ ├── Schaltfläche nach dem Einfügen
+ ├── Mittlere Maustaste fügt ein
+ ├── Standardeinfügeformat
+ └── Ohne Formatierung einfügen
 ```
 
 ### Allgemein und Speichern
 
 ```
 ├── Speichern
-│   └── Dateien als Standard speichern
+│ └── Dateien als Standard speichern
 ├── Allgemeine Optionen
-│   ├── Maßeinheit
-│   ├── Bilder in der Datei nicht komprimieren
-│   └── Standard-Ausgabeziel
+│ ├── Maßeinheit
+│ ├── Bilder in der Datei nicht komprimieren
+│ └── Standard-Ausgabeziel
 ├── Webseite
-│   └── Webseitencodierung
+│ └── Webseitencodierung
 └── Kompatibilitätsoptionen
-    ├── Seitenumbruch und Absatzmarke aufteilen
-    ├── Hängenden Einzug nicht als Tabstopp verwenden
-    ├── Nachstehende Leerstellen unterstreichen
-    ├── Layout von Fußnoten wie Word 6/95/97
-    └── Zeilenhöhe in Tabellen auf Rasterhöhe anpassen
+ ├── Seitenumbruch und Absatzmarke aufteilen
+ ├── Hängenden Einzug nicht als Tabstopp verwenden
+ ├── Nachstehende Leerstellen unterstreichen
+ ├── Layout von Fußnoten wie Word 6/95/97
+ └── Zeilenhöhe in Tabellen auf Rasterhöhe anpassen
 ```
 
 ### Sicherungseinstellungen
 
 ```
 ├── Sicherung
-│   ├── Wann gesichert wird
-│   ├── Abstand (Minuten)
-│   └── Wo die Einstellungen liegen
+│ ├── Wann gesichert wird
+│ ├── Abstand (Minuten)
+│ └── Wo die Einstellungen liegen
 ├── Zwischenstände aufheben
-│   ├── Wie lange (Tage)
-│   └── Zwischenstände löschen
+│ ├── Wie lange (Tage)
+│ └── Zwischenstände löschen
 └── Was im Speicher steht
-    └── Sichern und zurückholen
+ └── Sichern und zurückholen
 ```
 
 ### Speicherort für Dateien
 
 ```
 └── Speicherort für Dateien
-    ├── Ordner zum Speichern
-    └── Eigene Vorlagen
+ ├── Ordner zum Speichern
+ └── Eigene Vorlagen
 ```
 
 ### Änderungen verfolgen
 
 ```
 ├── Änderungen verfolgen
-│   ├── Änderungen verfolgen
-│   └── Markup anzeigen
+│ ├── Änderungen verfolgen
+│ └── Markup anzeigen
 ├── Markup
-│   ├── Einfügungen
-│   ├── Löschvorgänge
-│   ├── Geänderte Zeilen
-│   └── Farbe
+│ ├── Einfügungen
+│ ├── Löschvorgänge
+│ ├── Geänderte Zeilen
+│ └── Farbe
 ├── Sprechblasen
-│   ├── Sprechblasen verwenden
-│   ├── Empfohlene Breite verwenden
-│   ├── Bevorzugte Breite (mm)
-│   ├── Seitenrand
-│   └── Verbindungslinien zum Text anzeigen
+│ ├── Sprechblasen verwenden
+│ ├── Empfohlene Breite verwenden
+│ ├── Bevorzugte Breite (mm)
+│ ├── Seitenrand
+│ └── Verbindungslinien zum Text anzeigen
 └── Drucken (mit Sprechblasen)
-    └── Papierausrichtung
+ └── Papierausrichtung
 ```
 
 ### In PDF exportieren
 
 ```
 └── Exportoptionen
-    ├── Hyperlinks
-    ├── Überschriften als Lesezeichen
-    ├── Kommentare mitnehmen
-    ├── Dokumenteigenschaften mitnehmen
-    ├── Verknüpfung von Fuß- und Endnoten
-    ├── Textmarken übernehmen
-    ├── Andere Formatvorlagen in Lesezeichen umwandeln
-    ├── Eigene Formatvorlagen in Lesezeichen umwandeln
-    └── PDF nach dem Export öffnen
+ ├── Hyperlinks
+ ├── Überschriften als Lesezeichen
+ ├── Kommentare mitnehmen
+ ├── Dokumenteigenschaften mitnehmen
+ ├── Verknüpfung von Fuß- und Endnoten
+ ├── Textmarken übernehmen
+ ├── Andere Formatvorlagen in Lesezeichen umwandeln
+ ├── Eigene Formatvorlagen in Lesezeichen umwandeln
+ └── PDF nach dem Export öffnen
 ```
 
 ### Benutzerinformationen
 
 ```
 └── Benutzerdaten
-    ├── Wer schreibt
-    ├── Initialen
-    └── Diese Benutzerinformationen verwenden
+ ├── Wer schreibt
+ ├── Initialen
+ └── Diese Benutzerinformationen verwenden
 ```
 
 ### Drucken
 
 ```
 ├── Druckoptionen
-│   ├── Womit das Druckfenster aufgeht
-│   ├── Hohe Qualität
-│   ├── Umgekehrte Reihenfolge
-│   ├── Zeichnungsobjekte drucken
-│   ├── Hintergrundfarben und -bilder drucken
-│   ├── Leere Seiten mitdrucken
-│   ├── Felder vor dem Drucken aktualisieren
-│   ├── Feldfunktionen drucken
-│   ├── Ausgeblendeter Text
-│   └── Autor der Kommentare und Überarbeitungen
+│ ├── Womit das Druckfenster aufgeht
+│ ├── Hohe Qualität
+│ ├── Umgekehrte Reihenfolge
+│ ├── Zeichnungsobjekte drucken
+│ ├── Hintergrundfarben und -bilder drucken
+│ ├── Leere Seiten mitdrucken
+│ ├── Felder vor dem Drucken aktualisieren
+│ ├── Feldfunktionen drucken
+│ ├── Ausgeblendeter Text
+│ └── Autor der Kommentare und Überarbeitungen
 ├── Nur für das aktuelle Dokument
-│   └── Nur Formulardaten drucken
+│ └── Nur Formulardaten drucken
 └── Duplexdruck
-    ├── Blattvorderseite
-    └── Blattrückseite
+ ├── Blattvorderseite
+ └── Blattrückseite
 ```
 
 ### Sicherheit
 
 ```
 ├── Kennwortschutz
-│   ├── Dokumentkennwort
-│   └── Bearbeitung sperren
+│ ├── Dokumentkennwort
+│ └── Bearbeitung sperren
 └── Datenschutz
-    ├── Ausgeblendete Markups beim Öffnen anzeigen
-    └── Beim Speichern persönliche Daten entfernen
+ ├── Ausgeblendete Markups beim Öffnen anzeigen
+ └── Beim Speichern persönliche Daten entfernen
 ```
 
 ### Menüband anpassen
@@ -299,24 +299,24 @@ Links ein Baum mit drei Zweigen, rechts der Bereich.
 
 ```
 └── Prüfung und KI
-    ├── API-Schlüssel
-    ├── KI-Modell
-    ├── Für wen der Text ist
-    └── Verbrauch
+ ├── API-Schlüssel
+ ├── KI-Modell
+ ├── Für wen der Text ist
+ └── Verbrauch
 ```
 
 ### Gedächtnis
 
 ```
 └── Gedächtnis
-    └── Gelernte Schreibweisen
+ └── Gelernte Schreibweisen
 ```
 
 ### Erweitert
 
 ```
 └── Erweitert
-    └── Was zusätzlich geholt wurde
+ └── Was zusätzlich geholt wurde
 ```
 
 ---

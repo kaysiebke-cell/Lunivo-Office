@@ -3,11 +3,11 @@
 Das Optionen-Fenster, die Sprachen, das Kennwort, die Einstellungsdatei.
 
 **Optionen** — *☰ Menü ▸ Optionen*, oder **F9**. Links ein Baum mit drei
-Zweigen, rechts der Bereich, zweispaltig und kompakt wie im WPS Writer.
+Zweigen, rechts der Bereich, zweispaltig und kompakt wie im Writer.
 
 *Leichter lesen* steht zuoberst: **Lesehilfe**, **Schriftarten**,
 
-**Sprache**, **Rechtschreibprüfung**. Darunter *Wie im WPS Writer* mit
+**Sprache**, **Rechtschreibprüfung**. Darunter *Wie im Writer* mit
 
 **allen dreizehn Seiten** in seiner Reihenfolge und mit seinen Namen, und
 zuletzt *Nur bei Lunivo* — Schreibhilfe und KI, Gedächtnis und
@@ -31,7 +31,7 @@ ein vergessenes kann niemand wiederherstellen.
 
 **Die Einstellungen liegen in einer Datei**, lesbar, eine Zeile je
 Einstellung: `~/.config/lunivo-office/einstellungen.conf` — dort, wo auch
-WPS seine ablegt. Sie lässt sich sichern, auf einen zweiten Rechner
+ seine ablegt. Sie lässt sich sichern, auf einen zweiten Rechner
 mitnehmen und von Hand ändern. Der Speicher des Fensters bleibt, was er
 war; die Datei ist sein Abbild, beim Start gelesen und nach jeder
 Änderung neu geschrieben.

@@ -29,54 +29,54 @@ Symbolleisten — welche Oberfläche sichtbar ist, sagt
 ```
 START
 ├── Zwischenablage
-│   ├── Einfügen
-│   ├── Einfügen ohne Formatierung
-│   ├── Ausschneiden
-│   ├── Kopieren
-│   ├── Format übertragen
-│   └── Wort-Extras
+│ ├── Einfügen
+│ ├── Einfügen ohne Formatierung
+│ ├── Ausschneiden
+│ ├── Kopieren
+│ ├── Format übertragen
+│ └── Wort-Extras
 ├── Schriftart
-│   ├── Schrift vergrößern
-│   ├── Schrift verkleinern
-│   ├── Formatierung löschen
-│   ├── Groß-/Kleinschreibung
-│   ├── Fett
-│   ├── Kursiv
-│   ├── Unterstrichen
-│   ├── Durchgestrichen
-│   ├── Hochgestellt
-│   ├── Tiefgestellt
-│   ├── Zeichenumriss
-│   ├── Hervorheben
-│   ├── Schriftfarbe
-│   └── Texteffekte
+│ ├── Schrift vergrößern
+│ ├── Schrift verkleinern
+│ ├── Formatierung löschen
+│ ├── Groß-/Kleinschreibung
+│ ├── Fett
+│ ├── Kursiv
+│ ├── Unterstrichen
+│ ├── Durchgestrichen
+│ ├── Hochgestellt
+│ ├── Tiefgestellt
+│ ├── Zeichenumriss
+│ ├── Hervorheben
+│ ├── Schriftfarbe
+│ └── Texteffekte
 ├── Absatz
-│   ├── Aufzählung
-│   ├── Nummerierung
-│   ├── Einzug & Listenebene
-│   ├── Sortieren
-│   ├── Steuerzeichen
-│   ├── Linksbündig
-│   ├── Zentriert
-│   ├── Rechtsbündig
-│   ├── Blocksatz
-│   ├── Verteilt
-│   ├── Zeilenabstand
-│   ├── Absatzschattierung
-│   ├── Absatzrahmen
-│   ├── Einzug vergrößern
-│   ├── Einzug verringern
-│   ├── Genaues Maß…
-│   ├── Listenebene verringern
-│   └── Listenebene erhöhen
+│ ├── Aufzählung
+│ ├── Nummerierung
+│ ├── Einzug & Listenebene
+│ ├── Sortieren
+│ ├── Steuerzeichen
+│ ├── Linksbündig
+│ ├── Zentriert
+│ ├── Rechtsbündig
+│ ├── Blocksatz
+│ ├── Verteilt
+│ ├── Zeilenabstand
+│ ├── Absatzschattierung
+│ ├── Absatzrahmen
+│ ├── Einzug vergrößern
+│ ├── Einzug verringern
+│ ├── Genaues Maß…
+│ ├── Listenebene verringern
+│ └── Listenebene erhöhen
 ├── Stile
-│   └── katalog
+│ └── katalog
 └── Bearbeiten
-    ├── Suchen
-    ├── Ersetzen
-    ├── Suchen und Ersetzen
-    ├── Alles auswählen
-    └── Objekte auswählen
+ ├── Suchen
+ ├── Ersetzen
+ ├── Suchen und Ersetzen
+ ├── Alles auswählen
+ └── Objekte auswählen
 ```
 
 ## Einfügen
@@ -84,40 +84,40 @@ START
 ```
 EINFÜGEN
 ├── Seiten
-│   ├── Deckblatt
-│   ├── Leere Seite
-│   ├── Seitenumbruch
-│   ├── Hochformat
-│   └── Querformat
+│ ├── Deckblatt
+│ ├── Leere Seite
+│ ├── Seitenumbruch
+│ ├── Hochformat
+│ └── Querformat
 ├── Tabellen
-│   ├── Tabelle einfügen
-│   ├── Schnelltabelle
-│   ├── Tabellenblatt
-│   └── Eigenschaften
+│ ├── Tabelle einfügen
+│ ├── Schnelltabelle
+│ ├── Tabellenblatt
+│ └── Eigenschaften
 ├── Illustrationen
-│   ├── Bild
-│   ├── Formen
-│   ├── Diagramm
-│   ├── SmartArt
-│   ├── WordArt
-│   ├── Form mit eigener Farbe…
-│   ├── Bildschirmfoto
-│   └── Piktogramm
+│ ├── Bild
+│ ├── Formen
+│ ├── Diagramm
+│ ├── SmartArt
+│ ├── WordArt
+│ ├── Form mit eigener Farbe…
+│ ├── Bildschirmfoto
+│ └── Piktogramm
 ├── Links
-│   ├── Hyperlink
-│   ├── Lesezeichen / Textmarke
-│   └── Querverweis
+│ ├── Hyperlink
+│ ├── Lesezeichen / Textmarke
+│ └── Querverweis
 ├── Kopf- und Fußzeile
-│   ├── Kopf- und Fußzeile
-│   └── Seitenzahl
+│ ├── Kopf- und Fußzeile
+│ └── Seitenzahl
 ├── Text
-│   ├── Textfeld
-│   ├── Initiale
-│   ├── Datum und Uhrzeit
-│   └── Text aus Datei
+│ ├── Textfeld
+│ ├── Initiale
+│ ├── Datum und Uhrzeit
+│ └── Text aus Datei
 └── Symbole
-    ├── Sonderzeichen
-    └── Formel
+ ├── Sonderzeichen
+ └── Formel
 ```
 
 ## Seitenlayout
@@ -125,34 +125,34 @@ EINFÜGEN
 ```
 SEITENLAYOUT
 ├── Designs
-│   ├── Designs
-│   ├── Farben
-│   ├── Schriftarten
-│   └── Effekte
+│ ├── Designs
+│ ├── Farben
+│ ├── Schriftarten
+│ └── Effekte
 ├── Ränder
-│   └── Ränder
+│ └── Ränder
 ├── Seitenränder
-│   └── raender
+│ └── raender
 ├── Seite einrichten
-│   ├── Ausrichtung
-│   ├── Größe
-│   ├── Spalten
-│   ├── Textrichtung
-│   ├── Umbrüche
-│   └── Zeilennummern
+│ ├── Ausrichtung
+│ ├── Größe
+│ ├── Spalten
+│ ├── Textrichtung
+│ ├── Umbrüche
+│ └── Zeilennummern
 ├── Absatz
-│   ├── Einzug
-│   ├── Absatzabstand
-│   └── Silbentrennung
+│ ├── Einzug
+│ ├── Absatzabstand
+│ └── Silbentrennung
 ├── Seitenhintergrund
-│   ├── Seitenfarbe
-│   ├── Wasserzeichen
-│   └── Seitenränder
+│ ├── Seitenfarbe
+│ ├── Wasserzeichen
+│ └── Seitenränder
 └── Anordnen
-    ├── Textfluss
-    ├── Ausrichten
-    ├── Gruppieren
-    └── Drehen
+ ├── Textfluss
+ ├── Ausrichten
+ ├── Gruppieren
+ └── Drehen
 ```
 
 ## Referenzen
@@ -160,27 +160,27 @@ SEITENLAYOUT
 ```
 REFERENZEN
 ├── Inhaltsverzeichnis
-│   ├── Inhaltsverzeichnis
-│   └── Verzeichnisse aktualisieren
+│ ├── Inhaltsverzeichnis
+│ └── Verzeichnisse aktualisieren
 ├── Fußnoten
-│   ├── Fußnote
-│   ├── Endnote
-│   ├── Nächste Note
-│   ├── Vorige Note
-│   └── Notenbereich
+│ ├── Fußnote
+│ ├── Endnote
+│ ├── Nächste Note
+│ ├── Vorige Note
+│ └── Notenbereich
 ├── Zitate und Literatur
-│   ├── Zitat einfügen
-│   ├── Neue Quelle
-│   ├── Quellen verwalten
-│   ├── Zitierweise
-│   └── Literaturverzeichnis
+│ ├── Zitat einfügen
+│ ├── Neue Quelle
+│ ├── Quellen verwalten
+│ ├── Zitierweise
+│ └── Literaturverzeichnis
 ├── Beschriftungen
-│   ├── Beschriftung
-│   ├── Abbildungsverzeichnis
-│   └── Querverweis
+│ ├── Beschriftung
+│ ├── Abbildungsverzeichnis
+│ └── Querverweis
 └── Index
-    ├── Indexeintrag
-    └── Stichwortverzeichnis
+ ├── Indexeintrag
+ └── Stichwortverzeichnis
 ```
 
 ## Überprüfen
@@ -188,33 +188,33 @@ REFERENZEN
 ```
 ÜBERPRÜFEN
 ├── Dokumentprüfung
-│   ├── Prüfen
-│   ├── Gründlich prüfen
-│   ├── Rechtschreibung
-│   ├── Thesaurus
-│   └── Wörter zählen
+│ ├── Prüfen
+│ ├── Gründlich prüfen
+│ ├── Rechtschreibung
+│ ├── Thesaurus
+│ └── Wörter zählen
 ├── Sprache
-│   └── Korrektursprache
+│ └── Korrektursprache
 ├── Barrierefreiheit
-│   └── Barrierefreiheit prüfen
+│ └── Barrierefreiheit prüfen
 ├── Kommentare
-│   ├── Neuer Kommentar
-│   ├── Nächster Kommentar
-│   ├── Voriger Kommentar
-│   ├── Kommentar löschen
-│   └── Alle Kommentare löschen
+│ ├── Neuer Kommentar
+│ ├── Nächster Kommentar
+│ ├── Voriger Kommentar
+│ ├── Kommentar löschen
+│ └── Alle Kommentare löschen
 ├── Änderungen
-│   ├── Änderungen verfolgen
-│   ├── Markup anzeigen
-│   ├── Überarbeitungsbereich
-│   ├── Änderung annehmen
-│   ├── Änderung ablehnen
-│   ├── Nächste Änderung
-│   ├── Vorige Änderung
-│   ├── Alle annehmen
-│   └── Alle verwerfen
+│ ├── Änderungen verfolgen
+│ ├── Markup anzeigen
+│ ├── Überarbeitungsbereich
+│ ├── Änderung annehmen
+│ ├── Änderung ablehnen
+│ ├── Nächste Änderung
+│ ├── Vorige Änderung
+│ ├── Alle annehmen
+│ └── Alle verwerfen
 └── Schützen
-    └── Bearbeitung sperren
+ └── Bearbeitung sperren
 ```
 
 ## Schreibhilfe
@@ -222,39 +222,39 @@ REFERENZEN
 ```
 SCHREIBHILFE
 ├── Lesen
-│   ├── Lesehilfe
-│   ├── Zeilenfokus
-│   ├── Lesemodus
-│   └── Schrift zum Lesen
+│ ├── Lesehilfe
+│ ├── Zeilenfokus
+│ ├── Lesemodus
+│ └── Schrift zum Lesen
 ├── Prüfen
-│   ├── Dokumentprüfung
-│   ├── Prüfen
-│   ├── Gründlich prüfen
-│   └── Welche Hilfe wann
+│ ├── Dokumentprüfung
+│ ├── Prüfen
+│ ├── Gründlich prüfen
+│ └── Welche Hilfe wann
 ├── Beim Schreiben
-│   ├── Rechtschreibprüfung
-│   ├── Wortvorhersage
-│   └── AutoKorrektur
+│ ├── Rechtschreibprüfung
+│ ├── Wortvorhersage
+│ └── AutoKorrektur
 ├── Vorlesen
-│   ├── Vorlesen
-│   ├── Ab hier vorlesen
-│   ├── Anhalten
-│   └── Stimme und Tempo
+│ ├── Vorlesen
+│ ├── Ab hier vorlesen
+│ ├── Anhalten
+│ └── Stimme und Tempo
 ├── Sprache
-│   ├── Silbentrennung
-│   ├── Übersetzen
-│   ├── Thesaurus
-│   └── Sprache und Prüfung
+│ ├── Silbentrennung
+│ ├── Übersetzen
+│ ├── Thesaurus
+│ └── Sprache und Prüfung
 ├── Bausteine
-│   ├── Textbausteine
-│   ├── Bausteine verwalten…
-│   └── Schnellbaustein einfügen
+│ ├── Textbausteine
+│ ├── Bausteine verwalten…
+│ └── Schnellbaustein einfügen
 ├── KI
-│   ├── KI-Korrektur
-│   └── Vorschläge
+│ ├── KI-Korrektur
+│ └── Vorschläge
 └── Anzeigen
-    ├── Seitenleiste Schreibhilfe
-    └── Optionen
+ ├── Seitenleiste Schreibhilfe
+ └── Optionen
 ```
 
 ## Sendungen
@@ -262,19 +262,19 @@ SCHREIBHILFE
 ```
 SENDUNGEN
 ├── Erstellen
-│   ├── Umschlag
-│   └── Etiketten
+│ ├── Umschlag
+│ └── Etiketten
 ├── Seriendruck
-│   ├── Seriendruck-Assistent
-│   ├── Seriendruckfeld
-│   ├── Adressblock
-│   └── Regeln
+│ ├── Seriendruck-Assistent
+│ ├── Seriendruckfeld
+│ ├── Adressblock
+│ └── Regeln
 ├── Vorschau
-│   └── Ergebnisse anzeigen
+│ └── Ergebnisse anzeigen
 └── Formular
-    ├── Textfeld
-    ├── Kontrollkästchen
-    └── Schaltfläche
+ ├── Textfeld
+ ├── Kontrollkästchen
+ └── Schaltfläche
 ```
 
 ## Ansicht
@@ -282,41 +282,41 @@ SENDUNGEN
 ```
 ANSICHT
 ├── Dokumentansichten
-│   ├── Drucklayout
-│   ├── Lesemodus
-│   ├── Zwei Seiten
-│   ├── Weblayout
-│   └── Gliederung
+│ ├── Drucklayout
+│ ├── Lesemodus
+│ ├── Zwei Seiten
+│ ├── Weblayout
+│ └── Gliederung
 ├── Anzeigen
-│   ├── Lineal
-│   ├── Vertikales Lineal
-│   ├── Gitternetzlinien
-│   ├── Navigationsbereich
-│   └── Textbegrenzungen
+│ ├── Lineal
+│ ├── Vertikales Lineal
+│ ├── Gitternetzlinien
+│ ├── Navigationsbereich
+│ └── Textbegrenzungen
 ├── Zoom
-│   ├── Vergrößern
-│   ├── Verkleinern
-│   ├── Seitenbreite
-│   ├── Eine Seite
-│   └── Zoom
+│ ├── Vergrößern
+│ ├── Verkleinern
+│ ├── Seitenbreite
+│ ├── Eine Seite
+│ └── Zoom
 ├── Fenster
-│   ├── Neues Fenster
-│   ├── Anordnen
-│   ├── Nebeneinander
-│   ├── Untereinander
-│   ├── Kacheln
-│   └── Fensterliste
+│ ├── Neues Fenster
+│ ├── Anordnen
+│ ├── Nebeneinander
+│ ├── Untereinander
+│ ├── Kacheln
+│ └── Fensterliste
 ├── Helligkeit
-│   ├── Wie das System
-│   ├── Immer hell
-│   └── Immer dunkel
+│ ├── Wie das System
+│ ├── Immer hell
+│ └── Immer dunkel
 └── Oberfläche
-    ├── Register anpassen
-    ├── Symbol austauschen
-    ├── Benutzeroberfläche
-    ├── Menüleiste
-    ├── Symbolleisten
-    └── Vorlagen zurücksetzen
+ ├── Register anpassen
+ ├── Symbol austauschen
+ ├── Benutzeroberfläche
+ ├── Menüleiste
+ ├── Symbolleisten
+ └── Vorlagen zurücksetzen
 ```
 
 ---

@@ -1,7 +1,7 @@
 # Menüstruktur ↔ Programm
 
 **✅ 71 · ◐ 27 · ⬜ 12** (zusammengefasste Zeilen).
-Erzeugt von `werkzeug/menuestruktur-abgleich.py`. Die vorgegebene Struktur (12 Bereiche) Punkt für Punkt gegen das Programm: ✅ vorhanden · ◐ teilweise oder anders gelöst · ⬜ fehlt. Reiter-Reihenfolge und -Anordnung folgen den WPS-Bildschirmfotos; wo die Struktur davon abweicht (eigener KI-Reiter, Rechtschreibung unter Überprüfen), gilt die Anordnung nach WPS: Rechtschreibung und KI stehen im Reiter Schreibhilfe.
+Erzeugt von `werkzeug/menuestruktur-abgleich.py`. Die vorgegebene Struktur (12 Bereiche) Punkt für Punkt gegen das Programm: ✅ vorhanden · ◐ teilweise oder anders gelöst · ⬜ fehlt. Reiter-Reihenfolge und -Anordnung folgen den -Bildschirmfotos; wo die Struktur davon abweicht (eigener KI-Reiter, Rechtschreibung unter Überprüfen), gilt die Anordnung nach : Rechtschreibung und KI stehen im Reiter Schreibhilfe.
 
 ## 1. Datei
 
@@ -10,7 +10,7 @@ Erzeugt von `werkzeug/menuestruktur-abgleich.py`. Die vorgegebene Struktur (12 B
 | ✅ | Neu: Leeres Dokument · Aus Vorlage erstellen · Vorlagen durchsuchen | Backstage ▸ Neues Dokument / Von Vorlage; zehn Vorlagen |
 | ✅ | Öffnen · Zuletzt verwendete Dokumente | Backstage ▸ Öffnen, Zuletzt benutzte Dokumente |
 | ✅ | Speichern · Speichern unter · Kopie speichern | Backstage ▸ Speichern, Speichern als |
-| ✅ | Exportieren: PDF · DOCX · DOC (optional) · RTF · TXT | Speichern als; dazu ODT und PNG; DOC/ODT/RTF brauchen LibreOffice |
+| ✅ | Exportieren: PDF · DOCX · DOC (optional) · RTF · TXT | Speichern als; dazu ODT und PNG; DOC/ODT/RTF brauchen |
 | ✅ | Drucken: Druckvorschau · Drucker auswählen | Backstage ▸ Drucken |
 | ◐ | Drucken: Seitenbereich · Druckeinstellungen | im Druckfenster des Systems; was gedruckt wird: Optionen ▸ Drucken |
 | ✅ | Dokumentinformationen | Backstage ▸ Info (Statistik, Verfasser, Titel) |
@@ -102,7 +102,7 @@ Erzeugt von `werkzeug/menuestruktur-abgleich.py`. Die vorgegebene Struktur (12 B
 | ✅ | Zitieren: Stil · Quelle einfügen/bearbeiten · Quellen verwalten · Literaturverzeichnis | Verweise ▸ Zitate und Literatur |
 | ✅ | Beschriftung · Abbildungsverzeichnis · Index/Stichwortverzeichnis · Querverweis | Verweise ▸ Beschriftungen, Index |
 
-## 7. Überprüfen  (Rechtschreibung, Sprache, KI stehen laut Ihrer Vorgabe im Reiter Schreibhilfe)
+## 7. Überprüfen (Rechtschreibung, Sprache, KI stehen laut Ihrer Vorgabe im Reiter Schreibhilfe)
 
 | | Punkt | Beleg / Grenze |
 |---|---|---|
@@ -115,7 +115,7 @@ Erzeugt von `werkzeug/menuestruktur-abgleich.py`. Die vorgegebene Struktur (12 B
 | ✅ | Schützen: Dokument schützen | Überprüfen ▸ Schützen; Backstage ▸ Schützen |
 | ◐ | Schützen: Bearbeitung einschränken · Schutz aufheben (optional) | Bearbeitung sperren/freigeben; Kennwort entfernen |
 
-## 8. KI  (kein eigener Reiter: Reiter Schreibhilfe und Seitenleiste)
+## 8. KI (kein eigener Reiter: Reiter Schreibhilfe und Seitenleiste)
 
 | | Punkt | Beleg / Grenze |
 |---|---|---|
@@ -177,7 +177,7 @@ Erzeugt von `werkzeug/menuestruktur-abgleich.py`. Die vorgegebene Struktur (12 B
 
 * **Sendungen** (ausblendbarer Reiter): Seriendruck, Umschläge, Etiketten, Adressblock, Formularfelder.
 * **Lesehilfe für Menschen mit Legasthenie:** farbige Silben mit Einstellungen, Zeilenfokus, Leseschriften, Vorlesen.
-* **Backstage-Ansicht** für *Datei* mit Info, Öffnen mit … (WPS, LibreOffice).
+* **Backstage-Ansicht** für *Datei* mit Info, Öffnen mit … (, ).
 * **Sprechblasen** für Kommentare, **Fußnoten am Seitenfuß**, **Spalten live** auf der Seite.
 * **Hilfe:** Handbuch, Tastenkürzel, „Welche Hilfe wann“.
 * **Hell/Dunkel**, Register anpassen, Symbole austauschen, zweite Oberfläche (Symbolleisten).

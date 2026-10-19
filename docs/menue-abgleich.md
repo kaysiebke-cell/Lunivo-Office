@@ -1,9 +1,9 @@
-# Start, Einfügen, Seitenlayout — gegen WPS geprüft
+# Start, Einfügen, Seitenlayout — gegen geprüft
 
 **Grundlage:** Kays 33 Bildschirmfotos aus `~/Dropbox/Bilder/Menü Start`,
 `Menü Einfügen`, `Menü seitenlayut` — die geöffneten Klappmenüs, nicht
-nur die Leiste. Dazu die Befehlsnamen aus den WPS-Programmdateien
-(`werkzeug/wps-befehle-lesen.py`).
+nur die Leiste. Dazu die Befehlsnamen aus den -Programmdateien
+(`werkzeug/befehle-lesen.py`).
 
 Geprüft wurde, ob es den Befehl in Lunivo **gibt** — nicht, ob er genauso
 tief geht.
@@ -12,7 +12,7 @@ tief geht.
 
 ## Start
 
-| WPS | Lunivo |
+| | Lunivo |
 |---|---|
 | Einfügen · Ausschneiden · Kopieren · Format übertragen | da |
 | Schrift, Größe, A↑ A↓, Formatierung löschen | da |
@@ -33,7 +33,7 @@ tief geht.
 
 ## Einfügen
 
-| WPS | Lunivo |
+| | Lunivo |
 |---|---|
 | Deckblatt · Leere Seite · Umbrüche | da |
 | Tabelle (Raster) | da |
@@ -51,7 +51,7 @@ tief geht.
 
 ## Seitenlayout
 
-| WPS | Lunivo |
+| | Lunivo |
 |---|---|
 | Seitenränder (Voreinstellungen) | da |
 | Orientierung: Hoch-/Querformat | da |
@@ -79,7 +79,7 @@ tief geht.
 *Wort-Extras* sind ein eigener Block.
 
 **Einfügen** hat alle Gruppen, aber die **Formen-Galerie** ist der große
-Abstand: WPS bietet rund 155 Formen in acht Gruppen, Lunivo vier.
+Abstand: bietet rund 155 Formen in acht Gruppen, Lunivo vier.
 Dazu die zwei Knöpfe, die ins Leere greifen (Textmarke, Querverweis).
 
 **Seitenlayout** ist die größte Lücke: Der ganze Block **Designs,

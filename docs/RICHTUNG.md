@@ -1,6 +1,6 @@
 # Wohin das gehen soll
 
-Dieses Programm wird kein zweites Word. Es gibt Word, es gibt LibreOffice,
+Dieses Programm wird kein zweites Word. Es gibt Word, es gibt ,
 und beide sind besser darin, Word zu sein, als es dieses Projekt je wäre.
 
 Es gibt aber etwas, das beide nicht tun.
@@ -55,8 +55,8 @@ ist der Grund, warum die Vorschlagsleiste von selbst erscheint und warum
 * Keine Lernstands-Auswertung, keine Statistik über deine Fehler.
 * Keine Bevormundung: Nichts wird automatisch geändert.
 * Kein Nachbau von SmartArt, 3D-Modellen oder eingebetteter
-  Tabellenkalkulation. Der Aufwand wäre groß, der Nutzen für einen Brief
-  gering.
+ Tabellenkalkulation. Der Aufwand wäre groß, der Nutzen für einen Brief
+ gering.
 
 ## Woran gerade gearbeitet wird
 

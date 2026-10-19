@@ -26,7 +26,7 @@ Schreibhilfe mit anderen Apps zusammenarbeiten können, ohne dass dafür ständi
 umständliche Umwege notwendig sind.
 
 Aus dieser Entwicklung entstand schließlich Lunivo-Office. Da sich die
-Schreibhilfe nicht so in andere Schreibprogramme wie LibreOffice integrieren
+Schreibhilfe nicht so in andere Schreibprogramme wie integrieren
 ließ, wie ich es mir vorgestellt hatte, entstand die Idee, ein eigenes
 Schreibprogramm darum herum aufzubauen. Dadurch konnte ich die Schreibhilfe
 direkt mit den Funktionen verbinden, die ich für das Schreiben benötige.

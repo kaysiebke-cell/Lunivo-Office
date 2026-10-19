@@ -1,8 +1,8 @@
 # Bild gegen Bild: der Reiter Ansicht
 
-Kay am 13.09.2026: *„das wird noch ein hartes Stück Arbeit, WPS und mein
+Kay am 13.09.2026: *„das wird noch ein hartes Stück Arbeit, und mein
 Programm zu vergleichen"* — und dann zwei Aufnahmen geschickt: das Band
-von WPS Writer und das eigene, beide auf dem Reiter Ansicht.
+von Writer und das eigene, beide auf dem Reiter Ansicht.
 
 Diese Datei hält fest, was **auf den Bildern** zu sehen ist. Das ist
 etwas anderes als [reiter-abgleich.md](reiter-abgleich.md): Der vergleicht
@@ -12,13 +12,13 @@ zeigen kann.
 
 ## Der wichtigste Befund: die Beschriftung
 
-**WPS beschriftet im Reiter Ansicht jeden Knopf.** Vollbildgröße,
+** beschriftet im Reiter Ansicht jeden Knopf.** Vollbildgröße,
 Leseansicht, Drucklayout, Rahmen, Weblayout, Navigationsbereich,
 Augenschutzmodus, Neues Fenster, Fenster teilen — jedes Symbol trägt sein
 Wort. Die Schalter stehen sogar als Kontrollkästchen **mit** Text da:
 
-    ☐ Lineal          ☐ Gitternetzlinien anzeigen   ☑ Tabellengitternetzlinien
-    ☑ Markup          ☑ Task-Fenster
+ ☐ Lineal ☐ Gitternetzlinien anzeigen ☑ Tabellengitternetzlinien
+ ☑ Markup ☑ Task-Fenster
 
 **Lunivo beschriftet sieben Knöpfe von siebenundzwanzig.** Beschriftet
 sind nur die großen: Drucklayout, Lesemodus, Vergrößern, Verkleinern,
@@ -37,14 +37,14 @@ Er steht dort bei Zeilenabstand, Durchgestrichen, Seitenumbruch,
 Seitenzahl, Querverweis, Initiale, WordArt — sieben Mal dieselbe Sache.
 Es ist kein Symbolproblem. Es ist ein Beschriftungsproblem.
 
-Zweite Hälfte davon: **Lunivo zeigt keinen Schaltzustand.** In WPS sieht
+Zweite Hälfte davon: **Lunivo zeigt keinen Schaltzustand.** In sieht
 man am Haken, ob das Lineal an ist. In Lunivo ist genau ein Symbol blau
 hinterlegt; bei den übrigen sechs Schaltern der Gruppe *Anzeigen* ist von
 außen nicht zu sehen, ob sie an sind.
 
-## Was WPS hat und Lunivo nicht
+## Was hat und Lunivo nicht
 
-| WPS | in Lunivo |
+| | in Lunivo |
 |---|---|
 | Vollbildgröße | fehlt |
 | Rahmen | fehlt |
@@ -53,11 +53,11 @@ außen nicht zu sehen, ob sie an sind.
 | Augenschutzmodus | ersetzt durch die Gruppe *Helligkeit* |
 | Markup | steht in Lunivo unter Überprüfen, nicht unter Ansicht |
 
-*Augenschutzmodus* ist kein Fehlen: WPS hat einen Knopf, Lunivo hat drei
+*Augenschutzmodus* ist kein Fehlen: hat einen Knopf, Lunivo hat drei
 (Wie das System · Immer hell · Immer dunkel). Das ist mehr, nicht
 weniger — aber es ist nicht dasselbe, und deshalb steht es hier.
 
-## Was Lunivo hat und WPS nicht
+## Was Lunivo hat und nicht
 
 Gliederung · Vertikales Lineal · Textbegrenzungen · Seitenleiste
 Schreibhilfe · Fensterliste · die ganze Gruppe *Helligkeit* · die ganze
@@ -66,7 +66,7 @@ Benutzeroberfläche, Menüleiste, Symbolleisten, Vorlagen zurücksetzen)
 
 Dazu ein Unterschied im Aufbau: **Lunivo beschriftet die Gruppen**
 (DOKUMENTANSICHTEN · ANZEIGEN · ZOOM · FENSTER · HELLIGKEIT ·
-OBERFLÄCHE), WPS nicht. Word macht es wie Lunivo.
+OBERFLÄCHE), nicht. Word macht es wie Lunivo.
 
 ## Zwei Fehler, die dabei aufgefallen sind
 
@@ -74,8 +74,8 @@ OBERFLÄCHE), WPS nicht. Word macht es wie Lunivo.
 
 In `oberflaeche/daten/register.js`, Gruppe *Anzeigen*:
 
-    ['ecken', 'Textbegrenzungen', () => B.textbegrenzungen(), …]
-    ['ecken', 'Textbegrenzungen', () => B.markenZeigen(),     …]
+ ['ecken', 'Textbegrenzungen', () => B.textbegrenzungen(), …]
+ ['ecken', 'Textbegrenzungen', () => B.markenZeigen(), …]
 
 Gleiche Beschriftung, gleiches Symbol, **zwei verschiedene Befehle**.
 Beide zeichnen die vier Ecken des Satzspiegels — einmal über die Klasse
@@ -90,9 +90,9 @@ Welche der beiden bleiben soll, entscheidet er — die eine ist vermutlich
 In `oberflaeche/js/programm.js` steht in der Tabelle `w.an` der Schlüssel
 `textbegrenzungen` **zweimal**:
 
-    textbegrenzungen: () => textbegrenzungen,   // Zeile 4025
-    …
-    textbegrenzungen: () => marken,             // Zeile 4032
+ textbegrenzungen: () => textbegrenzungen, // Zeile 4025
+ …
+ textbegrenzungen: () => marken, // Zeile 4032
 
 In JavaScript gewinnt der letzte. Der Haken am Knopf *Textbegrenzungen*
 zeigt deshalb nie, ob die Textbegrenzungen an sind, sondern immer, ob die

@@ -1,21 +1,21 @@
-# Reiter für Reiter: WPS gegen Lunivo
+# Reiter für Reiter: gegen Lunivo
 
 Geschrieben von `werkzeug/reiter-abgleich.py`. Das SOLL kommt aus
-seinem Prüfkatalog (Lesekopie in `doku/wps-soll-lesekopie.txt`),
+seinem Prüfkatalog (Lesekopie in `doku/soll-lesekopie.txt`),
 der IST-Stand aus `oberflaeche/daten/register.js`.
 
 **268 gleich · 6 fehlen · 38 eigen · 0 ohne Bild**
 
 - **fehlt** — steht im SOLL, nicht im Band. Kein Ermessen.
 - **eigen** — steht im Band, nicht im SOLL. Das heißt nicht
-  „gibt es in WPS nicht": vieles davon steht dort sehr wohl,
-  nur führt das SOLL die Klappe nicht Punkt für Punkt auf.
+ „gibt es in nicht": vieles davon steht dort sehr wohl,
+ nur führt das SOLL die Klappe nicht Punkt für Punkt auf.
 - **ohne Bild** — der Symbolname steht in keiner Zeile von `symbole.js`;
-  das Band zeichnet dann das Wort.
+ das Band zeichnet dann das Wort.
 
 Wenn ein Punkt als **fehlt** dasteht, den es im Band gibt, ist er
 umbenannt worden — meist nach einer neueren Aufnahme, die das SOLL
-noch nicht kennt: „Mittel" heißt in WPS heute „Moderat",
+noch nicht kennt: „Mittel" heißt in heute „Moderat",
 „Seitenrahmen" heißt „Seitenränder", „Textumbruch" heißt
 „Textfluss". Dann gehört die Zeile im SOLL nachgezogen, nicht der
 Name im Band zurückgedreht. Das entscheidet er, nicht ich.
@@ -521,17 +521,17 @@ Name im Band zurückgedreht. Das entscheidet er, nicht ich.
 - Untereinander
 - Kacheln
 
-## Tabellenwerkzeuge  — **im Band nicht gefunden**
+## Tabellenwerkzeuge — **im Band nicht gefunden**
 
-## Zeichentools  — **im Band nicht gefunden**
+## Zeichentools — **im Band nicht gefunden**
 
-## Diagrammtools  — **im Band nicht gefunden**
+## Diagrammtools — **im Band nicht gefunden**
 
-## Smartart-Tools  — **im Band nicht gefunden**
+## Smartart-Tools — **im Band nicht gefunden**
 
-## Gleichungswerkzeuge  — **im Band nicht gefunden**
+## Gleichungswerkzeuge — **im Band nicht gefunden**
 
-## Kopf- Und Fusszeilenwerkzeuge  — **im Band nicht gefunden**
+## Kopf- Und Fusszeilenwerkzeuge — **im Band nicht gefunden**
 
 ## Kontextabhängige Register
 
