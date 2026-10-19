@@ -1,7 +1,7 @@
 # Lunivo Writer — native Qt-Fassung
 
-Eine Textverarbeitung für Linux Mint in **Python 3 + PySide6 (Qt 6 Widgets)**. Keine HTML-, CSS- oder JavaScript-Oberfläche,
-keine WebView, kein lokaler Webserver. Startpfad: `starten-qt.sh` → `python -m native_qt`.
+Eine Textverarbeitung für Linux Mint in **Python 3 + PySide6 (Qt 6 Widgets)**. Eine native Oberfläche aus Qt-Widgets,
+ohne WebView und ohne lokalen Webserver. Startpfad: `starten-qt.sh` → `python -m native_qt`.
 Ein Test (`tests/test_main_window.py::test_no_web_modules_loaded`) prüft in einem frischen Prozess, dass weder
 QtWebEngine/WebKit noch ein Webserver geladen wird.
 
