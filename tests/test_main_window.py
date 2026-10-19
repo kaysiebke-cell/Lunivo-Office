@@ -4,8 +4,8 @@ import docx
 from PySide6.QtCore import QSettings
 from PySide6.QtGui import QTextCursor
 
-from native_qt.storage.settings import Settings
-from native_qt.windows.main_window import MainWindow
+from lunivo_writer.services.settings_service import Settings
+from lunivo_writer.ui.main_window import MainWindow
 
 
 def win(tmp_path):
@@ -22,7 +22,7 @@ def test_new_edit_save_reopen(app, tmp_path, monkeypatch):
     assert e.document().isModified() and "●" in w.tabs.tabText(w.tabs.currentIndex())
     assert e.textCursor().charFormat().fontWeight() >= 600
     target = str(tmp_path / "doc.docx")
-    monkeypatch.setattr("native_qt.windows.main_window.QFileDialog.getSaveFileName", lambda *a, **k: (target, ""))
+    monkeypatch.setattr("lunivo_writer.ui.main_window.QFileDialog.getSaveFileName", lambda *a, **k: (target, ""))
     assert w.save()
     assert not e.document().isModified()
     assert docx.Document(target).paragraphs[0].runs[0].bold
@@ -39,7 +39,7 @@ def test_pdf_export_and_status(app, tmp_path, monkeypatch):
     w._sync_status()
     assert " von 3" in w.lbl_page.text() or " von 2" in w.lbl_page.text()
     out = str(tmp_path / "x.pdf")
-    monkeypatch.setattr("native_qt.windows.main_window.QFileDialog.getSaveFileName", lambda *a, **k: (out, ""))
+    monkeypatch.setattr("lunivo_writer.ui.main_window.QFileDialog.getSaveFileName", lambda *a, **k: (out, ""))
     w.export_pdf_dialog()
     assert os.path.getsize(out) > 500
 
@@ -63,13 +63,13 @@ def test_invalid_file_is_reported_not_crashing(app, tmp_path, monkeypatch):
 
 
 def test_autosave_and_recovery(app, tmp_path, monkeypatch):
-    from native_qt.storage import recovery
+    from lunivo_writer.services import recovery
     monkeypatch.setattr(recovery, "recovery_dir", lambda: str(tmp_path / "rec") if os.makedirs(tmp_path / "rec", exist_ok=True) is None else "")
     w = win(tmp_path); w.new_document(); w.current_editor().insertPlainText("Rettungstext")
     w.autosave_now()
     ent = recovery.pending()
     assert len(ent) == 1
-    from native_qt.document_io import formats
+    from lunivo_writer.services import file_service as formats
     assert "Rettungstext" in formats.load(ent[0].docx_path).doc.toPlainText()
     w.current_editor().document().setModified(False); w.close_tab(0)
     assert recovery.pending() == []
@@ -83,22 +83,23 @@ def test_no_web_modules_loaded(app):
         os.environ["QT_QPA_PLATFORM"] = "offscreen"
         from PySide6.QtWidgets import QApplication
         app = QApplication([])
-        import native_qt.main
-        from native_qt.windows.main_window import MainWindow
+        import lunivo_writer.app
+        from lunivo_writer.ui.main_window import MainWindow
         w = MainWindow(); w.new_document()
         bad = [m for m in sys.modules if m.startswith(("PySide6.QtWebEngine", "PySide6.QtWebKit", "PySide6.QtWebChannel",
                "PySide6.QtWebView", "http.server", "socketserver", "flask", "gi.repository.WebKit"))]
         print("BAD", bad)
     """)
     r = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, timeout=60,
-                       cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                       cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                       env=dict(os.environ, PYTHONPATH=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src")))
     assert "BAD []" in r.stdout, r.stdout + r.stderr
 
 
 def test_quelltext_ohne_web_oberflaeche():
     """Im neuen Programm kommt keine HTML/JS-Oberfläche vor."""
     import pathlib, re
-    wurzel = pathlib.Path(__file__).resolve().parent.parent / "native_qt"
+    wurzel = pathlib.Path(__file__).resolve().parent.parent / "src" / "lunivo_writer"
     muster = re.compile(r"QtWebEngine|QtWebKit|QWebEngineView|WebKit2|http\.server|SimpleHTTPRequestHandler")
     treffer = [str(p) for p in wurzel.rglob("*.py") if muster.search(p.read_text(encoding="utf-8"))]
     assert treffer == []
@@ -237,7 +238,7 @@ def test_neues_fenster_und_anordnen(app, tmp_path):
 
 
 def test_absatzdialog_und_objekte_waehlen(app, tmp_path):
-    from native_qt.widgets.dialogs import ParagraphDialog
+    from lunivo_writer.ui.dialogs.dokument_dialoge import ParagraphDialog
     d = ParagraphDialog(5, 0, 8, 6, 12, 1.5, None, 1, True)
     assert d.align.currentIndex() == 1 and d.umbruch.isChecked() and d.vorschau.w["first"] == 8
     d.left.setValue(12)
@@ -289,9 +290,9 @@ def test_kommentar_note_verfolgen_ueber_befehle(app, tmp_path, monkeypatch):
 
 def test_oberflaeche_wechseln_register_anpassen_symbole_tauschen(app, tmp_path):
     import json
-    from native_qt.widgets import icons
-    from native_qt.widgets.symbolleisten import Symbolleisten
-    from native_qt.widgets.register_band import RegisterBand
+    from lunivo_writer.ui.widgets import icons
+    from lunivo_writer.ui.ribbon.toolbars import Symbolleisten
+    from lunivo_writer.ui.ribbon.ribbon_bar import RegisterBand
     w = win(tmp_path)
     w.new_document(); w.resize(1380, 860); w.show()
     assert isinstance(w.band, RegisterBand)

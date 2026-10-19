@@ -1,8 +1,8 @@
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QTextCharFormat, QTextCursor, QTextDocument, QTextFormat
 
-from native_qt.editor import sendungen as S
-from native_qt.editor.editor_widget import DocumentEditor
+from lunivo_writer.editor import sendungen as S
+from lunivo_writer.ui.document.document_editor import DocumentEditor
 
 
 def ed(text=""):
@@ -71,8 +71,8 @@ def test_kontrollkaestchen_umschalten_und_formularfelder(app):
 
 def test_sendungen_reiter_im_band(app, tmp_path):
     from PySide6.QtCore import QSettings
-    from native_qt.storage.settings import Settings
-    from native_qt.windows.main_window import MainWindow
+    from lunivo_writer.services.settings_service import Settings
+    from lunivo_writer.ui.main_window import MainWindow
     w = MainWindow(Settings(QSettings(str(tmp_path / "s.ini"), QSettings.IniFormat)))
     standard = [w.band.reiter.tabText(i) for i in range(w.band.reiter.count()) if w.band.reiter.isTabVisible(i)]
     assert "Sendungen" not in standard                           # neue Struktur: acht Reiter

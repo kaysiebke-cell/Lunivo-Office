@@ -5,9 +5,9 @@ import zipfile
 import pytest
 from PySide6.QtGui import QTextCharFormat, QTextCursor, QTextDocument
 
-from native_qt.document_io import docx_reader, docx_writer
-from native_qt.editor.page import PageSettings
-from native_qt.editor.zusatz import P_AENDERUNG, P_AUTOR, P_DATUM, P_KOMMENTAR, P_NOTE
+from lunivo_writer.services import docx_reader, docx_writer
+from lunivo_writer.models.page import PageSettings
+from lunivo_writer.editor.zusatz import P_AENDERUNG, P_AUTOR, P_DATUM, P_KOMMENTAR, P_NOTE
 
 
 def _dokument():
@@ -66,7 +66,7 @@ def test_zusatz_roundtrip(app, tmp_path):
 
 
 def test_zusatz_datei_oeffnet_in_libreoffice(app, tmp_path):
-    from native_qt.integrations import libreoffice
+    from lunivo_writer.services.integrations import libreoffice
     if not libreoffice.verfuegbar():
         pytest.skip("LibreOffice nicht installiert")
     out = str(tmp_path / "z.docx")

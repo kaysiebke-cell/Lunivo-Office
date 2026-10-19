@@ -4,8 +4,8 @@ from PySide6.QtCore import QPoint, Qt
 from PySide6.QtGui import QTextCursor
 from PySide6.QtTest import QTest
 
-from native_qt.editor.editor_widget import DocumentEditor
-from native_qt.editor.page import PageSettings
+from lunivo_writer.ui.document.document_editor import DocumentEditor
+from lunivo_writer.models.page import PageSettings
 
 
 def _editor(spalten=2, zeilen=150, linie=True):
@@ -98,7 +98,7 @@ def test_zoom_in_spalten(app):
 def test_spalten_mit_tabelle_bild_wellen_und_silbenfarben(app):
     """Alles, was sonst im Text steht, wird in Spalten gezeichnet, ohne dass etwas abstürzt oder verloren geht."""
     from PySide6.QtGui import QColor, QImage
-    from native_qt.editor import einfuegen as E, silbenfarben as S
+    from lunivo_writer.editor import einfuegen as E, silbenfarben as S
     ed = _editor(2, zeilen=30)
     c = ed.textCursor(); c.setPosition(10); ed.setTextCursor(c)
     ed.insert_table(3, 2)

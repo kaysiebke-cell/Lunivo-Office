@@ -2,11 +2,11 @@
 import pytest
 from PySide6.QtGui import QImage, QTextCursor, QTextDocument
 
-from native_qt.document_io import docx_reader, docx_writer, formats
-from native_qt.editor import einfuegen as E
-from native_qt.editor.editor_widget import DocumentEditor
-from native_qt.editor.page import PageSettings
-from native_qt.storage import bausteine
+from lunivo_writer.services import docx_reader, docx_writer, file_service as formats
+from lunivo_writer.editor import einfuegen as E
+from lunivo_writer.ui.document.document_editor import DocumentEditor
+from lunivo_writer.models.page import PageSettings
+from lunivo_writer.services import bausteine
 
 
 def ed(text="Anfang"):
@@ -88,7 +88,7 @@ def test_text_aus_datei_mit_bild_und_baustein(app, tmp_path, monkeypatch):
     img = e.document().resource(QTextDocument.ImageResource, __import__("PySide6.QtCore", fromlist=["QUrl"]).QUrl(next(bilder(e.document())).name()))
     assert img is not None and not QImage(img).isNull()
     # Textbausteine
-    import native_qt.storage.bausteine as B
+    import lunivo_writer.services.bausteine as B
     monkeypatch.setattr(B, "_pfad", lambda: str(tmp_path / "b.json"))
     c = e.textCursor(); c.setPosition(0); c.setPosition(6, QTextCursor.KeepAnchor); e.setTextCursor(c)
     from PySide6.QtGui import QTextDocumentFragment

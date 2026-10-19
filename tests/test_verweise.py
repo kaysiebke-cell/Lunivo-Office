@@ -5,12 +5,12 @@ import subprocess
 import pytest
 from PySide6.QtGui import QTextCursor
 
-from native_qt.document_io import docx_reader, docx_writer
-from native_qt.editor import verweise
-from native_qt.editor.editor_widget import DocumentEditor
-from native_qt.editor.page import PageSettings
-from native_qt.editor.verzeichnis import verzeichnis_aktualisieren, verzeichnis_einfuegen
-from native_qt.editor.zusatz import B_ART, B_CAP, B_TOC, P_FELD, P_INDEX
+from lunivo_writer.services import docx_reader, docx_writer
+from lunivo_writer.editor import verweise
+from lunivo_writer.ui.document.document_editor import DocumentEditor
+from lunivo_writer.models.page import PageSettings
+from lunivo_writer.editor.verzeichnis import verzeichnis_aktualisieren, verzeichnis_einfuegen
+from lunivo_writer.editor.zusatz import B_ART, B_CAP, B_TOC, P_FELD, P_INDEX
 
 
 def ed(text):
@@ -96,7 +96,7 @@ def test_stichwoerter_und_zitate_roundtrip(app, tmp_path):
 
 
 def test_datei_mit_verweisen_oeffnet_in_libreoffice(app, tmp_path):
-    from native_qt.integrations import libreoffice
+    from lunivo_writer.services.integrations import libreoffice
     if not libreoffice.verfuegbar():
         pytest.skip("LibreOffice nicht installiert")
     e = ed("Kapitel\nText")

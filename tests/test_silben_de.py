@@ -1,7 +1,7 @@
 """Deutsche Sprechsilben: Soll-Liste (tests/silben_gold.py, 228 Wörter, von Hand geprüft) und eine harte Liste mit bekannten Fehlern."""
 import os
 
-from native_qt.services.silben_de import silben
+from lunivo_writer.proofing.silben_de import silben
 from silben_gold import GOLD
 
 

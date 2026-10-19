@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lunivo-writer"
+version = "0.1.0"
+description = "Lunivo Writer — native Textverarbeitung für Linux (Python 3, PySide6/Qt Widgets)"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = ["PySide6", "python-docx", "msoffcrypto-tool", "pyphen"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "pypdf>=4"]
+
+[project.scripts]
+lunivo-writer = "lunivo_writer.app:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+lunivo_writer = ["resources/*", "resources/daten/*"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]

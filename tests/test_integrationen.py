@@ -4,8 +4,8 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 
 import pytest
 
-from native_qt.integrations import languagetool
-from native_qt.services import vorlesen
+from lunivo_writer.services.integrations import languagetool
+from lunivo_writer.services import vorlesen
 
 
 class _LT(BaseHTTPRequestHandler):
@@ -57,7 +57,7 @@ def test_vorlesen_spd_befehl(monkeypatch):
 
 
 def test_wps_nur_ehrlich(monkeypatch):
-    from native_qt.integrations import wps
+    from lunivo_writer.services.integrations import wps
     monkeypatch.setattr(wps.shutil, "which", lambda n: None)
     assert not wps.verfuegbar() and wps.oeffnen("/x.docx") is False
     gesehen = {}

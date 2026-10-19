@@ -5,13 +5,13 @@ from PySide6.QtCore import QMimeData, QPoint, QPointF, Qt
 from PySide6.QtGui import QColor, QImage, QPdfWriter, QTextCharFormat, QTextCursor
 from PySide6.QtTest import QTest
 
-from native_qt.document_io import formats
-from native_qt.editor import anzeige_extra as AX
-from native_qt.editor import einfuegen as E
-from native_qt.editor.editor_widget import DocumentEditor
-from native_qt.editor.page import HeaderFooter, PageSettings
-from native_qt.editor.pagination import paginated_copy, render, seite_als_bild
-from native_qt.editor.zusatz import P_AENDERUNG, P_AUTOR, P_DATUM, P_FELD, P_OBJEKT, P_VERSTECKT
+from lunivo_writer.services import file_service as formats
+from lunivo_writer.editor import anzeige_extra as AX
+from lunivo_writer.editor import einfuegen as E
+from lunivo_writer.ui.document.document_editor import DocumentEditor
+from lunivo_writer.models.page import HeaderFooter, PageSettings
+from lunivo_writer.editor.pagination import paginated_copy, render, seite_als_bild
+from lunivo_writer.editor.zusatz import P_AENDERUNG, P_AUTOR, P_DATUM, P_FELD, P_OBJEKT, P_VERSTECKT
 
 
 def _text(ed, text="Eins zwei drei vier"):
@@ -111,7 +111,7 @@ def test_kreiszahl_und_rechtsbuendig(app):
 
 def test_kopffuss_zone_tipp_und_objektanker(app, monkeypatch):
     from PySide6.QtGui import QTextOption
-    from native_qt.editor import umbruch as U
+    from lunivo_writer.editor import umbruch as U
     ed = _text(DocumentEditor(), "Text")
     pg = PageSettings(); pg.header = HeaderFooter("Mein Kopf", "center"); pg.footer = HeaderFooter("Seite {PAGE}", "right")
     ed.page_settings_changed(pg)

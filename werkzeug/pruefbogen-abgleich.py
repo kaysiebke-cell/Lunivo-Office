@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Gleicht den Prüfbogen (415 Punkte) mit der nativen Fassung ab → doku/native-qt/PRUEFBOGEN.md.
+"""Gleicht den Prüfbogen (415 Punkte) mit der nativen Fassung ab → docs/PRUEFBOGEN.md.
 
-Quelle: doku/native-qt/pruefbogen/pruefbogen.json (aus dem Artefakt „Prüfkatalog WPS Writer + Lunivo Office“).
+Quelle: docs/pruefbogen/pruefbogen.json (aus dem Artefakt „Prüfkatalog WPS Writer + Lunivo Office“).
 Status je Punkt:  ✅ umgesetzt   ◐ teilweise / anders gelöst   ⬜ offen
-Die Zuordnung steht in doku/native-qt/pruefbogen/zuordnung.json (von Hand gepflegt, jede Zeile mit „wo“).
+Die Zuordnung steht in docs/pruefbogen/zuordnung.json (von Hand gepflegt, jede Zeile mit „wo“).
 Punkte ohne Eintrag werden automatisch über den Namen im Band (Befehle.hat) zugeordnet.
 """
 import json
@@ -13,18 +13,18 @@ import sys
 
 HIER = os.path.dirname(os.path.abspath(__file__))
 WURZEL = os.path.dirname(HIER)
-sys.path.insert(0, WURZEL)
+sys.path.insert(0, os.path.join(WURZEL, "src"))
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 from PySide6.QtWidgets import QApplication  # noqa: E402
 
 app = QApplication([])
-from native_qt.widgets.reiterplan import plan  # noqa: E402
-from native_qt.windows.befehle import Befehle  # noqa: E402
+from lunivo_writer.ui.ribbon.plan import plan  # noqa: E402
+from lunivo_writer.core.commands import Befehle  # noqa: E402
 
 B = Befehle(None)
-bogen = json.load(open(os.path.join(WURZEL, "doku/native-qt/pruefbogen/pruefbogen.json"), encoding="utf-8"))
-reg = json.load(open(os.path.join(WURZEL, "native_qt/resources/register.json"), encoding="utf-8"))
-zpfad = os.path.join(WURZEL, "doku/native-qt/pruefbogen/zuordnung.json")
+bogen = json.load(open(os.path.join(WURZEL, "docs/pruefbogen/pruefbogen.json"), encoding="utf-8"))
+reg = json.load(open(os.path.join(WURZEL, "src/lunivo_writer/resources/register.json"), encoding="utf-8"))
+zpfad = os.path.join(WURZEL, "docs/pruefbogen/zuordnung.json")
 zuordnung = json.load(open(zpfad, encoding="utf-8")) if os.path.exists(zpfad) else {}
 
 
@@ -88,6 +88,6 @@ kopf = (f"# Prüfbogen ↔ native Fassung\n\nErzeugt von `werkzeug/pruefbogen-ab
         f"(415 Punkte). **✅ {zaehl['✅']} · ◐ {zaehl['◐']} · ⬜ {zaehl['⬜']}**. "
         "✅ = Befehl/Funktion vorhanden (einzeln getestet nur, wo `tests/` es belegt); "
         "◐ = teilweise oder anders gelöst; ⬜ = offen.\n"
-        "Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `doku/native-qt/pruefbogen/bilder/`.\n")
-open(os.path.join(WURZEL, "doku/native-qt/PRUEFBOGEN.md"), "w", encoding="utf-8").write(kopf + "\n".join(zeilen) + "\n")
+        "Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `docs/pruefbogen/bilder/`.\n")
+open(os.path.join(WURZEL, "docs/PRUEFBOGEN.md"), "w", encoding="utf-8").write(kopf + "\n".join(zeilen) + "\n")
 print(zaehl)

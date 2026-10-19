@@ -4,8 +4,8 @@ from PySide6.QtCore import QPoint, QPointF, Qt
 from PySide6.QtGui import QTextCursor
 from PySide6.QtTest import QTest
 
-from native_qt.editor import sprechblasen as SB
-from native_qt.editor.editor_widget import DocumentEditor
+from lunivo_writer.editor import sprechblasen as SB
+from lunivo_writer.ui.document.document_editor import DocumentEditor
 
 
 def _ed(opts=None):
@@ -66,7 +66,7 @@ def test_einstellungen(app, opts, erwartet):
 
 
 def test_aenderungen_nur_bei_immer(app):
-    from native_qt.editor.zusatz import P_AENDERUNG, P_AUTOR, P_DATUM
+    from lunivo_writer.editor.zusatz import P_AENDERUNG, P_AUTOR, P_DATUM
     from PySide6.QtGui import QTextCharFormat
     for modus, n in (("Nur für Kommentare", 0), ("Immer", 1)):
         ed = _ed({"sprechblasen/verwenden": modus})
@@ -94,8 +94,8 @@ def _bd(**k):
 
 def test_druck_mit_blasen_pdf(app, tmp_path):
     from pypdf import PdfReader
-    from native_qt.editor.page import PageSettings
-    from native_qt.editor.pagination import blasen_geometrie, export_pdf
+    from lunivo_writer.models.page import PageSettings
+    from lunivo_writer.editor.pagination import blasen_geometrie, export_pdf
     ed = _mit_kommentaren()
     pg = PageSettings()
     bd = _bd(); bd["kommentare"] = {k: f'{v["autor"]}: {v["text"]}' for k, v in ed.kommentare.items()}
@@ -117,8 +117,8 @@ def test_druck_mit_blasen_pdf(app, tmp_path):
 
 def test_druck_blasen_links_und_ohne(app, tmp_path):
     from pypdf import PdfReader
-    from native_qt.editor.page import PageSettings
-    from native_qt.editor.pagination import blasen_geometrie, export_pdf
+    from lunivo_writer.models.page import PageSettings
+    from lunivo_writer.editor.pagination import blasen_geometrie, export_pdf
     ed = _mit_kommentaren()
     pg = PageSettings()
     bd = {"konfig": dict(SB.STANDARD, rand="Links", ausrichtung="Beibehalten"), "kommentare": dict(ed.kommentare)}

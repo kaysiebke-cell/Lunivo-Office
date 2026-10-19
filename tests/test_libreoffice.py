@@ -3,9 +3,9 @@ import os
 import docx
 import pytest
 
-from native_qt.document_io import formats
-from native_qt.editor.page import PageSettings, HeaderFooter
-from native_qt.integrations import libreoffice
+from lunivo_writer.services import file_service as formats
+from lunivo_writer.models.page import PageSettings, HeaderFooter
+from lunivo_writer.services.integrations import libreoffice
 
 pytestmark = pytest.mark.skipif(not libreoffice.verfuegbar(), reason="LibreOffice nicht installiert")
 
@@ -45,7 +45,7 @@ def test_kopfzeile_ueberlebt_odt(app, tmp_path):
 
 
 def test_kaputte_datei(app, tmp_path):
-    from native_qt.document_io.report import DocumentIOError
+    from lunivo_writer.models.report import DocumentIOError
     bad = tmp_path / "kaputt.odt"; bad.write_bytes(b"kein odt")
     with pytest.raises(DocumentIOError):
         formats.load(str(bad))

@@ -2,7 +2,7 @@
 
 Dieses Projekt sucht Leute. Nicht in erster Linie Programmierer.
 
-Wohin es soll, steht in [RICHTUNG.md](../doku/RICHTUNG.md). Wer etwas vorschlägt,
+Wohin es soll, steht in [RICHTUNG.md](../README.md). Wer etwas vorschlägt,
 sollte die eine Seite gelesen haben — dann reden wir über dasselbe.
 
 ## Am meisten hilft: erzählen, woran du hängenbleibst

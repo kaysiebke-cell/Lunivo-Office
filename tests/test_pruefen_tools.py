@@ -1,13 +1,13 @@
 """Barrierefreiheit, Thesaurus, Dokumentsprache."""
 from PySide6.QtGui import QImage, QTextCharFormat, QTextCursor, QTextImageFormat
 
-from native_qt.document_io import docx_reader, docx_writer
-from native_qt.editor.editor_widget import DocumentEditor
-from native_qt.editor.page import PageSettings
-from native_qt.services import ki as K
-from native_qt.services.barrierefreiheit import kontrast, pruefe
-from native_qt.windows.main_window import MainWindow
-from native_qt.storage.settings import Settings
+from lunivo_writer.services import docx_reader, docx_writer
+from lunivo_writer.ui.document.document_editor import DocumentEditor
+from lunivo_writer.models.page import PageSettings
+from lunivo_writer.ai import ki as K
+from lunivo_writer.proofing.barrierefreiheit import kontrast, pruefe
+from lunivo_writer.ui.main_window import MainWindow
+from lunivo_writer.services.settings_service import Settings
 from PySide6.QtCore import QSettings
 from PySide6.QtGui import QColor
 

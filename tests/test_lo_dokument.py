@@ -4,10 +4,10 @@ import subprocess
 
 import pytest
 
-from native_qt.document_io import docx_reader
-from native_qt.editor import verweise
-from native_qt.editor.editor_widget import DocumentEditor
-from native_qt.integrations import libreoffice
+from lunivo_writer.services import docx_reader
+from lunivo_writer.editor import verweise
+from lunivo_writer.ui.document.document_editor import DocumentEditor
+from lunivo_writer.services.integrations import libreoffice
 
 FODT = """<?xml version="1.0" encoding="UTF-8"?>
 <office:document xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0" xmlns:table="urn:oasis:names:tc:opendocument:xmlns:table:1.0" xmlns:dc="http://purl.org/dc/elements/1.1/" office:version="1.3" office:mimetype="application/vnd.oasis.opendocument.text">

@@ -4,16 +4,16 @@ from PySide6.QtCore import QEventLoop, QSettings, QTimer, Qt
 from PySide6.QtGui import QTextCursor
 from PySide6.QtTest import QTest
 
-from native_qt.storage.settings import Settings
-from native_qt.windows.main_window import MainWindow
+from lunivo_writer.services.settings_service import Settings
+from lunivo_writer.ui.main_window import MainWindow
 
 
 def win(tmp_path, monkeypatch):
-    from native_qt.storage import gelernt
+    from lunivo_writer.services import gelernt
     monkeypatch.setattr(gelernt, "data_dir", lambda: str(tmp_path))
-    from native_qt.services import ki_dienst
+    from lunivo_writer.ai import ai_service as ki_dienst
     monkeypatch.setattr(ki_dienst, "data_dir", lambda: str(tmp_path))
-    from native_qt.storage import recovery
+    from lunivo_writer.services import recovery
     monkeypatch.setattr(recovery, "recovery_dir", lambda: str(tmp_path))
     w = MainWindow(Settings(QSettings(str(tmp_path / "s.ini"), QSettings.IniFormat)))
     w.new_document()
@@ -131,7 +131,7 @@ def test_ki_korrektur_ende_zu_ende(app, tmp_path, monkeypatch):
     import threading
     from http.server import BaseHTTPRequestHandler, HTTPServer
     from PySide6.QtGui import QFont, QTextCharFormat
-    from native_qt.services import ki as K
+    from lunivo_writer.ai import ki as K
 
     class H(BaseHTTPRequestHandler):
         def do_POST(self):
@@ -175,7 +175,7 @@ def test_ki_ohne_schluessel_oeffnet_nichts_nach_aussen(app, tmp_path, monkeypatc
 
 
 def test_rechtschreib_ignorieren_schalter(app, tmp_path, monkeypatch):
-    from native_qt.services import pruefung
+    from lunivo_writer.proofing import pruefung
     text = "Das Wiederspruch gegen WIEDERSPRUCH und kaysiebke-cell/wiederspruch."
     an = {f["alt"] for f in pruefung.finde_probleme(text, None, {"rsGrossIgnorieren": True, "rsPfadeIgnorieren": True})}
     aus = {f["alt"] for f in pruefung.finde_probleme(text, None, {"rsGrossIgnorieren": False, "rsPfadeIgnorieren": False})}
@@ -237,7 +237,7 @@ def test_text_in_bild_ende_zu_ende(app, tmp_path, monkeypatch):
 
 
 def test_ki_dialoge(app, tmp_path, monkeypatch):
-    from native_qt.widgets.ki_dialoge import AnbieterDialog, KIKonfigurationDialog, ModellListeDialog
+    from lunivo_writer.ui.dialogs.ki_dialoge import AnbieterDialog, KIKonfigurationDialog, ModellListeDialog
     w = win(tmp_path, monkeypatch)
     k = w.ki.konfig
     d = AnbieterDialog(w, k)
@@ -254,7 +254,7 @@ def test_ki_dialoge(app, tmp_path, monkeypatch):
 
 
 def test_silbenfarben_befehl_und_dialog(app, tmp_path, monkeypatch):
-    from native_qt.widgets.silben_dialog import SilbenDialog
+    from lunivo_writer.ui.dialogs.silben_dialog import SilbenDialog
     w = win(tmp_path, monkeypatch)
     e = w.current_editor()
     e.setPlainText("Wanderung und Schmetterling")

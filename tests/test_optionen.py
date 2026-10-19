@@ -1,14 +1,14 @@
 from PySide6.QtCore import QSettings
 
-from native_qt.storage.settings import Settings
-from native_qt.widgets.optionen import OptionenDialog
-from native_qt.windows.main_window import MainWindow
+from lunivo_writer.services.settings_service import Settings
+from lunivo_writer.ui.dialogs.optionen import OptionenDialog
+from lunivo_writer.ui.main_window import MainWindow
 
 
 def win(tmp_path, monkeypatch):
-    from native_qt.storage import gelernt, recovery
+    from lunivo_writer.services import gelernt, recovery
     monkeypatch.setattr(gelernt, "data_dir", lambda: str(tmp_path))
-    from native_qt.services import ki_dienst
+    from lunivo_writer.ai import ai_service as ki_dienst
     monkeypatch.setattr(ki_dienst, "data_dir", lambda: str(tmp_path))
     monkeypatch.setattr(recovery, "recovery_dir", lambda: str(tmp_path))
     return MainWindow(Settings(QSettings(str(tmp_path / "s.ini"), QSettings.IniFormat)))

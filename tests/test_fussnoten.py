@@ -2,10 +2,10 @@
 from PySide6.QtGui import QPdfWriter, QTextCharFormat, QTextCursor
 from pypdf import PdfReader
 
-from native_qt.editor.editor_widget import DocumentEditor
-from native_qt.editor.page import PageSettings
-from native_qt.editor.pagination import export_pdf, fussnoten_am_seitenende, paginated_copy
-from native_qt.editor.zusatz import P_NOTE
+from lunivo_writer.ui.document.document_editor import DocumentEditor
+from lunivo_writer.models.page import PageSettings
+from lunivo_writer.editor.pagination import export_pdf, fussnoten_am_seitenende, paginated_copy
+from lunivo_writer.editor.zusatz import P_NOTE
 
 
 def _mit_noten(zeilen=140, marken=(10, 60, 61)):
@@ -32,7 +32,7 @@ def test_fussnoten_stehen_am_seitenfuss(app, tmp_path):
     assert seiten and seiten[0] == 1 and len(fuss[1]["noten"]) == 1
     assert 2 in fuss and len(fuss[2]["noten"]) == 2                       # die beiden Marken auf Seite 2 stehen gemeinsam
     # Der Text jeder Seite endet über dem Fußnotenbereich
-    from native_qt.editor.pagination import _zeilenbereiche
+    from lunivo_writer.editor.pagination import _zeilenbereiche
     ch = pg.content_height_px
     for seite, info in fuss.items():
         letzte = max(u for (o, u, _p, _b) in _zeilenbereiche(d) if (o + 0.5) // ch == seite - 1)

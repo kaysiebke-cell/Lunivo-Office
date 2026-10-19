@@ -1,9 +1,9 @@
 import pytest
 from PySide6.QtGui import QTextCursor, QTextDocument, QTextCharFormat, QFont
 
-from native_qt.document_io import formats
-from native_qt.document_io.report import DocumentIOError
-from native_qt.editor.page import PageSettings
+from lunivo_writer.services import file_service as formats
+from lunivo_writer.models.report import DocumentIOError
+from lunivo_writer.models.page import PageSettings
 
 
 def test_txt_roundtrip_with_umlaute(app, tmp_path):
@@ -56,9 +56,9 @@ def test_kennwort_roundtrip_und_html(app, tmp_path):
     import pytest
     pytest.importorskip("msoffcrypto")
     from PySide6.QtGui import QTextDocument
-    from native_qt.document_io import formats
-    from native_qt.document_io.report import PasswortNoetig
-    from native_qt.editor.page import PageSettings
+    from lunivo_writer.services import file_service as formats
+    from lunivo_writer.models.report import PasswortNoetig
+    from lunivo_writer.models.page import PageSettings
     d = QTextDocument(); d.setPlainText("Streng geheim äöü")
     p = str(tmp_path / "g.docx")
     formats.save(p, d, PageSettings(), {"kennwort": "pw1"})

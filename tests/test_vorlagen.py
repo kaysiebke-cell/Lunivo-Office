@@ -2,9 +2,9 @@ import pypdf
 from PySide6.QtCore import QEvent, Qt
 from PySide6.QtGui import QKeyEvent
 
-from native_qt.editor import vorlagen
-from native_qt.editor.editor_widget import DocumentEditor
-from native_qt.editor.pagination import export_pdf
+from lunivo_writer.editor import vorlagen
+from lunivo_writer.ui.document.document_editor import DocumentEditor
+from lunivo_writer.editor.pagination import export_pdf
 
 BENUTZER = {"name": "Ann Muster", "strasse": "Weg 1", "plz_ort": "12345 Stadt", "ort": "Stadt", "mail": "ann@example.org"}
 
@@ -50,9 +50,9 @@ def test_luecken_tab_springt_tippen_ersetzt_druck_ohne_luecken(app, tmp_path):
 
 def test_neu_aus_vorlage_im_fenster(app, tmp_path, monkeypatch):
     from PySide6.QtCore import QSettings
-    from native_qt.storage.settings import Settings
-    from native_qt.windows.main_window import MainWindow
-    import native_qt.widgets.vorlagen_dialog as vd
+    from lunivo_writer.services.settings_service import Settings
+    from lunivo_writer.ui.main_window import MainWindow
+    import lunivo_writer.ui.dialogs.vorlagen_dialog as vd
     w = MainWindow(Settings(QSettings(str(tmp_path / "s.ini"), QSettings.IniFormat)))
     w.settings.set("benutzer/name", "Ann Muster")
     m = vorlagen.muster()[3]                       # Bewerbung
@@ -64,7 +64,7 @@ def test_neu_aus_vorlage_im_fenster(app, tmp_path, monkeypatch):
     t = w.current_tab()
     assert t.title == "Bewerbung" and "Bewerbung als" in t.editor.toPlainText() and "Ann Muster" in t.editor.toPlainText()
     # eigene Vorlage aus Datei
-    from native_qt.document_io import docx_writer
+    from lunivo_writer.services import docx_writer
     ziel = str(tmp_path / "Meine.docx")
     docx_writer.write_docx(ziel, t.editor.document(), t.page, {})
     Fake.__init__ = lambda self, *a, **k: (setattr(self, "auswahl", ("datei", ziel)), setattr(self, "als_vorlage_gewuenscht", False))[0]
@@ -80,10 +80,10 @@ def test_hilfe_dialoge_und_kuerzel(app, tmp_path):
     from PySide6.QtCore import QSettings
     from PySide6.QtGui import QKeySequence
     from PySide6.QtWidgets import QTextBrowser
-    from native_qt.storage.settings import Settings
-    from native_qt.widgets import hilfe_dialoge
-    from native_qt.windows import kuerzel
-    from native_qt.windows.main_window import MainWindow
+    from lunivo_writer.services.settings_service import Settings
+    from lunivo_writer.ui.dialogs import hilfe_dialoge
+    from lunivo_writer.ui import kuerzel
+    from lunivo_writer.ui.main_window import MainWindow
     w = MainWindow(Settings(QSettings(str(tmp_path / "s.ini"), QSettings.IniFormat)))
     d = hilfe_dialoge.handbuch(w)
     assert "Aufbau des Fensters" in d.findChild(QTextBrowser).toPlainText()

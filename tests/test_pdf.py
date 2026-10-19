@@ -5,8 +5,8 @@ def norm(s):
     return ' '.join(s.split())
 from PySide6.QtGui import QTextDocument, QTextCursor, QTextBlockFormat, QTextFormat
 
-from native_qt.editor.page import PageSettings, HeaderFooter
-from native_qt.editor.pagination import export_pdf, page_count
+from lunivo_writer.models.page import PageSettings, HeaderFooter
+from lunivo_writer.editor.pagination import export_pdf, page_count
 
 
 def _doc(n_pages_text=200, brk=False):
@@ -63,8 +63,8 @@ def test_font_size_in_pdf_matches(app, tmp_path):
 
 def test_pdf_mit_seitenfarbe_und_wasserzeichen(app, tmp_path):
     from PySide6.QtGui import QTextDocument
-    from native_qt.editor.page import PageSettings
-    from native_qt.editor.pagination import export_pdf
+    from lunivo_writer.models.page import PageSettings
+    from lunivo_writer.editor.pagination import export_pdf
     d = QTextDocument(); d.setPlainText("Inhalt")
     pg = PageSettings(color="#ffeecc", watermark={"text": "ENTWURF", "farbe": "#c0c0c0", "winkel": -45, "groesse_pt": 80},
                       border={"art": "einfach", "farbe": "#000000", "breite_pt": 1.0, "abstand_mm": 8.0})

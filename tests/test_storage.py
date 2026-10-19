@@ -1,7 +1,7 @@
 from PySide6.QtCore import QSettings, QStandardPaths
 
-from native_qt.storage import recovery
-from native_qt.storage.settings import Settings
+from lunivo_writer.services import recovery
+from lunivo_writer.services.settings_service import Settings
 
 
 def test_settings_persist_and_recent(app, tmp_path):
@@ -33,7 +33,7 @@ def test_recovery_cycle(app, tmp_path, monkeypatch):
 
 
 def test_gedaechtnis_zaehlt_nur_beim_ausdruecklichen_pruefen(tmp_path):
-    from native_qt.storage.gelernt import LERN_SCHWELLE, Gelernt
+    from lunivo_writer.services.gelernt import LERN_SCHWELLE, Gelernt
     g = Gelernt(str(tmp_path / "g.json"))
     fund = {"alt": "Meyr", "neu": "Mehr", "wortEbene": True, "von": 0, "bis": 4, "art": "fehler", "grund": "x"}
     for _ in range(LERN_SCHWELLE - 1):

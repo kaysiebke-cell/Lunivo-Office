@@ -29,7 +29,7 @@ sudo apt install python3 python3-venv libxcb-cursor0 libegl1 libxkbcommon-x11-0 
 ./starten-qt.sh --test          # Tests
 ```
 
-Genaueres, optionale Teile (LibreOffice, LanguageTool, Piper-Stimme, Leseschriften, Ollama): [doku/native-qt/INSTALLATION.md](doku/native-qt/INSTALLATION.md).
+Genaueres, optionale Teile (LibreOffice, LanguageTool, Piper-Stimme, Leseschriften, Ollama): [docs/INSTALLATION.md](docs/INSTALLATION.md).
 
 ## Oberfläche
 
@@ -43,9 +43,9 @@ Genaueres, optionale Teile (LibreOffice, LanguageTool, Piper-Stimme, Leseschrift
 
 | | |
 |---|---|
-| [doku/native-qt/README.md](doku/native-qt/README.md) | Aufbau des Programms |
-| [doku/native-qt/BERICHT.md](doku/native-qt/BERICHT.md) | Stand, ehrlich: was geht, was nicht, was ungetestet ist |
-| [doku/native-qt/PRUEFBOGEN.md](doku/native-qt/PRUEFBOGEN.md) | Abgleich mit dem Prüfbogen (415 Punkte) |
-| [doku/native-qt/INSTALLATION.md](doku/native-qt/INSTALLATION.md) | Installation und optionale Bausteine |
+| [docs/README.md](docs/README.md) | Aufbau des Programms |
+| [docs/BERICHT.md](docs/BERICHT.md) | Stand, ehrlich: was geht, was nicht, was ungetestet ist |
+| [docs/PRUEFBOGEN.md](docs/PRUEFBOGEN.md) | Abgleich mit dem Prüfbogen (415 Punkte) |
+| [docs/INSTALLATION.md](docs/INSTALLATION.md) | Installation und optionale Bausteine |
 
-Lizenz: siehe [LICENSE](LICENSE). Symbole: Fluent UI System Icons (Microsoft, MIT) und Lucide (ISC), siehe `native_qt/resources/`.
+Lizenz: siehe [LICENSE](LICENSE). Symbole: Fluent UI System Icons (Microsoft, MIT) und Lucide (ISC), siehe `assets/icons/`.

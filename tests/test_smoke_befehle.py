@@ -7,10 +7,10 @@ from PySide6.QtCore import QSettings
 from PySide6.QtGui import QImage, QTextCursor
 from PySide6.QtWidgets import QColorDialog, QDialog, QFileDialog, QInputDialog, QMenu, QMessageBox
 
-from native_qt.editor import einfuegen as E
-from native_qt.storage.settings import Settings
-from native_qt.widgets.register_band import lade_register
-from native_qt.windows.main_window import MainWindow
+from lunivo_writer.editor import einfuegen as E
+from lunivo_writer.services.settings_service import Settings
+from lunivo_writer.ui.ribbon.ribbon_bar import lade_register
+from lunivo_writer.ui.main_window import MainWindow
 
 
 def _alle_befehle(daten) -> set[str]:
@@ -34,7 +34,7 @@ def test_alle_befehle_stuerzen_nicht_ab(app, tmp_path, monkeypatch):
     # alle Fenster, die auf Eingaben warten, werden von einem Wächter geschlossen (Abbrechen)
     from PySide6.QtCore import QTimer
     from PySide6.QtWidgets import QApplication
-    from native_qt.windows.befehle import Befehle
+    from lunivo_writer.core.commands import Befehle
     monkeypatch.setattr(Befehle, "_popup", lambda self, m: None)
 
     from PySide6.QtWidgets import QDialog, QMenu as _QMenu

@@ -5,9 +5,9 @@ from docx.shared import Pt, RGBColor, Mm
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from PySide6.QtGui import QImage, QColor, QTextCursor
 
-from native_qt.document_io.docx_reader import read_docx
-from native_qt.document_io.docx_writer import write_docx
-from native_qt.document_io.report import DocumentIOError
+from lunivo_writer.services.docx_reader import read_docx
+from lunivo_writer.services.docx_writer import write_docx
+from lunivo_writer.models.report import DocumentIOError
 import pytest
 
 
@@ -104,7 +104,7 @@ def test_numbering_restarts_per_list(app, tmp_path):
     lf2 = QTextListFormat(); lf2.setStyle(QTextListFormat.ListDecimal)
     c.insertList(lf2); c.insertText("c")
     out = str(tmp_path / "n.docx")
-    from native_qt.editor.page import PageSettings
+    from lunivo_writer.models.page import PageSettings
     write_docx(out, qd, PageSettings(), {})
     d = docx.Document(out)
     nums = {p.text: p._p.pPr.numPr.numId.val for p in d.paragraphs if p.style.name == "List Number"}
@@ -129,8 +129,8 @@ def test_unsupported_content_is_reported(app, tmp_path):
 
 def test_seitenfarbe_und_rahmen_roundtrip(tmp_path):
     from PySide6.QtGui import QTextDocument
-    from native_qt.document_io import docx_reader, docx_writer
-    from native_qt.editor.page import PageSettings
+    from lunivo_writer.services import docx_reader, docx_writer
+    from lunivo_writer.models.page import PageSettings
     d = QTextDocument(); d.setPlainText("Seite")
     pg = PageSettings(color="#ffeecc", border={"art": "doppelt", "farbe": "#336699", "breite_pt": 1.5, "abstand_mm": 10.0},
                       watermark={"text": "ENTWURF", "farbe": "#c0c0c0", "winkel": -45, "groesse_pt": 80})
@@ -147,8 +147,8 @@ def test_seitenfarbe_und_rahmen_roundtrip(tmp_path):
 def test_zeilennummern_und_textrichtung_roundtrip(tmp_path):
     from PySide6.QtCore import Qt
     from PySide6.QtGui import QTextBlockFormat, QTextCursor, QTextDocument
-    from native_qt.document_io import docx_reader, docx_writer
-    from native_qt.editor.page import PageSettings
+    from lunivo_writer.services import docx_reader, docx_writer
+    from lunivo_writer.models.page import PageSettings
     d = QTextDocument(); d.setPlainText("Eins\nZwei")
     c = QTextCursor(d.firstBlock()); bf = c.blockFormat(); bf.setLayoutDirection(Qt.RightToLeft); c.setBlockFormat(bf)
     out = str(tmp_path / "z.docx")
@@ -161,8 +161,8 @@ def test_zeilennummern_und_textrichtung_roundtrip(tmp_path):
 
 def test_unterstreichungsart_umriss_zeichenabstand_roundtrip(tmp_path):
     from PySide6.QtGui import QColor, QFont, QPen, QTextCharFormat, QTextCursor, QTextDocument
-    from native_qt.document_io import docx_reader, docx_writer
-    from native_qt.editor.page import PageSettings
+    from lunivo_writer.services import docx_reader, docx_writer
+    from lunivo_writer.models.page import PageSettings
     d = QTextDocument(); d.setPlainText("Welle Strich Umriss Weit")
     def fmt(von, bis, f):
         c = QTextCursor(d); c.setPosition(von); c.setPosition(bis, QTextCursor.KeepAnchor); c.mergeCharFormat(f)

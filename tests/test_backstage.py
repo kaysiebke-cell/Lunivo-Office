@@ -1,8 +1,8 @@
 """Backstage-Ansicht des Reiters „Datei“."""
 from PySide6.QtCore import QSettings
 
-from native_qt.storage.settings import Settings
-from native_qt.windows.main_window import MainWindow
+from lunivo_writer.services.settings_service import Settings
+from lunivo_writer.ui.main_window import MainWindow
 
 
 def fenster(tmp_path):

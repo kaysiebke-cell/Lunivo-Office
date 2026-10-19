@@ -5,7 +5,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 
 import pytest
 
-from native_qt.services import ki as K
+from lunivo_writer.ai import ki as K
 
 
 def konfig(tmp_path, **kw):

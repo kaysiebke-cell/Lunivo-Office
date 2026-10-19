@@ -57,4 +57,4 @@ if [ "${1:-}" = "--test" ]; then
 fi
 
 cd "$HIER"
-exec "$VENV/bin/python" -m native_qt "$@"
+PYTHONPATH="$HIER/src" exec "$VENV/bin/python" -m lunivo_writer "$@"
