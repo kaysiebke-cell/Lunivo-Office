@@ -78,8 +78,9 @@ ANBIETER_VORLAGEN = [("andere", "Andere", ""), ("ollama", "Ollama (auf diesem Re
                      ("mistral", "Mistral", "https://api.mistral.ai/v1"), ("groq", "Groq", "https://api.groq.com/openai/v1"),
                      ("deepseek", "DeepSeek", "https://api.deepseek.com/v1"), ("together", "Together AI", "https://api.together.xyz/v1")]
 VORSCHLAG_BAUPLAN = {"type": "object", "properties": {"vorschlaege": {"type": "array", "items": {
-    "type": "object", "properties": {"alt": {"type": "string"}, "neu": {"type": "string"}, "grund": {"type": "string"}},
-    "required": ["alt", "neu", "grund"], "additionalProperties": False}}},
+    "type": "object", "properties": {"alt": {"type": "string"}, "neu": {"type": "string"}, "grund": {"type": "string"},
+                                                                        "konfidenz": {"type": "number"}},
+    "required": ["alt", "neu", "grund", "konfidenz"], "additionalProperties": False}}},
     "required": ["vorschlaege"], "additionalProperties": False}
 
 
@@ -222,7 +223,7 @@ def anweisung_vorschlaege(k: KIKonfig) -> str:
             "Sprache stehen. \"neu\" bleibt in der Sprache des Textes, \"grund\" schreibst du immer auf Deutsch. Nimm "
             "höchstens sechs Sätze, nur die, bei denen es wirklich hilft; ist der Text schon gut, nimm weniger oder "
             "keinen. \"alt\" ist der Satz zeichengenau aus dem Text — nicht kürzen, nicht glätten, nichts "
-            "hinzufügen; er muss sich Zeichen für Zeichen im Text wiederfinden. \"neu\" ist die klarere Fassung, "
+            "hinzufügen; er muss sich Zeichen für Zeichen im Text wiederfinden. \"konfidenz\" ist eine Zahl von 0 bis 1: wie sicher du bist, dass die neue Fassung besser ist und nichts am Inhalt ändert. \"neu\" ist die klarere Fassung, "
             "\"grund\" sagt in höchstens acht Wörtern, warum das leichter ist. Gibt es nichts zu verbessern, bleibt "
             "die Liste leer.")
 
@@ -450,6 +451,11 @@ class KI:
         # nur, was sich zeichengenau im Text wiederfindet, lässt sich einsetzen
         gut = [v for v in lst if isinstance(v, dict) and isinstance(v.get("alt"), str) and isinstance(v.get("neu"), str)
                and v["alt"].strip() and v["neu"].strip() and v["alt"] != v["neu"] and v["alt"] in text]
+        from lunivo_writer.proofing.fund import klemmen
+        for v in gut:                                   # Sicherheit des Modells (0…1), fehlt sie oder ist sie Unsinn: 0,5
+            v["konfidenz"] = klemmen(v.get("konfidenz"))
+            v["quelle"] = "ki"
+        gut.sort(key=lambda v: -v["konfidenz"])
         return {"vorschlaege": gut, "cent": r.get("cent")}
 
     def synonyme(self, wort: str, umgebung: str = "") -> dict:

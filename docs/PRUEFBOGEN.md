@@ -1,6 +1,6 @@
 # Prüfbogen ↔ native Fassung
 
-Erzeugt von `werkzeug/pruefbogen-abgleich.py` aus dem Prüfkatalog (415 Punkte). **✅ 324 · ◐ 66 · ⬜ 25**. ✅ = Befehl/Funktion vorhanden (einzeln getestet nur, wo `tests/` es belegt); ◐ = teilweise oder anders gelöst; ⬜ = offen.
+Erzeugt von `werkzeug/pruefbogen-abgleich.py` aus dem Prüfkatalog (415 Punkte). **✅ 330 · ◐ 64 · ⬜ 21**. ✅ = Befehl/Funktion vorhanden (einzeln getestet nur, wo `tests/` es belegt); ◐ = teilweise oder anders gelöst; ⬜ = offen.
 Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `docs/pruefbogen/bilder/`.
 
 ## DATEI
@@ -310,19 +310,19 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `docs/pruefbogen/bilder/`.
 - ✅ Dokumentversion überprüfen — services/ki_dienst.py (Revision geprüft)
 - ◐ CheckId überprüfen — Revision statt Check-ID
 - ✅ Keine veralteten Ergebnisse akzeptieren — services/ki_dienst.py (Revision geprüft)
-- ⬜ KI-Konfidenz-Score speichern — nicht übertragen
+- ✅ KI-Konfidenz-Score speichern — ki.py: konfidenz je Vorschlag (0…1, geklemmt, sortiert), Gelernt.ki_vermerken speichert Trefferquote je Stufe (tests/test_ki.py)
 
 ## LANGUAGE BRIDGE (Fehler-Zusammenführung)
 
-- ◐ Mehrere Quellen für gleiche Position zusammenführen — LanguageTool-Funde ergänzen nur nicht überlappende (WritingAssistant._lt_fertig)
-- ⬜ Konflikt-Auflösung nach Quelle/Konfidenz/Typ — nicht übertragen
-- ◐ Hochwertige Vorschläge nicht überschreiben — LanguageTool-Funde ergänzen nur nicht überlappende (WritingAssistant._lt_fertig)
+- ✅ Mehrere Quellen für gleiche Position zusammenführen — proofing/fund.py: Quelle + Konfidenz je Fund, loesen() bei Überschneidung (tests/test_inkrement.py)
+- ✅ Konflikt-Auflösung nach Quelle/Konfidenz/Typ — fund.loesen: Konfidenz, dann Art, dann Quelle; unterlegene Funde als verdraengt vermerkt
+- ✅ Hochwertige Vorschläge nicht überschreiben — proofing/fund.py: Quelle + Konfidenz je Fund, loesen() bei Überschneidung (tests/test_inkrement.py)
 - ✅ Fehler-Signatur für Identify verwenden — WritingAssistant._key
 
 ## LANGUAGE BRIDGE (Invalidierung & Debouncing)
 
-- ⬜ Bereichs-Invalidierung bei Änderungen — es wird der ganze Text neu geprüft
-- ⬜ Sicherheitsbereich um geänderte Stelle — es wird der ganze Text neu geprüft
+- ✅ Bereichs-Invalidierung bei Änderungen — proofing/inkrement.py + WritingAssistant: nur geänderte Absätze ± 1 Absatz, ab 2000 Zeichen; Ergebnis gleich der Gesamtprüfung (tests/test_inkrement.py)
+- ✅ Sicherheitsbereich um geänderte Stelle — proofing/inkrement.py + WritingAssistant: nur geänderte Absätze ± 1 Absatz, ab 2000 Zeichen; Ergebnis gleich der Gesamtprüfung (tests/test_inkrement.py)
 - ✅ Debouncing für schnelle Eingaben — Timer 900 ms; Gründlich prüfen
 - ✅ Vollständige Prüfung möglich (Gründlich prüfen) — Timer 900 ms; Gründlich prüfen
 

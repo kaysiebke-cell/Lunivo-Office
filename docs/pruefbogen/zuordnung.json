@@ -360,24 +360,24 @@
   "wo": "Revision statt Check-ID"
  },
  "LANGUAGE BRIDGE (AI Engine)|KI-Konfidenz-Score speichern": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "✅",
+  "wo": "ki.py: konfidenz je Vorschlag (0…1, geklemmt, sortiert), Gelernt.ki_vermerken speichert Trefferquote je Stufe (tests/test_ki.py)"
  },
  "LANGUAGE BRIDGE (Fehler-Zusammenführung)|Fehler-Signatur für Identify verwenden": {
   "status": "✅",
   "wo": "WritingAssistant._key"
  },
  "LANGUAGE BRIDGE (Fehler-Zusammenführung)|Mehrere Quellen für gleiche Position zusammenführen": {
-  "status": "◐",
-  "wo": "LanguageTool-Funde ergänzen nur nicht überlappende (WritingAssistant._lt_fertig)"
+  "status": "✅",
+  "wo": "proofing/fund.py: Quelle + Konfidenz je Fund, loesen() bei Überschneidung (tests/test_inkrement.py)"
  },
  "LANGUAGE BRIDGE (Fehler-Zusammenführung)|Hochwertige Vorschläge nicht überschreiben": {
-  "status": "◐",
-  "wo": "LanguageTool-Funde ergänzen nur nicht überlappende (WritingAssistant._lt_fertig)"
+  "status": "✅",
+  "wo": "proofing/fund.py: Quelle + Konfidenz je Fund, loesen() bei Überschneidung (tests/test_inkrement.py)"
  },
  "LANGUAGE BRIDGE (Fehler-Zusammenführung)|Konflikt-Auflösung nach Quelle/Konfidenz/Typ": {
-  "status": "⬜",
-  "wo": "nicht übertragen"
+  "status": "✅",
+  "wo": "fund.loesen: Konfidenz, dann Art, dann Quelle; unterlegene Funde als verdraengt vermerkt"
  },
  "LANGUAGE BRIDGE (Invalidierung & Debouncing)|Debouncing für schnelle Eingaben": {
   "status": "✅",
@@ -388,12 +388,12 @@
   "wo": "Timer 900 ms; Gründlich prüfen"
  },
  "LANGUAGE BRIDGE (Invalidierung & Debouncing)|Bereichs-Invalidierung bei Änderungen": {
-  "status": "⬜",
-  "wo": "es wird der ganze Text neu geprüft"
+  "status": "✅",
+  "wo": "proofing/inkrement.py + WritingAssistant: nur geänderte Absätze ± 1 Absatz, ab 2000 Zeichen; Ergebnis gleich der Gesamtprüfung (tests/test_inkrement.py)"
  },
  "LANGUAGE BRIDGE (Invalidierung & Debouncing)|Sicherheitsbereich um geänderte Stelle": {
-  "status": "⬜",
-  "wo": "es wird der ganze Text neu geprüft"
+  "status": "✅",
+  "wo": "proofing/inkrement.py + WritingAssistant: nur geänderte Absätze ± 1 Absatz, ab 2000 Zeichen; Ergebnis gleich der Gesamtprüfung (tests/test_inkrement.py)"
  },
  "SCHREIBHILFE (Sidebar-Integration)|Fehler aus Language Bridge anzeigen": {
   "status": "✅",

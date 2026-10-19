@@ -10,7 +10,7 @@ from __future__ import annotations
 from PySide6.QtCore import QObject, QRunnable, QThreadPool, QTimer, Signal
 
 from lunivo_writer.services.gelernt import Gelernt
-from lunivo_writer.proofing import autokorrektur, pruefung, vorhersage
+from lunivo_writer.proofing import autokorrektur, fund as fundlib, inkrement, pruefung, vorhersage
 
 ART_REIHENFOLGE = {"fehler": 0, "tipp": 1, "hinweis": 2}
 
@@ -51,6 +51,10 @@ class WritingAssistant(QObject):
         self._alle_weg: set[str] = set()            # Wörter, die im ganzen Dokument in Ruhe bleiben (nur diese Sitzung)
         self._geprueft_rev = -1
         self._laeuft = False
+        self._voll = False                          # liegt eine vollständige Prüfung des aktuellen Dokuments vor?
+        self._schmutz: tuple[int, int] | None = None    # seit der letzten Prüfung geänderter Bereich
+        self._region: tuple[int, int] | None = None     # Bereich der laufenden Teilprüfung (None = ganzer Text)
+        self._doc = None
         self._pool = QThreadPool(self)
         self._pool.setMaxThreadCount(1)
         self._sig = _Signale()
@@ -58,7 +62,7 @@ class WritingAssistant(QObject):
         self._timer = QTimer(self)
         self._timer.setSingleShot(True)
         self._timer.setInterval(900)
-        self._timer.timeout.connect(self.pruefen)
+        self._timer.timeout.connect(lambda: self.pruefen())
         self.thema = settings.get("schreibhilfe/thema", "egal")
         vorhersage.thema_aufnehmen(vorhersage.thema_woerter(self.thema)) if self.thema != "egal" else None
 
@@ -71,7 +75,7 @@ class WritingAssistant(QObject):
         self.settings.set("schreibhilfe/" + name, wert)
         if name == "wellen":
             if wert:
-                self.pruefen()
+                self.pruefen(voll=True)
             elif self.editor is not None:
                 self.editor.set_wellen([])
         an, aus = {
@@ -95,7 +99,16 @@ class WritingAssistant(QObject):
     def attach(self, editor) -> None:
         if self.editor is editor:
             return
+        if self._doc is not None:
+            try:
+                self._doc.contentsChange.disconnect(self._geaendert)
+            except (RuntimeError, TypeError):
+                pass
         self.editor = editor
+        self._doc = editor.document() if editor is not None else None
+        self._voll, self._schmutz, self._roh = False, None, []
+        if self._doc is not None:
+            self._doc.contentsChange.connect(self._geaendert)
         self._weg.clear()
         self._alle_weg.clear()                      # beim Wechsel des Dokuments fangen die Ausnahmen bei null an
         if editor is not None:
@@ -108,17 +121,26 @@ class WritingAssistant(QObject):
         else:
             self.anzeigen([])
 
+    def _geaendert(self, pos: int, entfernt: int, hinzu: int) -> None:
+        """Bereichs-Invalidierung: Funde hinter der Änderung verschieben, Funde an der Änderung verwerfen, Bereich merken."""
+        if not self._voll:
+            return
+        self._roh = inkrement.verschieben(self._roh, pos, entfernt, hinzu)
+        self._schmutz = inkrement.schmutz_abbilden(self._schmutz, pos, entfernt, hinzu)
+
     def dokument_geaendert(self) -> None:
         if self.an("wellen") and self.editor is not None:
             self._timer.start()
 
     # ---- Prüfen --------------------------------------------------------------------
-    def pruefen(self, zaehlen: bool = False) -> None:
-        """zaehlen=True nur bei ausdrücklichem Prüfen (Knopf): dann zählt das Gedächtnis mit."""
+    def pruefen(self, zaehlen: bool = False, voll: bool = False) -> None:
+        """zaehlen=True nur bei ausdrücklichem Prüfen (Knopf): dann zählt das Gedächtnis mit und es wird alles geprüft.
+        voll=True erzwingt die Prüfung des ganzen Textes (Einstellungen oder Wörterbuch haben sich geändert)."""
         if zaehlen is not True:
             zaehlen = False
         if zaehlen:
             self._zaehlen = True
+            voll = True
         ed = self.editor
         if ed is None:
             return
@@ -126,9 +148,23 @@ class WritingAssistant(QObject):
             self._timer.start()
             return
         doc = ed.document()
+        text = doc.toPlainText()
+        self._region = None
+        if voll:
+            self._voll, self._schmutz = False, None
+        elif self._voll and self._schmutz is not None:
+            von, bis = inkrement.pruefbereich(text, *self._schmutz)
+            if inkrement.lohnt(len(text), von, bis):
+                self._region = (von, bis)
+            else:
+                self._voll = False
+        elif self._voll:
+            self._zeigen()                               # nichts geändert — nichts zu prüfen
+            return
         self._laeuft = True
         schalter = {k: self.settings.get_bool(k, True) for k in ("rsGrossIgnorieren", "rsZahlenIgnorieren", "rsPfadeIgnorieren")}
-        self._pool.start(_Lauf(doc.revision(), doc.toPlainText(), self.gelernt.daten, self._sig, schalter))
+        pruef_text = text[self._region[0]:self._region[1]] if self._region else text
+        self._pool.start(_Lauf(doc.revision(), pruef_text, self.gelernt.daten, self._sig, schalter))
 
     def _fertig(self, rev: int, roh: list) -> None:
         self._laeuft = False
@@ -139,12 +175,17 @@ class WritingAssistant(QObject):
             self._timer.start()
             return
         self._geprueft_rev = rev
-        self._roh = roh
+        roh = fundlib.markieren(roh, "eigen")
+        if self._region is not None:
+            self._roh = inkrement.einsetzen(self._roh, *self._region, roh)
+        else:
+            self._roh = roh
+        self._region, self._schmutz, self._voll = None, None, True
         if getattr(self, "_zaehlen", False):
             self._zaehlen = False
-            self.gelernt.merke_gezeigt([f for f in roh if self._key(f) not in self._weg and f["alt"].lower() not in self._alle_weg])
+            self.gelernt.merke_gezeigt([f for f in self._roh if self._key(f) not in self._weg and f["alt"].lower() not in self._alle_weg])
         n = ed.document().characterCount() - 1
-        self._zeigen(f"{n} Zeichen geprüft, {len([f for f in roh if self._key(f) not in self._weg])} Funde.")
+        self._zeigen(f"{n} Zeichen geprüft, {len([f for f in self._roh if self._key(f) not in self._weg])} Funde.")
 
     def _key(self, f: dict) -> tuple:
         t = self.editor.document().toPlainText() if self.editor else ""
@@ -239,7 +280,7 @@ class WritingAssistant(QObject):
     def zum_woerterbuch(self, wort: str) -> None:
         self.gelernt.daten["inRuhe"][wort.lower()] = True
         self.gelernt.speichern()
-        self.pruefen()
+        self.pruefen(voll=True)
 
     def ignorierte_wieder_pruefen(self) -> int:
         n = len(self._weg) + len(self._alle_weg)
@@ -250,7 +291,7 @@ class WritingAssistant(QObject):
     # ---- Gründlich prüfen (eigene Regeln + LanguageTool, wenn eingerichtet) -------------------
     def gruendlich(self) -> None:
         from lunivo_writer.services.integrations import languagetool
-        self.pruefen()
+        self.pruefen(voll=True)
         if not languagetool.verfuegbar():
             self.status.emit("Gründlich: LanguageTool ist nicht eingerichtet — es gelten die eigenen Regeln. "
                              "Hinweise dazu: docs/INSTALLATION.md")
@@ -285,10 +326,12 @@ class WritingAssistant(QObject):
         ed = self.editor
         if ed is None or rev != ed.document().revision():
             return
-        belegt = [(f["von"], f["bis"]) for f in self._roh]
-        neu = [f for f in funde if not any(f["von"] < b and a < f["bis"] for a, b in belegt)]
-        self._roh = self._roh + neu
-        self._zeigen(f"Gründlich geprüft: {len(neu)} zusätzliche Hinweise von LanguageTool.")
+        vorher = len(self._roh)
+        # Konflikte nach Konfidenz, Art und Quelle auflösen: ein sicherer eigener Fund wird nicht von LanguageTool überschrieben
+        self._roh = fundlib.loesen([f for f in self._roh if f.get("quelle") != "languagetool"]
+                                   + fundlib.markieren(funde, "languagetool"))
+        lt = len([f for f in self._roh if f.get("quelle") == "languagetool"])
+        self._zeigen(f"Gründlich geprüft: {lt} zusätzliche Hinweise von LanguageTool ({vorher} eigene Funde vorher).")
 
     # ---- Annehmen / weglassen ----------------------------------------------------------
     def aendern(self, fund: dict) -> bool:
@@ -299,7 +342,7 @@ class WritingAssistant(QObject):
             self.status.emit("Der Text hat sich an dieser Stelle geändert — bitte neu prüfen.")
             return False
         self.gelernt.gewaehlt(fund)
-        self.pruefen()
+        self.pruefen(voll=self.gelernt.wort_ebene(fund))
         return True
 
     def lassen(self, fund: dict) -> None:
@@ -312,7 +355,7 @@ class WritingAssistant(QObject):
             if self.editor.replace_range(f["von"], f["bis"], f["neu"], erwartet=f["alt"]):
                 self.gelernt.gewaehlt(f)
                 n += 1
-        self.pruefen()
+        self.pruefen(voll=True)
         return n
 
     # ---- Vorhersage und AutoKorrektur (vom Editor aufgerufen) --------------------------

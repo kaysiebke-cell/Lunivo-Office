@@ -230,11 +230,11 @@ class OptionenDialog(QDialog):
                                    "Benutzerwörterbuch (siehe Gedächtnis)"])
         f = p.gruppe("Rechtschreibprüfung")
         p.haken(f, "schreibhilfe/wellen", "Rechtschreibung während der Eingabe prüfen", True, lambda on: self.w.assistant.setze("wellen", on))
-        p.haken(f, "rsGrossIgnorieren", "Wörter in GROSSBUCHSTABEN ignorieren", True, lambda _: self.w.assistant.pruefen())
-        p.haken(f, "rsZahlenIgnorieren", "Wörter mit Zahlen ignorieren", True, lambda _: self.w.assistant.pruefen())
-        p.haken(f, "rsPfadeIgnorieren", "Internet- und Netzwerkpfade ignorieren", True, lambda _: self.w.assistant.pruefen())
+        p.haken(f, "rsGrossIgnorieren", "Wörter in GROSSBUCHSTABEN ignorieren", True, lambda _: self.w.assistant.pruefen(voll=True))
+        p.haken(f, "rsZahlenIgnorieren", "Wörter mit Zahlen ignorieren", True, lambda _: self.w.assistant.pruefen(voll=True))
+        p.haken(f, "rsPfadeIgnorieren", "Internet- und Netzwerkpfade ignorieren", True, lambda _: self.w.assistant.pruefen(voll=True))
         b = QPushButton("Weggewinkte Funde wieder anzeigen")
-        b.clicked.connect(lambda: (self.w.assistant._weg.clear(), self.w.assistant.pruefen()))
+        b.clicked.connect(lambda: (self.w.assistant._weg.clear(), self.w.assistant.pruefen(voll=True)))
         f.addRow(b)
         p.abschluss()
         return p
@@ -382,7 +382,7 @@ class OptionenDialog(QDialog):
             with zipfile.ZipFile(pfad) as z:
                 if "gelernt.json" in z.namelist():
                     z.extract("gelernt.json", data_dir())
-            self.w.assistant.gelernt.laden(); self.w.assistant.pruefen()
+            self.w.assistant.gelernt.laden(); self.w.assistant.pruefen(voll=True)
         except (OSError, zipfile.BadZipFile) as ex:
             QMessageBox.warning(self, "Zurückholen", f"Das ging nicht: {ex}")
             return
@@ -587,14 +587,14 @@ class OptionenDialog(QDialog):
                 g.daten["woerter"].pop(t.split(" → ")[0], None)
             else:
                 g.daten["inRuhe"].pop(t.replace(" (in Ruhe lassen)", ""), None)
-            g.speichern(); fuellen(); stand(); self.w.assistant.pruefen()
+            g.speichern(); fuellen(); stand(); self.w.assistant.pruefen(voll=True)
         eb.clicked.connect(eintrag_weg)
         f.addRow(eb)
         b = QPushButton("Alles Gelernte vergessen")
 
         def weg():
             if QMessageBox.question(self, "Vergessen", "Wirklich alles Gelernte löschen?") == QMessageBox.Yes:
-                g.vergessen(); fuellen(); stand(); self.w.assistant.pruefen()
+                g.vergessen(); fuellen(); stand(); self.w.assistant.pruefen(voll=True)
         b.clicked.connect(weg)
         f.addRow(b)
         p.hinweis("Das Gedächtnis liegt als Datei auf diesem Rechner und wird nur auf Ihren Wunsch an eine KI mitgeschickt (als Steckbrief).")

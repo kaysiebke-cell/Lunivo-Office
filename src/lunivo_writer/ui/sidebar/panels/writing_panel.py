@@ -58,7 +58,8 @@ class VorschlagKarte(QFrame):
         self.setStyleSheet("VorschlagKarte { border-left: 4px solid #2f9e75; }")
         lay = QVBoxLayout(self)
         lay.setContentsMargins(10, 6, 8, 6)
-        g = QLabel(v.get("grund", ""))
+        sicher = f" · Sicherheit {round(v['konfidenz'] * 100)} %" if "konfidenz" in v else ""
+        g = QLabel(v.get("grund", "") + sicher)
         g.setStyleSheet("color: palette(mid); font-size: 9pt;")
         g.setWordWrap(True)
         t = QLabel(f"<s>{_esc(v['alt'])}</s><br><b>{_esc(v['neu'])}</b>")
@@ -66,14 +67,19 @@ class VorschlagKarte(QFrame):
         lay.addWidget(g); lay.addWidget(t)
         z = QHBoxLayout(); z.addStretch(1)
         b1 = QPushButton("Einsetzen"); b1.clicked.connect(self._einsetzen)
-        b2 = QPushButton("Lassen"); b2.clicked.connect(self._weg)
+        b2 = QPushButton("Lassen"); b2.clicked.connect(self._lassen)
         z.addWidget(b1); z.addWidget(b2); lay.addLayout(z)
+
+    def _lassen(self):
+        self.d.assistant.gelernt.ki_vermerken(self.v, False)
+        self._weg()
 
     def _einsetzen(self):
         if self.d.vorschlag_einsetzen(self.v):
+            self.d.assistant.gelernt.ki_vermerken(self.v, True)
             self._weg()
 
-    def _weg(self):
+    def _weg(self, abgelehnt: bool = False):
         self.hide(); self.setParent(None); self.deleteLater()
 
 

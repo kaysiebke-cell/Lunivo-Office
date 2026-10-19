@@ -17,7 +17,7 @@ LERN_SCHWELLE = 5      # so oft darf ein Fund bei ausdrücklichem „Prüfen“ 
 class Gelernt:
     def __init__(self, pfad: str | None = None):
         self.pfad = pfad or os.path.join(data_dir(), "gelernt.json")
-        self.daten = {"woerter": {}, "inRuhe": {}, "gezeigt": {}}
+        self.daten = {"woerter": {}, "inRuhe": {}, "gezeigt": {}, "ki": {}}
         self.laden()
 
     def laden(self) -> None:
@@ -72,6 +72,19 @@ class Gelernt:
         if geaendert:
             self.speichern()
 
+    def ki_vermerken(self, vorschlag: dict, angenommen: bool) -> None:
+        """Die Sicherheit (konfidenz) eines KI-Vorschlags und ob er angenommen wurde — für die Trefferquote je Sicherheitsstufe.
+        Es wird nur die Zahl gespeichert, nie der Text."""
+        stufe = str(min(9, int(float(vorschlag.get("konfidenz", 0.5)) * 10)))
+        e = self.daten["ki"].setdefault(stufe, {"angenommen": 0, "abgelehnt": 0})
+        e["angenommen" if angenommen else "abgelehnt"] += 1
+        self.speichern()
+
+    def ki_trefferquote(self, stufe: int) -> float | None:
+        e = self.daten["ki"].get(str(stufe))
+        n = (e["angenommen"] + e["abgelehnt"]) if e else 0
+        return e["angenommen"] / n if n else None
+
     def vergessen(self) -> None:
-        self.daten = {"woerter": {}, "inRuhe": {}, "gezeigt": {}}
+        self.daten = {"woerter": {}, "inRuhe": {}, "gezeigt": {}, "ki": {}}
         self.speichern()

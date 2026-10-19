@@ -110,6 +110,23 @@ def test_vorschlaege_nur_zeichengenaue(tmp_path, server, monkeypatch):
     assert len(r["vorschlaege"]) == 1
 
 
+def test_vorschlaege_konfidenz_gespeichert_und_sortiert(tmp_path, server, monkeypatch):
+    monkeypatch.setattr(K, "OLLAMA_URL", server)
+    text = "Erster langer Satz hier. Zweiter langer Satz da. Dritter."
+    Handler.antwort = {"message": {"content": json.dumps({"vorschlaege": [
+        {"alt": "Erster langer Satz hier.", "neu": "Erster Satz.", "grund": "kürzer", "konfidenz": 0.3},
+        {"alt": "Zweiter langer Satz da.", "neu": "Zweiter Satz.", "grund": "kürzer", "konfidenz": 0.9},
+        {"alt": "Dritter.", "neu": "3.", "grund": "kürzer", "konfidenz": "viel"}]})}}
+    r = K.KI(konfig(tmp_path, modell="ollama:m")).vorschlaege(text)["vorschlaege"]
+    assert [v["konfidenz"] for v in r] == [0.9, 0.5, 0.3]            # sortiert; Unsinn wird 0,5
+    assert all(v["quelle"] == "ki" for v in r)
+    from lunivo_writer.services.gelernt import Gelernt
+    g = Gelernt(str(tmp_path / "g.json"))
+    g.ki_vermerken(r[0], True); g.ki_vermerken(r[0], False); g.ki_vermerken(r[0], True)
+    assert abs(g.ki_trefferquote(9) - 2 / 3) < 1e-9 and g.ki_trefferquote(0) is None
+    assert Gelernt(str(tmp_path / "g.json")).daten["ki"]["9"] == {"angenommen": 2, "abgelehnt": 1}   # überlebt Neustart
+
+
 def test_diff_ersetzt_nur_geaendertes():
     alt = "Wir hat keine Zahlung.\nDanke"
     neu = "Wir haben keine Zahlung.\nDanke"
