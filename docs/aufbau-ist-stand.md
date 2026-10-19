@@ -4,6 +4,9 @@ Erzeugt von werkzeug/aufbau-schreiben.py, nicht von Hand geschrieben.
 Nach Themen aufgeteilt und mit einer Suchtabelle steht dasselbe in
 doku/aufbau-band.md und doku/aufbau-optionen.md.
 
+
+LUNIVO WRITER – VOLLSTÄNDIGE MENÜSTRUKTUR
+
 DIE BÄNDER
 │
 ├── Start
@@ -263,10 +266,9 @@ DIE BÄNDER
  └── Vorlagen zurücksetzen
 
 
-═══════════════════════════════════════════════════════════════
 
 DAS OPTIONEN-FENSTER — Datei ▸ Optionen (F9)
-│
+
 ├── Leichter lesen
 │ ├── Lesehilfe
 │ │ ├── Lesestufe
