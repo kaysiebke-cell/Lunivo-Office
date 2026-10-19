@@ -191,10 +191,10 @@ Das legt beim ersten Mal auch den Menüeintrag an; danach steht
 *Schreibprogramm* hat: Der wird beim Start still mit weggeräumt, damit
 nicht beide nebeneinander stehen.
 
-Gebraucht wird GTK mit WebKit:
+Gebraucht wird Qt6 mit Qt WebEngine:
 
 ```text
-sudo apt install python3-gi gir1.2-webkit2-4.1
+sudo apt install PySide6 
 ```
 
 ## Eine Hilfe, kein Ersatz
