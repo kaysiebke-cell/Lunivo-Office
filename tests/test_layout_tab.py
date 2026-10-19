@@ -33,7 +33,7 @@ def test_reihenfolge_der_gruppen_und_vier_spalten(app, tmp_path):
     i = next(i for i in range(r.count()) if r.tabText(i) == "Seitenlayout")
     from PySide6.QtWidgets import QLabel
     seite = w.band.stapel.widget(i).widget()
-    titel = [l.text() for l in seite.findChildren(QLabel) if l.text() in ("DESIGNS", "RÄNDER", "SEITE EINRICHTEN", "SEITENHINTERGRUND", "ANORDNEN")]
-    assert titel == ["DESIGNS", "RÄNDER", "SEITE EINRICHTEN", "SEITENHINTERGRUND", "ANORDNEN"]
+    titel = [l.text() for l in seite.findChildren(QLabel) if l.text() in ("DESIGNS", "RÄNDER", "SEITE EINRICHTEN", "SEITENHINTERGRUND", "ANORDNEN", "ABSATZ")]
+    assert titel == ["DESIGNS", "RÄNDER", "SEITE EINRICHTEN", "SEITENHINTERGRUND", "ANORDNEN", "ABSATZ"]
     w.befehle.tun("spaltenSetzen:[4]")
     assert w.current_tab().page.spalten == 4

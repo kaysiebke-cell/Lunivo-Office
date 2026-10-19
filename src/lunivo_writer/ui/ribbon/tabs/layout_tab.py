@@ -1,6 +1,6 @@
 """Reiter „Seitenlayout“ in der Anordnung von WPS Office: Designs, Ränder mit den vier Maßfeldern, Seite einrichten
 (Orientierung, Größe, Spalten, Textrichtung, Umbrüche, Zeilennummern), Seitenhintergrund und Anordnen.
-Einzug, Absatzabstand und Silbentrennung stehen wie bei WPS nicht hier, sondern unter Start ▸ Absatz und Schreibhilfe."""
+Dazu die kleine Gruppe Absatz (Einzug, Absatzabstand) aus dem Prüfbogen; die Silbentrennung steht unter Schreibhilfe."""
 from __future__ import annotations
 
 from lunivo_writer.ui.ribbon.tabs.baustein import k as _k
@@ -31,4 +31,6 @@ def bauen(register: dict) -> dict:
     anordnen = {"name": "Anordnen", "reihenfolge": True, "knoepfe": [
         mit("Textfluss", gross=True), mit("Ausrichten", gross=True), mit("Gruppieren", text=True), mit("Drehen", text=True),
         _k("objekte", "Auswahlbereich", "objekteWaehlen", True)]}
-    return dict(tab, gruppen=[designs, raender, einrichten, hintergrund, anordnen])
+    absatz = {"name": "Absatz", "pfeil": alt["Absatz"].get("pfeil"), "reihenfolge": True, "knoepfe": [
+        mit("Einzug", text=True), mit("Absatzabstand", text=True)]}                 # die Silbentrennung steht unter Schreibhilfe
+    return dict(tab, gruppen=[designs, raender, einrichten, hintergrund, anordnen, absatz])
