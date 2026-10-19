@@ -94,7 +94,7 @@ class RegisterBand(QWidget):
         self.stapel.setObjectName("bandStapel")
         self.stapel.setFixedHeight(112)
         lay.addWidget(self.stapel)
-        linie = QFrame()
+        linie = self.linie = QFrame()
         linie.setFrameShape(QFrame.HLine)
         linie.setFrameShadow(QFrame.Sunken)
         lay.addWidget(linie)
