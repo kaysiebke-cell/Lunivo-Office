@@ -20,7 +20,7 @@ from lunivo_writer.ui.widgets import icons
 from lunivo_writer.ui.ribbon.plan import plan
 
 NICHT_DA = "{} — in der nativen Fassung noch nicht umgesetzt"
-STILE_KATALOG = ["Standard", "Überschrift 1", "Überschrift 2", "Überschrift 3", "Titel", "Untertitel", "Zitat", "Kein Abstand"]
+STILE_KATALOG = ["Standard", "Überschrift 1", "Überschrift 2", "Überschrift 3", "Überschrift 4", "Überschrift 5", "Überschrift 6", "Überschrift 7", "Überschrift 8", "Überschrift 9", "Titel", "Untertitel", "Zitat", "Kein Abstand"]
 TEXTSYMBOLE = {"F": QFont.Bold, "K": None, "U": None}
 
 

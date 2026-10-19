@@ -168,6 +168,7 @@ class MainWindow(QMainWindow):
         self.a_select_all = A("Alles auswählen", lambda: self._ed(lambda e: e.selectAll()), "Ctrl+A")
         self.a_find = A("Suchen …", self.find_dialog_show, "Ctrl+F")
         self.a_replace = A("Ersetzen …", self.find_dialog_show, "Ctrl+H")
+        self.a_goto = A("Gehe zu …", self.befehle.geheZu, "Ctrl+G")
 
         self.a_bold = A("F", self.befehle.fett, "Ctrl+B")
         self.a_italic = A("K", self.befehle.kursiv, "Ctrl+I")
@@ -233,7 +234,7 @@ class MainWindow(QMainWindow):
         m.addAction(self.a_close); m.addAction(self.a_quit)
         e = mb.addMenu("&Bearbeiten")
         for a in (self.a_undo, self.a_redo, None, self.a_cut, self.a_copy, self.a_paste,
-                  self.a_paste_plain, None, self.a_find, self.a_replace, self.a_select_all):
+                  self.a_paste_plain, None, self.a_find, self.a_replace, self.a_goto, self.a_select_all):
             e.addSeparator() if a is None else e.addAction(a)
         v = mb.addMenu("&Ansicht")
         v.addAction(self.a_marks); v.addAction(self.a_fullscreen)

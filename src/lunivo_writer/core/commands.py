@@ -1305,6 +1305,11 @@ class Befehle:
     def formTextfeld(self, k=None): self._form_dialog("text")
     def formAuswahl(self, k=None): self._form_dialog("auswahl")
 
+    def geheZu(self, k=None, art="Seite"):
+        if self.ed:
+            from lunivo_writer.ui.dialogs.gehe_zu_dialog import GeheZuDialog
+            GeheZuDialog(self.w, self.ed, art).exec()
+
     def vollbild(self, k=None): self.w.a_fullscreen.trigger()
     def an_vollbild(self): return self.w.isFullScreen()
     def formDatum(self, k=None): self._form_dialog("datum")

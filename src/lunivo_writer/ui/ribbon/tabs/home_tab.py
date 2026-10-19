@@ -19,7 +19,8 @@ def bauen(start: dict) -> dict:
         _k("wortextras", "Wort-Extras", "wortExtras", True)]}
     suchen = {"name": "Suchen", "reihenfolge": True, "knoepfe": [
         _k("lupe", "Suchen oder ersetzen", gross=True, menue=[{"name": "Suchen …", "tun": "suchen"},
-                                                              {"name": "Ersetzen …", "tun": "ersetzen"}])]}
+                                                              {"name": "Ersetzen …", "tun": "ersetzen"},
+                                                              {"name": "Gehe zu …", "tun": "geheZu"}])]}
     waehlen = {"name": "Auswählen", "reihenfolge": True, "knoepfe": [
         _k("objekte", "Auswählen", gross=True, menue=[{"name": "Alles auswählen", "tun": "allesMarkieren"},
                                                       {"name": "Objekte auswählen", "tun": "objekteWaehlen"}])]}
