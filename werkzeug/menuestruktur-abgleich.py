@@ -102,7 +102,7 @@ bereich("7. Überprüfen  (Rechtschreibung, Sprache, KI stehen laut Ihrer Vorgab
     ("Sprache: festlegen · Übersetzen", OK, "Schreibhilfe ▸ Sprache (Übersetzen mit KI)"),
     ("Kommentare: neu · bearbeiten · löschen · vorher/nächster · alle", OK, "Überprüfen ▸ Kommentare; Sprechblasen am Rand"),
     ("Änderungen: ein/aus · Anzeigeoptionen · Bereich · vorher/nächste · annehmen/ablehnen", OK, "Überprüfen ▸ Änderungen"),
-    ("Vergleichen: Dokumente vergleichen · zusammenführen (optional)", FEHLT, "—"),
+    ("Vergleichen: Dokumente vergleichen · zusammenführen (optional)", TEIL, "Überprüfen ▸ Vergleichen/Zusammenführen: Text und Absätze als verfolgte Änderungen; keine Formatänderungen, keine Tabellenstruktur (tests/test_vergleich.py)"),
     ("Schützen: Dokument schützen", OK, "Überprüfen ▸ Schützen; Backstage ▸ Schützen"),
     ("Schützen: Bearbeitung einschränken · Schutz aufheben (optional)", TEIL, "Bearbeitung sperren/freigeben; Kennwort entfernen"))
 

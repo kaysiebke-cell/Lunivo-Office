@@ -1270,6 +1270,69 @@ class Befehle:
         return m
 
     # ---- Sendungen --------------------------------------------------------------------------------------------
+    # ---- Vergleichen und Zusammenführen ---------------------------------------------------------------------------------------
+    def _fassung_laden(self, pfad: str):
+        from lunivo_writer.services import file_service as formats
+        try:
+            return formats.load(pfad).doc
+        except Exception as e:                                  # unlesbare Datei: melden, nicht abbrechen
+            QMessageBox.warning(self.w, "Datei lesen", f"„{os.path.basename(pfad)}“ lässt sich nicht lesen:\n{e}")
+            return None
+
+    def _ergebnis_blatt(self, titel: str, ziel, page):
+        from lunivo_writer.editor.sendungen import _ressourcen
+        from PySide6.QtGui import QTextDocumentFragment
+        t = self._neues_blatt(titel)
+        d = t.editor.document()
+        _ressourcen(ziel, d)
+        d.clear()
+        QTextCursor(d).insertFragment(QTextDocumentFragment(ziel))
+        t.editor.page_settings_changed(page.copy())
+        t.editor.document().setModified(True)
+        return t
+
+    def dokumenteVergleichen(self, k=None):
+        t = self.w.current_tab()
+        if not t:
+            return
+        from lunivo_writer.editor import vergleich as V
+        pfad, _ = QFileDialog.getOpenFileName(self.w, "Mit welchem Dokument vergleichen?", self.w.settings.get("last_dir", os.path.expanduser("~")),
+                                              "Dokumente (*.docx *.odt *.txt *.md *.html);;Alle Dateien (*)")
+        if not pfad:
+            return
+        andere = self._fassung_laden(pfad)
+        if andere is None:
+            return
+        autor = os.path.splitext(os.path.basename(pfad))[0]
+        ziel, st = V.vergleichen(t.editor.document(), andere, autor)
+        self._ergebnis_blatt(f"Vergleich — {t.title} ↔ {autor}", ziel, t.page)
+        self.w.statusBar().showMessage(
+            (f"Vergleich fertig: {st['eingefuegt']} Zeichen eingefügt, {st['geloescht']} gelöscht (Überprüfen ▸ Änderungen: annehmen oder ablehnen)."
+             if st["operationen"] else "Die beiden Dokumente haben denselben Text."), 9000)
+
+    def dokumenteZusammenfuehren(self, k=None):
+        t = self.w.current_tab()
+        if not t:
+            return
+        from lunivo_writer.editor import vergleich as V
+        pfade, _ = QFileDialog.getOpenFileNames(self.w, "Überarbeitete Fassungen auswählen (jede Datei ist ein Autor)",
+                                                self.w.settings.get("last_dir", os.path.expanduser("~")),
+                                                "Dokumente (*.docx *.odt *.txt *.md *.html);;Alle Dateien (*)")
+        fassungen = []
+        for p in pfade:
+            d = self._fassung_laden(p)
+            if d is not None:
+                fassungen.append((os.path.splitext(os.path.basename(p))[0], d))
+        if not fassungen:
+            return
+        ziel, st, konflikte = V.zusammenfuehren(t.editor.document(), fassungen)
+        self._ergebnis_blatt(f"Zusammenführung — {t.title}", ziel, t.page)
+        msg = f"{len(fassungen)} Fassungen zusammengeführt: {st['eingefuegt']} Zeichen eingefügt, {st['geloescht']} gelöscht."
+        if konflikte:
+            msg += f" {len(konflikte)} Konflikt(e) — die erste Fassung gilt."
+            QMessageBox.information(self.w, "Konflikte beim Zusammenführen", "\n".join(konflikte[:30]))
+        self.w.statusBar().showMessage(msg, 9000)
+
     def _neues_blatt(self, titel: str):
         self.w.new_document()
         t = self.w.current_tab()

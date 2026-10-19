@@ -1,6 +1,6 @@
 # Menüstruktur ↔ Programm
 
-**✅ 71 · ◐ 25 · ⬜ 14** (zusammengefasste Zeilen).
+**✅ 71 · ◐ 26 · ⬜ 13** (zusammengefasste Zeilen).
 Erzeugt von `werkzeug/menuestruktur-abgleich.py`. Die vorgegebene Struktur (12 Bereiche) Punkt für Punkt gegen das Programm: ✅ vorhanden · ◐ teilweise oder anders gelöst · ⬜ fehlt. Reiter-Reihenfolge und -Anordnung folgen den WPS-Bildschirmfotos; wo die Struktur davon abweicht (eigener KI-Reiter, Rechtschreibung unter Überprüfen), gilt die Anordnung nach WPS: Rechtschreibung und KI stehen im Reiter Schreibhilfe.
 
 ## 1. Datei
@@ -111,7 +111,7 @@ Erzeugt von `werkzeug/menuestruktur-abgleich.py`. Die vorgegebene Struktur (12 B
 | ✅ | Sprache: festlegen · Übersetzen | Schreibhilfe ▸ Sprache (Übersetzen mit KI) |
 | ✅ | Kommentare: neu · bearbeiten · löschen · vorher/nächster · alle | Überprüfen ▸ Kommentare; Sprechblasen am Rand |
 | ✅ | Änderungen: ein/aus · Anzeigeoptionen · Bereich · vorher/nächste · annehmen/ablehnen | Überprüfen ▸ Änderungen |
-| ⬜ | Vergleichen: Dokumente vergleichen · zusammenführen (optional) | — |
+| ◐ | Vergleichen: Dokumente vergleichen · zusammenführen (optional) | Überprüfen ▸ Vergleichen/Zusammenführen: Text und Absätze als verfolgte Änderungen; keine Formatänderungen, keine Tabellenstruktur (tests/test_vergleich.py) |
 | ✅ | Schützen: Dokument schützen | Überprüfen ▸ Schützen; Backstage ▸ Schützen |
 | ◐ | Schützen: Bearbeitung einschränken · Schutz aufheben (optional) | Bearbeitung sperren/freigeben; Kennwort entfernen |
 
