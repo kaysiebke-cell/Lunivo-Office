@@ -43,17 +43,21 @@ EXPORTE = [("PDF-Dokument (.pdf)", "speichernPdf"), ("Word-Dokument (.docx)", "e
            ("Rich-Text-Format (.rtf)", "exportierenRtf"), ("Nur Text (.txt)", "exportierenTxt"),
            ("Bild der Seite (.png)", "exportierenPng")]
 
+BREITE = 460
+
 STIL = """
 QWidget#bsLinks { background: palette(window); }
 QListWidget#bsListe { background: transparent; border: none; outline: none; }
-QListWidget#bsListe::item { padding: 10px 14px; border-radius: 0; }
-QListWidget#bsListe::item:selected { background: palette(mid); color: palette(window-text); }
+QListWidget#bsListe::item { padding: 10px 14px; border-left: 3px solid transparent; }
+QListWidget#bsListe::item:selected { background: palette(midlight); color: palette(window-text); border-left: 3px solid palette(highlight); }
 QListWidget#bsListe::item:hover:!selected { background: palette(midlight); }
 QWidget#bsRechts, QScrollArea#bsSeite, QScrollArea#bsSeite > QWidget > QWidget { background: palette(base); }
 QLabel#bsTitel { font-size: 17pt; }
 QLabel#bsGruppe { font-size: 11pt; font-weight: 600; }
 QLabel#bsHinweis { color: palette(mid); }
-QPushButton#bsKnopf { padding: 6px 16px; text-align: left; }
+QPushButton#bsKnopf { border: none; background: transparent; padding: 9px 12px; text-align: left; border-radius: 6px; }
+QPushButton#bsKnopf:hover:enabled { background: palette(midlight); }
+QPushButton#bsKnopf:disabled { color: palette(mid); }
 """
 
 
@@ -73,8 +77,8 @@ class Backstage(QWidget):
         ll = QVBoxLayout(links)
         ll.setContentsMargins(0, 8, 0, 8)
         zurueck = QPushButton(icons.icon("zurueck", 18), "  Zurück zum Dokument")
-        zurueck.setFlat(True)
-        zurueck.setStyleSheet("text-align: left; padding: 10px 14px;")
+        zurueck.setObjectName("bsKnopf")
+        zurueck.setCursor(Qt.PointingHandCursor)
         zurueck.clicked.connect(self.schliessen)
         ll.addWidget(zurueck)
         self.liste = QListWidget()
@@ -180,11 +184,10 @@ class Backstage(QWidget):
         if icon and icons.hat(icon):
             k.setIcon(icons.icon(icon, 18))
         k.setEnabled(self.w.befehle.hat(befehl))
+        k.setCursor(Qt.PointingHandCursor)
+        k.setFixedWidth(BREITE)                               # alle Zeilen gleich breit, keine Kästen
         k.clicked.connect(lambda _=False, b=befehl: (self.schliessen.emit() if schliessen else None, self.w.befehle.tun(b)))
-        row = QHBoxLayout()
-        row.addWidget(k)
-        row.addStretch(1)
-        v.addLayout(row)
+        v.addWidget(k)
         return k
 
     # ---- Seiten ------------------------------------------------------------------------------------------------
@@ -197,9 +200,8 @@ class Backstage(QWidget):
             v.addWidget(h)
         for p in pfade:
             k = QPushButton()
-            k.setFlat(True)
+            k.setObjectName("bsKnopf")
             k.setCursor(Qt.PointingHandCursor)
-            k.setStyleSheet("text-align: left; padding: 8px 10px;")
             k.setText(f"{os.path.basename(p)}\n{os.path.dirname(p)}")
             k.setIcon(icons.icon("ausdatei", 28))
             k.setIconSize(QSize(28, 28))
@@ -208,9 +210,10 @@ class Backstage(QWidget):
             v.addWidget(k)
         if pfade:
             leer = QPushButton("Liste leeren")
+            leer.setObjectName("bsKnopf")
+            leer.setFixedWidth(BREITE)
             leer.clicked.connect(lambda: (self.w._clear_recent(), self.oeffnen("zuletzt")))
-            row = QHBoxLayout(); row.addWidget(leer); row.addStretch(1)
-            v.addSpacing(8); v.addLayout(row)
+            v.addSpacing(8); v.addWidget(leer)
         v.addStretch(1)
         return sa
 
@@ -244,8 +247,8 @@ class Backstage(QWidget):
         k = QPushButton("Digitale Signatur hinzufügen")
         k.setObjectName("bsKnopf")
         k.setEnabled(False)
-        row = QHBoxLayout(); row.addWidget(k); row.addStretch(1)
-        v.addLayout(row)
+        k.setFixedWidth(BREITE)
+        v.addWidget(k)
         v.addStretch(1)
         return sa
 
