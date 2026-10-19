@@ -1,8 +1,8 @@
 """Reiter „Abschnitt“ in der Anordnung von WPS Office.
 
-Die native Fassung kennt **einen** Abschnitt pro Dokument (siehe docs/BERICHT.md): Deckblatt, Ränder, Orientierung, Größe, Seitenzahl,
-„Erste Seite anders“ und Kopf-/Fußzeile gelten für das ganze Dokument und funktionieren. Alles, was mehrere Abschnitte voraussetzt
-(Abschnitte hinzufügen/löschen/wechseln, Kopf-/Fußzeile mit dem Vorgänger verknüpfen, Navigationsbereich), steht ausgegraut da.
+Abschnitte (editor/abschnitte.py): hinzufügen (nächste Seite, fortlaufend, gerade, ungerade), löschen, vor/zurück, Navigation, eigene
+Orientierung, Größe, Ränder, Spalten und Kopf-/Fußzeilen je Abschnitt, Kopf-/Fußzeile mit dem Vorgänger verknüpfen. Orientierung, Größe,
+Ränder und Spalten gelten für den Abschnitt, in dem die Schreibmarke steht. Noch ausgegraut: „Gerade und ungerade Seiten unterschiedlich“.
 """
 from __future__ import annotations
 
@@ -23,6 +23,7 @@ def bauen(register: dict) -> dict:
         {"name": "Abschnitte", "reihenfolge": True, "knoepfe": [
             _k("umbruch", "Abschnitt hinzufügen", gross=True, menue=abschnitt_menue),
             _k("kanteKeine", "Abschnitt löschen", "abschnittLoeschen", True),
+            _k("zahnrad", "Abschnitt einrichten …", "abschnittEinstellungen", text=True),
             _k("zurueck", "Vorheriger Abschnitt", "abschnittVorher", text=True),
             _k("vor", "Nächster Abschnitt", "abschnittNaechster", text=True)]},
         {"name": "Kopf- und Fußzeile", "reihenfolge": True, "knoepfe": [

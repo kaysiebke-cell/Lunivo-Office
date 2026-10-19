@@ -150,6 +150,7 @@ def paginated_copy(qdoc: QTextDocument, page: PageSettings, noten: dict | None =
     noten_anhaengen(d, noten, ("e",) if am_fuss else ("f", "e"))
     if (page.silbentrennung if silben is None else silben):
         silben_einfuegen(d, page.silben_sprache)
+    _abschnittsbeginn_markieren(d)
     root = d.rootFrame()
     ff = root.frameFormat()
     ff.setMargin(0)
@@ -159,6 +160,19 @@ def paginated_copy(qdoc: QTextDocument, page: PageSettings, noten: dict | None =
     if am_fuss and fussnoten != "spaeter":                 # „spaeter“: render() ruft es nach den übrigen Änderungen selbst auf
         fussnoten_am_seitenende(d, page, noten)
     return d
+
+
+def _abschnittsbeginn_markieren(d: QTextDocument) -> None:
+    """Nur in der Kopie: Der Absatz nach einem Abschnittsumbruch („nächste/gerade/ungerade Seite“) beginnt eine neue Seite."""
+    from lunivo_writer.editor import abschnitte as AB
+    b = d.firstBlock()
+    while b.isValid():
+        e = AB.lesen(b.blockFormat())
+        n = b.next()
+        if e and e[0] != "fortlaufend" and n.isValid():
+            c = QTextCursor(n)
+            bf = c.blockFormat(); bf.setPageBreakPolicy(QTextFormat.PageBreak_AlwaysBefore); c.setBlockFormat(bf)
+        b = n
 
 
 def _fussnoten_am_fuss(page: PageSettings, noten: dict | None) -> bool:
@@ -446,15 +460,18 @@ def render(qdoc: QTextDocument, page: PageSettings, device, first: int = 1, last
     if _fussnoten_am_fuss(page, opt.get("noten")):
         fussnoten_am_seitenende(d, page, opt["noten"])
     total = ausgabe_seiten(d.pageCount(), page)
+    if opt.get("nur_zaehlen"):
+        return total
+    ab = opt.get("abschnitt") or {}
     last = total if last is None else min(last, total)
-    p = QPainter(device)
+    p = opt.get("painter") or QPainter(device)
     s = (dpi or device.logicalDpiX()) / 96.0
     cw, ch = page.content_width_px, page.content_height_px
     ml, mt = mm_to_px(page.margin_left_mm), mm_to_px(page.margin_top_mm)
     pw, ph = mm_to_px(page.width_mm), mm_to_px(page.height_mm)
     base = qdoc.defaultFont()
     spalten = max(1, int(page.spalten))
-    first_page = True
+    first_page = not ab.get("weiter")
     balken = None
     if opt.get("balken") in ("links", "rechts", "außen") and d.characterCount() < 400000:
         balken = (opt["balken"], AX.aenderungszeilen(d))
@@ -474,14 +491,16 @@ def render(qdoc: QTextDocument, page: PageSettings, device, first: int = 1, last
             p.save()
             p.translate(geo["x_page"], 0)
             p.scale(geo["f"], geo["f"])
-        zeichne_seite(p, d, page, n, total, base, opt.get("hintergrund") is not False, balken)
+        zeichne_seite(p, d, page, n, total, base, opt.get("hintergrund") is not False, balken, ab.get("offset", 0), ab.get("gesamt"))
         if opt.get("textgrenzen") or opt.get("zuschnitt"):
             _druckmarken(p, page, bool(opt.get("textgrenzen")), bool(opt.get("zuschnitt")))
         if geo:
             p.restore()
             _blasen_zeichnen(p, pro_seite.get(n, []), geo)
         p.restore()
-    p.end()
+    opt["_gedruckt"] = len(liste)
+    if not opt.get("painter"):
+        p.end()
     if opt.get("lesezeichen") is not None:
         opt["lesezeichen_ergebnis"] = lesezeichen_sammeln(d, ch, liste, opt["lesezeichen"], spalten)
     if opt.get("kommentare"):
@@ -489,6 +508,62 @@ def render(qdoc: QTextDocument, page: PageSettings, device, first: int = 1, last
     if opt.get("notenlinks"):
         opt["notenlinks_ergebnis"] = notenlinks_sammeln(d, page, liste)
     return total
+
+
+def render_dokument(qdoc: QTextDocument, page: PageSettings, device, first: int = 1, last: int | None = None, dpi: int | None = None,
+                    opt: dict | None = None, layout=None) -> int:
+    """Wie render(), aber mit mehreren Abschnitten: jeder Abschnitt wird mit seiner eigenen Seitengröße, seinen Rändern, Spalten und
+    Kopf-/Fußzeilen gesetzt; die Seitennummern laufen durch. `layout(PageSettings)` stellt das Papier des Geräts um (QPdfWriter/QPrinter).
+    → Seitenzahl der gesamten Ausgabe (mit eingeschobenen Leerseiten bei „gerade/ungerade Seite“)."""
+    from lunivo_writer.editor import abschnitte as AB
+    opt = opt if opt is not None else {}
+    teile, hinweise = AB.teile(qdoc, page)
+    opt["abschnitts_hinweise"] = hinweise
+    if len(teile) == 1:
+        return render(qdoc, page, device, first, last, dpi, opt)
+    zaehl = [render(d, ps, device, opt=dict(opt, nur_zaehlen=True)) for d, ps, _t in teile]
+    offsets, leer, gesamt = [], [], 0
+    for i, ((_d, _ps, typ), z) in enumerate(zip(teile, zaehl)):
+        b = 1 if i and ((typ == "gerade" and (gesamt + 1) % 2 == 1) or (typ == "ungerade" and (gesamt + 1) % 2 == 0)) else 0
+        offsets.append(gesamt + b); leer.append(b); gesamt += b + z
+    last = gesamt if last is None else min(last, gesamt)
+    # erster Teil, der wirklich gedruckt wird: sein Papier gilt schon beim Start
+    start = next((i for i, ((_d, _ps, _t), z) in enumerate(zip(teile, zaehl))
+                  if max(1, first - offsets[i]) <= min(z, last - offsets[i]) or (leer[i] and first <= offsets[i] <= last)), 0)
+    if layout:
+        layout(teile[start][1])
+    painter = QPainter(device)
+    gedruckt = 0
+    sammlung: dict[str, list] = {"lesezeichen_ergebnis": [], "kommentare_ergebnis": [], "notenlinks_ergebnis": []}
+    for i, ((d, ps, _typ), z) in enumerate(zip(teile, zaehl)):
+        o = offsets[i]
+        if leer[i] and first <= o <= last:
+            if i != start and layout:
+                layout(ps)
+            if gedruckt:
+                device.newPage()
+            gedruckt += 1
+        lo, hi = max(1, first - o), min(z, last - o)
+        if lo > hi:
+            continue
+        if i != start and layout:
+            layout(ps)
+        sub = dict(opt, painter=painter, abschnitt={"offset": o, "gesamt": gesamt, "weiter": gedruckt > 0})
+        render(d, ps, device, lo, hi, dpi, sub)
+        for k in sammlung:
+            for e in sub.get(k) or []:
+                if k == "lesezeichen_ergebnis":
+                    sammlung[k].append((e[0], e[1], e[2] + gedruckt))
+                elif k == "kommentare_ergebnis":
+                    sammlung[k].append((e[0] + gedruckt, e[1], e[2]))
+                else:
+                    sammlung[k].append(dict(e, seite=e["seite"] + gedruckt, ziel_seite=e["ziel_seite"] + gedruckt))
+        gedruckt += sub.get("_gedruckt", 0)
+    painter.end()
+    for k, v in sammlung.items():
+        if v:
+            opt[k] = v
+    return gesamt
 
 
 def notenlinks_sammeln(d: QTextDocument, page: PageSettings, liste: list[int]) -> list[dict]:
@@ -675,15 +750,15 @@ def _druckmarken(p: QPainter, page: PageSettings, grenzen: bool, zuschnitt: bool
 
 
 def zeichne_seite(p: QPainter, d: QTextDocument, page: PageSettings, n: int, total: int, base: QFont,
-                  hintergrund: bool = True, balken: tuple | None = None) -> None:
+                  hintergrund: bool = True, balken: tuple | None = None, nr_offset: int = 0, gesamt: int | None = None) -> None:
     """Eine Seite (Nummer n, 1-basiert) mit Seitenschmuck, Kopf-/Fußzeile und Text; Maßstab 96 dpi, Ursprung links oben."""
     cw, ch = page.content_width_px, page.content_height_px
     ml, mt = mm_to_px(page.margin_left_mm), mm_to_px(page.margin_top_mm)
     ph = mm_to_px(page.height_mm)
     seitenschmuck(p, page, hintergrund)
     kopf, fuss = (page.first_header, page.first_footer) if (n == 1 and page.diff_first) else (page.header, page.footer)
-    _draw_hf(p, kopf, QRectF(ml, mm_to_px(8), cw, mm_to_px(10)), n, total, base)
-    _draw_hf(p, fuss, QRectF(ml, ph - mm_to_px(18), cw, mm_to_px(10)), n, total, base)
+    _draw_hf(p, kopf, QRectF(ml, mm_to_px(8), cw, mm_to_px(10)), n + nr_offset, gesamt or total, base)
+    _draw_hf(p, fuss, QRectF(ml, ph - mm_to_px(18), cw, mm_to_px(10)), n + nr_offset, gesamt or total, base)
     if page.zeilennummern and page.spalten <= 1:
         p.save()
         p.translate(ml, mt)
@@ -797,7 +872,7 @@ def _zeilennummern(p: QPainter, d: QTextDocument, n: int, ch: float, base: QFont
 
 
 def seite_als_bild(qdoc: QTextDocument, page: PageSettings, n: int, faktor: float = 1.0, d: QTextDocument | None = None,
-                   noten: dict | None = None) -> QImage:
+                   noten: dict | None = None, nr_offset: int = 0, gesamt: int | None = None) -> QImage:
     """Seite n als Bild (für die Zwei-Seiten-Ansicht und „Als Bild exportieren“)."""
     d = d or paginated_copy(qdoc, page, noten)
     total = ausgabe_seiten(d.pageCount(), page)
@@ -808,9 +883,40 @@ def seite_als_bild(qdoc: QTextDocument, page: PageSettings, n: int, faktor: floa
     p.setRenderHint(QPainter.Antialiasing)
     p.setRenderHint(QPainter.TextAntialiasing)
     p.scale(faktor, faktor)
-    zeichne_seite(p, d, page, n, total, qdoc.defaultFont())
+    zeichne_seite(p, d, page, n, total, qdoc.defaultFont(), nr_offset=nr_offset, gesamt=gesamt)
     p.end()
     return img
+
+
+def seitenzahl(qdoc: QTextDocument, page: PageSettings, noten: dict | None = None) -> int:
+    """Seiten der Ausgabe über alle Abschnitte (einschließlich Leerseiten vor „gerade/ungerade Seite“)."""
+    from lunivo_writer.editor import abschnitte as AB
+    teile, _h = AB.teile(qdoc, page)
+    gesamt = 0
+    for i, (d, ps, typ) in enumerate(teile):
+        if i and ((typ == "gerade" and (gesamt + 1) % 2 == 1) or (typ == "ungerade" and (gesamt + 1) % 2 == 0)):
+            gesamt += 1
+        gesamt += ausgabe_seiten(paginated_copy(d, ps, noten, silben=False).pageCount(), ps)
+    return gesamt
+
+
+def seiten_bilder(qdoc: QTextDocument, page: PageSettings, noten: dict | None = None, faktor: float = 1.0):
+    """Alle Seiten der Ausgabe als (Nummer, Bild, Seiteneinrichtung) — mit mehreren Abschnitten je Abschnitt in der eigenen Größe."""
+    from lunivo_writer.editor import abschnitte as AB
+    teile, _hinweise = AB.teile(qdoc, page)
+    kopien = [paginated_copy(d, ps, noten) for d, ps, _t in teile]
+    zaehl = [ausgabe_seiten(k.pageCount(), ps) for k, (_d, ps, _t) in zip(kopien, teile)]
+    plan, gesamt = [], 0
+    for i, ((_d, _ps, typ), z) in enumerate(zip(teile, zaehl)):
+        leer = 1 if i and ((typ == "gerade" and (gesamt + 1) % 2 == 1) or (typ == "ungerade" and (gesamt + 1) % 2 == 0)) else 0
+        plan.append((gesamt + leer, leer)); gesamt += leer + z
+    for (d, ps, _t), k, z, (offset, leer) in zip(teile, kopien, zaehl, plan):
+        if leer:
+            img = QImage(int(mm_to_px(ps.width_mm) * faktor), int(mm_to_px(ps.height_mm) * faktor), QImage.Format_RGB32)
+            img.fill(Qt.white)
+            yield offset, img, ps
+        for n in range(1, z + 1):
+            yield offset + n, seite_als_bild(d, ps, n, faktor, k, noten, offset, gesamt), ps
 
 
 def _leere_seiten(d: QTextDocument, page: PageSettings, total: int) -> set[int]:
@@ -917,7 +1023,7 @@ def export_pdf(path: str, qdoc: QTextDocument, page: PageSettings, title: str = 
         opt["silbenfarben"] = silben
     if kommentare:
         opt["kommentare"] = kommentare
-    n = render(qdoc, page, w, opt=opt or None)
+    n = render_dokument(qdoc, page, w, opt=opt, layout=lambda ps: w.setPageLayout(_page_layout(ps, bool(geo and geo['quer']))))
     if opt.get("lesezeichen_ergebnis") or opt.get("kommentare_ergebnis") or opt.get("notenlinks_ergebnis"):
         del w                                  # Datei schließen, bevor sie noch einmal geöffnet wird
         gliederung_schreiben(path, opt.get("lesezeichen_ergebnis") or [], opt.get("kommentare_ergebnis"), page,
@@ -931,4 +1037,5 @@ def print_document(printer: QPrinter, qdoc: QTextDocument, page: PageSettings, o
     first, last = 1, None
     if printer.printRange() == QPrinter.PageRange and printer.fromPage():
         first, last = printer.fromPage(), printer.toPage() or None
-    return render(qdoc, page, printer, first, last, opt=opt)
+    return render_dokument(qdoc, page, printer, first, last, opt=opt,
+                           layout=lambda ps: printer.setPageLayout(_page_layout(ps, bool(geo and geo['quer']))))

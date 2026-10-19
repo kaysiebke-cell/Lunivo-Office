@@ -44,11 +44,11 @@ bereich("2. Start",
     ("Formatvorlagen: Listenformatvorlagen", FEHLT, "—"),
     ("Formatvorlagen: erstellen / ändern · Aufgabenbereich", TEIL, "vorhandene verwalten und ändern (Dialog); Anlegen/Löschen offen (Batch 7); kein Seitenbereich"),
     ("Bearbeiten: Suchen · Ersetzen · Weitersuchen · Alles/Objekte auswählen", OK, "Start ▸ Suchen oder ersetzen, Auswählen"),
-    ("Bearbeiten: Gehe zu (Seite/Abschnitt/Zeile/Objekt)", TEIL, "Strg+G: Seite, Zeile, Überschrift, Textmarke, Beschriftung, Kommentar, Fuß-/Endnote, Tabelle, Bild; Abschnitt = nur 1 (mehrere Abschnitte fehlen); Gleichungen/Felder fehlen"))
+    ("Bearbeiten: Gehe zu (Seite/Abschnitt/Zeile/Objekt)", TEIL, "Strg+G: Seite, Zeile, Überschrift, Textmarke, Beschriftung, Kommentar, Fuß-/Endnote, Tabelle, Bild; Abschnitt: alle Abschnitte; Gleichungen/Felder fehlen"))
 
 bereich("3. Einfügen",
     ("Seiten: Deckblatt · Leere Seite · Seitenumbruch", OK, "Einfügen ▸ Seiten"),
-    ("Seiten: Abschnittsumbruch", TEIL, "wirkt nur als „Nächste Seite“ (ein Abschnitt je Dokument)"),
+    ("Seiten: Abschnittsumbruch", OK, "nächste Seite, fortlaufend, gerade, ungerade; DOCX w:sectPr"),
     ("Tabellen: Raster · Schnelltabelle", OK, "Einfügen ▸ Tabellen"),
     ("Tabellen: einzeichnen · aus Text · Excel-Objekt", FEHLT, "Excel-/Tabellenblatt-Objekte sind per Projektvorgabe ausgeschlossen"),
     ("Illustrationen: Bild aus Datei · Formen · Diagramm · Screenshot", OK, "Einfügen ▸ Illustrationen (+ Piktogramm)"),
@@ -77,16 +77,16 @@ bereich("4. Seitenlayout",
     ("Anordnen: Größe / Seitenverhältnis", OK, "Bildtools ▸ Größe und Seitenverhältnis"))
 
 bereich("5. Abschnitt",
-    ("Abschnitt erstellen: Abschnittsumbruch · Nächste Seite", TEIL, "als Seitenumbruch"),
-    ("Abschnitt erstellen: Fortlaufend · Gerade Seite · Ungerade Seite", FEHLT, "Menü da, Hinweis in der Statusleiste"),
-    ("Abschnitt verwalten: Vorheriger · Nächster · markieren · umbenennen · löschen", FEHLT, "Knöpfe ausgegraut"),
-    ("Abschnittslayout: Ränder · Hoch/Quer · Papierformat · Spalten", TEIL, "funktionieren, gelten aber für das ganze Dokument"),
+    ("Abschnitt erstellen: Abschnittsumbruch · Nächste Seite", OK, "Abschnitt ▸ Abschnitt hinzufügen"),
+    ("Abschnitt erstellen: Fortlaufend · Gerade Seite · Ungerade Seite", TEIL, "alle vier Arten; fortlaufend mit anderer Geometrie beginnt in der Ausgabe auf neuer Seite"),
+    ("Abschnitt verwalten: Vorheriger · Nächster · markieren · umbenennen · löschen", TEIL, "Vorheriger, Nächster, Löschen, Navigation (Strg+G); Markieren und Umbenennen fehlen"),
+    ("Abschnittslayout: Ränder · Hoch/Quer · Papierformat · Spalten", OK, "gelten für den Abschnitt der Schreibmarke"),
     ("Abschnittslayout: Vertikale Seitenausrichtung", FEHLT, "—"),
     ("Kopf-/Fußzeilen: Erste Seite anders", OK, "Abschnitt ▸ Kopf- und Fußzeile"),
-    ("Kopf-/Fußzeilen: Mit vorherigem verknüpfen · Gerade/ungerade · je Abschnitt", FEHLT, "ausgegraut; braucht echte Abschnitte"),
+    ("Kopf-/Fußzeilen: Mit vorherigem verknüpfen · Gerade/ungerade · je Abschnitt", TEIL, "verknüpfen und je Abschnitt: ja; gerade/ungerade unterschiedlich: nein"),
     ("Seitennummerierung: beginnen/fortsetzen · Format · Anfangsseitenzahl", FEHLT, "—"),
-    ("Abschnittsumbrüche anzeigen", FEHLT, "—"),
-    ("Abschnittseinstellungen", TEIL, "Menü Einstellungen ▸ Optionen"))
+    ("Abschnittsumbrüche anzeigen", OK, "gestrichelte Linie mit Beschriftung im Text"),
+    ("Abschnittseinstellungen", OK, "Abschnitt ▸ Abschnitt einrichten … (Seite, Beginn)"))
 
 bereich("6. Verweise",
     ("Inhaltsverzeichnis einfügen/aktualisieren", OK, "Verweise ▸ Inhaltsverzeichnis, Verzeichnisse aktualisieren"),

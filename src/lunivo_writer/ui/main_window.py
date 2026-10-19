@@ -1274,7 +1274,7 @@ class MainWindow(QMainWindow):
         t = self.current_tab()
         if not t:
             return
-        page = t.page.copy()
+        page = t.editor.abschnitt_seite()
         erste = False
         if page.diff_first:
             from PySide6.QtWidgets import QInputDialog
@@ -1303,7 +1303,7 @@ class MainWindow(QMainWindow):
         t = self.current_tab()
         if not t:
             return
-        page = t.page.copy()
+        page = t.editor.abschnitt_seite()
         if page.footer.is_empty():
             page.footer = HeaderFooter("{PAGE}", "center")
         elif "{PAGE}" not in page.footer.text:
@@ -1319,7 +1319,7 @@ class MainWindow(QMainWindow):
         t = self.current_tab()
         if not t:
             return
-        p = t.page.copy(); fn(p); t.editor.page_settings_changed(p)
+        p = t.editor.abschnitt_seite(); fn(p); t.editor.page_settings_changed(p)
 
     def set_margins(self, top, bottom, left, right):
         def f(p):
@@ -1336,7 +1336,7 @@ class MainWindow(QMainWindow):
         t = self.current_tab()
         if not t:
             return
-        d = PageSetupDialog(t.page, self)
+        d = PageSetupDialog(t.editor.abschnitt_seite(), self)
         if d.exec():
             t.editor.page_settings_changed(d.result_page())
 

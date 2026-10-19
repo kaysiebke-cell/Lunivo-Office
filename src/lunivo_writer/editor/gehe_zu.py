@@ -84,7 +84,9 @@ def ziele(ed, art: str) -> list[tuple[str, int]]:
     if art == "Bild":
         return [(f"Bild {i}", f.position()) for i, f in enumerate((f for f in _fragmente(doc) if f.charFormat().isImageFormat()), start=1)]
     if art == "Abschnitt":
-        return [("Abschnitt 1 (das ganze Dokument)", 0)]
+        from lunivo_writer.editor import abschnitte as AB
+        n = AB.anzahl(doc)
+        return [(f"Abschnitt {i + 1}" + (f" ({AB.TYPEN[AB.alle_einrichtungen(doc, ed.page)[i][0]]})" if i else ""), AB.beginn(doc, i)) for i in range(n)]
     return []
 
 

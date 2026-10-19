@@ -47,6 +47,7 @@ def _has(fmt, prop) -> bool:
 
 from lunivo_writer.editor.zusatz import B_SPALTE, P_OBJEKT, P_VERSTECKT  # noqa: E402
 from lunivo_writer.editor.formular import P_FORM  # noqa: E402
+from lunivo_writer.editor.abschnitte import B_ABSCHNITT  # noqa: E402
 from lunivo_writer.editor.zusatz import B_ART, B_CAP, B_RAHMEN, B_TOC, P_AENDERUNG, P_AUTOR, P_DATUM, P_FELD, P_INDEX, P_KOMMENTAR, P_NOTE
 
 
@@ -76,19 +77,34 @@ class _Writer:
 
     # ---- Seite --------------------------------------------------------
     def write_page(self):
-        s = self.d.sections[0]
-        p = self.page
+        """Dokumentweite Einstellungen (Hintergrund, Silbentrennung) und der letzte Abschnitt in der Schlusseinrichtung des Textes."""
+        from lunivo_writer.editor import abschnitte as AB
+        self.abschnitte = AB.alle_einrichtungen(self.q, self.page)
+        self._ab_nr = 0
+        self._dokument_ebene(self.page)
+        typ, letzte = self.abschnitte[-1]
+        self.write_section(self.d.sections[0], letzte, typ if len(self.abschnitte) > 1 else None, len(self.abschnitte) - 1)
+
+    def write_section(self, s, p, typ: str | None = None, nr: int = 0):
+        """Einen Abschnitt (python-docx Section) nach Einrichtung p schreiben; nr = Nummer des Abschnitts (für verknüpfte Kopfzeilen)."""
+        from lunivo_writer.editor import abschnitte as AB
         s.page_width, s.page_height = Mm(p.width_mm), Mm(p.height_mm)
         s.orientation = WD_ORIENT.LANDSCAPE if p.landscape else WD_ORIENT.PORTRAIT
         s.top_margin, s.bottom_margin = Mm(p.margin_top_mm), Mm(p.margin_bottom_mm)
         s.left_margin, s.right_margin = Mm(p.margin_left_mm), Mm(p.margin_right_mm)
-        self._seitenschmuck(s)
-        paare = [(s.header, p.header), (s.footer, p.footer)]
+        if typ:
+            from docx.enum.section import WD_SECTION
+            s.start_type = {"naechste": WD_SECTION.NEW_PAGE, "fortlaufend": WD_SECTION.CONTINUOUS,
+                            "gerade": WD_SECTION.EVEN_PAGE, "ungerade": WD_SECTION.ODD_PAGE}.get(typ, WD_SECTION.NEW_PAGE)
+        self._seitenschmuck(s, p)
+        paare = [(s.header, p.header, p.kopf_verknuepft), (s.footer, p.footer, p.fuss_verknuepft)]
         if p.diff_first:
             s.different_first_page_header_footer = True
-            paare += [(s.first_page_header, p.first_header), (s.first_page_footer, p.first_footer)]
-        for part, hf in paare:
-            if hf.is_empty():
+            paare += [(s.first_page_header, p.first_header, p.kopf_verknuepft), (s.first_page_footer, p.first_footer, p.fuss_verknuepft)]
+        for part, hf, verknuepft in paare:
+            if nr > 0 and verknuepft:
+                continue                                            # bleibt „mit vorherigem verknüpft“
+            if hf.is_empty() and nr == 0:
                 continue
             part.is_linked_to_previous = False
             lines = hf.text.split("\n")
@@ -98,9 +114,19 @@ class _Writer:
                                   "right": WD_ALIGN_PARAGRAPH.RIGHT}.get(hf.align, WD_ALIGN_PARAGRAPH.LEFT)
                 self._text_with_fields(para, line)
 
-    def _seitenschmuck(self, sect) -> None:
-        from docx.oxml import OxmlElement
-        p = self.page
+    def _abschnitt_ende(self, para) -> None:
+        """Am Ende des Absatzes, der einen Abschnitt beschließt: dessen Einrichtung als w:sectPr in den Absatz schreiben."""
+        from docx.section import Section
+        k = self._ab_nr
+        self._ab_nr += 1
+        typ, ps = self.abschnitte[k]
+        sp = OxmlElement("w:sectPr")
+        ppr = para._p.get_or_add_pPr()
+        nach = ppr.find(qn("w:pPrChange"))
+        (nach.addprevious(sp) if nach is not None else ppr.append(sp))
+        self.write_section(Section(sp, self.d.part), ps, typ if k > 0 else None, k)
+
+    def _dokument_ebene(self, p) -> None:
         doc_el = self.d.element
         for alt in doc_el.findall(qn("w:background")):
             doc_el.remove(alt)
@@ -118,6 +144,9 @@ class _Writer:
             ah = OxmlElement("w:autoHyphenation")
             anker = st.find(qn("w:zoom"))
             (anker.addnext(ah) if anker is not None else st.insert(0, ah))
+
+    def _seitenschmuck(self, sect, p) -> None:
+        from docx.oxml import OxmlElement
         sp = sect._sectPr
         for alt in sp.findall(qn("w:pgBorders")):
             sp.remove(alt)
@@ -153,7 +182,8 @@ class _Writer:
             if anker is None:
                 anker = sp.find(qn("w:pgMar"))
             (anker.addnext(ln) if anker is not None else sp.append(ln))
-        if p.watermark and p.watermark.get("text"):
+        if p.watermark and p.watermark.get("text") and not getattr(self, "_wasserzeichen_gemeldet", False):
+            self._wasserzeichen_gemeldet = True
             self.report.warn("Das Wasserzeichen wird in der DOCX-Datei nicht gespeichert (nur Anzeige, PDF und Druck).")
 
     def _text_with_fields(self, para, text: str):
@@ -226,6 +256,8 @@ class _Writer:
                 para = container.first_paragraph() if first_in_cell else container.add_paragraph()
                 first_in_cell = False
                 self.write_block(blk, para)
+                if isinstance(container, _Body) and blk.blockFormat().hasProperty(B_ABSCHNITT):
+                    self._abschnitt_ende(para)
             else:
                 fr = it.currentFrame()
                 if isinstance(fr, QTextTable):

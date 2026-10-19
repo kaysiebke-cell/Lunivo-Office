@@ -1,6 +1,6 @@
 # Prüfbogen ↔ native Fassung
 
-Erzeugt von `werkzeug/pruefbogen-abgleich.py` aus dem Prüfkatalog (415 Punkte). **✅ 330 · ◐ 64 · ⬜ 21**. ✅ = Befehl/Funktion vorhanden (einzeln getestet nur, wo `tests/` es belegt); ◐ = teilweise oder anders gelöst; ⬜ = offen.
+Erzeugt von `werkzeug/pruefbogen-abgleich.py` aus dem Prüfkatalog (415 Punkte). **✅ 334 · ◐ 60 · ⬜ 21**. ✅ = Befehl/Funktion vorhanden (einzeln getestet nur, wo `tests/` es belegt); ◐ = teilweise oder anders gelöst; ⬜ = offen.
 Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `docs/pruefbogen/bilder/`.
 
 ## DATEI
@@ -145,7 +145,7 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `docs/pruefbogen/bilder/`.
 - ✅ Spalten — 1–4 Spalten live im Editor (editor_widget._sp_*), Seitenansicht, Druck, PDF, DOCX w:cols/Spaltenumbruch (test_spalten_editor, test_werkzeuge; mit LibreOffice geprüft). Gilt für das ganze Dokument; bei mehreren Spalten wirkt ein Seitenumbruch wie ein Spaltenumbruch
 - ✅ Umbruch > Seitenumbruch — Band: Einfügen ▸ Seiten, Seitenlayout ▸ Seite einrichten ▸ Umbrüche
 - ✅ Umbruch > Spaltenumbruch — 1–4 Spalten live im Editor (editor_widget._sp_*), Seitenansicht, Druck, PDF, DOCX w:cols/Spaltenumbruch (test_spalten_editor, test_werkzeuge; mit LibreOffice geprüft). Gilt für das ganze Dokument; bei mehreren Spalten wirkt ein Seitenumbruch wie ein Spaltenumbruch
-- ◐ Umbruch > Abschnittsumbruch — nur „Nächste Seite“ (Seitenumbruch); Abschnitte kennt Qt nicht
+- ✅ Umbruch > Abschnittsumbruch — Abschnitt ▸ Abschnitt hinzufügen (vier Arten)
 - ✅ Einzug — Band: Seitenlayout ▸ Absatz
 - ✅ Absatzabstand — Band: Seitenlayout ▸ Absatz
 - ✅ Zeilennummern — Band: Seitenlayout ▸ Seite einrichten
@@ -347,11 +347,11 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `docs/pruefbogen/bilder/`.
 
 ## DOKUMENTMODELL (Structure)
 
-- ◐ Document-Klasse mit Sections — ein Abschnitt: PageSettings (Papier, Ränder, Kopf/Fuß); keine Spalten, keine mehreren Abschnitte
-- ◐ Section mit Inhalt, Header, Footer — ein Abschnitt: PageSettings (Papier, Ränder, Kopf/Fuß); keine Spalten, keine mehreren Abschnitte
+- ✅ Document-Klasse mit Sections — editor/abschnitte.py: Umbruch-Absatz trägt die Einrichtung des folgenden Abschnitts (PageSettings); DOCX w:sectPr (tests/test_abschnitte.py)
+- ✅ Section mit Inhalt, Header, Footer — editor/abschnitte.py: Umbruch-Absatz trägt die Einrichtung des folgenden Abschnitts (PageSettings); DOCX w:sectPr (tests/test_abschnitte.py)
 - ✅ DocumentContent mit Blocks — QTextDocument (Blöcke, Tabellen, Bilder)
 - ◐ Block-Vererbung (Paragraph, Table, Image, Shape) — Absatz, Tabelle, Bild; keine Formen
-- ◐ PageSetup mit Margins, PageSize, Columns — ein Abschnitt: PageSettings (Papier, Ränder, Kopf/Fuß); keine Spalten, keine mehreren Abschnitte
+- ✅ PageSetup mit Margins, PageSize, Columns — editor/abschnitte.py: Umbruch-Absatz trägt die Einrichtung des folgenden Abschnitts (PageSettings); DOCX w:sectPr (tests/test_abschnitte.py)
 
 ## DOKUMENTMODELL (Callbacks)
 

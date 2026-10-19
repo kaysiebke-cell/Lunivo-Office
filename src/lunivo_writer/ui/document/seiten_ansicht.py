@@ -6,7 +6,7 @@ from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import QApplication, QGridLayout, QLabel, QWidget
 
 from lunivo_writer.models.page import mm_to_px
-from lunivo_writer.editor.pagination import ausgabe_seiten, paginated_copy, seite_als_bild
+from lunivo_writer.editor.pagination import seiten_bilder
 
 
 class SeitenAnsicht(QWidget):
@@ -22,10 +22,9 @@ class SeitenAnsicht(QWidget):
         faktor = max(0.25, min(1.2, (breite - 16 * 4) / 2 / mm_to_px(pg.width_mm)))
         QApplication.setOverrideCursor(Qt.WaitCursor)
         try:
-            d = paginated_copy(editor.document(), pg, editor.noten)
-            self.seiten = ausgabe_seiten(d.pageCount(), pg)
-            for n in range(1, self.seiten + 1):
-                bild = seite_als_bild(editor.document(), pg, n, faktor, d)
+            self.seiten = 0
+            for n, bild, _ps in seiten_bilder(editor.document(), pg, editor.noten, faktor):
+                self.seiten = n
                 lab = QLabel()
                 lab.setPixmap(QPixmap.fromImage(bild))
                 lab.setFixedSize(bild.size())

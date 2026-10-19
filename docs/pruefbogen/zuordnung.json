@@ -452,16 +452,16 @@
   "wo": "QTextDocument (Blöcke, Tabellen, Bilder)"
  },
  "DOKUMENTMODELL (Structure)|Document-Klasse mit Sections": {
-  "status": "◐",
-  "wo": "ein Abschnitt: PageSettings (Papier, Ränder, Kopf/Fuß); keine Spalten, keine mehreren Abschnitte"
+  "status": "✅",
+  "wo": "editor/abschnitte.py: Umbruch-Absatz trägt die Einrichtung des folgenden Abschnitts (PageSettings); DOCX w:sectPr (tests/test_abschnitte.py)"
  },
  "DOKUMENTMODELL (Structure)|Section mit Inhalt, Header, Footer": {
-  "status": "◐",
-  "wo": "ein Abschnitt: PageSettings (Papier, Ränder, Kopf/Fuß); keine Spalten, keine mehreren Abschnitte"
+  "status": "✅",
+  "wo": "editor/abschnitte.py: Umbruch-Absatz trägt die Einrichtung des folgenden Abschnitts (PageSettings); DOCX w:sectPr (tests/test_abschnitte.py)"
  },
  "DOKUMENTMODELL (Structure)|PageSetup mit Margins, PageSize, Columns": {
-  "status": "◐",
-  "wo": "ein Abschnitt: PageSettings (Papier, Ränder, Kopf/Fuß); keine Spalten, keine mehreren Abschnitte"
+  "status": "✅",
+  "wo": "editor/abschnitte.py: Umbruch-Absatz trägt die Einrichtung des folgenden Abschnitts (PageSettings); DOCX w:sectPr (tests/test_abschnitte.py)"
  },
  "DOKUMENTMODELL (Structure)|Block-Vererbung (Paragraph, Table, Image, Shape)": {
   "status": "◐",
@@ -1088,8 +1088,8 @@
   "wo": "1–4 Spalten live im Editor (editor_widget._sp_*), Seitenansicht, Druck, PDF, DOCX w:cols/Spaltenumbruch (test_spalten_editor, test_werkzeuge; mit LibreOffice geprüft). Gilt für das ganze Dokument; bei mehreren Spalten wirkt ein Seitenumbruch wie ein Spaltenumbruch"
  },
  "SEITENLAYOUT|Umbruch > Abschnittsumbruch": {
-  "status": "◐",
-  "wo": "nur „Nächste Seite“ (Seitenumbruch); Abschnitte kennt Qt nicht"
+  "status": "✅",
+  "wo": "Abschnitt ▸ Abschnitt hinzufügen (vier Arten)"
  },
  "SEITENLAYOUT|Silbentrennung": {
   "status": "◐",

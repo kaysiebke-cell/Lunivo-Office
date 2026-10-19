@@ -655,8 +655,54 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         e.ignore()                      # die Seite scrollt im grauen Grund
 
     def page_settings_changed(self, page: PageSettings) -> None:
-        self.apply_page(page)
+        """Seiteneinrichtung ändern — für den Abschnitt, in dem die Schreibmarke steht (der erste Abschnitt ist das Dokument)."""
+        from lunivo_writer.editor import abschnitte as AB
+        nr = self.abschnitt_nr()
+        if nr > 0 and AB.setzen(self.document(), nr, page):
+            self._recount()
+            self.viewport().update()
+        else:
+            self.apply_page(page)
         self.document().setModified(True)
+
+    # ---- Abschnitte ----------------------------------------------------------------------------------------------------
+    def abschnitt_nr(self) -> int:
+        from lunivo_writer.editor import abschnitte as AB
+        return AB.index_bei(self.document(), self.textCursor().position())
+
+    def abschnitt_seite(self, nr: int | None = None) -> PageSettings:
+        """Kopie der Einrichtung des Abschnitts `nr` (Vorgabe: des aktuellen)."""
+        from lunivo_writer.editor import abschnitte as AB
+        return AB.einrichtung(self.document(), self.page, self.abschnitt_nr() if nr is None else nr)
+
+    def abschnitt_einfuegen(self, typ: str = "naechste") -> int:
+        from lunivo_writer.editor import abschnitte as AB
+        c = self.textCursor()
+        nr = AB.einfuegen(self.document(), c, typ, self.page)
+        self.setTextCursor(c)
+        self.document().setModified(True)
+        self._recount()
+        return nr
+
+    def abschnitt_entfernen(self) -> bool:
+        from lunivo_writer.editor import abschnitte as AB
+        ok = AB.entfernen(self.document(), self.abschnitt_nr())
+        if ok:
+            self.document().setModified(True)
+            self._recount()
+            self.viewport().update()
+        return ok
+
+    def abschnitt_gehe(self, nr: int) -> bool:
+        from lunivo_writer.editor import abschnitte as AB
+        n = AB.anzahl(self.document())
+        if not 0 <= nr < n:
+            return False
+        c = self.textCursor()
+        c.setPosition(AB.beginn(self.document(), nr))
+        self.setTextCursor(c)
+        self.ensureCursorVisible()
+        return True
 
     # ---- Seitenzählung -----------------------------------------------------
     def _recount(self) -> None:
@@ -671,6 +717,10 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         self._paged = paginated_copy(self.document(), self.page, self.noten, silben=False, einspaltig=True, versteckt=self.versteckt_zeigen)   # wie die Bearbeitungsansicht umbricht: ohne Trennstriche
         self._pages = max(1, self._paged.pageCount())
         self._breaks = self._seitenwechsel(self._paged)
+        from lunivo_writer.editor import abschnitte as AB
+        if AB.anzahl(self.document()) > 1:               # die Streifenansicht kennt nur die Geometrie des ersten Abschnitts
+            from lunivo_writer.editor.pagination import seitenzahl
+            self._pages = max(1, seitenzahl(self.document(), self.page, self.noten))
         self.viewport().update()
         self._cursor_moved()
 
@@ -1314,6 +1364,23 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
                 for pos in ankern:
                     r = self.cursorRect(self._cursor_at(pos))
                     p.drawText(max(0, r.x() - int(18 * z)), r.y() + r.height() // 2, "⚓")
+        # Abschnittsumbrüche: gestrichelte Linie mit Beschriftung unter dem letzten Absatz des Abschnitts
+        if not sp:
+            from lunivo_writer.editor import abschnitte as AB
+            for nr, typ, _ps in AB.umbrueche(self.document()):
+                blk = self.document().findBlockByNumber(nr)
+                c = QTextCursor(blk); c.movePosition(QTextCursor.EndOfBlock)
+                r = self.cursorRect(c)
+                if r.bottom() < -20 or r.top() > vp.height():
+                    continue
+                y = r.bottom() + int(3 * z)
+                x0, x1 = int(mm_to_px(pg.margin_left_mm) * z), vp.width() - int(mm_to_px(pg.margin_right_mm) * z)
+                p.setPen(QPen(QColor("#4c6ef5"), 1, Qt.DashLine))
+                p.drawLine(x0, y, x1, y)
+                f = QFont(p.font()); f.setPointSizeF(max(6.5, 8 * z)); p.setFont(f)
+                txt = f"Abschnittsumbruch ({AB.TYPEN.get(typ, typ)})"
+                p.setPen(QColor("#4c6ef5"))
+                p.drawText(x0 + int(8 * z), y - int(2 * z), txt)
         # Geänderte Zeilen
         seite = self.opt_text("aenderungen/balken", "links")
         if seite in ("links", "rechts", "außen"):

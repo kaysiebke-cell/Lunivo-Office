@@ -122,6 +122,8 @@ class _Reader:
         self.fresh = True                 # aktueller Block ist leer und noch frei
         self.last_list = None             # (key, QTextList)
         self.pending_break = False
+        self._ab_zaehler = 0
+        self._erste_seite = None
         self.deferred_break = False       # Seitenumbruch im Absatz, danach folgt noch nichts
         self.img_n = 0
         self.zus = leere_meta()
@@ -443,6 +445,13 @@ class _Reader:
             b.setHeadingLevel(lvl)
         if st is not None and st.name in ("Title", "Subtitle", "Quote", "No Spacing"):
             b.setProperty(STYLE_PROP, st.name)
+        if para._p.xpath("w:pPr/w:sectPr"):                       # letzter Absatz eines Abschnitts: der folgende Abschnitt wird hier beschrieben
+            from lunivo_writer.editor import abschnitte as AB
+            k, secs = self._ab_zaehler, self.d.sections
+            self._ab_zaehler += 1
+            if k + 1 < len(secs):
+                nxt = secs[k + 1]
+                b.setProperty(AB.B_ABSCHNITT, AB.eintrag(self._abschnitt_beginn(nxt), self._section_page(nxt, basis=self._erste_seite)))
         return b
 
     # ---- Listen ------------------------------------------------------
@@ -883,11 +892,11 @@ class _Reader:
 
     # ---- Seite -------------------------------------------------------
     def read_page(self) -> PageSettings:
+        """Einrichtung des ERSTEN Abschnitts; weitere Abschnitte stehen als Umbrüche im Text (siehe editor/abschnitte.py)."""
+        return self._section_page(self.d.sections[0], erster=True)
+
+    def _section_page(self, s, erster: bool = False, basis: PageSettings | None = None) -> PageSettings:
         ps = PageSettings()
-        secs = self.d.sections
-        if len(secs) > 1:
-            self.report.warn("Das Dokument hat mehrere Abschnitte; es gilt die Seiteneinrichtung des ersten.")
-        s = secs[0]
         try:
             ps.width_mm = s.page_width.mm
             ps.height_mm = s.page_height.mm
@@ -898,6 +907,10 @@ class _Reader:
         except Exception:
             self.report.warn("Seitengröße oder Ränder fehlen; es gilt A4 mit 2,5 cm Rand.")
         self._seitenschmuck(ps, s)
+        if basis is not None:                                    # Hintergrund, Silbentrennung und Wasserzeichen gelten für das ganze Dokument
+            ps.color, ps.silbentrennung, ps.watermark = basis.color, basis.silbentrennung, basis.watermark
+        ps.kopf_verknuepft = (not erster) and s.header.is_linked_to_previous
+        ps.fuss_verknuepft = (not erster) and s.footer.is_linked_to_previous
         ps.header = self._hf(s.header)
         ps.footer = self._hf(s.footer)
         if s.different_first_page_header_footer:
@@ -905,6 +918,11 @@ class _Reader:
             ps.first_header = self._hf(s.first_page_header)
             ps.first_footer = self._hf(s.first_page_footer)
         return ps
+
+    def _abschnitt_beginn(self, s) -> str:
+        from lunivo_writer.editor.abschnitte import VOM_DOCX
+        t = s._sectPr.find(qn("w:type"))
+        return VOM_DOCX.get(t.get(qn("w:val")) if t is not None else "nextPage", "naechste")
 
     def _seitenschmuck(self, ps: PageSettings, sect) -> None:
         bg = self.d.element.find(qn("w:background"))
@@ -982,13 +1000,14 @@ class _Reader:
                         yield from kinder(inhalt)
                 else:
                     yield c
+        self._erste_seite = self.read_page()
         for child in kinder(body):
             if child.tag == qn("w:p"):
                 self.fresh = self.add_paragraph(Paragraph(child, self.d._body), self.cur, reuse=self.fresh)
             elif child.tag == qn("w:tbl"):
                 self.add_table(Table(child, self.d._body))
         # leeren Schlussblock nach Tabelle behalten (Qt braucht ihn)
-        page = self.read_page()
+        page = self._erste_seite
         df = QFont(self.def_font or "Calibri")
         df.setPointSizeF(self.def_size or 11.0)
         self.doc.setDefaultFont(df)

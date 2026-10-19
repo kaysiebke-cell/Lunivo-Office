@@ -23,10 +23,13 @@ Hilfe, Optionen, Beenden. Es klappt als Tafel mit zwei Spalten auf —
 links die Befehle, rechts die zuletzt benutzten Dateien. Ein Punkt mit
 Pfeil legt kein Fenster darüber, er füllt die rechte Spalte.
 
-**Der Reiter Abschnitt** ist wie bei WPS aufgebaut. Die Qt-Fassung kennt aber nur **einen** Abschnitt je Dokument:
-Deckblätter, Ränder, Orientierung, Größe, Seitenzahl, *Erste Seite anders* und Kopf-/Fußzeile gelten für das ganze Dokument und
-funktionieren. Was mehrere Abschnitte braucht — hinzufügen, löschen, wechseln, Kopf-/Fußzeile mit dem Vorgänger verknüpfen,
-*gerade und ungerade Seiten unterschiedlich* — steht ausgegraut da (Hinweis im Tooltip).
+**Der Reiter Abschnitt** ist wie bei WPS aufgebaut und kennt jetzt **mehrere Abschnitte**: hinzufügen (nächste Seite, fortlaufend,
+gerade, ungerade), löschen, vorheriger/nächster, Navigation (Strg+G ▸ Abschnitt) und *Abschnitt einrichten …*. Orientierung, Größe, Ränder,
+Spalten und Kopf-/Fußzeile gelten für den Abschnitt, in dem die Schreibmarke steht; die Kopf-/Fußzeile lässt sich mit dem Vorgänger
+verknüpfen. Seitenansicht, Druck, PDF und DOCX setzen jeden Abschnitt in seinen eigenen Maßen. *Gerade und ungerade Seiten
+unterschiedlich* steht weiter ausgegraut da (Hinweis im Tooltip). **Grenzen:** Die Bearbeitungsansicht zeigt alle Abschnitte in der
+Seitengeometrie des ersten (ein Qt-Dokument hat nur eine Seitengröße), ein fortlaufender Umbruch mit anderer Spaltenzahl beginnt in
+der Ausgabe auf einer neuen Seite, und Fuß-/Endnoten werden je Abschnitt neu nummeriert.
 
 Gleich daneben der **Schnellzugriff**: Öffnen, Speichern, Als PDF,
 Drucken, Druckvorschau, Rückgängig, Wiederholen. Dasselbe ☰ steht auch

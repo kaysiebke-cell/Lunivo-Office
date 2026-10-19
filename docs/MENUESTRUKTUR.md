@@ -1,6 +1,6 @@
 # Menüstruktur ↔ Programm
 
-**✅ 66 · ◐ 26 · ⬜ 18** (zusammengefasste Zeilen).
+**✅ 71 · ◐ 25 · ⬜ 14** (zusammengefasste Zeilen).
 Erzeugt von `werkzeug/menuestruktur-abgleich.py`. Die vorgegebene Struktur (12 Bereiche) Punkt für Punkt gegen das Programm: ✅ vorhanden · ◐ teilweise oder anders gelöst · ⬜ fehlt. Reiter-Reihenfolge und -Anordnung folgen den WPS-Bildschirmfotos; wo die Struktur davon abweicht (eigener KI-Reiter, Rechtschreibung unter Überprüfen), gilt die Anordnung nach WPS: Rechtschreibung und KI stehen im Reiter Schreibhilfe.
 
 ## 1. Datei
@@ -38,14 +38,14 @@ Erzeugt von `werkzeug/menuestruktur-abgleich.py`. Die vorgegebene Struktur (12 B
 | ⬜ | Formatvorlagen: Listenformatvorlagen | — |
 | ◐ | Formatvorlagen: erstellen / ändern · Aufgabenbereich | vorhandene verwalten und ändern (Dialog); Anlegen/Löschen offen (Batch 7); kein Seitenbereich |
 | ✅ | Bearbeiten: Suchen · Ersetzen · Weitersuchen · Alles/Objekte auswählen | Start ▸ Suchen oder ersetzen, Auswählen |
-| ◐ | Bearbeiten: Gehe zu (Seite/Abschnitt/Zeile/Objekt) | Strg+G: Seite, Zeile, Überschrift, Textmarke, Beschriftung, Kommentar, Fuß-/Endnote, Tabelle, Bild; Abschnitt = nur 1 (mehrere Abschnitte fehlen); Gleichungen/Felder fehlen |
+| ◐ | Bearbeiten: Gehe zu (Seite/Abschnitt/Zeile/Objekt) | Strg+G: Seite, Zeile, Überschrift, Textmarke, Beschriftung, Kommentar, Fuß-/Endnote, Tabelle, Bild; Abschnitt: alle Abschnitte; Gleichungen/Felder fehlen |
 
 ## 3. Einfügen
 
 | | Punkt | Beleg / Grenze |
 |---|---|---|
 | ✅ | Seiten: Deckblatt · Leere Seite · Seitenumbruch | Einfügen ▸ Seiten |
-| ◐ | Seiten: Abschnittsumbruch | wirkt nur als „Nächste Seite“ (ein Abschnitt je Dokument) |
+| ✅ | Seiten: Abschnittsumbruch | nächste Seite, fortlaufend, gerade, ungerade; DOCX w:sectPr |
 | ✅ | Tabellen: Raster · Schnelltabelle | Einfügen ▸ Tabellen |
 | ⬜ | Tabellen: einzeichnen · aus Text · Excel-Objekt | Excel-/Tabellenblatt-Objekte sind per Projektvorgabe ausgeschlossen |
 | ✅ | Illustrationen: Bild aus Datei · Formen · Diagramm · Screenshot | Einfügen ▸ Illustrationen (+ Piktogramm) |
@@ -80,16 +80,16 @@ Erzeugt von `werkzeug/menuestruktur-abgleich.py`. Die vorgegebene Struktur (12 B
 
 | | Punkt | Beleg / Grenze |
 |---|---|---|
-| ◐ | Abschnitt erstellen: Abschnittsumbruch · Nächste Seite | als Seitenumbruch |
-| ⬜ | Abschnitt erstellen: Fortlaufend · Gerade Seite · Ungerade Seite | Menü da, Hinweis in der Statusleiste |
-| ⬜ | Abschnitt verwalten: Vorheriger · Nächster · markieren · umbenennen · löschen | Knöpfe ausgegraut |
-| ◐ | Abschnittslayout: Ränder · Hoch/Quer · Papierformat · Spalten | funktionieren, gelten aber für das ganze Dokument |
+| ✅ | Abschnitt erstellen: Abschnittsumbruch · Nächste Seite | Abschnitt ▸ Abschnitt hinzufügen |
+| ◐ | Abschnitt erstellen: Fortlaufend · Gerade Seite · Ungerade Seite | alle vier Arten; fortlaufend mit anderer Geometrie beginnt in der Ausgabe auf neuer Seite |
+| ◐ | Abschnitt verwalten: Vorheriger · Nächster · markieren · umbenennen · löschen | Vorheriger, Nächster, Löschen, Navigation (Strg+G); Markieren und Umbenennen fehlen |
+| ✅ | Abschnittslayout: Ränder · Hoch/Quer · Papierformat · Spalten | gelten für den Abschnitt der Schreibmarke |
 | ⬜ | Abschnittslayout: Vertikale Seitenausrichtung | — |
 | ✅ | Kopf-/Fußzeilen: Erste Seite anders | Abschnitt ▸ Kopf- und Fußzeile |
-| ⬜ | Kopf-/Fußzeilen: Mit vorherigem verknüpfen · Gerade/ungerade · je Abschnitt | ausgegraut; braucht echte Abschnitte |
+| ◐ | Kopf-/Fußzeilen: Mit vorherigem verknüpfen · Gerade/ungerade · je Abschnitt | verknüpfen und je Abschnitt: ja; gerade/ungerade unterschiedlich: nein |
 | ⬜ | Seitennummerierung: beginnen/fortsetzen · Format · Anfangsseitenzahl | — |
-| ⬜ | Abschnittsumbrüche anzeigen | — |
-| ◐ | Abschnittseinstellungen | Menü Einstellungen ▸ Optionen |
+| ✅ | Abschnittsumbrüche anzeigen | gestrichelte Linie mit Beschriftung im Text |
+| ✅ | Abschnittseinstellungen | Abschnitt ▸ Abschnitt einrichten … (Seite, Beginn) |
 
 ## 6. Verweise
 

@@ -57,6 +57,8 @@ class PageSettings:
     spalten_linie: bool = False              # Trennlinie zwischen den Spalten
     silbentrennung: bool = False             # automatische Silbentrennung (Seitenansicht, Druck, PDF; DOCX: autoHyphenation)
     silben_sprache: str = "de_DE"
+    kopf_verknuepft: bool = False            # Abschnitt ab dem zweiten: Kopfzeile wie im vorigen Abschnitt
+    fuss_verknuepft: bool = False
 
     @property
     def landscape(self) -> bool:

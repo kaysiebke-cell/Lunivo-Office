@@ -494,7 +494,7 @@ class Befehle:
         t = self.w.current_tab()
         if not t:
             return ""
-        p = t.page
+        p = t.editor.abschnitt_seite()
         ist = tuple(round(x) for x in (p.margin_top_mm, p.margin_bottom_mm, p.margin_left_mm, p.margin_right_mm))
         for art, v in self.RAND.items():
             if ist == v:
@@ -510,7 +510,7 @@ class Befehle:
 
     def w_spaltenJetzt(self):
         t = self.w.current_tab()
-        return t.page.spalten if t else 1
+        return t.editor.abschnitt_seite().spalten if t else 1
 
     def spalten(self, k=None):
         self.w.page_setup()
@@ -530,7 +530,7 @@ class Befehle:
         t = self.w.current_tab()
         if not t:
             return ""
-        a, b = sorted((round(t.page.width_mm), round(t.page.height_mm)))
+        a, b = sorted((round(t.editor.abschnitt_seite().width_mm), round(t.editor.abschnitt_seite().height_mm)))
         for art, (x, y) in self.PAPIER.items():
             if (a, b) == tuple(sorted((x, y))):
                 return art
@@ -538,12 +538,12 @@ class Befehle:
 
     def w_querJetzt(self):
         t = self.w.current_tab()
-        return bool(t) and t.page.landscape
+        return bool(t) and t.editor.abschnitt_seite().landscape
 
     def querformat(self, k=None):
         t = self.w.current_tab()
         if t:
-            self.w.set_orientation(not t.page.landscape)
+            self.w.set_orientation(not t.editor.abschnitt_seite().landscape)
 
     def w_setzeThema(self, k, wahl):
         self.w.set_theme(wahl)
@@ -690,7 +690,7 @@ class Befehle:
         e = self.ed
         if not e:
             return
-        pg = e.page.copy()
+        pg = e.abschnitt_seite()
         for k, v in felder.items():
             setattr(pg, k, v)
         e.page_settings_changed(pg)
@@ -1017,13 +1017,81 @@ class Befehle:
         if ok:
             e.set_alignment(namen[n])
 
+    # ---- Abschnitte ------------------------------------------------------------------------------------------------------
+    ABSCHNITT_ART = {"NextPage": "naechste", "Continuous": "fortlaufend", "EvenPage": "gerade", "OddPage": "ungerade"}
+
     def abschnittsumbruch(self, k=None, art="NextPage"):
         if not self.ed:
             return
-        if art == "NextPage":
-            self.ed.insert_page_break()
+        nr = self.ed.abschnitt_einfuegen(self.ABSCHNITT_ART.get(art, "naechste"))
+        self.w.statusBar().showMessage(f"Abschnitt {nr + 1} beginnt hier — er übernimmt die Einrichtung des vorigen (Abschnitt ▸ Orientierung, Größe, Ränder gelten ab jetzt für den Abschnitt, in dem die Schreibmarke steht).", 7000)
+
+    def abschnittLoeschen(self, k=None):
+        if self.ed:
+            ok = self.ed.abschnitt_entfernen()
+            self.w.statusBar().showMessage("Abschnittsumbruch entfernt — die beiden Abschnitte sind einer (mit der Einrichtung des früheren)."
+                                           if ok else "Das Dokument hat nur einen Abschnitt.", 6000)
+
+    def abschnittVorher(self, k=None):
+        if self.ed:
+            self.ed.abschnitt_gehe(self.ed.abschnitt_nr() - 1)
+
+    def abschnittNaechster(self, k=None):
+        if self.ed:
+            self.ed.abschnitt_gehe(self.ed.abschnitt_nr() + 1)
+
+    def abschnittNavigation(self, k=None):
+        self.geheZu(k, "Abschnitt")
+
+    def abschnittEinstellungen(self, k=None):
+        t = self.w.current_tab()
+        if not t:
+            return
+        from lunivo_writer.editor import abschnitte as AB
+        from lunivo_writer.ui.dialogs.dokument_dialoge import PageSetupDialog
+        e = t.editor
+        nr = e.abschnitt_nr()
+        d = PageSetupDialog(e.abschnitt_seite(), self.w)
+        d.setWindowTitle(f"Abschnitt {nr + 1} einrichten")
+        if d.exec():
+            e.page_settings_changed(d.result_page())
+        if nr > 0:
+            namen = list(AB.TYPEN.values())
+            ab = AB.umbrueche(e.document())[nr - 1]
+            gewaehlt, ok = QInputDialog.getItem(self.w, f"Abschnitt {nr + 1}", "Der Abschnitt beginnt:", namen,
+                                                list(AB.TYPEN).index(ab[1]), False)
+            if ok:
+                typ = list(AB.TYPEN)[namen.index(gewaehlt)]
+                AB.setzen(e.document(), nr, AB.einrichtung(e.document(), e.page, nr), typ)
+                e.document().setModified(True)
+                e._recount()
+
+    def _kopf_link(self, was: str, an: bool | None = None):
+        t = self.w.current_tab()
+        if not t or t.editor.abschnitt_nr() == 0:
+            return None
+        pg = t.editor.abschnitt_seite()
+        feld = "kopf_verknuepft" if was == "kopf" else "fuss_verknuepft"
+        if an is None:
+            return getattr(pg, feld)
+        setattr(pg, feld, an)
+        t.editor.page_settings_changed(pg)
+        return an
+
+    def kopfVerknuepfen(self, k=None):
+        if self._kopf_link("kopf") is None:
+            self.w.statusBar().showMessage("Der erste Abschnitt hat keinen Vorgänger.", 4000)
         else:
-            self.w.statusBar().showMessage("Abschnitte kennt die native Fassung nicht — nur „Nächste Seite“ (Seitenumbruch) ist möglich.", 6000)
+            self._kopf_link("kopf", not self._kopf_link("kopf"))
+
+    def fussVerknuepfen(self, k=None):
+        if self._kopf_link("fuss") is None:
+            self.w.statusBar().showMessage("Der erste Abschnitt hat keinen Vorgänger.", 4000)
+        else:
+            self._kopf_link("fuss", not self._kopf_link("fuss"))
+
+    def an_kopfVerknuepfen(self): return bool(self._kopf_link("kopf"))
+    def an_fussVerknuepfen(self): return bool(self._kopf_link("fuss"))
 
     def schriftartMehr(self, k=None):
         if not self.ed:
@@ -1050,7 +1118,7 @@ class Befehle:
         t = self.w.current_tab()
         if not t:
             return
-        pg = t.page.copy()
+        pg = t.editor.abschnitt_seite()
         pg.diff_first = not pg.diff_first
         if pg.diff_first and pg.first_header.is_empty() and pg.first_footer.is_empty():
             pg.first_header = HeaderFooter(); pg.first_footer = HeaderFooter()
@@ -1058,7 +1126,7 @@ class Befehle:
 
     def an_ersteSeiteAnders(self):
         t = self.w.current_tab()
-        return bool(t and t.page.diff_first)
+        return bool(t and t.editor.abschnitt_seite().diff_first)
 
     def tabelleEigenschaften(self, k=None):
         t = self.ed.textCursor().currentTable() if self.ed else None
@@ -1155,16 +1223,14 @@ class Befehle:
         if not t:
             return
         import os
-        from lunivo_writer.editor.pagination import paginated_copy, seite_als_bild
+        from lunivo_writer.editor.pagination import seiten_bilder
         pfad, _ = QFileDialog.getSaveFileName(self.w, "Als Bild exportieren", os.path.splitext(t.title)[0] + ".png", "PNG-Bild (*.png)")
         if not pfad:
             return
         basis, _e = os.path.splitext(pfad)
-        d = paginated_copy(t.editor.document(), t.page, t.editor.noten)
-        from lunivo_writer.editor.pagination import ausgabe_seiten
-        n = ausgabe_seiten(d.pageCount(), t.page)
-        for i in range(1, n + 1):
-            img = seite_als_bild(t.editor.document(), t.page, i, 1.5, d)
+        bilder = list(seiten_bilder(t.editor.document(), t.page, t.editor.noten, 1.5))
+        n = len(bilder)
+        for i, img, _ps in bilder:
             img.save(basis + (f"-{i}" if n > 1 else "") + ".png", "PNG")
         self.w.statusBar().showMessage(f"{n} Seite{'n' if n != 1 else ''} als PNG gespeichert: {basis}…", 6000)
 

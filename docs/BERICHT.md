@@ -72,8 +72,13 @@ LibreOffice-erzeugte DOCX-Datei. **Nicht** durch Tests belegt: Bildschirmfoto am
 Druckoptionen am Drucker, Zwischenstände, Sichern/Zurückholen, Gitternetz, Dunkelmodus (nur per Screenshot gesehen).
 
 ## 6. Offen und bekannte Einschränkungen
+* **Abschnitte (neu):** mehrere Abschnitte mit eigener Seitengröße, Orientierung, Rändern, Spalten und Kopf-/Fußzeilen; DOCX-Rundreise
+  (`w:sectPr` im letzten Absatz jedes Abschnitts) und Ausgabe als PDF mit LibreOffice gegengeprüft. **Grenzen:** Bearbeitungsansicht in der
+  Geometrie des ersten Abschnitts; fortlaufender Umbruch mit anderer Geometrie → in der Ausgabe neue Seite; Noten je Abschnitt neu
+  nummeriert; PDF-Kommentar- und Linkpositionen nutzen die Ränder des ersten Abschnitts; Drucken mit wechselndem Papier nur über die PDF-Ausgabe
+  geprüft, nicht an einem echten Drucker.
 * **Nicht getestet:** echter Mint-Desktop (X11/Wayland, HiDPI), echter Drucker, Claude/Ollama/LanguageTool/Piper/WPS in Wirklichkeit.
-* **Qt-bedingt nicht möglich (im Prüfbogen ⬜):** Spalten und Spaltenumbruch, Abschnitte (nur „Nächste Seite“), automatische
+* **Qt-bedingt nicht möglich (im Prüfbogen ⬜):** Spalten und Spaltenumbruch, automatische
   Silbentrennung, frei schwebende Objekte/Textumbruch/Gruppieren, Formularsteuerelemente, PDF-Lesezeichen, Begrenzung des
   Rückgängig-Stapels, ausgeblendeter Text, Objektanker. Formen, WordArt, Diagramm, Piktogramm, Formel (als Bild bzw. Text) sind nach dem
   Einfügen nicht als Objekt bearbeitbar; das Wasserzeichen wird in DOCX **nicht** gespeichert (Warnung beim Speichern).
