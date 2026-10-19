@@ -1,4 +1,4 @@
-"""Wortvorhersage und Themenwörter (aus pruefung.js: faengtAnMit, themaSetzen; daten/themenwoerter.js)."""
+"""Wortvorhersage und Themenwörter (aus pruefung.js: faengtAnMit, themaSetzen; daten/themenwoerter.txt)."""
 from __future__ import annotations
 
 import bisect
@@ -19,13 +19,13 @@ def _ohne_js_kommentare(text: str) -> str:
 
 
 def themenwoerter() -> dict[str, frozenset]:
-    """Liest daten/themenwoerter.js: je Empfänger eine Kette aus Zeichenketten."""
+    """Liest daten/themenwoerter.txt: je Empfänger eine Kette aus Zeichenketten."""
     global _THEMEN
     if _THEMEN is not None:
         return _THEMEN
     _THEMEN = {}
     for ordner in daten_ordner():
-        pfad = os.path.join(ordner, "themenwoerter.js")
+        pfad = os.path.join(ordner, "themenwoerter.txt")
         if not os.path.exists(pfad):
             continue
         text = _ohne_js_kommentare(open(pfad, encoding="utf-8").read())

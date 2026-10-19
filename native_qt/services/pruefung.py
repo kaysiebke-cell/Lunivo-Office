@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Die Prüfung ohne Internet — Wort für Wort dieselbe wie oberflaeche/js/pruefung.js.
+Die Prüfung ohne Internet — Wort für Wort dieselbe wie die alte Web-Fassung (pruefung.js im Zweig main).
 
 Übernommen aus der LibreOffice-Erweiterung des Projekts „schreibhilfe“ (MIT, Kay Siebke)
 und gegen pruefung.js geprüft (tests/test_pruefung_parität.py).
@@ -11,7 +11,7 @@ gegeneinander geprüft (siehe libreoffice/vergleiche.py); was hier anders
 herauskäme, wäre ein Fehler.
 
 Den Wortschatz trägt diese Datei nicht mehr selbst: Er steht einmal in
-online/daten/regeln.js und wird von dort gelesen — von hier wie von app.js.
+native_qt/resources/daten/regeln.txt (JavaScript-Schreibweise, gelesen von hier).
 Eine Abschrift kann auseinanderlaufen, eine Datei nicht. Was hier bleibt, sind
 die Regeln selbst; die tragen Baustücke als Code und lassen sich nicht als
 Daten hinschreiben.
@@ -27,15 +27,13 @@ _HIER = os.path.dirname(os.path.abspath(__file__))
 
 
 def daten_ordner():
-    """Wo regeln.js und woerter.txt liegen — eine Quelle, nicht zwei Abschriften.
+    """Wo regeln.txt und woerter.txt liegen — eine Quelle, nicht zwei Abschriften.
 
-    Reihenfolge: Umgebungsvariable LUNIVO_DATEN, native_qt/resources/daten,
-    dann oberflaeche/daten im Projekt (dort liegen die Dateien heute).
+    Reihenfolge: Umgebungsvariable LUNIVO_DATEN, dann native_qt/resources/daten.
     """
     wurzel = os.path.abspath(os.path.join(_HIER, '..', '..'))
     kandidaten = [os.environ.get('LUNIVO_DATEN', ''),
-                  os.path.join(wurzel, 'native_qt', 'resources', 'daten'),
-                  os.path.join(wurzel, 'oberflaeche', 'daten')]
+                  os.path.join(wurzel, 'native_qt', 'resources', 'daten')]
     return [k for k in kandidaten if k]
 
 
@@ -79,7 +77,7 @@ def _ohne_kommentare(text):
 
 
 def _lies_regeln():
-    """Holt den gemeinsamen Wortschatz aus regeln.js.
+    """Holt den gemeinsamen Wortschatz aus regeln.txt.
 
     Zwei Orte: gepackt liegt die Datei neben dieser hier (bauen.sh kopiert sie
     hinein), im Arbeitsbaum unter online/daten/. Fehlt sie an beiden, bricht das
@@ -87,7 +85,7 @@ def _lies_regeln():
     scheinbar laufen und einfach nichts mehr finden; genau so eine stille
     Notlösung hat schon einmal einen grünen, aber wertlosen Vergleich erzeugt.
     """
-    kandidaten = [os.path.join(d, 'regeln.js') for d in daten_ordner()]
+    kandidaten = [os.path.join(d, 'regeln.txt') for d in daten_ordner()]
     for k in kandidaten:
         if not os.path.exists(k):
             continue
@@ -109,7 +107,7 @@ _REGELN = _lies_regeln()
 # a) Wörter, die ein Rechtschreibprüfer NICHT finden kann
 #    — weil beide Schreibweisen für sich genommen richtig sind.
 #
-# Die Wörter stehen in online/daten/regeln.js, zusammen mit dem übrigen
+# Die Wörter stehen in native_qt/resources/daten/regeln.txt, zusammen mit dem übrigen
 # Wortschatz und der Begründung zu jedem Eintrag.
 # --------------------------------------------------------------------------
 

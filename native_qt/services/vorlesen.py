@@ -1,6 +1,6 @@
 """Vorlesen: Piper (offline, gute Stimme) wenn eingerichtet, sonst speech-dispatcher (spd-say).
 
-Übernommen aus start.py (piper_*, vorlesen_*): gleiche Suchorte, gleiche Stimmennamen. Es wird nichts
+Übernommen aus der alten Web-Fassung (Zweig main, start.py) (piper_*, vorlesen_*): gleiche Suchorte, gleiche Stimmennamen. Es wird nichts
 heruntergeladen — Piper kommt über ./stimme-holen.sh, auf ausdrücklichen Wunsch.
 """
 from __future__ import annotations

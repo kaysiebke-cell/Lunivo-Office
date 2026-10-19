@@ -1,6 +1,6 @@
 """Oberfläche „Symbolleisten“: ☰ Menü + obere Leiste (Datei/Dokument) + untere Leiste (Text) + Zusammenhangsleiste.
 
-Reihenfolge und Beschriftungen aus werkzeugeBauen() in oberflaeche/js/programm.js übernommen. Gleiche Schnittstelle
+Reihenfolge und Beschriftungen aus der alten Web-Fassung (programm.js im Zweig main) übernommen. Gleiche Schnittstelle
 wie RegisterBand (aktualisieren, kontext, felder, menue_knopf), damit das Fenster beide gleich behandeln kann.
 """
 from __future__ import annotations

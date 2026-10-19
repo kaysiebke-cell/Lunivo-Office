@@ -1,6 +1,6 @@
 """Die KI-Ebene: Korrigieren, Vorschläge, Übersetzen, Zusammenfassen, Text bearbeiten, Chat.
 
-Übertragen aus oberflaeche/js/ki.js (Anweisungen, Empfänger, Anbieter, Fehlertexte).
+Übertragen aus der alten Web-Fassung (ki.js im Zweig main) (Anweisungen, Empfänger, Anbieter, Fehlertexte).
 Freiwillig und nach außen nur auf ausdrücklichen Knopfdruck:
   · Ollama — läuft auf diesem Rechner (127.0.0.1:11434), der Text verlässt das Gerät nicht.
   · Claude — Anthropic-API, nur mit eigenem Schlüssel und nur nach Ihrer Zustimmung (siehe KIKonfig.claude_erlaubt).

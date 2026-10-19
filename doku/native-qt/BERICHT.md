@@ -6,9 +6,8 @@ das ist offen (siehe 6). Der Prüfbogen ([PRUEFBOGEN.md](PRUEFBOGEN.md)) ist der
 „✅“ heißt „Befehl/Funktion vorhanden“, einzeln durch `tests/` belegt nur dort, wo im Eintrag ein Test genannt ist.
 
 ## 1. Dateien
-`native_qt/` (≈ 15 700 Zeilen Python in 7 Paketen), `tests/` (22 Testdateien, 171 Tests), `werkzeug/` (Exportskripte für Register,
-Symbolkatalog, Vorlagen, Handbuch; Abgleich-Skripte), `starten-qt.sh`, `requirements*.txt`, `doku/native-qt/*`. Die alte
-Web-Oberfläche (`oberflaeche/`, `start.py`) ist unverändert; auf `main` wurde nichts geändert.
+`native_qt/` (≈ 15 700 Zeilen Python in 7 Paketen), `tests/` (22 Testdateien, 171 Tests), `werkzeug/` (Abgleich-Skripte für Prüfbogen und Knöpfe), `starten-qt.sh`, `requirements*.txt`, `doku/native-qt/*`. Die alte
+Web-Oberfläche wurde aus diesem Zweig entfernt (sie bleibt im Zweig `main`); `main` selbst ist unverändert.
 
 ## 2. Tatsächlich umgesetzt
 * **Dokumente:** neu, öffnen, speichern (atomar), speichern unter, Kopie, Export (DOCX, ODT, DOC, RTF, TXT, HTML mit Codierung,
@@ -139,3 +138,10 @@ Anbieters mit „Bilder“. Getestet gegen einen gefälschten OpenAI-Server; **n
 ## Symbole (Fluent-Stil)
 
 Die Symbole der Oberfläche stammen jetzt aus den **Fluent UI System Icons** (Microsoft, MIT; `native_qt/resources/fluent/`, Lizenztext in `LIZENZ.txt`) — derselben Formensprache wie die Segoe-Fluent-Symbole, die RibbonSpace benutzt (RibbonSpace selbst liefert keine Symboldateien, nur Schriftzeichen-Codes der Windows-Schrift). Zuordnung Symbolname → Fluent-Datei: `resources/fluent/zuordnung.json` (229 Symbole, je kleine 20-px- und große 28-px-Fassung). Ohne Zuordnung oder nach „Symbol austauschen“ greift weiter der Lucide-Strich. Einzelne Zuordnungen sind Annäherungen (z. B. „Sonderzeichen“) und können in der Datei geändert werden.
+
+## Aufräumen (Web-Fassung entfernt)
+
+In diesem Zweig gibt es keine Dateien der alten HTML/JavaScript-Oberfläche mehr: entfernt wurden `oberflaeche/`, `start.py`, `starten.sh`,
+`symbole/`, die Web-Werkzeugskripte, die alten Aufbau-/Abgleich-Dokumente und die Oberflächen-Screenshots. Was das native Programm
+zur Laufzeit braucht (Rechtschreibregeln, Wörterbuch, Themenwörter), liegt jetzt in `native_qt/resources/daten/`. Die Paritätstests
+gegen die alte JavaScript-Prüfung laufen nur noch mit `LUNIVO_ALT=<Checkout von main>` und `node` und sind sonst übersprungen.

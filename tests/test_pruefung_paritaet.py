@@ -1,4 +1,6 @@
-"""Die Python-Prüfung muss dieselben Funde liefern wie oberflaeche/js/pruefung.js."""
+"""Die Python-Prüfung muss dieselben Funde liefern wie oberflaeche/js/pruefung.js des Zweigs `main`.
+
+Läuft nur mit LUNIVO_ALT=<Pfad zu einem Checkout von main> und installiertem node; sonst übersprungen."""
 import importlib.util
 import json
 import os
@@ -31,8 +33,8 @@ SAETZE = [
 
 def js(fälle):
     node = shutil.which("node")
-    if not node:
-        pytest.skip("node nicht installiert")
+    if not node or not os.environ.get("LUNIVO_ALT"):
+        pytest.skip("Vergleich mit der alten JS-Prüfung: node und LUNIVO_ALT=<Checkout von main> nötig")
     r = subprocess.run([node, os.path.join(HIER, "vergleich_pruefung.js")], input="\n".join(json.dumps(f) for f in fälle),
                        capture_output=True, text=True, timeout=120)
     assert r.returncode == 0, r.stderr
@@ -106,6 +108,8 @@ def _korpus():
 
 
 def test_python_equals_javascript_grosser_korpus():
+    if not os.environ.get("LUNIVO_ALT"):
+        pytest.skip("nur mit LUNIVO_ALT=<Checkout von main> und node")
     fälle = _korpus()
     assert len(fälle) >= 400
     js_ergebnis = js(fälle)
@@ -121,8 +125,8 @@ def test_vorschlaege_und_phonetik_gleich_wie_javascript():
               "hallo", "fileich", "tele", "verträg", "geerter", "dankeschön"]
     ein = "\n".join(json.dumps({"wort": w, "gelernt": {"woerter": {"halloch": "hallo"}, "inRuhe": {}}}) for w in wörter)
     node = shutil.which("node")
-    if not node:
-        pytest.skip("node nicht installiert")
+    if not node or not os.environ.get("LUNIVO_ALT"):
+        pytest.skip("Vergleich mit der alten JS-Prüfung: node und LUNIVO_ALT=<Checkout von main> nötig")
     r = subprocess.run([node, os.path.join(HIER, "vergleich_vorschlaege.js")], input=ein, capture_output=True, text=True, timeout=300)
     assert r.returncode == 0, r.stderr
     erg = [json.loads(z) for z in r.stdout.splitlines()]

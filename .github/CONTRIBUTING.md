@@ -39,7 +39,7 @@ Rückmeldung „bei mir startet es nicht, hier ist die Fehlermeldung" ist
 brauchbar.
 
 **Verpacken.** Es gibt kein Flatpak, kein AppImage, kein `.deb`. Wer so
-etwas kann, hilft damit allen, die `./starten.sh` nicht zumutbar finden.
+etwas kann, hilft damit allen, die `./starten-qt.sh` nicht zumutbar finden.
 
 **Schriften und Lesbarkeit.** Die Bedienung lässt sich größer stellen, das
 Blatt auch. Ob das reicht, weiß ich nicht — ich sehe mit meinen Augen.

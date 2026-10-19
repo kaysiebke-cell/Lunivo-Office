@@ -1,6 +1,6 @@
 """Die mitgelieferten Gerüste (Brief, Bewerbung, Lebenslauf …) und eigene Vorlagen.
 
-Ein Gerüst ist eine Liste von Zeilen (siehe oberflaeche/daten/vorlagenmuster.js):
+Ein Gerüst ist eine Liste von Zeilen (aus resources/vorlagenmuster.json):
     «Wort»  Lücke         ''  Leerzeile        '!Text'  fett        '#Text'  Titel
     '>Text' rechtsbündig  '@absender' / '@absender2' / '@ortdatum' / '@name' / @mail  aus den Benutzerdaten
 Zeilen ohne Leerzeile dazwischen werden zu einem Absatz mit Zeilenumbrüchen.
