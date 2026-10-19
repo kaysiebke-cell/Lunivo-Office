@@ -8,7 +8,9 @@ doku/aufbau-band.md und doku/aufbau-optionen.md.
 
 LUNIVO WRITER – VOLLSTÄNDIGE MENÜSTRUKTUR
 
-├── 1. DATEI
+DIE BÄNDER
+│
+├── 1. Menü
 │   ├── Neu
 │   │   ├── Leeres Dokument
 │   │   ├── Aus Vorlage erstellen
