@@ -1,7 +1,7 @@
 """Dokumentreiter ganz oben (mit „+“) und der Stapel der Dokumente darunter."""
 from __future__ import annotations
 
-from PySide6.QtCore import QObject, Signal
+from PySide6.QtCore import QObject, Qt, Signal
 from PySide6.QtWidgets import QHBoxLayout, QStackedWidget, QTabBar, QToolButton, QWidget
 
 
@@ -10,6 +10,7 @@ class DocTabs(QObject):
     currentChanged = Signal(int)
     tabCloseRequested = Signal(int)
     newRequested = Signal()
+    kontextGewuenscht = Signal(int, object)      # (Reiter, globale Position)
 
     def __init__(self):
         super().__init__()
@@ -38,6 +39,9 @@ class DocTabs(QObject):
         self.bar.currentChanged.connect(self._bar_changed)
         self.bar.tabCloseRequested.connect(self.tabCloseRequested)
         self.bar.tabMoved.connect(self._moved)
+        self.bar.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.bar.customContextMenuRequested.connect(
+            lambda p: self.kontextGewuenscht.emit(self.bar.tabAt(p), self.bar.mapToGlobal(p)))
 
     def _moved(self, von, nach):
         self._w.insert(nach, self._w.pop(von))

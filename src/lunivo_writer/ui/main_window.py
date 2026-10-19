@@ -4,8 +4,8 @@ from __future__ import annotations
 import os
 from datetime import datetime
 
-from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QAction, QActionGroup, QColor, QFont, QKeySequence, QTextFormat
+from PySide6.QtCore import Qt, QTimer, QUrl
+from PySide6.QtGui import QAction, QActionGroup, QColor, QDesktopServices, QFont, QKeySequence, QTextFormat
 from PySide6.QtPrintSupport import QPrintDialog, QPrintPreviewDialog, QPrinter
 from PySide6.QtWidgets import (
     QApplication, QColorDialog, QFileDialog, QInputDialog, QLineEdit, QMainWindow, QMenu, QMessageBox, QWidget,
@@ -53,6 +53,7 @@ class MainWindow(QMainWindow):
         self.docs.tabCloseRequested.connect(self.close_tab)
         self.docs.currentChanged.connect(self._tab_changed)
         self.docs.newRequested.connect(self.new_document)
+        self.docs.kontextGewuenscht.connect(self.reiter_menue)
         self.tabs = self.docs                      # gleiche Schnittstelle wie ein QTabWidget
         self.start = StartPage()
         self.start.newRequested.connect(self.new_document)
@@ -168,6 +169,7 @@ class MainWindow(QMainWindow):
         self.a_select_all = A("Alles auswählen", lambda: self._ed(lambda e: e.selectAll()), "Ctrl+A")
         self.a_find = A("Suchen …", self.find_dialog_show, "Ctrl+F")
         self.a_replace = A("Ersetzen …", self.find_dialog_show, "Ctrl+H")
+        self.a_tabs = A("Tabstopps …", self.tabstopp_dialog)
         self.a_goto = A("Gehe zu …", self.befehle.geheZu, "Ctrl+G")
 
         self.a_bold = A("F", self.befehle.fett, "Ctrl+B")
@@ -634,6 +636,29 @@ class MainWindow(QMainWindow):
             from lunivo_writer.editor.verzeichnis import verzeichnis_aktualisieren
             verzeichnis_aktualisieren(tab.editor)
 
+    def reiter_menue(self, index: int, pos) -> None:
+        """Kontextmenü am Dokumentreiter."""
+        w = self.tabs.widget(index) if index >= 0 else None
+        if not isinstance(w, DocumentTab):
+            return
+        m = QMenu(self)
+        m.addAction("Schließen", lambda: self.close_tab(index))
+        m.addAction("Andere schließen", lambda: self._reiter_schliessen(w, nur_andere=True))
+        m.addAction("Alle schließen", lambda: self._reiter_schliessen(w, nur_andere=False))
+        m.addSeparator()
+        m.addAction("Speichern", lambda: (self.tabs.setCurrentIndex(index), self._save_tab(w)))
+        pfad = m.addAction("Pfad kopieren", lambda: QApplication.clipboard().setText(w.path))
+        ordner = m.addAction("Ordner öffnen", lambda: QDesktopServices.openUrl(QUrl.fromLocalFile(os.path.dirname(w.path))))
+        pfad.setEnabled(bool(w.path)); ordner.setEnabled(bool(w.path))
+        m.exec(pos)
+
+    def _reiter_schliessen(self, behalten, nur_andere: bool) -> None:
+        for i in range(self.tabs.count() - 1, -1, -1):
+            t = self.tabs.widget(i)
+            if isinstance(t, DocumentTab) and not (nur_andere and t is behalten):
+                if not self.close_tab(i):
+                    return
+
     def close_tab(self, index: int) -> bool:
         w = self.tabs.widget(index)
         if not isinstance(w, DocumentTab):
@@ -842,6 +867,15 @@ class MainWindow(QMainWindow):
             e.set_indents(d.left.value(), d.right.value(), d.first.value())
             e.set_paragraph_spacing(d.before.value(), d.after.value())
             e.set_line_spacing(d.line.value())
+
+    def tabstopp_dialog(self):
+        e = self.current_editor()
+        if not e:
+            return
+        from lunivo_writer.ui.dialogs.tabstopp_dialog import TabstoppDialog
+        d = TabstoppDialog(self, e.textCursor().blockFormat().tabPositions())
+        if d.exec():
+            e.set_tabstopps(d.ergebnis())
 
     def _lesehilfe_auf(self, e):
         from lunivo_writer.ui.dialogs.lesehilfe_dialog import PAPIERTOENE

@@ -880,6 +880,9 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
             bf.setTextIndent(mm_to_px(first_mm))
         self._block_merge(f)
 
+    def set_tabstopps(self, stopps) -> None:
+        self._block_merge(lambda bf: bf.setTabPositions(list(stopps)))
+
     def set_line_spacing(self, factor: float) -> None:
         self._block_merge(lambda bf: bf.setLineHeight(factor * 100, LH_PROPORTIONAL))
 

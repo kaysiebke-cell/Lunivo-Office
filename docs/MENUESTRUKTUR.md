@@ -1,6 +1,6 @@
 # Menüstruktur ↔ Programm
 
-**✅ 62 · ◐ 24 · ⬜ 24** (zusammengefasste Zeilen).
+**✅ 66 · ◐ 23 · ⬜ 21** (zusammengefasste Zeilen).
 Erzeugt von `werkzeug/menuestruktur-abgleich.py`. Die vorgegebene Struktur (12 Bereiche) Punkt für Punkt gegen das Programm: ✅ vorhanden · ◐ teilweise oder anders gelöst · ⬜ fehlt. Reiter-Reihenfolge und -Anordnung folgen den WPS-Bildschirmfotos; wo die Struktur davon abweicht (eigener KI-Reiter, Rechtschreibung unter Überprüfen), gilt die Anordnung nach WPS: Rechtschreibung und KI stehen im Reiter Schreibhilfe.
 
 ## 1. Datei
@@ -33,12 +33,12 @@ Erzeugt von `werkzeug/menuestruktur-abgleich.py`. Die vorgegebene Struktur (12 B
 | ✅ | Absatz: Aufzählung · Nummerierung · Einzug · Ausrichtung (4 + verteilt) · Zeilenabstand | Start ▸ Absatz |
 | ✅ | Absatz: Absatzabstand · Schattierung · Rahmenlinien · Formatierungszeichen | Start ▸ Absatz / Seitenlayout ▸ Absatz |
 | ◐ | Absatz: Mehrstufige Liste | Listenebene erhöhen/verringern; kein Listenkatalog |
-| ⬜ | Absatz: Tabstopps | kein Tabstopp-Dialog; nur der rechte Tabstopp in Verzeichnissen |
-| ◐ | Formatvorlagen: Standard · Überschrift · Titel · Untertitel · Zitat | Standard, Überschrift 1–3, Titel, Untertitel, Zitat, Kein Abstand — nicht Überschrift 4–9 |
+| ✅ | Absatz: Tabstopps | Dialog (links/zentriert/rechts/dezimal, mm); wird als DOCX-Tabstopp gespeichert — keine Füllzeichen (Punkte/Linie) |
+| ✅ | Formatvorlagen: Standard · Überschrift · Titel · Untertitel · Zitat | Standard, Überschrift 1–9, Titel, Untertitel, Zitat, Kein Abstand |
 | ⬜ | Formatvorlagen: Listenformatvorlagen | — |
 | ◐ | Formatvorlagen: erstellen / ändern · Aufgabenbereich | vorhandene verwalten und ändern (Dialog); Anlegen/Löschen offen (Batch 7); kein Seitenbereich |
 | ✅ | Bearbeiten: Suchen · Ersetzen · Weitersuchen · Alles/Objekte auswählen | Start ▸ Suchen oder ersetzen, Auswählen |
-| ⬜ | Bearbeiten: Gehe zu (Seite/Abschnitt/Zeile/Objekt) | nur im Quellen-Dialog; Navigationsbereich springt zu Überschriften |
+| ◐ | Bearbeiten: Gehe zu (Seite/Abschnitt/Zeile/Objekt) | Strg+G: Seite, Zeile, Überschrift, Textmarke, Beschriftung, Kommentar, Fuß-/Endnote, Tabelle, Bild; Abschnitt = nur 1 (mehrere Abschnitte fehlen); Gleichungen/Felder fehlen |
 
 ## 3. Einfügen
 
@@ -70,7 +70,7 @@ Erzeugt von `werkzeug/menuestruktur-abgleich.py`. Die vorgegebene Struktur (12 B
 | ✅ | Seite einrichten: Dialog | Pfeil ↘ der Gruppe |
 | ✅ | Seitenhintergrund: Wasserzeichen · Seitenfarbe · Seitenrand | Seitenlayout ▸ Seitenhintergrund |
 | ✅ | Absatz: Einzug links/rechts · Abstand vor/nach | Seitenlayout ▸ Absatz |
-| ◐ | Absatz: Tabstopps / Absatzdialog | Absatzdialog ja, Tabstopps nein |
+| ✅ | Absatz: Tabstopps / Absatzdialog | Absatzdialog und Tabstopp-Dialog |
 | ✅ | Anordnen: Textumbruch (links/rechts/oben-unten/Zeile) · Ausrichten · Drehen | Seitenlayout ▸ Anordnen |
 | ◐ | Anordnen: Auswahlbereich | „Objekte auswählen“; kein Bereich mit Liste |
 | ⬜ | Anordnen: Nach vorne / Nach hinten · Gruppieren · Position sperren | Gruppieren: Knopf ausgegraut |
@@ -156,7 +156,7 @@ Erzeugt von `werkzeug/menuestruktur-abgleich.py`. Die vorgegebene Struktur (12 B
 |---|---|---|
 | ✅ | Schnellzugriff: Speichern · Rückgängig/Wiederholen · anpassen | Leiste links der Reiter; Optionen ▸ Symbolleiste für den Schnellzugriff |
 | ✅ | Dokumentregister: wechseln · neu · schließen | Reiter oben (Strg+Tab, +, ×) |
-| ⬜ | Dokumentregister: Kontextmenü | — |
+| ✅ | Dokumentregister: Kontextmenü | Schließen, Andere/Alle schließen, Speichern, Pfad kopieren, Ordner öffnen |
 | ✅ | Aufgabenbereiche: Navigation/Suchen | Navigationsbereich, Suchen-Fenster |
 | ⬜ | Aufgabenbereiche: Formatvorlagen · Auswahlbereich · Zwischenablage | — |
 | ✅ | Statusleiste: Seite · Wörter · Zoomregler · Zoom-Prozent | unten |

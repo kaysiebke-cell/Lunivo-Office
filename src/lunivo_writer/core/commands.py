@@ -315,6 +315,7 @@ class Befehle:
             m.addAction(f"{f:g}".replace(".", ","), lambda _=False, f=f: self.ed and self.ed.set_line_spacing(f))
         m.addSeparator()
         m.addAction("Absatz …", self.w.paragraph_dialog)
+        m.addAction("Tabstopps …", self.w.tabstopp_dialog)
         return m
 
     def steuerzeichenZeigen(self, k=None):
@@ -1304,6 +1305,8 @@ class Befehle:
 
     def formTextfeld(self, k=None): self._form_dialog("text")
     def formAuswahl(self, k=None): self._form_dialog("auswahl")
+
+    def tabstopps(self, k=None): self.w.tabstopp_dialog()
 
     def geheZu(self, k=None, art="Seite"):
         if self.ed:
