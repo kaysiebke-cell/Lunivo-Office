@@ -1,314 +1,100 @@
-<p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/images/lunivo-office-dunkel.png">
-    <img src="assets/images/lunivo-office.png"
-         style="max-width: 100%; height: auto;"
-         alt="Lunivo-Office Logo">
-  </picture>
-<p align="center">
-  Was geschrieben wird, bleibt auf diesem Rechner.<br>
-  Nichts geht hinaus, ohne dass du es selbst schickst.
-</p>
+![Nolphin File Manager – two windows, on the left with a file preview, on the right with the GID projects, the Nolphin icon in the middle. Below the slogan: The function comes to you – not the other way round.](docs/bilder/titelbild-en.png)
 
-<hr>
+# Nolphin
 
-Ein Schreibprogramm wie LibreOffice Writer oder Word — mit einem Unterschied:
-Die **Schreibhilfe** sitzt fest an der Seite und sucht die Fehler, die ein
-Rechtschreibprüfer **nicht** finden kann.
+**Ein nativer Linux-Dateimanager für Linux Mint Cinnamon, lauffähig auch unter XFCE und MATE – mit einem festen rechten Arbeitsbereich für Vorschau, Eigenschaften, Archive, Terminal, Git und Paketbau.**
 
-```text
-das / dass       seit / seid       wider / wieder
-„wir hat"  →  „wir haben"          „größer wie"  →  „größer als"
-fehlende Kommas vor weil, dass, wenn, aber
-zusammengetippte Wörter, doppelte Wörter, Satzanfänge
-```
+Nolphin ist ein eigenständiger Dateimanager auf Basis von Nemo 6.7.7 (GTK3, C11). Er wurde vollständig in **Nolphin** umbenannt und um eigene Funktionen erweitert. Die Hauptansicht bleibt sichtbar, während rechts daneben die jeweils gewählte Funktion bedient wird – ohne zusätzliche Fenster.
 
-Nicht *für* Menschen mit Legasthenie gebaut, sondern *von* einem —
-[wie es dazu kam](docs/ENTSTEHUNG.md).
-Kein Konto, keine Anmeldung, kein Internet nötig.
+> **Hinweis:** Nolphin ist ein unabhängiges Open-Source-Projekt und kein offizielles Projekt von Linux Mint.
 
-![Lunivo Writer mit einem Widerspruchsbrief im Blatt, dem Menüband oben und der Schreibhilfe rechts an der Seite: Ein Tippfehler („wiederspreche“) ist unterschlängelt und steht als Karte mit Ändern und Lassen in der Seitenleiste](assets/images/qt-uebersicht.png)
-
-## Mach mit
-
-Dieses Projekt sucht Leute — **nicht in erster Linie Programmierer.**
-
-Wenn dir Schreiben schwerfällt, bist du hier die wichtigste Person. Nicht
-weil das nett klingt, sondern weil niemand ein Werkzeug bauen kann für eine
-Not, von der er nichts weiß. Ein Satz darüber, woran du hängenbleibst, ist
-mehr wert als der schönste Quelltext.
-
-> [**Erzähl, woran du hängenbleibst**](../../issues/new?template=erfahrung.yml)
-> · [Etwas geht nicht](../../issues/new?template=fehler.yml)
-> · [Etwas fehlt](../../issues/new?template=wunsch.yml)
-> · [Reden statt melden](../../discussions)
-
-**Rechtschreibung ist dabei egal.** Wirklich — ausgerechnet hier wird
-niemand darauf angesprochen.
-
-Gebraucht wird außerdem: Regeln für die Prüfung (samt der Frage, wann sie
-falsch wären), Ausprobieren auf anderen Linux-Systemen, ein Flatpak oder
-AppImage, und andere Sprachen von Leuten, die sie sprechen.
-
-## Deine Erfahrung zählt
-
-Du möchtest erst einmal lesen, was hinter Lunivo-Office steckt, Fragen
-stellen oder deine Erfahrungen teilen?
-
-Dann komm in die [**GitHub Discussions**](../../discussions).
-
-Dort kannst du erzählen, was dir beim Schreiben schwerfällt, Fragen stellen,
-Vorschläge machen oder einfach mit anderen über das Projekt sprechen.
-
-**Besonders wichtig:** Du musst dafür kein Programmierer sein. Und deine
-Rechtschreibung spielt hier keine Rolle.
-
-* [**RICHTUNG.md**](docs/RICHTUNG.md) — wohin das gehen soll, und was es *nicht* wird
-* [MITMACHEN](.github/CONTRIBUTING.md) — wie, im Einzelnen
-* [Der Ton hier](.github/CODE_OF_CONDUCT.md) — eine Seite statt fünf
-
-## Warum noch ein Schreibprogramm?
-
-Weil die vorhandenen an der falschen Stelle helfen. Ein Rechtschreibprüfer
-findet Wörter, die es nicht gibt. Er findet nicht „das" statt „dass" — beide
-Wörter gibt es ja. Genau daran scheitert man aber, wenn Schreiben schwerfällt.
-
-Und weil die Prüfung hier **mit Absicht lückenhaft** ist. Regeln, die auch
-richtige Sätze anmeckern würden, stehen nicht drin. Wer ohnehin unsicher ist,
-den bringt ein falscher Alarm weiter vom Weg ab als eine übersehene Stelle.
-
-Vor allem aber, weil das Problem bei den Wörtern nicht aufhört. Wer auf seine
-Rechtschreibung angesprochen wird, wo es um etwas ganz anderes ging, schreibt
-irgendwann lieber nichts mehr. Ein Text, der wegen seiner Form nicht gelesen
-wird, kommt nicht an — gleich, was drinsteht.
-
-Deshalb ist dieses Programm nicht *für* Menschen mit Legasthenie gebaut,
-sondern *von* einem. Das ist kein Werbespruch, sondern der Grund, warum die
-Vorschlagsleiste von selbst erscheint, warum auf jeder Karte ein Ohr sitzt
-und warum unter *Neu aus Vorlage* fertige Gerüste liegen.
-
-> **Wie das alles entstanden ist**, steht in
-> [ENTSTEHUNG.md](docs/ENTSTEHUNG.md) — vom zu kleinen Textfeld auf dem
-> Handy bis hierher, aufgeschrieben von dem, der es gebaut hat.
-
-## Was es kann
-
-**Für Menschen, denen Lesen und Schreiben schwerfallen.** Die Grundschrift
-ist OpenDyslexic, die Lesehilfe sitzt im Reiter *Schreibhilfe* — dort steht auch
-alles andere beieinander, was dabei hilft: farbige Silben zum Einstellen, Vorlesen
-(**F4**), Prüfen, KI — statt über fünf Reiter verteilt.
-
-**Prüfung ohne Internet.** 355.322 Wörter und eigene Regeln finden, was ein
-Rechtschreibprüfer nicht findet — das/dass, wider/wieder, Kommas. Die KI ist
-freiwillig und braucht einen eigenen Schlüssel; ohne sie läuft alles Übrige.
-
-**Ein vollständiges Schreibprogramm.** Neun Reiter nach dem Vorbild des
-WPS Writer — *Datei* öffnet als Backstage-Ansicht wie bei ONLYOFFICE —, zwei
-Oberflächen zur Wahl, Formatvorlagen, Tabellen, Spalten (live auf der Seite),
-Fuß- und Endnoten, Kommentare als Sprechblasen, Formularfelder, Kopf- und
-Fußzeilen, Seriendruck, Druckvorschau, PDF-Export. Die Optionen haben 17 Seiten
-in drei Zweigen: *Leichter lesen*, *Wie im WPS Writer* und *Nur bei Lunivo*.
-Das Hauptformat ist **DOCX**.
-
-**Was geschrieben wird, bleibt hier.** Kein Konto, keine Cloud, kein
-Mitlesen. Die Einstellungen liegen als lesbare Datei unter
-`~/.config/Lunivo/Lunivo Writer.conf`.
+![Nolphin: links die Orte, in der Mitte die Dateien des Ordners „Bilder“, rechts der Arbeitsbereich mit den Ordner-Informationen](docs/bilder/uebersicht.png)
 
 ---
 
-## Die Dokumentation
+## Projektphilosophie
 
-Der README sagt, was es ist. Was es im Einzelnen tut, steht in den fünf
-Dateien darunter — sonst wäre er dreißig Seiten lang und niemand fände
-darin, was er sucht.
+**Die Funktion kommt zur Datei – nicht umgekehrt.**
 
-|                                                                | Worum es geht                                       |
-| -------------------------------------------------------------- | --------------------------------------------------- |
-| 1 · [Lesen und Schreiben](docs/lesen-und-schreiben.md)         | Lesehilfe, Schriften für Legasthenie, Vorlesen      |
-| 2 · [Prüfung, Vorhersage und KI](docs/pruefung-und-ki.md)      | Was gefunden wird, und was die KI dabei tut         |
-| 3 · [Schreiben und Dokumente](docs/schreiben-und-dokumente.md) | Das Blatt, Vorlagen, Speichern, Drucken             |
-| 4 · [Die Oberfläche](docs/oberflaeche.md)                      | Band und Leisten, Lineale, Formatvorlagen, Anpassen |
-| 5 · [Die Einstellungen](docs/einstellungen.md)                 | Das Optionen-Fenster, Sprachen, Kennwort            |
+Wer mit technischen Dateien arbeitet, wechselt sonst ständig zwischen Dateimanager, Terminal und Zusatzprogrammen. Nolphin holt diese Werkzeuge in das Hauptfenster.
 
-Dazu im Programm selbst: **☰ Menü → Hilfe → Handbuch** und **Datei → Hilfe**
-(Tastenkürzel) — die kurze Einführung für die Qt-Oberfläche.
+* **Ehrlich statt vorgetäuscht:** Fehlt ein Hilfsprogramm oder ein Vorschau-Backend, zeigt Nolphin das an, statt eine Funktion zu simulieren.
+* **Vertraute Bedienung:** Die klassische Nemo-Bedienung bleibt erhalten.
+* **Nur Belegtes ist fertig:** Diese README beschreibt den Stand des Codes. Als „umgesetzt“ gilt, was im Code vorhanden ist, als „getestet“ nur, was die Meson-Tests abdecken.
 
-| Weiteres                                            |                                                   |
-| --------------------------------------------------- | ------------------------------------------------- |
-| [Was zusätzlich geholt wird](docs/erweiterungen.md) | LibreOffice, LanguageTool, Stimmen, Schriften     |
-| [Der Aufbau des Projekts](docs/projektaufbau.md)    | Welche Datei was tut                              |
-| [Die lange Fassung](docs/LIESMICH.md)               | Alles ausführlich, auf Deutsch                    |
-| [Wie es entstanden ist](docs/ENTSTEHUNG.md)         | Die Geschichte dahinter                           |
-| [Wohin es geht](docs/RICHTUNG.md)                   | Was noch kommen soll                              |
-| [Der Aufbau des Bandes](docs/aufbau-band.md)        | Alle Reiter, mit Tabelle „wo finde ich was" (Stand der früheren Fassung) |
-| [Der Aufbau der Optionen](docs/aufbau-optionen.md)  | Alle Seiten und Felder, ebenso                    |
-| [Der Ist-Stand am Stück](docs/aufbau-ist-stand.md)  | Bänder und Optionen zusammen (Stand der früheren Fassung) |
-| [Stand der Qt-Fassung (Bericht)](docs/BERICHT.md) | Was geht, was nicht, was ungetestet ist |
-| [Menüstruktur-Abgleich](docs/MENUESTRUKTUR.md) | Ihre 12 Bereiche, Punkt für Punkt: da, teilweise, fehlt |
-| [Prüfbogen-Abgleich](docs/PRUEFBOGEN.md) | 415 Punkte, jeder mit Beleg |
-| [Aufbau der Qt-Fassung](docs/README.md) | Ordner und Zuständigkeiten |
-| [Installation](docs/INSTALLATION.md) | Pakete und optionale Bausteine |
+---
 
-Diese drei wurden aus dem Programm **erzeugt**, nicht geschrieben, und halten
-den Stand der früheren Fassung fest. Wie die Qt-Fassung heute dasteht —
-Reiter für Reiter gegen den Prüfbogen —, steht in [PRUEFBOGEN.md](docs/PRUEFBOGEN.md)
-und [BERICHT.md](docs/BERICHT.md); beides wird mit `werkzeug/pruefbogen-*.py` aus dem Code abgeglichen.
+## Schnellstart
 
-## So sieht es aus
+Aus dem Quellcode bauen und direkt aus dem Build-Verzeichnis starten:
 
-Die Bilder dieses Abschnitts zeigen die **Qt-Oberfläche** (aufgenommen mit
-`python3 werkzeug/bildschirmfotos.py`, ohne Bildschirm erzeugt).
-
-Das Fenster im Überblick — hell und dunkel: oben die Reiter, darunter das Band, in der Mitte das
-Blatt, rechts die Schreibhilfe mit der Karte zum Fund.
-
-![Das Fenster im hellen Thema](assets/images/qt-uebersicht.png)
-
-![Dasselbe Fenster im dunklen Thema](assets/images/qt-uebersicht-dunkel.png)
-
-Der Reiter **Schreibhilfe** trägt alles, was das Lesen und Schreiben erleichtert — Lesehilfe, farbige Silben,
-Prüfen, Vorlesen, Sprache, Bausteine und die KI —, im dunklen Thema genauso.
-
-![Der Reiter Schreibhilfe mit den Gruppen Lesen, Prüfen, Beim Schreiben, Vorlesen, Sprache, Bausteine, KI-Schreibwerkzeuge und KI](assets/images/qt-schreibhilfe.png)
-
-![Der Reiter Schreibhilfe im dunklen Thema](assets/images/qt-schreibhilfe-dunkel.png)
-
-**Datei** ist eine Backstage-Ansicht: links die Befehle, rechts die Seite dazu — hier *Info* mit Statistik,
-Verfasser und Titel.
-
-![Die Backstage-Ansicht des Reiters Datei mit der Seite Info](assets/images/qt-datei.png)
-
-![Die Backstage-Ansicht im dunklen Thema](assets/images/qt-datei-dunkel.png)
-
-**Spalten** stehen live auf der Seite, beim Schreiben — hier zwei Spalten auf einer A4-Seite.
-
-![Eine A4-Seite mit zwei Spalten im Reiter Seitenlayout](assets/images/qt-spalten.png)
-
-**Abschnitte** gehören jetzt dazu: Hier beginnt ab „Sehr geehrte Damen und Herren“ ein zweiter Abschnitt auf einer neuen Seite
-(gestrichelte Linie im Text), der im Reiter **Abschnitt** quer eingerichtet werden kann. Seitenansicht, Druck, PDF und DOCX setzen jeden
-Abschnitt in seinen eigenen Maßen; die Bearbeitungsansicht zeigt alle in der Geometrie des ersten.
-
-![Der Reiter Abschnitt mit einem Abschnittsumbruch im Text und der Statusmeldung dazu](assets/images/qt-abschnitte.png)
-
-**Kontext-Reiter** erscheinen, wenn man etwas Passendes anfasst: bei einer Form die *Form- und WordArt-Tools* (Vorlagen, Füllung, Kontur,
-Gruppieren), bei einer Tabelle die *Tabellentools* mit Formatvorlagen, bei einem SmartArt die *SmartArt-Tools*.
-
-![Die Form- und WordArt-Tools bei einer markierten Raute](assets/images/qt-formtools.png)
-
-![Die Tabellentools mit Tabellenformatvorlage Blau, Kopfzeile und gebänderten Zeilen](assets/images/qt-tabellentools.png)
-
-![SmartArt als Prozess mit vier Schritten und den SmartArt-Tools](assets/images/qt-smartart.png)
-
-**Überprüfen** vergleicht zwei Dokumente und führt mehrere überarbeitete Fassungen zusammen; die Unterschiede stehen als verfolgte Änderungen darin.
-
-![Der Reiter Überprüfen mit den Gruppen Dokument, Kommentare, Änderungen, Schützen und Vergleichen](assets/images/qt-ueberpruefen.png)
-
-Die **Optionen** (**F9**) haben drei Zweige. Jede Wahl der Lesehilfe wirkt sofort auf dem Blatt.
-
-![Die Optionen mit der Seite Lesehilfe: Papierton, Buchstaben- und Wortabstand, Zeilenfokus, Vorlesen, farbige Silben und Silbentrennung; links der Baum mit den drei Zweigen](assets/images/qt-optionen-lesehilfe.png)
-
-Unter **Schriftarten** stehen die Leseschriften.
-
-![Die Seite Schriftarten der Optionen](assets/images/qt-optionen-schriften.png)
-
-### Die frühere Oberfläche (Bildschirmfotos der Fassung davor)
-
-Der Reiter **Schreibhilfe** trägt alles, was das Lesen und Schreiben
-erleichtert. Der Text steht in OpenDyslexic.
-
-![Das Fenster mit dem offenen Reiter Schreibhilfe: die Gruppen Lesen, Prüfen, Beim Schreiben, Vorlesen, Sprache, KI und Anzeigen, rechts die Seitenleiste](assets/images/uebersicht.png)
-
-Die **Lesehilfe** ist die erste Seite der Optionen (**F9**). Jede Wahl
-wirkt sofort auf dem Blatt — kein „Übernehmen", kein Fenster, das über dem
-Text liegt, den man beurteilen will.
-
-![Die Optionen mit der offenen Seite Lesehilfe: Papierton, Buchstabenabstand, Wortabstand, Zeilenluft, Zeilenfokus und Vorlesen; links der Baum mit den drei Zweigen](assets/images/lesehilfe.png)
-
-Unter **Schriftarten** stehen die drei Leseschriften als Knöpfe, jede in
-ihrer eigenen Schrift — man muss ihren Namen nicht kennen.
-
-![Die Seite Schriftarten mit der Schriftwahl und den drei Knöpfen OpenDyslexic, Lexend und Atkinson Hyperlegible, jeder in seiner eigenen Schrift](assets/images/schriften.png)
-
-Die Optionen übernehmen die Seiten des WPS Writer, zweispaltig
-und kompakt wie dort — hier die Seite *Ansicht*.
-
-![Die Seite Ansicht der Optionen, zweispaltig: Anzeigen, Druckoptionen, Formatierungszeichen, Menübandoptionen und Darstellung](assets/images/einstellungen.png)
-
-Wer die Reiter aus Word gewohnt ist, findet sie unter *Ansicht ▸
-Darstellung ▸ Benutzeroberfläche*. Über dem Blatt liegt das Lineal mit den
-Einzugsmarken, links das senkrechte.
-
-![Das Register mit dem Reiter Start: Zwischenablage, Schriftart, Absatz, Absatzlayout und Bearbeiten](assets/images/register.png)
-
-Hell oder dunkel, je nachdem, was den Augen bekommt.
-
-![Dasselbe Fenster im hellen Thema](assets/images/hell.png)
-
-## Starten
-
-Lunivo Writer ist eine **native Qt-Anwendung** (Python 3 + PySide6) — ohne Browser, ohne WebKit.
-
-```text
-sudo apt install python3 python3-venv libxcb-cursor0 libegl1 libxkbcommon-x11-0 libxcb-icccm4 libxcb-keysyms1 libxcb-shape0
-./starten-qt.sh
+```bash
+meson setup build
+ninja -C build
+env GSETTINGS_SCHEMA_DIR="$(pwd)/build/libnolphin-private" \
+    LD_LIBRARY_PATH="$(pwd)/build/libnolphin-extension" \
+    ./build/src/nolphin
 ```
 
-Beim ersten Start legt das Skript eine eigene Umgebung (`.venv`) an und installiert PySide6 und die übrigen Pakete;
-`./starten-qt.sh --eintrag` legt zusätzlich einen Menüeintrag an. Genaueres und optionale Teile:
-[docs/INSTALLATION.md](docs/INSTALLATION.md). Direkt aus dem Projektordner geht auch `python3 main.py`.
+Mit **F11** blendest du den rechten Arbeitsbereich ein, mit **F4** das Terminal. Der Arbeitsbereich ist mindestens 400 Pixel breit (Standard 480); die Breite lässt sich mit dem Teiler ändern und wird gemerkt.
 
-## Eine Hilfe, kein Ersatz
+Voraussetzungen, Installation und Tests: siehe [Bauen und Installieren](docs/bauen-und-installieren.md).
 
-> Lunivo-Office ist eine Hilfe und kein Ersatz für eine Kontrolle durch
-> eine andere Person. Es kann nicht garantieren, dass der Text oder sein Inhalt
-> am Ende vollständig korrekt ist.
->
-> Gerade für Menschen mit Legasthenie ist eine zusätzliche Kontrolle durch eine
-> zweite Person wichtig. Eigene Fehler werden beim späteren Lesen nicht immer
-> erkannt, weil das Gehirn das Geschriebene teilweise so wahrnimmt, wie es
-> gemeint war.
+---
 
-Deshalb gibt es *Vorlesen* (F4): Über einen Fehler liest das Auge hinweg, das
-Ohr stolpert darüber. Es ersetzt die zweite Person nicht — es kommt ihr nur am
-nächsten, wenn gerade niemand da ist.
+## Highlights
 
-## Was nicht drin ist
+* **Rechter Arbeitsbereich (F11):** ein fester Bereich für Vorschau, Eigenschaften, Archive, Terminal, Git, DEB-Ersteller, Massenumbenennung und die Werkzeuge unten – ohne zusätzliche Fenster.
+* **GID-Projekte:** lokale Projektordner in der Seitenleiste; ein Klick zeigt die `README.md` des Projekts rechts im Arbeitsbereich – im Aussehen von GitHub, mit Tabellen, Aufgabenlisten, Bildern und aufklappbaren Abschnitten. Alles bleibt lokal.
+* **Vorschau mit Medieninfos:** Bilder, **PDF** (Titel, Autor, Seiten, Seitengröße), **Video** und **Audio** (Dauer, Codec, Auflösung, Bildrate, Kanäle).
+* **Metadaten:** **Bewertung (Sterne), Tags und Kommentar** direkt im Info-Panel.
+* **Git direkt im Dateimanager:** Overlay-Symbole an den Dateien (hinzugefügt, geändert, unversioniert), Panel für Status, Speichern, Server-Abgleich, Verlauf und Unterschiede.
+* **Archive:** Komprimieren, Entpacken, Prüfen und – im **Archiv-Manager** – Inhalt auflisten sowie Dateien hinzufügen, ersetzen und entfernen.
+* **Handy-Austausch in beide Richtungen, verschlüsselt:** Ein Klick auf „Handy“ in der Seitenleiste (oder Datei ▸ Handy-Austausch) startet den Austausch: rechts erscheint ein QR-Code, in der Hauptansicht der Ordner `~/Handy`. Die Handy-App (eigenes Projekt [Nolphin Handy](https://github.com/kaysiebke-cell/nolphin-handy), eine optionale Erweiterung) scannt den Code und verbindet sich verschlüsselt nur mit diesem PC; sie lädt Dateien und Ordner (`Vom Handy`) und empfängt Dateien aus `Handy`. Dafür braucht der PC `openssl`. Siehe [Schnittstelle](docs/handy-austausch-api.md).
+* **Werkzeuge:** Ordner **vergleichen und synchronisieren** (rsync, löscht nie), **Regeln anwenden**, **Duplikate finden**, **Versionen** einer Datei speichern und wiederherstellen.
+* **Suche mit Operatoren:** im Dateinamen UND, ODER, NICHT, „exakt“ und Platzhalter, dazu reguläre Ausdrücke.
+* **Mehrere Bereiche:** geteilte Ansicht mit bis zu vier Bereichen und **Arbeitsbereiche**, die Reiter, Teilung und Fenstergröße speichern.
+* **Gehe zu:** Verlauf, häufig verwendete Orte und die Reiter des Fensters im Menü.
+* **Hilfe (F1):** eine eingebaute Hilfe mit 20 Themen, Bildern, Tabellen und Themensuche; sie öffnet sich wie die Einstellungen im Hauptbereich. Die Texte liegen als Markdown unter `docs/hilfe/`.
+* **Diagnose:** Protokolle, Systeminformationen, Plugin-Status und Fehlerbericht im Panel.
+* **Einstellungen exportieren, importieren und zurücksetzen.**
+* **DEB-Pakete erstellen:** Nolphin baut ein `.deb` selbst als `ar`-Archiv, ohne `dpkg-deb`.
+* **Massenumbenennung:** Suchen/Ersetzen, Nummerierung und Groß-/Kleinschreibung mit Vorschau, rückgängig machbar.
+* **CAD- und 3D-Erkennung:** STL, STEP/STP, FreeCAD `.FCStd` und weitere Formate.
+* **Sicherheit:** Prüfsummen, GPG-Verschlüsselung, ACL-Verwaltung.
+* **Papierkorb-Automatik** und **gespeicherte Dateiauswahlen**.
+* **Nemo-Grundlagen:** Tabs, Symbol-, Listen- und Kompaktansicht, Fortschritt, Rückgängig, Netzwerk über GVfs.
 
-SmartArt als echtes Word-Diagramm (Lunivo-SmartArt ist ein bearbeitbares Bild), 3D-Modelle, eingebettete Tabellenkalkulation,
-Design-Themes, Bildumfluss mit Ebenen, Endnoten-Querverweise nach APA im
-vollen Umfang, Barrierefreiheitsprüfung über das Geprüfte hinaus,
-Gliederungsansicht zum Verschieben,
-Fenster teilen mit Synchronscrollen.
+---
 
-Bei den meisten wäre der Aufwand groß und der Nutzen für einen Brief gering.
+## Dokumentation
+
+| Nr. | Seite | Inhalt |
+| --- | ----- | ------ |
+| 1 | [Bauen und Installieren](docs/bauen-und-installieren.md) | Voraussetzungen, Bauen, Tests, Installation |
+| 2 | [Der rechte Arbeitsbereich](docs/arbeitsbereich.md) | Panels für Vorschau, Eigenschaften, Archive, Terminal, Git und mehr – mit Bildern |
+| 3 | [Funktionen im Detail](docs/funktionen.md) | Dateiverwaltung, Archive, Git, Werkzeuge, Suche, Handy-Austausch, GID-Projekte, Sicherheit |
+| 3a | [Handy-Austausch: Analyse](docs/handy-austausch-analyse.md) | Ist-Zustand, Vergleich mit LocalSend, Warpinator und PairDrop, Verbindungsablauf, Sicherheit, Tests |
+| 3b | [Handy-Austausch: Schnittstelle](docs/handy-austausch-api.md) | Verbindungslink und QR-Format, Wege, Fehlercodes, Verhalten der App |
+| 4 | [Einstellungen und Anpassung](docs/einstellungen.md) | Einstellungsseiten, Layout-Editor, Export und Import |
+| 5 | [Andere Desktops: XFCE und MATE](docs/andere-desktops.md) | Optionale Bibliotheken, Symbol-Ersatz, Teststand, bekannte Grenzen |
+| 6 | [Nolphin und Nemo](docs/nolphin-und-nemo.md) | Vergleich und Einrichtung als Nemo-Ersatz |
+| 7 | [Entwicklungsstand](docs/entwicklungsstand.md) | Was umgesetzt ist, was getestet wurde |
+| 8 | [Projektstruktur](docs/projektstruktur.md) | Verzeichnisse, Schema, weitere Dokumente |
+| 9 | [Fehler melden](docs/fehler-melden.md) | Vorlage für einen hilfreichen Bericht |
+
+Die eingebaute Hilfe (**F1**) liegt als Markdown unter [docs/hilfe/](docs/hilfe/).
+
+---
 
 ## Herkunft
 
-Wie das alles entstanden ist, steht in
-[ENTSTEHUNG.md](docs/ENTSTEHUNG.md) — siehe oben.
-
-Die Prüfung und der Wortschatz stammen aus der
-[Schreibhilfe](https://github.com/kaysiebke-cell/schreibhilfe) und sind dort
-über viele Fassungen gewachsen. Sie liegen hier als eigene Kopie: Dieses
-Programm ist eigenständig und braucht jenes Projekt nicht, um zu laufen.
-
-Die Wörterliste (`src/lunivo_writer/resources/daten/woerter.txt`, 355.324 Wörter) ist über viele Sitzungen
-selbst aufgebaut worden. Sie stammt aus keiner fremden Quelle und steht
-deshalb wie der übrige Code unter MIT.
+Nolphin begann als Quellstand von **Nemo 6.7.7**, wurde umbenannt, strukturell angepasst und schrittweise um eigene Funktionen erweitert. Der Verlauf steht in der Git-Historie.
 
 ## Lizenz
 
-[MIT](LICENSE) — benutzen, ändern und weitergeben ist erlaubt, auch
-gewerblich. Der Urhebervermerk muss mitgehen.
+**GPL-2.0-or-later**, siehe [COPYING](COPYING).
 
-LanguageTool und LibreOffice stehen unter eigenen Lizenzen (LGPL-2.1 und
-MPL-2.0) und werden als eigene Prozesse aufgerufen, nicht eingebunden.
+---
 
-Die Zeichnungen der Knöpfe stammen aus den
-[Fluent UI System Icons](https://github.com/microsoft/fluentui-system-icons)
-(Microsoft, MIT; Lizenztext in [assets/icons/fluent/LIZENZ.txt](assets/icons/fluent/LIZENZ.txt))
-und zum Teil aus [Lucide](https://lucide.dev) (ISC; Lizenztext in
-[docs/LIZENZ-LUCIDE.txt](docs/LIZENZ-LUCIDE.txt)).
-Ein paar sind von Hand gezeichnet — Kopfzeile, Fußzeile, Seitenzahl,
-Textbegrenzungen: die kennt nur ein Schreibprogramm.
-
+**Nolphin – Dateien verwalten. Informationen sehen. Mehr direkt erledigen.**
