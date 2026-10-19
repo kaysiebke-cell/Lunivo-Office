@@ -70,6 +70,9 @@ def katalog_bild(name: str, px: int = 96, farbe: str = "#1f2328", strich: float 
     return img
 
 
+# Farbstriche unter Symbolen wie in Word: Name → Farbe (Schriftfarbe rot, Hervorheben gelb, Tönung blau, Rahmen/Schatten bleiben neutral)
+AKZENT = {"schriftfarbe": "#e03131", "marker": "#fcc419", "absatztoenung": "#74c0fc", "toenung": "#74c0fc"}
+
 _FLUENT: dict | None = None
 _SVG_TEXT: dict = {}
 
@@ -100,7 +103,15 @@ def _fluent_svg(name: str, px: int, farbe: str) -> bytes | None:
         except OSError:
             _SVG_TEXT[key] = ""
     t = _SVG_TEXT[key]
-    return t.replace("<svg ", f'<svg fill="{farbe}" ', 1).encode() if t else None
+    if not t:
+        return None
+    t = t.replace("<svg ", f'<svg fill="{farbe}" ', 1)
+    if name in AKZENT:                                       # Farbstrich am unteren Rand; das Symbol selbst steht darüber
+        gr = 20 if art == "k" else 28
+        h = gr * 0.15
+        t = t.replace("</svg>", f'<rect x="{gr * 0.14:.2f}" y="{gr - h - gr * 0.02:.2f}" width="{gr * 0.72:.2f}" height="{h:.2f}" '
+                                f'rx="{h / 3:.2f}" fill="{AKZENT[name]}"/></svg>')
+    return t.encode()
 
 
 def hat(name: str) -> bool:

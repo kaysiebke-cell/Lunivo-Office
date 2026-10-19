@@ -158,7 +158,7 @@
 "schere": "cut",
 "schliessen": "dismiss",
 "schnelltab": "table_add",
-"schriftfarbe": "text_color",
+"schriftfarbe": "text_font",
 "seitenbreite": "arrow_autofit_width",
 "seitenrahmen": "document_border",
 "seitenzahl": "number_symbol",
