@@ -17,7 +17,7 @@ schickt.
 
 ## Starten
 
-    ./starten.sh
+    ./starten-qt.sh
 
 Das legt beim ersten Mal auch den Menüeintrag an. Danach steht
 *Lunivo-Office* im Startmenü unter „Büro". Einen alten Eintrag
@@ -295,8 +295,8 @@ Es liegt in neun Größen bereit statt nur in einer. Eine große Datei würde
 davon ab, wer rechnet. Die neun Dateien sind einmal sauber gerechnet und bleiben
 überall dieselben.
 
-`./starten.sh` legt alle Größen unter `~/.local/share/icons/hicolor/` ab.
-`./starten.sh --weg` räumt sie wieder fort.
+`./starten-qt.sh` legt alle Größen unter `~/.local/share/icons/hicolor/` ab.
+`./starten-qt.sh --weg` räumt sie wieder fort.
 
 ## Herkunft
 

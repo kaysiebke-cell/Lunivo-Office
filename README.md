@@ -183,7 +183,7 @@ Hell oder dunkel, je nachdem, was den Augen bekommt.
 ## Starten
 
 ```text
-./starten.sh
+./starten-qt.sh
 ```
 
 Das legt beim ersten Mal auch den Menüeintrag an; danach steht
