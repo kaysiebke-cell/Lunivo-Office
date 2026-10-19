@@ -24,10 +24,10 @@ zusammengetippte Wörter, doppelte Wörter, Satzanfänge
 ```
 
 Nicht *für* Menschen mit Legasthenie gebaut, sondern *von* einem —
-[wie es dazu kam](doku/ENTSTEHUNG.md).
+[wie es dazu kam](docs/ENTSTEHUNG.md).
 Kein Konto, keine Anmeldung, kein Internet nötig.
 
-![Lunivo-Office mit zwei Dokumenten als Reiter oben, einem Widerspruchsbrief im Blatt und der Schreibhilfe rechts an der Seite](bilder/uebersicht.png)
+![Lunivo-Office mit zwei docsmenten als Reiter oben, einem Widerspruchsbrief im Blatt und der Schreibhilfe rechts an der Seite](bilder/uebersicht.png)
 
 ## Mach mit
 
@@ -63,7 +63,7 @@ Vorschläge machen oder einfach mit anderen über das Projekt sprechen.
 **Besonders wichtig:** Du musst dafür kein Programmierer sein. Und deine
 Rechtschreibung spielt hier keine Rolle.
 
-* [**RICHTUNG.md**](doku/RICHTUNG.md) — wohin das gehen soll, und was es *nicht* wird
+* [**RICHTUNG.md**](docs/RICHTUNG.md) — wohin das gehen soll, und was es *nicht* wird
 * [MITMACHEN](.github/CONTRIBUTING.md) — wie, im Einzelnen
 * [Der Ton hier](.github/CODE_OF_CONDUCT.md) — eine Seite statt fünf
 
@@ -88,7 +88,7 @@ Vorschlagsleiste von selbst erscheint, warum auf jeder Karte ein Ohr sitzt
 und warum unter *Neu aus Vorlage* fertige Gerüste liegen.
 
 > **Wie das alles entstanden ist**, steht in
-> [ENTSTEHUNG.md](doku/ENTSTEHUNG.md) — vom zu kleinen Textfeld auf dem
+> [ENTSTEHUNG.md](docs/ENTSTEHUNG.md) — vom zu kleinen Textfeld auf dem
 > Handy bis hierher, aufgeschrieben von dem, der es gebaut hat.
 
 ## Was es kann
@@ -113,7 +113,7 @@ Mitlesen. Die Einstellungen liegen als lesbare Datei unter
 
 ---
 
-## Die Dokumentation
+## Die docsmentation
 
 Der README sagt, was es ist. Was es im Einzelnen tut, steht in den fünf
 Dateien darunter — sonst wäre er dreißig Seiten lang und niemand fände
@@ -121,25 +121,25 @@ darin, was er sucht.
 
 |                                                                | Worum es geht                                       |
 | -------------------------------------------------------------- | --------------------------------------------------- |
-| 1 · [Lesen und Schreiben](doku/lesen-und-schreiben.md)         | Lesehilfe, Schriften für Legasthenie, Vorlesen      |
-| 2 · [Prüfung, Vorhersage und KI](doku/pruefung-und-ki.md)      | Was gefunden wird, und was die KI dabei tut         |
-| 3 · [Schreiben und Dokumente](doku/schreiben-und-dokumente.md) | Das Blatt, Vorlagen, Speichern, Drucken             |
-| 4 · [Die Oberfläche](doku/oberflaeche.md)                      | Band und Leisten, Lineale, Formatvorlagen, Anpassen |
-| 5 · [Die Einstellungen](doku/einstellungen.md)                 | Das Optionen-Fenster, Sprachen, Kennwort            |
+| 1 · [Lesen und Schreiben](docs/lesen-und-schreiben.md)         | Lesehilfe, Schriften für Legasthenie, Vorlesen      |
+| 2 · [Prüfung, Vorhersage und KI](docs/pruefung-und-ki.md)      | Was gefunden wird, und was die KI dabei tut         |
+| 3 · [Schreiben und docsmente](docs/schreiben-und-docsmente.md) | Das Blatt, Vorlagen, Speichern, Drucken             |
+| 4 · [Die Oberfläche](docs/oberflaeche.md)                      | Band und Leisten, Lineale, Formatvorlagen, Anpassen |
+| 5 · [Die Einstellungen](docs/einstellungen.md)                 | Das Optionen-Fenster, Sprachen, Kennwort            |
 
 Dazu im Programm selbst: **☰ Menü → Hilfe → Handbuch** — ausführlicher als alles
 hier, mit Bildern und Tastenkürzeln.
 
 | Weiteres                                            |                                                   |
 | --------------------------------------------------- | ------------------------------------------------- |
-| [Was zusätzlich geholt wird](doku/erweiterungen.md) | LibreOffice, LanguageTool, Stimmen, Schriften     |
-| [Der Aufbau des Projekts](doku/projektaufbau.md)    | Welche Datei was tut                              |
-| [Die lange Fassung](doku/LIESMICH.md)               | Alles ausführlich, auf Deutsch                    |
-| [Wie es entstanden ist](doku/ENTSTEHUNG.md)         | Die Geschichte dahinter                           |
-| [Wohin es geht](doku/RICHTUNG.md)                   | Was noch kommen soll                              |
-| [Der Aufbau des Bandes](doku/aufbau-band.md)        | Alle acht Reiter, mit Tabelle „wo finde ich was"  |
-| [Der Aufbau der Optionen](doku/aufbau-optionen.md)  | Alle Seiten und Felder, ebenso                    |
-| [Der Ist-Stand am Stück](doku/aufbau-ist-stand.md)  | Bänder und Optionen zusammen, wie sie gerade sind |
+| [Was zusätzlich geholt wird](docs/erweiterungen.md) | LibreOffice, LanguageTool, Stimmen, Schriften     |
+| [Der Aufbau des Projekts](docs/projektaufbau.md)    | Welche Datei was tut                              |
+| [Die lange Fassung](docs/LIESMICH.md)               | Alles ausführlich, auf Deutsch                    |
+| [Wie es entstanden ist](docs/ENTSTEHUNG.md)         | Die Geschichte dahinter                           |
+| [Wohin es geht](docs/RICHTUNG.md)                   | Was noch kommen soll                              |
+| [Der Aufbau des Bandes](docs/aufbau-band.md)        | Alle acht Reiter, mit Tabelle „wo finde ich was"  |
+| [Der Aufbau der Optionen](docs/aufbau-optionen.md)  | Alle Seiten und Felder, ebenso                    |
+| [Der Ist-Stand am Stück](docs/aufbau-ist-stand.md)  | Bänder und Optionen zusammen, wie sie gerade sind |
 
 Diese drei werden **erzeugt**, nicht geschrieben —
 `python3 werkzeug/aufbau-schreiben.py` liest sie aus dem Programm. Die
@@ -217,7 +217,7 @@ nächsten, wenn gerade niemand da ist.
 SmartArt in Word-Qualität, 3D-Modelle, eingebettete Tabellenkalkulation,
 Design-Themes, Bildumfluss mit Ebenen, Endnoten-Querverweise nach APA im
 vollen Umfang, Barrierefreiheitsprüfung über das Geprüfte hinaus,
-Dokumentschutz mit Kennwort, Gliederungsansicht zum Verschieben,
+docsmentschutz mit Kennwort, Gliederungsansicht zum Verschieben,
 Fenster teilen mit Synchronscrollen.
 
 Bei den meisten wäre der Aufwand groß und der Nutzen für einen Brief gering.
@@ -225,7 +225,7 @@ Bei den meisten wäre der Aufwand groß und der Nutzen für einen Brief gering.
 ## Herkunft
 
 Wie das alles entstanden ist, steht in
-[ENTSTEHUNG.md](doku/ENTSTEHUNG.md) — siehe oben.
+[ENTSTEHUNG.md](docs/ENTSTEHUNG.md) — siehe oben.
 
 Die Prüfung und der Wortschatz stammen aus der
 [Schreibhilfe](https://github.com/kaysiebke-cell/schreibhilfe) und sind dort
@@ -246,6 +246,6 @@ MPL-2.0) und werden als eigene Prozesse aufgerufen, nicht eingebunden.
 
 Die Zeichnungen der Knöpfe stammen größtenteils aus
 [Lucide](https://lucide.dev) und stehen unter der ISC-Lizenz; der
-Lizenztext liegt in [doku/LIZENZ-LUCIDE.txt](doku/LIZENZ-LUCIDE.txt).
+Lizenztext liegt in [docs/LIZENZ-LUCIDE.txt](docs/LIZENZ-LUCIDE.txt).
 Ein paar sind von Hand gezeichnet — Kopfzeile, Fußzeile, Seitenzahl,
 Textbegrenzungen: die kennt nur ein Schreibprogramm.
