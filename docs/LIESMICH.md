@@ -23,9 +23,9 @@ Das legt beim ersten Mal auch den Menüeintrag an. Danach steht
 *Lunivo-Office* im Startmenü unter „Büro". Einen alten Eintrag
 *Schreibprogramm* räumt der Start still mit weg.
 
-Gebraucht wird dafür GTK mit WebKit:
+Gebraucht wird dafür Qt6 mit Qt WebEngine:
 
-    sudo apt install python3-gi gir1.2-webkit2-4.1
+    sudo apt install PySide6
 
 Ohne das geht es auch im Browser — einmal einen Server starten und die
 Adresse aufmachen:
@@ -175,7 +175,7 @@ Leiste und Seitenleiste — und über „In Datei drucken" wird daraus ein PDF.
 
 ## Was wo liegt
 
-    start.py          das Fenster (GTK + WebKit), der kleine Server,
+    start.py          das Fenster (Qt + WebKit), der kleine Server,
                       die Schriftliste und der Weg zu LibreOffice
     starten.sh        startet es und schreibt den Menüeintrag neu
 
