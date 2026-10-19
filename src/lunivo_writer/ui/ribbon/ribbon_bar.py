@@ -233,16 +233,16 @@ class RegisterBand(QWidget):
         lauf: list[dict] = []
 
         def spalte():
-            if lauf:
+            for i in range(0, len(lauf), 2):                    # je Spalte zwei Zeilen
                 host = QWidget()
                 v = QVBoxLayout(host)
                 v.setContentsMargins(0, 0, 0, 0)
                 v.setSpacing(1)
-                for e in lauf:
+                for e in lauf[i:i + 2]:
                     v.addWidget(self._knopf(e, False))
                 v.addStretch(1)
                 inhalt.addWidget(host, 0, Qt.AlignTop)
-                lauf.clear()
+            lauf.clear()
         for e in g["knoepfe"]:
             if e.get("gross"):
                 spalte()

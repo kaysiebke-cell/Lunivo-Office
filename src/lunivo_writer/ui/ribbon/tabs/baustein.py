@@ -8,3 +8,14 @@ def k(symbol, name, tun=None, gross=False, **kw):
         e["tun"] = tun
     e.update(kw)
     return e
+
+
+def alle(tab: dict) -> dict:
+    """Alle Knöpfe eines Reiters aus register.json nach Namen."""
+    return {e["name"]: e for g in tab["gruppen"] for e in g.get("knoepfe", []) if e.get("name")}
+
+
+def uebrige(tab: dict, benutzt: set) -> list:
+    """Knöpfe des Reiters, die in der neuen Anordnung noch nicht vorkommen (damit keine Funktion verloren geht)."""
+    return [e for g in tab["gruppen"] for e in g.get("knoepfe", [])
+            if e.get("name") and e["name"] not in benutzt and not e.get("zeilenumbruch")]

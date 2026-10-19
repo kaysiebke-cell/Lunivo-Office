@@ -1304,6 +1304,9 @@ class Befehle:
 
     def formTextfeld(self, k=None): self._form_dialog("text")
     def formAuswahl(self, k=None): self._form_dialog("auswahl")
+
+    def vollbild(self, k=None): self.w.a_fullscreen.trigger()
+    def an_vollbild(self): return self.w.isFullScreen()
     def formDatum(self, k=None): self._form_dialog("datum")
     def formKasten(self, k=None): self._form_dialog("kasten")
     def formKnopf(self, k=None): self._form_dialog("knopf")

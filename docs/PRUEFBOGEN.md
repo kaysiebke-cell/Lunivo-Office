@@ -152,7 +152,7 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `docs/pruefbogen/bilder/`.
 - ◐ Silbentrennung — pyphen setzt weiche Trennstellen in Seitenansicht, Druck, PDF; DOCX autoHyphenation (test_werkzeuge). Die Bearbeitungsansicht zeigt keine Trennstriche
 - ◐ Textumbruch — Bild links/rechts vom Text umflossen oder in eigener Zeile (editor/umbruch.py, DOCX wp:anchor wrapSquare, test_werkzeuge); „Hinter/vor dem Text“ und freie Position fehlen
 - ✅ Seitenfarbe — Band: Seitenlayout ▸ Seitenhintergrund
-- ✅ Wasserzeichen — Band: Seitenlayout ▸ Seitenhintergrund
+- ✅ Wasserzeichen — Band: Einfügen ▸ Kopf- und Fußzeile, Seitenlayout ▸ Seitenhintergrund
 - ✅ Seitenrahmen — befehle.seitenrahmen, pagination.seitenschmuck, DOCX pgBorders (test_docx_roundtrip, test_pdf)
 - ◐ Bild/Objekt anordnen — nur Ausrichten und Drehen/Spiegeln (Bildtools); kein Gruppieren, keine Ebenen
 
@@ -235,7 +235,7 @@ Die Bilder des Bogens (bindend, 1 zu 1) liegen unter `docs/pruefbogen/bilder/`.
 
 - ✅ Drucklayout — Band: Ansicht ▸ Dokumentansichten
 - ✅ Lesemodus — Band: Ansicht ▸ Dokumentansichten, Schreibhilfe ▸ Lesen
-- ✅ Zwei Seiten — Band: Ansicht ▸ Dokumentansichten
+- ✅ Zwei Seiten — Band: Ansicht ▸ Zoom
 - ✅ Weblayout — Band: Ansicht ▸ Dokumentansichten
 - ✅ Gliederung — Band: Ansicht ▸ Dokumentansichten
 - ✅ Lineal — Band: Ansicht ▸ Anzeigen

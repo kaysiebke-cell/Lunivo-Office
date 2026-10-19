@@ -37,3 +37,20 @@ def test_reihenfolge_der_gruppen_und_vier_spalten(app, tmp_path):
     assert titel == ["DESIGNS", "RÄNDER", "SEITE EINRICHTEN", "SEITENHINTERGRUND", "ANORDNEN", "ABSATZ"]
     w.befehle.tun("spaltenSetzen:[4]")
     assert w.current_tab().page.spalten == 4
+
+
+def test_reiter_einfuegen_verweise_ansicht_wie_wps(app, tmp_path):
+    from PySide6.QtWidgets import QLabel
+    w = fenster(tmp_path)
+    r = w.band.reiter
+    erwartet = {
+        "Einfügen": ["SEITEN", "TABELLEN", "ILLUSTRATIONEN", "KOMMENTAR", "KOPF- UND FUSSZEILE", "TEXT", "SYMBOLE", "LINKS", "FORMULARE"],
+        "Verweise": ["INHALTSVERZEICHNIS", "FUSSNOTEN", "BESCHRIFTUNGEN", "INDEX", "ZITATE UND LITERATUR", "SERIENDRUCK"],
+        "Ansicht": ["DOKUMENTANSICHTEN", "ANZEIGEN", "ZOOM", "HELLIGKEIT", "FENSTER", "OBERFLÄCHE"],
+    }
+    for name, soll in erwartet.items():
+        i = next(i for i in range(r.count()) if r.tabText(i) == name)
+        seite = w.band.stapel.widget(i).widget()
+        titel = [l.text() for l in seite.findChildren(QLabel) if l.text().isupper() and l.text() in soll]
+        assert titel == soll, (name, titel)
+    assert w.befehle.hat("vollbild")
