@@ -1,6 +1,6 @@
 # Menüstruktur ↔ Programm
 
-**✅ 66 · ◐ 23 · ⬜ 21** (zusammengefasste Zeilen).
+**✅ 66 · ◐ 26 · ⬜ 18** (zusammengefasste Zeilen).
 Erzeugt von `werkzeug/menuestruktur-abgleich.py`. Die vorgegebene Struktur (12 Bereiche) Punkt für Punkt gegen das Programm: ✅ vorhanden · ◐ teilweise oder anders gelöst · ⬜ fehlt. Reiter-Reihenfolge und -Anordnung folgen den WPS-Bildschirmfotos; wo die Struktur davon abweicht (eigener KI-Reiter, Rechtschreibung unter Überprüfen), gilt die Anordnung nach WPS: Rechtschreibung und KI stehen im Reiter Schreibhilfe.
 
 ## 1. Datei
@@ -73,7 +73,7 @@ Erzeugt von `werkzeug/menuestruktur-abgleich.py`. Die vorgegebene Struktur (12 B
 | ✅ | Absatz: Tabstopps / Absatzdialog | Absatzdialog und Tabstopp-Dialog |
 | ✅ | Anordnen: Textumbruch (links/rechts/oben-unten/Zeile) · Ausrichten · Drehen | Seitenlayout ▸ Anordnen |
 | ◐ | Anordnen: Auswahlbereich | „Objekte auswählen“; kein Bereich mit Liste |
-| ⬜ | Anordnen: Nach vorne / Nach hinten · Gruppieren · Position sperren | Gruppieren: Knopf ausgegraut |
+| ◐ | Anordnen: Nach vorne / Nach hinten · Gruppieren · Position sperren | Gruppieren/Aufheben für Formen (als Zeilenobjekt, nicht frei schwebend); Nach vorne/hinten und Position sperren fehlen — Qt kennt keine Z-Ordnung |
 | ✅ | Anordnen: Größe / Seitenverhältnis | Bildtools ▸ Größe und Seitenverhältnis |
 
 ## 5. Abschnitt
@@ -142,11 +142,11 @@ Erzeugt von `werkzeug/menuestruktur-abgleich.py`. Die vorgegebene Struktur (12 B
 | | Punkt | Beleg / Grenze |
 |---|---|---|
 | ✅ | Tabellentools: Schattierung · Rahmenlinien · Zeilen/Spalten einfügen/löschen · verbinden/teilen · sortieren · ausrichten · Eigenschaften | Reiter Tabellentools |
-| ⬜ | Tabellentools: Tabellenformatvorlagen · Formatoptionen · Linienstil/Effekte · Formel · Textrichtung | — |
+| ◐ | Tabellentools: Tabellenformatvorlagen · Formatoptionen · Linienstil/Effekte · Formel · Textrichtung | Vorlagen (7), Kopfzeile/gebänderte Zeilen/erste Spalte, Rahmen, Schattierung; keine lebende Verknüpfung (Vorlage wird auf die Zellen angewendet); Linienstil/Effekte, Formel, Textrichtung fehlen |
 | ◐ | Tabellentools: Zellengröße Höhe/Breite | über Eigenschaften |
 | ✅ | Bildtools: Helligkeit/Kontrast/Farbe · Zuschneiden · Größe · Textumbruch · Alternativtext | Reiter Bildtools |
 | ⬜ | Bildtools: Transparenz · Bildstile/Rahmen · Position/Ausrichten | — |
-| ⬜ | Form- und WordArt-Tools: Formvorlagen · Füllung · Kontur · Effekte · Gruppieren | Reiter da, Knöpfe ausgegraut |
+| ◐ | Form- und WordArt-Tools: Formvorlagen · Füllung · Kontur · Effekte · Gruppieren | Formvorlagen (8), Füllung, Kontur/Stärke, Text in der Form, Gruppieren; Effekte fehlen; Formen sind Bilder mit gespeicherten Parametern |
 | ✅ | Kopf- und Fußzeilentools: Kopf/Fuß bearbeiten · Seitenzahl · Erste Seite anders · schließen | Reiter Kopf- und Fußzeilentools |
 | ⬜ | Kopf- und Fußzeilentools: Gerade/ungerade · Verknüpfen · Dokumenttext anzeigen | — |
 

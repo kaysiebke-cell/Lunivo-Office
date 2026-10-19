@@ -823,6 +823,23 @@ class _Reader:
         return "links"
 
     # ---- Tabellen ----------------------------------------------------
+    @staticmethod
+    def _zelle_format(qcell, cell) -> None:
+        """Zellenschattierung (w:shd) und senkrechte Ausrichtung (w:vAlign) aus der DOCX-Zelle."""
+        from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT as V
+        cf = qcell.format().toTableCellFormat()
+        geaendert = False
+        shd = cell._tc.xpath("w:tcPr/w:shd")
+        if shd and shd[0].get(qn("w:fill")) not in (None, "auto"):
+            cf.setBackground(QBrush(QColor("#" + shd[0].get(qn("w:fill")))))
+            geaendert = True
+        va = cell.vertical_alignment
+        if va in (V.CENTER, V.BOTTOM):
+            cf.setVerticalAlignment(QTextCharFormat.AlignMiddle if va == V.CENTER else QTextCharFormat.AlignBottom)
+            geaendert = True
+        if geaendert:
+            qcell.setFormat(cf)
+
     def add_table(self, table: Table):
         rows, cols = len(table.rows), len(table.columns)
         if rows == 0 or cols == 0:
@@ -857,6 +874,8 @@ class _Reader:
                     first = False
                 else:
                     self.report.warn("Verschachtelte Tabellen werden nicht dargestellt.")
+        for r0, c0, _r1, _c1, cell in placed.values():          # erst nach dem Inhalt: das Einfügen von Text setzt das Zellenformat zurück
+            self._zelle_format(qt.cellAt(r0, c0), cell)
         self.cur = QTextCursor(self.doc)
         self.cur.movePosition(QTextCursor.End)
         self.fresh = True

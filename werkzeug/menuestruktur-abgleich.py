@@ -73,7 +73,7 @@ bereich("4. Seitenlayout",
     ("Absatz: Tabstopps / Absatzdialog", OK, "Absatzdialog und Tabstopp-Dialog"),
     ("Anordnen: Textumbruch (links/rechts/oben-unten/Zeile) · Ausrichten · Drehen", OK, "Seitenlayout ▸ Anordnen"),
     ("Anordnen: Auswahlbereich", TEIL, "„Objekte auswählen“; kein Bereich mit Liste"),
-    ("Anordnen: Nach vorne / Nach hinten · Gruppieren · Position sperren", FEHLT, "Gruppieren: Knopf ausgegraut"),
+    ("Anordnen: Nach vorne / Nach hinten · Gruppieren · Position sperren", TEIL, "Gruppieren/Aufheben für Formen (als Zeilenobjekt, nicht frei schwebend); Nach vorne/hinten und Position sperren fehlen — Qt kennt keine Z-Ordnung"),
     ("Anordnen: Größe / Seitenverhältnis", OK, "Bildtools ▸ Größe und Seitenverhältnis"))
 
 bereich("5. Abschnitt",
@@ -124,11 +124,11 @@ bereich("9. Ansicht",
 
 bereich("10. Kontextabhängige Registerkarten",
     ("Tabellentools: Schattierung · Rahmenlinien · Zeilen/Spalten einfügen/löschen · verbinden/teilen · sortieren · ausrichten · Eigenschaften", OK, "Reiter Tabellentools"),
-    ("Tabellentools: Tabellenformatvorlagen · Formatoptionen · Linienstil/Effekte · Formel · Textrichtung", FEHLT, "—"),
+    ("Tabellentools: Tabellenformatvorlagen · Formatoptionen · Linienstil/Effekte · Formel · Textrichtung", TEIL, "Vorlagen (7), Kopfzeile/gebänderte Zeilen/erste Spalte, Rahmen, Schattierung; keine lebende Verknüpfung (Vorlage wird auf die Zellen angewendet); Linienstil/Effekte, Formel, Textrichtung fehlen"),
     ("Tabellentools: Zellengröße Höhe/Breite", TEIL, "über Eigenschaften"),
     ("Bildtools: Helligkeit/Kontrast/Farbe · Zuschneiden · Größe · Textumbruch · Alternativtext", OK, "Reiter Bildtools"),
     ("Bildtools: Transparenz · Bildstile/Rahmen · Position/Ausrichten", FEHLT, "—"),
-    ("Form- und WordArt-Tools: Formvorlagen · Füllung · Kontur · Effekte · Gruppieren", FEHLT, "Reiter da, Knöpfe ausgegraut"),
+    ("Form- und WordArt-Tools: Formvorlagen · Füllung · Kontur · Effekte · Gruppieren", TEIL, "Formvorlagen (8), Füllung, Kontur/Stärke, Text in der Form, Gruppieren; Effekte fehlen; Formen sind Bilder mit gespeicherten Parametern"),
     ("Kopf- und Fußzeilentools: Kopf/Fuß bearbeiten · Seitenzahl · Erste Seite anders · schließen", OK, "Reiter Kopf- und Fußzeilentools"),
     ("Kopf- und Fußzeilentools: Gerade/ungerade · Verknüpfen · Dokumenttext anzeigen", FEHLT, "—"))
 

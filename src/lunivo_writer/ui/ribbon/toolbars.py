@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (
 )
 
 from lunivo_writer.ui.widgets import icons
-from lunivo_writer.ui.contextual.image_tools import BILDTOOLS
+from lunivo_writer.ui.contextual.image_tools import BILDTOOLS, FORMTOOLS
 from lunivo_writer.ui.contextual.table_tools import TABELLENTOOLS
 from lunivo_writer.ui.ribbon.ribbon_bar import NICHT_DA, STILE_KATALOG
 
@@ -167,7 +167,7 @@ class Symbolleisten(QWidget):
 
     # ---- gleiche Schnittstelle wie RegisterBand ----------------------------------------------
     def kontext(self, name: str, sichtbar: bool) -> None:
-        if name not in ("tabelle", "bild"):
+        if name not in ("tabelle", "bild", "form"):
             return
         if sichtbar and self._kontext_name != name:
             self._kontext_name = name
@@ -175,10 +175,20 @@ class Symbolleisten(QWidget):
                 it = self.z3.takeAt(0)
                 if it.widget():
                     it.widget().deleteLater()
-            plan = TABELLENTOOLS if name == "tabelle" else BILDTOOLS
+            plan = TABELLENTOOLS if name == "tabelle" else FORMTOOLS if name == "form" else BILDTOOLS
             for g in plan["gruppen"]:
                 for e in g["knoepfe"]:
-                    if e.get("symbol") == "//" or not e.get("tun"):
+                    if e.get("symbol") == "//":
+                        continue
+                    if e.get("klappe") and not e.get("tun"):
+                        fn = getattr(self.b, "menue_" + e["klappe"], None)
+                        if fn:
+                            kn = QToolButton(); kn.setAutoRaise(True); kn.setPopupMode(QToolButton.InstantPopup)
+                            kn.setIcon(icons.icon(e["symbol"], 18)); kn.setToolTip(e["name"])
+                            kn.setMenu(fn())
+                            self.z3.addWidget(kn)
+                        continue
+                    if not e.get("tun"):
                         continue
                     self.z3.addWidget(self._knopf(e["symbol"], e["name"], e["tun"]))
                 self._trenner(self.z3)

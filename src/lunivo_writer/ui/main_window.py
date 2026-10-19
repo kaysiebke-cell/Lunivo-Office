@@ -363,7 +363,10 @@ class MainWindow(QMainWindow):
         e = self.current_editor()
         self.band.aktualisieren(e is not None)
         self.band.kontext("tabelle", bool(e) and e.textCursor().currentTable() is not None)
-        self.band.kontext("bild", bool(e) and e.bild_format() is not None)
+        bf = e.bild_format() if e else None
+        from lunivo_writer.editor import formen
+        self.band.kontext("bild", bf is not None and not formen.ist_form(bf))
+        self.band.kontext("form", bf is not None and formen.ist_form(bf))
         f = self.band.felder
         if e is None or not f:
             return

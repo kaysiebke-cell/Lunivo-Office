@@ -17,7 +17,10 @@ BILDTOOLS = {"name": "Bildtools", "kontext": "bild", "gruppen": [
 ]}
 
 FORMTOOLS = {"name": "Form- und WordArt-Tools", "kontext": "form", "gruppen": [
-    {"name": "Format", "knoepfe": [_k("stift", "Formvorlagen", "formVorlagen", True),
-                                    _k("toenung", "Formfüllung", "formFuellung"),
-                                    _k("linie", "Formkontur", "formKontur"),
-                                    _k("anordnen", "Anordnen / Gruppieren", "gruppieren")]}]}
+    {"name": "Formvorlagen", "knoepfe": [_k("stift", "Formvorlagen", klappe="formVorlagen", gross=True)]},
+    {"name": "Formenstile", "knoepfe": [_k("toenung", "Formfüllung", klappe="formFuellung"),
+                                         _k("linie", "Formkontur", klappe="formKontur"),
+                                         _k("notiz", "Text in der Form …", "formText")]},
+    {"name": "Anordnen", "knoepfe": [_k("gruppieren", "Gruppieren", "gruppieren"),
+                                     _k("gruppieren", "Gruppierung aufheben", "gruppeAufheben"),
+                                     _k("textflussumbruch", "Textumbruch / Position", "anordnen")]}]}

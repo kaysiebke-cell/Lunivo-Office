@@ -705,6 +705,7 @@ class _Writer:
                 dcell = t.cell(r, c)
                 if rs > 1 or cs > 1:
                     dcell = dcell.merge(t.cell(r + rs - 1, c + cs - 1))
+                self._zelle_format(dcell, cell.format().toTableCellFormat())
                 box = _CellBox(dcell)
                 # Zelleninhalt: Rahmen der Zelle durchlaufen
                 cit = cell.begin()
@@ -718,6 +719,22 @@ class _Writer:
                     cit += 1
         if isinstance(container, _Body):
             pass
+
+    @staticmethod
+    def _zelle_format(dcell, cf) -> None:
+        """Zellenschattierung (w:shd) und senkrechte Ausrichtung (w:vAlign) der Qt-Zelle übernehmen."""
+        from docx.enum.table import WD_CELL_VERTICAL_ALIGNMENT as V
+        br = cf.background()
+        if br.style() != Qt.NoBrush and br.color().alpha() > 0:
+            tcpr = dcell._tc.get_or_add_tcPr()
+            shd = OxmlElement("w:shd")
+            shd.set(qn("w:val"), "clear"); shd.set(qn("w:color"), "auto"); shd.set(qn("w:fill"), br.color().name()[1:].upper())
+            for alt in tcpr.findall(qn("w:shd")):
+                tcpr.remove(alt)
+            tcpr.append(shd)
+        va = {QTextCharFormat.AlignMiddle: V.CENTER, QTextCharFormat.AlignBottom: V.BOTTOM}.get(cf.verticalAlignment())
+        if va is not None:
+            dcell.vertical_alignment = va
 
     # ---- Hauptlauf --------------------------------------------------------
     def run(self) -> bytes:

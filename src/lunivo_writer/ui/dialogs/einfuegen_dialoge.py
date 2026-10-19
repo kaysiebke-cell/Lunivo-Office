@@ -77,6 +77,10 @@ class FormDialog(QDialog, VorschauMixin):
         return E.form_bild(self.art.currentText(), self.breite.value(), self.hoehe.value(), self.fuell.farbe, self.linie.farbe,
                            self.strich.value(), self.text.text())
 
+    def daten(self):
+        return {"form": self.art.currentText(), "fuell": self.fuell.farbe, "linie": self.linie.farbe,
+                "strich": self.strich.value(), "text": self.text.text()}
+
     def aktualisieren(self, *_):
         self._zeige(self.bild())
 

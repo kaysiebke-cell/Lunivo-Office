@@ -828,7 +828,7 @@ class Befehle:
             from lunivo_writer.ui.dialogs.einfuegen_dialoge import FormDialog
             d = FormDialog(self.w)
             if d.exec():
-                self._bild_einfuegen(d.bild(), f"Form: {d.art.currentText()}", "form", {"form": d.art.currentText()})
+                self._bild_einfuegen(d.bild(), f"Form: {d.art.currentText()}", "form", d.daten())
 
     def wordart(self, k=None):
         if self.ed:
@@ -1768,6 +1768,40 @@ class Befehle:
         m.addAction("Keine Schattierung", lambda: setze(None))
         return m
 
+    # Tabellenformatvorlagen und Formatoptionen
+    def menue_tabelleVorlagen(self):
+        from lunivo_writer.editor import tabellenstil as TS
+        m = QMenu()
+        for n, (kopf, _s, streifen, _r) in TS.VORLAGEN.items():
+            m.addAction(_farbfeld(kopf or streifen or "#ffffff"), n, lambda _=False, n=n: self._tabelle_vorlage(n))
+        return m
+
+    def _tabelle_vorlage(self, name):
+        from lunivo_writer.editor import tabellenstil as TS
+        e, c, t = self._tab()
+        if t:
+            o = self.tabellenOptionen
+            e.textCursor().beginEditBlock()
+            TS.anwenden(t, name, o["kopf"], o["streifen"], o["spalte"])
+            e.textCursor().endEditBlock()
+            self._tabellen_vorlage_name = name
+            e.document().setModified(True)
+
+    tabellenOptionen = {"kopf": True, "streifen": True, "spalte": False}
+
+    def _tabellen_option(self, key):
+        self.tabellenOptionen[key] = not self.tabellenOptionen[key]
+        n = getattr(self, "_tabellen_vorlage_name", None)
+        if n:
+            self._tabelle_vorlage(n)
+
+    def tabelleKopfzeile(self, k=None): self._tabellen_option("kopf")
+    def tabelleStreifen(self, k=None): self._tabellen_option("streifen")
+    def tabelleErsteSpalte(self, k=None): self._tabellen_option("spalte")
+    def an_tabelleKopfzeile(self): return self.tabellenOptionen["kopf"]
+    def an_tabelleStreifen(self): return self.tabellenOptionen["streifen"]
+    def an_tabelleErsteSpalte(self): return self.tabellenOptionen["spalte"]
+
     def _zelle_ausrichten(self, wo):
         e, c, t = self._tab()
         if t:
@@ -1787,6 +1821,74 @@ class Befehle:
             return None, None
         f = e.bild_format()
         return (e, f) if f is not None else (e, None)
+
+    # ---- Form- und WordArt-Tools --------------------------------------------------------------------------------------------
+    FARBEN = ("#4a8fd8", "#6bbf59", "#f4a259", "#e5645f", "#ffd43b", "#ced4da", "#495057", "#ffffff", "#000000")
+
+    def _form_farbe(self, feld: str, titel: str):
+        from PySide6.QtWidgets import QColorDialog
+        c = QColorDialog.getColor(QColor("#4a8fd8"), self.w, titel)
+        if c.isValid():
+            self._form_aendern(**{feld: c.name()})
+
+    def _form_aendern(self, **kw):
+        from lunivo_writer.editor import formen
+        if not (self.ed and formen.aendern(self.ed, **kw)):
+            self.w.lbl_msg.setText("Bitte zuerst eine Form auswählen (Schreibmarke vor der Form oder Form markieren).")
+
+    def menue_formFuellung(self):
+        m = QMenu()
+        for col in self.FARBEN:
+            m.addAction(_farbfeld(col), col, lambda _=False, col=col: self._form_aendern(fuell=col))
+        m.addAction("Keine Füllung", lambda: self._form_aendern(fuell=""))
+        m.addAction("Weitere Farben …", lambda: self._form_farbe("fuell", "Füllfarbe"))
+        return m
+
+    def menue_formKontur(self):
+        m = QMenu()
+        for col in self.FARBEN:
+            m.addAction(_farbfeld(col), col, lambda _=False, col=col: self._form_aendern(linie=col))
+        m.addAction("Weitere Farben …", lambda: self._form_farbe("linie", "Linienfarbe"))
+        m.addSeparator()
+        st = m.addMenu("Linienstärke")
+        for w in (0.5, 1.0, 2.0, 3.0, 5.0, 8.0):
+            st.addAction(f"{w:g} pt".replace(".", ","), lambda _=False, w=w: self._form_aendern(strich=w))
+        return m
+
+    def menue_formVorlagen(self):
+        from lunivo_writer.editor import formen
+        m = QMenu()
+        for n, fu, li, _st in formen.VORLAGEN:
+            m.addAction(_farbfeld(fu or "#ffffff"), n, lambda _=False, n=n: self._form_vorlage(n))
+        return m
+
+    def _form_vorlage(self, name):
+        from lunivo_writer.editor import formen
+        if not (self.ed and formen.vorlage(self.ed, name)):
+            self.w.lbl_msg.setText("Bitte zuerst eine Form auswählen.")
+
+    def formText(self, k=None):
+        e, f = self._bild()
+        if f is None:
+            return
+        from lunivo_writer.editor import formen
+        o = formen.objekt(f) or {}
+        akt = o.get("daten", {}).get("text", "")
+        t, ok = QInputDialog.getText(self.w, "Text in der Form", "Text:", text=akt)
+        if ok:
+            self._form_aendern(text=t)
+
+    def gruppieren(self, k=None):
+        from lunivo_writer.editor import formen
+        if self.ed:
+            r = formen.gruppieren(self.ed)
+            self.w.lbl_msg.setText(r or "Formen gruppiert.")
+
+    def gruppeAufheben(self, k=None):
+        from lunivo_writer.editor import formen
+        if self.ed:
+            r = formen.gruppe_aufheben(self.ed)
+            self.w.lbl_msg.setText(r or "Gruppierung aufgehoben.")
 
     def bildGroesse(self, k=None):
         e, f = self._bild()

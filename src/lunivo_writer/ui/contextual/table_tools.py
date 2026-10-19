@@ -5,6 +5,11 @@ from lunivo_writer.ui.ribbon.tabs.baustein import k as _k
 
 
 TABELLENTOOLS = {"name": "Tabellentools", "kontext": "tabelle", "gruppen": [
+    {"name": "Tabellenformatvorlagen", "knoepfe": [
+        _k("tabelle", "Tabellenformatvorlagen", klappe="tabelleVorlagen", gross=True),
+        _k("haken", "Kopfzeile", "tabelleKopfzeile", haken=True),
+        _k("haken", "Gebänderte Zeilen", "tabelleStreifen", haken=True),
+        _k("haken", "Erste Spalte", "tabelleErsteSpalte", haken=True)]},
     {"name": "Entwurf: Rahmen und Farbe", "knoepfe": [
         _k("rahmen", "Rahmenlinien ein/aus", "tabelleRahmen", True, haken=True),
         _k("toenung", "Zellenschattierung", klappe="tabelleSchattierung", gross=True)]},
