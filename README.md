@@ -27,7 +27,7 @@ Nicht *für* Menschen mit Legasthenie gebaut, sondern *von* einem —
 [wie es dazu kam](docs/ENTSTEHUNG.md).
 Kein Konto, keine Anmeldung, kein Internet nötig.
 
-![Lunivo-Office mit zwei Dokumenten als Reiter oben, einem Widerspruchsbrief im Blatt und der Schreibhilfe rechts an der Seite](assets/images/uebersicht.png)
+![Lunivo Writer mit einem Widerspruchsbrief im Blatt, dem Menüband oben und der Schreibhilfe rechts an der Seite: Ein Tippfehler („wiederspreche“) ist unterschlängelt und steht als Karte mit Ändern und Lassen in der Seitenleiste](assets/images/qt-uebersicht.png)
 
 ## Mach mit
 
@@ -155,6 +155,44 @@ und [BERICHT.md](docs/BERICHT.md); beides wird mit `werkzeug/pruefbogen-*.py` au
 
 ## So sieht es aus
 
+Die Bilder dieses Abschnitts zeigen die **Qt-Oberfläche** (aufgenommen mit
+`python3 werkzeug/bildschirmfotos.py`, ohne Bildschirm erzeugt).
+
+Das Fenster im Überblick — hell und dunkel: oben die Reiter, darunter das Band, in der Mitte das
+Blatt, rechts die Schreibhilfe mit der Karte zum Fund.
+
+![Das Fenster im hellen Thema](assets/images/qt-uebersicht.png)
+
+![Dasselbe Fenster im dunklen Thema](assets/images/qt-uebersicht-dunkel.png)
+
+Der Reiter **Schreibhilfe** trägt alles, was das Lesen und Schreiben erleichtert — Lesehilfe, farbige Silben,
+Prüfen, Vorlesen, Sprache, Bausteine und die KI —, im dunklen Thema genauso.
+
+![Der Reiter Schreibhilfe mit den Gruppen Lesen, Prüfen, Beim Schreiben, Vorlesen, Sprache, Bausteine, KI-Schreibwerkzeuge und KI](assets/images/qt-schreibhilfe.png)
+
+![Der Reiter Schreibhilfe im dunklen Thema](assets/images/qt-schreibhilfe-dunkel.png)
+
+**Datei** ist eine Backstage-Ansicht: links die Befehle, rechts die Seite dazu — hier *Info* mit Statistik,
+Verfasser und Titel.
+
+![Die Backstage-Ansicht des Reiters Datei mit der Seite Info](assets/images/qt-datei.png)
+
+![Die Backstage-Ansicht im dunklen Thema](assets/images/qt-datei-dunkel.png)
+
+**Spalten** stehen live auf der Seite, beim Schreiben — hier zwei Spalten auf einer A4-Seite.
+
+![Eine A4-Seite mit zwei Spalten im Reiter Seitenlayout](assets/images/qt-spalten.png)
+
+Die **Optionen** (**F9**) haben drei Zweige. Jede Wahl der Lesehilfe wirkt sofort auf dem Blatt.
+
+![Die Optionen mit der Seite Lesehilfe: Papierton, Buchstaben- und Wortabstand, Zeilenfokus, Vorlesen, farbige Silben und Silbentrennung; links der Baum mit den drei Zweigen](assets/images/qt-optionen-lesehilfe.png)
+
+Unter **Schriftarten** stehen die Leseschriften.
+
+![Die Seite Schriftarten der Optionen](assets/images/qt-optionen-schriften.png)
+
+### Die frühere Oberfläche (Bildschirmfotos der Fassung davor)
+
 Der Reiter **Schreibhilfe** trägt alles, was das Lesen und Schreiben
 erleichtert. Der Text steht in OpenDyslexic.
 
@@ -198,8 +236,6 @@ sudo apt install python3 python3-venv libxcb-cursor0 libegl1 libxkbcommon-x11-0 
 Beim ersten Start legt das Skript eine eigene Umgebung (`.venv`) an und installiert PySide6 und die übrigen Pakete;
 `./starten-qt.sh --eintrag` legt zusätzlich einen Menüeintrag an. Genaueres und optionale Teile:
 [docs/INSTALLATION.md](docs/INSTALLATION.md). Direkt aus dem Projektordner geht auch `python3 main.py`.
-
-> Die Bilder in diesem Dokument zeigen noch die frühere Oberfläche; neue Bilder der Qt-Oberfläche folgen.
 
 ## Eine Hilfe, kein Ersatz
 
