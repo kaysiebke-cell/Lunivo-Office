@@ -21,9 +21,8 @@ class DocumentManager:
         return formats.load(path, kennwort)
 
     def meta_fuer_speichern(self, meta: dict) -> dict:
-        """Dokument-Metadaten plus Einstellungen: Codierung, Verfasser (Benutzername oder gelöscht)."""
+        """Dokument-Metadaten plus Einstellungen: Verfasser (Benutzername oder gelöscht)."""
         m = dict(meta)
-        m["codierung"] = self.settings.get("speichern/codierung", "UTF-8")
         if self.settings.get_bool("sicherheit/personendaten_weg", False) or not self.settings.get_bool("benutzer/verwenden", True):
             m["author"] = ""
         elif self.settings.get("benutzer/name", ""):

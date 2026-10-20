@@ -4,11 +4,12 @@ from __future__ import annotations
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
-    QCheckBox, QColorDialog, QComboBox, QDialog, QDialogButtonBox, QFormLayout, QHBoxLayout, QLabel, QPushButton,
+    QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFormLayout, QHBoxLayout, QLabel, QPushButton,
     QSpinBox, QTextEdit, QVBoxLayout, QWidget,
 )
 
 from lunivo_writer.editor import silbenfarben as S
+from lunivo_writer.ui.baukasten import weitere_farben
 
 
 class SilbenDialog(QDialog):
@@ -103,8 +104,8 @@ class SilbenDialog(QDialog):
         self._zustand()
 
     def _farbe_waehlen(self, i: int) -> None:
-        c = QColorDialog.getColor(QColor(self.eigene[i]), self, "Farbe für Silbe " + str(i + 1))
-        if c.isValid():
+        c = weitere_farben(self, self.eigene[i], "Farbe für Silbe " + str(i + 1))
+        if c is not None:
             self.eigene[i] = c.name()
             self._knoepfe_faerben()
             self.anwenden()

@@ -25,7 +25,7 @@ Leiste ihr Inhalt. Neue Registerkarten und Gruppen lassen sich anlegen
 und umbenennen.
 
 **Das Dokumentkennwort** verschlüsselt wirklich: AES-256, den Schlüssel
-mit PBKDF2 aus dem Kennwort, beides vom Browser selbst gerechnet. Ohne das
+mit PBKDF2 aus dem Kennwort, beides vom Programm selbst gerechnet. Ohne das
 Kennwort ist der Inhalt nicht mehr zu lesen, auch nicht von Lunivo — und
 ein vergessenes kann niemand wiederherstellen.
 

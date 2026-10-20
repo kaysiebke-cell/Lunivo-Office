@@ -43,11 +43,11 @@ bekommt.
 Die Gerüste werden **nicht** in `~/Vorlagen` geschrieben — der Ordner
 gehört dem Menschen. Was dort liegt, steht im zweiten Reiter daneben.
 
-**Speichern.** `.odt`, `.docx`, `.doc`, `.rtf`, `.fodt`, `.html`, `.txt`,
+**Speichern.** `.odt`, `.docx`, `.doc`, `.rtf`, `.fodt`, `.txt`,
 PDF und EPUB. Word-Dateien öffnen und wieder als Word speichern.
 
 **Drucken.** Das Programm rechnet den Seitenumbruch selbst aus, statt ihn
-dem Browser zu überlassen: Es füllt ein Blatt, bis es voll ist, und fängt
+dem Textfeld zu überlassen: Es füllt ein Blatt, bis es voll ist, und fängt
 ein neues an. Kopfzeile, Fußzeile und die *wirkliche* Seitenzahl stehen
 deshalb auf jeder Seite. Die **Druckvorschau** zeigt den ganzen Stapel zum
 Durchblättern — eine, zwei oder vier Seiten nebeneinander, oder als

@@ -4,12 +4,13 @@ from __future__ import annotations
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QPixmap
 from PySide6.QtWidgets import (
-    QColorDialog, QComboBox, QDialog, QDialogButtonBox, QDoubleSpinBox, QFormLayout, QHBoxLayout, QLabel, QLineEdit,
+    QComboBox, QDialog, QDialogButtonBox, QDoubleSpinBox, QFormLayout, QHBoxLayout, QLabel, QLineEdit,
     QListWidget, QListWidgetItem, QMessageBox, QPlainTextEdit, QPushButton, QSpinBox, QTableWidget, QTableWidgetItem,
     QVBoxLayout,
 )
 
 from lunivo_writer.editor import einfuegen as E
+from lunivo_writer.ui.baukasten import FarbFeld
 from lunivo_writer.services import bausteine
 
 
@@ -19,22 +20,7 @@ def _ok(dlg):
     return bb
 
 
-class _Farbknopf(QPushButton):
-    def __init__(self, farbe: str, titel: str = "Farbe"):
-        super().__init__(farbe)
-        self.farbe = farbe
-        self.titel = titel
-        self.clicked.connect(self._waehle)
-        self._zeige()
-
-    def _waehle(self):
-        c = QColorDialog.getColor(QColor(self.farbe), self, self.titel)
-        if c.isValid():
-            self.farbe = c.name(); self._zeige()
-
-    def _zeige(self):
-        self.setText(self.farbe)
-        self.setStyleSheet(f"QPushButton {{ background: {self.farbe}; color: {'white' if QColor(self.farbe).lightness() < 140 else 'black'}; }}")
+_Farbknopf = FarbFeld
 
 
 class VorschauMixin:
@@ -244,11 +230,19 @@ class FormelDialog(QDialog):
         self.eingabe.textChanged.connect(self._zeige); self._zeige()
 
     def _zeige(self, *_):
-        html = ""
+        from PySide6.QtGui import QColor, QFont, QPainter, QPixmap, QTextCharFormat, QTextCursor, QTextDocument
+        d = QTextDocument(); d.setDefaultFont(QFont("DejaVu Serif", 16)); c = QTextCursor(d)
         for t, a in E.formel_teile(self.eingabe.text()):
-            t = t.replace("&", "&amp;").replace("<", "&lt;")
-            html += f"<sup>{t}</sup>" if a == "hoch" else f"<sub>{t}</sub>" if a == "tief" else t
-        self.vorschau.setText(f"<i>{html}</i>")
+            cf = QTextCharFormat(); cf.setFontItalic(True); cf.setForeground(QColor("black"))
+            if a == "hoch":
+                cf.setVerticalAlignment(QTextCharFormat.AlignSuperScript)
+            elif a == "tief":
+                cf.setVerticalAlignment(QTextCharFormat.AlignSubScript)
+            c.insertText(t, cf)
+        d.setTextWidth(-1)
+        pm = QPixmap(int(d.idealWidth()) + 20, int(d.size().height()) + 16); pm.fill(QColor("white"))
+        p = QPainter(pm); p.translate(10, 8); d.drawContents(p); p.end()
+        self.vorschau.setPixmap(pm)
 
 
 class DeckblattDialog(QDialog):

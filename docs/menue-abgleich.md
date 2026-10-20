@@ -86,4 +86,4 @@ Dazu die zwei Knöpfe, die ins Leere greifen (Textmarke, Querverweis).
 Farben, Schriftarten, Effekte** fehlt, ebenso **Ausrichten, Gruppieren,
 Drehen** für Objekte und die genauen Ränder als Zahlenfelder.
 
-[← Zurück zum README](../README.md) · [Was wirklich fehlt](was-fehlt-wirklich.md)
+[← Zurück zum README](../README.md) · [Funktionsstand](funktionsstand.md)

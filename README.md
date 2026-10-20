@@ -133,7 +133,7 @@ hier, mit Bildern und Tastenkürzeln.
 | Weiteres                                            |                                                   |
 | --------------------------------------------------- | ------------------------------------------------- |
 | [Was zusätzlich geholt wird](docs/erweiterungen.md) | LibreOffice, LanguageTool, Stimmen, Schriften     |
-| [Der Aufbau des Projekts](docs/projektaufbau.md)    | Welche Datei was tut                              |
+| [Der Aufbau des Projekts](docs/README.md)           | Welche Datei was tut                              |
 | [Die lange Fassung](docs/LIESMICH.md)               | Alles ausführlich, auf Deutsch                    |
 | [Wie es entstanden ist](docs/ENTSTEHUNG.md)         | Die Geschichte dahinter                           |
 | [Wohin es geht](docs/RICHTUNG.md)                   | Was noch kommen soll                              |
@@ -232,7 +232,7 @@ Die Prüfung und der Wortschatz stammen aus der
 über viele Fassungen gewachsen. Sie liegen hier als eigene Kopie: Dieses
 Programm ist eigenständig und braucht jenes Projekt nicht, um zu laufen.
 
-Die Wörterliste (`oberflaeche/daten/woerter.txt`, 355.324 Wörter) ist über viele Sitzungen
+Die Wörterliste (`src/lunivo_writer/resources/daten/woerter.txt`, 355.324 Wörter) ist über viele Sitzungen
 selbst aufgebaut worden. Sie stammt aus keiner fremden Quelle und steht
 deshalb wie der übrige Code unter MIT.
 

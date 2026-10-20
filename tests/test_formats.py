@@ -52,7 +52,7 @@ def test_save_to_unwritable_folder(app, tmp_path):
         formats.save("/proc/nicht/möglich.docx", d, PageSettings())
 
 
-def test_kennwort_roundtrip_und_html(app, tmp_path):
+def test_kennwort_roundtrip(app, tmp_path):
     import pytest
     pytest.importorskip("msoffcrypto")
     from PySide6.QtGui import QTextDocument
@@ -69,6 +69,30 @@ def test_kennwort_roundtrip_und_html(app, tmp_path):
     assert ei.value.falsch
     l = formats.load(p, "pw1")
     assert "Streng geheim äöü" in l.doc.toPlainText() and l.meta["kennwort"] == "pw1"
-    h = str(tmp_path / "x.html")
-    formats.save(h, d, PageSettings(), {"codierung": "ISO-8859-1"})
-    assert "Streng geheim \xe4\xf6\xfc".encode("latin-1") in open(h, "rb").read()
+    with pytest.raises(DocumentIOError):                         # Webseiten werden nicht geschrieben
+        formats.save(str(tmp_path / "x.html"), d, PageSettings())
+
+
+def test_textbausteine_ohne_html(app, tmp_path, monkeypatch):
+    """Ein Baustein wird mit Formatierung als einfache Absatzdaten gespeichert und wieder eingefügt."""
+    import json
+    from PySide6.QtGui import QColor, QFont, QTextCharFormat, QTextCursor, QTextDocument, QTextDocumentFragment
+    from lunivo_writer.services import bausteine
+    monkeypatch.setattr(bausteine, "_pfad", lambda: str(tmp_path / "b.json"))
+    d = QTextDocument(); c = QTextCursor(d)
+    fett = QTextCharFormat(); fett.setFontWeight(QFont.Bold); fett.setForeground(QColor("#c92a2a")); fett.setFontPointSize(18)
+    c.insertText("Guten ", QTextCharFormat()); c.insertText("Tag", fett); c.insertBlock(); c.insertText("Zweiter Absatz")
+    bausteine.hinzufuegen("Gruss", QTextDocumentFragment(d))
+    roh = (tmp_path / "b.json").read_text(encoding="utf-8")
+    assert "html" not in roh.lower() and "<" not in roh
+    eintrag = json.loads(roh)[0]
+    assert eintrag["text"] == "Guten Tag\nZweiter Absatz" and len(eintrag["absaetze"]) == 2
+    ziel = QTextDocument(); bausteine.einfuegen(QTextCursor(ziel), bausteine.laden()[0])
+    assert ziel.toPlainText() == "Guten Tag\nZweiter Absatz"
+    rc = QTextCursor(ziel); rc.setPosition(7); rc.setPosition(8, QTextCursor.KeepAnchor)
+    f = rc.charFormat()
+    assert f.fontWeight() >= QFont.Bold and f.foreground().color().name() == "#c92a2a" and f.fontPointSize() == 18
+    # alter Eintrag ohne Absatzdaten: kommt als einfacher Text
+    (tmp_path / "b.json").write_text(json.dumps([{"name": "alt", "text": "nur Text"}]), encoding="utf-8")
+    z2 = QTextDocument(); bausteine.einfuegen(QTextCursor(z2), bausteine.laden()[0])
+    assert z2.toPlainText() == "nur Text"

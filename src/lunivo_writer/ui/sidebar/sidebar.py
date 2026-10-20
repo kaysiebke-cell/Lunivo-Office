@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
     QStackedWidget, QVBoxLayout, QWidget,
 )
 
+from lunivo_writer.ui.baukasten.beschriftung import md_escape, md_label, text_label
 from lunivo_writer.proofing.vorhersage import EMPFAENGER
 from lunivo_writer.ui.sidebar.panels.writing_panel import FundKarte, HinweisKarte, VorschlagKarte
 from lunivo_writer.ui.widgets.flow_layout import FlowLayout
@@ -17,12 +18,17 @@ CHIP_GRUEN = ("QPushButton { border: 1px solid palette(mid); border-radius: 11px
               "QPushButton:checked { background: #2f9e75; color: white; border-color: #2f9e75; }")
 LEER = ("Nichts gefunden. Das heißt nicht, dass alles richtig ist — die Schreibhilfe sucht nur die Fehler, "
         "die ein Rechtschreibprüfer nicht finden kann.")
-HILFE = """<b>Welche Hilfe wann?</b><br><br>
-<b>Wellen</b> — während Sie schreiben, werden Fundstellen unterschlängelt: orange = sicher falsch, blau = kommt auf den Zusammenhang an, grau = nur zum Nachdenken.<br><br>
-<b>Vorhersage</b> — nach drei Buchstaben erscheinen passende Wörter. Tab oder Eingabe übernimmt das markierte.<br><br>
-<b>AutoKorr</b> — bessert das Offensichtliche, sobald ein Wort fertig ist: „ statt ", Gedankenstrich, Auslassungszeichen, Satzanfang, Wochentage.<br><br>
-<b>Prüfen</b> — prüft den ganzen Text gründlich und listet jeden Fund mit Begründung auf. Sie entscheiden: Ändern oder Lassen.<br><br>
-<b>KI</b> — freiwillig; ohne Schlüssel oder Ollama auf diesem Rechner bleibt sie aus. Der Text verlässt den Rechner nie ohne Ihr Zutun."""
+HILFE = """**Welche Hilfe wann?**
+
+**Wellen** — während Sie schreiben, werden Fundstellen unterschlängelt: orange = sicher falsch, blau = kommt auf den Zusammenhang an, grau = nur zum Nachdenken.
+
+**Vorhersage** — nach drei Buchstaben erscheinen passende Wörter. Tab oder Eingabe übernimmt das markierte.
+
+**AutoKorr** — bessert das Offensichtliche, sobald ein Wort fertig ist: „ statt ", Gedankenstrich, Auslassungszeichen, Satzanfang, Wochentage.
+
+**Prüfen** — prüft den ganzen Text gründlich und listet jeden Fund mit Begründung auf. Sie entscheiden: Ändern oder Lassen.
+
+**KI** — freiwillig; ohne Schlüssel oder Ollama auf diesem Rechner bleibt sie aus. Der Text verlässt den Rechner nie ohne Ihr Zutun."""
 
 
 class SchreibhilfePanel(QWidget):
@@ -47,9 +53,14 @@ class SchreibhilfePanel(QWidget):
         # Kopf: Titel, die drei Schalter der Schreibbrücke (We/Vo/Ko), rechts „Prüfen“
         kopf = QHBoxLayout()
         kopf.setSpacing(6)
-        t = QLabel("<b style='font-size:12pt'>Schreib <span style='color:#2f6fb5'>|</span> hilfe</b>")
-        t.setTextFormat(Qt.RichText)
-        kopf.addWidget(t)
+        titel = QHBoxLayout()
+        titel.setSpacing(0)
+        for teil, farbe in (("Schreib", None), (" | ", "#2f6fb5"), ("hilfe", None)):
+            t = text_label(teil, fett=True, pt=12, umbruch=False)
+            if farbe:
+                t.setStyleSheet(f"color: {farbe};")
+            titel.addWidget(t)
+        kopf.addLayout(titel)
         self.chips = {}
         for key, kurz, name, lang in (
                 ("wellen", "We", "Wellen", "Rote Wellenlinien unter unbekannten Wörtern"),
@@ -74,9 +85,10 @@ class SchreibhilfePanel(QWidget):
         s.setStyleSheet("color: palette(mid);")
         v.addWidget(s)
         zl = QHBoxLayout()
-        l = QLabel("<a href='#' style='color:#6ea8e0'>Welche Hilfe wann?</a>")
-        l.setTextFormat(Qt.RichText)
-        l.linkActivated.connect(lambda _: self.welche_hilfe())
+        l = QPushButton("Welche Hilfe wann?")
+        l.setFlat(True); l.setCursor(Qt.PointingHandCursor)
+        l.setStyleSheet("QPushButton { border: none; background: transparent; padding: 0; color: #6ea8e0; text-decoration: underline; }")
+        l.clicked.connect(self.welche_hilfe)
         zl.addWidget(l)
         zl.addStretch(1)
         v.addLayout(zl)
@@ -269,6 +281,6 @@ class SchreibhilfePanel(QWidget):
     def welche_hilfe(self):
         m = QMessageBox(self)
         m.setWindowTitle("Welche Hilfe wann?")
-        m.setTextFormat(Qt.RichText)
+        m.setTextFormat(Qt.MarkdownText)
         m.setText(HILFE)
         m.exec()

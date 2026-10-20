@@ -6,10 +6,11 @@ import json
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtWidgets import (
-    QCheckBox, QColorDialog, QComboBox, QDialog, QDialogButtonBox, QHBoxLayout, QLabel, QLineEdit, QListWidget, QListWidgetItem,
+    QCheckBox, QComboBox, QDialog, QDialogButtonBox, QHBoxLayout, QLabel, QLineEdit, QListWidget, QListWidgetItem,
     QMessageBox, QPushButton, QRadioButton, QVBoxLayout,
 )
 
+from lunivo_writer.ui.baukasten import weitere_farben
 from lunivo_writer.ui.widgets import icons
 from lunivo_writer.ui.ribbon.plan import plan
 
@@ -196,7 +197,7 @@ class StileVerwaltenDialog(QDialog):
 
     def __init__(self, parent, speichern, anwenden, auswahl=None, entfernen=None, aktualisiert=None):
         super().__init__(parent)
-        from PySide6.QtWidgets import QCheckBox, QColorDialog, QDoubleSpinBox, QFontComboBox, QFormLayout
+        from PySide6.QtWidgets import QCheckBox, QDoubleSpinBox, QFontComboBox, QFormLayout
         from lunivo_writer.editor import stile
         self.stile = stile
         self._speichern = speichern
@@ -262,8 +263,8 @@ class StileVerwaltenDialog(QDialog):
         self._zeige()
 
     def _farbe_waehlen(self):
-        c = QColorDialog.getColor(Qt.black, self, "Schriftfarbe")
-        if c.isValid():
+        c = weitere_farben(self, Qt.black, "Schriftfarbe")
+        if c is not None:
             self._farbe = c.name(); self.farbe.setText(self._farbe); self._zeige()
 
     def _zeige(self, *_):

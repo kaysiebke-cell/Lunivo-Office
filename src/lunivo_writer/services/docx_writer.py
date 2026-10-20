@@ -48,6 +48,8 @@ def _has(fmt, prop) -> bool:
 from lunivo_writer.editor.zusatz import B_SPALTE, P_OBJEKT, P_VERSTECKT  # noqa: E402
 from lunivo_writer.editor.formular import P_FORM  # noqa: E402
 from lunivo_writer.editor.abschnitte import B_ABSCHNITT  # noqa: E402
+from lunivo_writer.editor import umbruch
+from lunivo_writer.editor.linie import Linie
 from lunivo_writer.editor.zusatz import B_ART, B_CAP, B_RAHMEN, B_TOC, P_AENDERUNG, P_AUTOR, P_DATUM, P_FELD, P_INDEX, P_KOMMENTAR, P_NOTE
 
 
@@ -60,6 +62,7 @@ class _Writer:
         self.d = docx.Document()
         self._clear_body()
         self._num_ids: dict[tuple, int] = {}
+        self._vorab_bilder: list = []                    # schwebende Bilder, die am nächsten Absatz verankert werden
         self.last_list_obj = None
         self.last_num = None
         self._komm_runs: dict[int, list] = {}
@@ -252,6 +255,9 @@ class _Writer:
         first_in_cell = isinstance(container, _CellBox)
         while not it.atEnd():
             blk = it.currentBlock()
+            if blk.isValid() and umbruch.ist_anker(blk):
+                it += 1                                          # Hilfsabsatz vor einem schwebenden Bild: kein Word-Absatz
+                continue
             if blk.isValid():
                 para = container.first_paragraph() if first_in_cell else container.add_paragraph()
                 first_in_cell = False
@@ -263,6 +269,8 @@ class _Writer:
                 if isinstance(fr, QTextTable):
                     self.write_table(fr, container)
                     first_in_cell = False
+                elif fr is not None and fr.frameFormat().position() in umbruch.SEITEN and umbruch.bild_im_rahmen(fr) is not None:
+                    self._vorab_bilder.append((umbruch.bild_im_rahmen(fr), umbruch.SEITEN[fr.frameFormat().position()]))
                 elif fr is not None:
                     self.report.warn("Ein Rahmen im Text wurde nur als Fließtext gespeichert.")
                     self.write_frame(fr, container)
@@ -364,23 +372,29 @@ class _Writer:
                     "w:mirrorIndents", "w:suppressOverlap", "w:jc", "w:textDirection", "w:textAlignment", "w:textboxTightWrap",
                     "w:outlineLvl", "w:divId", "w:cnfStyle", "w:rPr", "w:sectPr", "w:pPrChange")
         if bf.hasProperty(B_RAHMEN):
-            farbe, _, rest = bf.stringProperty(B_RAHMEN).partition("|")
-            pt, _, art = rest.partition("|")
+            li = Linie.aus_text(bf.stringProperty(B_RAHMEN))
             bdr = OxmlElement("w:pBdr")
-            for seite in ("top", "left", "bottom", "right"):
+            val = {"doppelt": "double", "gestrichelt": "dashed", "gepunktet": "dotted", "strichpunkt": "dotDash"}.get(li.art, "single")
+            for seite, kurz in (("top", "t"), ("left", "l"), ("bottom", "b"), ("right", "r"), ("between", "h")):
+                if kurz not in li.seiten:
+                    continue
                 e = OxmlElement(f"w:{seite}")
-                e.set(qn("w:val"), "double" if art == "doppelt" else "single")
-                e.set(qn("w:sz"), str(max(2, int(round(float(pt or 1) * 8)))))
+                e.set(qn("w:val"), val)
+                e.set(qn("w:sz"), str(max(2, int(round(li.breite_pt * 8)))))
                 e.set(qn("w:space"), "4")
-                e.set(qn("w:color"), (farbe or "#000000").lstrip("#").upper())
+                e.set(qn("w:color"), (li.farbe or "#000000").lstrip("#").upper())
                 bdr.append(e)
-            para._p.get_or_add_pPr().insert_element_before(bdr, "w:shd", *nach_shd)
+            if len(bdr):
+                para._p.get_or_add_pPr().insert_element_before(bdr, "w:shd", *nach_shd)
         bg = bf.background()
         if bg.style() != Qt.NoBrush and bg.color().isValid():
             shd = OxmlElement("w:shd")
             shd.set(qn("w:val"), "clear"); shd.set(qn("w:color"), "auto"); shd.set(qn("w:fill"), bg.color().name()[1:].upper())
             para._p.get_or_add_pPr().insert_element_before(shd, *nach_shd)
         # Läufe
+        for imf, seite in self._vorab_bilder:                    # schwebende Bilder vor diesem Absatz: hier verankern
+            self._image(imf, para, seite)
+        self._vorab_bilder = []
         it = blk.begin()
         in_head = bool(lvl) or style_name in ("Title", "Subtitle")
         frags = []
@@ -493,11 +507,7 @@ class _Writer:
         cf: QTextCharFormat = frag.charFormat()
         text = frag.text()
         if cf.isImageFormat():
-            if not hasattr(self, "_schwebend"):
-                from lunivo_writer.editor import umbruch
-                self._schwebend = {pos: umbruch.SEITEN[r.frameFormat().position()]
-                                   for pos, r in umbruch.schwebende_rahmen(self.q).items()}
-            self._image(cf.toImageFormat(), para, self._schwebend.get(frag.position()))
+            self._image(cf.toImageFormat(), para)
             return
         parent = getattr(self, "_ziel", None) if getattr(self, "_ziel", None) is not None else para
         href = cf.anchorHref() if cf.isAnchor() else ""

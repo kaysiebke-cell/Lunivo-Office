@@ -50,4 +50,5 @@ BESCHRIFTUNGEN = ("Abbildung", "Tabelle", "Gleichung")
 
 B_NOTENZIEL = QTextFormat.UserProperty + 7       # "e:3": Absatz ist der Text einer Endnote (Sprungziel in der PDF)
 B_SPALTE = QTextFormat.UserProperty + 6          # 1: Spaltenumbruch vor diesem Absatz (ein Seitenumbruch der Spaltenseite)
-B_RAHMEN = QTextFormat.UserProperty + 5          # Absatzrahmen: "#farbe|breite_pt|einfach|doppelt"
+B_RAHMEN = QTextFormat.UserProperty + 5          # Absatzrahmen: "farbe|breite_pt|art" und ggf. "|seiten" (siehe editor/linie.py)
+B_ANKER = QTextFormat.UserProperty + 8           # 1: leerer Hilfsabsatz vor einem schwebenden Bild (Anker, wird nicht gespeichert)

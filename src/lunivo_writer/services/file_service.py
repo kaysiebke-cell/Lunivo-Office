@@ -20,9 +20,7 @@ SAVE_FILTERS = {
     ".odt": "OpenDocument-Text (*.odt)",
     ".doc": "Word 97–2003 (*.doc)",
     ".rtf": "Rich Text (*.rtf)",
-    ".html": "Webseite (*.html)",
 }
-WEB_CODIERUNGEN = ["UTF-8", "ISO-8859-1", "ISO-8859-15", "Windows-1252", "UTF-16"]
 
 
 @dataclass
@@ -173,22 +171,6 @@ def save(path: str, doc: QTextDocument, page: PageSettings, meta: dict | None = 
         if not page.header.is_empty() or not page.footer.is_empty():
             rep.warn("Kopf- und Fußzeile werden in der Textdatei nicht gespeichert.")
         _atomic_write(path, doc.toPlainText().replace(" ", "\n").encode("utf-8"))
-        return rep
-    if e in (".html", ".htm"):
-        cod = (meta or {}).get("codierung") or "UTF-8"
-        try:
-            "".encode(cod)
-        except LookupError:
-            raise DocumentIOError(f"Die Codierung „{cod}“ ist unbekannt.")
-        html = doc.toHtml()
-        if "<head>" in html:
-            html = html.replace("<head>", f'<head><meta charset="{cod}">', 1)
-        rep.warn("Als Webseite gehen Seitenränder, Kopf-/Fußzeile und Seitenumbrüche verloren.")
-        try:
-            data = html.encode(cod)
-        except UnicodeEncodeError:
-            raise DocumentIOError(f"Der Text enthält Zeichen, die in {cod} nicht darstellbar sind. Bitte UTF-8 wählen.")
-        _atomic_write(path, data)
         return rep
     if e in (".odt", ".doc", ".rtf"):
         from lunivo_writer.services.integrations import libreoffice

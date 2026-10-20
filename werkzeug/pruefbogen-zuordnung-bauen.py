@@ -118,7 +118,6 @@ s(O+"Allgemein und Speichern > Schrift für neuen Text", "Schrift; Größe", OK,
 s(O+"Allgemein und Speichern > Allgemeine Optionen", "Bilder in der Datei nicht komprimieren", TEIL, "Bilder werden nie komprimiert; kein Schalter")
 s(O+"Allgemein und Speichern > Allgemeine Optionen", "Maßeinheit", OK, "ui/masseinheit → dialogs._MassSpin (Seitenränder, Einzüge; intern mm)")
 s(O+"Allgemein und Speichern > Allgemeine Optionen", "Standard-Ausgabeziel", OK, "Optionen ▸ Speichern ▸ Ausgabe als Bild (96/150/220/330 ppi) steuert „Als Bild exportieren“ (tests/test_ausgabe.py)")
-s(O+"Allgemein und Speichern > Webseite", "Webseitencodierung", OK, "speichern/codierung, formats.save(.html) (test_formats)")
 s(O+"Allgemein und Speichern > Kompatibilitätsoptionen", "Seitenumbruch und Absatzmarke aufteilen; Hängenden Einzug nicht als Tabstopp verwenden; Nachstehende Leerstellen unterstreichen; Layout von Fußnoten wie Word 6/95/97; Zeilenhöhe in Tabellen auf Rasterhöhe anpassen", OFFEN, "WPS-/Word-Altlayout; Qt hat keine Entsprechung")
 s(O+"Sicherungseinstellungen > Sicherung", "Wann gesichert wird; Abstand (Minuten); Wo die Einstellungen liegen", OK, "sicherung/aktiv, autosave_seconds, Pfadanzeige")
 s(O+"Sicherungseinstellungen > Zwischenstände aufheben", "Wie lange (Tage)", TEIL, "sicherung/staende + sicherung/tage, recovery.zwischenstand — noch ohne eigenen Test")

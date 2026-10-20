@@ -1,7 +1,7 @@
 import os
 
 from PySide6.QtCore import QEventLoop, QSettings, QTimer, Qt
-from PySide6.QtGui import QTextCursor
+from PySide6.QtGui import QColor, QTextCursor
 from PySide6.QtTest import QTest
 
 from lunivo_writer.services.settings_service import Settings
@@ -324,12 +324,12 @@ def test_live_vorschau(app, tmp_path, monkeypatch):
     assert abs(e.textCursor().charFormat().fontPointSize() - 24) > 1 and d.availableUndoSteps() == schritte
     # 3) Farbmenü: Überfahren zeigt, Schließen nimmt zurück, Klick übernimmt wirklich
     m = w.befehle.menue_schriftfarbeKlappe()
-    a = next(x for x in m.actions() if x.data() == "#c92a2a")
-    m.hovered.emit(a)
+    rot = QColor("#c92a2a")
+    m.ueberfahren.emit(rot)
     assert e.textCursor().charFormat().foreground().color().name() == "#c92a2a"
     m.aboutToHide.emit()
     assert e.textCursor().charFormat().foreground().color().name() != "#c92a2a"
-    a.trigger()
+    m.waehle(rot)
     assert e.textCursor().charFormat().foreground().color().name() == "#c92a2a" and d.isModified()
     # 4) ausgeschaltet: keine Vorschau
     w.settings.set("ui/live_vorschau", False)

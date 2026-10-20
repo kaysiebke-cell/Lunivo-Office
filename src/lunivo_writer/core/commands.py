@@ -14,19 +14,15 @@ import json
 import os
 from datetime import datetime
 
-from PySide6.QtCore import Qt, QUrl
+from PySide6.QtCore import QSize, Qt, QUrl
 from PySide6.QtGui import QBrush, QColor, QCursor, QFont, QIcon, QPixmap, QTextBlockFormat, QTextCharFormat, QTextCursor, QTextListFormat
 from lunivo_writer.models.page import HeaderFooter
-from PySide6.QtWidgets import QApplication, QColorDialog, QFileDialog, QInputDialog, QLineEdit, QMenu, QMessageBox
+from PySide6.QtWidgets import QApplication, QFileDialog, QInputDialog, QLineEdit, QMenu, QMessageBox
 
-PALETTE = ["#000000", "#c92a2a", "#e8590c", "#f08c00", "#2f9e44", "#1098ad", "#1971c2", "#6741d9",
-           "#c2255c", "#868e96", "#ffec99", "#b2f2bb", "#a5d8ff", "#eebefa", "#ffffff"]
+from lunivo_writer.editor.linie import Linie
+from lunivo_writer.ui.baukasten import FarbPalette, RahmenMenue, RasterAuswahl, ZellenRaster, farb_symbol, liste_zeichner, weitere_farben
 
-
-def _farbfeld(c: str) -> QIcon:
-    pm = QPixmap(14, 14)
-    pm.fill(QColor(c))
-    return QIcon(pm)
+_farbfeld = farb_symbol
 
 
 class Befehle:
@@ -210,22 +206,14 @@ class Befehle:
         return m
 
     def _farbmenue(self, setzen, ohne_text, vorschau=None):
-        m = QMenu()
-        for c in PALETTE:
-            a = m.addAction(_farbfeld(c), c, lambda _=False, c=c: self.ed and setzen(QColor(c)))
-            a.setData(c)
+        """Die gemeinsame Farbpalette; ``setzen`` bekommt eine QColor oder None („keine“)."""
+        m = FarbPalette(self.w, keine_text=ohne_text)
+        m.gewaehlt.connect(lambda c: self.ed and setzen(c))
         if vorschau is not None:                              # Live-Vorschau beim Überfahren der Farben
-            m.hovered.connect(lambda a: self.w.vorschau.zeigen(lambda e: vorschau(QColor(a.data()))) if a.data() else self.w.vorschau.ende())
+            m.ueberfahren.connect(lambda c: self.w.vorschau.zeigen(lambda e: vorschau(c)))
+            m.verlassen.connect(self.w.vorschau.ende)
             m.aboutToHide.connect(self.w.vorschau.ende)
-        m.addSeparator()
-        m.addAction(ohne_text, lambda: self.ed and setzen(None))
-        m.addAction("Weitere Farben …", lambda: self._farbe_waehlen(setzen))
         return m
-
-    def _farbe_waehlen(self, setzen):
-        c = QColorDialog.getColor(Qt.black, self.w, "Farbe")
-        if c.isValid() and self.ed:
-            setzen(c)
 
     def schriftfarbeJetzt(self, k=None):
         if self.ed: self.ed.set_text_color(QColor(getattr(self, "_schriftfarbe", "#c92a2a")))
@@ -260,18 +248,52 @@ class Befehle:
         l = self.ed.textCursor().currentList() if self.ed else None
         return bool(l) and l.format().style() == QTextListFormat.ListDecimal
 
+    _LISTENARTEN = {
+        "disc": ("Punkt", "bullet", QTextListFormat.ListDisc, "disc"), "circle": ("Kreis", "bullet", QTextListFormat.ListCircle, "circle"),
+        "square": ("Quadrat", "bullet", QTextListFormat.ListSquare, "square"),
+        "dezimal": ("1. 2. 3.", "number", QTextListFormat.ListDecimal, "1.|2.|3."),
+        "klein": ("a. b. c.", "number", QTextListFormat.ListLowerAlpha, "a.|b.|c."),
+        "gross": ("A. B. C.", "number", QTextListFormat.ListUpperAlpha, "A.|B.|C."),
+        "roem_klein": ("i. ii. iii.", "number", QTextListFormat.ListLowerRoman, "i.|ii.|iii."),
+        "roem_gross": ("I. II. III.", "number", QTextListFormat.ListUpperRoman, "I.|II.|III."),
+    }
+
+    def _listenraster(self, art: str, titel: str, schluessel: tuple[str, ...]) -> RasterAuswahl:
+        """Bild-Raster für Aufzählungs- bzw. Nummerierungsarten; die gerade benutzte Art ist hervorgehoben."""
+        l = self.ed.textCursor().currentList() if self.ed else None
+        aktuell = next((k for k in schluessel if l and l.format().style() == self._LISTENARTEN[k][2]), None)
+        r = RasterAuswahl(self.w, titel=titel, spalten=3, groesse=QSize(48, 40))
+        r.kachel("keine", "Keine", liste_zeichner(None), aktuell=l is None)
+        for k in schluessel:
+            text, _kind, _stil, marke = self._LISTENARTEN[k]
+            r.kachel(k, text, liste_zeichner(marke), aktuell=k == aktuell)
+        r.gewaehlt.connect(self._liste_waehlen)
+        return r
+
+    def _liste_waehlen(self, schluessel: str) -> None:
+        if not self.ed:
+            return
+        if schluessel == "keine":
+            self.ed.list_remove()
+            return
+        _text, kind, stil, _marke = self._LISTENARTEN[schluessel]
+        l = self.ed.textCursor().currentList()
+        if l and l.format().style() == stil:                 # schon diese Art: nichts umschalten
+            return
+        self.ed.toggle_list(kind, stil)
+
     def menue_aufzaehlungKlappe(self):
-        m = QMenu()
-        for t, s in (("● Punkt", QTextListFormat.ListDisc), ("○ Kreis", QTextListFormat.ListCircle), ("■ Quadrat", QTextListFormat.ListSquare)):
-            m.addAction(t, lambda _=False, s=s: self.ed and self.ed.toggle_list("bullet", s))
-        return m
+        return self._listenraster("bullet", "Aufzählungszeichen", ("disc", "circle", "square"))
 
     def menue_nummerierungKlappe(self):
-        m = QMenu()
-        for t, s in (("1. 2. 3.", QTextListFormat.ListDecimal), ("a. b. c.", QTextListFormat.ListLowerAlpha),
-                     ("A. B. C.", QTextListFormat.ListUpperAlpha), ("i. ii. iii.", QTextListFormat.ListLowerRoman),
-                     ("I. II. III.", QTextListFormat.ListUpperRoman)):
-            m.addAction(t, lambda _=False, s=s: self.ed and self.ed.toggle_list("number", s))
+        return self._listenraster("number", "Nummerierung", ("dezimal", "klein", "gross", "roem_klein", "roem_gross"))
+
+    def menue_tabelleKlappe(self):
+        """Tabelle einfügen wie bei WPS: Zellen überfahren, klicken; darunter der Dialog und die Schnelltabellen."""
+        m = ZellenRaster(self.w)
+        m.gewaehlt.connect(lambda z, s: self.ed and self.ed.insert_table(z, s))
+        m.fuss("Tabelle einfügen …", self.tabelleRaster)
+        m.addAction("Schnelltabelle …", self.schnelltabelle)
         return m
 
     def einzugMehr(self, k=None):
@@ -540,6 +562,11 @@ class Befehle:
         t = self.w.current_tab()
         return bool(t) and t.editor.abschnitt_seite().landscape
 
+    def w_setzeQuer(self, k=None, quer=True):
+        """Hochformat (False) oder Querformat (True) für den Abschnitt am Zeiger."""
+        if self.w.current_tab():
+            self.w.set_orientation(bool(quer))
+
     def querformat(self, k=None):
         t = self.w.current_tab()
         if t:
@@ -599,34 +626,50 @@ class Befehle:
         c.endEditBlock()
 
     def menue_absatzSchattierung(self):
-        m = QMenu()
         def setze(c):
-            if self.ed:
-                self.ed._block_merge(lambda bf: bf.setBackground(QBrush(c)) if c else bf.clearBackground())
-        for c in ("#fff3bf", "#d3f9d8", "#d0ebff", "#ffe3e3", "#e9ecef"):
-            m.addAction(_farbfeld(c), "Schattierung " + c, lambda _=False, c=c: setze(QColor(c)))
-        m.addSeparator()
-        m.addAction("Keine Schattierung", lambda: setze(None))
-        return m
+            self.ed._block_merge(lambda bf: bf.setBackground(QBrush(c)) if c else bf.clearBackground())
+        return self._farbmenue(setze, "Keine Schattierung")
 
-    RAHMEN_STUFEN = [("Dünn (0,75 pt)", 0.75, "einfach"), ("Mittel (1,5 pt)", 1.5, "einfach"), ("Dick (3 pt)", 3.0, "einfach"),
-                     ("Doppelt", 1.0, "doppelt")]
+    _rahmen_stil = Linie("#000000", 0.75, "einfach")          # Linie, die ein neuer Rahmen aus dem Menü bekommt
 
     def menue_absatzRahmen(self):
-        m = QMenu()
-        for text, pt, art in self.RAHMEN_STUFEN:
-            m.addAction(text, lambda _=False, pt=pt, art=art: self.ed and self.ed.set_absatzrahmen(f"#000000|{pt}|{art}"))
-        m.addAction("Farbe wählen …", self.absatzRahmen)
-        m.addSeparator()
-        m.addAction("Kein Rahmen", lambda: self.ed and self.ed.set_absatzrahmen(None))
+        m = RahmenMenue(self.w, innen="h", mehr=self.absatzRahmen)
+        m.gewaehlt.connect(lambda _s, k: self._rahmen_seite(k))
         return m
 
-    def absatzRahmen(self, k=None):
+    def _rahmen_seite(self, schluessel: str) -> None:
+        """Eintrag des Rahmen-Menüs: einzelne Seiten ein-/ausschalten, alle, außen oder keine."""
         if not self.ed:
             return
-        c = QColorDialog.getColor(Qt.black, self.w, "Rahmenfarbe")
-        if c.isValid():
-            self.ed.set_absatzrahmen(f"{c.name()}|1.5|einfach")
+        aktuell = self.ed.absatzrahmen()
+        seiten = set(aktuell.seiten) if aktuell else set()
+        if schluessel == "kein":
+            seiten = set()
+        elif schluessel == "alle":
+            seiten = set("tblrh")
+        elif schluessel == "aussen":
+            seiten = set("tblr")
+        else:
+            k = {"unten": "b", "oben": "t", "links": "l", "rechts": "r", "innen_h": "h"}[schluessel]
+            seiten ^= {k}
+        basis = aktuell or self._rahmen_stil
+        self.ed.set_absatzrahmen(basis.mit_seiten("".join(seiten)).text() if seiten else None)
+
+    def absatzRahmen(self, k=None):
+        """Dialog „Rahmen und Schattierung“."""
+        if not self.ed:
+            return
+        from lunivo_writer.ui.dialogs.rahmen_dialog import AbsatzRahmenDialog
+        bg = self.ed.textCursor().blockFormat().background()
+        schatt = bg.color().name() if bg.style() != Qt.NoBrush and bg.color().isValid() else None
+        d = AbsatzRahmenDialog(self.w, self.ed.absatzrahmen(), schatt, self._rahmen_stil)
+        if not d.exec():
+            return
+        linie, farbe = d.ergebnis()
+        if linie is not None:
+            self._rahmen_stil = linie.mit_seiten("tblr")
+        self.ed.set_absatzrahmen(linie.text() if linie is not None else None)
+        self.ed._block_merge(lambda bf: bf.setBackground(QBrush(QColor(farbe))) if farbe else bf.clearBackground())
 
     def stileVerwalten(self, k=None):
         from lunivo_writer.editor import stile
@@ -1338,7 +1381,7 @@ class Befehle:
             return
         from lunivo_writer.editor import vergleich as V
         pfad, _ = QFileDialog.getOpenFileName(self.w, "Mit welchem Dokument vergleichen?", self.w.settings.get("last_dir", os.path.expanduser("~")),
-                                              "Dokumente (*.docx *.odt *.txt *.md *.html);;Alle Dateien (*)")
+                                              "Dokumente (*.docx *.odt *.txt *.md);;Alle Dateien (*)")
         if not pfad:
             return
         andere = self._fassung_laden(pfad)
@@ -1358,7 +1401,7 @@ class Befehle:
         from lunivo_writer.editor import vergleich as V
         pfade, _ = QFileDialog.getOpenFileNames(self.w, "Überarbeitete Fassungen auswählen (jede Datei ist ein Autor)",
                                                 self.w.settings.get("last_dir", os.path.expanduser("~")),
-                                                "Dokumente (*.docx *.odt *.txt *.md *.html);;Alle Dateien (*)")
+                                                "Dokumente (*.docx *.odt *.txt *.md);;Alle Dateien (*)")
         fassungen = []
         for p in pfade:
             d = self._fassung_laden(p)
@@ -1925,7 +1968,6 @@ class Befehle:
         return bool(t) and t.format().border() > 0
 
     def menue_tabelleSchattierung(self):
-        m = QMenu()
         def setze(col):
             e, c, t = self._tab()
             if t:
@@ -1933,10 +1975,7 @@ class Befehle:
                 f = cell.format()
                 f.setBackground(QBrush(col)) if col else f.clearBackground()
                 cell.setFormat(f)
-        for col in ("#fff3bf", "#d3f9d8", "#d0ebff", "#ffe3e3", "#e9ecef"):
-            m.addAction(_farbfeld(col), col, lambda _=False, col=col: setze(QColor(col)))
-        m.addAction("Keine Schattierung", lambda: setze(None))
-        return m
+        return self._farbmenue(setze, "Keine Schattierung")
 
     # Tabellenformatvorlagen und Formatoptionen
     def menue_tabelleVorlagen(self):
@@ -1996,9 +2035,8 @@ class Befehle:
     FARBEN = ("#4a8fd8", "#6bbf59", "#f4a259", "#e5645f", "#ffd43b", "#ced4da", "#495057", "#ffffff", "#000000")
 
     def _form_farbe(self, feld: str, titel: str):
-        from PySide6.QtWidgets import QColorDialog
-        c = QColorDialog.getColor(QColor("#4a8fd8"), self.w, titel)
-        if c.isValid():
+        c = weitere_farben(self.w, "#4a8fd8", titel)
+        if c is not None:
             self._form_aendern(**{feld: c.name()})
 
     def _form_aendern(self, **kw):
@@ -2007,18 +2045,13 @@ class Befehle:
             self.w.lbl_msg.setText("Bitte zuerst eine Form auswählen (Schreibmarke vor der Form oder Form markieren).")
 
     def menue_formFuellung(self):
-        m = QMenu()
-        for col in self.FARBEN:
-            m.addAction(_farbfeld(col), col, lambda _=False, col=col: self._form_aendern(fuell=col))
-        m.addAction("Keine Füllung", lambda: self._form_aendern(fuell=""))
-        m.addAction("Weitere Farben …", lambda: self._form_farbe("fuell", "Füllfarbe"))
+        m = FarbPalette(self.w, keine_text="Keine Füllung", start="#4a8fd8", titel="Füllfarbe")
+        m.gewaehlt.connect(lambda c: self._form_aendern(fuell=c.name() if c is not None else ""))
         return m
 
     def menue_formKontur(self):
-        m = QMenu()
-        for col in self.FARBEN:
-            m.addAction(_farbfeld(col), col, lambda _=False, col=col: self._form_aendern(linie=col))
-        m.addAction("Weitere Farben …", lambda: self._form_farbe("linie", "Linienfarbe"))
+        m = FarbPalette(self.w, keine_text=None, start="#4a8fd8", titel="Linienfarbe")
+        m.gewaehlt.connect(lambda c: self._form_aendern(linie=c.name()))
         m.addSeparator()
         st = m.addMenu("Linienstärke")
         for w in (0.5, 1.0, 2.0, 3.0, 5.0, 8.0):

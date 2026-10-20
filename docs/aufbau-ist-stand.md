@@ -394,8 +394,6 @@ DAS OPTIONEN-FENSTER — Datei ▸ Optionen (F9)
 │ │ │ ├── Maßeinheit
 │ │ │ ├── Bilder in der Datei nicht komprimieren
 │ │ │ └── Standard-Ausgabeziel
-│ │ ├── Webseite
-│ │ │ └── Webseitencodierung
 │ │ └── Kompatibilitätsoptionen
 │ │ ├── Seitenumbruch und Absatzmarke aufteilen
 │ │ ├── Hängenden Einzug nicht als Tabstopp verwenden

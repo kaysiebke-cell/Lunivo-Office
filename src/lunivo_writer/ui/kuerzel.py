@@ -18,11 +18,12 @@ HILFE = [
 ]
 
 
-def als_html() -> str:
-    h = ""
+def als_markdown() -> str:
+    """Die Tabelle als Markdown — das zeigt der Hilfe-Dialog über ``QTextBrowser.setMarkdown``."""
+    t = ""
     for gruppe, zeilen in HILFE:
-        h += f"<h3>{gruppe}</h3><table cellpadding='3'>"
+        t += f"### {gruppe}\n\n| Taste | Wirkung |\n|---|---|\n"
         for taste, text in zeilen:
-            h += f"<tr><td><code>{taste}</code></td><td>{text}</td></tr>"
-        h += "</table>"
-    return h
+            t += f"| `{taste}` | {text} |\n"
+        t += "\n"
+    return t

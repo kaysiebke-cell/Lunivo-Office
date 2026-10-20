@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
     QTreeWidgetItem, QVBoxLayout, QWidget,
 )
 
+from lunivo_writer.ui.baukasten.beschriftung import md_escape, md_label, text_label
 from lunivo_writer.proofing import autokorrektur
 from lunivo_writer.ai import ki as K
 from lunivo_writer.services import vorlesen
@@ -33,7 +34,7 @@ class _Seite(QWidget):
         self.s = fenster.settings
         self.lay = QVBoxLayout(self)
         self.lay.setContentsMargins(24, 16, 24, 16)
-        t = QLabel(f"<h2>{titel}</h2>")
+        t = text_label(titel, fett=True, pt=16, umbruch=False)
         self.lay.addWidget(t)
         self.gruppe_lay = None
         self._offen = offen or []
@@ -93,14 +94,13 @@ class _Seite(QWidget):
         return l
 
     def hinweis(self, text: str):
-        l = QLabel(text)
-        l.setWordWrap(True)
+        l = text_label(text)
         l.setStyleSheet("color: palette(mid);")
         self.lay.addWidget(l)
 
     def abschluss(self):
         if self._offen:
-            self.hinweis("<b>Noch nicht umgesetzt</b> (Einstellung ohne Wirkung): " + "; ".join(self._offen) + ".")
+            self.hinweis("Noch nicht umgesetzt (Einstellung ohne Wirkung): " + "; ".join(self._offen) + ".")
         self.lay.addStretch(1)
 
 
@@ -319,9 +319,6 @@ class OptionenDialog(QDialog):
         f = p.gruppe("Neue Dokumente")
         e = QLineEdit(p.s.get("standard/schrift", "Liberation Sans")); e.textChanged.connect(lambda t: p.s.set("standard/schrift", t)); f.addRow("Schriftart", e)
         p.zahl(f, "standard/groesse", "Schriftgröße", 6, 72, 11, " pt")
-        f = p.gruppe("Webseite")
-        from lunivo_writer.services import file_service as _f
-        p.auswahl(f, "speichern/codierung", "Webseitencodierung (Speichern als .html)", _f.WEB_CODIERUNGEN, "UTF-8")
         f = p.gruppe("Ausgabe als Bild")
         p.auswahl(f, "ausgabe/ppi", "Standard-Ausgabeziel (Auflösung für „Als Bild exportieren“)",
                   ["96 ppi (Bildschirm)", "150 ppi (Web, Entwurf)", "220 ppi (Druck)", "330 ppi (hohe Qualität)"], "150 ppi (Web, Entwurf)")

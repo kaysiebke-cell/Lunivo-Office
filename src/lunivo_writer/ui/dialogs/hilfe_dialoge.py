@@ -37,7 +37,7 @@ def handbuch(parent) -> QDialog:
 
 def tastenkuerzel(parent) -> QDialog:
     d, b, v = _browser(parent, "Tastenkürzel", 520, 640)
-    b.setHtml(kuerzel.als_html())
+    b.setMarkdown(kuerzel.als_markdown())
     bb = QDialogButtonBox(QDialogButtonBox.Close); bb.rejected.connect(d.reject); v.addWidget(bb)
     return d
 
@@ -49,26 +49,21 @@ def erweiterungen(parent) -> QDialog:
     d, b, v = _browser(parent, "Erweiterungen", 720, 640)
 
     def zeile(name, ok, wo, wie):
-        return f"<tr><td><b>{name}</b></td><td>{'✅ ' + wo if ok else '⬜ nicht eingerichtet'}</td><td>{wie}</td></tr>"
+        return f"| **{name}** | {'✅ ' + wo if ok else '⬜ nicht eingerichtet'} | {wie} |\n"
     lo = libreoffice.finde_soffice()
-    html = "<h2>Angebundene Programme</h2><table cellpadding='4' border='0'>"
-    html += zeile("LibreOffice", bool(lo), lo or "", "ODT/DOC/RTF-Umwandlung: <code>sudo apt install libreoffice-writer</code>")
-    html += zeile("LanguageTool", languagetool.verfuegbar(), "bereit", "gründliche Prüfung (Java): in INSTALLATION.md beschrieben")
-    html += zeile("Sprachausgabe", bool(vorlesen.piper_da() or vorlesen.spd_da()),
-                  "Piper" if vorlesen.piper_da() else "speech-dispatcher", "<code>sudo apt install speech-dispatcher</code>")
+    text = "## Angebundene Programme\n\n| Programm | Stand | Wie |\n|---|---|---|\n"
+    text += zeile("LibreOffice", bool(lo), f"`{lo}`" if lo else "", "ODT/DOC/RTF-Umwandlung: `sudo apt install libreoffice-writer`")
+    text += zeile("LanguageTool", languagetool.verfuegbar(), "bereit", "gründliche Prüfung (Java): in INSTALLATION.md beschrieben")
+    text += zeile("Sprachausgabe", bool(vorlesen.piper_da() or vorlesen.spd_da()),
+                  "Piper" if vorlesen.piper_da() else "speech-dispatcher", "`sudo apt install speech-dispatcher`")
     try:
-        html += zeile("WPS Office", bool(wps.finde_wps()), str(wps.finde_wps()), "wird nur als installierte Anwendung gestartet, nicht als Bibliothek")
+        text += zeile("WPS Office", bool(wps.finde_wps()), f"`{wps.finde_wps()}`", "wird nur als installierte Anwendung gestartet, nicht als Bibliothek")
     except Exception:
         pass
-    html += f"</table><p>Daten: <code>{data_dir()}</code></p>"
-    b.setHtml(html)
+    text += f"\nDaten: `{data_dir()}`\n"
     pfad = os.path.join(paths.WURZEL, "docs", "INSTALLATION.md")
     if os.path.exists(pfad):
-        from PySide6.QtGui import QTextCursor, QTextDocument, QTextDocumentFragment
-        md = QTextDocument()
-        md.setMarkdown(open(pfad, encoding="utf-8").read())
-        cur = QTextCursor(b.document())
-        cur.movePosition(QTextCursor.End)
-        cur.insertFragment(QTextDocumentFragment.fromHtml(md.toHtml()))
+        text += "\n" + open(pfad, encoding="utf-8").read()
+    b.setMarkdown(text)
     bb = QDialogButtonBox(QDialogButtonBox.Close); bb.rejected.connect(d.reject); v.addWidget(bb)
     return d

@@ -655,6 +655,14 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         self._block_merge(f)
         self.viewport().update()
 
+    def absatzrahmen(self):
+        """Der Rahmen des Absatzes an der Schreibmarke (bei Auswahl: des ersten Absatzes) als ``Linie``, sonst None."""
+        from lunivo_writer.editor.linie import Linie
+        from lunivo_writer.editor.zusatz import B_RAHMEN
+        c = self.textCursor()
+        bf = c.document().findBlock(min(c.position(), c.anchor())).blockFormat()
+        return Linie.aus_text(bf.stringProperty(B_RAHMEN)) if bf.hasProperty(B_RAHMEN) else None
+
     def toggle_rtl(self) -> None:
         rtl = self.textCursor().blockFormat().layoutDirection() == Qt.RightToLeft
         self._block_merge(lambda bf: bf.setLayoutDirection(Qt.LeftToRight if rtl else Qt.RightToLeft))
@@ -1032,6 +1040,21 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
             return
         fmt = QTextListFormat(); fmt.setStyle(style); fmt.setIndent(1)
         cur.createList(fmt)
+
+    def list_remove(self) -> None:
+        """Aufzählung/Nummerierung vom Absatz an der Schreibmarke (bzw. der Auswahl) nehmen."""
+        cur = self.textCursor()
+        cur.beginEditBlock()
+        von, bis = sorted((cur.anchor(), cur.position()))
+        c = QTextCursor(self.document()); c.setPosition(von)
+        blk = c.block()
+        while blk.isValid() and blk.position() <= bis:
+            lst = blk.textList()
+            if lst:
+                lst.remove(blk)
+                cc = QTextCursor(blk); bf = cc.blockFormat(); bf.setIndent(0); bf.setLeftMargin(0); cc.setBlockFormat(bf)
+            blk = blk.next()
+        cur.endEditBlock()
 
     def list_level(self, delta: int) -> None:
         cur = self.textCursor()

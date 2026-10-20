@@ -340,7 +340,8 @@
        "symbol": "tabelle",
        "name": "Tabelle einfügen",
        "gross": true,
-       "tun": "tabelleRaster"
+       "tun": "tabelleRaster",
+       "klappe": "tabelleKlappe"
       },
       {
        "symbol": "schnelltab",
@@ -592,12 +593,12 @@
        "menue": [
         {
          "name": "Hochformat",
-         "tun": "querformat",
+         "tun": "w.setzeQuer:[false]",
          "haken": "w.querJetzt"
         },
         {
          "name": "Querformat",
-         "tun": "w.querJetzt",
+         "tun": "w.setzeQuer:[true]",
          "haken": "w.querJetzt"
         }
        ]

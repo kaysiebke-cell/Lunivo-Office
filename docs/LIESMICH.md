@@ -23,19 +23,7 @@ Das legt beim ersten Mal auch den Menüeintrag an. Danach steht
 *Lunivo-Office* im Startmenü unter „Büro". Einen alten Eintrag
 *Schreibprogramm* räumt der Start still mit weg.
 
-Gebraucht wird dafür Qt6 mit Qt WebEngine:
-
- sudo apt install PySide6
-
-Ohne das geht es auch im Browser — einmal einen Server starten und die
-Adresse aufmachen:
-
- python3 -m http.server 8322
- # dann http://localhost:8322/ öffnen
-
-Der Umweg über einen Server statt `file://` hat einen Grund: Unter `file://`
-gilt die Seite nicht als sicherer Ursprung, und dann merkt sich das Programm
-nichts.
+Gebraucht wird Python 3 mit PySide6 (Qt 6). `./starten-qt.sh` legt dafür beim ersten Start eine eigene Umgebung an.
 
 ## Was es kann
 
@@ -92,7 +80,6 @@ habe" bleibt deshalb in Ruhe.
 | `.fodt` | dasselbe als eine einzige XML-Datei, zum Hineinsehen |
 | `.docx` | Word — für alle, die etwas anderes nicht öffnen können |
 | `.pdf` | zum Verschicken und Ausdrucken, unveränderlich |
-| `.html` | öffnet sich in Word, im Browser, überall |
 | `.txt` | nur die Wörter — für Formulare im Netz |
 
 Schriftart und Schriftgröße stehen mit in der Datei und kommen beim Öffnen
@@ -147,7 +134,7 @@ Er belegt allerdings gut 700 MB. Wer das nicht will, löscht den Ordner —
 dann übernimmt das des Systems.
 
 Gebraucht wird der Motor nur für `.docx`, `.doc`, `.rtf` und PDF. Alles
-andere — schreiben, prüfen, `.odt`, `.fodt`, `.html`, `.txt` — läuft ohne ihn.
+andere — schreiben, prüfen, `.odt`, `.fodt`, `.txt` — läuft ohne ihn.
 
 Geöffnet werden alle vier. *Drucken* (Strg+P) druckt das Blatt ohne Menü,
 Leiste und Seitenleiste — und über „In Datei drucken" wird daraus ein PDF.
@@ -175,56 +162,13 @@ Leiste und Seitenleiste — und über „In Datei drucken" wird daraus ein PDF.
 
 ## Was wo liegt
 
- start.py das Fenster (Qt + WebKit), der kleine Server,
- die Schriftliste und der Weg zu 
- starten.sh startet es und schreibt den Menüeintrag neu
-
- oberflaeche/ alles, was im Fenster zu sehen ist — und nur das
- liefert der kleine Server aus
- index.html die Oberfläche
- css/programm.css das Aussehen
- js/programm.js Menüs, Werkzeuge, Seitenleiste, Statuszeile
- js/dokument.js das Dokument: lesen, zeigen, ersetzen, formatieren
- js/dokumente.js welche Dokumente offen sind, welches vorn liegt —
- die Reiterzeile oben und die Trennung der Fenster
- js/dokumentmodell.js Abschnitte, Seitenaufbau, Kopf- und Fußzeilen
- js/language-bridge.js hält den Fehlerstand: welche Fassung geprüft
- wurde, was weggewinkt und was angenommen ist
- js/dateien.js öffnen und speichern — .odt, .fodt, .docx, .doc,
- .rtf, .pdf, .epub, .html, .txt
- js/pruefung.js die Prüfung selbst
- js/ki.js Claude und Ollama, das Gedächtnis, die Sicherung
- js/kiteil.js die KI im Programm: korrigieren, vorschlagen,
- übersetzen, die Marken „Für wen?"
- js/drucken.js Seitenumbruch, Druckvorschau, Druckfenster
- js/referenzen.js Fußnoten, Zitate, Verzeichnisse
- js/bausteine.js Textbausteine und die Lücken zum Ausfüllen
- js/vorlagen.js die Seite „Neu" mit den Vorlagen
- js/einstellungen.js die Einstellungsseite
- daten/regeln.js der Wortschatz der Prüfung
- daten/woerter.txt die deutsche Wörterliste (355.324 Wörter)
-
- werkzeug/ Prüfungen für den Quelltext, nicht für den Text
- namen-pruefen.py sucht Namen, die zweimal im selben Bereich stehen
- haken-an.sh schaltet die Prüfung vor jedem Commit ein
- git-haken/ die Haken selbst — im Projekt, nicht in .git
-
- symbole/icon.svg das Symbol des Programms
- symbole/ dasselbe in allen Größen (16 bis 512)
- bilder/marke.png das freigestellte Zeichen, aus dem sie gerechnet sind
- doku/ diese Seite, ENTSTEHUNG und RICHTUNG
+Der Aufbau des Projekts steht in [README.md](README.md) in diesem Ordner. Die gemeinsamen Bausteine der Oberfläche
+(Farbpalette, Linien, Menüs, Dialoggerüst) sind in [baukasten.md](baukasten.md) beschrieben.
 
 ## Prüfläufe
 
-Drei Stücke prüfen sich selbst, ohne Fenster und ohne Browser:
-
- node oberflaeche/js/dokumente.test.js die offenen Dokumente
- node oberflaeche/js/dokumentmodell.test.js Abschnitte und Seitenaufbau
- node oberflaeche/js/language-bridge.test.js der Fehlerstand
-
-Sie brauchen nichts als Node und laufen in Sekunden. Was sie nicht prüfen
-können, ist alles, was ein Fenster braucht — dafür gibt es keinen Ersatz
-außer Hinsehen.
+ .venv/bin/python -m pytest alle Tests (Fenster laufen ohne Bildschirm)
+ .venv/bin/python werkzeug/funktionspruefung.py jeden Knopf des Bandes ausprobieren
 
 ## Namen prüfen, bevor man sich wundert
 

@@ -1,0 +1,64 @@
+# Der Baukasten der Oberfläche
+
+`src/lunivo_writer/ui/baukasten/` — Bausteine, die an vielen Stellen wiederkehren. **Ein Baustein, viele Aufrufer:**
+Er kennt nur seinen eigenen Wert und meldet ihn (Signal oder Rückgabewert). Was damit geschieht — Schriftfarbe,
+Schattierung, Seitenfarbe, Rahmen, Füllung —, entscheidet der Aufrufer.
+
+| Datei | Baustein | Meldet |
+|---|---|---|
+| `farben.py` | Daten: 10 Themenfarben mit je 5 Abstufungen, 10 Standardfarben, „zuletzt benutzt“ (QSettings) | — |
+| `farbpalette.py` | `FarbPalette` (Popup), `FarbFeld` (Knopf für Dialoge), `FarbKnopf` (geteilter Knopf fürs Band), `weitere_farben()` (System-Farbwähler) | `gewaehlt(QColor \| None)`, `ueberfahren`, `verlassen` |
+| `linien.py` | `Linie` (Farbe, pt, Art), `LinienWahl` (Zeile aus Art, Stärke, Farbe), `RahmenMenue` (unten, oben, links, rechts, kein, alle, außen, innen) | `geaendert(Linie)`, `gewaehlt(RahmenSeiten, schluessel)` |
+| `menue_liste.py` | `MenueListe`: Zeilen mit Symbol, Kürzel, Haken, Untermenü, auch aus einer Beschreibung (`aus_liste`) | `triggered` je Zeile |
+| `raster_auswahl.py` | `RasterAuswahl`: Kacheln mit „Mehr …“-Fuß (Aufzählung, Vorlagen, Ränder, Deckblätter) | `gewaehlt(schluessel)` |
+| `zellen_raster.py` | `ZellenRaster`: Zellen überfahren, „3 × 4 Tabelle“ lesen, klicken; mit `fuss()` weitere Einträge darunter | `gewaehlt(zeilen, spalten)` |
+| `listen_symbole.py` | `liste_zeichner()`: Vorschaubild einer Aufzählungs- oder Nummerierungsart für die Kachel-Auswahl | — |
+| `mass_feld.py` | `MassSpin`: Zahl mit Maßeinheit (intern mm), `set_einheit()` | `valueChanged` |
+| `dialog_rahmen.py` | `DialogRahmen`: Formular, optionale Vorschau, OK/Abbrechen, Zusatzknöpfe („Entfernen“) | `ergebnis()` |
+
+## Regeln
+
+1. **Ein Popup liefert einen Wert** — `QColor` oder `None` („Keine Farbe“). Es kennt den Aufrufer nicht.
+2. **Popups wirken sofort, Dialoge haben Vorschau und OK/Abbrechen.**
+3. **„Keine“ und „Zuletzt benutzt“ stehen immer an derselben Stelle.**
+4. **Nicht Mögliches bleibt grau sichtbar**, statt zu fehlen.
+5. **Nichts nachbauen:** Wer eine Farbe braucht, nimmt `FarbPalette`/`FarbFeld`/`weitere_farben`, wer eine Linie braucht,
+   `LinienWahl`/`Linie`, wer ein Maß braucht, `MassSpin`.
+
+## Wer den Baukasten benutzt
+
+- **Band** (`core/commands.py`): Schriftfarbe, Hervorheben, Seitenfarbe, Absatz- und Tabellenschattierung, Formfüllung,
+  Formkontur — alle über `_farbmenue()` bzw. `FarbPalette`. Die Live-Vorschau hängt an `ueberfahren`/`verlassen`.
+- **Dialoge:** Wasserzeichen und Seitenrahmen (`DialogRahmen`, `FarbFeld`, `LinienWahl`, mit Vorschau), Formen/WordArt
+  (`FarbFeld`), Silben farbig, Seite einrichten und Absatz (`MassSpin`).
+
+## Neues Fenster oder neue Farbstelle
+
+```python
+from lunivo_writer.ui.baukasten import DialogRahmen, FarbFeld, LinienWahl, Linie
+
+class MeinDialog(DialogRahmen):
+    def __init__(self, parent):
+        super().__init__(parent, "Mein Dialog", vorschau=self._male)
+        self.farbe = FarbFeld("#1971c2", "Füllfarbe", keine_text="Keine Füllung")
+        self.linie = LinienWahl(Linie("#000000", 1.0, "einfach"))
+        self.zeile("Füllung", self.farbe); self.zeile("Linie", self.linie)
+        self.farbe.farbeGeaendert.connect(self.aktualisieren); self.linie.geaendert.connect(self.aktualisieren)
+
+    def _male(self, painter, rect): ...
+    def ergebnis(self): return {"fuell": self.farbe.farbe, "linie": self.linie.linie().text()}
+```
+
+## Absatzrahmen
+
+Der Rahmen eines Absatzes steht als Text `farbe|pt|art` am Absatz (`B_RAHMEN`); ein vierter Teil nennt die Seiten, wenn nicht alle
+vier gemeint sind: `t` oben, `b` unten, `l` links, `r` rechts, `h` zwischen zwei Absätzen (`editor/linie.py`, Klasse `Linie`).
+Ohne vierten Teil gelten alle Seiten, ältere Dateien bleiben also gültig. Gezeichnet wird in `editor/pagination.py`, nach Word
+gespeichert und gelesen als `w:pBdr` (`top`, `left`, `bottom`, `right`, `between`; Linienarten einfach, doppelt, gestrichelt,
+gepunktet, Strich-Punkt).
+
+- **Menü** (`RahmenMenue`): schaltet einzelne Seiten ein/aus, „Alle“, „Außen“, „Kein“; neue Rahmen übernehmen die zuletzt
+  eingestellte Linie.
+- **Dialog „Rahmen und Schattierung …“** (`ui/dialogs/rahmen_dialog.py`): Seiten, Linienart/-stärke/-farbe, Schattierung, Vorschau.
+
+Tests: `tests/test_baukasten.py`.

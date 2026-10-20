@@ -1,18 +1,17 @@
 """Textumbruch um Bilder: Bilder, die links oder rechts stehen und vom Text umflossen werden.
 
-Qt kennt das als „schwebendes Bild“: Das Bild steht als Zeichen im Absatz, dazu legt Qt einen unsichtbaren Rahmen
-(QTextFrame mit FloatLeft/FloatRight) an, um den der Text läuft. Angelegt wird das über den HTML-Import (`float`), weil
-QTextCursor dafür keine eigene Schnittstelle hat. Ein schwebendes Bild gehört zum Absatz, in dem es steht — es steht immer
-am Absatzanfang (wie der Anker in Word).
+Ein schwebendes Bild ist ein Rahmen (`QTextFrame` mit `FloatLeft`/`FloatRight`), in dem das Bild steht; der Text läuft darum herum.
+Qt legt vor einem solchen Rahmen einen leeren Hilfsabsatz an. Er ist der Anker des Bildes: klein gesetzt (kaum sichtbar), mit
+`B_ANKER` gekennzeichnet und wird beim Speichern nicht als Absatz geschrieben. Das Bild gehört zum Absatz, der dem Rahmen folgt —
+es steht immer an dessen Anfang (wie der Anker in Word). Der Schlüssel eines Bildes ist die Position seines Zeichens im Rahmen.
 """
 from __future__ import annotations
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QTextBlockFormat, QTextCursor, QTextDocument, QTextFrame, QTextFrameFormat, QTextImageFormat
+from PySide6.QtGui import QTextBlock, QTextBlockFormat, QTextCharFormat, QTextCursor, QTextDocument, QTextFrame, QTextFrameFormat, QTextImageFormat
 
-from lunivo_writer.services.docx_reader import STYLE_PROP
+from lunivo_writer.editor.zusatz import B_ANKER
 
-ORIGINAL_PROP = STYLE_PROP + 3
 ABSTAND_PX = 8.0
 SEITEN = {QTextFrameFormat.FloatLeft: "links", QTextFrameFormat.FloatRight: "rechts"}
 
@@ -25,8 +24,7 @@ def _rahmen(frame: QTextFrame):
 
 def schwebende_rahmen(doc: QTextDocument) -> dict[int, QTextFrame]:
     """{Position des Bildzeichens: Rahmen} für alle schwebenden Bilder des Dokuments."""
-    return {f.firstPosition() - 1: f for f in _rahmen(doc.rootFrame())
-            if f.frameFormat().position() in SEITEN}
+    return {f.firstPosition(): f for f in _rahmen(doc.rootFrame()) if f.frameFormat().position() in SEITEN}
 
 
 def schwebend(doc: QTextDocument, pos: int) -> str | None:
@@ -35,28 +33,70 @@ def schwebend(doc: QTextDocument, pos: int) -> str | None:
     return SEITEN.get(f.frameFormat().position()) if f is not None else None
 
 
-def _gemerkt(neu: QTextImageFormat, alt: QTextImageFormat) -> None:
-    for k in (STYLE_PROP + 1, ORIGINAL_PROP):
-        if alt.hasProperty(k):
-            neu.setProperty(k, alt.property(k))
+def bild_im_rahmen(rahmen: QTextFrame) -> QTextImageFormat | None:
+    """Das Bild, das in einem schwebenden Rahmen steht."""
+    it = rahmen.begin()
+    while not it.atEnd():
+        blk = it.currentBlock()
+        if blk.isValid():
+            bit = blk.begin()
+            while not bit.atEnd():
+                if bit.fragment().isValid() and bit.fragment().charFormat().isImageFormat():
+                    return bit.fragment().charFormat().toImageFormat()
+                bit += 1
+        it += 1
+    return None
 
 
-def schwebend_einfuegen(doc: QTextDocument, blockpos: int, f: QTextImageFormat, seite: str) -> None:
-    """Fügt das Bild f am Anfang des Absatzes bei blockpos als schwebendes Bild ein (seite: „links“ | „rechts“)."""
+def ist_anker(blk: QTextBlock) -> bool:
+    return blk.isValid() and blk.blockFormat().hasProperty(B_ANKER)
+
+
+def schwebend_einfuegen(doc: QTextDocument, blockpos: int, f: QTextImageFormat, seite: str) -> int:
+    """Fügt das Bild f vor dem Absatz bei blockpos als schwebendes Bild ein (seite: „links“ | „rechts“).
+    Gibt die Position des Bildzeichens zurück."""
     c = QTextCursor(doc)
+    c.beginEditBlock()
     c.setPosition(blockpos)
-    css = "left" if seite == "links" else "right"
-    c.insertHtml(f'<img src="{f.name()}" width="{f.width():.0f}" height="{f.height():.0f}" style="float:{css}">')
-    c.setPosition(blockpos)
-    c.setPosition(blockpos + 1, QTextCursor.KeepAnchor)
-    neu = c.charFormat().toImageFormat()
-    _gemerkt(neu, f)
-    c.setCharFormat(neu)
-    r = schwebende_rahmen(doc).get(blockpos)
-    if r is not None:
-        ff = r.frameFormat()
-        ff.setMargin(ABSTAND_PX)
-        r.setFrameFormat(ff)
+    breite = f.width()
+    if not breite:
+        bild = doc.resource(QTextDocument.ImageResource, f.name())
+        breite = bild.width() if bild is not None and hasattr(bild, "width") else 100
+    ff = QTextFrameFormat()
+    ff.setPosition(QTextFrameFormat.FloatLeft if seite == "links" else QTextFrameFormat.FloatRight)
+    ff.setBorder(0); ff.setPadding(0); ff.setMargin(ABSTAND_PX); ff.setWidth(breite)
+    rahmen = c.insertFrame(ff)
+    QTextCursor(rahmen).insertImage(QTextImageFormat(f))
+    anker = doc.findBlock(rahmen.firstPosition() - 1)                  # der leere Absatz, den Qt vor dem Rahmen angelegt hat
+    if anker.isValid() and not anker.text():
+        ac = QTextCursor(anker)
+        bf = QTextBlockFormat(anker.blockFormat())
+        bf.setProperty(B_ANKER, 1); bf.setTopMargin(0); bf.setBottomMargin(0)
+        ac.setBlockFormat(bf)
+        cf = QTextCharFormat(); cf.setFontPointSize(1)
+        ac.setBlockCharFormat(cf)
+    c.endEditBlock()
+    return rahmen.firstPosition()
+
+
+def absatz_nach_rahmen(doc: QTextDocument, bildpos: int) -> QTextBlock:
+    """Der Absatz, zu dem das schwebende Bild bei bildpos gehört (er folgt dem Rahmen)."""
+    return doc.findBlock(schwebende_rahmen(doc)[bildpos].lastPosition() + 1)
+
+
+def schwebend_entfernen(doc: QTextDocument, pos: int) -> int:
+    """Nimmt das schwebende Bild bei pos samt Rahmen und Anker aus dem Dokument. Gibt die Stelle zurück, an der der Absatz
+    jetzt beginnt (dort kann das Bild wieder in der Zeile eingesetzt werden)."""
+    r = schwebende_rahmen(doc).get(pos)
+    if r is None:
+        return pos
+    anker = doc.findBlock(r.firstPosition() - 1)
+    von = anker.position() if ist_anker(anker) else r.firstPosition() - 1
+    c = QTextCursor(doc)
+    c.setPosition(von)
+    c.setPosition(r.lastPosition() + 1, QTextCursor.KeepAnchor)
+    c.removeSelectedText()
+    return von
 
 
 def umbruch_setzen(ed, modus: str) -> bool:
@@ -103,15 +143,17 @@ def umbruch_setzen(ed, modus: str) -> bool:
         doc.setModified(True)
         return True
     c.beginEditBlock()
-    c.removeSelectedText()
+    if aktuell == "zeile":
+        c.removeSelectedText()
+    else:
+        pos = schwebend_entfernen(doc, pos)                        # Rahmen und Anker weg; pos ist jetzt der Absatzanfang
     if modus == "zeile":
         k = QTextCursor(doc)
         k.setPosition(pos)
         k.insertImage(f)
         neu = pos
     else:
-        neu = doc.findBlock(pos).position()
-        schwebend_einfuegen(doc, neu, f, modus)
+        neu = schwebend_einfuegen(doc, doc.findBlock(pos).position(), f, modus)
     c.endEditBlock()
     sel = QTextCursor(doc)
     sel.setPosition(neu)

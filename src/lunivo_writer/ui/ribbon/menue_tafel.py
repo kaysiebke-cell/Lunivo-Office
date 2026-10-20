@@ -8,6 +8,8 @@ from PySide6.QtWidgets import (
     QFrame, QHBoxLayout, QLabel, QPushButton, QToolButton, QVBoxLayout, QWidget,
 )
 
+from lunivo_writer.ui.baukasten.beschriftung import md_escape, md_label, text_label
+
 
 class MenueTafel(QFrame):
     def __init__(self, punkte: list, befehle, fenster):
@@ -75,7 +77,7 @@ class MenueTafel(QFrame):
     def _zeige_zuletzt(self):
         self._leeren()
         kopf = QHBoxLayout()
-        t = QLabel("<b>Zuletzt verwendete Dokumente</b>")
+        t = text_label("Zuletzt verwendete Dokumente", fett=True, umbruch=False)
         kopf.addWidget(t)
         kopf.addStretch(1)
         r = QToolButton(); r.setText("↻"); r.setAutoRaise(True); r.setToolTip("Liste neu holen")
@@ -101,7 +103,7 @@ class MenueTafel(QFrame):
 
     def _zeige_unter(self, p: dict):
         self._leeren()
-        self.rechts.addWidget(QLabel(f"<b>{p['name']}</b>"))
+        self.rechts.addWidget(text_label(p["name"], fett=True, umbruch=False))
         for u in p["unter"]:
             if u.get("trenner"):
                 continue

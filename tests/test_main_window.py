@@ -106,6 +106,36 @@ def test_quelltext_ohne_web_oberflaeche():
     assert not list(wurzel.rglob("*.html")) and not list(wurzel.rglob("*.js"))
 
 
+# Das Einfügen aus der Zwischenablage nimmt Inhalte aus fremden Programmen an (die liefern ihre Formatierung so); das ist keine
+# Datei und kein Format von Lunivo. Für alles, was Lunivo selbst anlegt oder speichert, gilt: kein HTML. Neue Einträge: nicht vorgesehen.
+HTML_NOCH_ERLAUBT = {"ui/document/base.py", "ui/document/document_editor.py"}
+
+
+def test_kein_html_im_projekt():
+    """Lunivo ist eine native Qt-Anwendung: HTML, JavaScript und CSS kommen weder als Dateien noch im Quelltext vor,
+    auch nicht als Datei-, Daten- oder Zwischenformat (Textbausteine, Hilfe, Berichte, Werkzeuge)."""
+    import pathlib, re
+    wurzel = pathlib.Path(__file__).resolve().parent.parent
+    ohne = {".venv", ".git", ".pytest_cache", "__pycache__", "node_modules"}
+    projektdateien = [p for p in wurzel.rglob("*") if p.is_file() and not (ohne & set(p.relative_to(wurzel).parts))]
+    web = [str(p.relative_to(wurzel)) for p in projektdateien if p.suffix.lower() in {".html", ".htm", ".js", ".mjs", ".css", ".ts"}]
+    assert web == [], "Web-Dateien im Projekt: " + ", ".join(web)
+    code = re.compile(r"toHtml|setHtml|insertHtml|fromHtml|hasHtml|\.html\(\)|import html\b|<html|<body|<img |<table|<br>|"
+                      r"</?(?:b|i|s|u|br|p|h[1-6]|code|sup|sub|a|span|div|table|tr|td|ul|li|font|em|strong)(?:\s[^>]*)?/?>|"
+                      r"[\"']\.html?[\"']|\"html\"|QtWebEngine|QtWebKit|QWebEngine|WebKit2|http\.server|SimpleHTTPRequestHandler")
+    treffer = []
+    for p in projektdateien:
+        rel = p.relative_to(wurzel).as_posix()
+        if p.suffix not in {".py", ".json", ".sh", ".toml"} or rel.startswith(("tests/", "src/lunivo_writer/resources/daten/")):
+            continue
+        if rel.removeprefix("src/lunivo_writer/") in HTML_NOCH_ERLAUBT or rel == "werkzeug/funktionspruefung.py":
+            continue
+        for n, z in enumerate(p.read_text(encoding="utf-8", errors="replace").split("\n"), 1):
+            if code.search(z):
+                treffer.append(f"{rel}:{n}: {z.strip()[:90]}")
+    assert treffer == [], "HTML im Quelltext:\n" + "\n".join(treffer)
+
+
 def test_tastenkuerzel_fett(app, tmp_path):
     from PySide6.QtCore import Qt
     from PySide6.QtTest import QTest

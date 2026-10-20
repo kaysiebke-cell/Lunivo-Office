@@ -6,7 +6,7 @@ von Writer und das eigene, beide auf dem Reiter Ansicht.
 
 Diese Datei hält fest, was **auf den Bildern** zu sehen ist. Das ist
 etwas anderes als [reiter-abgleich.md](reiter-abgleich.md): Der vergleicht
-Listen gegen Listen — sein Prüfkatalog gegen `register.js` — und meldet
+Listen gegen Listen — sein Prüfkatalog gegen `register.json` — und meldet
 für Ansicht **alles gleich**. Die Bilder zeigen etwas, das keine Liste
 zeigen kann.
 
@@ -72,7 +72,7 @@ OBERFLÄCHE), nicht. Word macht es wie Lunivo.
 
 ### 1. „Textbegrenzungen" steht zweimal im Band
 
-In `oberflaeche/daten/register.js`, Gruppe *Anzeigen*:
+In `resources/register.json`, Gruppe *Anzeigen*:
 
  ['ecken', 'Textbegrenzungen', () => B.textbegrenzungen(), …]
  ['ecken', 'Textbegrenzungen', () => B.markenZeigen(), …]
@@ -87,7 +87,7 @@ Welche der beiden bleiben soll, entscheidet er — die eine ist vermutlich
 
 ### 2. Der Haken zeigt den falschen Zustand
 
-In `oberflaeche/js/programm.js` steht in der Tabelle `w.an` der Schlüssel
+In `core/commands.py` stand der Schlüssel
 `textbegrenzungen` **zweimal**:
 
  textbegrenzungen: () => textbegrenzungen, // Zeile 4025
@@ -103,7 +103,7 @@ entschieden ist, welcher der beiden Knöpfe aus Punkt 1 bleibt.
 
 ## Der Ansicht-Reiter in Lunivo, wie er heute ist
 
-Aus `register.js` gelesen, in der Reihenfolge des Bandes:
+Aus `resources/register.json` gelesen, in der Reihenfolge des Bandes:
 
 | Gruppe | Knöpfe | beschriftet |
 |---|---|---|
@@ -122,4 +122,4 @@ Untereinander, Kacheln. Das ist kein Fehler, aber doppelt.
 
 [← Zurück zum README](../README.md) ·
 [Reiter für Reiter](reiter-abgleich.md) ·
-[Was wirklich fehlt](was-fehlt-wirklich.md)
+[Funktionsstand](funktionsstand.md)

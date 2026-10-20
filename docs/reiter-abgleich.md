@@ -597,7 +597,6 @@ das `aufbau-schreiben.py` aus dem laufenden Programm zieht.
 | Bearbeiten | Ausschneiden und Einfügen | gleich (4 Felder) |
 | Allgemein und speichern | Speichern | gleich (1 Felder) |
 | Allgemein und speichern | Allgemeine Optionen | gleich (3 Felder) |
-| Allgemein und speichern | Webseite | gleich (1 Felder) |
 | Allgemein und speichern | Kompatibilitätsoptionen | gleich (5 Felder) |
 | Sicherungseinstellungen | Sicherung | gleich (3 Felder) |
 | Sicherungseinstellungen | Zwischenstände aufheben | gleich (2 Felder) |

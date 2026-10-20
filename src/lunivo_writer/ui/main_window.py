@@ -8,7 +8,7 @@ from PySide6.QtCore import Qt, QTimer, QUrl
 from PySide6.QtGui import QAction, QActionGroup, QColor, QDesktopServices, QFont, QKeySequence, QPalette, QTextFormat
 from PySide6.QtPrintSupport import QPrintDialog, QPrintPreviewDialog, QPrinter
 from PySide6.QtWidgets import (
-    QApplication, QColorDialog, QFileDialog, QInputDialog, QLineEdit, QMainWindow, QMenu, QMessageBox, QWidget,
+    QApplication, QFileDialog, QInputDialog, QLineEdit, QMainWindow, QMenu, QMessageBox, QWidget,
 )
 
 from lunivo_writer import __version__
@@ -23,6 +23,7 @@ from lunivo_writer.ai.ai_service import KIDienst
 from lunivo_writer.proofing.proofing_service import WritingAssistant
 from lunivo_writer.core.document_manager import DocumentManager
 from lunivo_writer.ui.statusbar.status_bar import StatusBar
+from lunivo_writer.ui.baukasten import weitere_farben
 from lunivo_writer.ui.dialogs.dokument_dialoge import FindReplaceDialog, HeaderFooterDialog, PageSetupDialog, ParagraphDialog, TableDialog
 from lunivo_writer.ui.document.document_tabs import DocTabs
 from lunivo_writer.ui.document.document_area import DocumentTab
@@ -498,14 +499,14 @@ class MainWindow(QMainWindow):
             flt = formats.SAVE_FILTERS[only]; default = only
         else:
             standard = self.settings.get("speichern/standard", ".docx")
-            flt = ("Word-Dokument (*.docx);;Textdatei (*.txt);;Webseite (*.html)" if standard != ".txt"
-                   else "Textdatei (*.txt);;Word-Dokument (*.docx);;Webseite (*.html)")
+            flt = ("Word-Dokument (*.docx);;Textdatei (*.txt)" if standard != ".txt"
+                   else "Textdatei (*.txt);;Word-Dokument (*.docx)")
             default = standard if standard in (".docx", ".txt") else ".docx"
         path, chosen = QFileDialog.getSaveFileName(self, title, os.path.join(folder, base + default), flt)
         if not path:
             return None
         if not os.path.splitext(path)[1]:
-            path += ".txt" if "txt" in chosen else ".html" if "html" in chosen else default
+            path += ".txt" if "txt" in chosen else default
         return path
 
     def _save_tab_as(self, tab: DocumentTab) -> bool:
@@ -857,13 +858,13 @@ class MainWindow(QMainWindow):
                 e.textCursor().insertText(t)
 
     def choose_color(self):
-        c = QColorDialog.getColor(Qt.black, self, "Schriftfarbe")
-        if c.isValid():
+        c = weitere_farben(self, Qt.black, "Schriftfarbe")
+        if c is not None:
             self._ed(lambda e: e.set_text_color(c))
 
     def choose_highlight(self):
-        c = QColorDialog.getColor(QColor("yellow"), self, "Texthervorhebungsfarbe")
-        if c.isValid():
+        c = weitere_farben(self, QColor("yellow"), "Texthervorhebungsfarbe")
+        if c is not None:
             self._ed(lambda e: e.set_highlight(c))
 
     def paragraph_dialog(self):

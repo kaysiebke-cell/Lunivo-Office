@@ -1,7 +1,8 @@
 """Kleine Dialoge: Seite einrichten, Absatz, Kopf-/Fußzeile, Tabelle, Suchen/Ersetzen."""
 from __future__ import annotations
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import QRect, Qt, Signal
+from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QCheckBox, QComboBox, QDialog, QDialogButtonBox, QDoubleSpinBox, QFormLayout, QGridLayout,
     QGroupBox, QHBoxLayout, QLabel, QLineEdit, QPlainTextEdit, QPushButton, QSpinBox, QVBoxLayout,
@@ -9,53 +10,8 @@ from PySide6.QtWidgets import (
 )
 
 from lunivo_writer.models.page import PAPER_MM, HeaderFooter, PageSettings
-
-
-# Maßeinheit der Oberfläche (Optionen ▸ Speichern): intern bleibt alles in Millimetern, nur die Anzeige wechselt.
-EINHEITEN = {"Millimeter": (1.0, "mm"), "Zentimeter": (0.1, "cm"), "Zoll": (1 / 25.4, "in"),
-             "Punkt": (72 / 25.4, "pt"), "Pica": (6 / 25.4, "pc")}
-_einheit = "Millimeter"
-
-
-def set_einheit(name: str) -> None:
-    global _einheit
-    _einheit = name if name in EINHEITEN else "Millimeter"
-
-
-def einheit() -> tuple[float, str]:
-    return EINHEITEN[_einheit]
-
-
-class _MassSpin(QDoubleSpinBox):
-    """Wert in mm, Anzeige in der gewählten Maßeinheit; wer „mm“ eingibt oder „2 cm“ tippt, wird verstanden."""
-
-    def textFromValue(self, v: float) -> str:
-        f, kurz = einheit()
-        return f"{v * f:.{2 if f != 1.0 else self.decimals()}f}".replace(".", ",") + " " + kurz
-
-    def valueFromText(self, text: str) -> float:
-        import re
-        m = re.match(r"\s*(-?\d+(?:[.,]\d+)?)\s*([a-zA-Z]*)", text)
-        if not m:
-            return self.value()
-        zahl = float(m.group(1).replace(",", "."))
-        f, kurz = einheit()
-        eigene = {"mm": 1.0, "cm": 0.1, "in": 1 / 25.4, "zoll": 1 / 25.4, "pt": 72 / 25.4, "pc": 6 / 25.4}
-        fak = eigene.get(m.group(2).lower(), f)
-        return zahl / fak
-
-    def validate(self, text, pos):
-        from PySide6.QtGui import QValidator
-        import re
-        return (QValidator.Acceptable if re.match(r"^\s*-?\d*[.,]?\d*\s*[a-zA-Z]*\s*$", text) else QValidator.Invalid), text, pos
-
-
-def _spin(value: float, lo=0.0, hi=500.0, suffix=" mm", step=1.0, decimals=1) -> QDoubleSpinBox:
-    s = _MassSpin() if suffix == " mm" else QDoubleSpinBox()
-    s.setRange(lo, hi); s.setSingleStep(step); s.setDecimals(decimals); s.setValue(value)
-    if suffix != " mm":
-        s.setSuffix(suffix)
-    return s
+from lunivo_writer.ui.baukasten import DialogRahmen, FarbFeld, Linie, LinienWahl
+from lunivo_writer.ui.baukasten.mass_feld import EINHEITEN, MassSpin as _MassSpin, einheit, set_einheit, spin as _spin  # noqa: F401
 
 
 class PageSetupDialog(QDialog):
@@ -355,33 +311,29 @@ class ZoomDialog(QDialog):
         return self._art[i]
 
 
-class WasserzeichenDialog(QDialog):
+class WasserzeichenDialog(DialogRahmen):
     def __init__(self, parent, aktuell: dict | None):
-        super().__init__(parent)
-        from PySide6.QtWidgets import QColorDialog, QSpinBox
-        self.setWindowTitle("Wasserzeichen")
         a = aktuell or {}
-        f = QFormLayout(self)
+        super().__init__(parent, "Wasserzeichen", self._male)
         self.text = QLineEdit(a.get("text", "ENTWURF"))
-        self.farbe = a.get("farbe", "#c0c0c0")
-        self.knopf = QPushButton(self.farbe)
-        self.knopf.clicked.connect(self._waehle)
+        self.knopf = FarbFeld(a.get("farbe", "#c0c0c0"), "Farbe")
         self.winkel = QSpinBox(); self.winkel.setRange(-90, 90); self.winkel.setValue(int(a.get("winkel", -45)))
         self.groesse = QSpinBox(); self.groesse.setRange(10, 300); self.groesse.setSuffix(" pt"); self.groesse.setValue(int(a.get("groesse_pt", 80)))
-        f.addRow("Text", self.text); f.addRow("Farbe", self.knopf); f.addRow("Drehung (Grad)", self.winkel); f.addRow("Größe", self.groesse)
-        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        self.weg = bb.addButton("Entfernen", QDialogButtonBox.DestructiveRole)
+        for beschr, w in (("Text", self.text), ("Farbe", self.knopf), ("Drehung (Grad)", self.winkel), ("Größe", self.groesse)):
+            self.zeile(beschr, w)
         self.entfernt = False
-        self.weg.clicked.connect(lambda: (setattr(self, "entfernt", True), self.accept()))
-        bb.accepted.connect(self.accept); bb.rejected.connect(self.reject)
-        f.addRow(bb)
+        self.zusatzknopf("Entfernen", lambda: setattr(self, "entfernt", True))
+        self.text.textChanged.connect(self.aktualisieren); self.winkel.valueChanged.connect(self.aktualisieren)
+        self.groesse.valueChanged.connect(self.aktualisieren); self.knopf.farbeGeaendert.connect(self.aktualisieren)
 
-    def _waehle(self):
-        from PySide6.QtGui import QColor
-        from PySide6.QtWidgets import QColorDialog
-        c = QColorDialog.getColor(QColor(self.farbe), self, "Farbe")
-        if c.isValid():
-            self.farbe = c.name(); self.knopf.setText(self.farbe)
+    @property
+    def farbe(self) -> str:
+        return self.knopf.farbe
+
+    def _male(self, p, r) -> None:
+        p.setPen(QColor(self.farbe)); f = p.font(); f.setPointSizeF(max(8.0, self.groesse.value() / 4)); f.setBold(True); p.setFont(f)
+        p.translate(r.center()); p.rotate(self.winkel.value())
+        p.drawText(QRect(-r.width() // 2, -r.height() // 2, r.width(), r.height()), Qt.AlignCenter, self.text.text())
 
     def ergebnis(self) -> dict | None:
         if self.entfernt or not self.text.text().strip():
@@ -389,37 +341,27 @@ class WasserzeichenDialog(QDialog):
         return {"text": self.text.text().strip(), "farbe": self.farbe, "winkel": self.winkel.value(), "groesse_pt": self.groesse.value()}
 
 
-class SeitenrahmenDialog(QDialog):
+class SeitenrahmenDialog(DialogRahmen):
     def __init__(self, parent, aktuell: dict | None):
-        super().__init__(parent)
-        from PySide6.QtWidgets import QSpinBox
-        self.setWindowTitle("Seitenrahmen")
         a = aktuell or {}
-        f = QFormLayout(self)
-        self.art = QComboBox(); self.art.addItems(["Einfach", "Doppelt"])
-        self.art.setCurrentIndex(1 if a.get("art") == "doppelt" else 0)
-        self.farbe = a.get("farbe", "#000000")
-        self.knopf = QPushButton(self.farbe); self.knopf.clicked.connect(self._waehle)
-        self.breite = QDoubleSpinBox(); self.breite.setRange(0.25, 6); self.breite.setSingleStep(0.25); self.breite.setSuffix(" pt")
-        self.breite.setValue(float(a.get("breite_pt", 1.0)))
+        super().__init__(parent, "Seitenrahmen", self._male)
+        self.linie = LinienWahl(Linie(a.get("farbe", "#000000"), float(a.get("breite_pt", 1.0)), a.get("art", "einfach")),
+                                arten=("einfach", "doppelt"), breiten=(0.25, 0.5, 0.75, 1.0, 1.5, 2.25, 3.0, 4.5, 6.0))
         self.abstand = QDoubleSpinBox(); self.abstand.setRange(2, 30); self.abstand.setSuffix(" mm"); self.abstand.setValue(float(a.get("abstand_mm", 8.0)))
-        f.addRow("Art", self.art); f.addRow("Farbe", self.knopf); f.addRow("Breite", self.breite); f.addRow("Abstand vom Seitenrand", self.abstand)
-        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        self.weg = bb.addButton("Kein Rahmen", QDialogButtonBox.DestructiveRole)
+        self.zeile("Linie", self.linie); self.zeile("Abstand vom Seitenrand", self.abstand)
         self.entfernt = False
-        self.weg.clicked.connect(lambda: (setattr(self, "entfernt", True), self.accept()))
-        bb.accepted.connect(self.accept); bb.rejected.connect(self.reject)
-        f.addRow(bb)
+        self.zusatzknopf("Kein Rahmen", lambda: setattr(self, "entfernt", True))
+        self.linie.geaendert.connect(self.aktualisieren); self.abstand.valueChanged.connect(self.aktualisieren)
 
-    def _waehle(self):
-        from PySide6.QtGui import QColor
-        from PySide6.QtWidgets import QColorDialog
-        c = QColorDialog.getColor(QColor(self.farbe), self, "Farbe")
-        if c.isValid():
-            self.farbe = c.name(); self.knopf.setText(self.farbe)
+    def _male(self, p, r) -> None:
+        d = int(self.abstand.value() / 2)
+        x1, y1, x2, y2 = r.left() + d, r.top() + d, r.right() - d, r.bottom() - d
+        li = self.linie.linie()
+        for (ax, ay, bx, by) in ((x1, y1, x2, y1), (x2, y1, x2, y2), (x2, y2, x1, y2), (x1, y2, x1, y1)):
+            li.zeichne(p, ax, ay, bx, by, 96 / 72)
 
     def ergebnis(self) -> dict | None:
         if self.entfernt:
             return None
-        return {"art": "doppelt" if self.art.currentIndex() else "einfach", "farbe": self.farbe,
-                "breite_pt": self.breite.value(), "abstand_mm": self.abstand.value()}
+        li = self.linie.linie()
+        return {"art": li.art, "farbe": li.farbe, "breite_pt": li.breite_pt, "abstand_mm": self.abstand.value()}

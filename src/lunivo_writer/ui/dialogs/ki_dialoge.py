@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
     QMessageBox, QPushButton, QToolButton, QVBoxLayout, QWidget,
 )
 
+from lunivo_writer.ui.baukasten.beschriftung import md_escape, md_label, text_label
 from lunivo_writer.ai import ki as K
 from lunivo_writer.ui.widgets.flow_layout import FlowLayout
 
@@ -32,7 +33,7 @@ class AnbieterDialog(QDialog):
         self.setWindowTitle("Modell bearbeiten" if bestehend else "Eigenen Anbieter hinzufügen")
         self.setMinimumWidth(560)
         v = QVBoxLayout(self)
-        t = QLabel("<b style='font-size:13pt'>%s</b>" % self.windowTitle())
+        t = text_label(self.windowTitle(), fett=True, pt=13, umbruch=False)
         v.addWidget(t)
         f = QFormLayout()
         self.name = QLineEdit(bestehend["name"] if bestehend else "")
@@ -184,7 +185,7 @@ class ModellListeDialog(QDialog):
         self.setWindowTitle("Liste der KI-Modelle")
         self.setMinimumSize(480, 340)
         v = QVBoxLayout(self)
-        v.addWidget(QLabel("<b style='font-size:13pt'>Liste der KI-Modelle</b>"))
+        v.addWidget(text_label("Liste der KI-Modelle", fett=True, pt=13, umbruch=False))
         z = QHBoxLayout()
         self.liste = QListWidget()
         z.addWidget(self.liste, 1)
@@ -251,7 +252,7 @@ class KIKonfigurationDialog(QDialog):
         self.setWindowTitle("KI-Konfiguration")
         self.setMinimumWidth(560)
         v = QVBoxLayout(self)
-        v.addWidget(QLabel("<b style='font-size:13pt'>KI-Konfiguration</b>"))
+        v.addWidget(text_label("KI-Konfiguration", fett=True, pt=13, umbruch=False))
         v.addWidget(QLabel("Fügen Sie hinzu und wählen Sie KI-Modelle für verschiedene Aufgaben aus."))
         self.f = QFormLayout()
         v.addLayout(self.f)

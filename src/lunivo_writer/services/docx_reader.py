@@ -37,6 +37,7 @@ LH_PROPORTIONAL, LH_FIXED = 1, 2                # QTextBlockFormat.LineHeightTyp
 STYLE_PROP = QTextFormat.UserProperty + 1       # Name der Formatvorlage am Block
 from lunivo_writer.editor.zusatz import B_SPALTE, P_OBJEKT, P_VERSTECKT  # noqa: E402
 from lunivo_writer.editor.formular import P_FORM  # noqa: E402
+from lunivo_writer.editor.linie import Linie
 from lunivo_writer.editor.zusatz import B_ART, B_CAP, B_RAHMEN, B_TOC, BESCHRIFTUNGEN, P_AENDERUNG, P_AUTOR, P_DATUM, P_FELD, P_INDEX, P_KOMMENTAR, P_NOTE, P_ZITAT, leere_meta
 EMU_PER_PX = 9525
 PT_PER_PX = 0.75
@@ -664,11 +665,14 @@ class _Reader:
         ppr = para._p.pPr
         bdr = ppr.find(qn("w:pBdr")) if ppr is not None else None
         if bdr is not None:
-            e = next((bdr.find(qn(f"w:{x}")) for x in ("top", "left", "bottom", "right") if bdr.find(qn(f"w:{x}")) is not None), None)
-            if e is not None and e.get(qn("w:val"), "nil") not in ("nil", "none"):
+            da = [(kurz, bdr.find(qn(f"w:{x}"))) for x, kurz in (("top", "t"), ("left", "l"), ("bottom", "b"), ("right", "r"), ("between", "h"))]
+            da = [(k, e) for k, e in da if e is not None and e.get(qn("w:val"), "nil") not in ("nil", "none")]
+            if da:
+                e = da[0][1]
                 col = e.get(qn("w:color")) or "000000"
-                bfmt.setProperty(B_RAHMEN, f"#{col.lower() if col.lower() != 'auto' else '000000'}|{int(e.get(qn('w:sz')) or 8) / 8:g}|"
-                                 + ("doppelt" if e.get(qn("w:val")) == "double" else "einfach"))
+                art = {"double": "doppelt", "dashed": "gestrichelt", "dotted": "gepunktet", "dotDash": "strichpunkt"}.get(e.get(qn("w:val")), "einfach")
+                li = Linie(f"#{col.lower() if col.lower() != 'auto' else '000000'}", int(e.get(qn("w:sz")) or 8) / 8, art).mit_seiten("".join(k for k, _e in da))
+                bfmt.setProperty(B_RAHMEN, li.text())
         try:
             name = self._ps(para).name
         except Exception:
@@ -809,8 +813,10 @@ class _Reader:
             imf.setProperty(P_OBJEKT, titel[0][len("lunivo:"):])
         seite = self._umbruch_seite(drawing, w)
         if seite:
-            from lunivo_writer.editor.umbruch import schwebend_einfuegen
-            schwebend_einfuegen(self.doc, cursor.block().position(), imf, seite)      # gehört zum Absatz: steht an dessen Anfang
+            from lunivo_writer.editor.umbruch import absatz_nach_rahmen, schwebend_einfuegen
+            bild_pos = schwebend_einfuegen(self.doc, cursor.block().position(), imf, seite)   # gehört zum Absatz: davor eingefügt
+            text = absatz_nach_rahmen(self.doc, bild_pos)
+            cursor.setPosition(text.position() + text.length() - 1)                          # weiter am Ende dieses Absatzes schreiben
             return
         cursor.insertImage(imf)
 

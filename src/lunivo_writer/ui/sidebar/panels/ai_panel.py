@@ -7,10 +7,9 @@ from PySide6.QtWidgets import (
 )
 
 from lunivo_writer.ai import ki as K
+from lunivo_writer.ui.baukasten.beschriftung import md_escape, md_label, text_label
 
 
-def _esc(s):
-    return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<br>")
 
 
 class ChatPanel(QWidget):
@@ -20,7 +19,7 @@ class ChatPanel(QWidget):
         self.verlauf: list[dict] = []
         v = QVBoxLayout(self)
         v.setContentsMargins(0, 0, 0, 0)
-        v.addWidget(QLabel("<b>KI-Chat</b>"))
+        v.addWidget(text_label("KI-Chat", fett=True))
         self.blasen = QVBoxLayout()
         self.blasen.setAlignment(Qt.AlignTop)
         host = QWidget(); host.setLayout(self.blasen)
@@ -42,7 +41,7 @@ class ChatPanel(QWidget):
         f = QFrame(); f.setFrameShape(QFrame.StyledPanel)
         f.setStyleSheet("QFrame { border-left: 4px solid %s; }" % ("#2f6fb5" if ki else "#868e96"))
         l = QVBoxLayout(f)
-        t = QLabel(_esc(text)); t.setTextFormat(Qt.RichText); t.setWordWrap(True)
+        t = text_label(text)
         t.setTextInteractionFlags(Qt.TextSelectableByMouse)
         l.addWidget(t)
         if ki and not text.startswith("⚠"):

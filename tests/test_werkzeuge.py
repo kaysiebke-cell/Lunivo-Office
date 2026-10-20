@@ -438,3 +438,92 @@ def test_textumbruch_oben_unten(app):
     while b.isValid():
         bloecke.append((b.text().replace("￼", "[Bild]"), bool(b.blockFormat().alignment() & Qt.AlignHCenter))); b = b.next()
     assert [t for t, _z in bloecke] == ["Davor ", "[Bild]", "Danach"] and bloecke[1][1] is True
+
+
+def _bild_dokument():
+    from PySide6.QtGui import QColor, QImage
+    from lunivo_writer.editor import einfuegen as E
+    from lunivo_writer.ui.document.document_editor import DocumentEditor
+    ed = DocumentEditor()
+    ed.setPlainText("Erster.\nZweiter Absatz lang. " + "Text " * 60 + "\nDritter.")
+    c = ed.textCursor(); c.setPosition(ed.document().findBlockByNumber(1).position()); ed.setTextCursor(c)
+    E.qimage_einfuegen(ed, QImage(100, 60, QImage.Format_RGB32), "Rotes Rechteck")
+    c = ed.textCursor(); c.setPosition(ed.document().findBlockByNumber(1).position()); ed.setTextCursor(c)
+    return ed
+
+
+def test_schwebendes_bild_ist_ein_qt_rahmen_ohne_leere_absaetze_in_docx(app, tmp_path):
+    import zipfile
+    import docx
+    from PySide6.QtGui import QTextFrameFormat
+    from lunivo_writer.editor import umbruch as U
+    from lunivo_writer.editor.zusatz import B_ANKER
+    from lunivo_writer.models.page import PageSettings
+    from lunivo_writer.services import file_service as formats
+    ed = _bild_dokument(); doc = ed.document()
+    ohne_bild_text = "Erster.\nZweiter Absatz lang. " + "Text " * 60 + "\nDritter."
+    assert U.umbruch_setzen(ed, "links")
+    (pos, rahmen), = U.schwebende_rahmen(doc).items()
+    assert rahmen.frameFormat().position() == QTextFrameFormat.FloatLeft and U.bild_im_rahmen(rahmen).name()
+    ankerbloecke = [b for b in _bloecke(doc) if b.blockFormat().hasProperty(B_ANKER)]
+    assert len(ankerbloecke) == 1 and ankerbloecke[0].text() == ""
+    assert ed.bild_format() is not None and ed.textCursor().selectionStart() == pos        # das Bild bleibt markiert
+    # Speichern: drei Word-Absätze (der Anker ist keiner), das Bild am zweiten verankert; wiederholt bleibt es dabei
+    pfad = str(tmp_path / "a.docx")
+    for _ in range(3):
+        formats.save(pfad, doc, PageSettings())
+        xml = zipfile.ZipFile(pfad).read("word/document.xml").decode()
+        absaetze = docx.Document(pfad).paragraphs
+        assert [p.text[:7] for p in absaetze] == ["Erster.", "Zweite" + "r", "Dritter"] and xml.count("<wp:anchor") == 1
+        assert "<wp:anchor" in absaetze[1]._p.xml                                  # am zweiten Absatz verankert
+        doc = formats.load(pfad).doc
+    assert len(U.schwebende_rahmen(doc)) == 1 and "Dritter." in doc.toPlainText()
+    assert [b.text() for b in _bloecke(doc) if b.text() and "￼" not in b.text()][0] == "Erster."
+
+
+def _auf_bild(ed):
+    c = ed.textCursor(); c.setPosition(ed.document().findBlockByNumber(1).position()); ed.setTextCursor(c)
+
+
+def _bloecke(doc):
+    b = doc.begin()
+    while b.isValid():
+        yield b
+        b = b.next()
+
+
+def test_schwebendes_bild_zurueck_in_die_zeile_und_rueckgaengig(app):
+    from lunivo_writer.editor import umbruch as U
+    ed = _bild_dokument(); doc = ed.document()
+    vorher = doc.toPlainText()
+    assert vorher.count("￼") == 1 and doc.blockCount() == 3
+    assert U.umbruch_setzen(ed, "rechts") and doc.blockCount() == 5                   # Anker und Bildabsatz kamen dazu
+    doc.undo()                                                                        # ein einziges Rückgängig stellt alles her
+    assert U.schwebende_rahmen(doc) == {} and doc.toPlainText() == vorher and doc.blockCount() == 3
+    _auf_bild(ed)
+    assert U.umbruch_setzen(ed, "rechts")
+    assert U.umbruch_setzen(ed, "zeile")
+    assert U.schwebende_rahmen(doc) == {} and doc.toPlainText() == vorher and doc.blockCount() == 3
+    assert U.umbruch_setzen(ed, "links") and U.umbruch_setzen(ed, "rechts")
+    assert [U.schwebend(doc, p) for p in U.schwebende_rahmen(doc)] == ["rechts"]
+    for _ in range(4):                                                                # rechts, links, zeile, rechts
+        doc.undo()
+    assert U.schwebende_rahmen(doc) == {} and doc.toPlainText() == vorher
+
+
+def test_schwebendes_bild_text_fliesst_herum_und_pdf(app, tmp_path):
+    import pypdf
+    from lunivo_writer.editor import umbruch as U
+    from lunivo_writer.models.page import PageSettings
+    from lunivo_writer.editor.pagination import export_pdf
+    ed = _bild_dokument(); doc = ed.document()
+    doc.setTextWidth(500)
+    zeilen = lambda blk: [blk.layout().lineAt(i).x() for i in range(blk.layout().lineCount())]      # noqa: E731
+    assert max(zeilen(doc.findBlockByNumber(1))) == 0                                  # Bild in der Zeile: nichts eingerückt
+    assert U.umbruch_setzen(ed, "links")
+    doc.setTextWidth(500)
+    xs = zeilen(doc.findBlockByNumber(3))                                              # der lange Absatz nach dem Rahmen
+    assert min(xs) >= 100                                                               # Zeilen beginnen rechts vom Bild: Text umfließt
+    pdf = str(tmp_path / "u.pdf")
+    export_pdf(pdf, doc, PageSettings(), "t")
+    assert "Dritter." in " ".join(pypdf.PdfReader(pdf).pages[0].extract_text().split())

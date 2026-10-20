@@ -1,8 +1,6 @@
 # Der Aufbau der Optionen
 
-**Diese Datei wird erzeugt.** `python3 werkzeug/aufbau-schreiben.py` liest
-`oberflaeche/js/einstellungen.js` und `oberflaeche/index.html` und schreibt
-sie neu.
+Quelle der Optionen: `src/lunivo_writer/ui/dialogs/optionen.py`.
 
 Das Optionen-Fenster geht mit **F9** auf, oder über *Datei ▸ Optionen*.
 Links ein Baum mit drei Zweigen, rechts der Bereich.
@@ -170,8 +168,6 @@ Links ein Baum mit drei Zweigen, rechts der Bereich.
 │ ├── Maßeinheit
 │ ├── Bilder in der Datei nicht komprimieren
 │ └── Standard-Ausgabeziel
-├── Webseite
-│ └── Webseitencodierung
 └── Kompatibilitätsoptionen
  ├── Seitenumbruch und Absatzmarke aufteilen
  ├── Hängenden Einzug nicht als Tabstopp verwenden
@@ -453,7 +449,6 @@ Alphabetisch, mit Seite und Gruppe.
 | Wann gesichert wird | Sicherungseinstellungen ▸ Sicherung |
 | Was das Programm gelernt hat | Rechtschreibprüfung ▸ Benutzerwörterbuch |
 | Was zusätzlich geholt wurde | Erweitert ▸ Erweitert |
-| Webseitencodierung | Allgemein und Speichern ▸ Webseite |
 | Weggewinkte Funde wieder anzeigen | Rechtschreibprüfung ▸ Rechtschreibprüfung |
 | Weicher Kontrast | Ansicht ▸ Darstellung |
 | Wer schreibt | Benutzerinformationen ▸ Benutzerdaten |

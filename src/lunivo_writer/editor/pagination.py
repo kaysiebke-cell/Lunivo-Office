@@ -822,7 +822,7 @@ def zeichne_seite(p: QPainter, d: QTextDocument, page: PageSettings, n: int, tot
 
 def absatzrahmen_zeichnen(p: QPainter, d: QTextDocument, faktor: float = 1.0, polster: float = 4.0) -> None:
     """Rahmen um zusammenhängende Absätze mit gleichem B_RAHMEN. Koordinaten: Dokument (Layoutgerät); faktor = Zoom."""
-    from PySide6.QtGui import QColor, QPen
+    from lunivo_writer.editor.linie import Linie
     from lunivo_writer.editor.zusatz import B_RAHMEN
     lay = d.documentLayout()
     gruppen: list[list] = []
@@ -836,19 +836,15 @@ def absatzrahmen_zeichnen(p: QPainter, d: QTextDocument, faktor: float = 1.0, po
                 gruppen.append([w, [b], b.blockNumber()])
         b = b.next()
     for w, bloecke, _n in gruppen:
-        farbe, _, rest = w.partition("|")
-        pt, _, art = rest.partition("|")
+        linie = Linie.aus_text(w)
+        if linie is None:
+            continue
         r = lay.blockBoundingRect(bloecke[0]).united(lay.blockBoundingRect(bloecke[-1]))
-        pen = QPen(QColor(farbe or "#000000"))
-        pen.setWidthF(max(0.6, float(pt or 1) * 96 / 72 * faktor))
-        p.setPen(pen)
-        p.setBrush(Qt.NoBrush)
         pd = polster * faktor
         rr = r.adjusted(-pd, -pd + 1, pd, pd - 1)
-        p.drawRect(rr)
-        if art == "doppelt":
-            g = pen.widthF() * 3
-            p.drawRect(rr.adjusted(g, g, -g, -g))
+        zwischen = [(lay.blockBoundingRect(x).bottom() + lay.blockBoundingRect(y).top()) / 2
+                    for x, y in zip(bloecke, bloecke[1:])]
+        linie.rahmen_zeichnen(p, rr, 96 / 72 * faktor, zwischen)
 
 
 def _zeilennummern(p: QPainter, d: QTextDocument, n: int, ch: float, base: QFont) -> None:

@@ -1,8 +1,8 @@
 # Der Aufbau des Bandes
 
-**Diese Datei wird erzeugt.** `python3 werkzeug/aufbau-schreiben.py` liest
-`oberflaeche/daten/register.js` und schreibt sie neu. Von Hand geändert,
-ist die Änderung beim nächsten Lauf wieder weg.
+Quelle des Bandes: `src/lunivo_writer/resources/register.json` und die Reiter-Module unter
+`src/lunivo_writer/ui/ribbon/tabs/`. Was davon wirklich tut, was es soll, steht in
+[funktionsstand.md](funktionsstand.md) (geschrieben von `werkzeug/funktionspruefung.py`).
 
 Neun Reiter. Das Band zeigt einen davon; welchen, sagt die Reiterzeile.
 Dieselben Befehle stehen auch in der Menüleiste und in den beiden
