@@ -4,7 +4,7 @@ from __future__ import annotations
 import os
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import QHBoxLayout, QScrollArea, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QHBoxLayout, QScrollArea, QWidget
 
 from lunivo_writer.services.file_service import Loaded
 from lunivo_writer.ui.document.document_editor import DocumentEditor
@@ -27,22 +27,17 @@ class DocumentTab(QScrollArea):
         lay.setContentsMargins(12, 12, 12, 12)
         self.editor = DocumentEditor()
         from lunivo_writer.ui.document.lineal import LinealH, LinealV
-        spalte = QVBoxLayout(); spalte.setSpacing(0); spalte.setContentsMargins(0, 0, 0, 0)
-        reihe = QHBoxLayout(); reihe.setSpacing(0); reihe.setContentsMargins(0, 0, 0, 0)
-        self.lineal_h = LinealH(self.editor); self.lineal_v = LinealV(self.editor)
+        # Die Lineale stehen fest am Rand des Fensters (im Rand des Viewports) und folgen dem Blatt beim Rollen
+        self.lineal_h = LinealH(self); self.lineal_v = LinealV(self)
         self.lineal_h.hide(); self.lineal_v.hide()
+        self._lineale = (False, False)
         self.lineal_h.randGeaendert.connect(self._rand)
         self.lineal_v.randGeaendert.connect(self._rand)
         self.lineal_h.einzugGeaendert.connect(lambda l, r, f: self.editor.set_indents(l, r, f))
-        links = QVBoxLayout(); links.setSpacing(0); links.setContentsMargins(0, 0, 0, 0)
-        self._abstand = QWidget(); self._abstand.setFixedSize(1, 22); self._abstand.hide()
-        links.addWidget(self._abstand); links.addWidget(self.lineal_v); links.addStretch(1)
-        rechts = QVBoxLayout(); rechts.setSpacing(0); rechts.setContentsMargins(0, 0, 0, 0)
-        rechts.addWidget(self.lineal_h); rechts.addWidget(self.editor); rechts.addStretch(1)
-        reihe.addLayout(links); reihe.addLayout(rechts)
+        for leiste in (self.horizontalScrollBar(), self.verticalScrollBar()):
+            leiste.valueChanged.connect(self._lineale_neu_zeichnen)
         lay.addStretch(1)
-        lay.addLayout(reihe)
-        lay.setAlignment(reihe, Qt.AlignTop)
+        lay.addWidget(self.editor, 0, Qt.AlignTop)
         lay.addStretch(1)
         self.setWidget(holder)
         self._holder = holder
@@ -68,6 +63,7 @@ class DocumentTab(QScrollArea):
             self.setWidget(self._holder)
             self._holder.show()
         self.layout_art = art
+        self._lineale_anordnen()
         self.editor.set_web(art == "web")
         if art == "web":
             self.editor.set_web_breite(self.viewport().width() - 24 - 22)
@@ -80,6 +76,7 @@ class DocumentTab(QScrollArea):
 
     def resizeEvent(self, ev):
         super().resizeEvent(ev)
+        self._lineale_anordnen()
         if self.layout_art == "web":
             self.editor.set_web_breite(self.viewport().width() - 24 - 22)
 
@@ -90,11 +87,25 @@ class DocumentTab(QScrollArea):
         self.editor.page_settings_changed(pg)
 
     def zeige_lineale(self, waagerecht: bool, senkrecht: bool) -> None:
-        self.lineal_h.setVisible(waagerecht)
-        self.lineal_v.setVisible(senkrecht)
-        self._abstand.setVisible(waagerecht)
-        if waagerecht or senkrecht:
-            self.lineal_h._neu(); self.lineal_v._neu()
+        self._lineale = (waagerecht, senkrecht)
+        self._lineale_anordnen()
+
+    def _lineale_anordnen(self) -> None:
+        """Lineale in den Rand des Viewports legen; nur im Drucklayout (Weblayout und Zwei Seiten haben keine Blattkanten)."""
+        from lunivo_writer.ui.document.lineal import HOEHE
+        h, v = self._lineale if self.layout_art == "blatt" else (False, False)
+        self.setViewportMargins(HOEHE if v else 0, HOEHE if h else 0, 0, 0)
+        self.lineal_h.setVisible(h); self.lineal_v.setVisible(v)
+        vp = self.viewport().geometry()
+        self.lineal_h.setGeometry(vp.left(), 0, vp.width(), HOEHE)
+        self.lineal_v.setGeometry(0, vp.top(), HOEHE, vp.height())
+        self.lineal_h.update(); self.lineal_v.update()
+
+    def _lineale_neu_zeichnen(self, *_) -> None:
+        if self.lineal_h.isVisible():
+            self.lineal_h.update()
+        if self.lineal_v.isVisible():
+            self.lineal_v.update()
 
     def zoom_breite(self) -> None:
         """Seitenbreite: die Seite füllt die Breite des Fensters."""

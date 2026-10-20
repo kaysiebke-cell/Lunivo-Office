@@ -199,7 +199,8 @@ def test_lineale_zeigen_und_raender_ziehen(app, tmp_path):
     w.befehle.linealZeigen(); w.befehle.linealHochZeigen()
     assert t.lineal_h.isVisibleTo(t.widget()) and t.lineal_v.isVisibleTo(t.widget())
     assert w.befehle.an_linealZeigen() and w.befehle.an_linealHochZeigen()
-    assert t.lineal_h.width() == t.editor.width()
+    assert t.lineal_h.width() == t.viewport().width() and t.lineal_v.height() == t.viewport().height()    # fest am Fensterrand
+    assert t.lineal_h.geometry().bottom() < t.viewport().geometry().top()                               # im Rand des Viewports
     t.lineal_h.randGeaendert.emit("links", 20.0)
     t.lineal_v.randGeaendert.emit("oben", 15.0)
     assert t.page.margin_left_mm == 20.0 and t.page.margin_top_mm == 15.0
@@ -208,8 +209,9 @@ def test_lineale_zeigen_und_raender_ziehen(app, tmp_path):
     t.lineal_h.einzugGeaendert.emit(10.0, 5.0, 8.0)
     bf = t.editor.textCursor().blockFormat()
     assert abs(bf.leftMargin() / 3.7795 - 10) < 0.2 and abs(bf.textIndent() / 3.7795 - 8) < 0.2
+    x_vorher = t.lineal_h._marken()["links"]
     t.editor.set_zoom(2.0)
-    assert t.lineal_h.width() == t.editor.width()
+    assert t.lineal_h.width() == t.viewport().width() and t.lineal_h._marken()["links"] > x_vorher      # die Marken folgen dem Zoom
     t.editor.document().setModified(False)
     w.close()
 

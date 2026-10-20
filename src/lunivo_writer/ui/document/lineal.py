@@ -1,56 +1,67 @@
-"""Waagerechtes und senkrechtes Lineal über/neben der Seite.
+"""Waagerechtes und senkrechtes Lineal am Rand des Dokumentfensters.
 
-Zeigt Millimeter (mit dem Zoom der Ansicht), die Seitenränder (abgedunkelt) und – waagerecht – Einzüge des
-aktuellen Absatzes. Ränder und Einzüge lassen sich mit der Maus ziehen.
+Beide stehen fest am Rand und laufen mit dem Blatt: Sie zeigen Zentimeter und Millimeter (mit dem Zoom der Ansicht) von der
+linken bzw. oberen Textkante aus — dort steht die Null, die Zahlen wachsen nach beiden Seiten. Der Textbereich ist heller als
+die Seitenränder, außerhalb des Blattes ist es am dunkelsten. Ränder und Einzüge des aktuellen Absatzes lassen sich mit der Maus
+ziehen: oben das Dreieck für die erste Zeile, unten die Dreiecke für linken und rechten Einzug.
 """
 from __future__ import annotations
 
-from PySide6.QtCore import QPointF, QRectF, Qt, Signal
-from PySide6.QtGui import QColor, QPainter, QPen, QPolygonF
+from PySide6.QtCore import QPoint, QPointF, QRectF, Qt, Signal
+from PySide6.QtGui import QColor, QFont, QPainter, QPen, QPolygonF
 from PySide6.QtWidgets import QWidget
 
 from lunivo_writer.models.page import PX_PER_MM, px_to_mm
 
-HOEHE = 22
-FANG = 5
+HOEHE = 26          # Dicke des Lineals
+FANG = 6            # so nahe (Bildpunkte) muss die Maus an einer Marke sein
+AKZENT = QColor("#4a8fd8")
 
 
 class _Lineal(QWidget):
-    def __init__(self, editor):
-        super().__init__()
-        self.e = editor
+    def __init__(self, tab):
+        super().__init__(tab)
+        self.tab = tab
+        self.e = tab.editor
         self._zieh = None
         self._wert = None
         self.setMouseTracking(True)
-        editor.zoomChanged.connect(lambda *_: self._neu())
-        editor.pageApplied.connect(self._neu)
-        editor.cursorPositionChanged.connect(self.update)
+        self.e.zoomChanged.connect(lambda *_: self.update())
+        self.e.pageApplied.connect(self.update)
+        self.e.cursorPositionChanged.connect(self.update)
 
-    def _neu(self):
-        self._groesse()
-        self.update()
-
-    def _groesse(self):
-        raise NotImplementedError
+    def _versatz(self) -> QPoint:
+        """Wo der Editor (das Blatt) im Fenster steht — ändert sich beim Rollen."""
+        return self.e.mapTo(self.tab.viewport(), QPoint(0, 0))
 
     def px(self, mm: float) -> float:
         return mm * PX_PER_MM * self.e.zoom
 
-    def farben(self):
+    def farben(self) -> dict:
         pal = self.palette()
-        return (pal.color(self.backgroundRole()), pal.color(self.foregroundRole()), pal.color(pal.ColorRole.Highlight))
+        grund = pal.color(pal.ColorRole.Window)
+        schrift = pal.color(pal.ColorRole.WindowText)
+        dunkel = grund.darker(130) if grund.lightness() < 128 else grund.darker(108)
+        hell = grund.lighter(125) if grund.lightness() < 128 else QColor("#ffffff")
+        return {"grund": grund, "schrift": schrift, "aussen": dunkel, "text": hell}
+
+    def _schrift(self, p: QPainter) -> None:
+        f = QFont(p.font())
+        f.setPixelSize(11); f.setBold(False)
+        p.setFont(f)
 
 
 class LinealH(_Lineal):
-    randGeaendert = Signal(str, float)            # "links"|"rechts", neuer Rand in mm
+    randGeaendert = Signal(str, float)             # "links"|"rechts", neuer Rand in mm
     einzugGeaendert = Signal(float, float, float)  # links, rechts, erste Zeile (mm)
-
-    def _groesse(self):
-        self.setFixedSize(self.e.width(), HOEHE)
 
     def _einzuege(self):
         bf = self.e.textCursor().blockFormat()
         return px_to_mm(bf.leftMargin()), px_to_mm(bf.rightMargin()), px_to_mm(bf.textIndent())
+
+    def _x0(self) -> float:
+        """x des linken Blattrandes im Lineal."""
+        return self._versatz().x() + self.e.frameWidth()
 
     def _marken(self):
         """Name → x-Position (Bildpunkte) der ziehbaren Marken."""
@@ -63,54 +74,58 @@ class LinealH(_Lineal):
             if n == "einzug_links": l = w
             if n == "einzug_rechts": r = w
             if n == "einzug_erste": f = w
-        x0 = self.e.frameWidth() + self.px(pg.margin_left_mm)
-        x1 = self.e.frameWidth() + self.px(pg.width_mm - pg.margin_right_mm)
-        return {"links": x0, "rechts": x1, "einzug_erste": x0 + self.px(l + f), "einzug_links": x0 + self.px(l),
-                "einzug_rechts": x1 - self.px(r)}
+        x = self._x0()
+        a, b = x + self.px(pg.margin_left_mm), x + self.px(pg.width_mm - pg.margin_right_mm)
+        return {"links": a, "rechts": b, "einzug_erste": a + self.px(l + f), "einzug_links": a + self.px(l),
+                "einzug_rechts": b - self.px(r), "blatt_links": x, "blatt_rechts": x + self.px(pg.width_mm), "pg": pg}
 
     def paintEvent(self, ev):
         p = QPainter(self)
         p.setRenderHint(QPainter.Antialiasing)
-        bg, fg, ak = self.farben()
-        p.fillRect(self.rect(), bg)
+        c = self.farben()
         m = self._marken()
-        grau = QColor(fg); grau.setAlpha(40)
-        p.fillRect(QRectF(0, 0, m["links"], HOEHE), grau)
-        p.fillRect(QRectF(m["rechts"], 0, self.width() - m["rechts"], HOEHE), grau)
-        p.setPen(QPen(fg, 1))
-        f = p.font(); f.setPointSizeF(7); p.setFont(f)
+        pg = m["pg"]
+        p.fillRect(self.rect(), c["aussen"])
+        p.fillRect(QRectF(m["blatt_links"], 0, m["blatt_rechts"] - m["blatt_links"], HOEHE), c["grund"])
+        p.fillRect(QRectF(m["links"], 0, m["rechts"] - m["links"], HOEHE), c["text"])
+        rand = QColor(c["schrift"]); rand.setAlpha(60)
+        p.setPen(QPen(rand, 1)); p.drawLine(0, HOEHE - 1, self.width(), HOEHE - 1)
+        self._schrift(p)
+        zahl, ticks = QColor(c["schrift"]), QColor(c["schrift"])
+        zahl.setAlpha(225); ticks.setAlpha(170)
         z = self.e.zoom
-        schritt = 5 if z >= 0.6 else 10
-        mm = 0
-        pgb = self.e.page.width_mm
-        while mm <= pgb:
-            x = self.e.frameWidth() + self.px(mm)
-            if mm % 10 == 0:
-                p.drawLine(QPointF(x, HOEHE - 9), QPointF(x, HOEHE - 1))
-                if mm:
-                    p.drawText(QRectF(x - 14, 1, 28, 11), Qt.AlignCenter, str(mm // 10))
-            else:
-                p.drawLine(QPointF(x, HOEHE - 5), QPointF(x, HOEHE - 1))
-            mm += schritt
-        p.setBrush(ak); p.setPen(Qt.NoPen)
-        for n in ("einzug_erste", "einzug_links", "einzug_rechts"):
+        feiner = PX_PER_MM * z >= 2.4                                       # jeder Millimeter nur, wenn er sich noch trennen lässt
+        k0, k1 = -int(pg.margin_left_mm), int(pg.width_mm - pg.margin_left_mm)
+        for k in range(k0, k1 + 1):                                        # k = Millimeter von der linken Textkante
+            x = m["links"] + self.px(k)
+            if k % 10 == 0:
+                p.setPen(QPen(ticks, 1)); p.drawLine(QPointF(x, HOEHE - 8), QPointF(x, HOEHE - 2))
+                if k:
+                    p.setPen(zahl)
+                    p.drawText(QRectF(x - 14, 2, 28, 13), Qt.AlignCenter, str(abs(k) // 10))
+            elif k % 5 == 0:
+                p.setPen(QPen(ticks, 1)); p.drawLine(QPointF(x, HOEHE - 6), QPointF(x, HOEHE - 2))
+            elif feiner:
+                p.setPen(QPen(ticks, 1)); p.drawLine(QPointF(x, HOEHE - 4), QPointF(x, HOEHE - 2))
+        # Marken: erste Zeile (Dreieck nach unten, oben), linker und rechter Einzug (Dreiecke nach oben, unten)
+        p.setPen(QPen(QColor(0, 0, 0, 90), 1)); p.setBrush(AKZENT)
+        x = m["einzug_erste"]
+        p.drawPolygon(QPolygonF([QPointF(x - 5, 1.5), QPointF(x + 5, 1.5), QPointF(x, 8.5)]))
+        for n in ("einzug_links", "einzug_rechts"):
             x = m[n]
-            if n == "einzug_erste":
-                p.drawPolygon(QPolygonF([QPointF(x - 4, 1), QPointF(x + 4, 1), QPointF(x, 7)]))
-            else:
-                p.drawPolygon(QPolygonF([QPointF(x - 4, HOEHE - 1), QPointF(x + 4, HOEHE - 1), QPointF(x, HOEHE - 7)]))
+            p.drawPolygon(QPolygonF([QPointF(x - 5, HOEHE - 1.5), QPointF(x + 5, HOEHE - 1.5), QPointF(x, HOEHE - 8.5)]))
         p.end()
 
     def _treffer(self, x, y):
         m = self._marken()
-        if y < 9 and abs(x - m["einzug_erste"]) <= FANG:
+        if y < HOEHE / 2 - 1 and abs(x - m["einzug_erste"]) <= FANG:
             return "einzug_erste"
-        if y > 11:
+        if y >= HOEHE / 2:
             for n in ("einzug_links", "einzug_rechts"):
                 if abs(x - m[n]) <= FANG:
                     return n
         for n in ("links", "rechts"):
-            if abs(x - m[n]) <= 2:
+            if abs(x - m[n]) <= 2.5:
                 return n
         return None
 
@@ -123,7 +138,7 @@ class LinealH(_Lineal):
 
     def _mm(self, x, name):
         pg = self.e.page
-        mm = (x - self.e.frameWidth()) / (PX_PER_MM * self.e.zoom)
+        mm = (x - self._x0()) / (PX_PER_MM * self.e.zoom)
         l0 = pg.margin_left_mm
         r0 = pg.width_mm - pg.margin_right_mm
         if name == "links":
@@ -160,48 +175,72 @@ class LinealH(_Lineal):
 class LinealV(_Lineal):
     randGeaendert = Signal(str, float)            # "oben"|"unten"
 
-    def _groesse(self):
-        self.setFixedSize(HOEHE, max(self.e.height(), 10))
+    def _blatt(self) -> int:
+        """Nummer des Blattes, in dem die Schreibmarke steht — das Lineal richtet sich nach diesem Blatt."""
+        e = self.e
+        schritt = e.blatt_oben(1) - e.blatt_oben(0)
+        if schritt <= 0:
+            return 0
+        return max(0, int((e.cursorRect().center().y() - e.blatt_oben(0)) // schritt))
+
+    def _o(self) -> float:
+        """y des oberen Blattrandes des aktuellen Blattes im Lineal."""
+        return self._versatz().y() + self.e.blatt_oben(self._blatt())
 
     def paintEvent(self, ev):
         p = QPainter(self)
-        bg, fg, _ = self.farben()
-        p.fillRect(self.rect(), bg)
+        p.setRenderHint(QPainter.Antialiasing)
+        c = self.farben()
         pg = self.e.page
-        o = self.e.blatt_oben(0)                      # das erste Blatt beginnt unter dem grauen Streifen
+        o = self._o()
         t = o + self.px(pg.margin_top_mm)
         if self._zieh == "oben" and self._wert is not None:
             t = o + self.px(self._wert)
-        ph = o + self.px(pg.height_mm)
-        grau = QColor(fg); grau.setAlpha(40)
-        p.fillRect(QRectF(0, 0, HOEHE, t), grau)
-        p.fillRect(QRectF(0, ph - self.px(pg.margin_bottom_mm), HOEHE, self.px(pg.margin_bottom_mm)), grau)
-        p.setPen(QPen(fg, 1))
-        f = p.font(); f.setPointSizeF(7); p.setFont(f)
-        schritt = 5 if self.e.zoom >= 0.6 else 10
-        mm = 0
-        while o + self.px(mm) <= self.height():
-            y = o + self.px(mm)
-            if mm % 10 == 0:
-                p.drawLine(QPointF(HOEHE - 9, y), QPointF(HOEHE - 1, y))
-                if mm:
-                    p.save(); p.translate(8, y); p.rotate(-90)
-                    p.drawText(QRectF(-14, -6, 28, 12), Qt.AlignCenter, str(mm // 10)); p.restore()
-            else:
-                p.drawLine(QPointF(HOEHE - 5, y), QPointF(HOEHE - 1, y))
-            mm += schritt
+        unten = o + self.px(pg.height_mm - pg.margin_bottom_mm)
+        if self._zieh == "unten" and self._wert is not None:
+            unten = o + self.px(pg.height_mm - self._wert)
+        p.fillRect(self.rect(), c["aussen"])
+        p.fillRect(QRectF(0, o, HOEHE, self.px(pg.height_mm)), c["grund"])
+        p.fillRect(QRectF(0, t, HOEHE, unten - t), c["text"])
+        rand = QColor(c["schrift"]); rand.setAlpha(60)
+        p.setPen(QPen(rand, 1)); p.drawLine(HOEHE - 1, 0, HOEHE - 1, self.height())
+        self._schrift(p)
+        zahl, ticks = QColor(c["schrift"]), QColor(c["schrift"])
+        zahl.setAlpha(225); ticks.setAlpha(170)
+        feiner = PX_PER_MM * self.e.zoom >= 2.4
+        k0, k1 = -int(pg.margin_top_mm), int(pg.height_mm - pg.margin_top_mm)
+        for k in range(k0, k1 + 1):                                        # k = Millimeter von der oberen Textkante
+            y = t + self.px(k)
+            if y < -12 or y > self.height() + 12:
+                continue
+            if k % 10 == 0:
+                p.setPen(QPen(ticks, 1)); p.drawLine(QPointF(HOEHE - 8, y), QPointF(HOEHE - 2, y))
+                if k:
+                    p.setPen(zahl)
+                    p.drawText(QRectF(0, y - 7, HOEHE - 9, 14), Qt.AlignRight | Qt.AlignVCenter, str(abs(k) // 10))
+            elif k % 5 == 0:
+                p.setPen(QPen(ticks, 1)); p.drawLine(QPointF(HOEHE - 6, y), QPointF(HOEHE - 2, y))
+            elif feiner:
+                p.setPen(QPen(ticks, 1)); p.drawLine(QPointF(HOEHE - 4, y), QPointF(HOEHE - 2, y))
         p.end()
 
     def _treffer(self, y):
         pg = self.e.page
-        if abs(y - self.e.blatt_oben(0) - self.px(pg.margin_top_mm)) <= 3:
+        o = self._o()
+        if abs(y - o - self.px(pg.margin_top_mm)) <= 3:
             return "oben"
+        if abs(y - o - self.px(pg.height_mm - pg.margin_bottom_mm)) <= 3:
+            return "unten"
         return None
 
     def mouseMoveEvent(self, ev):
         if self._zieh:
-            mm = (ev.position().y() - self.e.blatt_oben(0)) / (PX_PER_MM * self.e.zoom)
-            self._wert = max(0.0, min(mm, self.e.page.height_mm - self.e.page.margin_bottom_mm - 40))
+            pg = self.e.page
+            mm = (ev.position().y() - self._o()) / (PX_PER_MM * self.e.zoom)
+            if self._zieh == "oben":
+                self._wert = max(0.0, min(mm, pg.height_mm - pg.margin_bottom_mm - 40))
+            else:
+                self._wert = max(0.0, min(pg.height_mm - mm, pg.height_mm - pg.margin_top_mm - 40))
             self.update()
             return
         self.setCursor(Qt.SizeVerCursor if self._treffer(ev.position().y()) else Qt.ArrowCursor)
