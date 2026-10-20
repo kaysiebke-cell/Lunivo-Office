@@ -389,14 +389,9 @@ def seitenschmuck(p: QPainter, page: PageSettings, hintergrund: bool = True, fla
     b = page.border
     if b:
         a = mm_to_px(b.get("abstand_mm", 8.0))
-        pen = QPen(QColor(b.get("farbe", "#000000")))
-        pen.setWidthF(max(0.5, b.get("breite_pt", 1.0) * 96 / 72))
-        p.setPen(pen)
-        p.setBrush(Qt.NoBrush)
-        p.drawRect(r.adjusted(a, a, -a, -a))
-        if b.get("art") == "doppelt":
-            g = a + pen.widthF() * 3
-            p.drawRect(r.adjusted(g, g, -g, -g))
+        from lunivo_writer.editor.linie import Linie
+        Linie(b.get("farbe", "#000000"), float(b.get("breite_pt", 1.0)), b.get("art", "einfach"), b.get("seiten", "tblr")).rahmen_zeichnen(
+            p, QRectF(r).adjusted(a, a, -a, -a), 96 / 72)
     w = page.watermark
     if w and w.get("text"):
         f = QFont("Liberation Sans")

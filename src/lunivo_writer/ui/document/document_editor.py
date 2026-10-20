@@ -663,6 +663,35 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         bf = c.document().findBlock(min(c.position(), c.anchor())).blockFormat()
         return Linie.aus_text(bf.stringProperty(B_RAHMEN)) if bf.hasProperty(B_RAHMEN) else None
 
+    def set_absatzschatten(self, fuell: str | None, muster: tuple[str, str] | None = None) -> None:
+        """Füllung (und Muster darüber) der markierten Absätze; ``None`` und kein Muster nehmen sie weg."""
+        from lunivo_writer.editor import muster as M
+        from lunivo_writer.editor.zusatz import B_MUSTER
+
+        def f(bf):
+            bf.clearProperty(B_MUSTER)
+            if muster:
+                bf.setBackground(M.pinsel(muster[0], muster[1], fuell))
+                bf.setProperty(B_MUSTER, M.als_text(muster[0], muster[1], fuell))
+            elif fuell:
+                bf.setBackground(QBrush(QColor(fuell)))
+            else:
+                bf.clearBackground()
+        self._block_merge(f)
+        self.viewport().update()
+
+    def absatzschatten(self):
+        """(Füllfarbe oder None, (Musterschlüssel, Musterfarbe) oder None) des Absatzes an der Schreibmarke."""
+        from lunivo_writer.editor import muster as M
+        from lunivo_writer.editor.zusatz import B_MUSTER
+        c = self.textCursor()
+        bf = c.document().findBlock(min(c.position(), c.anchor())).blockFormat()
+        m = M.aus_text(bf.stringProperty(B_MUSTER)) if bf.hasProperty(B_MUSTER) else None
+        if m:
+            return m[2], (m[0], m[1])
+        bg = bf.background()
+        return (bg.color().name() if bg.style() != Qt.NoBrush and bg.color().isValid() else None), None
+
     def toggle_rtl(self) -> None:
         rtl = self.textCursor().blockFormat().layoutDirection() == Qt.RightToLeft
         self._block_merge(lambda bf: bf.setLayoutDirection(Qt.LeftToRight if rtl else Qt.RightToLeft))

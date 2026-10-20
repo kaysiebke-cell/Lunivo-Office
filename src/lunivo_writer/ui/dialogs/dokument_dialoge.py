@@ -339,29 +339,3 @@ class WasserzeichenDialog(DialogRahmen):
         if self.entfernt or not self.text.text().strip():
             return None
         return {"text": self.text.text().strip(), "farbe": self.farbe, "winkel": self.winkel.value(), "groesse_pt": self.groesse.value()}
-
-
-class SeitenrahmenDialog(DialogRahmen):
-    def __init__(self, parent, aktuell: dict | None):
-        a = aktuell or {}
-        super().__init__(parent, "Seitenrahmen", self._male)
-        self.linie = LinienWahl(Linie(a.get("farbe", "#000000"), float(a.get("breite_pt", 1.0)), a.get("art", "einfach")),
-                                arten=("einfach", "doppelt"), breiten=(0.25, 0.5, 0.75, 1.0, 1.5, 2.25, 3.0, 4.5, 6.0))
-        self.abstand = QDoubleSpinBox(); self.abstand.setRange(2, 30); self.abstand.setSuffix(" mm"); self.abstand.setValue(float(a.get("abstand_mm", 8.0)))
-        self.zeile("Linie", self.linie); self.zeile("Abstand vom Seitenrand", self.abstand)
-        self.entfernt = False
-        self.zusatzknopf("Kein Rahmen", lambda: setattr(self, "entfernt", True))
-        self.linie.geaendert.connect(self.aktualisieren); self.abstand.valueChanged.connect(self.aktualisieren)
-
-    def _male(self, p, r) -> None:
-        d = int(self.abstand.value() / 2)
-        x1, y1, x2, y2 = r.left() + d, r.top() + d, r.right() - d, r.bottom() - d
-        li = self.linie.linie()
-        for (ax, ay, bx, by) in ((x1, y1, x2, y1), (x2, y1, x2, y2), (x2, y2, x1, y2), (x1, y2, x1, y1)):
-            li.zeichne(p, ax, ay, bx, by, 96 / 72)
-
-    def ergebnis(self) -> dict | None:
-        if self.entfernt:
-            return None
-        li = self.linie.linie()
-        return {"art": li.art, "farbe": li.farbe, "breite_pt": li.breite_pt, "abstand_mm": self.abstand.value()}

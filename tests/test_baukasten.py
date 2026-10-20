@@ -48,14 +48,16 @@ def test_palette_ueberfahren_meldet_vorschau(app):
     assert geseh == [k.farbe] and ende == [1]
 
 
-def test_weitere_farben_ueber_den_system_waehler(app, monkeypatch):
+def test_weitere_farben_ueber_das_farbenfenster(app, monkeypatch):
+    from lunivo_writer.ui.baukasten.farbwaehler import FarbenDialog
     _sauber()
-    monkeypatch.setattr(QColorDialog, "getColor", staticmethod(lambda *a, **k: QColor("#123456")))
+    monkeypatch.setattr(FarbenDialog, "exec", lambda self: 1)
+    monkeypatch.setattr(FarbenDialog, "farbe", lambda self: QColor("#123456"))
     pal = FarbPalette(); erhalten = []
     pal.gewaehlt.connect(erhalten.append)
     pal._weitere()
     assert erhalten[0].name() == "#123456" and F.zuletzt_laden()[0] == "#123456"
-    monkeypatch.setattr(QColorDialog, "getColor", staticmethod(lambda *a, **k: QColor()))   # Abbruch
+    monkeypatch.setattr(FarbenDialog, "exec", lambda self: 0)                    # Abbrechen
     pal._weitere()
     assert len(erhalten) == 1
     _sauber()
@@ -67,7 +69,7 @@ def test_farbfeld_uebernimmt_farbe_aus_der_palette(app, monkeypatch):
     gemeldet = []
     feld.farbeGeaendert.connect(gemeldet.append)
     feld.click()
-    assert feld.farbe == "#2f9e44" and gemeldet == ["#2f9e44"] and "#2f9e44" in feld.styleSheet()
+    assert feld.farbe == "#2f9e44" and gemeldet == ["#2f9e44"] and feld.text() == "#2F9E44" and feld.icon().pixmap(14, 14).toImage().pixelColor(7, 7).name() == "#2f9e44"
     monkeypatch.setattr(FarbFeld, "_zeige_popup", lambda self, pal: pal.waehle(None))
     feld.click()
     assert feld.farbe == "" and feld.text() == "Keine"
@@ -247,18 +249,33 @@ def test_rahmenmenue_schaltet_seiten_im_absatz(app, tmp_path):
     w.close()
 
 
-def test_rahmendialog_liefert_linie_und_schattierung(app):
-    from lunivo_writer.ui.dialogs.rahmen_dialog import AbsatzRahmenDialog
-    d = AbsatzRahmenDialog(None, None)
-    assert d.ergebnis() == (None, None)
-    d.setze_seiten("tb")
-    d.linie.setLinie(Linie("#c92a2a", 3.0, "doppelt"))
-    d.schatt._uebernehmen(QColor("#fff3bf"))
-    li, farbe = d.ergebnis()
-    assert li == Linie("#c92a2a", 3.0, "doppelt", "tb") and farbe == "#fff3bf"
-    d2 = AbsatzRahmenDialog(None, Linie("#000000", 1.0, "einfach", "lr"), "#d0ebff")
-    assert d2.seiten() == "lr" and d2.ergebnis()[1] == "#d0ebff"
-    d.show(); d.aktualisieren(); app.processEvents()
+def test_rahmenfenster_liefert_linie_schattierung_und_seitenrand(app):
+    from lunivo_writer.ui.baukasten.rahmen_schattierung import RahmenSchattierungDialog
+    d = RahmenSchattierungDialog(None)
+    assert d.rahmen() is None and d.schattierung() == (None, None) and d.seitenrand() is None
+    d.p_rahmen.einstellung["kontur"].click()
+    assert d.rahmen().seiten == "tblr"
+    d.p_rahmen.kantenknoepfe["l"].toggle(); d.p_rahmen.kantenknoepfe["r"].toggle()
+    assert d.rahmen().seiten == "tb" and d.p_rahmen.einstellung["anpassen"].isChecked()
+    d.p_rahmen.einstellung["alle"].click()
+    assert d.rahmen().seiten == "tblrh"
+    d.p_schatt.fuell._uebernehmen(QColor("#fff3bf"))
+    d.p_schatt.art.setCurrentIndex(d.p_schatt.art.findData("pct25"))
+    assert d.schattierung() == ("#fff3bf", ("pct25", "#000000"))
+    d.p_rand.einstellung["kontur"].click()
+    assert d.seitenrand()["art"] == "einfach" and d.seitenrand()["abstand_mm"] == 8.0
+    d2 = RahmenSchattierungDialog(None, rahmen=Linie("#000000", 1.0, "einfach", "lr"), fuell="#d0ebff", seite="schattierung")
+    assert d2.rahmen().seiten == "lr" and d2.schattierung() == ("#d0ebff", None) and d2.reiter.currentIndex() == 2
+    d.show(); app.processEvents()
+
+
+def test_muster_kacheln_und_ooxml(app):
+    from lunivo_writer.editor import muster as M
+    assert len(M.MUSTER) == 37 and M.ooxml_von("pct12_5") == "pct12" and M.schluessel_von_ooxml("diagCross") == "dunkel_karo"
+    assert M.aus_text(M.als_text("pct50", "#ff0000", None)) == ("pct50", "#ff0000", None)
+    k = M.kachel("pct50", "#000000", "#ffffff").toImage()
+    schwarz = sum(1 for y in range(8) for x in range(8) if k.pixelColor(x, y).name() == "#000000")
+    assert schwarz == 32                                                           # 50 % von 64
 
 
 # ---- Aufzählung, Nummerierung, Tabellenraster ----------------------------------------------------------------------------
@@ -398,3 +415,47 @@ def test_speichern_unter_untermenue_mit_formaten(app, tmp_path):
     w.befehle.tun('w.speichernAls:[".txt"]')
     assert gefragt == [".txt"] and (tmp_path / "brief.txt").read_text(encoding="utf-8") == "Hallo" and w.current_tab().path == ziel
     _zu(w)
+
+
+def test_farbenfenster_wege_zur_selben_farbe(app):
+    from PySide6.QtCore import QPointF
+    from PySide6.QtGui import QColor
+    from lunivo_writer.ui.baukasten.farbwaehler import FarbenDialog, _Flaeche, _Leiste, _Regler, _Ring
+    d = FarbenDialog(None, QColor("#2f6fb5"), "Schriftfarbe")
+    assert d.farbe().name() == "#2f6fb5"
+    reg = d.findChildren(_Regler)[0]
+    reg.hex.setText("#ff8800"); reg._hex()
+    assert d.farbe().name() == "#ff8800" and reg.werte() == (255, 136, 0)
+    ring = d.findChildren(_Ring)[0]
+    ring._ziehen = "ring"; ring._wirke(QPointF(ring.mitte.x() + 100, ring.mitte.y()))      # drei Uhr = Farbton 90°
+    assert abs(d.m.h - 0.25) < 0.01
+    d.findChildren(_Leiste)[0]._setze(QPointF(5, 214))                                      # ganz unten = schwarz
+    assert d.farbe().name() == "#000000"
+    d.findChildren(_Flaeche)[0]._setze(QPointF(0, 0))                                       # links oben = Rot, voll
+    d.findChildren(_Leiste)[0]._setze(QPointF(5, 0))
+    assert d.farbe().name() == "#ff0000"
+
+
+def test_seitenrand_einzelne_kanten_und_docx(app, tmp_path):
+    from PySide6.QtCore import QPoint, QSettings, Qt
+    from PySide6.QtTest import QTest
+    from lunivo_writer.ui.baukasten.rahmen_schattierung import RahmenSchattierungDialog
+    d = RahmenSchattierungDialog(None, seite="seitenrand"); d.show()
+    r = d.p_rand
+    assert all(b.isEnabled() for b in r.kantenknoepfe.values())                    # alle vier Kanten sind anklickbar
+    r.kantenknoepfe["l"].click(); r.kantenknoepfe["b"].click()
+    assert d.seitenrand()["seiten"] == "bl"
+    v = r.vorschau; a = max(4.0, r.abstand_mm * 1.2)
+    QTest.mouseClick(v, Qt.LeftButton, Qt.NoModifier, QPoint(int(v.width() - a), v.height() // 2))   # Klick auf die rechte Kante
+    assert d.seitenrand()["seiten"] == "blr"
+    from lunivo_writer.services.settings_service import Settings
+    from lunivo_writer.ui.main_window import MainWindow
+    w = MainWindow(Settings(QSettings(str(tmp_path / "s.ini"), QSettings.IniFormat)))
+    w.new_document(); e = w.current_editor()
+    w.befehle._seite_aendern(border=d.seitenrand())
+    pfad = str(tmp_path / "r.docx"); w.current_tab().path = pfad; w.save()
+    geladen = w.dokumente.laden(pfad)
+    assert geladen.page.border["seiten"] == "blr"
+    for t in w._doc_tabs():
+        t.editor.document().setModified(False)
+    w.close()

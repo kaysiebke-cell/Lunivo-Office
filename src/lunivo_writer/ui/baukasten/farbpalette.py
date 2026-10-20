@@ -8,17 +8,19 @@ from __future__ import annotations
 from PySide6.QtCore import QPoint, QRectF, QSize, Qt, Signal
 from PySide6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (
-    QColorDialog, QGridLayout, QLabel, QMenu, QPushButton, QToolButton, QVBoxLayout, QWidget, QWidgetAction,
+    QGridLayout, QLabel, QMenu, QPushButton, QToolButton, QVBoxLayout, QWidget, QWidgetAction,
 )
 
 from lunivo_writer.ui.baukasten import farben as F
 
 
 def weitere_farben(parent, start=None, titel: str = "Farbe") -> QColor | None:
-    """„Weitere Farben …“: der Farbwähler des Systems. Gibt die Farbe zurück oder ``None`` bei Abbruch."""
-    c = QColorDialog.getColor(QColor(start) if start else QColor(Qt.black), parent, titel)
-    if not c.isValid():
+    """„Weitere Farben …“: das Fenster „Farben“ (Standard · Benutzerdefiniert · Erweitert). Gibt die Farbe zurück oder ``None`` bei Abbruch."""
+    from lunivo_writer.ui.baukasten.farbwaehler import FarbenDialog
+    d = FarbenDialog(parent, start, titel)
+    if not d.exec():
         return None
+    c = d.farbe()
     F.zuletzt_merken(c.name())
     return c
 
@@ -88,9 +90,16 @@ class FarbPalette(QMenu):
             mehr = QPushButton("Weitere Farben …"); mehr.setFlat(True); mehr.setStyleSheet("text-align: left; padding: 4px 6px;")
             mehr.clicked.connect(self._weitere)
             v.addWidget(mehr)
+        self._spalte = v
         a = QWidgetAction(self)
         a.setDefaultWidget(wid)
         self.addAction(a)
+
+    def zusatz_eintrag(self, text: str, aktion) -> None:
+        """Ein weiterer Eintrag unter „Weitere Farben …“ (z. B. „Rahmen und Schattierung …“); schließt die Palette und ruft ``aktion``."""
+        k = QPushButton(text); k.setFlat(True); k.setStyleSheet("text-align: left; padding: 4px 6px;")
+        k.clicked.connect(lambda: (self.close(), aktion()))
+        self._spalte.addWidget(k)
 
     @staticmethod
     def _titel_zeile(text: str) -> QLabel:
@@ -156,12 +165,18 @@ class FarbFeld(QPushButton):
         self.farbeGeaendert.emit(self.farbe)
 
     def _zeige(self) -> None:
+        """Ruhig und sachlich: ein kleines Farbfeld mit Rand und der Name daneben — kein Knopf, der selbst bunt wird."""
         if not self.farbe:
-            self.setText(self.keine_text or "Keine"); self.setStyleSheet("")
-            return
-        self.setText(self.farbe)
-        hell = QColor(self.farbe).lightness() >= 140
-        self.setStyleSheet(f"QPushButton {{ background: {self.farbe}; color: {'black' if hell else 'white'}; }}")
+            self.setText(self.keine_text or "Keine")
+            pm = QPixmap(14, 14); pm.fill(Qt.transparent)
+            p = QPainter(pm); p.setPen(QPen(QColor("#868e96"), 1)); p.drawRect(0, 0, 13, 13); p.drawLine(0, 13, 13, 0); p.end()
+            self.setIcon(QIcon(pm))
+        else:
+            self.setText(self.farbe.upper())
+            pm = QPixmap(14, 14); pm.fill(QColor(self.farbe))
+            p = QPainter(pm); p.setPen(QPen(QColor("#868e96"), 1)); p.setBrush(Qt.NoBrush); p.drawRect(0, 0, 13, 13); p.end()
+            self.setIcon(QIcon(pm))
+        self.setStyleSheet("QPushButton { text-align: left; padding: 3px 10px; min-width: 120px; }")
 
 
 class FarbKnopf(QToolButton):

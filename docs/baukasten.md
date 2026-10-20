@@ -7,7 +7,7 @@ Schattierung, Seitenfarbe, Rahmen, Füllung —, entscheidet der Aufrufer.
 | Datei | Baustein | Meldet |
 |---|---|---|
 | `farben.py` | Daten: 10 Themenfarben mit je 5 Abstufungen, 10 Standardfarben, „zuletzt benutzt“ (QSettings) | — |
-| `farbpalette.py` | `FarbPalette` (Popup), `FarbFeld` (Knopf für Dialoge), `FarbKnopf` (geteilter Knopf fürs Band), `weitere_farben()` (System-Farbwähler) | `gewaehlt(QColor \| None)`, `ueberfahren`, `verlassen` |
+| `farbpalette.py` | `FarbPalette` (Popup), `FarbFeld` (Knopf für Dialoge), `FarbKnopf` (geteilter Knopf fürs Band), `weitere_farben()` (Fenster „Farben“, siehe `farbwaehler.py`: Standard · Benutzerdefiniert · Erweitert, Farbmodell RGB/HSV/HSL, Hex, Neu/Aktuell) | `gewaehlt(QColor \| None)`, `ueberfahren`, `verlassen` |
 | `linien.py` | `Linie` (Farbe, pt, Art), `LinienWahl` (Zeile aus Art, Stärke, Farbe), `RahmenMenue` (unten, oben, links, rechts, kein, alle, außen, innen) | `geaendert(Linie)`, `gewaehlt(RahmenSeiten, schluessel)` |
 | `menue_liste.py` | `MenueListe`: Zeilen mit Symbol, Kürzel, Haken, Untermenü, auch aus einer Beschreibung (`aus_liste`) | `triggered` je Zeile |
 | `raster_auswahl.py` | `RasterAuswahl`: Kacheln mit „Mehr …“-Fuß (Aufzählung, Vorlagen, Ränder, Deckblätter) | `gewaehlt(schluessel)` |
@@ -59,6 +59,6 @@ gepunktet, Strich-Punkt).
 
 - **Menü** (`RahmenMenue`): schaltet einzelne Seiten ein/aus, „Alle“, „Außen“, „Kein“; neue Rahmen übernehmen die zuletzt
   eingestellte Linie.
-- **Dialog „Rahmen und Schattierung …“** (`ui/dialogs/rahmen_dialog.py`): Seiten, Linienart/-stärke/-farbe, Schattierung, Vorschau.
+- **Fenster „Rahmen und Schattierung“** (`ui/baukasten/rahmen_schattierung.py`, Muster in `editor/muster.py`): Reiter Rahmen (Einstellung, Linienart, Farbe, Breite, Vorschau mit Kantenknöpfen), Seitenrand und Schattierung (Füllfarbe, 37 Muster, Musterfarbe). Gespeichert wird das Muster am Absatz (`B_MUSTER`) und in DOCX als `w:shd`.
 
 Tests: `tests/test_baukasten.py`.

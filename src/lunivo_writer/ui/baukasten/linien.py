@@ -4,8 +4,8 @@ from __future__ import annotations
 from enum import Flag, auto
 
 from PySide6.QtCore import QRectF, QSize, Qt, Signal
-from PySide6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
-from PySide6.QtWidgets import QComboBox, QHBoxLayout, QWidget
+from PySide6.QtGui import QColor, QIcon, QPainter, QPalette, QPen, QPixmap
+from PySide6.QtWidgets import QApplication, QComboBox, QHBoxLayout, QWidget
 
 from lunivo_writer.editor.linie import ALLE_SEITEN, LINIENARTEN, LINIENBREITEN, Linie  # noqa: F401
 from lunivo_writer.ui.baukasten.farbpalette import FarbFeld
@@ -15,7 +15,8 @@ from lunivo_writer.ui.baukasten.menue_liste import MenueListe
 def linien_symbol(art: str, groesse: QSize = QSize(56, 14), farbe: str = "#343a40") -> QIcon:
     pm = QPixmap(groesse); pm.fill(Qt.transparent)
     p = QPainter(pm)
-    Linie(farbe, 1.5, art).zeichne(p, 2, groesse.height() / 2, groesse.width() - 2, groesse.height() / 2)
+    p.setRenderHint(QPainter.Antialiasing)
+    Linie(farbe, 1.5, art).zeichne(p, 2, groesse.height() / 2, groesse.width() - 2, groesse.height() / 2, 96 / 72)
     p.end()
     return QIcon(pm)
 
@@ -83,7 +84,9 @@ def rahmen_symbol(seiten: RahmenSeiten, groesse: int = 16) -> QIcon:
     pm = QPixmap(groesse, groesse); pm.fill(Qt.transparent)
     p = QPainter(pm)
     r = QRectF(1.5, 1.5, groesse - 3, groesse - 3)
-    blass, stark = QPen(QColor("#adb5bd"), 1, Qt.DotLine), QPen(QColor("#343a40"), 2)
+    pal = QApplication.palette()                       # Farben der Oberfläche — im dunklen Design sonst kaum zu sehen
+    blass = QPen(pal.color(QPalette.Mid), 1, Qt.DotLine)
+    stark = QPen(pal.color(QPalette.WindowText), max(2.0, groesse / 8), Qt.SolidLine, Qt.RoundCap)
     mitte_x, mitte_y = r.center().x(), r.center().y()
     for flagge, linie in ((RahmenSeiten.OBEN, (r.left(), r.top(), r.right(), r.top())), (RahmenSeiten.UNTEN, (r.left(), r.bottom(), r.right(), r.bottom())),
                           (RahmenSeiten.LINKS, (r.left(), r.top(), r.left(), r.bottom())), (RahmenSeiten.RECHTS, (r.right(), r.top(), r.right(), r.bottom())),

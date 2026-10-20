@@ -632,8 +632,10 @@ class Befehle:
 
     def menue_absatzSchattierung(self):
         def setze(c):
-            self.ed._block_merge(lambda bf: bf.setBackground(QBrush(c)) if c else bf.clearBackground())
-        return self._farbmenue(setze, "Keine Schattierung")
+            self.ed.set_absatzschatten(c.name() if c else None)
+        m = self._farbmenue(setze, "Keine Schattierung")
+        m.zusatz_eintrag("Rahmen und Schattierung …", lambda: self.absatzRahmen(seite="schattierung"))
+        return m
 
     _rahmen_stil = Linie("#000000", 0.75, "einfach")          # Linie, die ein neuer Rahmen aus dem Menü bekommt
 
@@ -660,21 +662,24 @@ class Befehle:
         basis = aktuell or self._rahmen_stil
         self.ed.set_absatzrahmen(basis.mit_seiten("".join(seiten)).text() if seiten else None)
 
-    def absatzRahmen(self, k=None):
-        """Dialog „Rahmen und Schattierung“."""
+    def absatzRahmen(self, k=None, seite: str = "rahmen"):
+        """Fenster „Rahmen und Schattierung“ (Reiter Rahmen · Seitenrand · Schattierung); ``seite`` wählt den Reiter."""
         if not self.ed:
             return
-        from lunivo_writer.ui.dialogs.rahmen_dialog import AbsatzRahmenDialog
-        bg = self.ed.textCursor().blockFormat().background()
-        schatt = bg.color().name() if bg.style() != Qt.NoBrush and bg.color().isValid() else None
-        d = AbsatzRahmenDialog(self.w, self.ed.absatzrahmen(), schatt, self._rahmen_stil)
+        from lunivo_writer.ui.baukasten.rahmen_schattierung import RahmenSchattierungDialog
+        fuell, muster = self.ed.absatzschatten()
+        alt_rand = self.ed.page.border
+        d = RahmenSchattierungDialog(self.w, rahmen=self.ed.absatzrahmen(), fuell=fuell, muster=muster, seitenrand=alt_rand,
+                                     fuer=["Absatz"], seite=seite)
         if not d.exec():
             return
-        linie, farbe = d.ergebnis()
+        linie = d.rahmen()
         if linie is not None:
             self._rahmen_stil = linie.mit_seiten("tblr")
         self.ed.set_absatzrahmen(linie.text() if linie is not None else None)
-        self.ed._block_merge(lambda bf: bf.setBackground(QBrush(QColor(farbe))) if farbe else bf.clearBackground())
+        self.ed.set_absatzschatten(*d.schattierung())
+        if d.seitenrand() != alt_rand:
+            self._seite_aendern(border=d.seitenrand())
 
     def stileVerwalten(self, k=None):
         from lunivo_writer.editor import stile
@@ -769,10 +774,7 @@ class Befehle:
     def seitenrahmen(self, k=None):
         if not self.ed:
             return
-        from lunivo_writer.ui.dialogs.dokument_dialoge import SeitenrahmenDialog
-        d = SeitenrahmenDialog(self.w, self.ed.page.border)
-        if d.exec():
-            self._seite_aendern(border=d.ergebnis())
+        self.absatzRahmen(seite="seitenrand")                       # dasselbe Fenster, Reiter Seitenrand
 
     def netzlinien(self, k=None):
         if self.ed:

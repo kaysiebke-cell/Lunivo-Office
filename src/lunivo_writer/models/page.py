@@ -46,7 +46,7 @@ class PageSettings:
     header: HeaderFooter = field(default_factory=HeaderFooter)
     footer: HeaderFooter = field(default_factory=HeaderFooter)
     color: str = ""                      # Seitenfarbe als „#rrggbb“; leer = keine
-    border: dict | None = None           # {"farbe": "#000000", "breite_pt": 1.0, "art": "einfach|doppelt", "abstand_mm": 8.0}
+    border: dict | None = None           # {"farbe": "#000000", "breite_pt": 1.0, "art": Linienart (editor/linie.py), "abstand_mm": 8.0, "seiten": "tblr"}
     watermark: dict | None = None        # {"text": …, "farbe": "#c0c0c0", "winkel": -45, "groesse_pt": 80}
     zeilennummern: bool = False
     diff_first: bool = False                 # „Erste Seite anders“

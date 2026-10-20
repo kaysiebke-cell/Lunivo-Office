@@ -37,8 +37,9 @@ LH_PROPORTIONAL, LH_FIXED = 1, 2                # QTextBlockFormat.LineHeightTyp
 STYLE_PROP = QTextFormat.UserProperty + 1       # Name der Formatvorlage am Block
 from lunivo_writer.editor.zusatz import B_SPALTE, P_OBJEKT, P_VERSTECKT  # noqa: E402
 from lunivo_writer.editor.formular import P_FORM  # noqa: E402
-from lunivo_writer.editor.linie import Linie
-from lunivo_writer.editor.zusatz import B_ART, B_CAP, B_RAHMEN, B_TOC, BESCHRIFTUNGEN, P_AENDERUNG, P_AUTOR, P_DATUM, P_FELD, P_INDEX, P_KOMMENTAR, P_NOTE, P_ZITAT, leere_meta
+from lunivo_writer.editor.linie import Linie, art_aus_docx, docx_wert
+from lunivo_writer.editor import muster
+from lunivo_writer.editor.zusatz import B_ART, B_CAP, B_MUSTER, B_RAHMEN, B_TOC, BESCHRIFTUNGEN, P_AENDERUNG, P_AUTOR, P_DATUM, P_FELD, P_INDEX, P_KOMMENTAR, P_NOTE, P_ZITAT, leere_meta
 EMU_PER_PX = 9525
 PT_PER_PX = 0.75
 
@@ -432,7 +433,15 @@ class _Reader:
             self.pending_break = False
             self.pending_col = False
         shd = para._p.xpath("w:pPr/w:shd")
-        if shd and shd[0].get(qn("w:fill")) not in (None, "auto"):
+        art = muster.schluessel_von_ooxml(shd[0].get(qn("w:val"))) if shd else None
+        if shd and art and art != "loeschen":                    # Muster über Füllfarbe
+            farbe = shd[0].get(qn("w:color"))
+            fill = shd[0].get(qn("w:fill"))
+            mf = "#" + farbe if farbe not in (None, "auto") else "#000000"
+            ff = "#" + fill if fill not in (None, "auto") else None
+            b.setBackground(muster.pinsel(art, mf, ff))
+            b.setProperty(B_MUSTER, muster.als_text(art, mf, ff))
+        elif shd and shd[0].get(qn("w:fill")) not in (None, "auto"):
             b.setBackground(QBrush(QColor("#" + shd[0].get(qn("w:fill")))))
         stops = list(pf.tab_stops)
         if stops:
@@ -670,7 +679,7 @@ class _Reader:
             if da:
                 e = da[0][1]
                 col = e.get(qn("w:color")) or "000000"
-                art = {"double": "doppelt", "dashed": "gestrichelt", "dotted": "gepunktet", "dotDash": "strichpunkt"}.get(e.get(qn("w:val")), "einfach")
+                art = art_aus_docx(e.get(qn("w:val")))
                 li = Linie(f"#{col.lower() if col.lower() != 'auto' else '000000'}", int(e.get(qn("w:sz")) or 8) / 8, art).mit_seiten("".join(k for k, _e in da))
                 bfmt.setProperty(B_RAHMEN, li.text())
         try:
@@ -981,15 +990,16 @@ class _Reader:
             ps.silbentrennung = True
         pb = sect._sectPr.find(qn("w:pgBorders"))
         if pb is not None:
-            e = pb.find(qn("w:top"))
-            if e is not None and e.get(qn("w:val"), "none") not in ("none", "nil"):
+            e = next((x for x in (pb.find(qn("w:top")), pb.find(qn("w:left")), pb.find(qn("w:bottom")), pb.find(qn("w:right")))
+                      if x is not None and x.get(qn("w:val"), "none") not in ("none", "nil")), None)
+            if e is not None:
                 col = (e.get(qn("w:color")) or "000000")
-                ps.border = {"farbe": "#" + (col if col.lower() != "auto" else "000000").lower(),
+                da = "".join(k for x, k in (("top", "t"), ("bottom", "b"), ("left", "l"), ("right", "r"))
+                             if pb.find(qn(f"w:{x}")) is not None and pb.find(qn(f"w:{x}")).get(qn("w:val"), "none") not in ("none", "nil"))
+                ps.border = {"seiten": da or "tblr", "farbe": "#" + (col if col.lower() != "auto" else "000000").lower(),
                              "breite_pt": int(e.get(qn("w:sz")) or 8) / 8.0,
-                             "art": "doppelt" if e.get(qn("w:val")) == "double" else "einfach",
+                             "art": art_aus_docx(e.get(qn("w:val"))),
                              "abstand_mm": int(e.get(qn("w:space")) or 24) / 72 * 25.4}
-                if pb.find(qn("w:left")) is None or pb.find(qn("w:bottom")) is None:
-                    self.report.warn("Der Seitenrahmen hat nicht auf allen Seiten eine Linie; er wird als vollständiger Rahmen gezeigt.")
 
     def _hf(self, part) -> HeaderFooter:
         if part.is_linked_to_previous or not part.paragraphs:

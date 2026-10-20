@@ -49,8 +49,9 @@ from lunivo_writer.editor.zusatz import B_SPALTE, P_OBJEKT, P_VERSTECKT  # noqa:
 from lunivo_writer.editor.formular import P_FORM  # noqa: E402
 from lunivo_writer.editor.abschnitte import B_ABSCHNITT  # noqa: E402
 from lunivo_writer.editor import umbruch
-from lunivo_writer.editor.linie import Linie
-from lunivo_writer.editor.zusatz import B_ART, B_CAP, B_RAHMEN, B_TOC, P_AENDERUNG, P_AUTOR, P_DATUM, P_FELD, P_INDEX, P_KOMMENTAR, P_NOTE
+from lunivo_writer.editor.linie import Linie, art_aus_docx, docx_wert
+from lunivo_writer.editor import muster
+from lunivo_writer.editor.zusatz import B_ART, B_CAP, B_MUSTER, B_RAHMEN, B_TOC, P_AENDERUNG, P_AUTOR, P_DATUM, P_FELD, P_INDEX, P_KOMMENTAR, P_NOTE
 
 
 class _Writer:
@@ -157,9 +158,11 @@ class _Writer:
             b = p.border
             pb = OxmlElement("w:pgBorders")
             pb.set(qn("w:offsetFrom"), "page")
-            for seite in ("top", "left", "bottom", "right"):
+            for seite, kurz in (("top", "t"), ("left", "l"), ("bottom", "b"), ("right", "r")):
+                if kurz not in b.get("seiten", "tblr"):
+                    continue
                 e = OxmlElement(f"w:{seite}")
-                e.set(qn("w:val"), "double" if b.get("art") == "doppelt" else "single")
+                e.set(qn("w:val"), docx_wert(b.get("art", "einfach")))
                 e.set(qn("w:sz"), str(max(2, int(round(b.get("breite_pt", 1.0) * 8)))))
                 e.set(qn("w:space"), str(int(round(b.get("abstand_mm", 8.0) / 25.4 * 72))))
                 e.set(qn("w:color"), b.get("farbe", "#000000").lstrip("#").upper())
@@ -374,7 +377,7 @@ class _Writer:
         if bf.hasProperty(B_RAHMEN):
             li = Linie.aus_text(bf.stringProperty(B_RAHMEN))
             bdr = OxmlElement("w:pBdr")
-            val = {"doppelt": "double", "gestrichelt": "dashed", "gepunktet": "dotted", "strichpunkt": "dotDash"}.get(li.art, "single")
+            val = docx_wert(li.art)
             for seite, kurz in (("top", "t"), ("left", "l"), ("bottom", "b"), ("right", "r"), ("between", "h")):
                 if kurz not in li.seiten:
                     continue
@@ -387,7 +390,12 @@ class _Writer:
             if len(bdr):
                 para._p.get_or_add_pPr().insert_element_before(bdr, "w:shd", *nach_shd)
         bg = bf.background()
-        if bg.style() != Qt.NoBrush and bg.color().isValid():
+        mu = muster.aus_text(bf.stringProperty(B_MUSTER)) if bf.hasProperty(B_MUSTER) else None
+        if mu:                                                   # Muster über Füllfarbe: w:val = Musterart, w:color = Musterfarbe
+            shd = OxmlElement("w:shd")
+            shd.set(qn("w:val"), muster.ooxml_von(mu[0])); shd.set(qn("w:color"), mu[1][1:].upper()); shd.set(qn("w:fill"), mu[2][1:].upper() if mu[2] else "auto")
+            para._p.get_or_add_pPr().insert_element_before(shd, *nach_shd)
+        elif bg.style() != Qt.NoBrush and bg.color().isValid():
             shd = OxmlElement("w:shd")
             shd.set(qn("w:val"), "clear"); shd.set(qn("w:color"), "auto"); shd.set(qn("w:fill"), bg.color().name()[1:].upper())
             para._p.get_or_add_pPr().insert_element_before(shd, *nach_shd)
