@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from PySide6.QtCore import QMimeData, QPoint, QPointF, QRect, QRectF, QSizeF, QTimer, Qt, Signal, QUrl
 from PySide6.QtGui import (
-    QAbstractTextDocumentLayout, QBrush, QColor, QFont, QImage, QMouseEvent, QPainter, QPalette, QPen, QTextBlockFormat, QTextCharFormat, QTextCursor,
+    QAbstractTextDocumentLayout, QBrush, QColor, QDragMoveEvent, QDropEvent, QFont, QImage, QMouseEvent, QPainter, QPalette, QPen, QTextBlockFormat, QTextCharFormat, QTextCursor,
     QTextDocument, QTextFormat, QTextFrameFormat, QTextImageFormat, QTextListFormat,
     QTextTableFormat, QTextLength, QTextDocumentFragment, QTextOption,
 )
@@ -18,6 +18,8 @@ from lunivo_writer.proofing.autokorrektur import kleinste_aenderung
 from lunivo_writer.editor.pagination import bind_layout, paginated_copy
 from lunivo_writer.editor import stile
 from lunivo_writer.ui.document.zusatz_editor import ZusatzMixin
+
+BLATT_ABSTAND_PX = 32            # grauer Zwischenraum zwischen zwei Blättern (bei 100 % Zoom)
 
 STYLES = dict.fromkeys(stile.NAMEN)       # nur die eingebauten; selbst angelegte: stile.namen()            # Namen der Formatvorlagen (Definitionen: editor/stile.py)
 
@@ -59,7 +61,7 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         super().__init__(parent)
         self.page = PageSettings()
         self.setAcceptRichText(True)
-        self.setFrameShape(QTextEdit.StyledPanel)
+        self.setFrameShape(QTextEdit.NoFrame)          # das Blatt hat keinen Rahmen; es steht frei auf der Arbeitsfläche
         self.setUndoRedoEnabled(True)
         self.setLineWrapMode(QTextEdit.WidgetWidth)
         self.show_marks = False
@@ -69,7 +71,7 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         self._web_breite = 800
         self.gliederung = False
         self.zeilenfokus = False
-        self.marken = True                 # Textbegrenzungen (Eckmarken am Textrand)
+        self.marken = False                # Textbegrenzungen (Eckmarken am Textrand)
         self.vorhersage = None            # Rückruf: Wortanfang → Liste von Vorschlägen
         self.autokorr = None              # Rückruf: Text vor dem Zeiger → korrigierter Text
         self.mini_hook = None             # Rückruf(editor, globalePosition, rechtsklick): Minisymbolleiste zeigen/verbergen
@@ -82,6 +84,9 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         self._popup.setFocusPolicy(Qt.NoFocus)
         self._popup.itemClicked.connect(lambda it: self._vorschlag_nehmen(it.data(Qt.UserRole)))
         self._pages = 1
+        self._extra_seiten = 0              # Blätter, die erst der Druck (Endnoten) anhängt
+        self._lese_papier = ""              # Lesehilfe: Papierfarbe / Textfarbe überschreiben die Blattfarbe
+        self._lese_text = ""
         self._breaks: list[int] = []
         self._paged: QTextDocument | None = None
         self._timer = QTimer(self)
@@ -113,18 +118,24 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         self.apply_page(self.page)
 
     # ---- Dokument und Seite ---------------------------------------------
+
     def _verbinde_groesse(self) -> None:
         self.document().documentLayout().documentSizeChanged.connect(self._passe_hoehe_an)
 
     def _passe_hoehe_an(self, *_):
-        h = int(self.document().size().height()) + 4
-        if self._spalten_aktiv():
+        if self.web:
+            h = int(self.document().size().height()) + 4
+        else:
             g = self._sp_geo()
-            blaetter = max(1, -(-max(1, self.document().pageCount()) // g["n"]))
-            h = int(g["mt"] + blaetter * g["ch"] + g["mb"]) + 4
-        mind = 0 if self.web else int(mm_to_px(self.page.height_mm) * self.zoom)
-        self.setFixedHeight(max(h, mind))
+            h = int(g["top"] + self._blatt_anzahl() * (g["H"] + g["gap"]))
+        if h != self.height():
+            self.setFixedHeight(h)
         self.pageApplied.emit()
+
+    def _blatt_anzahl(self) -> int:
+        """Anzahl der Blätter: so viele, wie der Textfluss des Editors Seiten braucht (plus Noten-Seiten, die nur der Druck anhängt)."""
+        n = max(1, int(self.page.spalten))
+        return max(1, -(-max(1, self.document().pageCount()) // n)) + self._extra_seiten
 
     def _aussen(self):
         w = self.parent()
@@ -157,34 +168,44 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         self.seitenfarbe_anwenden()
         bind_layout(doc, self.zoom)
         doc.setDocumentMargin(0)
+
         root = doc.rootFrame()
         ff: QTextFrameFormat = root.frameFormat()
-        if self.web:                      # Weblayout: fortlaufender Text in Fensterbreite, kleine Ränder
-            for setze in (ff.setTopMargin, ff.setBottomMargin, ff.setLeftMargin, ff.setRightMargin):
+
+        if self.web:
+            for setze in (
+                ff.setTopMargin,
+                ff.setBottomMargin,
+                ff.setLeftMargin,
+                ff.setRightMargin,
+            ):
                 setze(mm_to_px(8))
             root.setFrameFormat(ff)
             self.setFixedWidth(max(300, int(self._web_breite)))
-        elif int(page.spalten) > 1:
-            # Spalten: Text fließt in Spaltenbreite und wird auf Spaltenhöhe in „Spaltenseiten“ geteilt; paintEvent und die
-            # Mausabbildung stellen sie nebeneinander auf das Blatt (siehe _sp_*).
-            for setze in (ff.setTopMargin, ff.setBottomMargin, ff.setLeftMargin, ff.setRightMargin):
+
+        else:
+            # Blattmodus: Die Ränder gehören zum Blatt, nicht zum Textfluss. Das Dokument wird auf die Textfläche
+            # (Breite/Höhe ohne Ränder) umbrochen; jede Qt-Seite des Flusses wird auf ein eigenes Blatt gezeichnet.
+            for setze in (
+                ff.setTopMargin,
+                ff.setBottomMargin,
+                ff.setLeftMargin,
+                ff.setRightMargin,
+            ):
                 setze(0)
             root.setFrameFormat(ff)
-            self.setFixedWidth(int(mm_to_px(page.width_mm) * self.zoom) + 2)
+            self.setFixedWidth(int(mm_to_px(page.width_mm) * self.zoom))
             self._sp_einrichten()
-        else:
-            ff.setTopMargin(mm_to_px(page.margin_top_mm))
-            ff.setBottomMargin(mm_to_px(page.margin_bottom_mm))
-            ff.setLeftMargin(mm_to_px(page.margin_left_mm))
-            ff.setRightMargin(mm_to_px(page.margin_right_mm))
-            root.setFrameFormat(ff)
-            self.setFixedWidth(int(mm_to_px(page.width_mm) * self.zoom) + 2)
+
         self._blasen_einrichten()
-        if not self._spalten_aktiv() and self.lineWrapMode() != QTextEdit.WidgetWidth:
-            self.setLineWrapMode(QTextEdit.WidgetWidth)
-            doc.setPageSize(QSizeF(self.viewport().width(), -1))
-            self._sp_timer.stop()
-            self.setAcceptDrops(True)
+
+        if self.web:
+            if self.lineWrapMode() != QTextEdit.WidgetWidth:
+                self.setLineWrapMode(QTextEdit.WidgetWidth)
+                self._sp_timer.stop()
+            doc.setPageSize(QSizeF(max(300, self._web_breite), -1))
+
+        self._recount()
         self._passe_hoehe_an()
         self._timer.start()
         self.pageApplied.emit()
@@ -226,7 +247,7 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         links = k["rand"] == "Links"
         self.setViewportMargins(extra if links else 0, 0, 0 if links else extra, 0)
         if not self.web:
-            self.setFixedWidth(int(mm_to_px(self.page.width_mm) * self.zoom) + 2 + extra)
+            self.setFixedWidth(int(mm_to_px(self.page.width_mm) * self.zoom) + extra)
         if extra and self._blasen_flaeche is None:
             from lunivo_writer.ui.document.blasen_flaeche import BlasenFlaeche
             self._blasen_flaeche = BlasenFlaeche(self)
@@ -317,15 +338,34 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         self.document().setModified(True)
 
     # ---- Spalten im Editor -----------------------------------------------------------------------------------------
-    def _spalten_aktiv(self) -> bool:
+    def _blatt_aktiv(self) -> bool:
+        """Blattmodus (Drucklayout): echte Blätter mit Rand und Zwischenraum; nur das Weblayout ist ein Endlosfluss."""
+        return not self.web
+
+    def _mehrspaltig(self) -> bool:
         return (not self.web) and int(self.page.spalten) > 1
 
     def _sp_geo(self) -> dict:
         z, pg = self.zoom, self.page
         n = max(1, int(pg.spalten))
-        return {"n": n, "cb": round(pg.spalten_breite_px * z), "g": mm_to_px(pg.spalten_abstand_mm) * z,
+        gap = max(10.0, BLATT_ABSTAND_PX * z)
+        return {"n": n, "cb": round(pg.spalten_breite_px * z), "g": mm_to_px(pg.spalten_abstand_mm) * z if n > 1 else 0.0,
                 "ch": pg.content_height_px * z, "ml": mm_to_px(pg.margin_left_mm) * z, "mt": mm_to_px(pg.margin_top_mm) * z,
-                "mb": mm_to_px(pg.margin_bottom_mm) * z}
+                "mb": mm_to_px(pg.margin_bottom_mm) * z,
+                "H": mm_to_px(pg.height_mm) * z,              # Höhe eines Blattes
+                "gap": gap,                                    # grauer Zwischenraum zwischen zwei Blättern
+                "top": gap}                                    # grauer Streifen über dem ersten Blatt
+
+    def blatt_oben(self, nr: int = 0) -> float:
+        """y des oberen Randes von Blatt `nr` (0-basiert) im Editor — die Lineale richten sich danach."""
+        g = self._sp_geo()
+        return g["top"] + nr * (g["H"] + g["gap"])
+
+    def _sp_ursprung(self, lp: int) -> tuple[float, float]:
+        """Ecke links oben der Textspalte, in der die logische Seite `lp` des Textflusses steht (Editorkoordinaten)."""
+        g = self._sp_geo()
+        s, j = divmod(lp, g["n"])
+        return g["ml"] + j * (g["cb"] + g["g"]), self.blatt_oben(s) + g["mt"]
 
     def _sp_einrichten(self) -> None:
         """Dokument in Spaltenbreite und -höhe legen: feste Zeilenbreite, damit QTextEdit die Seitenhöhe nicht wieder auf „endlos“ setzt."""
@@ -333,7 +373,6 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         self.setLineWrapMode(QTextEdit.FixedPixelWidth)
         self.setLineWrapColumnOrWidth(int(g["cb"]))
         self.document().setPageSize(QSizeF(g["cb"], g["ch"]))
-        self.setAcceptDrops(False)                      # Ziehen und Ablegen kennt die Spaltenabbildung nicht
         if self.hasFocus():
             self._sp_timer.start()
 
@@ -341,14 +380,14 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         """Dokumentkoordinate (fortlaufender Fluss der Spaltenseiten) → Punkt auf dem Blatt."""
         g = self._sp_geo()
         lp = max(0, int((dy + 1.0) // g["ch"]))        # +1: Qt gibt Rechtecke ganzzahlig, die Seitengrenze liegt meist knapp darüber
-        s, j = divmod(lp, g["n"])
-        return g["ml"] + j * (g["cb"] + g["g"]) + dx, g["mt"] + s * g["ch"] + max(0.0, dy - lp * g["ch"])
+        x0, y0 = self._sp_ursprung(lp)
+        return x0 + dx, y0 + max(0.0, dy - lp * g["ch"])
 
     def _sp_doc(self, vx: float, vy: float) -> tuple[float, float]:
         """Punkt auf dem Blatt → Dokumentkoordinate; Punkte in Rändern und Lücken landen in der nächsten Spalte."""
         g = self._sp_geo()
-        s = max(0, int((vy - g["mt"]) // g["ch"]))
-        y_in = min(max(vy - g["mt"] - s * g["ch"], 0.0), g["ch"] - 1)
+        s = max(0, int((vy - g["top"]) // (g["H"] + g["gap"])))
+        y_in = min(max(vy - self.blatt_oben(s) - g["mt"], 0.0), g["ch"] - 1)      # Ränder und Lücken: nächste Textzeile
         j = min(g["n"] - 1, max(0, int((vx - g["ml"] + g["g"] / 2) // (g["cb"] + g["g"]))))
         dx = min(max(vx - (g["ml"] + j * (g["cb"] + g["g"])), 0.0), g["cb"])
         lp = s * g["n"] + j
@@ -359,44 +398,44 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
 
     def _sp_neu_zeichnen(self, *_) -> None:
         try:
-            if self._spalten_aktiv():
+            if self._blatt_aktiv():
                 self._sp_caret = True
                 self.viewport().update()
         except RuntimeError:                           # beim Abbau ist das Widget schon weg
             pass
 
     def _sp_blinken(self) -> None:
-        if self._spalten_aktiv() and self.hasFocus():
+        if self._blatt_aktiv() and self.hasFocus():
             self._sp_caret = not self._sp_caret
             self.viewport().update()
 
     def focusInEvent(self, e) -> None:
         super().focusInEvent(e)
-        if self._spalten_aktiv():
+        if self._blatt_aktiv():
             self._sp_timer.start()
 
     def cursorRect(self, *args) -> QRect:
         r = super().cursorRect(*args)
-        if self._spalten_aktiv():
+        if self._blatt_aktiv():
             x, y = self._sp_view(r.x(), r.y())
             return QRect(int(x), int(y), r.width(), r.height())
         return r
 
     def cursorForPosition(self, pos: QPoint) -> QTextCursor:
-        if self._spalten_aktiv():
+        if self._blatt_aktiv():
             x, y = self._sp_doc(pos.x(), pos.y())
             pos = QPoint(int(x), int(y))
         return super().cursorForPosition(pos)
 
     def anchorAt(self, pos: QPoint) -> str:
-        if self._spalten_aktiv():
+        if self._blatt_aktiv():
             x, y = self._sp_doc(pos.x(), pos.y())
             pos = QPoint(int(x), int(y))
         return super().anchorAt(pos)
 
     def _maus_abgebildet(self, e):
         """Mausereignis mit Dokumentkoordinaten (nur bei Spalten); QTextEdit selbst rechnet in Dokumentkoordinaten."""
-        if not self._spalten_aktiv():
+        if not self._blatt_aktiv():
             return e
         x, y = self._sp_doc(e.position().x(), e.position().y())
         return QMouseEvent(e.type(), QPointF(x, y), e.globalPosition(), e.button(), e.buttons(), e.modifiers())
@@ -404,14 +443,44 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
     def mousePressEvent(self, e) -> None:
         super().mousePressEvent(self._maus_abgebildet(e))
 
+    def _ziehen_abgebildet(self, e):
+        """Ziehen/Ablegen: QTextEdit rechnet in Dokumentkoordinaten, der Editor zeigt aber Blätter → Position abbilden."""
+        if not self._blatt_aktiv():
+            return e
+        x, y = self._sp_doc(e.position().x(), e.position().y())
+        art = type(e)
+        if art is QDropEvent:
+            return QDropEvent(QPointF(x, y), e.possibleActions(), e.mimeData(), e.buttons(), e.modifiers())
+        return QDragMoveEvent(QPoint(int(x), int(y)), e.possibleActions(), e.mimeData(), e.buttons(), e.modifiers())
+
+    def dragMoveEvent(self, e) -> None:
+        m = self._ziehen_abgebildet(e)
+        super().dragMoveEvent(m)
+        if m is not e:
+            e.setDropAction(m.dropAction())
+            e.setAccepted(m.isAccepted())
+
+    def dropEvent(self, e) -> None:
+        m = self._ziehen_abgebildet(e)
+        super().dropEvent(m)
+        if m is not e:
+            e.setDropAction(m.dropAction())
+            e.setAccepted(m.isAccepted())
+
     def _kopffuss_zone(self, y: float) -> str:
         """„kopf“ im oberen, „fuss“ im unteren Rand der Seite (nur Seitenansicht, nicht im Weblayout)."""
         if self.web:
             return ""
-        z = self.zoom
-        if y < mm_to_px(self.page.margin_top_mm) * z - 4:
+        g = self._sp_geo()
+        if y < g["top"]:
+            return ""
+        s = int((y - g["top"]) // (g["H"] + g["gap"]))
+        rel = y - self.blatt_oben(s)
+        if rel > g["H"]:                                 # grauer Zwischenraum
+            return ""
+        if rel < g["mt"] - 4:
             return "kopf"
-        if y > self.viewport().height() - mm_to_px(self.page.margin_bottom_mm) * z + 4:
+        if rel > g["H"] - g["mb"] + 4:
             return "fuss"
         return ""
 
@@ -433,23 +502,41 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
     def resizeEvent(self, e) -> None:
         super().resizeEvent(e)
         self._blasen_geometrie()
-        if self._spalten_aktiv():
+        if self._blatt_aktiv():
             g = self._sp_geo()
             ps = self.document().pageSize()
             if abs(ps.height() - g["ch"]) > 0.5 or abs(ps.width() - g["cb"]) > 0.5:
                 self.document().setPageSize(QSizeF(g["cb"], g["ch"]))
 
-    def _sp_zeichnen(self, e) -> None:
-        """Text, Auswahl, Schreibmarke und Wellenlinien: jede Spaltenseite in ihre Spalte auf dem Blatt."""
+    def _arbeitsflaeche(self) -> QColor:
+        """Grauer Arbeitsbereich zwischen und um die Blätter (gleich dem Grund hinter dem Editor)."""
+        return self.palette().color(QPalette.Dark)
+
+    def _blatt_zeichnen(self, e) -> None:
+        """Arbeitsfläche, Blätter mit Schatten, dann Text, Auswahl, Schreibmarke und Wellenlinien: jede Seite des Textflusses
+        in ihre Spalte auf ihrem Blatt."""
         vp = self.viewport()
         p = QPainter(vp)
-        p.fillRect(e.rect(), QColor(self.page.color or "white"))
+        g = self._sp_geo()
+        p.fillRect(e.rect(), self._arbeitsflaeche())
+        papier = QColor(self._lese_papier or self.page.color or "white")
+        sicht = QRectF(e.rect())
+        for k in range(self._blatt_anzahl()):
+            blatt = QRectF(0, self.blatt_oben(k), vp.width(), g["H"])
+            if not blatt.adjusted(-2, -2, 6, 8).intersects(sicht):
+                continue
+            # weicher, mehrstufiger Schatten wie bei modernen Office-Programmen: nur nach unten, zu den Seiten hin ausblendend
+            tiefe = max(4, int(9 * self.zoom))
+            for i in range(tiefe, 0, -1):
+                t = i / tiefe
+                alpha = int(26 * (1 - t) ** 2 + 2)
+                p.fillRect(QRectF(blatt.left() + i * 0.5, blatt.bottom(), blatt.width() - i, i), QColor(16, 24, 40, alpha))
+            p.fillRect(blatt, papier)
         doc = self.document()
         lay = doc.documentLayout()
-        g = self._sp_geo()
         ctx = QAbstractTextDocumentLayout.PaintContext()
         pal = QPalette(self.palette())
-        pal.setColor(QPalette.Text, QColor("black"))
+        pal.setColor(QPalette.Text, QColor(self._lese_text or "black"))
         ctx.palette = pal
         auswahl = []
         for es in self.extraSelections():
@@ -466,10 +553,8 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         ctx.selections = auswahl
         ctx.cursorPosition = c.position() if (self._sp_caret and self.hasFocus() and not c.hasSelection()
                                               and not self.isReadOnly()) else -1
-        sicht = QRectF(e.rect())
         for lp in range(max(1, doc.pageCount())):
-            s, j = divmod(lp, g["n"])
-            x0, y0 = g["ml"] + j * (g["cb"] + g["g"]), g["mt"] + s * g["ch"]
+            x0, y0 = self._sp_ursprung(lp)
             feld = QRectF(x0 - 6, y0, g["cb"] + 12, g["ch"])
             if not feld.intersects(sicht):
                 continue
@@ -530,7 +615,7 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
                 for i in range(b.layout().lineCount()):
                     nr += 1
                     z = b.layout().lineAt(i)
-                    y = top + z.y() - oben
+                    y = self._sp_view(0, top + z.y())[1]
                     if -20 < y < vp.height():
                         p.drawText(QRectF(ml - 52, y, 44, z.height()), Qt.AlignRight | Qt.AlignVCenter, str(nr))
             b = b.next()
@@ -588,20 +673,12 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         self.viewport().update()
 
     def seitenspannen(self) -> list[tuple[int, int]]:
-        """Senkrechte Bereiche (von, bis) jeder Seite im Editor, aus den Seitenwechseln."""
-        if self._spalten_aktiv():
-            g = self._sp_geo()
-            blaetter = max(1, -(-max(1, self.document().pageCount()) // g["n"]))
-            return [(0 if k == 0 else int(g["mt"] + k * g["ch"]),
-                     int(g["mt"] + (k + 1) * g["ch"] + (g["mb"] if k == blaetter - 1 else 0))) for k in range(blaetter)]
-        h = self.viewport().height() + self.verticalScrollBar().value()
-        h = max(h, int(self.document().size().height()))
-        starts = [0]
-        n = self.document().characterCount()
-        for pos in self._breaks:
-            if pos < n:
-                starts.append(self.cursorRect(self._cursor_at(pos)).top() - 3)
-        return [(a, starts[i + 1] if i + 1 < len(starts) else h) for i, a in enumerate(starts)]
+        """Senkrechte Bereiche (von, bis) jedes Blattes im Editor."""
+        if self.web:
+            h = self.viewport().height() + self.verticalScrollBar().value()
+            return [(0, max(h, int(self.document().size().height())))]
+        g = self._sp_geo()
+        return [(int(self.blatt_oben(k)), int(self.blatt_oben(k) + g["H"])) for k in range(self._blatt_anzahl())]
 
     def _schmuck_zeichnen(self, p: QPainter) -> None:
         pg, z = self.page, self.zoom
@@ -633,7 +710,8 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
 
     def seitenfarbe_anwenden(self) -> None:
         c = self.page.color or "white"
-        self.setStyleSheet(f"QTextEdit {{ background: {c}; color: black; border: 1px solid #5c6166; }}")
+        # der Rahmen hat die Farbe der Arbeitsfläche: um das Blatt herum ist kein Strich zu sehen
+        self.setStyleSheet("QTextEdit { background: palette(dark); color: black; border: none; }")
 
     ZOOM_MIN, ZOOM_MAX = 0.1, 5.0
 
@@ -704,23 +782,29 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         self.ensureCursorVisible()
         return True
 
-    # ---- Seitenzählung -----------------------------------------------------
+    # ---- Seitenzählung & Echte Paginierung ----------------------------------
     def _recount(self) -> None:
-        if self._spalten_aktiv():                      # die Spaltenseiten stammen aus dem Editor-Dokument selbst
-            g = self._sp_geo()
+        """Seitenzahl und Seitenwechsel neu bestimmen. Die Blätter selbst entstehen aus dem Textfluss des Editors; die
+        Druckkopie liefert Seitenwechsel für „Gehe zu“ und die Seiten, die erst der Druck anhängt (Endnoten)."""
+        live = self._blatt_anzahl() - self._extra_seiten
+        if self.web:
+            self._paged, self._breaks, self._pages, self._extra_seiten = None, [], 1, 0
+        elif self._mehrspaltig():                      # die Spaltenseiten stammen aus dem Editor-Dokument selbst
             self._paged = None
             self._breaks = []
-            self._pages = max(1, -(-max(1, self.document().pageCount()) // g["n"]))
-            self.viewport().update()
-            self._cursor_moved()
-            return
-        self._paged = paginated_copy(self.document(), self.page, self.noten, silben=False, einspaltig=True, versteckt=self.versteckt_zeigen)   # wie die Bearbeitungsansicht umbricht: ohne Trennstriche
-        self._pages = max(1, self._paged.pageCount())
-        self._breaks = self._seitenwechsel(self._paged)
-        from lunivo_writer.editor import abschnitte as AB
-        if AB.anzahl(self.document()) > 1:               # die Streifenansicht kennt nur die Geometrie des ersten Abschnitts
-            from lunivo_writer.editor.pagination import seitenzahl
-            self._pages = max(1, seitenzahl(self.document(), self.page, self.noten))
+            self._pages = live
+            self._extra_seiten = 0
+        else:
+            self._paged = paginated_copy(self.document(), self.page, self.noten, silben=False, einspaltig=True, versteckt=self.versteckt_zeigen)
+            self._breaks = self._seitenwechsel(self._paged)
+            druck = max(1, self._paged.pageCount())
+            from lunivo_writer.editor import abschnitte as AB
+            if AB.anzahl(self.document()) > 1:
+                from lunivo_writer.editor.pagination import seitenzahl
+                druck = max(1, seitenzahl(self.document(), self.page, self.noten))
+            self._extra_seiten = max(0, druck - live)
+            self._pages = live + self._extra_seiten
+        self._passe_hoehe_an()
         self.viewport().update()
         self._cursor_moved()
 
@@ -752,19 +836,12 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         return self._pages
 
     def current_page(self) -> int:
-        if self._spalten_aktiv():
-            g = self._sp_geo()
-            r = QTextEdit.cursorRect(self)
-            return max(1, min(self._pages, int((r.y() + 1.0) // g["ch"]) // g["n"] + 1))
-        if self._paged is None:
+        """Blatt, auf dem die Schreibmarke steht (so, wie es im Editor angezeigt wird)."""
+        if self.web:
             return 1
-        pos = min(self.textCursor().position(), max(0, self._paged.characterCount() - 1))
-        blk = self._paged.findBlock(pos)
-        if not blk.isValid():
-            return 1
-        rect = self._paged.documentLayout().blockBoundingRect(blk)
-        ch = self.page.content_height_px
-        return max(1, min(self._pages, int((rect.top() + 0.5) // ch) + 1))
+        g = self._sp_geo()
+        r = QTextEdit.cursorRect(self)
+        return max(1, min(self._pages, int((r.y() + 1.0) // g["ch"]) // g["n"] + 1))
 
     def _cursor_moved(self) -> None:
         try:
@@ -1283,20 +1360,32 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         self.viewport().update()
 
     def set_lesehilfe(self, papier: str, buchstaben: float, wort: float) -> None:
-        self.setStyleSheet(f"QTextEdit {{ background: {papier}; color: black; }}")
+        pk = QColor(papier) if papier else QColor()
+        text_farbe = "black" if (not pk.isValid() or pk.lightness() >= 128) else "#ffffff"
+        self._lese_papier = papier if pk.isValid() and papier.lower() not in ("white", "#ffffff") else ""
+        self._lese_text = text_farbe if self._lese_papier else ""
+        self.setStyleSheet(f"QTextEdit {{ background: {papier or 'white'}; color: {text_farbe}; border: none; }}")
+        self.viewport().update()
         f = QFont(self.document().defaultFont())
         f.setLetterSpacing(QFont.AbsoluteSpacing, buchstaben)
         f.setWordSpacing(wort)
         self.document().setDefaultFont(f)
 
     def paintEvent(self, e) -> None:
-        sp = self._spalten_aktiv()
+        sp = self._blatt_aktiv()
         if sp:
-            self._sp_zeichnen(e)
+            self._blatt_zeichnen(e)
         else:
             super().paintEvent(e)
+        
         vp = self.viewport()
         p = QPainter(vp)
+
+        is_dark = self.palette().color(QPalette.Window).lightness() < 128
+        line_color = QColor("#adb5bd") if is_dark else QColor("#868e96")
+        accent_color = QColor("#748ffc") if is_dark else QColor("#4c6ef5")
+        strip_color = QColor("#2b2d30") if is_dark else QColor("#d9dee5")
+
         self._schmuck_zeichnen(p)
         if self.gitter:
             self._gitter_zeichnen(p)
@@ -1305,8 +1394,7 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
             if sp:
                 g = self._sp_geo()
                 for lp in range(max(1, self.document().pageCount())):
-                    k, j = divmod(lp, g["n"])
-                    x0, y0 = g["ml"] + j * (g["cb"] + g["g"]), g["mt"] + k * g["ch"]
+                    x0, y0 = self._sp_ursprung(lp)
                     p.save()
                     p.setClipRect(QRectF(x0 - 6, y0, g["cb"] + 12, g["ch"]))
                     p.translate(x0, y0 - lp * g["ch"])
@@ -1317,46 +1405,30 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
                 p.translate(0, -self.verticalScrollBar().value())
                 absatzrahmen_zeichnen(p, self.document(), self.zoom)
                 p.restore()
-        if self.page.zeilennummern and not self.web and not sp:
+        if self.page.zeilennummern and not self.web and not self._mehrspaltig():
             self._zeilennummern_zeichnen(p)
         if self.marken and not self.web:
-            z = self.zoom
-            ml, mt = int(mm_to_px(self.page.margin_left_mm) * z), int(mm_to_px(self.page.margin_top_mm) * z)
-            mr = int(mm_to_px(self.page.margin_right_mm) * z)
-            y = mt - self.verticalScrollBar().value()
-            p.setPen(QPen(QColor("#868e96"), 1))
-            L, x2 = 14, vp.width() - mr
-            for x, dx in ((ml, 1), (x2, -1)):
-                p.drawLine(x, y - 1, x + dx * L, y - 1)
-                p.drawLine(x - dx, y - L, x - dx, y - 1)
-        self._extras_zeichnen(p, sp)
-        if sp:
             g = self._sp_geo()
-            blaetter = max(1, -(-max(1, self.document().pageCount()) // g["n"]))
-            if self.page.spalten_linie:
-                p.setPen(QPen(QColor("#868e96"), 1))
-                for k in range(blaetter):
-                    for j in range(1, g["n"]):
-                        x = int(g["ml"] + j * (g["cb"] + g["g"]) - g["g"] / 2)
-                        p.drawLine(x, int(g["mt"] + k * g["ch"]), x, int(g["mt"] + (k + 1) * g["ch"]))
-            p.setPen(QPen(QColor("#868e96"), 1, Qt.DashLine))
-            f = p.font(); f.setPointSizeF(8); p.setFont(f)
-            for k in range(1, blaetter):
-                y = int(g["mt"] + k * g["ch"]) - 3
-                p.drawLine(0, y, vp.width(), y)
-                p.drawText(6, y - 2, f"Seite {k + 1}")
-        elif self._breaks and not self.web:
-            p.setPen(QPen(QColor("#868e96"), 1, Qt.DashLine))
-            f = p.font(); f.setPointSizeF(8); p.setFont(f)
-            n = self.document().characterCount()
-            for k, pos in enumerate(self._breaks, start=2):
-                if pos >= n:
-                    continue
-                r = self.cursorRect(self._cursor_at(pos))
-                y = r.top() - 3
-                if -20 < y < vp.height() + 20:
-                    p.drawLine(0, y, vp.width(), y)
-                    p.drawText(6, y - 2, f"Seite {k}")
+            L = 14
+            p.setPen(QPen(line_color, 1))
+            for k in range(self._blatt_anzahl()):
+                oben = int(self.blatt_oben(k) + g["mt"])
+                unten = int(self.blatt_oben(k) + g["H"] - g["mb"])
+                # Eckmarken liegen außerhalb der Textfläche und zeigen von ihrer Ecke nach außen (wie in Word)
+                for x, ox in ((int(g["ml"]), -1), (int(g["ml"] + g["cb"] * g["n"] + g["g"] * (g["n"] - 1)), 1)):
+                    for y, oy in ((oben, -1), (unten, 1)):
+                        p.drawLine(x, y, x + ox * L, y)
+                        p.drawLine(x, y, x, y + oy * L)
+        self._extras_zeichnen(p, sp)
+        if sp and self._mehrspaltig() and self.page.spalten_linie:
+            g = self._sp_geo()
+            p.setPen(QPen(line_color, 1))
+            for k in range(self._blatt_anzahl()):
+                for j in range(1, g["n"]):
+                    x = int(g["ml"] + j * (g["cb"] + g["g"]) - g["g"] / 2)
+                    y0 = self.blatt_oben(k) + g["mt"]
+                    p.drawLine(x, int(y0), x, int(y0 + g["ch"]))
+
         if self.zeilenfokus and self.hasFocus() and not self.textCursor().hasSelection():
             r = self.cursorRect()
             zeile = QRect(0, r.top() - 1, vp.width(), r.height() + 2)
@@ -1379,6 +1451,10 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         if self.web:
             return
         vp, z, pg = self.viewport(), self.zoom, self.page
+        is_dark = self.palette().color(QPalette.Window).lightness() < 128
+        line_color = QColor("#adb5bd") if is_dark else QColor("#868e96")
+        accent_color = QColor("#748ffc") if is_dark else QColor("#4c6ef5")
+
         # Objektanker neben Bildern, die vom Text umflossen werden (bei sichtbaren Formatierungszeichen)
         marks = bool(self.document().defaultTextOption().flags() & QTextOption.ShowTabsAndSpaces)
         if marks and self.opt("ui/objektanker", True):
@@ -1386,12 +1462,12 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
             ankern = schwebende_rahmen(self.document())
             if ankern:
                 f = QFont(p.font()); f.setPointSizeF(max(7.0, 10 * z)); p.setFont(f)
-                p.setPen(QColor("#4c6ef5"))
+                p.setPen(accent_color)
                 for pos in ankern:
                     r = self.cursorRect(self._cursor_at(pos))
                     p.drawText(max(0, r.x() - int(18 * z)), r.y() + r.height() // 2, "⚓")
         # Abschnittsumbrüche: gestrichelte Linie mit Beschriftung unter dem letzten Absatz des Abschnitts
-        if not sp:
+        if not self._mehrspaltig():
             from lunivo_writer.editor import abschnitte as AB
             for nr, typ, _ps in AB.umbrueche(self.document()):
                 blk = self.document().findBlockByNumber(nr)
@@ -1401,27 +1477,23 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
                     continue
                 y = r.bottom() + int(3 * z)
                 x0, x1 = int(mm_to_px(pg.margin_left_mm) * z), vp.width() - int(mm_to_px(pg.margin_right_mm) * z)
-                p.setPen(QPen(QColor("#4c6ef5"), 1, Qt.DashLine))
+                p.setPen(QPen(accent_color, 1, Qt.DashLine))
                 p.drawLine(x0, y, x1, y)
                 f = QFont(p.font()); f.setPointSizeF(max(6.5, 8 * z)); p.setFont(f)
                 txt = f"Abschnittsumbruch ({AB.TYPEN.get(typ, typ)})"
-                p.setPen(QColor("#4c6ef5"))
+                p.setPen(accent_color)
                 p.drawText(x0 + int(8 * z), y - int(2 * z), txt)
         # Geänderte Zeilen
         seite = self.opt_text("aenderungen/balken", "links")
         if seite in ("links", "rechts", "außen"):
             zeilen = self._aenderungszeilen_gecacht()
             if zeilen:
-                p.setPen(QPen(QColor("#c92a2a"), 1.6))
+                p.setPen(QPen(QColor("#ff6b6b") if is_dark else QColor("#c92a2a"), 1.6))
                 for t, u in zeilen:
-                    if sp:
-                        g = self._sp_geo()
-                        vx, vy = self._sp_view(0, t)
-                        x = vx + (g["cb"] + 8 * z if seite == "rechts" else -8 * z)
-                        y0, y1 = vy, vy + (u - t)
-                    else:
-                        x = (vp.width() - mm_to_px(pg.margin_right_mm) * z + 8 * z) if seite == "rechts" else mm_to_px(pg.margin_left_mm) * z - 8 * z
-                        y0, y1 = t, u
+                    g = self._sp_geo()
+                    vx, vy = self._sp_view(0, t)
+                    x = vx + (g["cb"] + 8 * z if seite == "rechts" else -8 * z)
+                    y0, y1 = vy, vy + (u - t)
                     p.drawLine(int(x), int(y0), int(x), int(y1))
         # Linien von den Sprechblasen zum Text: Textende bis zum Seitenrand (der Rest steht in der Blasenfläche)
         if self._blasen_extra and self.blasen_linien():
@@ -1436,23 +1508,25 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
                 p.setPen(QPen(QColor(bl.farbe), 1, Qt.DotLine))
                 y = int(rc.y() + rc.height() / 2)
                 p.drawLine(rc.x() + 4 if rechts else 0, y, vp.width() if rechts else rc.x(), y)
-        # Kopf- und Fußzeile (erste Seite oben, letzte unten)
+        # Kopf- und Fußzeile auf jedem Blatt (Lage wie im Druck: 8 mm unter dem oberen, 18 mm über dem unteren Blattrand)
         if self.opt("ui/kopffuss_anzeigen", True):
-            kopf = pg.first_header if pg.diff_first else pg.header
-            fuss = pg.footer
-            f = QFont(p.font()); f.setPixelSize(max(6, int(11 * z))); p.setFont(f)
-            p.setPen(QColor("#868e96"))
-            ml, mr = mm_to_px(pg.margin_left_mm) * z, mm_to_px(pg.margin_right_mm) * z
-            breite = vp.width() - ml - mr
-
-            def zeile(hf, y):
-                if hf.is_empty():
-                    return
-                text = hf.text.replace("{PAGE}", str(max(1, self.current_page()))).replace("{PAGES}", str(self._pages))
-                fl = {"center": Qt.AlignHCenter, "right": Qt.AlignRight}.get(hf.align, Qt.AlignLeft)
-                p.drawText(QRectF(ml, y, breite, 18 * z), int(fl | Qt.AlignVCenter), text)
-            zeile(kopf, mm_to_px(8) * z)
-            zeile(fuss, vp.height() - mm_to_px(8) * z - 18 * z)
+            from lunivo_writer.editor.pagination import _draw_hf
+            g = self._sp_geo()
+            ml, cw = mm_to_px(pg.margin_left_mm), pg.content_width_px
+            ph = mm_to_px(pg.height_mm)
+            base = QFont(self.font())
+            p.setPen(line_color)
+            for k in range(self._blatt_anzahl()):
+                oben = self.blatt_oben(k)
+                if oben > vp.height() or oben + g["H"] < 0:
+                    continue
+                kopf, fuss = (pg.first_header, pg.first_footer) if (k == 0 and pg.diff_first) else (pg.header, pg.footer)
+                p.save()
+                p.translate(0, oben)
+                p.scale(z, z)
+                _draw_hf(p, kopf, QRectF(ml, mm_to_px(8), cw, mm_to_px(10)), k + 1, self._pages, base)
+                _draw_hf(p, fuss, QRectF(ml, ph - mm_to_px(18), cw, mm_to_px(10)), k + 1, self._pages, base)
+                p.restore()
 
     # ---- Schreibhilfe: Wellenlinien, Ersetzen, Vorhersage, AutoKorrektur -------------------
     WELLE = {"fehler": "#e8590c", "tipp": "#1c7ed6", "hinweis": "#868e96"}

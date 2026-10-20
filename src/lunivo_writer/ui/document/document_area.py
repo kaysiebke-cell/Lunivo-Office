@@ -99,14 +99,14 @@ class DocumentTab(QScrollArea):
     def zoom_breite(self) -> None:
         """Seitenbreite: die Seite füllt die Breite des Fensters."""
         from lunivo_writer.models.page import mm_to_px
-        frei = self.viewport().width() - 24 - 2
+        frei = self.viewport().width() - 24
         self.editor.set_zoom(frei / mm_to_px(self.page.width_mm))
 
     def zoom_seite(self) -> None:
         """Eine Seite: die ganze Seite ist sichtbar."""
         from lunivo_writer.models.page import mm_to_px
-        b = (self.viewport().width() - 24 - 2) / mm_to_px(self.page.width_mm)
-        h = (self.viewport().height() - 24 - 2) / mm_to_px(self.page.height_mm)
+        b = (self.viewport().width() - 24) / mm_to_px(self.page.width_mm)
+        h = (self.viewport().height() - 24) / mm_to_px(self.page.height_mm)
         self.editor.set_zoom(min(b, h))
 
     @property

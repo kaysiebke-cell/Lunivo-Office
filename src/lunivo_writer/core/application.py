@@ -28,6 +28,8 @@ class LunivoApplication:
             win.open_path(f)
         if not dateien:
             win.offer_recovery()
+        if win.tabs.count() == 0:                    # keine Startseite: das Programm beginnt mit einem leeren Blatt
+            win.new_document()
         rc = self.app.exec()
         self._abbauen()
         return rc

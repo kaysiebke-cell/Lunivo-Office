@@ -94,7 +94,7 @@ class MenueTafel(QFrame):
             b.clicked.connect(lambda _=False, p=pfad: (self.close(), self.w.open_path(p)))
             x = QToolButton(); x.setText("×"); x.setAutoRaise(True)
             x.setToolTip("Aus der Liste nehmen — die Datei bleibt liegen")
-            x.clicked.connect(lambda _=False, p=pfad: (self.w.settings.remove_recent(p), self.w.start.set_recent(self.w.settings.recent()), self._zeige_zuletzt()))
+            x.clicked.connect(lambda _=False, p=pfad: (self.w.settings.remove_recent(p), self._zeige_zuletzt()))
             z.addWidget(b, 1); z.addWidget(x)
             zw = QWidget(); zw.setLayout(z)
             self.rechts.addWidget(zw)

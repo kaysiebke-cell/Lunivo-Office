@@ -63,8 +63,8 @@ class LinealH(_Lineal):
             if n == "einzug_links": l = w
             if n == "einzug_rechts": r = w
             if n == "einzug_erste": f = w
-        x0 = 1 + self.px(pg.margin_left_mm)
-        x1 = 1 + self.px(pg.width_mm - pg.margin_right_mm)
+        x0 = self.e.frameWidth() + self.px(pg.margin_left_mm)
+        x1 = self.e.frameWidth() + self.px(pg.width_mm - pg.margin_right_mm)
         return {"links": x0, "rechts": x1, "einzug_erste": x0 + self.px(l + f), "einzug_links": x0 + self.px(l),
                 "einzug_rechts": x1 - self.px(r)}
 
@@ -84,7 +84,7 @@ class LinealH(_Lineal):
         mm = 0
         pgb = self.e.page.width_mm
         while mm <= pgb:
-            x = 1 + self.px(mm)
+            x = self.e.frameWidth() + self.px(mm)
             if mm % 10 == 0:
                 p.drawLine(QPointF(x, HOEHE - 9), QPointF(x, HOEHE - 1))
                 if mm:
@@ -123,7 +123,7 @@ class LinealH(_Lineal):
 
     def _mm(self, x, name):
         pg = self.e.page
-        mm = (x - 1) / (PX_PER_MM * self.e.zoom)
+        mm = (x - self.e.frameWidth()) / (PX_PER_MM * self.e.zoom)
         l0 = pg.margin_left_mm
         r0 = pg.width_mm - pg.margin_right_mm
         if name == "links":
@@ -168,10 +168,11 @@ class LinealV(_Lineal):
         bg, fg, _ = self.farben()
         p.fillRect(self.rect(), bg)
         pg = self.e.page
-        t = self.px(pg.margin_top_mm)
+        o = self.e.blatt_oben(0)                      # das erste Blatt beginnt unter dem grauen Streifen
+        t = o + self.px(pg.margin_top_mm)
         if self._zieh == "oben" and self._wert is not None:
-            t = self.px(self._wert)
-        ph = self.px(pg.height_mm)
+            t = o + self.px(self._wert)
+        ph = o + self.px(pg.height_mm)
         grau = QColor(fg); grau.setAlpha(40)
         p.fillRect(QRectF(0, 0, HOEHE, t), grau)
         p.fillRect(QRectF(0, ph - self.px(pg.margin_bottom_mm), HOEHE, self.px(pg.margin_bottom_mm)), grau)
@@ -179,8 +180,8 @@ class LinealV(_Lineal):
         f = p.font(); f.setPointSizeF(7); p.setFont(f)
         schritt = 5 if self.e.zoom >= 0.6 else 10
         mm = 0
-        while self.px(mm) <= self.height():
-            y = self.px(mm)
+        while o + self.px(mm) <= self.height():
+            y = o + self.px(mm)
             if mm % 10 == 0:
                 p.drawLine(QPointF(HOEHE - 9, y), QPointF(HOEHE - 1, y))
                 if mm:
@@ -193,13 +194,13 @@ class LinealV(_Lineal):
 
     def _treffer(self, y):
         pg = self.e.page
-        if abs(y - self.px(pg.margin_top_mm)) <= 3:
+        if abs(y - self.e.blatt_oben(0) - self.px(pg.margin_top_mm)) <= 3:
             return "oben"
         return None
 
     def mouseMoveEvent(self, ev):
         if self._zieh:
-            mm = ev.position().y() / (PX_PER_MM * self.e.zoom)
+            mm = (ev.position().y() - self.e.blatt_oben(0)) / (PX_PER_MM * self.e.zoom)
             self._wert = max(0.0, min(mm, self.e.page.height_mm - self.e.page.margin_bottom_mm - 40))
             self.update()
             return

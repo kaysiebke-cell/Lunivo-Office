@@ -244,7 +244,7 @@ class OptionenDialog(QDialog):
         p = _Seite(self.w, titel, ["Lineal", "Vertikales Lineal", "Gitternetzlinien",
                                    ])
         f = p.gruppe("Anzeigen")
-        p.haken(f, "ui/marken", "Textbegrenzungen (Eckmarken)", True, self.w.set_marken)
+        p.haken(f, "ui/marken", "Textbegrenzungen (Eckmarken)", False, self.w.set_marken)
         p.haken(f, "ui/seitenleiste", "Seitenleiste beim Start", True)
         p.haken(f, "ui/navigation", "Navigationsbereich beim Start", False)
         p.haken(f, "ui/live_vorschau", "Live-Vorschau: Formate beim Überfahren schon im Dokument zeigen", True, lambda _: self.w.vorschau.ende())

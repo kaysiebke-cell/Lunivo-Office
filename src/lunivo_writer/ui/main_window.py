@@ -5,7 +5,7 @@ import os
 from datetime import datetime
 
 from PySide6.QtCore import Qt, QTimer, QUrl
-from PySide6.QtGui import QAction, QActionGroup, QColor, QDesktopServices, QFont, QKeySequence, QTextFormat
+from PySide6.QtGui import QAction, QActionGroup, QColor, QDesktopServices, QFont, QKeySequence, QPalette, QTextFormat
 from PySide6.QtPrintSupport import QPrintDialog, QPrintPreviewDialog, QPrinter
 from PySide6.QtWidgets import (
     QApplication, QColorDialog, QFileDialog, QInputDialog, QLineEdit, QMainWindow, QMenu, QMessageBox, QWidget,
@@ -30,7 +30,6 @@ from lunivo_writer.ui.ribbon.menue_tafel import MenueTafel
 from lunivo_writer.ui.document.navigation import NavigationPanel
 from lunivo_writer.ui.ribbon.ribbon_bar import RegisterBand, lade_register
 from lunivo_writer.ui.sidebar.sidebar import SchreibhilfePanel
-from lunivo_writer.ui.document.start_page import StartPage
 from lunivo_writer.core.commands import Befehle
 
 MARGIN_PRESETS = {
@@ -56,12 +55,11 @@ class MainWindow(QMainWindow):
         self.docs.newRequested.connect(self.new_document)
         self.docs.kontextGewuenscht.connect(self.reiter_menue)
         self.tabs = self.docs                      # gleiche Schnittstelle wie ein QTabWidget
-        self.start = StartPage()
-        self.start.newRequested.connect(self.new_document)
-        self.start.openRequested.connect(self.open_dialog)
-        self.start.openPath.connect(self.open_path)
-        self.docs.stack.insertWidget(0, self.start)
-        self.docs.stack.setCurrentWidget(self.start)
+        self.leer = QWidget()                      # nur der graue Arbeitsgrund, solange kein Dokument offen ist
+        self.leer.setBackgroundRole(QPalette.Dark)
+        self.leer.setAutoFillBackground(True)
+        self.docs.stack.insertWidget(0, self.leer)
+        self.docs.stack.setCurrentWidget(self.leer)
         self.find_dialog = FindReplaceDialog(self.current_editor, self)
         self.assistant = WritingAssistant(self.settings, parent=self)
         self.assistant.status.connect(lambda t: self.lbl_msg.setText(t))
@@ -120,7 +118,6 @@ class MainWindow(QMainWindow):
         self.autosave = QTimer(self)
         self.autosave.timeout.connect(self.autosave_now)
         self.autosave.start(max(10, self.settings.get_int("autosave_seconds", 60)) * 1000)
-        self.start.set_recent(self.settings.recent())
         self._sync_timer = QTimer(self)
         self._sync_timer.setSingleShot(True)
         self._sync_timer.setInterval(60)
@@ -258,7 +255,7 @@ class MainWindow(QMainWindow):
         self.recent_menu.addAction("Liste leeren", self._clear_recent)
 
     def _clear_recent(self):
-        self.settings.clear_recent(); self.start.set_recent([])
+        self.settings.clear_recent()
 
     # ==== Statusleiste ============================================================
     def _build_status(self):
@@ -315,7 +312,7 @@ class MainWindow(QMainWindow):
 
     def _refresh_ui(self):
         has = self.current_tab() is not None
-        self.docs.stack.setCurrentWidget(self.current_tab() if has else self.start)
+        self.docs.stack.setCurrentWidget(self.current_tab() if has else self.leer)
         self.band.aktualisieren(has)
         for a in (self.a_undo, self.a_redo):
             a.setEnabled(has)
@@ -349,7 +346,7 @@ class MainWindow(QMainWindow):
         e.autor = self.autor_angaben
         e.mini_hook = self.mini_zeigen
         e.zusatzGeaendert.connect(self.navigation.spaeter)
-        e.set_marken(self.settings.get_bool("ui/marken", True))
+        e.set_marken(self.settings.get_bool("ui/marken", False))
         self.formatzeichen_anwenden(e)
         self.lineale_anwenden(tab)
         self._lesehilfe_auf(e)
@@ -464,14 +461,14 @@ class MainWindow(QMainWindow):
                 break
         if loaded is None:
             QMessageBox.warning(self, "Öffnen nicht möglich", f"{os.path.basename(path)}\n\n{fehler}")
-            self.dokumente.vergessen(path); self.start.set_recent(self.dokumente.zuletzt())
+            self.dokumente.vergessen(path)
             return False
         tab = DocumentTab(loaded, path)
         self._add_tab(tab)
         if stile.als_json_neu() != self.settings.get("stile/eigene", ""):       # das Dokument brachte eigene Formatvorlagen mit
             self.settings.set("stile/eigene", stile.als_json_neu())
             getattr(self.band, "stile_aktualisieren", lambda: None)()
-        self.dokumente.gelesen(path); self.start.set_recent(self.dokumente.zuletzt())
+        self.dokumente.gelesen(path)
         self._show_report(loaded.report, f"Hinweise zu „{os.path.basename(path)}“", "beim Öffnen")
         return True
 
@@ -518,7 +515,7 @@ class MainWindow(QMainWindow):
         if not self._write(tab, path):
             return False
         tab.set_path(path)
-        self.settings.add_recent(path); self.start.set_recent(self.settings.recent())
+        self.settings.add_recent(path)
         self._update_tab_titles()
         return True
 
