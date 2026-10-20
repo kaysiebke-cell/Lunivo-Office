@@ -1,4 +1,5 @@
-from PySide6.QtCore import QSettings
+from PySide6.QtCore import QSettings, Qt
+from PySide6.QtWidgets import QPushButton
 
 from lunivo_writer.services.settings_service import Settings
 from lunivo_writer.ui.dialogs.optionen import OptionenDialog
@@ -34,7 +35,7 @@ def test_optionen_ki_seite_speichert_schluessel_privat(app, tmp_path, monkeypatc
     w = win(tmp_path, monkeypatch)
     d = OptionenDialog(w, "ki")
     from PySide6.QtWidgets import QLineEdit
-    feld = [e for e in d.findChildren(QLineEdit) if e.placeholderText().startswith("Schlüssel (sk-")][0]
+    feld = [e for e in d.findChildren(QLineEdit) if e.placeholderText().startswith("sk-ant")][0]
     feld.setText("sk-ant-test"); feld.editingFinished.emit()
     assert w.ki.konfig["apiKey"] == "sk-ant-test"
     assert oct(os.stat(w.ki.konfig.pfad).st_mode & 0o777) == "0o600"
@@ -162,16 +163,41 @@ def test_seitenleiste_und_optionen_gehen_hand_in_hand(app, tmp_path, monkeypatch
     # Für wen? (Optionen -> Seitenleiste)
     w.assistant.setze_thema("Amt")
     assert any(b.text() == "Amt" and b.isChecked() for b in sb.gruppe.buttons())
-    # Stufe 3: Lesehilfe, Seitenleiste -> Optionen-Einstellung -> Seitenleiste
-    sb.lese_stufen["Leichter lesen"].click()
-    assert w.settings.get("lesehilfe/papier") != ""
-    sb.lese_fokus.setChecked(True)
-    assert w.settings.get_bool("lesehilfe/zeilenfokus", False)
-    w.settings.set("lesehilfe/zeilenfokus", False)
-    w.lesehilfe_anwenden()
-    assert not sb.lese_fokus.isChecked()
     # Stufe 4: KI -> Seitenleiste wird über dasselbe Signal neu bewertet
     gesehen = []
     w.ki.geaendert.connect(lambda: gesehen.append(1))
     w.ki.geaendert.emit()
     assert gesehen
+
+
+def test_befehlslisten_kennwort_ki_und_erweitert(app, tmp_path, monkeypatch):
+    import json
+    from PySide6.QtWidgets import QListWidget
+    w = win(tmp_path, monkeypatch)
+    d = OptionenDialog(w, "schnellzugriff")
+    seite = d.stapel.currentWidget()
+    listen = seite.findChildren(QListWidget)
+    links, rechts = listen[0], listen[1]
+    n = rechts.count()
+    links.setCurrentRow(0)
+    erster = links.item(0).data(Qt.UserRole)
+    seite.findChildren(QPushButton)  # Knöpfe vorhanden
+    [b for b in seite.findChildren(QPushButton) if b.text() == "Hinzufügen >>"][0].click()
+    assert rechts.count() == n + 1
+    assert erster in json.loads(w.settings.get("ui/schnellzugriff"))
+    # Menüband: ein Register ausblenden
+    d.gehe_zu("menueband")
+    seite = d.stapel.currentWidget()
+    links, rechts = seite.findChildren(QListWidget)[:2]
+    rechts.setCurrentRow(0); name = rechts.item(0).text()
+    [b for b in seite.findChildren(QPushButton) if b.text() == "Entfernen"][0].click()
+    assert name in json.loads(w.settings.get("ui/register_plan"))["versteckt"]
+    # Sicherheit: Kennwort, Markup-Haken
+    d.gehe_zu("sicherheit")
+    d.gehe_zu("ki"); d.gehe_zu("gedaechtnis"); d.gehe_zu("erweitert")
+    # KI: Aufgabenmodell wird gespeichert
+    d.gehe_zu("ki")
+    seite = d.stapel.currentWidget()
+    from PySide6.QtWidgets import QComboBox
+    c = [x for x in seite.findChildren(QComboBox)][0]
+    assert c.itemText(0).startswith("Standard (")

@@ -150,6 +150,13 @@ class RegisterBand(QWidget):
         haupt.sort(key=lambda r: ordnung.index(r["name"]) if r["name"] in ordnung else 999)
         return [r for r in haupt if r["name"] not in versteckt] + kontext
 
+    def _tausch_rechtsklick(self, k: QToolButton, sym: str) -> None:
+        """Rechtsklick auf einen Knopf: Fenster „Symbol austauschen“ mit der Zeichnung dieses Knopfes."""
+        if not icons.hat(sym):
+            return
+        k.setContextMenuPolicy(Qt.CustomContextMenu)
+        k.customContextMenuRequested.connect(lambda _p, s=sym: self.b.symbolTauschen(None, s))
+
     def _schnellzugriff(self):
         liste = self.SCHNELL if self._schnell_wahl is None else [e for e in self.SCHNELL_ALLE if e[2] in self._schnell_wahl]
         for sym, name, aktion in liste:
@@ -159,6 +166,7 @@ class RegisterBand(QWidget):
             k.setIcon(icons.icon(sym, 18))
             k.setIconSize(QSize(18, 18))
             k.clicked.connect(lambda _=False, a=aktion: self.b.tun(a))
+            self._tausch_rechtsklick(k, sym)
             self.schnell.addWidget(k)
             self.knoepfe.append((k, aktion, sym in ("speichern", "pdf", "drucken", "vorschau", "zurueck", "vor")))
 
@@ -487,6 +495,7 @@ class RegisterBand(QWidget):
             k.setIconSize(QSize(28, 28) if gross else QSize(18, 18))
         k.setDefaultAction(akt)
         k.setToolTip(name)
+        self._tausch_rechtsklick(k, sym)
         if not icons.hat(sym):
             f = k.font()
             if sym == "F":

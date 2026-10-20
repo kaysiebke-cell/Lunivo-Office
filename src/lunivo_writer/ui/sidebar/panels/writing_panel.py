@@ -5,44 +5,79 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QVBoxLayout
 
 from lunivo_writer.ui.baukasten.beschriftung import md_escape, md_label, text_label
+from lunivo_writer.ui.widgets import icons
 
 FARBE = {"fehler": "#e8590c", "tipp": "#1c7ed6", "hinweis": "#868e96"}
+
+
+# Marke oben auf der Karte: Schrift, Hintergrund (nach der Vorlage der ersten Fassung)
+MARKE = {"fehler": ("SICHER FALSCH", "#d9a03a", "#1d1a12"), "tipp": ("KOMMT DRAUF AN", "#2f6fb5", "#ffffff"),
+         "hinweis": ("NUR ZUM NACHDENKEN", "#6b7280", "#ffffff")}
+KARTE = "{name} {{ border: 1px solid palette(midlight); border-radius: 10px; background: rgba(128, 128, 128, 0.07); }}"
+
+
+def marke(art: str) -> QLabel:
+    text, grund, schrift = MARKE.get(art, MARKE["hinweis"])
+    m = QLabel(text)
+    m.setStyleSheet(f"background: {grund}; color: {schrift}; border: none; border-radius: 3px; padding: 2px 8px; "
+                    "font-size: 8pt; font-weight: 700; letter-spacing: 0.5px;")
+    return m
 
 
 class FundKarte(QFrame):
     def __init__(self, fund: dict, assistent, parent=None):
         super().__init__(parent)
         self.fund, self.a = fund, assistent
-        self.setFrameShape(QFrame.StyledPanel)
-        farbe = FARBE.get(fund["art"], "#868e96")
-        self.setStyleSheet(f"FundKarte {{ border-left: 4px solid {farbe}; }}")
+        self.setObjectName("FundKarte")
+        self.setStyleSheet(KARTE.format(name="QFrame#FundKarte"))
         v = QVBoxLayout(self)
-        v.setContentsMargins(10, 6, 8, 6)
-        v.setSpacing(3)
-        g = QLabel(fund["grund"])
-        g.setWordWrap(True)
-        g.setStyleSheet("color: palette(mid); font-size: 9pt;")
-        v.addWidget(g)
+        v.setContentsMargins(14, 12, 12, 12)
+        v.setSpacing(6)
+        kopf = QHBoxLayout(); kopf.setContentsMargins(0, 0, 0, 0)
+        kopf.addWidget(marke(fund["art"])); kopf.addStretch(1)
+        v.addLayout(kopf)
         if fund["art"] != "hinweis" and fund["neu"] != "":
-            t = md_label(f"~~{md_escape(fund['zeigeAlt'])}~~ → **{md_escape(fund['zeigeNeu'])}**")
+            t = md_label(f"~~{md_escape(fund['zeigeAlt'])}~~  →  **{md_escape(fund['zeigeNeu'])}**")
         else:
             t = text_label(f"„{fund['zeigeAlt'][:80]}“" if fund["alt"] else "")
+        t.setStyleSheet("border: none; background: transparent; font-size: 11pt;")
         v.addWidget(t)
+        g = QLabel(fund["grund"])
+        g.setWordWrap(True)
+        g.setStyleSheet("color: palette(mid); font-size: 9pt; border: none; background: transparent;")
+        v.addWidget(g)
         z = QHBoxLayout()
-        z.addStretch(1)
+        z.setSpacing(8)
+        zeigen = QPushButton("Zeigen")
+        zeigen.clicked.connect(self._zeigen)
+        z.addWidget(zeigen)
         if fund["art"] != "hinweis" and fund["neu"] != "":
             b = QPushButton("Ändern")
             b.clicked.connect(lambda: self.a.aendern(self.fund))
             z.addWidget(b)
-        b2 = QPushButton("Lassen")
-        b2.clicked.connect(lambda: self.a.lassen(self.fund))
-        z.addWidget(b2)
+        z.addStretch(1)
+        from lunivo_writer.services import vorlesen
+        if vorlesen.verfuegbar():
+            ohr = QPushButton()
+            ohr.setIcon(icons.icon("vorlesen", 16)); ohr.setFlat(True); ohr.setCursor(Qt.PointingHandCursor)
+            ohr.setToolTip("Das Wort anhören")
+            ohr.clicked.connect(self._hoeren)
+            z.addWidget(ohr)
         v.addLayout(z)
 
-    def mousePressEvent(self, e):
+    def _zeigen(self):
         ed = self.a.editor
         if ed is not None:
             ed.select_range(self.fund["von"], self.fund["bis"])
+            ed.setFocus()
+
+    def _hoeren(self):
+        from lunivo_writer.services import vorlesen
+        f = self.fund
+        vorlesen.lies_vor(f["zeigeNeu"] if f["art"] != "hinweis" and f["neu"] else f["zeigeAlt"])
+
+    def mousePressEvent(self, e):
+        self._zeigen()
         super().mousePressEvent(e)
 
 
@@ -50,8 +85,8 @@ class VorschlagKarte(QFrame):
     def __init__(self, v: dict, dienst, panel):
         super().__init__()
         self.v, self.d, self.p = v, dienst, panel
-        self.setFrameShape(QFrame.StyledPanel)
-        self.setStyleSheet("VorschlagKarte { border-left: 4px solid #2f9e75; }")
+        self.setObjectName("VorschlagKarte")
+        self.setStyleSheet(KARTE.format(name="QFrame#VorschlagKarte"))
         lay = QVBoxLayout(self)
         lay.setContentsMargins(10, 6, 8, 6)
         sicher = f" · Sicherheit {round(v['konfidenz'] * 100)} %" if "konfidenz" in v else ""
@@ -83,7 +118,8 @@ class HinweisKarte(QFrame):
     def __init__(self, titel, text, cent, fenster, panel):
         super().__init__()
         self.text, self.w = text, fenster
-        self.setFrameShape(QFrame.StyledPanel)
+        self.setObjectName("HinweisKarte")
+        self.setStyleSheet(KARTE.format(name="QFrame#HinweisKarte"))
         lay = QVBoxLayout(self)
         t = text_label(titel, fett=True, umbruch=False)
         body = text_label(text, auswaehlbar=True)

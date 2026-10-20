@@ -479,6 +479,8 @@ class MainWindow(QMainWindow):
             return False
         tab = DocumentTab(loaded, path)
         self._add_tab(tab)
+        if not self.settings.get_bool("sicherheit/markup_oeffnen", True):
+            tab.editor.set_markup(False)
         if stile.als_json_neu() != self.settings.get("stile/eigene", ""):       # das Dokument brachte eigene Formatvorlagen mit
             self.settings.set("stile/eigene", stile.als_json_neu())
             getattr(self.band, "stile_aktualisieren", lambda: None)()

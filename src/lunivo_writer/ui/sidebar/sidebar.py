@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import QTimer, Qt, Signal
+from PySide6.QtGui import QColor, QPalette
 from PySide6.QtWidgets import (QCheckBox, 
     QButtonGroup, QFrame, QHBoxLayout, QLabel, QLineEdit, QMessageBox, QPushButton, QScrollArea,
     QStackedWidget, QVBoxLayout, QWidget,
@@ -48,7 +49,6 @@ class SchreibhilfePanel(QWidget):
         seite0 = QWidget()
         self.stapel.addWidget(seite0)
         v = QVBoxLayout(seite0)
-        self._v0 = v
         v.setContentsMargins(14, 12, 14, 10)
         v.setSpacing(8)
         # Kopf: Titel, die drei Schalter der Schreibbrücke (We/Vo/Ko), rechts „Prüfen“
@@ -85,6 +85,7 @@ class SchreibhilfePanel(QWidget):
         s.setWordWrap(True)
         s.setStyleSheet("color: palette(mid);")
         v.addWidget(s)
+        self._einfuehrung = [s]
         zl = QHBoxLayout()
         l = QPushButton("Welche Hilfe wann?")
         l.setFlat(True); l.setCursor(Qt.PointingHandCursor)
@@ -93,6 +94,7 @@ class SchreibhilfePanel(QWidget):
         zl.addWidget(l)
         zl.addStretch(1)
         v.addLayout(zl)
+        self._einfuehrung.append(l)
         self.liste = QVBoxLayout()
         self.liste.setSpacing(6)
         host = QWidget()
@@ -134,6 +136,9 @@ class SchreibhilfePanel(QWidget):
         self.worum = QLineEdit()
         self.worum.setPlaceholderText("Worum geht's? (freiwillig)")
         self.worum.setMaxLength(300)
+        self.worum.setStyleSheet("QLineEdit { border: none; border-bottom: 1px dashed #c77d2e; background: transparent; "
+                                 "padding: 5px 0; }")
+        pal = self.worum.palette(); pal.setColor(QPalette.PlaceholderText, QColor("#c98a3d")); self.worum.setPalette(pal)
         v.addWidget(self.worum)
         ki = QHBoxLayout()
         self.ki_knoepfe = []
@@ -174,7 +179,6 @@ class SchreibhilfePanel(QWidget):
         dienst.laeuft.connect(lambda an: self.ki_aktualisieren(an))
         dienst.geaendert.connect(self.ki_aktualisieren)
         self.ki_aktualisieren()
-        self._lesehilfe_bauen()
         QTimer.singleShot(300, self._ollama_pruefen)
 
     # ---- Verbindung mit den Optionen: was dort (oder anderswo) umgestellt wird, steht hier sofort richtig -----------------------
@@ -188,67 +192,6 @@ class SchreibhilfePanel(QWidget):
         for b in self.gruppe.buttons():
             if b.text() == name and not b.isChecked():
                 b.setChecked(True)
-
-    # ---- Lesehilfe (Legasthenie): dieselben Einstellungen wie in den Optionen ▸ Lesehilfe ------------------------------------
-    def _lesehilfe_bauen(self) -> None:
-        from lunivo_writer.ui import lesestufen as LS
-        f, s = self.fenster, self.fenster.settings
-        kopf = QPushButton("LESEHILFE")
-        kopf.setCheckable(True)
-        kopf.setStyleSheet("QPushButton { border: none; background: transparent; text-align: left; font-size: 8pt; color: palette(mid); "
-                           "letter-spacing: 1px; padding: 2px 0; } QPushButton:checked { color: palette(window-text); }")
-        inhalt = QWidget()
-        iv = QVBoxLayout(inhalt)
-        iv.setContentsMargins(0, 0, 0, 0); iv.setSpacing(6)
-        stufen = QWidget()
-        sl = FlowLayout(stufen)
-        gr = QButtonGroup(self)
-        self.lese_stufen = {}
-        for name in LS.STUFEN:
-            b = QPushButton(name)
-            b.setCheckable(True); b.setStyleSheet(CHIP)
-            b.setToolTip(" ".join(LS.STUFEN[name]["text"]))
-            gr.addButton(b); sl.addWidget(b)
-            self.lese_stufen[name] = b
-            b.clicked.connect(lambda _=False, n=name: (LS.setze(s, n), f.lesehilfe_anwenden()))
-        iv.addWidget(stufen)
-        self.lese_fokus = QCheckBox("Zeilenfokus")
-        self.lese_fokus.setToolTip("Die Zeile, in der du schreibst, tritt hervor. Der Rest bleibt ruhig.")
-        self.lese_fokus.toggled.connect(lambda on: (s.set("lesehilfe/zeilenfokus", on), f.lesehilfe_anwenden()))
-        self.lese_silben = QCheckBox("Silben farbig")
-        self.lese_silben.setToolTip("Wörter werden in Silben zerlegt und abwechselnd gefärbt (Lesehilfe für Legasthenie).")
-        self.lese_silben.toggled.connect(lambda on: (s.set("lesehilfe/silben/an", on), f.silbenfarben_anwenden()))
-        iv.addWidget(self.lese_fokus); iv.addWidget(self.lese_silben)
-        zeile = QHBoxLayout()
-        hoeren = QPushButton("Vorlesen")
-        hoeren.setToolTip("Den Text hören (F4)")
-        hoeren.clicked.connect(lambda: f.vorlesen(False))
-        mehr = QPushButton("Alle Optionen …")
-        mehr.clicked.connect(lambda: f.show_options("lesehilfe"))
-        zeile.addWidget(hoeren); zeile.addWidget(mehr)
-        iv.addLayout(zeile)
-
-        def aufklappen(an):
-            inhalt.setVisible(an)
-            kopf.setText("LESEHILFE  ▾" if an else "LESEHILFE  ▸")
-            s.set("ui/seitenleiste_lesehilfe", an)
-        kopf.toggled.connect(aufklappen)
-        kopf.setChecked(s.get_bool("ui/seitenleiste_lesehilfe", True))
-        aufklappen(kopf.isChecked())
-
-        def nachziehen():
-            aktuell = LS.aktuell(s)
-            for name, b in self.lese_stufen.items():
-                b.blockSignals(True); b.setChecked(name == aktuell); b.blockSignals(False)
-            if not aktuell:
-                for b in self.lese_stufen.values():
-                    b.setChecked(False)
-            for c, key in ((self.lese_fokus, "lesehilfe/zeilenfokus"), (self.lese_silben, "lesehilfe/silben/an")):
-                c.blockSignals(True); c.setChecked(s.get_bool(key, False)); c.blockSignals(False)
-        f.lesehilfe_geaendert.connect(nachziehen)
-        nachziehen()
-        self._v0.addWidget(kopf)
-        self._v0.addWidget(inhalt)
 
     def ki_aktualisieren(self, laeuft: bool = False) -> None:
         ok = self.ki.verfuegbar()
@@ -350,6 +293,8 @@ class SchreibhilfePanel(QWidget):
         for i, f in enumerate(funde):
             self.liste.insertWidget(i, FundKarte(f, self.a))
         self.alle.setVisible(any(f["art"] == "fehler" and f["neu"] for f in funde))
+        for w in self._einfuehrung:                                 # mit Funden steht die Liste ganz oben, wie in der ersten Fassung
+            w.setVisible(not funde)
 
     def _alle(self):
         n = self.a.alle_aendern()

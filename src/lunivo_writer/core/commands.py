@@ -459,10 +459,14 @@ class Befehle:
         if SchnellzugriffDialog(self.w, self.w.settings, RegisterBand.SCHNELL_ALLE, akt).exec():
             self.w.neu_bauen_band()
 
-    def symbolTauschen(self, k=None):
+    def symbolTauschen(self, k=None, name=None):
+        """Symbol austauschen (Ansicht ▸ Oberfläche, Optionen — und Rechtsklick auf einen Knopf, dann mit dessen Symbol)."""
+        from PySide6.QtCore import QTimer
         from lunivo_writer.ui.dialogs.oberflaeche_dialoge import SymbolTauschenDialog
-        SymbolTauschenDialog(self.w, self.w.settings).exec()
-        self.w.neu_bauen_band()
+        d = SymbolTauschenDialog(self.w, self.w.settings, name)
+        d.exec()
+        if d.geaendert:
+            QTimer.singleShot(0, self.w.neu_bauen_band)             # nicht mitten im Klick auf den Knopf, der gerade neu gebaut wird
 
     def benutzeroberflaeche(self, k=None):
         from lunivo_writer.ui.dialogs.oberflaeche_dialoge import OberflaecheDialog

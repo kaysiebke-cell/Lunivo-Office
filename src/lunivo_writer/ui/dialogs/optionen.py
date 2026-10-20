@@ -9,11 +9,11 @@ from __future__ import annotations
 import json
 import os
 
-from PySide6.QtCore import QEvent, Qt
+from PySide6.QtCore import QEvent, QSize, QTimer, Qt
 from PySide6.QtGui import QFont, QFontDatabase
 from PySide6.QtWidgets import (
     QApplication, QButtonGroup, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QDoubleSpinBox, QFormLayout, QFrame, QGridLayout, QGroupBox, QHBoxLayout, QLabel,
-    QLineEdit, QRadioButton, QListWidget, QMessageBox, QPushButton, QScrollArea, QSlider, QSpinBox, QStackedWidget, QTreeWidget,
+    QLineEdit, QListWidget, QListWidgetItem, QMessageBox, QRadioButton, QPushButton, QScrollArea, QSlider, QSpinBox, QStackedWidget, QTreeWidget,
     QTreeWidgetItem, QVBoxLayout, QWidget,
 )
 
@@ -869,23 +869,162 @@ class OptionenAnsicht(QWidget):
         p.abschluss()
         return p
 
+    # ---- Befehlslisten (Menüband, Schnellzugriff): zwei Listen mit Hinzufügen / Entfernen, wie in der Vorlage ---------------------------
+    def _band_merken(self) -> None:
+        """Die Änderung steht in den Einstellungen; das Band wird beim Verlassen der Seite neu gebaut (nicht bei jedem Klick)."""
+        self._band_neu = True
+
+    def _band_jetzt(self, *_a) -> None:
+        if getattr(self, "_band_neu", False):
+            self._band_neu = False
+            QTimer.singleShot(0, self.w.neu_bauen_band)
+
+    def hideEvent(self, ev):
+        self._band_jetzt()
+        super().hideEvent(ev)
+
+    def _zwei_listen(self, p, links_kopf: str, rechts_kopf: str, hinzu: str, weg: str, kategorie: str):
+        """Gerüst der Vorlage: links „Befehle auswählen“ (Auswahl, Suche, Liste), in der Mitte Hinzufügen/Entfernen, rechts die Liste
+        der aktuellen Einträge mit Pfeilen. Gibt (links, rechts, suche, b_hinzu, b_weg, auf, ab, unten) zurück."""
+        w = QWidget(); g = QGridLayout(w); g.setContentsMargins(0, 8, 0, 0); g.setHorizontalSpacing(14); g.setVerticalSpacing(6)
+        g.setColumnStretch(0, 5); g.setColumnStretch(2, 5)
+        g.addWidget(QLabel(links_kopf), 0, 0)
+        kopf = QHBoxLayout()
+        auswahl = QComboBox(); auswahl.addItem(kategorie)
+        suche = QLineEdit(); suche.setPlaceholderText("Befehl suchen"); suche.setClearButtonEnabled(True)
+        kopf.addWidget(auswahl, 1); kopf.addWidget(suche, 1)
+        g.addLayout(kopf, 1, 0)
+        links = QListWidget(); links.setMinimumHeight(250); links.setIconSize(QSize(18, 18))
+        g.addWidget(links, 2, 0)
+        mitte = QVBoxLayout(); mitte.addStretch(1)
+        b_hinzu = QPushButton(hinzu); b_weg = QPushButton(weg)
+        mitte.addWidget(b_hinzu); mitte.addWidget(b_weg); mitte.addStretch(1)
+        g.addLayout(mitte, 2, 1)
+        g.addWidget(QLabel(rechts_kopf), 0, 2)
+        rechts = QListWidget(); rechts.setMinimumHeight(250); rechts.setIconSize(QSize(18, 18))
+        pf = QVBoxLayout()
+        auf = QPushButton("▲"); ab = QPushButton("▼")
+        for b in (auf, ab):
+            b.setFixedWidth(34)
+        pf.addStretch(1); pf.addWidget(auf); pf.addWidget(ab); pf.addStretch(1)
+        rz = QHBoxLayout(); rz.addWidget(rechts, 1); rz.addLayout(pf)
+        g.addLayout(rz, 1, 2, 2, 1)
+        unten = QHBoxLayout(); unten.setContentsMargins(0, 4, 0, 0)
+        g.addLayout(unten, 3, 0, 1, 3)
+        p.lay.addWidget(w)
+        return links, rechts, suche, b_hinzu, b_weg, auf, ab, unten
+
+    @staticmethod
+    def _schieben(liste: QListWidget, d: int) -> None:
+        i = liste.currentRow(); j = i + d
+        if i < 0 or not 0 <= j < liste.count():
+            return
+        it = liste.takeItem(i)
+        liste.insertItem(j, it)
+        liste.setCurrentRow(j)
+
     def _menueband(self, titel):
+        from lunivo_writer.ui.dialogs.oberflaeche_dialoge import IMMER, lade_json
+        from lunivo_writer.ui.ribbon.plan import plan
+        from lunivo_writer.ui.ribbon.ribbon_bar import STANDARD_VERSTECKT
         p = _Seite(self.w, titel)
-        f = p.gruppe("Register")
-        p.zeile(f, "Reiter ein- und ausblenden und die Reihenfolge ändern.")
-        b = QPushButton("Register anpassen …"); b.clicked.connect(self.w.befehle.registerAnpassen); f.addRow(b)
+        links, rechts, suche, b_hinzu, b_weg, auf, ab, unten = self._zwei_listen(
+            p, "Register, die ausgeblendet sind", "Menüband anpassen", "Hinzufügen", "Entfernen", "Ausgeblendete Register")
+        namen = [r["name"] for r in plan(self.w.band.daten) if not r.get("kontext") and r["name"] not in IMMER]
+        cfg = lade_json(self.w.settings, "ui/register_plan", {})
+        reihenfolge = [n for n in cfg.get("reihenfolge", []) if n in namen] + [n for n in namen if n not in cfg.get("reihenfolge", [])]
+        versteckt = set(cfg["versteckt"] if "versteckt" in cfg else STANDARD_VERSTECKT)
+        for n in reihenfolge:
+            (links if n in versteckt else rechts).addItem(n)
+
+        def speichern():
+            sichtbar = [rechts.item(i).text() for i in range(rechts.count())]
+            weg = [links.item(i).text() for i in range(links.count())]
+            self.w.settings.set("ui/register_plan", json.dumps({"reihenfolge": sichtbar + weg, "versteckt": weg}))
+            self._band_merken()
+
+        def verschiebe(von, nach):
+            it = von.currentItem()
+            if it is None or (nach is links and it.text() in IMMER):
+                return
+            if nach is links and rechts.count() <= 1 and von is rechts:
+                return                                           # mindestens ein Register bleibt
+            von.takeItem(von.row(it)); nach.addItem(it); nach.setCurrentItem(it)
+            speichern()
+        b_hinzu.clicked.connect(lambda: verschiebe(links, rechts))
+        b_weg.clicked.connect(lambda: verschiebe(rechts, links))
+        links.itemDoubleClicked.connect(lambda _i: verschiebe(links, rechts))
+        auf.clicked.connect(lambda: (self._schieben(rechts, -1), speichern()))
+        ab.clicked.connect(lambda: (self._schieben(rechts, 1), speichern()))
+        suche.textChanged.connect(lambda t: [links.item(i).setHidden(t.lower() not in links.item(i).text().lower())
+                                             for i in range(links.count())])
+        from PySide6.QtWidgets import QMenu
+        unten.addWidget(QLabel("Tastenkombinationen:"))
+        tk = QPushButton("Anzeigen …")
+        tk.clicked.connect(lambda: __import__("lunivo_writer.ui.dialogs.hilfe_dialoge", fromlist=["x"]).tastenkuerzel(self.w).show())
+        unten.addWidget(tk); unten.addStretch(1)
+        unten.addWidget(QLabel("Anpassungen:"))
+        zr = QPushButton("Zurücksetzen ▾")
+        m = QMenu(zr)
+        m.addAction("Nur das Menüband", lambda: (self.w.settings.remove("ui/register_plan"), self._band_merken(), self._band_jetzt()))
+        m.addAction("Alle Anpassungen (Register, Schnellzugriff, Symbole) …", self.w.befehle.vorlagenZurueck)
+        zr.setMenu(m)
+        unten.addWidget(zr)
         f = p.gruppe("Aussehen")
-        b2 = QPushButton("Benutzeroberfläche wählen …"); b2.clicked.connect(self.w.befehle.benutzeroberflaeche); f.addRow(b2)
-        b3 = QPushButton("Symbole austauschen …"); b3.clicked.connect(self.w.befehle.symbolTauschen); f.addRow(b3)
-        b4 = QPushButton("Auf die Vorgabe zurücksetzen …"); b4.clicked.connect(self.w.befehle.vorlagenZurueck); f.addRow(b4)
+        for text, fn in (("Benutzeroberfläche wählen …", self.w.befehle.benutzeroberflaeche),
+                         ("Symbole austauschen …", self.w.befehle.symbolTauschen)):
+            b = QPushButton(text); b.clicked.connect(lambda _=False, fn=fn: fn()); f.addRow(b)
         p.abschluss()
         return p
 
     def _schnellzugriff(self, titel):
+        from lunivo_writer.ui.dialogs.oberflaeche_dialoge import lade_json
+        from lunivo_writer.ui.ribbon.ribbon_bar import RegisterBand
+        from lunivo_writer.ui.widgets import icons
         p = _Seite(self.w, titel)
-        f = p.gruppe("Schnellzugriff")
-        p.zeile(f, "Welche Knöpfe neben dem ☰-Menü stehen.")
-        b = QPushButton("Schnellzugriff anpassen …"); b.clicked.connect(self.w.befehle.schnellzugriffAnpassen); f.addRow(b)
+        links, rechts, suche, b_hinzu, b_weg, auf, ab, unten = self._zwei_listen(
+            p, "Befehle auswählen", "Derzeit angezeigte Optionen", "Hinzufügen >>", "<< Entfernen", "Häufig verwendete Befehle")
+        alle = {aktion: (sym, name) for sym, name, aktion in RegisterBand.SCHNELL_ALLE}
+        vorgabe = [a for _s, _n, a in RegisterBand.SCHNELL]
+
+        def eintrag(aktion):
+            sym, name = alle[aktion]
+            it = QListWidgetItem(icons.icon(sym, 18), name)
+            it.setData(Qt.UserRole, aktion)
+            return it
+
+        def fuellen(aktuell):
+            links.clear(); rechts.clear()
+            for a in aktuell:
+                if a in alle:
+                    rechts.addItem(eintrag(a))
+            for a in alle:
+                if a not in aktuell:
+                    links.addItem(eintrag(a))
+        fuellen(lade_json(self.w.settings, "ui/schnellzugriff", None) or vorgabe)
+
+        def speichern():
+            self.w.settings.set("ui/schnellzugriff", json.dumps([rechts.item(i).data(Qt.UserRole) for i in range(rechts.count())]))
+            self._band_merken()
+
+        def verschiebe(von, nach):
+            it = von.currentItem()
+            if it is None:
+                return
+            von.takeItem(von.row(it)); nach.addItem(it); nach.setCurrentItem(it)
+            speichern()
+        b_hinzu.clicked.connect(lambda: verschiebe(links, rechts))
+        b_weg.clicked.connect(lambda: verschiebe(rechts, links))
+        links.itemDoubleClicked.connect(lambda _i: verschiebe(links, rechts))
+        rechts.itemDoubleClicked.connect(lambda _i: verschiebe(rechts, links))
+        auf.clicked.connect(lambda: (self._schieben(rechts, -1), speichern()))
+        ab.clicked.connect(lambda: (self._schieben(rechts, 1), speichern()))
+        suche.textChanged.connect(lambda t: [links.item(i).setHidden(t.lower() not in links.item(i).text().lower())
+                                             for i in range(links.count())])
+        unten.addStretch(1)
+        zr = QPushButton("Zurücksetzen")
+        zr.clicked.connect(lambda: (self.w.settings.remove("ui/schnellzugriff"), fuellen(vorgabe), self._band_merken()))
+        unten.addWidget(zr)
         p.abschluss()
         return p
 
@@ -904,39 +1043,58 @@ class OptionenAnsicht(QWidget):
         return p
 
     def _sicherheit(self, titel):
-        p = _Seite(self.w, titel, ["Ausgeblendete Markups beim Öffnen anzeigen"])
-        f = p.gruppe("Kennwortschutz (aktuelles Dokument)")
+        p = _Seite(self.w, titel)
         t = self.w.current_tab()
-        lab = QLabel()
-        f.addRow(lab)
+        f = p.gruppe("Kennwortschutz")
+        w = QWidget(); g = QGridLayout(w); g.setContentsMargins(0, 4, 0, 4); g.setHorizontalSpacing(10); g.setVerticalSpacing(8)
+        g.addWidget(QLabel("Dokumentkennwort"), 0, 0)
+        k1 = QLineEdit(); k1.setEchoMode(QLineEdit.Password); k1.setPlaceholderText("Kennwort")
+        k2 = QLineEdit(); k2.setEchoMode(QLineEdit.Password); k2.setPlaceholderText("Kennwort erneut eingeben")
+        g.addWidget(k1, 0, 1); g.addWidget(k2, 0, 2)
+        g.setColumnStretch(1, 1); g.setColumnStretch(2, 1)
+        f.addRow(w)
+        w.setProperty("optName", "Dokumentkennwort")
+        stand = QLabel(); stand.setWordWrap(True)
+        setzen = QPushButton("Kennwort setzen"); weg = QPushButton("Kennwort entfernen")
+        zeile = QWidget(); h = QHBoxLayout(zeile); h.setContentsMargins(0, 0, 0, 0)
+        h.addWidget(setzen); h.addWidget(weg); h.addStretch(1)
+        f.addRow(zeile)
+        f.addRow(stand)
 
-        def stand():
-            lab.setText("Kein Dokument geöffnet." if not t else
-                        "Das Dokument wird beim Speichern verschlüsselt." if t.meta.get("kennwort") else "Kein Kennwort gesetzt.")
-        stand()
-        if t:
-            setzen = QPushButton("Kennwort setzen / ändern …")
-            weg = QPushButton("Kennwort entfernen")
+        def zeige(meldung: str = ""):
+            if not t:
+                stand.setText("Kein Dokument geöffnet — das Kennwort gehört zum Dokument im aktuellen Fenster.")
+            elif meldung:
+                stand.setText(meldung)
+            else:
+                stand.setText("Das Dokument wird beim Speichern verschlüsselt." if t.meta.get("kennwort")
+                              else "Ohne Kennwort — die Datei ist im Klartext lesbar.")
+        for c in (k1, k2, setzen, weg):
+            c.setEnabled(t is not None)
 
-            def setze():
-                from PySide6.QtWidgets import QInputDialog
-                a, ok = QInputDialog.getText(self, "Kennwort", "Neues Kennwort:", QLineEdit.Password)
-                if not ok or not a:
-                    return
-                b, ok = QInputDialog.getText(self, "Kennwort", "Zur Bestätigung noch einmal:", QLineEdit.Password)
-                if not ok or a != b:
-                    QMessageBox.information(self, "Kennwort", "Die Eingaben stimmen nicht überein.")
-                    return
-                t.meta["kennwort"] = a
-                t.editor.document().setModified(True)
-                stand()
-            setzen.clicked.connect(setze)
-            weg.clicked.connect(lambda: (t.meta.pop("kennwort", None), t.editor.document().setModified(True), stand()))
-            f.addRow(setzen); f.addRow(weg)
-        p.hinweis("Verschlüsselt wird DOCX nach dem Office-Standard (AES) mit dem Paket msoffcrypto-tool. Ein vergessenes Kennwort "
-                  "lässt sich nicht wiederherstellen.")
+        def setze():
+            if not k1.text():
+                zeige("Bitte ein Kennwort eingeben."); return
+            if k1.text() != k2.text():
+                zeige("Die beiden Eingaben stimmen nicht überein."); return
+            t.meta["kennwort"] = k1.text()
+            t.editor.document().setModified(True)
+            k1.clear(); k2.clear()
+            zeige("Gesetzt — das Dokument wird ab dem nächsten Speichern verschlüsselt.")
+        setzen.clicked.connect(setze)
+        weg.clicked.connect(lambda: (t.meta.pop("kennwort", None), t.editor.document().setModified(True), k1.clear(), k2.clear(),
+                                     zeige("Entfernt — gilt ab dem nächsten Speichern.")))
+        zeige()
+        warn = md_label("**Ein vergessenes Kennwort kann niemand wiederherstellen.** Bewahre es an einem sicheren Ort auf.")
+        warn.setWordWrap(True); warn.setStyleSheet("color: palette(mid);")
+        f.addRow(warn)
+        sperre = QCheckBox("Bearbeitung sperren")
+        sperre.setChecked(bool(t and getattr(t, "gesperrt", False))); sperre.setEnabled(t is not None)
+        sperre.toggled.connect(lambda on: t and on != bool(getattr(t, "gesperrt", False)) and self.w.toggle_sperre())
+        f.addRow(sperre)
         f = p.gruppe("Datenschutz")
-        p.haken(f, "sicherheit/personendaten_weg", "Beim Speichern persönliche Daten (Autor) entfernen", False)
+        p.haken(f, "sicherheit/markup_oeffnen", "Ausgeblendete Markups beim Öffnen anzeigen", True)
+        p.haken(f, "sicherheit/personendaten_weg", "Beim Speichern persönliche Daten entfernen", False)
         p.abschluss()
         return p
 
@@ -977,68 +1135,195 @@ class OptionenAnsicht(QWidget):
 
     # ================= Nur bei Lunivo =================
     def _ki(self, titel):
+        from PySide6.QtCore import QUrl
+        from PySide6.QtGui import QDesktopServices
         p = _Seite(self.w, titel)
         k = self.w.ki.konfig
-        f = p.gruppe("Modell")
-        c = QComboBox()
-        c.addItem("(keines)", "")
-        for mid, name in K.MODELLE_FEST:
-            c.addItem(name, mid)
-        modelle = self.w.ki.ki.ollama_modelle()
-        for m in modelle:
-            c.addItem(f"Auf diesem Rechner: {m}", K.OLLAMA_MARKE + m)
-        for a in k["anbieter"]:
-            c.addItem(f"{a['name']} ({a['modell']})", K.EIGEN_MARKE + a["id"])
-        c.setCurrentIndex(max(0, c.findData(k["modell"])))
-        c.currentIndexChanged.connect(lambda _: (k.setze("modell", c.currentData()), self.w.ki.geaendert.emit()))
-        f.addRow("KI-Modell", c)
-        if not modelle:
-            p.zeile(f, "Ollama ist auf diesem Rechner nicht erreichbar — oder es ist kein Modell geholt.")
-        f = p.gruppe("Claude (Anthropic)")
-        e = QLineEdit(k["apiKey"]); e.setEchoMode(QLineEdit.Password); e.setPlaceholderText("Schlüssel (sk-ant-…)")
-        e.editingFinished.connect(lambda: (k.setze("apiKey", e.text().strip()), self.w.ki.geaendert.emit()))
-        f.addRow("Schlüssel", e)
-        f.addRow(QLabel(f"Gespeichert in {k.pfad} (nur für Sie lesbar). Bei Nutzung geht der Text an Anthropic — "
-                        "vorher fragt das Programm um Erlaubnis."))
-        p.zeile(f, f"Bisherige Kosten: {(K.als_geld(k['kosten']) if k['kosten'] else '0 $')}")
-        f = p.gruppe("Anbieter und Aufgaben")
-        p.zeile(f, "Eigene Anbieter (OpenAI-kompatibel, auch Ollama unter /v1) und welches Modell welche Aufgabe übernimmt — "
-                   "Chatbot, Zusammenfassen, Übersetzung, Textanalyse, Bildgenerierung.")
-        for text, fn in (("KI-Konfiguration …", self.w.befehle.w_kiKonfiguration),
-                         ("Eigenen Anbieter hinzufügen …", self.w.befehle.w_eigenenAnbieterHinzufuegen)):
-            b = QPushButton(text)
-            b.clicked.connect(lambda _=False, fn=fn: fn())
-            f.addRow(b)
-        f = p.gruppe("Für wen schreiben Sie? (Standard)")
-        e2 = QComboBox(); e2.addItems(EMPFAENGER)
-        e2.setCurrentText(self.w.assistant.thema)
-        e2.currentTextChanged.connect(self.w.assistant.setze_thema)
-        f.addRow("Empfänger", e2)
+        geaendert = self.w.ki.geaendert
+        f = p.gruppe("Prüfung und KI")
+        f.addRow(text_label("KI-Konfiguration", pt=11, umbruch=False))
+        combos: dict[str, QComboBox] = {}
+
+        def standard_name() -> str:
+            mid = k["modell"]
+            if not mid:
+                return "(keines)"
+            for m in k.alle_modelle():
+                if m["id"] == mid:
+                    return m["name"]
+            return mid[len(K.OLLAMA_MARKE):] if mid.startswith(K.OLLAMA_MARKE) else mid
+
+        def aufgaben_fuellen():
+            for aufgabe, c in combos.items():
+                c.blockSignals(True); c.clear()
+                c.addItem(f"Standard ({standard_name()})", "")
+                for m in k.alle_modelle():
+                    if aufgabe == "bildgenerierung" and ("bilder" not in m["verwendungFuer"] or not m["id"].startswith(K.EIGEN_MARKE)):
+                        continue
+                    c.addItem(m["name"] + ("  · lokal" if m["lokal"] else ""), m["id"])
+                c.setCurrentIndex(max(0, c.findData(k["aufgaben"].get(aufgabe, ""))))
+                c.blockSignals(False)
+        for aufgabe, name in K.AUFGABEN:
+            c = QComboBox()
+            combos[aufgabe] = c
+            c.currentIndexChanged.connect(lambda _i, a=aufgabe, c=c: (k.aufgabe_setzen(a, c.currentData() or ""), geaendert.emit()))
+            f.addRow(name, c)
+        mb = QPushButton("KI-Modelle bearbeiten"); mb.setFlat(True); mb.setCursor(Qt.PointingHandCursor)
+        mb.setStyleSheet("QPushButton { color: #5b9bd5; text-align: left; border: none; padding: 4px 0; }")
+        f.addRow(mb)
+
+        schluessel = QLineEdit(k["apiKey"]); schluessel.setEchoMode(QLineEdit.Password); schluessel.setPlaceholderText("sk-ant-…")
+        schluessel.setProperty("optName", "API-Schlüssel")
+        f.addRow("API-Schlüssel", schluessel)
+        hinweis = QLabel(); hinweis.setStyleSheet("color: palette(mid); font-size: 9pt;"); hinweis.setWordWrap(True)
+        f.addRow(hinweis)
+        zeile = QWidget(); h = QHBoxLayout(zeile); h.setContentsMargins(0, 0, 0, 0)
+        zeigen = QPushButton("Anzeigen"); zeigen.setCheckable(True)
+        kopie = QPushButton("Kopieren")
+        loeschen = QPushButton("Schlüssel löschen")
+        erstellen = QPushButton("Schlüssel erstellen ↗"); erstellen.setFlat(True); erstellen.setCursor(Qt.PointingHandCursor)
+        erstellen.setStyleSheet("QPushButton { color: #5b9bd5; border: none; }")
+        for b in (zeigen, kopie, loeschen, erstellen):
+            h.addWidget(b)
+        h.addStretch(1)
+        f.addRow(zeile)
+
+        def schluessel_stand():
+            hinweis.setText("Gespeichert in " + k.pfad + " (nur für dich lesbar). Bei Nutzung von Claude geht der Text an Anthropic — "
+                            "vorher fragt das Programm um Erlaubnis." if k["apiKey"] else
+                            "Kein Schlüssel — für das Modell auf diesem Rechner braucht es auch keinen.")
+            for b in (zeigen, kopie, loeschen):
+                b.setEnabled(bool(schluessel.text().strip()))
+        schluessel.editingFinished.connect(lambda: (k.setze("apiKey", schluessel.text().strip()), schluessel_stand(), geaendert.emit()))
+        schluessel.textChanged.connect(lambda _t: [b.setEnabled(bool(schluessel.text().strip())) for b in (zeigen, kopie, loeschen)])
+        zeigen.toggled.connect(lambda an: (schluessel.setEchoMode(QLineEdit.Normal if an else QLineEdit.Password),
+                                           zeigen.setText("Verbergen" if an else "Anzeigen")))
+        kopie.clicked.connect(lambda: QApplication.clipboard().setText(schluessel.text().strip()))
+
+        def loesche():
+            if QMessageBox.question(self, "Schlüssel löschen", "Den gespeicherten Schlüssel wirklich löschen?") == QMessageBox.Yes:
+                schluessel.clear(); k.setze("apiKey", ""); schluessel_stand(); geaendert.emit()
+        loeschen.clicked.connect(loesche)
+        erstellen.clicked.connect(lambda: QDesktopServices.openUrl(QUrl("https://console.anthropic.com/settings/keys")))
+
+        modell = QComboBox()
+        f.addRow("KI-Modell", modell)
+
+        def modell_fuellen():
+            modell.blockSignals(True); modell.clear()
+            modell.addItem("(keines)", "")
+            for mid, name in K.MODELLE_FEST:
+                modell.addItem(name, mid)
+            for m in self.w.ki.ki.ollama_modelle():
+                modell.addItem(f"Auf diesem Rechner: {m}", K.OLLAMA_MARKE + m)
+            for a in k["anbieter"]:
+                modell.addItem(f"{a['name']} ({a['modell']})", K.EIGEN_MARKE + a["id"])
+            modell.setCurrentIndex(max(0, modell.findData(k["modell"])))
+            modell.blockSignals(False)
+        modell.currentIndexChanged.connect(lambda _i: (k.setze("modell", modell.currentData()), aufgaben_fuellen(), geaendert.emit()))
+
+        anb = QWidget(); av = QVBoxLayout(anb); av.setContentsMargins(0, 4, 0, 4); av.setSpacing(6)
+        anb.setProperty("optName", "Eigene Anbieter")
+        f.addRow(QLabel("Eigene Anbieter"))
+        f.addRow(anb)
+        neuer = QPushButton("Anbieter hinzufügen …")
+        f.addRow(neuer)
+
+        def anbieter_fuellen():
+            while av.count():
+                it = av.takeAt(0)
+                if it.widget():
+                    it.widget().deleteLater()
+            if not k["anbieter"]:
+                av.addWidget(QLabel("Noch keiner angelegt — Ollama, OpenAI, OpenRouter, Gemini, Mistral …"))
+            for a in k["anbieter"]:
+                z = QWidget(); zh = QHBoxLayout(z); zh.setContentsMargins(0, 0, 0, 0)
+                teile = [a["modell"], "Lokaler Anbieter" if K.ist_lokale_url(a["url"]) else "Über das Internet"]
+                zh.addWidget(QLabel(f"{a['name']}  ·  {' · '.join(t for t in teile if t)}"), 1)
+                eb = QPushButton("Entfernen")
+                eb.clicked.connect(lambda _=False, i=a["id"]: (k.anbieter_entfernen(i), alles_neu(), geaendert.emit()))
+                zh.addWidget(eb)
+                av.addWidget(z)
+
+        def alles_neu():
+            aufgaben_fuellen(); modell_fuellen(); anbieter_fuellen()
+
+        def anbieter_neu():
+            from lunivo_writer.ui.dialogs.ki_dialoge import AnbieterDialog
+            if AnbieterDialog(self.w, k).exec():
+                alles_neu(); geaendert.emit()
+
+        def modelle_bearbeiten():
+            from lunivo_writer.ui.dialogs.ki_dialoge import ModellListeDialog
+            ModellListeDialog(self.w, k).exec()
+            alles_neu(); geaendert.emit()
+        neuer.clicked.connect(anbieter_neu)
+        mb.clicked.connect(modelle_bearbeiten)
+
+        f.addRow(QLabel("Eigene Assistenten"))
+        ass = QWidget(); sv = QVBoxLayout(ass); sv.setContentsMargins(0, 4, 0, 4); sv.setSpacing(6)
+        ass.setProperty("optName", "Eigene Assistenten")
+        f.addRow(ass)
+        na = QPushButton("Neuen Assistenten erstellen …")
+        f.addRow(na)
+
+        def assistenten_fuellen():
+            while sv.count():
+                it = sv.takeAt(0)
+                if it.widget():
+                    it.widget().deleteLater()
+            if not k["assistenten"]:
+                sv.addWidget(QLabel("Noch keiner angelegt."))
+            for a in k["assistenten"]:
+                z = QWidget(); zh = QHBoxLayout(z); zh.setContentsMargins(0, 0, 0, 0)
+                zh.addWidget(QLabel(a["name"]), 1)
+                eb = QPushButton("Entfernen")
+                eb.clicked.connect(lambda _=False, i=a["id"]: (k.assistent_entfernen(i), assistenten_fuellen()))
+                zh.addWidget(eb)
+                sv.addWidget(z)
+        na.clicked.connect(lambda: (self.w.befehle.w_assistentErstellen(), assistenten_fuellen()))
+
+        wen = QComboBox(); wen.addItems(EMPFAENGER)
+        wen.setCurrentText(self.w.assistant.thema)
+        wen.currentTextChanged.connect(self.w.assistant.setze_thema)
+        self.w.assistant.themaGeaendert.connect(lambda t: wen.currentText() != t and (wen.blockSignals(True), wen.setCurrentText(t), wen.blockSignals(False)))
+        f.addRow("Für wen der Text ist", wen)
+
+        verbrauch = QWidget(); vh = QHBoxLayout(verbrauch); vh.setContentsMargins(0, 2, 0, 2)
+        vh.addWidget(QLabel("Verbrauch"))
+        vh.addWidget(QLabel("Noch nichts verbraucht." if not k["kosten"] else f"Bisherige Kosten: {K.als_geld(k['kosten'])}"))
+        auf = QPushButton("Guthaben aufladen ↗"); auf.setFlat(True); auf.setCursor(Qt.PointingHandCursor)
+        auf.setStyleSheet("QPushButton { color: #5b9bd5; border: none; }")
+        auf.clicked.connect(lambda: QDesktopServices.openUrl(QUrl("https://console.anthropic.com/settings/billing")))
+        vh.addWidget(auf); vh.addStretch(1)
+        f.addRow(verbrauch)
+        alles_neu(); assistenten_fuellen(); schluessel_stand()
+        self.w.ki.geaendert.connect(lambda: (aufgaben_fuellen(), modell_fuellen(), anbieter_fuellen()))
         p.abschluss()
         return p
 
     def _gedaechtnis(self, titel):
+        from PySide6.QtWidgets import QFileDialog, QListWidget
         p = _Seite(self.w, titel)
         g = self.w.assistant.gelernt
-        f = p.gruppe("Was das Programm gelernt hat")
-        lab = QLabel()
-        f.addRow(lab)
-
-        def stand():
-            d = g.daten
-            lab.setText(f"{len(d['woerter'])} Wörter, die Sie richtiggestellt haben · {len(d['inRuhe'])} Wörter, die in Ruhe bleiben.")
-        stand()
         f = p.gruppe("Gelernte Schreibweisen")
-        from PySide6.QtWidgets import QListWidget
-        liste = QListWidget(); liste.setMinimumHeight(140)
+        zeile = QWidget(); h = QHBoxLayout(zeile); h.setContentsMargins(0, 2, 0, 2)
+        lab = QLabel(); lab.setStyleSheet("color: palette(mid);")
+        vergessen = QPushButton("vergessen")
+        h.addWidget(lab, 1); h.addWidget(vergessen)
+        f.addRow(zeile)
+        zeile.setProperty("optName", "Gelernte Schreibweisen")
+        liste = QListWidget(); liste.setMinimumHeight(120)
 
         def fuellen():
+            d = g.daten
+            lab.setText(f"{len(d['woerter'])} eigene Schreibweisen · {len(d['inRuhe'])} Wörter in Ruhe gelassen")
             liste.clear()
-            for alt, neu in sorted(g.daten["woerter"].items()):
+            for alt, neu in sorted(d["woerter"].items()):
                 liste.addItem(f"{alt} → {neu}")
-            for w_ in sorted(g.daten["inRuhe"]):
+            for w_ in sorted(d["inRuhe"]):
                 liste.addItem(f"{w_} (in Ruhe lassen)")
-        fuellen()
+            vergessen.setEnabled(bool(d["woerter"] or d["inRuhe"] or d["gezeigt"] or d["ki"]))
         f.addRow(liste)
         eb = QPushButton("Markierten Eintrag entfernen")
 
@@ -1051,17 +1336,44 @@ class OptionenAnsicht(QWidget):
                 g.daten["woerter"].pop(t.split(" → ")[0], None)
             else:
                 g.daten["inRuhe"].pop(t.replace(" (in Ruhe lassen)", ""), None)
-            g.speichern(); fuellen(); stand(); self.w.assistant.pruefen(voll=True)
+            g.speichern(); fuellen(); self.w.assistant.pruefen(voll=True)
         eb.clicked.connect(eintrag_weg)
-        f.addRow(eb)
-        b = QPushButton("Alles Gelernte vergessen")
 
         def weg():
             if QMessageBox.question(self, "Vergessen", "Wirklich alles Gelernte löschen?") == QMessageBox.Yes:
-                g.vergessen(); fuellen(); stand(); self.w.assistant.pruefen(voll=True)
-        b.clicked.connect(weg)
-        f.addRow(b)
-        p.hinweis("Das Gedächtnis liegt als Datei auf diesem Rechner und wird nur auf Ihren Wunsch an eine KI mitgeschickt (als Steckbrief).")
+                g.vergessen(); fuellen(); self.w.assistant.pruefen(voll=True)
+        vergessen.clicked.connect(weg)
+
+        def sichern():
+            pfad, _ = QFileDialog.getSaveFileName(self, "Gelerntes sichern", "gelernt.json", "JSON (*.json)")
+            if pfad:
+                try:
+                    with open(pfad, "w", encoding="utf-8") as fh:
+                        json.dump(g.daten, fh, ensure_ascii=False, indent=1)
+                except OSError as ex:
+                    QMessageBox.warning(self, "Sichern", f"Das ging nicht: {ex}")
+
+        def einspielen():
+            pfad, _ = QFileDialog.getOpenFileName(self, "Gelerntes einspielen", "", "JSON (*.json)")
+            if not pfad:
+                return
+            try:
+                with open(pfad, encoding="utf-8") as fh:
+                    neu = json.load(fh)
+                for key in g.daten:
+                    if isinstance(neu.get(key), dict):
+                        g.daten[key].update(neu[key])
+            except (OSError, ValueError) as ex:
+                QMessageBox.warning(self, "Einspielen", f"Das ging nicht: {ex}")
+                return
+            g.speichern(); fuellen(); self.w.assistant.pruefen(voll=True)
+        z2 = QWidget(); h2 = QHBoxLayout(z2); h2.setContentsMargins(0, 2, 0, 2)
+        b1 = QPushButton("Sichern"); b2 = QPushButton("Einspielen")
+        b1.clicked.connect(sichern); b2.clicked.connect(einspielen)
+        h2.addWidget(b1); h2.addWidget(b2); h2.addWidget(eb); h2.addStretch(1)
+        f.addRow(z2)
+        fuellen()
+        p.hinweis("Das Gedächtnis liegt als Datei auf diesem Rechner und wird nur auf deinen Wunsch an eine KI mitgeschickt (als Steckbrief).")
         p.abschluss()
         return p
 
@@ -1069,10 +1381,53 @@ class OptionenAnsicht(QWidget):
         from lunivo_writer.services.integrations import languagetool, libreoffice
         from lunivo_writer.services.settings_service import data_dir
         p = _Seite(self.w, titel)
-        f = p.gruppe("Angebundene Programme")
-        p.zeile(f, "LibreOffice (ODT/DOC/RTF-Umwandlung): " + (libreoffice.finde_soffice() or "nicht installiert"))
-        p.zeile(f, "LanguageTool (gründliche Prüfung): " + ("bereit" if languagetool.verfuegbar() else "nicht eingerichtet"))
-        p.zeile(f, "Sprachausgabe: " + ("Piper" if vorlesen.piper_da() else "speech-dispatcher" if vorlesen.spd_da() else "nicht eingerichtet"))
+
+        def groesse(pfad) -> str:
+            gesamt = 0
+            if pfad and os.path.exists(pfad):
+                if os.path.isfile(pfad):
+                    gesamt = os.path.getsize(pfad)
+                for wurzel, _d, dateien in os.walk(pfad):
+                    for n in dateien:
+                        try:
+                            gesamt += os.path.getsize(os.path.join(wurzel, n))
+                        except OSError:
+                            pass
+            mb = gesamt / 1048576
+            return "" if not gesamt else (f"{mb:.0f} MB" if mb >= 10 else f"{mb:.1f} MB".replace(".", ","))
+
+        soffice = libreoffice.finde_soffice()
+        lo_pfad = os.path.dirname(os.path.realpath(soffice)) if soffice else ""
+        lt = languagetool.jar_finden()
+        _prog, piper = vorlesen.piper_programm()
+        stimmen = vorlesen.piper_stimmen() if piper else []
+        schriften = [n for n in LESESCHRIFTEN if n in QFontDatabase.families()]
+        schr_ordner = os.path.expanduser("~/.local/share/fonts/lunivo-office")
+        karten = [
+            ("LibreOffice", "Word-Dateien, PDF und EPUB", bool(soffice), lo_pfad, "nicht installiert"),
+            ("LanguageTool", "„Gründlich prüfen“ — Grammatik über die eigenen Regeln hinaus", bool(lt), languagetool.ordner(), "./… holen"),
+            (f"Stimmen zum Vorlesen ({len(stimmen)})", "aufgenommene Stimmen statt der blechernen des Systems", bool(stimmen), piper, "stimme-holen.sh"),
+            (f"Schriften zum leichteren Lesen ({len(schriften)})", ", ".join(schriften) or "OpenDyslexic, Lexend, Atkinson Hyperlegible",
+             bool(schriften), schr_ordner, "schrift-holen.sh"),
+        ]
+        f = p.gruppe("Was zusätzlich geholt wurde")
+        for name, beschr, da, pfad, fehlt in karten:
+            k = QFrame(); k.setObjectName("optSchriftkarte")
+            h = QHBoxLayout(k); h.setContentsMargins(12, 10, 12, 10)
+            badge = QLabel("DA" if da else "—")
+            badge.setAlignment(Qt.AlignCenter); badge.setFixedWidth(36)
+            badge.setStyleSheet("background: %s; color: white; border-radius: 4px; font-weight: 700; font-size: 8pt; padding: 3px;"
+                                % ("#3aa57a" if da else "#6b7280"))
+            h.addWidget(badge, 0, Qt.AlignTop)
+            v = QVBoxLayout(); v.setSpacing(2)
+            v.addWidget(text_label(name, fett=True, umbruch=False))
+            b = QLabel(beschr if da else f"{beschr} — nicht vorhanden ({fehlt})")
+            b.setWordWrap(True); b.setStyleSheet("color: palette(mid); font-style: italic;")
+            v.addWidget(b)
+            h.addLayout(v, 1)
+            gr = QLabel(groesse(pfad) if da else ""); gr.setStyleSheet("color: palette(mid); font-size: 9pt;")
+            h.addWidget(gr, 0, Qt.AlignTop)
+            f.addRow(k)
         f = p.gruppe("Daten")
         p.zeile(f, data_dir())
         p.abschluss()

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from lunivo_writer.core import paths
 
 from PySide6.QtCore import QByteArray, QRectF, Qt
@@ -41,8 +42,12 @@ def uebersteuern(tausch: dict) -> None:
     _PFADE = dict(pfade_original())
     kat = katalog()
     for alt, neu in (tausch or {}).items():
-        if alt in _PFADE and neu in kat:
+        if alt not in _PFADE:
+            continue
+        if neu in kat:
             _PFADE[alt] = kat[neu]
+        elif str(neu).startswith(EIGEN):                         # eigene Zeichnung (siehe eigene_zeichnung)
+            _PFADE[alt] = neu
     leeren()
 
 
@@ -66,6 +71,17 @@ def katalog_bild(name: str, px: int = 96, farbe: str = "#1f2328", strich: float 
     p = QPainter(img)
     p.setRenderHint(QPainter.Antialiasing)
     QSvgRenderer(QByteArray(d)).render(p, QRectF(0, 0, px, px))
+    p.end()
+    return img
+
+
+def pfad_bild(pfad: str, px: int = 48, farbe: str = "#1f2328") -> QImage:
+    """Eine Zeichnung (Katalogpfad oder eigene) als Bild — für Vorschau und Auswahlfenster."""
+    img = QImage(px, px, QImage.Format_ARGB32)
+    img.fill(Qt.transparent)
+    p = QPainter(img)
+    p.setRenderHint(QPainter.Antialiasing)
+    QSvgRenderer(QByteArray(_svg(pfad, farbe))).render(p, QRectF(0, 0, px, px))
     p.end()
     return img
 
@@ -118,7 +134,42 @@ def hat(name: str) -> bool:
     return name in pfade()
 
 
+EIGEN = "#e#"          # Vorsatz einer eigenen Zeichnung im Austausch: #e# + JSON {d, s, x, y, f}
+
+
+def eigene_zeichnung(text: str, gefuellt: bool = False) -> str | None:
+    """SVG oder Pfaddaten → Zeichnung, auf 24 × 24 gebracht und mittig eingepasst (Zeichenkette für den Austausch).
+    ``None``, wenn daraus nichts Zeichenbares wird. Eine Zeichnung, die schon in 0–24 liegt, bleibt unverändert."""
+    text = (text or "").strip()
+    pfade_ = re.findall(r'\bd\s*=\s*"([^"]+)"', text)
+    d = " ".join(" ".join(pfade_).split()) if pfade_ else (" ".join(text.split()) if "<" not in text else "")
+    if not d or not re.fullmatch(r"[MmLlHhVvCcSsQqTtAaZz0-9eE\s,.+\-]+", d):
+        return None
+    probe = QSvgRenderer(QByteArray(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="-2000 -2000 6000 6000"><path id="p" d="{d}"/></svg>'.encode()))
+    if not probe.isValid():
+        return None
+    b = probe.boundsOnElement("p")
+    if b.width() <= 0 and b.height() <= 0:
+        return None
+    schon_24 = bool(re.search(r'viewBox\s*=\s*"\s*0[ ,]+0[ ,]+24[ ,]+24\s*"', text)) and b.left() >= -0.5 and b.top() >= -0.5 \
+        and b.right() <= 24.5 and b.bottom() <= 24.5
+    if schon_24:
+        s, x, y = 1.0, 0.0, 0.0
+    else:
+        s = 20.0 / max(b.width(), b.height(), 0.0001)
+        x, y = 12 - s * (b.left() + b.width() / 2), 12 - s * (b.top() + b.height() / 2)
+    return EIGEN + json.dumps({"d": d, "s": round(s, 5), "x": round(x, 4), "y": round(y, 4), "f": bool(gefuellt)})
+
+
 def _svg(pfad: str, farbe: str) -> bytes:
+    if pfad.startswith(EIGEN):
+        e = json.loads(pfad[len(EIGEN):])
+        s = e["s"]
+        zug = f'transform="translate({e["x"]} {e["y"]}) scale({s})"'
+        if e.get("f"):
+            return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path {zug} fill="{farbe}" d="{e["d"]}"/></svg>').encode()
+        return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="{farbe}" stroke-width="{STRICH / s:.4f}" '
+                f'stroke-linecap="round" stroke-linejoin="round"><path {zug} d="{e["d"]}"/></svg>').encode()
     return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="{farbe}" '
             f'stroke-width="{STRICH}" stroke-linecap="round" stroke-linejoin="round"><path d="{pfad}"/></svg>').encode()
 

@@ -144,6 +144,9 @@ class Symbolleisten(QWidget):
         a.setToolTip(tip)
         k.setDefaultAction(a)
         k.setToolTip(tip)
+        if icons.hat(sym):                                     # Rechtsklick: Symbol austauschen
+            k.setContextMenuPolicy(Qt.CustomContextMenu)
+            k.customContextMenuRequested.connect(lambda _p, s=sym: self.b.symbolTauschen(None, s))
         ok = self.b.hat(akt)
         if ok:
             a.triggered.connect(lambda _=False, t=akt, kk=k: (self.b.tun(t, kk), self.aktualisieren()))

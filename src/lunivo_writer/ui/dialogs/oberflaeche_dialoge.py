@@ -6,8 +6,8 @@ import json
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtWidgets import (
-    QCheckBox, QComboBox, QDialog, QDialogButtonBox, QHBoxLayout, QLabel, QLineEdit, QListWidget, QListWidgetItem,
-    QMessageBox, QPushButton, QRadioButton, QVBoxLayout,
+    QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFrame, QGridLayout, QHBoxLayout, QLabel, QLineEdit, QListWidget,
+    QListWidgetItem, QMessageBox, QPlainTextEdit, QPushButton, QRadioButton, QScrollArea, QToolButton, QVBoxLayout, QWidget,
 )
 
 from lunivo_writer.ui.baukasten import weitere_farben
@@ -102,74 +102,187 @@ class SchnellzugriffDialog(QDialog):
         self.accept()
 
 
-class SymbolTauschenDialog(QDialog):
-    """Ein Symbol des Programms durch eines der 1800 Lucide-Symbole ersetzen."""
+class EigeneZeichnungDialog(QDialog):
+    """„Eigene Zeichnung …“: eine SVG-Datei oder nur Pfaddaten hineinkopieren; die Vorschau zeichnet beim Tippen mit."""
 
-    def __init__(self, parent, settings):
+    def __init__(self, parent):
         super().__init__(parent)
-        self.settings = settings
-        self.setWindowTitle("Symbol austauschen")
-        self.resize(720, 520)
-        self.tausch = lade_json(settings, "ui/symbol_tausch", {})
-        h = QHBoxLayout(self)
-        links = QVBoxLayout(); rechts = QVBoxLayout()
-        h.addLayout(links, 1); h.addLayout(rechts, 2)
-        links.addWidget(QLabel("1. Welches Symbol?"))
-        self.such_a = QLineEdit(); self.such_a.setPlaceholderText("Suchen …"); links.addWidget(self.such_a)
-        self.alt = QListWidget(); self.alt.setIconSize(QSize(22, 22)); links.addWidget(self.alt)
-        rechts.addWidget(QLabel("2. Wodurch? (Name auf Englisch, z. B. heart, printer, star)"))
-        self.such_b = QLineEdit(); rechts.addWidget(self.such_b)
-        self.neu = QListWidget(); self.neu.setViewMode(QListWidget.IconMode); self.neu.setIconSize(QSize(36, 36))
-        self.neu.setGridSize(QSize(92, 66)); self.neu.setResizeMode(QListWidget.Adjust); rechts.addWidget(self.neu)
-        z = QHBoxLayout()
-        for text, fn in (("Austauschen", self._tauschen), ("Dieses Symbol zurücksetzen", self._zurueck)):
-            b = QPushButton(text); b.clicked.connect(fn); z.addWidget(b)
-        rechts.addLayout(z)
-        bb = QDialogButtonBox(QDialogButtonBox.Close); bb.rejected.connect(self.accept); rechts.addWidget(bb)
-        self.such_a.textChanged.connect(self._fuelle_alt); self.such_b.textChanged.connect(self._fuelle_neu)
-        self._fuelle_alt(""); self._fuelle_neu("")
+        self.setWindowTitle("Eigene Zeichnung")
+        self.wert: str | None = None
+        v = QVBoxLayout(self)
+        t = QLabel("Eigene Zeichnung"); f = t.font(); f.setBold(True); f.setPointSizeF(f.pointSizeF() + 2); t.setFont(f)
+        v.addWidget(t)
+        satz = QLabel("Eine SVG-Datei hier hineinkopieren — oder nur die Pfaddaten. Sie wird auf 24 × 24 gebracht und mittig eingepasst.")
+        satz.setWordWrap(True); v.addWidget(satz)
+        z = QHBoxLayout(); v.addLayout(z)
+        self.feld = QPlainTextEdit(); self.feld.setPlaceholderText('<svg viewBox="0 0 24 24">…</svg>')
+        self.feld.setMinimumSize(460, 170)
+        z.addWidget(self.feld, 1)
+        rechts = QVBoxLayout(); z.addLayout(rechts)
+        self.bild = QLabel(); self.bild.setFixedSize(96, 96); self.bild.setAlignment(Qt.AlignCenter)
+        self.bild.setStyleSheet("border: 1px solid palette(midlight); border-radius: 8px;")
+        self.wort = QLabel("Noch nichts"); self.wort.setAlignment(Qt.AlignCenter); self.wort.setWordWrap(True); self.wort.setMaximumWidth(110)
+        rechts.addWidget(self.bild); rechts.addWidget(self.wort); rechts.addStretch(1)
+        self.gefuellt = QCheckBox("Gefüllt zeichnen (für Zeichnungen aus Flächen statt Strichen)")
+        v.addWidget(self.gefuellt)
+        zu = QHBoxLayout(); zu.addStretch(1)
+        ab = QPushButton("Abbrechen"); ok = QPushButton("Übernehmen"); ok.setDefault(True)
+        ab.clicked.connect(self.reject); ok.clicked.connect(self._ok)
+        zu.addWidget(ab); zu.addWidget(ok)
+        v.addLayout(zu)
+        self.feld.textChanged.connect(self._schau); self.gefuellt.toggled.connect(self._schau)
+        self._schau()
 
-    def _fuelle_alt(self, q):
-        self.alt.clear()
-        q = q.lower().strip()
-        for n in sorted(icons.pfade_original()):
-            if q and q not in n.lower():
-                continue
-            it = QListWidgetItem(icons.icon(n, 22), n + ("  →  " + self.tausch[n] if n in self.tausch else ""))
-            it.setData(Qt.UserRole, n)
-            self.alt.addItem(it)
-
-    def _fuelle_neu(self, q):
-        self.neu.clear()
-        q = q.lower().strip()
-        k = 0
-        for n in sorted(icons.katalog()):
-            if q and q not in n:
-                continue
-            it = QListWidgetItem(QIcon(QPixmap.fromImage(icons.katalog_bild(n, 36, "#444444"))), n)
-            it.setData(Qt.UserRole, n)
-            self.neu.addItem(it)
-            k += 1
-            if k >= 200:
-                break
-
-    def _tauschen(self):
-        a, n = self.alt.currentItem(), self.neu.currentItem()
-        if not a or not n:
-            QMessageBox.information(self, "Symbol austauschen", "Links ein Symbol und rechts das neue wählen.")
+    def _schau(self) -> None:
+        self.wert = icons.eigene_zeichnung(self.feld.toPlainText(), self.gefuellt.isChecked())
+        if self.wert is None:
+            self.bild.clear()
+            self.wort.setText("Daraus wird keine Zeichnung." if self.feld.toPlainText().strip() else "Noch nichts")
             return
-        self.tausch[a.data(Qt.UserRole)] = n.data(Qt.UserRole)
-        self._speichern(); self._fuelle_alt(self.such_a.text())
+        farbe = self.palette().color(self.foregroundRole()).name()
+        self.bild.setPixmap(QPixmap.fromImage(icons.pfad_bild(self.wert, 80, farbe)))
+        self.wort.setText("So kommt sie in die Leiste.")
 
-    def _zurueck(self):
-        a = self.alt.currentItem()
-        if a and a.data(Qt.UserRole) in self.tausch:
-            del self.tausch[a.data(Qt.UserRole)]
-            self._speichern(); self._fuelle_alt(self.such_a.text())
+    def _ok(self) -> None:
+        if self.wert is None:
+            QMessageBox.information(self, "Eigene Zeichnung", "Daraus wird keine Zeichnung — steht wirklich eine SVG darin?")
+            return
+        self.accept()
 
-    def _speichern(self):
+
+class SymbolTauschenDialog(QDialog):
+    """Ein Symbol austauschen — wie in der ersten Fassung: Getauscht wird die Zeichnung, nicht der Knopf; sie ändert sich überall,
+    wo sie benutzt wird. Oben steht, wo das ist. Dazu Suche, 1800 Zeichnungen, eigene Zeichnung und Zurücksetzen."""
+    GRENZE = 240
+    SPALTEN = 7
+
+    def __init__(self, parent, settings, name: str | None = None):
+        super().__init__(parent)
+        self.w, self.settings = parent, settings
+        self.setWindowTitle("Symbol austauschen")
+        self.setMinimumSize(520, 560)
+        self.tausch = lade_json(settings, "ui/symbol_tausch", {})
+        self._anfang = dict(self.tausch)
+        self.geaendert = False
+        namen = icons.pfade_original()
+        self.welches = name if name in namen else next(iter(namen))
+        v = QVBoxLayout(self)
+        t = QLabel("Symbol austauschen"); f = t.font(); f.setBold(True); f.setPointSizeF(f.pointSizeF() + 2); t.setFont(f)
+        v.addWidget(t)
+        satz = QLabel("Getauscht wird die Zeichnung, nicht der Knopf — sie ändert sich überall, wo sie benutzt wird. Oben steht, wo das ist.")
+        satz.setWordWrap(True); satz.setStyleSheet("color: palette(mid);"); v.addWidget(satz)
+        kopf = QFrame(); kopf.setObjectName("tauschKopf")
+        kopf.setStyleSheet("QFrame#tauschKopf { border: 1px solid palette(midlight); border-radius: 8px; }")
+        kh = QHBoxLayout(kopf)
+        self.jetzt = QLabel(); self.jetzt.setFixedSize(40, 40); self.jetzt.setAlignment(Qt.AlignCenter)
+        self.wo = QLabel(); self.wo.setWordWrap(True)
+        kh.addWidget(self.jetzt); kh.addWidget(self.wo, 1)
+        v.addWidget(kopf)
+        self.suche = QLineEdit(); self.suche.setClearButtonEnabled(True)
+        self.suche.setPlaceholderText("Zeichnung suchen … (englisch: table, clock, save)")
+        v.addWidget(self.suche)
+        sc = QScrollArea(); sc.setWidgetResizable(True)
+        self.gitter_halter = QWidget(); self.gitter = QGridLayout(self.gitter_halter)
+        self.gitter.setSpacing(4); self.gitter.setAlignment(Qt.AlignTop)
+        sc.setWidget(self.gitter_halter)
+        v.addWidget(sc, 1)
+        fuss = QHBoxLayout(); v.addLayout(fuss)
+        self.b_eigene = QPushButton("Eigene Zeichnung …"); self.b_dieses = QPushButton("Dieses zurücksetzen"); self.b_alle = QPushButton("Alle zurücksetzen")
+        for b in (self.b_eigene, self.b_dieses, self.b_alle):
+            fuss.addWidget(b)
+        fuss.addStretch(1)
+        self.meldung = QLabel(); self.meldung.setStyleSheet("color: palette(mid);"); v.addWidget(self.meldung)
+        zu = QHBoxLayout(); zu.addStretch(1)
+        ab = QPushButton("Abbrechen"); fertig = QPushButton("Fertig"); fertig.setDefault(True)
+        ab.clicked.connect(self._abbrechen); fertig.clicked.connect(self.accept)
+        zu.addWidget(ab); zu.addWidget(fertig)
+        v.addLayout(zu)
+        self.suche.textChanged.connect(self._gitter_zeigen)
+        self.b_eigene.clicked.connect(self._eigene)
+        self.b_dieses.clicked.connect(self._dieses_zurueck)
+        self.b_alle.clicked.connect(self._alle_zurueck)
+        self._kopf_zeigen()
+        self._gitter_zeigen()
+
+    # ---- Kopf: welches Symbol, und wo es steht --------------------------------------------------------------------
+    def _befehle(self) -> list[str]:
+        namen: list[str] = []
+        try:
+            for r in plan(self.w.band.daten):
+                for g in r.get("gruppen", []):
+                    for k in g.get("knoepfe", []):
+                        if k.get("symbol") == self.welches and k.get("name") and k["name"] not in namen:
+                            namen.append(k["name"])
+        except Exception:
+            pass
+        return namen
+
+    def _kopf_zeigen(self) -> None:
+        self.jetzt.setPixmap(icons.icon(self.welches, 32).pixmap(32, 32))
+        b = self._befehle()
+        self.wo.setText((", ".join(b[:4]) + (" und weitere" if len(b) > 4 else "")) if b else "Wird zurzeit nirgends im Register benutzt.")
+        self.b_dieses.setEnabled(self.welches in self.tausch)
+
+    # ---- Auswahl --------------------------------------------------------------------------------------------------
+    def _gitter_zeigen(self) -> None:
+        while self.gitter.count():
+            it = self.gitter.takeAt(0)
+            if it.widget():
+                it.widget().hide(); it.widget().setParent(None); it.widget().deleteLater()
+        wort = self.suche.text().strip().lower()
+        gezeigt = gefunden = 0
+        farbe = self.palette().color(self.foregroundRole()).name()
+        for n, pfad in icons.katalog().items():
+            if wort and wort not in n.lower():
+                continue
+            gefunden += 1
+            if gezeigt >= self.GRENZE:
+                continue
+            k = QToolButton(); k.setFixedSize(52, 52); k.setToolTip(n); k.setAutoRaise(True)
+            k.setIcon(QIcon(QPixmap.fromImage(icons.pfad_bild(pfad, 56, farbe)))); k.setIconSize(QSize(28, 28))
+            k.clicked.connect(lambda _=False, n=n: self._waehle(n))
+            self.gitter.addWidget(k, gezeigt // self.SPALTEN, gezeigt % self.SPALTEN)
+            gezeigt += 1
+        if not gefunden:
+            self.gitter.addWidget(QLabel("Keine Zeichnung mit diesem Namen."), 0, 0, 1, self.SPALTEN)
+        elif gefunden > self.GRENZE:
+            self.gitter.addWidget(QLabel(f"{gefunden} gefunden, {self.GRENZE} gezeigt — die Suche genauer machen."),
+                                  gezeigt // self.SPALTEN + 1, 0, 1, self.SPALTEN)
+
+    # ---- Wirkung --------------------------------------------------------------------------------------------------
+    def _anwenden(self, meldung: str) -> None:
         self.settings.set("ui/symbol_tausch", json.dumps(self.tausch))
         icons.uebersteuern(self.tausch)
+        self.geaendert = True
+        self._kopf_zeigen()
+        self.meldung.setText(meldung)
+
+    def _waehle(self, katalogname: str) -> None:
+        self.tausch[self.welches] = katalogname
+        self._anwenden(f"Symbol getauscht: {katalogname}.")
+
+    def _eigene(self) -> None:
+        d = EigeneZeichnungDialog(self)
+        if d.exec() and d.wert:
+            self.tausch[self.welches] = d.wert
+            self._anwenden("Eigene Zeichnung übernommen.")
+
+    def _dieses_zurueck(self) -> None:
+        self.tausch.pop(self.welches, None)
+        self._anwenden("Zurückgesetzt.")
+
+    def _alle_zurueck(self) -> None:
+        self.tausch = {}
+        self._anwenden("Alle Symbole wieder wie ausgeliefert.")
+
+    def _abbrechen(self) -> None:
+        """Abbrechen nimmt zurück, was in diesem Fenster getauscht wurde."""
+        if self.tausch != self._anfang:
+            self.tausch = dict(self._anfang)
+            self.settings.set("ui/symbol_tausch", json.dumps(self.tausch))
+            icons.uebersteuern(self.tausch)
+            self.geaendert = True
+        self.reject()
 
 
 class OberflaecheDialog(QDialog):
