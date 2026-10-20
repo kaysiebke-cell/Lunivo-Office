@@ -1,5 +1,5 @@
 """Fußnoten am Seitenfuß (Druck, PDF, Seitenansicht) und Sprungverweise im PDF."""
-from PySide6.QtGui import QPdfWriter, QTextCharFormat, QTextCursor
+from PySide6.QtGui import QPdfWriter, QTextBlockFormat, QTextCharFormat, QTextCursor
 from pypdf import PdfReader
 
 from lunivo_writer.ui.document.document_editor import DocumentEditor
@@ -11,6 +11,9 @@ from lunivo_writer.editor.zusatz import P_NOTE
 def _mit_noten(zeilen=140, marken=(10, 60, 61)):
     ed = DocumentEditor()
     ed.setPlainText("\n".join(f"Zeile {i} mit Text" for i in range(zeilen)))
+    c = QTextCursor(ed.document()); c.select(QTextCursor.Document)      # feste Zeilenhöhe: die Seitenumbrüche hängen nicht von der Schrift des Rechners ab
+    bf = QTextBlockFormat(); bf.setLineHeight(20, QTextBlockFormat.FixedHeight.value if hasattr(QTextBlockFormat.FixedHeight, "value") else 2)
+    c.setBlockFormat(bf)
     noten = {"f": {}, "e": {}}
     for k, nr in enumerate(marken, start=1):
         c = QTextCursor(ed.document().findBlockByNumber(nr))
