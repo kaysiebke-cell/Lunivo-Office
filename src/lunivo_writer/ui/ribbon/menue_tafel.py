@@ -2,13 +2,40 @@
 from __future__ import annotations
 
 import os
+from datetime import datetime
 
-from PySide6.QtCore import Qt, QPoint
+from PySide6.QtCore import QPoint, QSize, Qt
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QFrame, QHBoxLayout, QLabel, QPushButton, QToolButton, QVBoxLayout, QWidget,
 )
 
 from lunivo_writer.ui.baukasten.beschriftung import md_escape, md_label, text_label
+from lunivo_writer.ui.baukasten.datei_symbole import datei_symbol
+
+
+# Symbole der Menüpunkte aus dem Icon-Theme des Systems (Freedesktop-Namen); was das Theme nicht kennt, bleibt ohne Symbol
+_MENUE_SYMBOLE = {
+    "Neu": "document-new", "Neu aus Vorlage": "document-new", "Öffnen": "document-open", "Speichern": "document-save",
+    "Speichern unter": "document-save-as", "Drucken": "document-print", "Druckvorschau": "document-print-preview",
+    "Druckereinstellungen": "document-page-setup", "Dokumenteigenschaften": "document-properties", "Umbenennen": "document-edit",
+    "Schließen": "window-close", "Hilfe": "help-browser", "Optionen": "preferences-system", "Beenden": "application-exit",
+    "Vorlagenordner": "folder-templates", "Zuletzt geöffnet": "document-open-recent",
+}
+
+
+def _menue_symbol(name: str) -> QIcon:
+    if name == "Als PDF exportieren":
+        return datei_symbol(".pdf")
+    return QIcon.fromTheme(_MENUE_SYMBOLE.get(name, ""))
+
+
+def _datum(pfad: str) -> str:
+    """Änderungsdatum der Datei für die Liste „Zuletzt verwendet“ (leer, wenn es sie nicht mehr gibt)."""
+    try:
+        return datetime.fromtimestamp(os.path.getmtime(pfad)).strftime("%d.%m. %H:%M")
+    except OSError:
+        return "nicht mehr da"
 
 
 class MenueTafel(QFrame):
@@ -39,6 +66,9 @@ class MenueTafel(QFrame):
             name = p["name"]
             taste = p.get("taste", "")
             b = QPushButton(f"{name}" + ("   ›" if p.get("unter") or name == "Zuletzt geöffnet" else ""))
+            sym = _menue_symbol(name)
+            if not sym.isNull():
+                b.setIcon(sym); b.setIconSize(QSize(22, 22))
             b.setFlat(True)
             b.setStyleSheet("text-align: left; padding: 5px 8px;")
             if taste:
@@ -91,13 +121,16 @@ class MenueTafel(QFrame):
         for pfad in items[:10]:
             z = QHBoxLayout()
             b = QPushButton(f"{os.path.basename(pfad)}\n{os.path.dirname(pfad)}")
+            b.setIcon(datei_symbol(pfad)); b.setIconSize(QSize(28, 28))
             b.setFlat(True)
             b.setStyleSheet("text-align: left; padding: 3px 6px; font-size: 9pt;")
             b.clicked.connect(lambda _=False, p=pfad: (self.close(), self.w.open_path(p)))
             x = QToolButton(); x.setText("×"); x.setAutoRaise(True)
             x.setToolTip("Aus der Liste nehmen — die Datei bleibt liegen")
             x.clicked.connect(lambda _=False, p=pfad: (self.w.settings.remove_recent(p), self._zeige_zuletzt()))
-            z.addWidget(b, 1); z.addWidget(x)
+            datum = text_label(_datum(pfad), umbruch=False)
+            datum.setStyleSheet("color: palette(mid); font-size: 9pt;")
+            z.addWidget(b, 1); z.addWidget(datum); z.addWidget(x)
             zw = QWidget(); zw.setLayout(z)
             self.rechts.addWidget(zw)
 
@@ -108,6 +141,8 @@ class MenueTafel(QFrame):
             if u.get("trenner"):
                 continue
             b = QPushButton(u["name"])
+            if u.get("datei"):                                     # Dateiformat: Symbol aus dem Icon-Theme des Systems
+                b.setIcon(datei_symbol(u["datei"])); b.setIconSize(QSize(24, 24))
             b.setFlat(True)
             b.setStyleSheet("text-align: left; padding: 4px 8px;")
             ok = bool(u.get("tun")) and self.b.hat(u["tun"])

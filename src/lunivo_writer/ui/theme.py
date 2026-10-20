@@ -32,6 +32,17 @@ FARBEN = {
                griff_h="#5a6169"),
 }
 
+# „Weicher Kontrast“ (Optionen ▸ Ansicht): dunkel ein Anthrazit statt fast Schwarz, hell ein warmes Creme statt Weiß-auf-Grau
+WEICH = False
+WEICHE_FARBEN = {
+    False: dict(bg="#efebe3", flaeche="#f5f2ec", karte="#ffffff", tafel="#f5f2ec", feld="#ffffff", dokleiste="#efebe3", rand="#c9c3b8",
+                text="#232019", text2="#5a5449", hover="#e4dfd5", akzent="#2f6fb5", weich="#d8e6f7", grau="#86806f", griff="#c9c3b8",
+                griff_h="#b3ac9e"),
+    True: dict(bg="#3d444b", flaeche="#3d444b", karte="#434b53", tafel="#394046", feld="#343a40", dokleiste="#343a40", rand="#525b63",
+               text="#dde2e6", text2="#afb7be", hover="#4a525a", akzent="#4a8fd8", weich="#35506b", grau="#8c949b", griff="#59626b",
+               griff_h="#6b747d"),
+}
+
 QSS = """
 QToolButton { border: none; border-radius: 5px; padding: 2px; background: transparent; }
 QToolButton:hover { background: %(hover)s; }
@@ -75,6 +86,9 @@ QSlider::sub-page:horizontal { background: %(akzent)s; border-radius: 2px; }
 QSlider::handle:horizontal { background: %(karte)s; border: 2px solid %(akzent)s; width: 10px; height: 10px; margin: -6px 0; border-radius: 7px; }
 QCheckBox::indicator { width: 15px; height: 15px; border: 1px solid %(grau)s; border-radius: 4px; background: %(karte)s; }
 QCheckBox::indicator:checked { background: %(akzent)s; border-color: %(akzent)s; }
+QRadioButton::indicator { width: 14px; height: 14px; border: 1px solid %(grau)s; border-radius: 8px; background: %(feld)s; }
+QRadioButton::indicator:checked { border: 4px solid %(akzent)s; background: white; }
+QRadioButton { spacing: 8px; padding: 3px 0; }
 QGroupBox { border: 1px solid %(rand)s; border-radius: 8px; margin-top: 12px; padding-top: 8px; }
 QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 4px; color: %(grau)s; }
 QTreeWidget, QListWidget { border: 1px solid %(rand)s; border-radius: 6px; background: %(karte)s; outline: 0; }
@@ -130,7 +144,7 @@ def _kreuz(farbe: str) -> str:
 
 
 def _stil(app: QApplication) -> None:
-    f = dict(FARBEN[_ist_dunkel(app)])
+    f = dict((WEICHE_FARBEN if WEICH else FARBEN)[_ist_dunkel(app)])
     f["pfeil_unten"], f["pfeil_oben"] = _pfeile(f["text"])
     f["x_bild"] = _kreuz(f["grau"])
     app.setStyleSheet(QSS % f)
@@ -159,17 +173,34 @@ def _setze(app: QApplication, mode: str) -> None:
             p.setColor(QPalette.Disabled, rolle, grau)
         p.setColor(QPalette.Disabled, QPalette.Base, QColor(38, 41, 45))
         p.setColor(QPalette.Disabled, QPalette.Highlight, QColor(80, 86, 94))
+        if WEICH:
+            fenster, flaeche, knopf, schrift = QColor(61, 68, 75), QColor(52, 58, 64), QColor(67, 75, 83), QColor(221, 226, 230)
+            for rolle, farbe in ((QPalette.Window, fenster), (QPalette.Base, flaeche), (QPalette.Dark, flaeche), (QPalette.Button, knopf),
+                                 (QPalette.AlternateBase, knopf), (QPalette.WindowText, schrift), (QPalette.Text, schrift),
+                                 (QPalette.ButtonText, schrift), (QPalette.Mid, QColor(140, 148, 155)), (QPalette.ToolTipBase, flaeche)):
+                p.setColor(rolle, farbe)
         app.setPalette(p)
     elif mode == "light":
-        p = QPalette()
         app.setPalette(app.style().standardPalette())
-        pal = app.palette(); pal.setColor(QPalette.Dark, QColor(226, 229, 234)); app.setPalette(pal)
+        _hell_feinschliff(app)
     else:
         app.setPalette(app.style().standardPalette())
         if _ist_dunkel(app):
             _setze(app, "dark")                                     # dunkles System: dieselbe Palette wie „Immer dunkel“
         else:
-            pal = app.palette(); pal.setColor(QPalette.Dark, QColor(226, 229, 234)); app.setPalette(pal)
+            _hell_feinschliff(app)
+
+
+def _hell_feinschliff(app: QApplication) -> None:
+    """Helle Palette: Fläche um das Blatt; mit „Weichem Kontrast“ warme Töne."""
+    pal = app.palette()
+    pal.setColor(QPalette.Dark, QColor(215, 210, 200) if WEICH else QColor(226, 229, 234))
+    if WEICH:
+        for rolle, farbe in ((QPalette.Window, QColor(239, 235, 227)), (QPalette.Button, QColor(245, 242, 236)),
+                             (QPalette.WindowText, QColor(35, 32, 25)), (QPalette.Text, QColor(35, 32, 25)),
+                             (QPalette.ButtonText, QColor(35, 32, 25)), (QPalette.Mid, QColor(134, 128, 111))):
+            pal.setColor(rolle, farbe)
+    app.setPalette(pal)
 
 
 def Qt_white() -> QColor:

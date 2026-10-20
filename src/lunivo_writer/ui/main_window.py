@@ -4,7 +4,7 @@ from __future__ import annotations
 import os
 from datetime import datetime
 
-from PySide6.QtCore import Qt, QTimer, QUrl
+from PySide6.QtCore import QEvent, QObject, QTimer, QUrl, Qt, Signal
 from PySide6.QtGui import QAction, QActionGroup, QColor, QDesktopServices, QFont, QKeySequence, QPalette, QTextFormat
 from PySide6.QtPrintSupport import QPrintDialog, QPrintPreviewDialog, QPrinter
 from PySide6.QtWidgets import (
@@ -41,7 +41,20 @@ MARGIN_PRESETS = {
 }
 
 
+class _QuickInfo(QObject):
+    """Schluckt die Hinweistexte (QuickInfo) an Knöpfen und Feldern, wenn sie ausgeschaltet sind (Optionen ▸ Ansicht)."""
+
+    def __init__(self):
+        super().__init__()
+        self.an = True
+
+    def eventFilter(self, obj, ev):
+        return (not self.an) and ev.type() == QEvent.ToolTip
+
+
 class MainWindow(QMainWindow):
+    lesehilfe_geaendert = Signal()                  # Lesestufe, Papier, Abstände, Zeilenfokus, Silben farbig: Seitenleiste und Optionen ziehen nach
+
     def __init__(self, settings: Settings | None = None):
         super().__init__()
         self.settings = settings or Settings()
@@ -491,6 +504,19 @@ class MainWindow(QMainWindow):
         t = self.current_tab()
         return self._save_tab_as(t) if t else False
 
+    def save_as_format(self, ext: str) -> bool:
+        """Speichern unter mit festem Dateiformat (Untermenü „Speichern unter ▸“); das Dokument gehört danach zur neuen Datei."""
+        t = self.current_tab()
+        if not t:
+            return False
+        path = self._ask_path(t, "Speichern unter", only=ext)
+        if not path or not self._write(t, path):
+            return False
+        t.set_path(path)
+        self.settings.add_recent(path)
+        self._update_tab_titles()
+        return True
+
     def _ask_path(self, tab: DocumentTab, title: str, only: str | None = None) -> str | None:
         folder = os.path.dirname(tab.path) if tab.path else (self.settings.get("speichern/ordner", "") or
                                                              self.settings.get("last_dir", os.path.expanduser("~")))
@@ -899,6 +925,10 @@ class MainWindow(QMainWindow):
         s = self.settings
         e.set_lesehilfe(PAPIERTOENE.get(s.get("lesehilfe/papier", "Weiß"), "#ffffff"),
                         float(s.get("lesehilfe/buchstaben", 0)), float(s.get("lesehilfe/wort", 0)))
+        e.set_zeilenfokus(s.get_bool("lesehilfe/zeilenfokus", False))
+        e.set_lesefokus({"etwas": 1.05, "deutlich": 1.10}.get(str(s.get("lesehilfe/groesser", "keine")), 1.0),
+                        {"etwas": 0.62, "deutlich": 0.38}.get(str(s.get("lesehilfe/zurueck", "keine")), 1.0))
+        e.setAcceptDrops(s.get_bool("bearbeiten/ziehen", True))          # Text mit der Maus verschieben
         self.silbenfarben_anwenden(e)
         self.versteckt_anwenden(e)
 
@@ -928,6 +958,8 @@ class MainWindow(QMainWindow):
         k = S.konfig_lesen(self.settings)
         for ed in ([e] if e is not None else [t.editor for t in self._doc_tabs()]):
             ed.set_silbenfarben(k)
+        if e is None:
+            self.lesehilfe_geaendert.emit()
 
     def lineale_anwenden(self, tab=None):
         h = self.settings.get_bool("ansicht/lineal", False)
@@ -937,28 +969,54 @@ class MainWindow(QMainWindow):
         self.band.aktualisieren(self.current_tab() is not None)
 
     def formatzeichen_anwenden(self, e=None):
-        """Formatierungszeichen für neue Reiter: Zustand aus Optionen (ui/steuerzeichen)."""
+        """Formatierungszeichen für Reiter: Absatzmarken und Leerzeichen/Tabstopps getrennt (Optionen ▸ Ansicht)."""
         from PySide6.QtGui import QTextOption
-        an = self.settings.get_bool("ui/steuerzeichen", False)
-        self.marks_on = an
+        alt = self.settings.get_bool("ui/steuerzeichen", False)            # früherer gemeinsamer Schalter
+        absatz = self.settings.get_bool("ui/marken_absatz", alt)
+        leer = self.settings.get_bool("ui/marken_leer", alt)
+        self.marks_on = absatz or leer
         for ed in ([e] if e is not None else [t.editor for t in self._doc_tabs()]):
             opt = ed.document().defaultTextOption()
-            fl = QTextOption.ShowTabsAndSpaces | QTextOption.ShowLineAndParagraphSeparators
-            opt.setFlags(opt.flags() | fl if an else opt.flags() & ~fl)
+            fl = opt.flags()
+            fl = fl | QTextOption.ShowLineAndParagraphSeparators if absatz else fl & ~QTextOption.ShowLineAndParagraphSeparators
+            fl = fl | QTextOption.ShowTabsAndSpaces if leer else fl & ~QTextOption.ShowTabsAndSpaces
+            opt.setFlags(fl)
             ed.document().setDefaultTextOption(opt)
+
+    def marken_setzen(self, absatz: bool | None = None, leer: bool | None = None):
+        """Absatzmarken und/oder Leerzeichen und Tabstopps ein- oder ausschalten (None = unverändert)."""
+        alt = self.settings.get_bool("ui/steuerzeichen", False)
+        a = self.settings.get_bool("ui/marken_absatz", alt) if absatz is None else absatz
+        l = self.settings.get_bool("ui/marken_leer", alt) if leer is None else leer
+        self.settings.set("ui/marken_absatz", a); self.settings.set("ui/marken_leer", l)
+        self.settings.set("ui/steuerzeichen", a or l)
+        self.formatzeichen_anwenden()
+        if hasattr(self, "a_marks"):
+            self.a_marks.blockSignals(True); self.a_marks.setChecked(a or l); self.a_marks.blockSignals(False)
 
     def ansicht_optionen_anwenden(self):
         """Statusleiste, QuickInfo, Bedienschrift, Symbolgröße — aus den Optionen."""
         self.statusBar().setVisible(self.settings.get_bool("ui/statusleiste", True))
         app = QApplication.instance()
+        if getattr(self, "_quickinfo", None) is None:
+            self._quickinfo = _QuickInfo()
+        self._quickinfo.an = self.settings.get_bool("ui/quickinfo", True)
+        app.removeEventFilter(self._quickinfo)
+        if not self._quickinfo.an:                    # nur solange QuickInfo aus ist, sonst prüft er jedes Ereignis des Programms
+            app.installEventFilter(self._quickinfo)
         fam = self.settings.get("ui/bedienschrift", "")
         gr = self.settings.get_int("ui/bedienschrift_groesse", 0)
-        if fam or gr:
-            f = app.font()
-            if fam:
-                f.setFamily(fam)
-            if gr:
-                f.setPointSize(gr)
+        prozent = self.settings.get_int("ui/bedien_prozent", 100)
+        if getattr(self, "_app_font0", None) is None:
+            self._app_font0 = QFont(app.font())                       # die Schrift des Systems, Grundlage für die Prozente
+        f = QFont(self._app_font0)
+        if fam:
+            f.setFamily(fam)
+        if gr:
+            f.setPointSize(gr)
+        elif prozent != 100:
+            f.setPointSizeF(max(6.0, self._app_font0.pointSizeF() * prozent / 100))
+        if f != app.font():
             app.setFont(f)
         from lunivo_writer.ui.widgets import icons
         faktor = {"klein": 0.8, "mittel": 1.0, "gross": 1.3}.get(self.settings.get("ui/icongroesse", "mittel"), 1.0)
@@ -970,6 +1028,7 @@ class MainWindow(QMainWindow):
     def lesehilfe_anwenden(self):
         for t in self._doc_tabs():
             self._lesehilfe_auf(t.editor)
+        self.lesehilfe_geaendert.emit()
 
     def set_marken(self, an: bool):
         self.settings.set("ui/marken", an)
@@ -1055,7 +1114,9 @@ class MainWindow(QMainWindow):
     def set_theme(self, wahl: str):
         from lunivo_writer.ui.theme import apply_theme
         from lunivo_writer.ui.widgets import icons
+        from lunivo_writer.ui import theme
         self.settings.set("theme", wahl)
+        theme.WEICH = self.settings.get_bool("ui/weich", False)
         apply_theme(QApplication.instance(), wahl)
         icons.leeren()
         self.neu_bauen_band()
@@ -1095,6 +1156,17 @@ class MainWindow(QMainWindow):
         self.neu_bauen_band()
 
     def neu_bauen_band(self):
+        optionen_offen = self.backstage.isVisible() and self.backstage.stapel.currentWidget() is self.backstage.seiten.get("optionen")
+        unter = self.backstage.optionen_seite() if optionen_offen else None
+        self._band_neu_bauen()
+        if optionen_offen:                                         # Der Umbau (Design, Symbolgröße …) wirft niemanden aus den Optionen
+            if hasattr(self.band, "reiter"):
+                self.backstage_oeffnen("optionen", unter)
+            else:                                                  # Symbolleisten-Oberfläche: kein Register, also Fenster
+                self.backstage.hide(); self.arbeit.show()
+                self.show_options(unter)
+
+    def _band_neu_bauen(self):
         alt = self.band
         idx = self.band_lay.indexOf(alt)
         self.band = self._band_erzeugen()
@@ -1119,6 +1191,30 @@ class MainWindow(QMainWindow):
         self.arbeit.show()
         r.currentChanged.connect(self._reiter_gewechselt)
         r.tabBarClicked.connect(self._reiter_angeklickt)
+        # Die Datei-Ansicht heißt „☰ Menü“ und steht ganz links vor dem Schnellzugriff; der Reiter „Datei“ bleibt dafür verborgen
+        for i in range(r.count()):
+            if r.tabText(i) == "Datei":
+                r.setTabVisible(i, False)
+        k = self.band.menue_knopf
+        try:
+            k.clicked.disconnect()
+        except (RuntimeError, TypeError):
+            pass
+        k.setText("☰ Menü"); k.setCheckable(True); k.setToolTip("Menü: Neu, Öffnen, Speichern, Drucken, Info, Einstellungen, Hilfe")
+        k.setStyleSheet("QToolButton { font-weight: 600; padding: 4px 12px; } QToolButton:checked { color: #4a8fd8; }")
+        k.clicked.connect(self._menue_geklickt)
+        r.currentChanged.connect(lambda i, kk=k: kk.setChecked(self._ist_datei(i)))
+
+    def _menue_geklickt(self):
+        """☰ Menü: öffnet die Datei-Ansicht, ein zweiter Klick schließt sie wieder."""
+        r = self.band.reiter
+        if self.backstage.isVisible():
+            self.backstage_schliessen()
+            return
+        i = next((n for n in range(r.count()) if r.tabText(n) == "Datei"), None)
+        if i is not None:
+            r.setCurrentIndex(i)
+        self.band.menue_knopf.setChecked(self.backstage.isVisible())
 
     def _ist_datei(self, i: int) -> bool:
         r = self.band.reiter
@@ -1136,14 +1232,16 @@ class MainWindow(QMainWindow):
         if self._ist_datei(i) and self.backstage.isVisible() and time.monotonic() - self._bs_zeit > 0.4:   # zweiter Klick schließt
             self.backstage_schliessen()
 
-    def backstage_oeffnen(self, seite: str = "zuletzt"):
+    def backstage_oeffnen(self, seite: str = "zuletzt", unter: str | None = None):
         import time
         self._bs_zeit = time.monotonic()
         self.band.stapel.hide()
         self.band.linie.hide()
         self.arbeit.hide()
-        self.backstage.oeffnen(seite)
+        self.backstage.oeffnen(seite, unter)
         self.backstage.show()
+        if hasattr(self.band, "menue_knopf"):
+            self.band.menue_knopf.setChecked(True)
 
     def backstage_zu(self):
         if not self.backstage.isVisible():
@@ -1153,6 +1251,9 @@ class MainWindow(QMainWindow):
         if not self.band._eingeklappt:
             self.band.stapel.show()
         self.band.linie.show()
+        if hasattr(self.band, "menue_knopf"):
+            self.band.menue_knopf.setChecked(False)
+        self.ki.geaendert.emit()                                   # Einstellungen der Optionen übernehmen (KI, Anbieter …)
 
     def backstage_schliessen(self):
         r = self.band.reiter
@@ -1248,14 +1349,7 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage("Bearbeitung gesperrt." if t.gesperrt else "Bearbeitung freigegeben.", 4000)
 
     def toggle_marks(self, on: bool):
-        self.marks_on = on
-        self.settings.set("ui/steuerzeichen", on)
-        from PySide6.QtGui import QTextOption
-        for t in self._doc_tabs():
-            opt = t.editor.document().defaultTextOption()
-            flags = QTextOption.ShowTabsAndSpaces | QTextOption.ShowLineAndParagraphSeparators
-            opt.setFlags(opt.flags() | flags if on else opt.flags() & ~flags)
-            t.editor.document().setDefaultTextOption(opt)
+        self.marken_setzen(on, on)
 
     def insert_table(self):
         if not self.current_editor():
@@ -1377,6 +1471,10 @@ class MainWindow(QMainWindow):
                                 f"Seiten: {t.editor.page_count}   Wörter: {t.editor.word_count()}")
 
     def show_options(self, seite: str | None = None):
+        """Die Optionen stehen in der Datei-Ansicht („☰ Menü ▸ Erweiterte Einstellungen“); ohne Register-Band als Fenster."""
+        if hasattr(self.band, "reiter") and hasattr(self.band, "stapel"):
+            self.backstage_oeffnen("optionen", seite)
+            return
         from lunivo_writer.ui.dialogs.optionen import OptionenDialog
         d = OptionenDialog(self, seite)
         d.exec()

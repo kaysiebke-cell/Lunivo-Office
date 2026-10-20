@@ -39,6 +39,8 @@ class _Lauf(QRunnable):
 class WritingAssistant(QObject):
     fundeGeaendert = Signal(list)         # sichtbare Funde (ohne die weggewinkten)
     status = Signal(str)
+    schalterGeaendert = Signal(str, bool)  # „wellen“, „vorhersage“, „autokorr“ — aus der Seitenleiste oder den Optionen
+    themaGeaendert = Signal(str)
 
     def __init__(self, settings, gelernt: Gelernt | None = None, parent=None):
         super().__init__(parent)
@@ -85,12 +87,14 @@ class WritingAssistant(QObject):
             "autokorr": ("AutoKorrektur an.", "AutoKorrektur aus."),
         }.get(name, (f"{name.capitalize()} an.", f"{name.capitalize()} aus."))
         self.status.emit(an if wert else aus)
+        self.schalterGeaendert.emit(name, bool(wert))
 
     def setze_thema(self, name: str) -> None:
         self.thema = name
         self.settings.set("schreibhilfe/thema", name)
         if name != "egal":
             vorhersage.thema_aufnehmen(vorhersage.thema_woerter(name))
+        self.themaGeaendert.emit(name)
 
     def ak_an(self, name: str) -> bool:
         return self.settings.get_bool("schreibhilfe/" + name, autokorrektur.SCHALTER[name][0])
@@ -162,7 +166,7 @@ class WritingAssistant(QObject):
             self._zeigen()                               # nichts geändert — nichts zu prüfen
             return
         self._laeuft = True
-        schalter = {k: self.settings.get_bool(k, True) for k in ("rsGrossIgnorieren", "rsZahlenIgnorieren", "rsPfadeIgnorieren")}
+        schalter = {k: self.settings.get_bool(k, True) for k in ("rsGrossIgnorieren", "rsZahlenIgnorieren", "rsPfadeIgnorieren", "rsGrammatik")}
         pruef_text = text[self._region[0]:self._region[1]] if self._region else text
         self._pool.start(_Lauf(doc.revision(), pruef_text, self.gelernt.daten, self._sig, schalter))
 

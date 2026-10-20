@@ -1701,7 +1701,17 @@
     {
      "name": "Speichern unter",
      "tun": "speichernUnter",
-     "taste": "Strg+Umschalt+S"
+     "taste": "Strg+Umschalt+S",
+     "unter": [
+      {"name": "Word-Dokument (.docx)", "tun": "w.speichernAls:[\".docx\"]", "datei": ".docx"},
+      {"name": "OpenDocument-Text (.odt)", "tun": "w.speichernAls:[\".odt\"]", "datei": ".odt"},
+      {"name": "Word 97–2003 (.doc)", "tun": "w.speichernAls:[\".doc\"]", "datei": ".doc"},
+      {"name": "Rich Text (.rtf)", "tun": "w.speichernAls:[\".rtf\"]", "datei": ".rtf"},
+      {"name": "Textdatei (.txt)", "tun": "w.speichernAls:[\".txt\"]", "datei": ".txt"},
+      {"name": "PDF (.pdf)", "tun": "speichernPdf", "datei": ".pdf"},
+      {"trenner": true},
+      {"name": "Anderer Name oder Ort …", "tun": "speichernUnter"}
+     ]
     },
     {
      "trenner": true

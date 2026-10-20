@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout, QWidget,
 )
 
+from lunivo_writer.ui.baukasten.datei_symbole import datei_symbol
 from lunivo_writer.ui.widgets import icons
 
 # (Schlüssel, Beschriftung, Symbol, Art: "seite" | "tun" | "trenner", Befehl)
@@ -34,7 +35,7 @@ EINTRAEGE = [
     ("-3", "", "", "trenner", None),
     ("schliessen", "Schließen", "schliessen", "tun", "schliessen"),
     ("-4", "", "", "trenner", None),
-    ("optionen", "Erweiterte Einstellungen", "zahnrad", "tun", "w.optionenOeffnen"),
+    ("optionen", "Erweiterte Einstellungen", "zahnrad", "seite", None),
     ("hilfe", "Hilfe", "buch", "tun", "tastenHilfe"),
 ]
 
@@ -42,6 +43,9 @@ EXPORTE = [("PDF-Dokument (.pdf)", "speichernPdf"), ("Word-Dokument (.docx)", "e
            ("Word 97–2003 (.doc, optional)", "exportierenDoc"), ("OpenDocument-Text (.odt)", "exportierenOdt"),
            ("Rich-Text-Format (.rtf)", "exportierenRtf"), ("Nur Text (.txt)", "exportierenTxt"),
            ("Bild der Seite (.png)", "exportierenPng")]
+
+EXPORT_ENDUNG = {"speichernPdf": ".pdf", "exportierenDocx": ".docx", "exportierenDoc": ".doc", "exportierenOdt": ".odt",
+                 "exportierenRtf": ".rtf", "exportierenTxt": ".txt", "exportierenPng": ".png"}
 
 BREITE = 460
 
@@ -53,6 +57,10 @@ QListWidget#bsListe::item:selected { background: palette(midlight); color: palet
 QListWidget#bsListe::item:hover:!selected { background: palette(midlight); }
 QWidget#bsRechts, QScrollArea#bsSeite, QScrollArea#bsSeite > QWidget > QWidget { background: palette(base); }
 QLabel#bsTitel { font-size: 17pt; }
+QWidget#optKopf { border-bottom: 1px solid palette(midlight); }
+QPushButton#optZurueck { border: none; background: transparent; font-size: 14pt; font-weight: 600; text-align: left; padding: 4px 6px; }
+QPushButton#optFertig { background: #2f6fb5; color: white; border: none; border-radius: 6px; padding: 9px 30px; font-weight: 600; }
+QPushButton#optFertig:hover { background: #4a8fd8; }
 QLabel#bsGruppe { font-size: 11pt; font-weight: 600; }
 QLabel#bsHinweis { color: palette(mid); }
 QPushButton#bsKnopf { border: none; background: transparent; padding: 9px 12px; text-align: left; border-radius: 6px; }
@@ -87,6 +95,7 @@ class Backstage(QWidget):
         self.liste.setFocusPolicy(Qt.NoFocus)
         ll.addWidget(self.liste, 1)
         lay.addWidget(links)
+        self._links = links                                          # bei den Optionen ausgeblendet
         self.rechts = QWidget()
         self.rechts.setObjectName("bsRechts")
         rl = QVBoxLayout(self.rechts)
@@ -111,7 +120,10 @@ class Backstage(QWidget):
         self._frischen_sich_selbst = True
 
     # ---- Aufbau der Seiten (bei jedem Öffnen frisch, damit Zahlen und Listen stimmen) ----------------------------
-    def oeffnen(self, seite: str = "zuletzt"):
+    def oeffnen(self, seite: str = "zuletzt", unter: str | None = None):
+        """``unter``: bei „optionen“ die Seite der Optionen, die gleich offen sein soll (z. B. „ki“)."""
+        self._optionen_unter = unter
+        self._links.show()
         while self.stapel.count():
             w = self.stapel.widget(0)
             self.stapel.removeWidget(w)
@@ -121,16 +133,54 @@ class Backstage(QWidget):
         for schl in ("speichern", "speichern_als", "drucken", "schuetzen", "info", "oeffnen_mit", "ort", "schliessen"):
             self.zeilen[schl].setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable if haben_dok else Qt.NoItemFlags)
         bauer = {"zuletzt": self._zuletzt, "speichern_als": self._speichern_als, "drucken": self._drucken,
-                 "schuetzen": self._schuetzen, "info": self._info, "oeffnen_mit": self._oeffnen_mit}
+                 "schuetzen": self._schuetzen, "info": self._info, "oeffnen_mit": self._oeffnen_mit, "optionen": self._optionen}
         for schl, f in bauer.items():
             seite_w = f()
             self.seiten[schl] = seite_w
             self.stapel.addWidget(seite_w)
-        if seite not in self.seiten or (not haben_dok and seite not in ("zuletzt",)):
+        if seite not in self.seiten or (not haben_dok and seite not in ("zuletzt", "optionen")):
             seite = "zuletzt"
         self._zeigen(seite)
 
+    def optionen_seite(self) -> str | None:
+        """Schlüssel der Optionenseite, die gerade offen ist (z. B. „ansicht“)."""
+        a = getattr(self.seiten.get("optionen"), "_ansicht", None)
+        it = a.baum.currentItem() if a is not None else None
+        return it.data(0, 0x100) if it is not None else None
+
+    def _optionen(self) -> QWidget:
+        """Platzhalter: die Optionen werden erst gebaut, wenn die Seite zum ersten Mal gezeigt wird."""
+        ph = QWidget()
+        QVBoxLayout(ph).setContentsMargins(0, 0, 0, 0)
+        ph._ansicht = None
+        return ph
+
+    def _optionen_zeigen(self) -> None:
+        from lunivo_writer.ui.dialogs.optionen import OptionenAnsicht
+        ph = self.seiten["optionen"]
+        self._links.hide()                                           # die Optionen füllen die ganze Breite; das Menü ist für die Dauer weg
+        if ph._ansicht is None:
+            v = ph.layout()
+            kopf = QWidget(); kopf.setObjectName("optKopf")
+            kh = QHBoxLayout(kopf); kh.setContentsMargins(14, 10, 14, 10)
+            zurueck = QPushButton("←   Optionen")
+            zurueck.setObjectName("optZurueck"); zurueck.setFlat(True); zurueck.setCursor(Qt.PointingHandCursor)
+            zurueck.setToolTip("Optionen verlassen")
+            zurueck.clicked.connect(self.schliessen)
+            kh.addWidget(zurueck); kh.addStretch(1)
+            ph._ansicht = OptionenAnsicht(self.w, getattr(self, "_optionen_unter", None))
+            fuss = QWidget(); fh = QHBoxLayout(fuss); fh.setContentsMargins(24, 10, 24, 14)
+            fertig = QPushButton("Fertig"); fertig.setObjectName("optFertig"); fertig.setCursor(Qt.PointingHandCursor)
+            fertig.clicked.connect(self.schliessen)
+            fh.addStretch(1); fh.addWidget(fertig)
+            ph._kopf, ph._fertig, ph._zurueck = kopf, fertig, zurueck
+            v.addWidget(kopf); v.addWidget(ph._ansicht, 1); v.addWidget(fuss)
+        elif getattr(self, "_optionen_unter", None):
+            ph._ansicht.gehe_zu(self._optionen_unter)
+
     def _zeigen(self, schl: str):
+        if schl == "optionen":
+            self._optionen_zeigen()
         self.stapel.setCurrentWidget(self.seiten[schl])
         self.liste.setCurrentItem(self.zeilen[schl])
 
@@ -178,10 +228,14 @@ class Backstage(QWidget):
             h.setWordWrap(True)
             v.addWidget(h)
 
-    def _knopf(self, v: QVBoxLayout, text: str, befehl: str, icon: str | None = None, schliessen: bool = True):
+    def _knopf(self, v: QVBoxLayout, text: str, befehl: str, icon: str | None = None, schliessen: bool = True,
+               datei: str | None = None):
         k = QPushButton(text)
         k.setObjectName("bsKnopf")
-        if icon and icons.hat(icon):
+        sym = datei_symbol(datei) if datei else None
+        if sym is not None and not sym.isNull():                       # Dateiformat: Symbol des Systems statt unseres
+            k.setIcon(sym); k.setIconSize(QSize(22, 22))
+        elif icon and icons.hat(icon):
             k.setIcon(icons.icon(icon, 18))
         k.setEnabled(self.w.befehle.hat(befehl))
         k.setCursor(Qt.PointingHandCursor)
@@ -202,8 +256,10 @@ class Backstage(QWidget):
             k = QPushButton()
             k.setObjectName("bsKnopf")
             k.setCursor(Qt.PointingHandCursor)
-            k.setText(f"{os.path.basename(p)}\n{os.path.dirname(p)}")
-            k.setIcon(icons.icon("ausdatei", 28))
+            k.setText(os.path.basename(p))
+            k.setToolTip(p)                                          # den Pfad zeigt nur der Tooltip
+            sym = datei_symbol(p)                                    # Symbol des Dateiformats aus dem Icon-Theme des Systems
+            k.setIcon(sym if not sym.isNull() else icons.icon("ausdatei", 28))
             k.setIconSize(QSize(28, 28))
             k.setEnabled(os.path.exists(p))
             k.clicked.connect(lambda _=False, p=p: (self.schliessen.emit(), self.w.open_path(p)))
@@ -224,7 +280,7 @@ class Backstage(QWidget):
         self._knopf(v, "Kopie speichern …", "kopieSpeichern", "kopie")
         self._gruppe(v, "Exportieren", "Die Ausgabe wird als Datei geschrieben; das geöffnete Dokument bleibt unverändert.")
         for text, b in EXPORTE:
-            self._knopf(v, text, b, "pdf" if b == "speichernPdf" else "ausdatei")
+            self._knopf(v, text, b, "pdf" if b == "speichernPdf" else "ausdatei", datei=EXPORT_ENDUNG.get(b))
         v.addStretch(1)
         return sa
 

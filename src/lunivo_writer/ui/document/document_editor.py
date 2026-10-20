@@ -1340,6 +1340,9 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         return c
 
     def mouseReleaseEvent(self, e) -> None:
+        if e.button() == Qt.MiddleButton and not self.opt("bearbeiten/mittlere_taste", True):
+            e.accept()                                  # mittlere Maustaste fügt nichts ein (Optionen ▸ Bearbeiten)
+            return
         super().mouseReleaseEvent(self._maus_abgebildet(e))
         if e.button() == Qt.LeftButton and self.opt("bearbeiten/wortweise", True) and self.textCursor().hasSelection():
             self._wortweise()
@@ -1393,6 +1396,92 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         f.setLetterSpacing(QFont.AbsoluteSpacing, buchstaben)
         f.setWordSpacing(wort)
         self.document().setDefaultFont(f)
+
+    # ---- Lesehilfe am Schirm: Absatz größer, Übriger Text blasser ---------------------------------------------------------
+    # Wie in der ersten Fassung ändert das nichts am Dokument: Der Text wird nur anders gezeigt, gedruckt und gespeichert
+    # wird er unverändert.
+    def set_lesefokus(self, wachstum: float, blasse: float) -> None:
+        """wachstum: 1,0 / 1,05 / 1,10 für den Absatz, in dem die Schreibmarke steht; blasse: 1,0 / 0,62 / 0,38 für den übrigen Text."""
+        self._lese_wachstum, self._lese_blasse = max(1.0, float(wachstum)), min(1.0, float(blasse))
+        if not getattr(self, "_lese_verbunden", False):
+            self.cursorPositionChanged.connect(self._lese_neu)
+            self.verticalScrollBar().valueChanged.connect(self._lese_neu)
+            self._lese_verbunden = True
+        self._lese_neu(erzwingen=True)
+
+    def _lese_aktiv(self) -> bool:
+        return getattr(self, "_lese_wachstum", 1.0) > 1.0 or getattr(self, "_lese_blasse", 1.0) < 1.0
+
+    def _lese_neu(self, *_, erzwingen: bool = False) -> None:
+        if not (self._lese_aktiv() or erzwingen):
+            return
+        if hasattr(self, "_overlays_neu"):
+            self._overlays_neu()
+        self.viewport().update()
+
+    def _lese_blasse_auswahl(self) -> list:
+        """Zusatzauswahl, die den Text außerhalb des aktuellen Absatzes in die Farbe des Papiers mischt (nur der sichtbare Bereich)."""
+        b = getattr(self, "_lese_blasse", 1.0)
+        aktuell = self.textCursor().block()
+        if b >= 1.0 or not aktuell.isValid() or not aktuell.text().strip():
+            return []                                       # in einer leeren Zeile tritt nichts zurück, sonst wäre alles nur blasser
+        papier = QColor(self._lese_papier or "#ffffff")
+        text = QColor(self._lese_text or "#000000")
+        farbe = QColor(round(text.red() * b + papier.red() * (1 - b)), round(text.green() * b + papier.green() * (1 - b)),
+                       round(text.blue() * b + papier.blue() * (1 - b)))
+        vp = self.viewport()
+        blk = self.cursorForPosition(QPoint(0, 0)).block()
+        ende = self.cursorForPosition(QPoint(max(0, vp.width() - 1), max(0, vp.height() - 1))).block().blockNumber()
+        sel = []
+        while blk.isValid() and blk.blockNumber() <= ende:
+            if blk.blockNumber() != aktuell.blockNumber() and blk.text():
+                c = QTextCursor(blk)
+                c.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
+                fmt = QTextCharFormat(); fmt.setForeground(farbe)
+                e = QTextEdit.ExtraSelection(); e.cursor = c; e.format = fmt
+                sel.append(e)
+            blk = blk.next()
+        return sel
+
+    def _lese_wachstum_zeichnen(self) -> None:
+        """Der Absatz an der Schreibmarke wird ein wenig größer gezeichnet (aus der Mitte, ohne den Umbruch zu ändern): sein
+        Textlayout wird über das Original gelegt. Bei einer Auswahl, über Seiten- und Spaltenwechsel oder bei Tabellen unterbleibt es."""
+        f = getattr(self, "_lese_wachstum", 1.0)
+        c0 = self.textCursor()
+        blk = c0.block()
+        if f <= 1.0 or c0.hasSelection() or not blk.isValid() or not blk.text().strip() or blk.layout() is None or c0.currentTable():
+            return
+        lay = blk.layout()
+        if lay.lineCount() == 0:
+            return
+        r0 = self.cursorRect(QTextCursor(blk))
+        c1 = QTextCursor(blk); c1.movePosition(QTextCursor.EndOfBlock)
+        r1 = self.cursorRect(c1)
+        if r1.bottom() < r0.top() or r1.bottom() - r0.top() > 40 * lay.lineCount() + 40:
+            return
+        vp = self.viewport()
+        if self._blatt_aktiv():
+            g = self._sp_geo()
+            breite = g["cb"]
+            spalte = max(0, min(int(g["n"]) - 1, int((r0.x() - g["ml"]) // max(1.0, g["cb"] + g["g"]))))
+            x0 = g["ml"] + spalte * (g["cb"] + g["g"])
+            papier = QColor(self._lese_papier or self.page.color or "white")
+        else:
+            x0 = self.document().documentMargin()
+            breite = vp.width() - 2 * x0
+            papier = QColor(self._lese_papier or "white")
+        feld = QRectF(x0, r0.top(), breite, r1.bottom() - r0.top() + 1)
+        # QTextLayout.draw addiert die eigene Position im Dokument selbst; die Schreibmarke liefert die Stelle auf dem Schirm
+        origin = QPointF(r0.x() - lay.lineAt(0).x() - lay.position().x(), r0.top() - lay.lineAt(0).y() - lay.position().y())
+        p2 = QPainter(vp)
+        p2.setClipRect(vp.rect())
+        p2.fillRect(feld, papier)                                   # das Original darunter wegnehmen
+        dreh = QPointF(feld.left(), feld.center().y())              # wächst vom linken Rand der Spalte aus, nicht in den Seitenrand
+        p2.translate(dreh); p2.scale(f, f); p2.translate(-dreh)
+        lay.draw(p2, origin)
+        if self.hasFocus():
+            lay.drawCursor(p2, origin, c0.positionInBlock())
+        p2.end()
 
     def paintEvent(self, e) -> None:
         sp = self._blatt_aktiv()
@@ -1462,6 +1551,7 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
             p.drawRect(QRect(0, 0, vp.width(), zeile.top()))
             p.drawRect(QRect(0, zeile.bottom() + 1, vp.width(), vp.height()))
         p.end()
+        self._lese_wachstum_zeichnen()
 
     def _aenderungszeilen_gecacht(self) -> list:
         rev = self.document().revision()

@@ -490,6 +490,7 @@ class Befehle:
     def oeffnen(self, k=None): self.w.open_dialog()
     def speichern(self, k=None): self.w.save()
     def speichernUnter(self, k=None): self.w.save_as()
+    def w_speichernAls(self, k=None, ext=".docx"): self.w.save_as_format(ext)
     def speichernPdf(self, k=None): self.w.export_pdf_dialog()
     def drucken(self, k=None): self.w.print_dialog()
     def vorschau(self, k=None): self.w.print_preview()

@@ -705,6 +705,32 @@ class _Writer:
         if is_link:
             run._r.get_or_add_rPr().append(_rstyle_hyperlink(self.d))
 
+    # Kompatibilitätsoptionen (Optionen ▸ Allgemein und Speichern): als echte Einstellungen in settings.xml; Reihenfolge nach ECMA-376
+    KOMPAT_VOR_FE = ("ulTrailSpace", "footnoteLayoutLikeWW8", "adjustLineHeightInTable")
+    KOMPAT_NACH_FE = ("doNotUseIndentAsNumberingTabStop", "splitPgBreakAndParaMark")
+
+    def _kompatibilitaet(self) -> None:
+        gewaehlt = set(self.meta.get("kompat") or [])
+        einst = self.d.settings.element
+        if "bilder_komprimieren" in self.meta:
+            wort = einst.find(qn("w:doNotAutoCompressPictures"))
+            if self.meta["bilder_komprimieren"] and wort is not None:
+                einst.remove(wort)                                    # Word darf Bilder beim Speichern selbst komprimieren
+        if not gewaehlt:
+            return
+        compat = einst.find(qn("w:compat"))
+        if compat is None:
+            return
+        for name in self.KOMPAT_VOR_FE[::-1]:
+            if name in gewaehlt and compat.find(qn(f"w:{name}")) is None:
+                compat.insert(0, OxmlElement(f"w:{name}"))
+        fe = compat.find(qn("w:useFELayout"))
+        stelle = list(compat).index(fe) + 1 if fe is not None else 0
+        for name in self.KOMPAT_NACH_FE:
+            if name in gewaehlt and compat.find(qn(f"w:{name}")) is None:
+                compat.insert(stelle, OxmlElement(f"w:{name}"))
+                stelle += 1
+
     def _image(self, imf, para, seite: str | None = None):
         name = imf.name()
         img = self.q.resource(QTextDocument.ImageResource, QUrl(name))
@@ -713,6 +739,8 @@ class _Writer:
         if img.isNull():
             self.report.warn(f"Bild „{os.path.basename(name)}“ nicht lesbar und nicht gespeichert.")
             return
+        if self.meta.get("bilder_komprimieren") and max(img.width(), img.height()) > 1600:        # „Bilder nicht komprimieren“ ist aus
+            img = img.scaled(1600, 1600, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         buf = QBuffer()
         buf.open(QIODevice.WriteOnly)
         img.save(buf, "PNG")
@@ -816,6 +844,7 @@ class _Writer:
         self._noten_schreiben()
         self._kommentare_schreiben()
         self._quellen_schreiben()
+        self._kompatibilitaet()
         cp = self.d.core_properties
         cp.title = self.meta.get("title", "") or ""
         cp.author = self.meta.get("author", "") or "Lunivo Writer"

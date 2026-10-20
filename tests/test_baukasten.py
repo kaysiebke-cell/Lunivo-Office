@@ -364,3 +364,37 @@ def test_dunkles_system_nutzt_die_lunivo_palette(app, monkeypatch):
         assert app.palette().color(QPalette.Mid).lightness() > 100
     finally:
         app.setPalette(alt)
+
+
+def test_dateisymbole_aus_dem_icon_theme(app, monkeypatch):
+    from PySide6.QtGui import QIcon, QPixmap
+    from lunivo_writer.ui.baukasten import datei_symbole as D
+    namen = D.icon_namen(".pdf")
+    assert namen[0] == "application-pdf" and "x-office-document" in namen              # MIME-Typ zuerst, dann Rückfälle
+    assert D.icon_namen("/home/x/brief.txt")[0] == "text-plain" and D.icon_namen(".odt")[0].startswith("application-vnd.oasis")
+    # Das Symbol kommt aus dem Theme des Systems: der erste Name, den es kennt, gewinnt
+    pm = QPixmap(8, 8); pm.fill("red"); da = QIcon(pm)
+    gefragt = []
+    def theme(n):
+        gefragt.append(n)
+        return da if n == "x-office-document" else QIcon()
+    monkeypatch.setattr(QIcon, "fromTheme", staticmethod(theme))
+    assert not D.datei_symbol(".pdf").isNull() and gefragt[0] == "application-pdf" and gefragt[-1] == "x-office-document"
+
+
+def test_speichern_unter_untermenue_mit_formaten(app, tmp_path):
+    from lunivo_writer.ui.ribbon.ribbon_bar import lade_register
+    reg = lade_register()
+    datei = next(m for m in reg["menues"] if m.get("name") == "Datei") if isinstance(reg.get("menues"), list) else None
+    punkte = datei["unter"] if datei and "unter" in datei else None
+    text = str(reg)
+    for ext in (".docx", ".odt", ".doc", ".rtf", ".txt", ".pdf"):
+        assert f"'datei': '{ext}'" in text
+    w = _fenster(tmp_path)
+    ziel = str(tmp_path / "brief.txt")
+    gefragt = []
+    w._ask_path = lambda tab, titel, only=None: (gefragt.append(only), ziel)[1]
+    w.current_editor().setPlainText("Hallo")
+    w.befehle.tun('w.speichernAls:[".txt"]')
+    assert gefragt == [".txt"] and (tmp_path / "brief.txt").read_text(encoding="utf-8") == "Hallo" and w.current_tab().path == ziel
+    _zu(w)

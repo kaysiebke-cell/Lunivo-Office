@@ -6,22 +6,44 @@ damit nichts stillschweigend verschwindet.
 """
 from __future__ import annotations
 
+import json
 import os
 
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QFontDatabase
+from PySide6.QtCore import QEvent, Qt
+from PySide6.QtGui import QFont, QFontDatabase
 from PySide6.QtWidgets import (
-    QCheckBox, QComboBox, QDialog, QDialogButtonBox, QDoubleSpinBox, QFormLayout, QGridLayout, QGroupBox, QHBoxLayout, QLabel,
-    QLineEdit, QListWidget, QMessageBox, QPushButton, QScrollArea, QSpinBox, QStackedWidget, QTreeWidget,
+    QApplication, QButtonGroup, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QDoubleSpinBox, QFormLayout, QFrame, QGridLayout, QGroupBox, QHBoxLayout, QLabel,
+    QLineEdit, QRadioButton, QListWidget, QMessageBox, QPushButton, QScrollArea, QSlider, QSpinBox, QStackedWidget, QTreeWidget,
     QTreeWidgetItem, QVBoxLayout, QWidget,
 )
 
 from lunivo_writer.ui.baukasten.beschriftung import md_escape, md_label, text_label
 from lunivo_writer.proofing import autokorrektur
 from lunivo_writer.ai import ki as K
+from lunivo_writer.core import paths
+from lunivo_writer.ui import lesestufen as LS
 from lunivo_writer.services import vorlesen
 from lunivo_writer.proofing.vorhersage import EMPFAENGER
 from lunivo_writer.ui.dialogs.lesehilfe_dialog import PAPIERTOENE
+
+ERKLAERUNG_LEER = "Zeig auf eine Einstellung — hier steht, was sie tut."
+_ERKLAERUNGEN: dict | None = None
+
+
+def _erklaerung(name: str) -> str:
+    """Der Satz zu einer Einstellung (aus resources/daten/optionen_erklaerungen.json); leer, wenn es keinen gibt."""
+    global _ERKLAERUNGEN
+    if _ERKLAERUNGEN is None:
+        try:
+            with open(os.path.join(paths.RESSOURCEN, "daten", "optionen_erklaerungen.json"), encoding="utf-8") as fh:
+                _ERKLAERUNGEN = json.load(fh)
+        except (OSError, ValueError):
+            _ERKLAERUNGEN = {}
+    n = " ".join(name.split())
+    if n in _ERKLAERUNGEN:
+        return _ERKLAERUNGEN[n]
+    return next((v for k, v in _ERKLAERUNGEN.items() if len(k) >= 8 and (n.startswith(k) or k.startswith(n))), "")
+
 
 LESESCHRIFTEN = ("OpenDyslexic", "Lexend", "Atkinson Hyperlegible")
 
@@ -37,16 +59,19 @@ class _Seite(QWidget):
         t = text_label(titel, fett=True, pt=16, umbruch=False)
         self.lay.addWidget(t)
         self.gruppe_lay = None
+        self.karten: list[_Karte] = []
         self._offen = offen or []
 
     def gruppe(self, name: str) -> QFormLayout:
-        g = QGroupBox(name)
-        f = QFormLayout(g)
+        g = QGroupBox(name.upper())
+        f = _Karte(g)
+        self.karten.append(f)
         self.lay.addWidget(g)
         return f
 
     def haken(self, f, key, text, std, wirkt=None):
         c = QCheckBox(text)
+        c.setProperty("optName", text)
         c.setChecked(self.s.get_bool(key, std))
 
         def geaendert(on):
@@ -67,6 +92,81 @@ class _Seite(QWidget):
             if wirkt:
                 wirkt(t)
         c.currentTextChanged.connect(geaendert)
+        f.addRow(label, c)
+        return c
+
+    def wahl(self, f, key, label, eintraege: list[tuple[str, object]], std, wirkt=None):
+        """Auswahl mit Anzeigetext und gespeichertem Wert (Text oder Ja/Nein)."""
+        c = QComboBox()
+        for text, wert in eintraege:
+            c.addItem(text, wert)
+        aktuell = self.s.get_bool(key, std) if isinstance(std, bool) else self.s.get(key, std)
+        c.setCurrentIndex(max(0, c.findData(aktuell)))
+
+        def geaendert(_i):
+            self.s.set(key, c.currentData())
+            if wirkt:
+                wirkt(c.currentData())
+        c.currentIndexChanged.connect(geaendert)
+        f.addRow(label, c)
+        return c
+
+    def schalter(self, f, text: str, ist, umschalten):
+        """Haken, der den Zustand eines anderen Teils des Programms zeigt und schaltet (Navigationsbereich, Gitternetzlinien …)."""
+        c = QCheckBox(text)
+        c.setProperty("optName", text)
+        c.setChecked(bool(ist()))
+        c.toggled.connect(lambda on: on != bool(ist()) and umschalten())
+        f.addRow(c)
+        return c
+
+    def eingabe(self, key: str, platzhalter: str) -> QLineEdit:
+        e = QLineEdit(str(self.s.get(key, "")))
+        e.setPlaceholderText(platzhalter)
+        e.setProperty("optName", platzhalter)
+        e.textChanged.connect(lambda t: self.s.set(key, t))
+        return e
+
+    def felder(self, f, eintraege: list[tuple[str, str]], spalten: int = 2):
+        """Eingabefelder im Raster, jedes mit seinem Platzhalter als Beschriftung."""
+        w = QWidget(); g = QGridLayout(w); g.setContentsMargins(0, 6, 0, 6); g.setHorizontalSpacing(10); g.setVerticalSpacing(8)
+        for i, (key, platzhalter) in enumerate(eintraege):
+            g.addWidget(self.eingabe(key, platzhalter), i // spalten, i % spalten)
+        f.addRow(w)
+
+    def pfad(self, f, key: str, text: str, platzhalter: str, wirkt=None):
+        """Ordner-Zeile: Beschriftung, darunter Feld und „Wählen …“."""
+        w = QWidget(); v = QVBoxLayout(w); v.setContentsMargins(0, 6, 0, 8); v.setSpacing(6)
+        v.addWidget(QLabel(text))
+        h = QHBoxLayout()
+        e = self.eingabe(key, platzhalter)
+        e.setProperty("optName", text)
+        k = QPushButton("Wählen …")
+
+        def waehle():
+            from PySide6.QtWidgets import QFileDialog
+            ordner = QFileDialog.getExistingDirectory(self, text, e.text() or os.path.expanduser("~"))
+            if ordner:
+                e.setText(ordner)
+        k.clicked.connect(waehle)
+        h.addWidget(e, 1); h.addWidget(k)
+        v.addLayout(h)
+        f.addRow(w)
+        return e
+
+    def stufen(self, f, key, label, eintraege: list[tuple[str, float]], std, wirkt=None):
+        """Auswahl aus benannten Stufen („normal“, „weit“ …), die als Zahl gespeichert werden."""
+        c = QComboBox()
+        for text, wert in eintraege:
+            c.addItem(text, wert)
+        akt = float(self.s.get(key, std))
+        c.setCurrentIndex(min(range(len(eintraege)), key=lambda i: abs(eintraege[i][1] - akt)))
+
+        def geaendert(_i):
+            self.s.set(key, c.currentData())
+            if wirkt:
+                wirkt(c.currentData())
+        c.currentIndexChanged.connect(geaendert)
         f.addRow(label, c)
         return c
 
@@ -98,33 +198,141 @@ class _Seite(QWidget):
         l.setStyleSheet("color: palette(mid);")
         self.lay.addWidget(l)
 
+    def aktion(self, text: str, knopf: str, aktion, name: str | None = None):
+        """Zeile mit Text und Knopf in der Gruppe, die zuletzt begonnen wurde."""
+        return self.karten[-1].aktion(text, knopf, aktion, name)
+
+    def haken_aus(self, f, text: str, grund: str, an: bool = True):
+        """Ein Haken, den es in der ersten Fassung gab und der hier noch nichts bewirkt: grau, mit Grund."""
+        c = QCheckBox(text)
+        c.setProperty("optName", text)
+        c.setChecked(an); c.setEnabled(False); c.setToolTip(grund)
+        f.addRow(c)
+        return c
+
     def abschluss(self):
+        for k in self.karten:
+            k.ende()
+        fuss = text_label("Lunivo-Office · Prüfung und Wortschatz aus der Schreibhilfe", umbruch=False)
+        fuss.setStyleSheet("color: palette(mid); font-size: 8pt; padding-top: 6px;")
+        self.lay.addWidget(fuss)
         if self._offen:
             self.hinweis("Noch nicht umgesetzt (Einstellung ohne Wirkung): " + "; ".join(self._offen) + ".")
         self.lay.addStretch(1)
 
 
-class OptionenDialog(QDialog):
+STIL = """
+QTreeWidget#optNavigation { background: transparent; border: none; outline: none; }
+QTreeWidget#optNavigation::item { padding: 6px 10px; margin: 1px 8px 1px 0; border-radius: 6px; color: palette(mid); }
+QTreeWidget#optNavigation::item:selected { background: #2f6fb5; color: white; font-weight: 600; }
+QTreeWidget#optNavigation::item:hover:!selected { background: palette(midlight); }
+QTreeWidget#optNavigation::branch, QTreeWidget#optNavigation::branch:selected { background: transparent; }
+QScrollArea#optSeite, QScrollArea#optSeite > QWidget > QWidget { background: transparent; border: none; }
+QGroupBox { border: 1px solid palette(midlight); border-radius: 10px; margin-top: 26px; padding: 8px 10px 8px 10px; background: transparent; }
+QGroupBox::title { subcontrol-origin: margin; subcontrol-position: top left; left: 2px; padding: 0; color: palette(mid); font-size: 8pt; font-weight: 600; }
+QWidget#optPaar { border-bottom: 1px solid palette(midlight); }
+QLabel#optErklaerung { color: palette(mid); font-style: italic; padding: 12px 24px; border-top: 1px solid palette(midlight); }
+QFrame#optSchriftkarte { border: 1px solid palette(midlight); border-radius: 8px; }
+QLabel#optVorschau { background: white; color: #111417; border-radius: 6px; padding: 16px 20px; }
+"""
+
+
+class _Karte(QFormLayout):
+    """Zeilen einer Gruppe. Haken stehen wie in der ersten Fassung zu zweit nebeneinander, mit Linie zwischen den Zeilen;
+    alles andere (Auswahl, Zahlen, Text) steht in einer eigenen Zeile. Verhält sich sonst wie ein ``QFormLayout``."""
+
+    def __init__(self, eltern):
+        super().__init__(eltern)
+        self._offen = None                                  # Zeile mit einem Haken, in die noch ein zweiter passt
+        self.paare: list[QWidget] = []
+        self.setHorizontalSpacing(12); self.setVerticalSpacing(6)
+
+    def addRow(self, *args):
+        if len(args) == 2 and isinstance(args[0], str) and isinstance(args[1], QWidget):
+            self._offen = None
+            zeile = QWidget(); zeile.setObjectName("optPaar")
+            h = QHBoxLayout(zeile); h.setContentsMargins(0, 4, 0, 6); h.setSpacing(12)
+            l = QLabel(args[0]); l.setWordWrap(False)
+            h.addWidget(l); h.addWidget(args[1], 1)
+            args[1].setProperty("optName", args[0])
+            self.paare.append(zeile)
+            super().addRow(zeile)
+            return
+        if len(args) == 1 and isinstance(args[0], QCheckBox) and len(args[0].text()) > 42:
+            self._offen = None                               # langer Text: eine ganze Zeile, sonst wird er abgeschnitten
+            super().addRow(args[0])
+            return
+        if len(args) == 1 and isinstance(args[0], QCheckBox):
+            if self._offen is not None:
+                self._offen.layout().addWidget(args[0], 1)
+                self._offen = None
+                return
+            paar = QWidget(); paar.setObjectName("optPaar")
+            h = QHBoxLayout(paar); h.setContentsMargins(0, 2, 0, 6); h.setSpacing(18)
+            h.addWidget(args[0], 1)
+            self.paare.append(paar)
+            self._offen = paar
+            super().addRow(paar)
+            return
+        self._offen = None
+        super().addRow(*args)
+
+    def aktion(self, text: str, knopf: str, aktion, name: str | None = None) -> QPushButton:
+        """Zeile aus Text und darunter einem Knopf („Den Text hören“ / „Stimme und Tempo …“)."""
+        self._offen = None
+        zeile = QWidget(); zeile.setObjectName("optPaar")
+        v = QVBoxLayout(zeile); v.setContentsMargins(0, 6, 0, 8); v.setSpacing(8)
+        v.addWidget(QLabel(text))
+        k = QPushButton(knopf)
+        k.clicked.connect(lambda _=False: aktion())
+        h = QHBoxLayout(); h.addWidget(k); h.addStretch(1)
+        v.addLayout(h)
+        zeile.setProperty("optName", name or text)
+        self.paare.append(zeile)
+        super().addRow(zeile)
+        return k
+
+    def ende(self):
+        """Unterste Linie der letzten Haken-Zeile weg (die Karte hat selbst einen Rand); halbe Zeile mit Platz auffüllen."""
+        if self._offen is not None:
+            self._offen.layout().addStretch(1)
+        if self.paare:
+            self.paare[-1].setStyleSheet("QWidget#optPaar { border-bottom: none; }")
+
+
+class OptionenAnsicht(QWidget):
+    """Alle Optionen als Ansicht (Navigation links, Seite rechts) — sie steht in der Datei-Ansicht („☰ Menü ▸ Erweiterte
+    Einstellungen“) und im Dialog `OptionenDialog`. Werte gelten sofort."""
+
     def __init__(self, fenster, seite: str | None = None):
-        super().__init__(fenster)
-        self.setWindowTitle("Optionen")
-        self.resize(900, 640)
+        super().__init__()
         self.w = fenster
+        self.setStyleSheet(STIL)
         h = QHBoxLayout(self)
+        h.setContentsMargins(0, 0, 0, 0)
+        h.setSpacing(0)
         self.baum = QTreeWidget()
+        self.baum.setObjectName("optNavigation")
         self.baum.setHeaderHidden(True)
-        self.baum.setFixedWidth(230)
+        self.baum.setRootIsDecorated(True)
+        self.baum.setIndentation(14)
+        self.baum.setFocusPolicy(Qt.NoFocus)
+        self.baum.setFixedWidth(250)
         self.stapel = QStackedWidget()
-        self.stapel.setMinimumWidth(560)
+        self.stapel.setMinimumWidth(520)
+        self.stapel.setMaximumWidth(860)
         h.addWidget(self.baum)
-        rechts = QVBoxLayout()
-        sc = QScrollArea(); sc.setWidgetResizable(True); sc.setWidget(self.stapel); sc.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        rechts.addWidget(sc, 1)
-        bb = QDialogButtonBox(QDialogButtonBox.Close)
-        bb.button(QDialogButtonBox.Close).setText("Fertig")
-        bb.rejected.connect(self.accept)
-        rechts.addWidget(bb)
-        h.addLayout(rechts, 1)
+        sc = QScrollArea(); sc.setObjectName("optSeite"); sc.setWidgetResizable(True); sc.setFrameShape(QFrame.NoFrame)
+        sc.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        halter = QWidget(); hl = QHBoxLayout(halter); hl.setContentsMargins(0, 0, 0, 0)
+        hl.addWidget(self.stapel); hl.addStretch(1)                      # Seite links, nicht über die ganze Breite gezogen
+        sc.setWidget(halter)
+        rechts = QWidget(); rv = QVBoxLayout(rechts); rv.setContentsMargins(0, 0, 0, 0); rv.setSpacing(0)
+        rv.addWidget(sc, 1)
+        self.erklaerzeile = text_label(ERKLAERUNG_LEER, umbruch=True)
+        self.erklaerzeile.setObjectName("optErklaerung")
+        rv.addWidget(self.erklaerzeile)
+        h.addWidget(rechts, 1)
         self.knoten: dict[str, QTreeWidgetItem] = {}
         zweige = [
             ("Leichter lesen", [("lesehilfe", "Lesehilfe", self._lesehilfe), ("schriften", "Schriftarten", self._schriften),
@@ -132,18 +340,23 @@ class OptionenDialog(QDialog):
             ("Wie im WPS Writer", [("ansicht", "Ansicht", self._ansicht), ("bearbeiten", "Bearbeiten", self._bearbeiten),
                                    ("speichern", "Allgemein und Speichern", self._speichern),
                                    ("sicherung", "Sicherungseinstellungen", self._sicherung),
-                                   ("drucken", "Drucken", self._drucken), ("benutzer", "Benutzerinformationen", self._benutzer),
+                                   ("speicherort", "Speicherort für Dateien", self._speicherort),
+                                   ("verfolgen", "Änderungen verfolgen", self._verfolgen),
+                                   ("pdf", "In PDF exportieren", self._pdf),
+                                   ("benutzer", "Benutzerinformationen", self._benutzer),
+                                   ("drucken", "Drucken", self._drucken),
                                    ("sicherheit", "Sicherheit", self._sicherheit),
                                    ("menueband", "Menüband anpassen", self._menueband),
-                                   ("schnellzugriff", "Symbolleiste für den Schnellzugriff", self._schnellzugriff),
-                                   ("verfolgen", "Änderungen verfolgen", self._verfolgen)]),
+                                   ("schnellzugriff", "Symbolleiste für den Schnellzugriff", self._schnellzugriff)]),
             ("Nur bei Lunivo", [("ki", "Schreibhilfe und KI", self._ki), ("gedaechtnis", "Gedächtnis", self._gedaechtnis),
                                 ("erweitert", "Erweitert", self._erweitert)]),
         ]
         for zweig, seiten in zweige:
             z = QTreeWidgetItem([zweig])
             z.setFlags(z.flags() & ~Qt.ItemIsSelectable)
-            f = z.font(0); f.setBold(True); z.setFont(0, f)
+            f = z.font(0); f.setBold(True); f.setPointSizeF(max(7.5, f.pointSizeF() - 1.5)); f.setCapitalization(QFont.AllUppercase)
+            z.setFont(0, f)
+            z.setForeground(0, self.palette().mid())
             self.baum.addTopLevelItem(z)
             for key, titel, bauer in seiten:
                 it = QTreeWidgetItem([titel])
@@ -153,9 +366,27 @@ class OptionenDialog(QDialog):
                 self.stapel.addWidget(bauer(titel))
                 it.setData(0, Qt.UserRole + 1, self.stapel.count() - 1)
         self.baum.expandAll()
+        self.baum.itemClicked.connect(lambda it, _c: it.parent() is None and it.setExpanded(not it.isExpanded()))   # Gruppen auf-/zuklappen
         self.baum.currentItemChanged.connect(lambda cur, _p: cur and cur.data(0, Qt.UserRole + 1) is not None
                                              and self.stapel.setCurrentIndex(cur.data(0, Qt.UserRole + 1)))
+        for wid in self.stapel.findChildren(QWidget):                 # Zeigen auf eine Einstellung erklärt sie unten
+            wid.installEventFilter(self)
         self.gehe_zu(seite or "lesehilfe")
+
+    def eventFilter(self, obj, ev):
+        if ev.type() in (QEvent.Enter, QEvent.FocusIn) and isinstance(obj, QWidget):
+            w = obj
+            while w is not None and not w.property("optName"):
+                w = w.parentWidget()
+            if w is not None:
+                self._erklaere(str(w.property("optName")))
+        elif ev.type() == QEvent.Leave:
+            self.erklaerzeile.setText(ERKLAERUNG_LEER)
+        return super().eventFilter(obj, ev)
+
+    def _erklaere(self, name: str) -> None:
+        satz = _erklaerung(name)
+        self.erklaerzeile.setText(f"{name} — {satz}" if satz else ERKLAERUNG_LEER)
 
     def gehe_zu(self, key: str):
         it = self.knoten.get(key) or self.knoten["lesehilfe"]
@@ -163,26 +394,90 @@ class OptionenDialog(QDialog):
 
     # ================= Leichter lesen =================
     def _lesehilfe(self, titel):
-        p = _Seite(self.w, titel, ["Lesestufe", "Zeilenluft", "Absatz beim Schreiben / Übriger Text (Abdunkeln)"])
+        p = _Seite(self.w, titel, ["Zeilenluft"])
+        refs: dict = {}
+        stufen = LS.STUFEN
+        proben = ("Sehr geehrte Damen und Herren, hiermit kündige ich meinen Vertrag fristgerecht zum nächstmöglichen Termin.",
+                  "Bitte bestätigen Sie mir den Eingang und das Datum, zu dem die Kündigung wirksam wird.",
+                  "Mit freundlichen Grüßen")
+
+        def anwenden(_=None):
+            self.w.lesehilfe_anwenden()
+            vorschau_neu()
+
+        def vorschau_neu():
+            lab = refs.get("vorschau")
+            if lab is None:
+                return
+            px_b, px_w = float(p.s.get("lesehilfe/buchstaben", 0)), float(p.s.get("lesehilfe/wort", 0))
+            fnt = lab.font(); fnt.setLetterSpacing(QFont.AbsoluteSpacing, px_b); fnt.setWordSpacing(px_w); lab.setFont(fnt)
+            lab.setStyleSheet(f"background: {PAPIERTOENE.get(str(p.s.get('lesehilfe/papier', 'Weiß')), '#ffffff')}; color: #111417; "
+                              "border-radius: 6px; padding: 16px 20px;")
+
+        # ---- Lesestufe: drei Voreinstellungen, die die Einstellungen darunter setzen
+        f = p.gruppe("Lesestufe")
+        karte = QWidget()
+        kv = QVBoxLayout(karte); kv.setContentsMargins(0, 4, 0, 4)
+        kv.addWidget(QLabel("Wie leicht soll es zu lesen sein?"))
+        spalten = QHBoxLayout(); spalten.setSpacing(24)
+        links = QVBoxLayout()
+        links.addWidget(text_label("Lesestufe", fett=True, umbruch=False))
+        gruppe = QButtonGroup(karte)
+        aktuell = LS.aktuell(p.s)
+        erlaeutert = text_label(" ".join(stufen[aktuell]["text"] if aktuell else LS.EIGENE))
+        erlaeutert.setStyleSheet("color: palette(mid); font-size: 9pt;")
+        for name in stufen:
+            r = QRadioButton(name)
+            r.setProperty("optName", "Lesestufe")
+            r.setChecked(name == aktuell)
+            gruppe.addButton(r)
+            links.addWidget(r)
+            r.toggled.connect(lambda an, n=name: an and waehle_stufe(n))
+        links.addStretch(1)
+        rechts = QVBoxLayout()
+        rechts.addWidget(text_label("Vorschau", fett=True, umbruch=False))
+        vorschau = QLabel("\n\n".join(proben)); vorschau.setWordWrap(True); vorschau.setObjectName("optVorschau")
+        refs["vorschau"] = vorschau
+        rechts.addWidget(vorschau); rechts.addWidget(erlaeutert)
+        spalten.addLayout(links, 1); spalten.addLayout(rechts, 2)
+        kv.addLayout(spalten)
+        f.addRow(karte)
+
+        def waehle_stufe(name):
+            st = stufen[name]
+            p.s.set("lesehilfe/stufe", name)
+            refs["papier"].setCurrentText(st["papier"])
+            refs["buch"].setCurrentIndex(refs["buch"].findData(st["buchstaben"]))
+            refs["wort"].setCurrentIndex(refs["wort"].findData(st["wort"]))
+            refs["groesser"].setCurrentIndex(refs["groesser"].findData(st["groesser"]))
+            refs["zurueck"].setCurrentIndex(refs["zurueck"].findData(st["zurueck"]))
+            erlaeutert.setText(" ".join(st["text"]))
+            anwenden()
+
         f = p.gruppe("Leichter lesen")
-        p.auswahl(f, "lesehilfe/papier", "Papierton", list(PAPIERTOENE), "Weiß", lambda _: self.w.lesehilfe_anwenden())
-        p.zahl(f, "lesehilfe/buchstaben", "Buchstabenabstand", 0, 6, 0, " px", 1, lambda _: self.w.lesehilfe_anwenden())
-        p.zahl(f, "lesehilfe/wort", "Wortabstand", 0, 20, 0, " px", 1, lambda _: self.w.lesehilfe_anwenden())
+        refs["papier"] = p.auswahl(f, "lesehilfe/papier", "Papierton", list(PAPIERTOENE), "Weiß", anwenden)
+        refs["buch"] = p.stufen(f, "lesehilfe/buchstaben", "Buchstabenabstand",
+                                [("normal", 0.0), ("etwas mehr", 0.45), ("deutlich mehr", 0.9), ("sehr viel", 1.35)], 0.0, anwenden)
+        refs["wort"] = p.stufen(f, "lesehilfe/wort", "Wortabstand",
+                                [("normal", 0.0), ("etwas mehr", 1.8), ("deutlich mehr", 3.6), ("sehr viel", 5.4)], 0.0, anwenden)
         f = p.gruppe("Beim Schreiben")
-        c = p.haken(f, "lesehilfe/zeilenfokus", "Zeilenfokus", False,
-                    lambda on: [t.editor.set_zeilenfokus(on) for t in self.w._doc_tabs()])
+        refs["fokus"] = p.haken(f, "lesehilfe/zeilenfokus", "Zeilenfokus", False, lambda on: self.w.lesehilfe_anwenden())
+        refs["groesser"] = p.wahl(f, "lesehilfe/groesser", "Absatz beim Schreiben",
+                                  [("nicht vergrößern", "keine"), ("etwas größer", "etwas"), ("deutlich größer", "deutlich")], "keine", anwenden)
+        refs["zurueck"] = p.wahl(f, "lesehilfe/zurueck", "Übriger Text",
+                                 [("gleich lassen", "keine"), ("etwas blasser", "etwas"), ("deutlich blasser", "deutlich")], "keine", anwenden)
+        c = QComboBox(); c.addItem("normal"); c.setEnabled(False)
+        c.setToolTip("Zeilenluft braucht einen eigenen Textsatz: Qt kennt den Zeilenabstand nur als Format des Absatzes, das das Dokument "
+                     "(und den Rückgängig-Verlauf) ändern würde. Der Zeilenabstand der Absätze steht unter Start ▸ Absatz.")
+        c.setProperty("optName", "Zeilenluft")
+        f.addRow("Zeilenluft", c)
         f = p.gruppe("Schrift und Sprache")
-        p.haken(f, "schreibhilfe/wellen", "Rechtschreibung während der Eingabe prüfen (Wellenlinien)", True,
+        p.aktion("Schrift zum leichteren Lesen", "Zur Schriftwahl", lambda: self.gehe_zu("schriften"))
+        self._silbentrennung_haken(p, f)
+        p.haken(f, "schreibhilfe/wellen", "Rechtschreibung während der Eingabe prüfen", True,
                 lambda on: self.w.assistant.setze("wellen", on))
         f = p.gruppe("Vorlesen")
-        liste = vorlesen.stimmen()
-        v = QComboBox(); v.addItem("Automatisch", "")
-        for s in liste:
-            v.addItem(s["name"], s["kennung"])
-        v.setCurrentIndex(max(0, v.findData(p.s.get("vorlesen/stimme", ""))))
-        v.currentIndexChanged.connect(lambda _: p.s.set("vorlesen/stimme", v.currentData()))
-        f.addRow("Stimme", v)
-        p.zahl(f, "vorlesen/tempo", "Tempo (−100 bis 100)", -100, 100, 0)
+        p.aktion("Den Text hören", "Stimme und Tempo …", lambda: self.w.befehle.stimmeWaehlen())
         if not vorlesen.verfuegbar():
             p.hinweis("Es ist keine Sprachausgabe eingerichtet (speech-dispatcher oder Piper).")
         f = p.gruppe("Silben farbig (Lesehilfe für Legasthenie)")
@@ -192,9 +487,18 @@ class OptionenDialog(QDialog):
         f.addRow(b)
         f = p.gruppe("Silbentrennung")
         p.auswahl(f, "silben/sprache", "Sprache der Silbentrennung", ["de_DE", "de_AT", "de_CH", "en_US", "en_GB", "fr", "es", "it", "nl_NL", "pl_PL", "tr_TR"], "de_DE")
-        p.zeile(f, "Ein/Aus: Reiter Schreibhilfe ▸ Sprache ▸ Silbentrennung. Wirkt in Seitenansicht, Druck und PDF; in DOCX wird der Schalter „automatische Silbentrennung“ gespeichert.")
+        vorschau_neu()
         p.abschluss()
         return p
+
+    def _silbentrennung_haken(self, p, f):
+        """Haken „Silbentrennung“: gilt für das Dokument, das gerade offen ist (derselbe Schalter wie im Reiter Schreibhilfe)."""
+        c = QCheckBox("Silbentrennung")
+        c.setProperty("optName", "Silbentrennung")
+        c.setChecked(bool(self.w.befehle.an_silbentrennung()))
+        c.toggled.connect(lambda on: on != bool(self.w.befehle.an_silbentrennung()) and self.w.befehle.silbentrennung())
+        f.addRow(c)
+        return c
 
     def _schriften(self, titel):
         p = _Seite(self.w, titel)
@@ -206,123 +510,255 @@ class OptionenDialog(QDialog):
         f.addRow("Schrift", fam)
         p.zahl(f, "standard/groesse", "Größe", 6, 72, 11, " pt", 1)
         f = p.gruppe("Zum leichteren Lesen")
+        f.addRow(QLabel("Drei Schriften sind dafür gemacht"))
         vorhanden = {n.lower() for n in QFontDatabase.families()}
+        beschreibung = {"OpenDyslexic": "Die Buchstaben sind unten schwerer — sie kippen nicht.",
+                        "Lexend": "Weitere Abstände, ruhigeres Zeilenbild.",
+                        "Atkinson Hyperlegible": "Unterscheidet Zeichen wie I, l und 1."}
+        reihe = QWidget(); rh = QHBoxLayout(reihe); rh.setContentsMargins(0, 4, 0, 4); rh.setSpacing(10)
         for n in LESESCHRIFTEN:
-            p.zeile(f, f"{n}: " + ("ist da ✔" if n.lower() in vorhanden else "fehlt — ./schrift-holen.sh holt sie"))
+            k = QFrame(); k.setObjectName("optSchriftkarte")
+            kv = QVBoxLayout(k)
+            name = QLabel(n)
+            if n.lower() in vorhanden:
+                fnt = QFont(n); fnt.setPointSizeF(13); name.setFont(fnt)
+            kv.addWidget(name)
+            t = text_label(beschreibung.get(n, "") + ("" if n.lower() in vorhanden else "  (fehlt — ./schrift-holen.sh holt sie)"))
+            t.setStyleSheet("color: palette(mid); font-size: 8pt;")
+            kv.addWidget(t)
+            rh.addWidget(k, 1)
+        f.addRow(reihe)
+        p.aktion("Sind sie da?", "Zu Erweitert", lambda: self.gehe_zu("erweitert"))
         p.hinweis("Gilt für neue Dokumente. Bestehende Dokumente behalten ihre Schrift.")
         p.abschluss()
         return p
 
     def _sprache(self, titel):
-        p = _Seite(self.w, titel, ["Weitere Prüfsprachen (derzeit Deutsch)", "Alle Prüfoptionen"])
+        p = _Seite(self.w, titel, ["Weitere Prüfsprachen (derzeit Deutsch)"])
         f = p.gruppe("Sprache")
+        pr = QComboBox(); pr.addItem("Deutsch"); pr.setToolTip("Weitere Prüfsprachen gibt es in der Qt-Fassung noch nicht")
+        f.addRow("Sprache für die Prüfung", pr)
         c = QComboBox(); c.addItems(K.SPRACHEN)
         c.setCurrentText(self.w.ki.konfig["sprache"])
         c.currentTextChanged.connect(lambda t: (self.w.ki.konfig.setze("sprache", t), self.w.ki.geaendert.emit()))
         f.addRow("Übersetzen nach", c)
         f = p.gruppe("Was geprüft wird")
         p.haken(f, "schreibhilfe/wellen", "Rechtschreibung während der Eingabe", True, lambda on: self.w.assistant.setze("wellen", on))
+        p.haken(f, "rsGrammatik", "Grammatik mitprüfen", True, lambda _: self.w.assistant.pruefen(voll=True))
+        self._silbentrennung_haken(p, f)
+        p.aktion("Alle Prüfoptionen", "Zur Rechtschreibprüfung", lambda: self.gehe_zu("rechtschreibung"))
+        f = p.gruppe("Wörter, die Lunivo kennt")
+        p.aktion("Dein eigener Wortschatz", "Zum Gedächtnis", lambda: self.gehe_zu("gedaechtnis"))
+        p.aktion("Gründlich prüfen", "Gründlich prüfen …", lambda: self.w.befehle.tun("gruendlichPruefen"))
         p.abschluss()
         return p
 
     def _rechtschreibung(self, titel):
-        p = _Seite(self.w, titel, ["Immer Korrekturvorschläge unterbreiten", "Grammatik mitprüfen (LanguageTool einrichten, siehe INSTALLATION.md)",
-                                   "Benutzerwörterbuch (siehe Gedächtnis)"])
+        p = _Seite(self.w, titel)
         f = p.gruppe("Rechtschreibprüfung")
+        pr = QComboBox(); pr.addItem("Deutsch"); pr.setToolTip("Weitere Prüfsprachen gibt es in der Qt-Fassung noch nicht")
+        f.addRow("Sprache für die Prüfung", pr)
         p.haken(f, "schreibhilfe/wellen", "Rechtschreibung während der Eingabe prüfen", True, lambda on: self.w.assistant.setze("wellen", on))
+        p.haken(f, "schreibhilfe/vorschlaege", "Immer Korrekturvorschläge unterbreiten", True)
+        p.haken(f, "rsGrammatik", "Grammatik mitprüfen", True, lambda _: self.w.assistant.pruefen(voll=True))
         p.haken(f, "rsGrossIgnorieren", "Wörter in GROSSBUCHSTABEN ignorieren", True, lambda _: self.w.assistant.pruefen(voll=True))
         p.haken(f, "rsZahlenIgnorieren", "Wörter mit Zahlen ignorieren", True, lambda _: self.w.assistant.pruefen(voll=True))
         p.haken(f, "rsPfadeIgnorieren", "Internet- und Netzwerkpfade ignorieren", True, lambda _: self.w.assistant.pruefen(voll=True))
-        b = QPushButton("Weggewinkte Funde wieder anzeigen")
-        b.clicked.connect(lambda: (self.w.assistant._weg.clear(), self.w.assistant.pruefen(voll=True)))
-        f.addRow(b)
+        p.aktion("Weggewinkte Funde wieder anzeigen", "Wieder anzeigen",
+                 lambda: (self.w.assistant._weg.clear(), self.w.assistant.pruefen(voll=True)))
+        f = p.gruppe("Benutzerwörterbuch")
+        p.aktion("Was das Programm gelernt hat", "Zum Gedächtnis", lambda: self.gehe_zu("gedaechtnis"))
         p.abschluss()
         return p
 
     # ================= Wie im WPS Writer =================
     def _ansicht(self, titel):
-        p = _Seite(self.w, titel, ["Lineal", "Vertikales Lineal", "Gitternetzlinien",
-                                   ])
+        p = _Seite(self.w, titel)
         f = p.gruppe("Anzeigen")
-        p.haken(f, "ui/marken", "Textbegrenzungen (Eckmarken)", False, self.w.set_marken)
+        p.haken(f, "ansicht/lineal", "Lineal", False, lambda _: self.w.lineale_anwenden())
+        p.haken(f, "ansicht/lineal_hoch", "Vertikales Lineal", False, lambda _: self.w.lineale_anwenden())
+        p.schalter(f, "Navigationsbereich", lambda: self.w.navigation.isVisible(), self.w.toggle_navigation)
+        p.haken(f, "ui/marken", "Textbegrenzungen", False, self.w.set_marken)
+        p.schalter(f, "Gitternetzlinien", lambda: bool(self.w.befehle.an_netzlinien()), lambda: self.w.befehle.netzlinien())
+        p.haken(f, "ui/statusleiste", "Statusleiste", True, lambda on: self.w.statusBar().setVisible(on))
         p.haken(f, "ui/seitenleiste", "Seitenleiste beim Start", True)
-        p.haken(f, "ui/navigation", "Navigationsbereich beim Start", False)
-        p.haken(f, "ui/live_vorschau", "Live-Vorschau: Formate beim Überfahren schon im Dokument zeigen", True, lambda _: self.w.vorschau.ende())
-        f = p.gruppe("Minisymbolleiste")
-        p.haken(f, "ui/mini_auswahl", "Minisymbolleiste beim Markieren von Text zeigen", True)
-        p.haken(f, "ui/mini_rechtsklick", "Minisymbolleiste beim Rechtsklick zeigen", True)
-        f = p.gruppe("Weitere Anzeige")
-        p.haken(f, "ui/versteckt_zeigen", "Ausgeblendeten Text anzeigen (grau, gepunktet)", False, lambda _: self.w.versteckt_anwenden())
-        p.haken(f, "ui/objektanker", "Objektanker anzeigen (bei sichtbaren Formatierungszeichen)", True)
-        p.haken(f, "ui/kopffuss_anzeigen", "Kopf- und Fußzeile im Seitenrand zeigen", True)
-        p.haken(f, "ui/kopffuss_tipp", "Tipp „Doppelklick bearbeitet Kopf-/Fußzeile“ zeigen", True)
-        p.auswahl(f, "ui/feldschattierung", "Feldschattierung", ["Nie", "Bei Auswahl", "Immer"], "Bei Auswahl", lambda _: [t.editor._overlays_neu() for t in self.w._doc_tabs()])
-        f = p.gruppe("Druckoptionen der Ansicht")
-        p.haken(f, "drucken/versteckt", "Ausgeblendeten Text drucken", False)
-        p.haken(f, "drucken/felder_code", "Feldfunktionen statt Ergebnissen drucken", False)
-        p.haken(f, "drucken/zeichnungen", "Zeichnungsobjekte drucken (Formen, WordArt, Diagramme)", True)
-        p.haken(f, "drucken/hervorhebungen", "Hervorhebungen drucken (Textmarker)", True)
-        p.haken(f, "drucken/textgrenzen", "Textbegrenzungen drucken (gestrichelter Rahmen um die Textfläche)", False)
-        p.haken(f, "drucken/zuschnitt", "Zuschnittsmarken drucken (Ecken der Textfläche)", False)
-        p.haken(f, "drucken/textmarken", "Textmarken drucken (in eckigen Klammern)", False)
+        p.haken(f, "ui/quickinfo", "QuickInfo", True, lambda _: self.w.ansicht_optionen_anwenden())
+        p.haken(f, "ui/live_vorschau", "Live-Vorschau", True, lambda _: self.w.vorschau.ende())
+        p.haken(f, "ui/mini_auswahl", "Minisymbolleiste bei Auswahl", True)
+        p.haken(f, "ui/mini_rechtsklick", "Minisymbolleiste bei Rechtsklick", True)
+        p.haken(f, "ui/kopffuss_tipp", "Tipp für Kopf- bzw. Fußzeile", True)
+        f = p.gruppe("Druckoptionen")
+        p.haken(f, "drucken/hervorhebungen", "Hervorhebungen drucken", True)
+        p.haken(f, "drucken/textgrenzen", "Textbegrenzungen drucken", False)
+        p.haken(f, "drucken/zuschnitt", "Zuschnittsmarken anzeigen", False)
+        p.haken(f, "drucken/felder_code", "Feldfunktionen drucken", False)
+        p.haken(f, "drucken/textmarken", "Textmarken drucken", False)
+        p.wahl(f, "ui/feldschattierung", "Feldschattierung", [("Nie", "Nie"), ("Wenn ausgewählt", "Bei Auswahl"), ("Immer", "Immer")],
+               "Bei Auswahl", lambda _: [t.editor._overlays_neu() for t in self.w._doc_tabs()])
         f = p.gruppe("Formatierungszeichen")
-        p.haken(f, "ui/steuerzeichen", "Absatzmarken, Leerzeichen und Tabstoppzeichen anzeigen", False,
-                lambda on: self.w.a_marks.setChecked(on))
-        p.haken(f, "ui/statusleiste", "Statusleiste anzeigen", True, lambda on: self.w.statusBar().setVisible(on))
-        p.haken(f, "ui/band_doppelklick", "Doppelklick auf einen Reiter blendet das Band aus", True,
-                lambda on: setattr(self.w.band, "einklappbar", on))
-        p.haken(f, "ui/strg_klick_link", "Strg + Klick öffnet Hyperlinks", True)
+        alle, absatz, leer = QCheckBox("Alle anzeigen"), QCheckBox("Absatzmarken"), QCheckBox("Leerzeichen und Tabstoppzeichen")
+        for c in (alle, absatz, leer):
+            c.setProperty("optName", c.text())
+
+        def stand():
+            alt = p.s.get_bool("ui/steuerzeichen", False)
+            a, l = p.s.get_bool("ui/marken_absatz", alt), p.s.get_bool("ui/marken_leer", alt)
+            for c, v in ((alle, a and l), (absatz, a), (leer, l)):
+                c.blockSignals(True); c.setChecked(v); c.blockSignals(False)
+
+        def setze(a=None, l=None):
+            self.w.marken_setzen(a, l)
+            stand()
+        stand()
+        alle.toggled.connect(lambda on: setze(on, on))
+        absatz.toggled.connect(lambda on: setze(absatz=on))
+        leer.toggled.connect(lambda on: setze(leer=on))
+        for c in (alle, absatz, leer):
+            f.addRow(c)
+        p.haken(f, "ui/objektanker", "Objektanker", True)
+        p.haken(f, "ui/versteckt_zeigen", "Ausgeblendeter Text", False, lambda _: self.w.versteckt_anwenden())
+        f = p.gruppe("Menübandoptionen")
+        p.haken(f, "ui/band_doppelklick", "Doppelklick blendet das Band aus", True, lambda on: setattr(self.w.band, "einklappbar", on))
+        p.haken(f, "ui/strg_klick_link", "Strg+Klick folgt einem Verweis", True)
         f = p.gruppe("Darstellung")
-        p.auswahl(f, "ui/icongroesse", "Symbolgröße", ["klein", "mittel", "gross"], "mittel", lambda _: self.w.ansicht_optionen_anwenden())
-        p.zahl(f, "ui/bedienschrift_groesse", "Schriftgröße der Bedienelemente (0 = System)", 0, 24, 0, " pt",
-               wirkt=lambda _: self.w.ansicht_optionen_anwenden())
-        p.auswahl(f, "theme", "Helligkeit", ["system", "light", "dark"], "system", self.w.set_theme)
+        self._darstellung(p, f)
         p.abschluss()
         return p
 
+    def _darstellung(self, p, f):
+        """Schrift und Helligkeit, Weicher Kontrast, Größe der Symbole, Schrift der Bedienung, Benutzeroberfläche."""
+        kopf = QWidget(); v = QVBoxLayout(kopf); v.setContentsMargins(0, 6, 0, 8); v.setSpacing(8)
+        v.addWidget(QLabel("Schrift und Helligkeit"))
+        knoepfe = QHBoxLayout()
+        klein, gross, hell = QPushButton("A−  kleiner"), QPushButton("A+  größer"), QPushButton("◐  Hell/Dunkel")
+        for k in (klein, gross, hell):
+            knoepfe.addWidget(k)
+        knoepfe.addStretch(1)
+        v.addLayout(knoepfe)
+        zeile = QHBoxLayout()
+        probe = QLabel("So groß schreibst du.")
+        probe.setObjectName("optVorschau")
+        stand = QLabel()
+        stand.setStyleSheet("color: palette(mid); font-size: 9pt;")
+        zeile.addWidget(probe); zeile.addWidget(stand); zeile.addStretch(1)
+        v.addLayout(zeile)
+
+        def zoom_zeigen():
+            e = self.w.current_editor()
+            z = e.zoom if e is not None else 1.0
+            fnt = probe.font(); fnt.setPointSizeF(12 * z); probe.setFont(fnt)
+            stand.setText(f"Schriftgröße: {round(z * 100)} %")
+
+        def um(faktor):
+            self.w.befehle._zoom_um(faktor)
+            zoom_zeigen()
+        klein.clicked.connect(lambda: um(1 / 1.1))
+        gross.clicked.connect(lambda: um(1.1))
+        hell.clicked.connect(lambda: self.w.set_theme("light" if QApplication.instance().palette().window().color().lightness() < 128 else "dark"))
+        zoom_zeigen()
+        kopf.setProperty("optName", "Schrift und Helligkeit")
+        f.addRow(kopf)
+        p.haken(f, "ui/weich", "Weicher Kontrast", False, lambda _: self.w.set_theme(self.w.settings.get("theme", "system")))
+        p.wahl(f, "ui/icongroesse", "Größe der Symbole", [("Klein", "klein"), ("Mittel", "mittel"), ("Groß", "gross")], "mittel",
+               lambda _: self.w.ansicht_optionen_anwenden())
+        regler = QWidget(); rv = QVBoxLayout(regler); rv.setContentsMargins(0, 6, 0, 8); rv.addWidget(QLabel("Schrift der Bedienung"))
+        rh = QHBoxLayout()
+        sl = QSlider(Qt.Horizontal); sl.setRange(80, 140); sl.setSingleStep(5); sl.setPageStep(10)
+        sl.setValue(p.s.get_int("ui/bedien_prozent", 100))
+        prozent = QLabel(f"{sl.value()} %"); prozent.setStyleSheet("color: palette(mid);")
+
+        def neu_wert(w):
+            p.s.set("ui/bedien_prozent", w)
+            prozent.setText(f"{w} %")
+            if not sl.isSliderDown():
+                self.w.ansicht_optionen_anwenden()
+        sl.valueChanged.connect(neu_wert)
+        sl.sliderReleased.connect(self.w.ansicht_optionen_anwenden)
+        rh.addWidget(sl, 1); rh.addWidget(prozent)
+        rv.addLayout(rh)
+        regler.setProperty("optName", "Schrift der Bedienung")
+        f.addRow(regler)
+        oberfl = QWidget(); ov = QVBoxLayout(oberfl); ov.setContentsMargins(0, 6, 0, 8); ov.addWidget(QLabel("Benutzeroberfläche"))
+        gr = QButtonGroup(oberfl)
+        beschreibung = text_label("", umbruch=True)
+        beschreibung.setStyleSheet("color: palette(mid); font-size: 9pt;")
+        texte = {"symbolleisten": "Menüleiste, darunter zwei Zeilen Symbole: alles ist sichtbar, nichts ist versteckt.",
+                 "register": "Menüleiste oben, darunter Reiter: Start, Einfügen, Layout. Jeder Reiter hat seine eigenen Werkzeuge, in Gruppen mit Namen darunter."}
+        aktuell = p.s.get("ui/oberflaeche", "register")
+        for schl, name in (("symbolleisten", "Symbolleisten"), ("register", "In Registern")):
+            r = QRadioButton(name); r.setChecked(schl == aktuell); r.setProperty("optName", "Benutzeroberfläche")
+            gr.addButton(r); ov.addWidget(r)
+            r.toggled.connect(lambda an, k=schl: an and (beschreibung.setText(texte[k]),
+                                                         self.w.oberflaeche_aendern(k, self.w.menubar_wanted if k == "register" else True)))
+        beschreibung.setText(texte.get(aktuell, ""))
+        ov.addWidget(beschreibung)
+        oberfl.setProperty("optName", "Benutzeroberfläche")
+        f.addRow(oberfl)
+
     def _bearbeiten(self, titel):
-        p = _Seite(self.w, titel, ["Text mit der Maus verschieben", "Maximale Rückgängig-Schritte",
-                                   ])
+        p = _Seite(self.w, titel)
+        f = p.gruppe("Bearbeitungsoptionen")
+        p.haken(f, "bearbeiten/wortweise", "Wortweise markieren", True)
+        p.haken(f, "bearbeiten/ziehen", "Text mit der Maus verschieben", True, lambda _: self.w.lesehilfe_anwenden())
+        p.haken(f, "bearbeiten/tippen_ersetzt", "Tippen ersetzt die Auswahl", True)
+        f = p.gruppe("AutoFormat")
+        p.haken(f, "autoformat/liste", "Automatisch nummerierte Listen", True)
+        p.haken(f, "autoformat/punkte", "Aufzählungen erkennen", True)
+        p.haken(f, "schreibhilfe/akKreiszahl", "Zahl automatisch im Kreis", False)
         f = p.gruppe("AutoKorrektur")
-        p.haken(f, "schreibhilfe/autokorr", "AutoKorrektur (Hauptschalter)", True, lambda on: self.w.assistant.setze("autokorr", on))
+        p.haken(f, "schreibhilfe/autokorr", "AutoKorrektur", True, lambda on: self.w.assistant.setze("autokorr", on))
         for name, (std, text) in autokorrektur.SCHALTER.items():
             p.haken(f, "schreibhilfe/" + name, text, std)
-        f = p.gruppe("Eingabe")
-        p.haken(f, "bearbeiten/tippen_ersetzt", "Eingabe ersetzt die Markierung", True)
-        from lunivo_writer.ui.document.document_editor import EINFUEGE_MODI
-        p.auswahl(f, "bearbeiten/einfuegen_standard", "Standardeinfügeformat (Strg+V)", EINFUEGE_MODI, EINFUEGE_MODI[0])
-        p.haken(f, "bearbeiten/einfuegen_schaltflaeche", "Schaltfläche mit Einfügeoptionen nach dem Einfügen zeigen", True)
-        p.haken(f, "schreibhilfe/vorschlaege", "Im Rechtsklickmenü immer Korrekturvorschläge anbieten", True)
-        p.haken(f, "bearbeiten/wortweise", "Wortweise markieren (Ziehen mit der Maus erweitert auf ganze Wörter)", True)
-        p.haken(f, "autoformat/liste", "Listen beim Tippen erkennen (1.  a)  -  *)", True)
-        p.haken(f, "autoformat/punkte", "„- “ und „* “ am Zeilenanfang werden zur Aufzählung", True)
         p.haken(f, "schreibhilfe/akPfade", "Internet- und Netzwerkpfade durch Hyperlinks ersetzen", True)
-        p.haken(f, "schreibhilfe/akTabEinzug", "Tab / Rücktaste am Absatzanfang ändert den Einzug", True)
-        p.haken(f, "schreibhilfe/akErstzeile", "Leerzeichen am Absatzanfang werden Erstzeileneinzug", False)
-        p.haken(f, "schreibhilfe/akZentriert", "Zentrieren hebt den Erstzeileneinzug auf", True)
-        p.haken(f, "schreibhilfe/akKreiszahl", "Zahl in Klammern automatisch in den Kreis setzen: (1) → ①", False)
-        p.haken(f, "schreibhilfe/akRechtsLeer", "Leerzeichen am Ende rechtsbündiger Zeilen entfernen", False)
-        f = p.gruppe("Wortvorhersage")
+        p.haken(f, "schreibhilfe/akErstzeile", "Leerzeichen am Absatzanfang mit Erstzeileneinzug", False)
+        p.haken(f, "schreibhilfe/akRechtsLeer", "Leerzeichenformat am Ende rechtsbündiger Zeilen anpassen", False)
+        p.haken(f, "schreibhilfe/akZentriert", "Bei zentriertem Ausrichten Erstzeileneinzug löschen", True)
+        p.haken(f, "schreibhilfe/akTabEinzug", "Tabulator und Rücktaste setzen den Einzug", True)
         p.haken(f, "schreibhilfe/vorhersage", "Wortvorhersage", True, lambda on: self.w.assistant.setze("vorhersage", on))
+        f = p.gruppe("Ausschneiden und Einfügen")
+        p.haken(f, "bearbeiten/einfuegen_schaltflaeche", "Schaltfläche nach dem Einfügen", True)
+        p.haken(f, "bearbeiten/mittlere_taste", "Mittlere Maustaste fügt ein", True)
+        from lunivo_writer.ui.document.document_editor import EINFUEGE_MODI
+        p.wahl(f, "bearbeiten/einfuegen_standard", "Standardeinfügeformat", [(m, m) for m in EINFUEGE_MODI], EINFUEGE_MODI[0])
         p.abschluss()
         return p
 
     def _speichern(self, titel):
-        p = _Seite(self.w, titel, ["Bilder nicht komprimieren", "Kompatibilitätsoptionen"])
-        f = p.gruppe("Maßeinheit")
-        from lunivo_writer.ui.dialogs import dokument_dialoge as _d
-        p.auswahl(f, "ui/masseinheit", "Maßeinheit in Dialogen (Seitenränder, Einzüge …)", list(_d.EINHEITEN), "Millimeter", _d.set_einheit)
+        p = _Seite(self.w, titel)
         f = p.gruppe("Speichern")
-        p.auswahl(f, "speichern/standard", "Dateien standardmäßig speichern als", [".docx", ".txt"], ".docx")
-        p.zeile(f, "Standardordner (leer = zuletzt benutzter)")
-        e = QLineEdit(p.s.get("speichern/ordner", "")); e.textChanged.connect(lambda t: p.s.set("speichern/ordner", t)); f.addRow("Ordner", e)
-        f = p.gruppe("Neue Dokumente")
-        e = QLineEdit(p.s.get("standard/schrift", "Liberation Sans")); e.textChanged.connect(lambda t: p.s.set("standard/schrift", t)); f.addRow("Schriftart", e)
-        p.zahl(f, "standard/groesse", "Schriftgröße", 6, 72, 11, " pt")
-        f = p.gruppe("Ausgabe als Bild")
-        p.auswahl(f, "ausgabe/ppi", "Standard-Ausgabeziel (Auflösung für „Als Bild exportieren“)",
-                  ["96 ppi (Bildschirm)", "150 ppi (Web, Entwurf)", "220 ppi (Druck)", "330 ppi (hohe Qualität)"], "150 ppi (Web, Entwurf)")
-        f = p.gruppe("PDF")
+        p.wahl(f, "speichern/standard", "Dateien als Standard speichern", [("Microsoft Word (.docx)", ".docx"), ("Textdatei (.txt)", ".txt")], ".docx")
+        f = p.gruppe("Allgemeine Optionen")
+        from lunivo_writer.ui.dialogs import dokument_dialoge as _d
+        p.wahl(f, "ui/masseinheit", "Maßeinheit", [(n, n) for n in _d.EINHEITEN], "Millimeter", _d.set_einheit)
+        p.haken(f, "start/letztes_oeffnen", "Beim Start das zuletzt geschriebene Dokument öffnen", False)
+        p.haken(f, "speichern/bilder_nicht_komprimieren", "Bilder in der Datei nicht komprimieren", True)
+        p.wahl(f, "ausgabe/ppi", "Standard-Ausgabeziel",
+               [(t, t) for t in ("96 ppi (Bildschirm)", "150 ppi (Web, Entwurf)", "220 ppi (Druck)", "330 ppi (hohe Qualität)")],
+               "150 ppi (Web, Entwurf)")
+        f = p.gruppe("Kompatibilitätsoptionen")
+        for key, text in (("kompat/seitenumbruch", "Seitenumbruch und Absatzmarke aufteilen"),
+                          ("kompat/haengend", "Hängenden Einzug nicht als Tabstopp verwenden"),
+                          ("kompat/leerstellen", "Nachstehende Leerstellen unterstreichen"),
+                          ("kompat/fussnoten", "Layout von Fußnoten wie Word 6/95/97"),
+                          ("kompat/zeilenhoehe", "Zeilenhöhe in Tabellen auf Rasterhöhe anpassen")):
+            p.haken(f, key, text, False)
+        p.hinweis("Die Kompatibilitätsoptionen werden als Einstellungen in die DOCX-Datei geschrieben; Word liest sie beim Öffnen. "
+                  "Bilder werden nur verkleinert (auf höchstens 1600 Punkte Kantenlänge), wenn „nicht komprimieren“ aus ist.")
+        p.hinweis("DOCX ist das Austauschformat mit der höchsten Treue. ODT, DOC und RTF gehen über LibreOffice (Datei ▸ Exportieren).")
+        p.abschluss()
+        return p
+
+    def _speicherort(self, titel):
+        p = _Seite(self.w, titel)
+        f = p.gruppe("Speicherort für Dateien")
+        p.pfad(f, "speichern/ordner", "Ordner zum Speichern", "Zuletzt benutzter Ordner")
+        p.pfad(f, "vorlagen/ordner", "Eigene Vorlagen", "~/Vorlagen")
+        p.abschluss()
+        return p
+
+    def _pdf(self, titel):
+        p = _Seite(self.w, titel)
+        f = p.gruppe("Exportoptionen")
         p.haken(f, "pdf/oeffnen", "PDF nach dem Export öffnen", False)
         p.haken(f, "pdf/eigenschaften", "Dokumenteigenschaften (Autor) in das PDF übernehmen", True)
         p.haken(f, "pdf/lz_ueberschriften", "Überschriften als Lesezeichen", False)
@@ -330,32 +766,49 @@ class OptionenDialog(QDialog):
         p.haken(f, "pdf/lz_andere", "Titel, Untertitel und Zitat als Lesezeichen (andere Formatvorlagen)", False)
         p.haken(f, "pdf/kommentare", "Kommentare als PDF-Notizen mitnehmen", False)
         p.haken(f, "pdf/notenlinks", "Fuß- und Endnoten mit ihrer Marke verknüpfen (Sprungverweise)", True)
-        f3 = p.gruppe("Vorlagen")
-        ve = QLineEdit(p.s.get("vorlagen/ordner", "")); ve.setPlaceholderText("leer = ~/Vorlagen")
-        ve.textChanged.connect(lambda t: p.s.set("vorlagen/ordner", t)); f3.addRow("Vorlagenordner", ve)
-        p.hinweis("DOCX ist das Austauschformat mit der höchsten Treue. ODT, DOC und RTF gehen über LibreOffice (Datei ▸ Exportieren).")
         p.abschluss()
         return p
 
     def _sicherung(self, titel):
         p = _Seite(self.w, titel)
         f = p.gruppe("Sicherung")
-        p.haken(f, "sicherung/aktiv", "Automatisch sichern (Absturzschutz)", True)
-        p.haken(f, "sicherung/staende", "Zwischenstände aufheben", False)
-        p.zahl(f, "sicherung/tage", "Zwischenstände aufheben (Tage)", 1, 365, 7, " Tage")
-        p.zahl(f, "autosave_seconds", "Abstand der automatischen Sicherung", 10, 3600, 60, " s",
-               wirkt=lambda v: self.w.autosave.start(int(v) * 1000))
-        f2 = p.gruppe("Einstellungen und Gelerntes sichern")
-        sb = QPushButton("Sichern …"); zb = QPushButton("Zurückholen …")
-        sb.clicked.connect(self._daten_sichern); zb.clicked.connect(self._daten_zurueckholen)
-        f2.addRow(sb); f2.addRow(zb)
+        p.wahl(f, "sicherung/aktiv", "Wann gesichert wird", [("Laufend, nach jeder Änderung", True), ("Nie", False)], True)
+        minuten = QSpinBox(); minuten.setRange(1, 120); minuten.setSuffix(" min")
+        minuten.setValue(max(1, p.s.get_int("autosave_seconds", 60) // 60))
+
+        def neu(m):
+            p.s.set("autosave_seconds", m * 60)
+            self.w.autosave.start(m * 60 * 1000)
+        minuten.valueChanged.connect(neu)
+        f.addRow("Abstand (Minuten)", minuten)
+        ort = QLineEdit(p.s.q.fileName()); ort.setReadOnly(True)
+        f.addRow("Wo die Einstellungen liegen", ort)
+        f = p.gruppe("Zwischenstände aufheben")
+        p.zahl(f, "sicherung/tage", "Wie lange (Tage)", 1, 365, 7, " Tage")
+        p.aktion("Zwischenstände löschen", "Zwischenstände löschen", self._zwischenstaende_loeschen)
+        f = p.gruppe("Was im Speicher steht")
+        p.aktion("Sichern und zurückholen", "Sichern …", self._daten_sichern)
+        zb = QPushButton("Einspielen …"); zb.clicked.connect(self._daten_zurueckholen)
+        f.addRow(zb)
         p.hinweis("Gesichert werden Gedächtnis und Wörterbuch (ohne API-Schlüssel) als ZIP-Datei.")
-        from lunivo_writer.services import recovery
-        p.zeile(f, "Gesichert wird nach: " + recovery.recovery_dir())
-        from lunivo_writer.services.settings_service import data_dir
-        p.zeile(f, "Einstellungen und Daten liegen in: " + data_dir())
         p.abschluss()
         return p
+
+    def _zwischenstaende_loeschen(self):
+        import shutil
+        from lunivo_writer.services import recovery
+        ordner = recovery.recovery_dir()
+        if QMessageBox.question(self, "Zwischenstände löschen", f"Alle gesicherten Zwischenstände in\n{ordner}\nwirklich löschen?") != QMessageBox.Yes:
+            return
+        n = 0
+        for name in os.listdir(ordner) if os.path.isdir(ordner) else []:
+            pfad = os.path.join(ordner, name)
+            try:
+                shutil.rmtree(pfad) if os.path.isdir(pfad) else os.remove(pfad)
+                n += 1
+            except OSError:
+                pass
+        QMessageBox.information(self, "Zwischenstände löschen", f"{n} Zwischenstände gelöscht.")
 
     def _daten_sichern(self):
         import zipfile
@@ -389,16 +842,29 @@ class OptionenDialog(QDialog):
         QMessageBox.information(self, "Zurückholen", "Zurückgeholt.")
 
     def _drucken(self, titel):
-        p = _Seite(self.w, titel, ["Textbegrenzungen / Zuschnittsmarken drucken"])
-        f = p.gruppe("Drucken")
-        p.auswahl(f, "drucken/vorgabe", "Das Druckfenster öffnet mit", ["Alle Seiten", "Aktuelle Seite"], "Alle Seiten")
-        p.haken(f, "drucken/hoch", "Hohe Qualität (Druckerauflösung)", True)
-        p.haken(f, "drucken/umgekehrt", "Seiten in umgekehrter Reihenfolge drucken", False)
-        p.haken(f, "drucken/hintergrund", "Hintergrundfarben und Bilder drucken", True)
-        p.haken(f, "drucken/leere", "Leere Seiten drucken", True)
-        p.haken(f, "drucken/nur_formular", "Nur Formulardaten drucken (für vorgedruckte Formulare)", False)
-        p.haken(f, "drucken/felder", "Felder (Verzeichnisse) vor dem Drucken aktualisieren", True)
-        p.auswahl(f, "drucken/duplex", "Beidseitig von Hand", ["alle", "vorder", "rueck"], "alle")
+        p = _Seite(self.w, titel)
+        f = p.gruppe("Druckoptionen")
+        p.wahl(f, "drucken/vorgabe", "Womit das Druckfenster aufgeht", [("Alle Seiten", "Alle Seiten"), ("Aktuelle Seite", "Aktuelle Seite")], "Alle Seiten")
+        p.haken(f, "drucken/hoch", "Hohe Qualität", True)
+        p.haken(f, "drucken/umgekehrt", "Umgekehrte Reihenfolge", False)
+        p.haken(f, "drucken/zeichnungen", "Zeichnungsobjekte drucken", True)
+        p.haken(f, "drucken/hintergrund", "Hintergrundfarben und -bilder drucken", True)
+        p.haken(f, "drucken/leere", "Leere Seiten mitdrucken", True)
+        p.haken(f, "drucken/felder", "Felder vor dem Drucken aktualisieren", True)
+        p.haken(f, "drucken/felder_code", "Feldfunktionen drucken", False)
+        p.wahl(f, "drucken/versteckt", "Ausgeblendeter Text", [("Ausgeblendeten Text nicht drucken", False), ("Ausgeblendeten Text drucken", True)], False)
+        f = p.gruppe("Nur für das aktuelle Dokument")
+        p.haken(f, "drucken/nur_formular", "Nur Formulardaten drucken", False)
+        f = p.gruppe("Duplexdruck")
+        wert = str(p.s.get("drucken/duplex", "alle"))
+        vorne, hinten = QCheckBox("Blattvorderseite"), QCheckBox("Blattrückseite")
+        vorne.setChecked(wert in ("alle", "vorder")); hinten.setChecked(wert in ("alle", "rueck"))
+
+        def duplex(_=None):
+            neu = "alle" if vorne.isChecked() == hinten.isChecked() else ("vorder" if vorne.isChecked() else "rueck")
+            p.s.set("drucken/duplex", neu)
+        for c in (vorne, hinten):
+            c.setProperty("optName", "Duplexdruck"); c.toggled.connect(duplex); f.addRow(c)
         p.hinweis("Gedruckt wird über das Druckfenster des Systems (Datei ▸ Drucken). Kopf-/Fußzeile und Seitenzahlen werden mitgedruckt.")
         p.abschluss()
         return p
@@ -426,16 +892,13 @@ class OptionenDialog(QDialog):
     def _benutzer(self, titel):
         p = _Seite(self.w, titel)
         f = p.gruppe("Benutzerdaten")
-        e = QLineEdit(p.s.get("benutzer/name", ""))
-        e.textChanged.connect(lambda t: p.s.set("benutzer/name", t))
-        f.addRow("Name (Autor in DOCX-Dokumenten)", e)
-        for key, text in (("benutzer/initialen", "Initialen (Kommentare)"), ("benutzer/strasse", "Straße und Hausnummer"),
-                          ("benutzer/plz_ort", "PLZ und Ort"), ("benutzer/ort", "Ort (für „Ort, Datum“)"),
-                          ("benutzer/telefon", "Telefon"), ("benutzer/mail", "E-Mail")):
-            le = QLineEdit(p.s.get(key, ""))
-            le.textChanged.connect(lambda t, k=key: p.s.set(k, t))
-            f.addRow(text, le)
-        p.haken(f, "benutzer/verwenden", "Benutzerdaten in Dokumenten verwenden", True)
+        f.addRow(QLabel("Wer schreibt"))
+        p.felder(f, [("benutzer/name", "Name (Autor in DOCX-Dokumenten)"), ("benutzer/strasse", "Straße und Hausnummer"),
+                     ("benutzer/plz_ort", "PLZ und Ort"), ("benutzer/ort", "Ort (für „Ort, Datum“)"),
+                     ("benutzer/telefon", "Telefon"), ("benutzer/mail", "E-Mail")])
+        p.zeile(f, "Bleibt auf diesem Rechner und geht nie mit einem Text an die KI.")
+        f.addRow("Initialen", p.eingabe("benutzer/initialen", "z. B. KS"))
+        p.haken(f, "benutzer/verwenden", "Diese Benutzerinformationen verwenden", True)
         p.haken(f, "sicherheit/personendaten_weg", "Beim Speichern persönliche Daten entfernen", False)
         p.abschluss()
         return p
@@ -614,3 +1077,21 @@ class OptionenDialog(QDialog):
         p.zeile(f, data_dir())
         p.abschluss()
         return p
+
+
+class OptionenDialog(QDialog):
+    """Die Optionen als eigenes Fenster (für Aufrufe außerhalb der Datei-Ansicht); gleicher Inhalt wie `OptionenAnsicht`."""
+
+    def __init__(self, fenster, seite: str | None = None):
+        super().__init__(fenster)
+        self.setWindowTitle("Optionen")
+        self.resize(1000, 680)
+        v = QVBoxLayout(self)
+        v.setContentsMargins(0, 0, 0, 8)
+        self.ansicht = OptionenAnsicht(fenster, seite)
+        self.baum, self.stapel, self.knoten, self.gehe_zu = self.ansicht.baum, self.ansicht.stapel, self.ansicht.knoten, self.ansicht.gehe_zu
+        v.addWidget(self.ansicht, 1)
+        bb = QDialogButtonBox(QDialogButtonBox.Close)
+        bb.button(QDialogButtonBox.Close).setText("Fertig")
+        bb.rejected.connect(self.accept)
+        v.addWidget(bb)

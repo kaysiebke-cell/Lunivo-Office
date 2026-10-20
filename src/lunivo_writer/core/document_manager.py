@@ -23,6 +23,10 @@ class DocumentManager:
     def meta_fuer_speichern(self, meta: dict) -> dict:
         """Dokument-Metadaten plus Einstellungen: Verfasser (Benutzername oder gelöscht)."""
         m = dict(meta)
+        m["bilder_komprimieren"] = not self.settings.get_bool("speichern/bilder_nicht_komprimieren", True)
+        m["kompat"] = [n for k, n in (("kompat/seitenumbruch", "splitPgBreakAndParaMark"), ("kompat/haengend", "doNotUseIndentAsNumberingTabStop"),
+                                      ("kompat/leerstellen", "ulTrailSpace"), ("kompat/fussnoten", "footnoteLayoutLikeWW8"),
+                                      ("kompat/zeilenhoehe", "adjustLineHeightInTable")) if self.settings.get_bool(k, False)]
         if self.settings.get_bool("sicherheit/personendaten_weg", False) or not self.settings.get_bool("benutzer/verwenden", True):
             m["author"] = ""
         elif self.settings.get("benutzer/name", ""):

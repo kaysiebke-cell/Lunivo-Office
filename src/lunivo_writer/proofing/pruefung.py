@@ -607,15 +607,18 @@ def finde_probleme(text, gelernt=None, schalter=None):
                    if not (in_ruhe.get(f['alt'].lower())
                            and not eigene.get(f['alt'].lower()))]
 
+    grammatik = True if not schalter else bool(schalter.get("rsGrammatik", True))    # „Grammatik mitprüfen“ (Optionen)
     wende_regeln_an(text, ZEICHEN_REGELN, korrekturen)
     wende_regeln_an(text, GROSS_REGELN, korrekturen)
-    wende_regeln_an(text, GRAMMATIK_REGELN, korrekturen)
-    wende_regeln_an(text, KOMMA_REGELN, korrekturen)
-    pruefe_kongruenz(text, korrekturen)
+    if grammatik:
+        wende_regeln_an(text, GRAMMATIK_REGELN, korrekturen)
+        wende_regeln_an(text, KOMMA_REGELN, korrekturen)
+        pruefe_kongruenz(text, korrekturen)
     pruefe_satzende(text, korrekturen)
 
     hinweise = []
-    pruefe_satzbau(text, hinweise)
+    if grammatik:
+        pruefe_satzbau(text, hinweise)
 
     # Erst das zum Ändern, danach das zum Nachdenken.
     return ohne_ueberschneidung(korrekturen) + hinweise

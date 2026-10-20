@@ -363,7 +363,7 @@ class ZusatzMixin:
 
     def _overlays_neu(self) -> None:
         """Wellenlinien der Schreibhilfe plus Markup (Kommentare, Änderungen) als Zusatzauswahl — nichts davon landet im Format."""
-        sel = []
+        sel = self._lese_blasse_auswahl() if hasattr(self, "_lese_blasse_auswahl") else []      # zuerst: alles Übrige tritt zurück
         doc = self.document()
         n = doc.characterCount()
         for f in getattr(self, "_wellen", []):

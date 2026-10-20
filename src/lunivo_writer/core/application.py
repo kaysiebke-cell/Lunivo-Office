@@ -17,6 +17,8 @@ class LunivoApplication:
         self.app.setOrganizationName(APP_ORG)
         self.app.setDesktopFileName("lunivo-writer")
         self.settings = Settings()
+        from lunivo_writer.ui import theme
+        theme.WEICH = self.settings.get_bool("ui/weich", False)
         apply_theme(self.app, self.settings.get("theme", "system"))
         self.fenster = MainWindow(self.settings)
 
@@ -28,6 +30,11 @@ class LunivoApplication:
             win.open_path(f)
         if not dateien:
             win.offer_recovery()
+        if not dateien and win.tabs.count() == 0 and self.settings.get_bool("start/letztes_oeffnen", False):
+            import os
+            letztes = next((p for p in self.settings.recent() if os.path.exists(p)), None)     # zuletzt geschriebenes Dokument
+            if letztes:
+                win.open_path(letztes)
         if win.tabs.count() == 0:                    # keine Startseite: das Programm beginnt mit einem leeren Blatt
             win.new_document()
         rc = self.app.exec()

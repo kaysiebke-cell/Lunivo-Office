@@ -331,7 +331,7 @@ def test_oberflaeche_wechseln_register_anpassen_symbole_tauschen(app, tmp_path):
     w.settings.set("ui/register_plan", json.dumps({"reihenfolge": ["Datei", "Ansicht", "Start"], "versteckt": ["Verweise", "KI"]}))
     w.neu_bauen_band()
     namen = [w.band.reiter.tabText(i) for i in range(w.band.reiter.count()) if w.band.reiter.isTabVisible(i)]
-    assert namen[:3] == ["Datei", "Ansicht", "Start"] and "Verweise" not in namen and "KI" not in namen
+    assert namen[:2] == ["Ansicht", "Start"] and "Datei" not in namen and "Verweise" not in namen and "KI" not in namen
     assert w.band.reiter.tabText(w.band.reiter.currentIndex()) == "Start"
     # Schnellzugriff
     w.settings.set("ui/schnellzugriff", json.dumps(["speichern", "neu"]))
