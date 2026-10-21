@@ -2331,6 +2331,20 @@ class Befehle:
         m.addAction("Hinter den Text", lambda: self.zeichenEbene(None, "hinter"))
         return m
 
+    def wortExtras(self, k=None):
+        """Wort-Extras: Absätze aufräumen (Markierung, sonst das ganze Dokument)."""
+        from lunivo_writer.editor import wortextras as W
+        if not self.ed:
+            return
+        m = QMenu()
+        for text, f in W.AKTIONEN:
+            m.addAction(text, lambda _=False, t=text, f=f: self._wort_extra(t, f))
+        self._popup(m)
+
+    def _wort_extra(self, text, f):
+        n = f(self.ed)
+        self.w.statusBar().showMessage(f"{text}: {n} Stelle(n) geändert." if n else f"{text}: nichts zu ändern.", 5000)
+
     def zeichenEffekte(self, k=None):
         e, z = self._zeichen()
         if z is not None:

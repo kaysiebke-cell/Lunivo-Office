@@ -1532,3 +1532,18 @@ def test_fuelleffekte_graduell_textur_muster_oeffnen_die_seitenleiste(app, tmp_p
         app.processEvents()
         assert FB.aus_absatz(ed.document().firstBlock().blockFormat())[0]["fuell"]["art"] in ("textur", "muster", "graduell", "verlauf")
     _zu(w)
+
+
+def test_wort_extras(app):
+    from lunivo_writer.editor import wortextras as W
+    from lunivo_writer.ui.document.document_editor import DocumentEditor
+    ed = DocumentEditor(); ed.setPlainText("Das ist ein\nSatz.\n\n\nZweiter  Absatz.  \nDritter.")
+    assert W.absaetze_neu_anordnen(ed) == 1 and ed.toPlainText().startswith("Das ist ein Satz.")
+    assert W.leere_loeschen(ed) == 2 and "\n\n" not in ed.toPlainText()
+    assert W.leerzeichen_bereinigen(ed) == 2 and "Zweiter Absatz." in ed.toPlainText()
+    assert W.leere_einfuegen(ed) == 2 and ed.document().blockCount() == 5
+    W.einzug_zwei_zeichen(ed)
+    assert ed.document().firstBlock().blockFormat().textIndent() > 0
+    ed.document().undo()
+    ed.setPlainText("a b")
+    assert W.zeilenumbruch_in_return(ed) == 1 and ed.document().blockCount() == 2
