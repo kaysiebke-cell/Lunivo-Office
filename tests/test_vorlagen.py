@@ -52,23 +52,17 @@ def test_neu_aus_vorlage_im_fenster(app, tmp_path, monkeypatch):
     from PySide6.QtCore import QSettings
     from lunivo_writer.services.settings_service import Settings
     from lunivo_writer.ui.main_window import MainWindow
-    import lunivo_writer.ui.dialogs.vorlagen_dialog as vd
     w = MainWindow(Settings(QSettings(str(tmp_path / "s.ini"), QSettings.IniFormat)))
     w.settings.set("benutzer/name", "Ann Muster")
     m = vorlagen.muster()[3]                       # Bewerbung
-    class Fake:
-        def __init__(self, *a, **k): self.auswahl = ("geruest", m); self.als_vorlage_gewuenscht = False
-        def exec(self): return True
-    monkeypatch.setattr(vd, "VorlagenDialog", Fake)
-    w.neu_aus_vorlage()
+    w.neu_aus_wahl("geruest", m)
     t = w.current_tab()
     assert t.title == "Bewerbung" and "Bewerbung als" in t.editor.toPlainText() and "Ann Muster" in t.editor.toPlainText()
     # eigene Vorlage aus Datei
     from lunivo_writer.services import docx_writer
     ziel = str(tmp_path / "Meine.docx")
     docx_writer.write_docx(ziel, t.editor.document(), t.page, {})
-    Fake.__init__ = lambda self, *a, **k: (setattr(self, "auswahl", ("datei", ziel)), setattr(self, "als_vorlage_gewuenscht", False))[0]
-    w.neu_aus_vorlage()
+    w.neu_aus_wahl("datei", ziel)
     t2 = w.current_tab()
     assert t2 is not t and t2.title == "Meine" and t2.path is None and "Bewerbung als" in t2.editor.toPlainText()
     for x in w._doc_tabs():

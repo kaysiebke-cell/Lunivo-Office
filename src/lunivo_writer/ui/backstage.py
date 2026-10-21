@@ -20,7 +20,7 @@ from lunivo_writer.ui.widgets import icons
 # (Schlüssel, Beschriftung, Symbol, Art: "seite" | "tun" | "trenner", Befehl)
 EINTRAEGE = [
     ("neu", "Neues Dokument erstellen", "neu", "tun", "neu"),
-    ("vorlage", "Von Vorlage erstellen", "vorlage", "tun", "neuAusVorlage"),
+    ("vorlage", "Von Vorlage erstellen", "vorlage", "seite", None),
     ("oeffnen", "Öffnen", "oeffnen", "tun", "oeffnen"),
     ("zuletzt", "Zuletzt benutzte Dokumente öffnen", "zuletzt", "seite", None),
     ("-1", "", "", "trenner", None),
@@ -132,7 +132,7 @@ class Backstage(QWidget):
         haben_dok = self.w.current_tab() is not None
         for schl in ("speichern", "speichern_als", "drucken", "schuetzen", "info", "oeffnen_mit", "ort", "schliessen"):
             self.zeilen[schl].setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable if haben_dok else Qt.NoItemFlags)
-        bauer = {"zuletzt": self._zuletzt, "speichern_als": self._speichern_als, "drucken": self._drucken,
+        bauer = {"zuletzt": self._zuletzt, "speichern_als": self._speichern_als, "drucken": self._drucken, "vorlage": self._vorlage,
                  "hilfe": self._hilfe, "schuetzen": self._schuetzen, "info": self._info, "oeffnen_mit": self._oeffnen_mit, "optionen": self._optionen}
         for schl, f in bauer.items():
             seite_w = f()
@@ -183,6 +183,8 @@ class Backstage(QWidget):
             self._optionen_zeigen()
         elif schl == "drucken":
             self._drucken_zeigen()
+        elif schl == "vorlage":
+            self._vorlage_zeigen()
         self.stapel.setCurrentWidget(self.seiten[schl])
         self.liste.setCurrentItem(self.zeilen[schl])
 
@@ -285,6 +287,24 @@ class Backstage(QWidget):
             self._knopf(v, text, b, "pdf" if b == "speichernPdf" else "ausdatei", datei=EXPORT_ENDUNG.get(b))
         v.addStretch(1)
         return sa
+
+    def _vorlage(self) -> QWidget:
+        """Platzhalter: die Galerie mit den Vorschauen wird erst gebaut, wenn die Seite gezeigt wird."""
+        ph = QWidget()
+        QVBoxLayout(ph).setContentsMargins(0, 0, 0, 0)
+        ph._ansicht = None
+        return ph
+
+    def _vorlage_zeigen(self) -> None:
+        from lunivo_writer.ui.baukasten.vorlagen_galerie import VorlagenGalerie
+        ph = self.seiten["vorlage"]
+        if ph._ansicht is None:
+            g = VorlagenGalerie(self.w.settings, self.w.current_tab() is not None, self.w.benutzerdaten())
+            g.gewaehlt.connect(lambda art, wert: (self.schliessen.emit(), self.w.neu_aus_wahl(art, wert)))
+            g.als_vorlage.connect(lambda ziel: (self.schliessen.emit(), self.w.als_vorlage_speichern(ziel or None)))
+            ph.layout().addWidget(g); ph._ansicht = g
+        else:
+            ph._ansicht.neu_lesen()
 
     def _drucken(self) -> QWidget:
         """Platzhalter: das Druckfenster samt Vorschau wird erst gebaut, wenn die Seite gezeigt wird."""

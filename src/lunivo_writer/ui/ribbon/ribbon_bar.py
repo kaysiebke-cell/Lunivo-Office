@@ -192,7 +192,7 @@ class RegisterBand(QWidget):
         self.kopf.addWidget(s)
 
     # ---- Schnellzugriff -------------------------------------------------------------------------------
-    SCHNELL = [("oeffnen", "Öffnen", "oeffnen"), ("speichern", "Speichern", "speichern"),
+    SCHNELL = [("oeffnen", "Öffnen", "oeffnen"), ("vorlage", "Neu aus Vorlage", "neuAusVorlage"), ("speichern", "Speichern", "speichern"),
                ("pdf", "Als PDF exportieren", "speichernPdf"), ("drucken", "Drucken", "drucken"),
                ("vorschau", "Druckvorschau", "vorschau"), ("zurueck", "Rückgängig", "rueckgaengig"),
                ("vor", "Wiederholen", "wiederholen")]

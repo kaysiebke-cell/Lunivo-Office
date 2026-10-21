@@ -824,15 +824,14 @@ class MainWindow(QMainWindow):
         return {k: g(f"benutzer/{k}", "") or "" for k in ("name", "initialen", "strasse", "plz_ort", "ort", "telefon", "mail")}
 
     def neu_aus_vorlage(self):
-        from lunivo_writer.ui.dialogs.vorlagen_dialog import VorlagenDialog
-        d = VorlagenDialog(self, self.settings, self.current_tab() is not None)
-        if not d.exec():
-            return
-        if d.als_vorlage_gewuenscht:
-            self.als_vorlage_speichern()
-            return
-        art, wert = d.auswahl
-        if art == "geruest":
+        """Die Seite „Neu“ im Menü: alle Vorlagen als Blätter mit Vorschau."""
+        self.backstage_oeffnen("vorlage")
+
+    def neu_aus_wahl(self, art: str, wert) -> None:
+        """Legt ein neues Dokument nach der Wahl auf der Seite „Neu“ an: leer, ein Gerüst oder eine Abschrift einer Vorlagendatei."""
+        if art == "leer":
+            self.new_document()
+        elif art == "geruest":
             from lunivo_writer.editor import vorlagen
             from PySide6.QtCore import QDate, QLocale
             self.new_document()
@@ -850,12 +849,13 @@ class MainWindow(QMainWindow):
             tab.editor.document().setModified(True)
             self._show_report(geladen.report, "Hinweise zur Vorlage", "beim Öffnen")
 
-    def als_vorlage_speichern(self):
+    def als_vorlage_speichern(self, ordner: str | None = None):
+        """Legt das Blatt als Vorlage ab: im Vorlagenordner oder (``ordner``) in einer seiner Rubriken."""
         t = self.current_tab()
         if not t:
             return
         from lunivo_writer.editor import vorlagen
-        ordner = vorlagen.vorlagenordner(self.settings)
+        ordner = ordner or vorlagen.vorlagenordner(self.settings)
         os.makedirs(ordner, exist_ok=True)
         pfad, _ = QFileDialog.getSaveFileName(self, "Als Vorlage speichern", os.path.join(ordner, os.path.splitext(t.title)[0] + ".docx"),
                                               "Word-Dokument (*.docx)")

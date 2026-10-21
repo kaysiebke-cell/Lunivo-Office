@@ -1192,3 +1192,44 @@ def test_handbuch_fenster_hat_gliederung(app):
     eintraege = [nav.item(i).text() for i in range(nav.count()) if nav.item(i).data(0x100)]
     assert "Das erste Blatt" in eintraege and "Wenn etwas klemmt" in eintraege and len(eintraege) >= 18
     assert "Lunivo" in d.findChild(QTextBrowser).toPlainText()
+
+
+def test_vorlagen_galerie_zeigt_eigene_vorlagen(app, tmp_path):
+    from PySide6.QtCore import QSettings
+    from lunivo_writer.services.settings_service import Settings
+    from lunivo_writer.ui.baukasten.vorlagen_galerie import VorlagenGalerie
+    s = Settings(QSettings(str(tmp_path / "s.ini"), QSettings.IniFormat)); s.set("vorlagen/ordner", str(tmp_path))
+    (tmp_path / "Mein Brief.txt").write_text("Hallo\nVorlage\n", encoding="utf-8")
+    g = VorlagenGalerie(s, True); g.resize(1200, 800); g.show()
+    namen = [k.name for k in g._kacheln]
+    assert namen[0] == "Leeres Dokument" and "Mein Brief" in namen and "Brief" in namen
+    assert g.knoepfe["eigene"].text().endswith("1")
+    g._reiter_setzen("eigene"); assert [k.name for k in g._kacheln if k.isVisible()] == ["Mein Brief"]
+    g.suche.setText("xyz"); assert not [k for k in g._kacheln if k.isVisible()]
+    g.suche.setText(""); g._reiter_setzen("alle")
+    gewaehlt = []
+    g.gewaehlt.connect(lambda a, w: gewaehlt.append((a, w)))
+    next(k for k in g._kacheln if k.name == "Mein Brief").click()
+    assert gewaehlt == [("datei", str(tmp_path / "Mein Brief.txt"))]
+    g._timer.stop()
+
+
+def test_vorlagen_rubriken_aus_unterordnern(app, tmp_path):
+    from PySide6.QtCore import QSettings
+    from lunivo_writer.services.settings_service import Settings
+    from lunivo_writer.ui.baukasten.vorlagen_galerie import VorlagenGalerie
+    s = Settings(QSettings(str(tmp_path / "s.ini"), QSettings.IniFormat)); s.set("vorlagen/ordner", str(tmp_path))
+    (tmp_path / "Lebenslauf").mkdir()
+    for n in ("Kay 2024", "Kay Technik"):
+        (tmp_path / "Lebenslauf" / f"{n}.txt").write_text("Lebenslauf\n", encoding="utf-8")
+    g = VorlagenGalerie(s, True); g.resize(1200, 800); g.show()
+    sicht = [k.name for k in g._sichtbar()]
+    assert "Lebenslauf" in sicht and "Brief" in sicht and "Kay 2024" not in sicht          # oben nur die Rubriken
+    g.rubrik_oeffnen("Lebenslauf")
+    assert [k.name for k in g._sichtbar()] == ["Lebenslauf", "Kay 2024", "Kay Technik"]     # Gerüst und eigene Dokumente der Rubrik
+    assert g._ziel() == str(tmp_path / "Lebenslauf") and g.zurueck.isVisible() is True
+    g.rubrik_oeffnen("Brief")
+    assert "Brief an eine Behörde" in [k.name for k in g._sichtbar()]
+    g.rubrik_oeffnen(None); g.suche.setText("technik")
+    assert [k.name for k in g._sichtbar()] == ["Kay Technik"]                               # die Suche findet auch in Rubriken
+    g._timer.stop()

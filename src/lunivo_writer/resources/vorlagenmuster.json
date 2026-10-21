@@ -23,7 +23,8 @@
    "",
    "",
    "@name"
-  ]
+  ],
+  "rubrik": "Brief"
  },
  {
   "id": "behoerde",
@@ -57,7 +58,8 @@
    "",
    "!Anlagen",
    "«was du mitschickst»"
-  ]
+  ],
+  "rubrik": "Brief"
  },
  {
   "id": "widerspruch",
@@ -89,7 +91,8 @@
    "",
    "",
    "@name"
-  ]
+  ],
+  "rubrik": "Brief"
  },
  {
   "id": "bewerbung",
@@ -126,7 +129,8 @@
    "",
    "!Anlagen",
    "Lebenslauf, «Zeugnisse»"
-  ]
+  ],
+  "rubrik": "Bewerbung"
  },
  {
   "id": "lebenslauf",
@@ -157,7 +161,8 @@
    "",
    "",
    "@name"
-  ]
+  ],
+  "rubrik": "Lebenslauf"
  },
  {
   "id": "krankmeldung",
@@ -185,7 +190,8 @@
    "",
    "",
    "@name"
-  ]
+  ],
+  "rubrik": "Brief"
  },
  {
   "id": "kuendigung",
@@ -214,7 +220,8 @@
    "",
    "",
    "@name"
-  ]
+  ],
+  "rubrik": "Brief"
  },
  {
   "id": "rechnung",
@@ -255,7 +262,8 @@
    "IBAN «DE00 0000 0000 0000 0000 00»",
    "«Name der Bank»",
    "Steuernummer: «Nummer»"
-  ]
+  ],
+  "rubrik": "Rechnung"
  },
  {
   "id": "einladung",
@@ -283,7 +291,8 @@
    "Ich freue mich auf dich!",
    "",
    "@name"
-  ]
+  ],
+  "rubrik": "Brief"
  },
  {
   "id": "protokoll",
@@ -312,6 +321,7 @@
    "",
    "!Nächster Termin",
    "«TT.MM.JJJJ», «Uhrzeit» Uhr, «Ort»"
-  ]
+  ],
+  "rubrik": "Protokoll"
  }
 ]

@@ -118,6 +118,19 @@ def vorlagenordner(settings) -> str:
     return settings.get("vorlagen/ordner", "") or os.path.join(os.path.expanduser("~"), "Vorlagen")
 
 
+def rubriken(ordner: str) -> tuple[dict[str, list[str]], list[str]]:
+    """Der Vorlagenordner nach Rubriken: jeder Unterordner ist eine Rubrik (Name → Dateien); lose Dateien liegen im Ordner selbst."""
+    rub: dict[str, list[str]] = {}
+    try:
+        for f in sorted(os.listdir(ordner)):
+            pfad = os.path.join(ordner, f)
+            if os.path.isdir(pfad) and not f.startswith("."):
+                rub[f] = eigene_vorlagen(pfad)
+    except OSError:
+        pass
+    return rub, eigene_vorlagen(ordner)
+
+
 def eigene_vorlagen(ordner: str) -> list[str]:
     try:
         return sorted(os.path.join(ordner, f) for f in os.listdir(ordner) if f.lower().endswith(ENDUNGEN))

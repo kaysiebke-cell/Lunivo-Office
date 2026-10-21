@@ -19,7 +19,7 @@ Der zuletzt geschriebene Text wird laufend gemerkt und beim nächsten Start wied
 | `☰ Menü → Neues Dokument erstellen` | Ein leeres Blatt in einem **neuen Reiter**. Das, woran gerade geschrieben wurde, bleibt offen — siehe Mehrere Dokumente. |
 | `☰ Menü → Öffnen` | Eine vorhandene Datei: `.docx`, `.odt`, `.doc`, `.rtf` oder `.txt`. Steht im vordersten Reiter schon etwas, bekommt die Datei einen eigenen. |
 | `☰ Menü → Zuletzt benutzte Dokumente öffnen` | Die Dateien, an denen zuletzt gearbeitet wurde, mit einem Knopf, der die Liste leert. Die Dateien selbst bleiben liegen. |
-| `☰ Menü → Von Vorlage erstellen` | Das Fenster **Neu aus Vorlage** — siehe Vorlagen. |
+| `☰ Menü → Von Vorlage erstellen` | Die Seite **Neu** mit allen Vorlagen — siehe Vorlagen. |
 
 Gefragt wird nur dort, wo wirklich etwas weggehen könnte: beim **Schließen** eines Reiters mit ungesicherten Änderungen und beim **Beenden**. „Neu" und „Öffnen" verwerfen nichts — sie legen daneben.
 
@@ -63,7 +63,8 @@ Links vor den Registern steht `☰ Menü`. Es öffnet eine Ansicht mit zwei Spal
 
 |  |  |
 |---|---|
-| **Neues Dokument erstellen**, **Von Vorlage erstellen**, **Öffnen** | Starten sofort. |
+| **Neues Dokument erstellen**, **Öffnen** | Starten sofort. |
+| **Von Vorlage erstellen** | Die Seite **Neu** mit allen Vorlagen und ihren Vorschauen. |
 | **Zuletzt benutzte Dokumente öffnen** | Die Liste der letzten Dateien. |
 | **Speichern** | Speichert sofort. |
 | **Speichern als** | Speichern unter, Kopie speichern und alle Ausgabeformate. |
@@ -76,7 +77,7 @@ Links vor den Registern steht `☰ Menü`. Es öffnet eine Ansicht mit zwei Spal
 | **Erweiterte Einstellungen** | Die Optionen (`F9`). |
 | **Hilfe** | Handbuch, Tastenkürzel, Erweiterungen und die Angaben zum Programm. |
 
-Gleich neben dem ☰ liegt der **Schnellzugriff**: Öffnen, Speichern, Als PDF, Drucken, Druckvorschau, Rückgängig, Wiederholen. Welche Knöpfe dort stehen, stellt man unter `Optionen → Symbolleiste für den Schnellzugriff` ein.
+Gleich neben dem ☰ liegt der **Schnellzugriff**: Öffnen, Neu aus Vorlage, Speichern, Als PDF, Drucken, Druckvorschau, Rückgängig, Wiederholen. Welche Knöpfe dort stehen, stellt man unter `Optionen → Symbolleiste für den Schnellzugriff` ein.
 
 ### Die Optionen (F9)
 
@@ -258,11 +259,19 @@ Absatzgrenzen kommen mit. Wer beim Schreiben `«Betrag»` hineinschreibt, hat be
 
 Eine Vorlage ist ein ganzes Dokument: Briefkopf, Ränder, Schriften, Aufbau.
 
-`☰ Menü → Von Vorlage erstellen` öffnet das Fenster **Neu aus Vorlage** mit zwei Reitern.
+`☰ Menü → Von Vorlage erstellen` — oder der Knopf **Neu aus Vorlage** im Schnellzugriff — öffnet die Seite **Neu**: alle Vorlagen als Blätter mit kleiner Vorschau, darüber ein Suchfeld und drei Reiter: **Alle**, **Mitgeliefert** und **Meine Vorlagen**. Ein Klick auf ein Blatt öffnet ein neues Dokument danach.
 
-### Gerüste
+### Rubriken
 
-Zehn Dokumente liegen von Anfang an da: **Brief**, **Brief an eine Behörde**, **Widerspruch**, **Bewerbung**, **Lebenslauf**, **Krankmeldung**, **Kündigung**, **Rechnung**, **Einladung**, **Protokoll**.
+Die Seite ordnet die Vorlagen in **Rubriken**: **Brief**, **Bewerbung**, **Lebenslauf**, **Rechnung** und **Protokoll** sind schon da. Ein Klick auf eine Rubrik öffnet eine eigene Seite mit allem, was dazugehört. Unter **Brief** liegen zum Beispiel **Brief an eine Behörde**, **Widerspruch**, **Krankmeldung**, **Kündigung** und **Einladung**; unter **Lebenslauf** das Gerüst und alle deine eigenen Lebensläufe. **← Neu** führt zurück.
+
+Eine Rubrik ist ein Unterordner im Vorlagenordner. Wer Dokumente in den Ordner `Lebenslauf` legt, hat sie in der Rubrik **Lebenslauf**; **Neue Rubrik …** legt einen neuen Ordner an, zum Beispiel für **Rezepte** oder **Schule**. Dokumente, die lose im Vorlagenordner liegen, stehen gleich auf der ersten Seite. Das Suchfeld sucht in allen Rubriken.
+
+**Dieses Dokument als Vorlage behalten …** legt das Blatt in der Rubrik ab, die gerade offen ist.
+
+### Die Gerüste
+
+Zehn Dokumente liegen von Anfang an da: **Brief**, **Brief an eine Behörde**, **Widerspruch**, **Bewerbung**, **Lebenslauf**, **Krankmeldung**, **Kündigung**, **Rechnung**, **Einladung**, **Protokoll**. Dazu **Leeres Dokument**.
 
 **Es steht kein fertiger Text darin.** Nur das Gerüst — wo der Absender hingehört, wo der Betreff, wo die Anrede — und in jeder Lücke ein Wort, das sagt, was dort hinkommt:
 
@@ -272,7 +281,15 @@ Zehn Dokumente liegen von Anfang an da: **Brief**, **Brief an eine Behörde**, *
 
 ### Meine Vorlagen
 
-Der Reiter zeigt die Dateien aus dem Vorlagenordner (`.docx`, `.dotx`, `.odt` oder `.txt`). **Ordner wählen …** bestimmt, welcher Ordner das ist, **Ordner öffnen** zeigt ihn in der Dateiverwaltung. **Dokument als Vorlage speichern …** legt das, was gerade im Blatt steht, dort ab — mit Briefkopf, Rändern und Schriften.
+Hier liegen die Dokumente aus deinem Vorlagenordner (`.docx`, `.dotx`, `.odt` oder `.txt`), jedes mit seiner Vorschau. Was du dort ablegst, steht beim nächsten Öffnen der Seite da — und ist so jederzeit zur Hand.
+
+Unten auf der Seite:
+
+|  |  |
+|---|---|
+| **Dieses Dokument als Vorlage behalten …** | Legt das, was gerade im Blatt steht, im Vorlagenordner (oder in der offenen Rubrik) ab — mit Briefkopf, Rändern und Schriften. |
+| **Vorlagenordner wählen …** | Bestimmt, welcher Ordner es ist. |
+| **Vorlagenordner öffnen** | Zeigt ihn (oder den Ordner der offenen Rubrik) in der Dateiverwaltung. |
 
 > **Geöffnet wird immer eine Abschrift.** Die Vorlage selbst wird nur gelesen. Eine Vorlage, die beim dritten Brief überschrieben ist, war keine.
 >
@@ -342,7 +359,7 @@ Die vollständige Liste steht auch im Programm unter `☰ Menü → Hilfe → Ta
 
 |  |  |
 |---|---|
-| Vorlagenordner | Eigene Dokumentvorlagen. Welcher Ordner es ist, zeigt das Fenster **Neu aus Vorlage**. |
+| Vorlagenordner | Eigene Dokumentvorlagen. Welcher Ordner es ist, steht unter **Vorlagenordner wählen …** auf der Seite **Neu**. |
 | Datenordner des Programms | Einstellungen, gelernte Wörter, der gerettete Text. Der Ort steht unter `Optionen → Speicherort für Dateien`. |
 
 Eigene Textbausteine liegen im Speicher des Programms, nicht in einer Datei anderer Programme.
@@ -359,7 +376,7 @@ Diese Formate werden über ein Umwandlungsprogramm gelesen und geschrieben. Fehl
 
 ### Eine Vorlage taucht nicht auf
 
-Der Vorlagenordner wird bei jedem Öffnen des Fensters **Neu aus Vorlage** neu gelesen; ein Neustart ist nicht nötig. Erkannt werden nur `.docx`, `.dotx`, `.odt` und `.txt`.
+Der Vorlagenordner wird bei jedem Öffnen der Seite **Neu** neu gelesen; ein Neustart ist nicht nötig. Erkannt werden nur `.docx`, `.dotx`, `.odt` und `.txt`.
 
 ### Etwas ist verlorengegangen
 
