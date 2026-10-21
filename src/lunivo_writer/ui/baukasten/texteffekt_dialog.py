@@ -224,7 +224,7 @@ class TexteffektPanel(QWidget):
         for t, x in (("Farbe", self.l_farbe), ("Größe", self.l_gross), ("Transparenz", self.l_trans)):
             self.a_leucht.zeile(t, x)
         v.addWidget(self.a_leucht)
-        # 3D-Format (wie im WPS: Tiefe und Kontur je mit Farbe und Größe, Material, Beleuchtung mit Winkel, Zurücksetzen)
+ # 3D-Format (wie in der Vorlage: Tiefe und Kontur je mit Farbe und Größe, Material, Beleuchtung mit Winkel, Zurücksetzen)
         self.a_3d = Abschnitt("3D-Format")
         self.d_tiefe_f = FarbFeld("#868e96", "Farbe der Tiefe"); self.d_tiefe = self._schritt_feld(0, 60, " pt", 0.5, 1)
         self.d_kontur_f = FarbFeld("#343a40", "Farbe der Kontur"); self.d_kontur = self._schritt_feld(0, 10, " pt", 0.25, 2)
@@ -435,7 +435,7 @@ class TexteffektPanel(QWidget):
 
 
 class TexteffektDialog(QDialog):
-    """Das Fenster „Texteffekte formatieren“: das Panel mit „OK“ (wie im WPS; das Schließen-Kreuz bricht ab). Felder des Panels sind hier erreichbar."""
+    """Das Fenster „Texteffekte formatieren“: das Panel mit „OK“ (wie in der Vorlage; das Schließen-Kreuz bricht ab). Felder des Panels sind hier erreichbar."""
 
     def __init__(self, parent=None, werte: dict | None = None):
         super().__init__(parent)

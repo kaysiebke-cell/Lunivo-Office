@@ -187,7 +187,7 @@ class Befehle:
         self.ed._merge(texteffekt.zu_format(w))
 
     def menue_texteffekteKlappe(self):
-        """Menü am Knopf „Texteffekte“ wie im WPS: WordArt, Schatten, Spiegelung, Leuchteffekt (je mit Bildchen zum Anklicken), 3D-Drehung und
+        """Menü am Knopf „Texteffekte“ wie in der Vorlage: WordArt, Schatten, Spiegelung, Leuchteffekt (je mit Bildchen zum Anklicken), 3D-Drehung und
         Transformieren (nur für Formen und Textfelder, hier ausgegraut), „Weitere Texteffekte …“ öffnet die Seitenleiste."""
         from lunivo_writer.editor import texteffekt, textfx
         from lunivo_writer.ui.baukasten.voreinstellung_menue import VoreinstellungMenue
@@ -213,7 +213,7 @@ class Befehle:
         lv = textfx.leuchten_vorgaben()
         le.abschnitt("Leuchtvarianten", [(str(i), textfx.voreinstellung_icon({"leuchten": g}), n) for i, (n, g) in enumerate(lv)], 6)
         le.gewaehlt.connect(lambda k: self._effekt_setzen(leuchten=lv[int(k)][1] if k else None))
-        for titel in ("3D-Drehung", "Transformieren"):                        # wie im WPS: nur für Formen und Textfelder, sonst ausgegraut
+        for titel in ("3D-Drehung", "Transformieren"): # wie in der Vorlage: nur für Formen und Textfelder, sonst ausgegraut
             a = m.addMenu(titel); a.setEnabled(False)
         m.addSeparator()
         m.addAction("Weitere Texteffekte(&O) …", self.texteffekte)

@@ -3,7 +3,7 @@
     d = SchriftartDialog(parent, werte)             # werte: dict wie ``text_format.ZEICHEN``
     if d.exec(): d.werte()                           # dasselbe dict; ``zu_format(werte)`` macht ein QTextCharFormat daraus
 
-Aufbau wie im WPS: Schriftart, Schriftschnitt und Größe für asiatischen Text, für westlichen Text und für komplexe Schriftzeichen; Schriftfarbe,
+Aufbau wie in der Vorlage: Schriftart, Schriftschnitt und Größe für asiatischen Text, für westlichen Text und für komplexe Schriftzeichen; Schriftfarbe,
 Unterstreichung (mit Farbe), Betonungszeichen; Effekte (durchgestrichen, doppelt durchgestrichen, hoch-/tiefgestellt, Kapitälchen, Großbuchstaben,
 ausgeblendet); Vorschau; „Standard …“ und „Texteffekte …“. Der zweite Reiter hat den Zeichenabstand.
 

@@ -19,7 +19,7 @@ def fussleiste(dialog: QDialog, layout, *links: QPushButton, bei_ok: Callable | 
     zu.addStretch(1)
     ab, ok = QPushButton(abbrechen_text), QPushButton(ok_text); ok.setDefault(True)
     ab.setIcon(_symbol("kreuz")); ok.setIcon(_symbol("haken"))
-    for k in (ab, ok):                                  # wie im WPS: breite Knöpfe mit Symbol
+    for k in (ab, ok): # wie in der Vorlage: breite Knöpfe mit Symbol
         k.setMinimumSize(100, 34); k.setIconSize(QSize(16, 16))
     ab.clicked.connect(dialog.reject); ok.clicked.connect(bei_ok or dialog.accept)
     if not nur_ok:

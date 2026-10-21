@@ -115,7 +115,7 @@ class FarbPalette(QMenu):
         v.addLayout(self._raster(F.thema_raster()))
         v.addWidget(self._titel_zeile("Standardfarben"))
         v.addLayout(self._raster([list(F.STANDARD_FARBEN)]))
-        if verlauf:                                         # „Graduelle Füllung“ wie im WPS: dieselben Farben als Verläufe
+        if verlauf: # „Graduelle Füllung“ wie in der Vorlage: dieselben Farben als Verläufe
             v.addWidget(self._titel_zeile("Graduelle Füllung"))
             g = QGridLayout(); g.setSpacing(2); g.setContentsMargins(0, 0, 0, 0); g.setAlignment(Qt.AlignLeft | Qt.AlignTop)
             for i, farbe in enumerate(F.STANDARD_FARBEN):

@@ -382,9 +382,6 @@ class Backstage(QWidget):
 
     def _oeffnen_mit(self):
         sa, v = self._seite("Öffnen mit …")
-        self._gruppe(v, "Anderes Programm", "Das Dokument wird zuerst gespeichert und dann im gewählten Programm geöffnet — falls es installiert ist.")
-        self._knopf(v, "Mit WPS Writer öffnen", "mitWpsOeffnen", "buch")
-        self._knopf(v, "Mit LibreOffice öffnen", "mitLibreOfficeOeffnen", "buch")
         self._gruppe(v, "Teilen")
         self._knopf(v, "Dokument teilen (optional)", "dokumentTeilen", "verknuepft")
         v.addStretch(1)

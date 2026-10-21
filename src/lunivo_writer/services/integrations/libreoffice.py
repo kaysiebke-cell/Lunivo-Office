@@ -33,7 +33,7 @@ def konvertiere(quelle: str, ziel_ext: str, ordner: str) -> str:
     """Wandelt `quelle` nach `ziel_ext` um (Ergebnis liegt in `ordner`). → Pfad der neuen Datei."""
     soffice = finde_soffice()
     if not soffice:
-        raise DocumentIOError("LibreOffice ist nicht installiert. Dieses Format braucht es zum Umwandeln "
+        raise DocumentIOError("Das Umwandlungsprogramm ist nicht installiert. Dieses Format braucht es "
                               "(Installation: sudo apt install libreoffice-writer).")
     profil = os.path.join(data_dir(), "lo-profil")
     os.makedirs(profil, exist_ok=True)
@@ -43,13 +43,13 @@ def konvertiere(quelle: str, ziel_ext: str, ordner: str) -> str:
              "--convert-to", FILTER.get(ziel_ext, ziel_ext), "--outdir", ordner, quelle],
             capture_output=True, encoding="utf-8", errors="replace", timeout=TIMEOUT_S)
     except subprocess.TimeoutExpired as e:
-        raise DocumentIOError("LibreOffice hat zu lange gebraucht und wurde abgebrochen.") from e
+        raise DocumentIOError("Das Umwandlungsprogramm hat zu lange gebraucht und wurde abgebrochen.") from e
     except OSError as e:
-        raise DocumentIOError(f"LibreOffice ließ sich nicht starten: {e.strerror or e}") from e
+        raise DocumentIOError(f"Das Umwandlungsprogramm ließ sich nicht starten: {e.strerror or e}") from e
     ziel = os.path.join(ordner, os.path.splitext(os.path.basename(quelle))[0] + "." + ziel_ext)
     if not os.path.isfile(ziel):
         hinweis = (lauf.stderr or lauf.stdout or "").strip().splitlines()
-        raise DocumentIOError("Die Umwandlung durch LibreOffice ergab nichts"
+        raise DocumentIOError("Die Umwandlung ergab nichts"
                               + (f": {hinweis[-1]}" if hinweis else "."))
     return ziel
 

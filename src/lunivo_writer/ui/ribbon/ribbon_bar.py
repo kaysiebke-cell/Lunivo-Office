@@ -36,7 +36,7 @@ def lade_register() -> dict:
 
 
 class _BandSeite(QScrollArea):
-    """Eine Seite des Bandes. Ist sie breiter als das Fenster, erscheinen am Rand Pfeile zum Blättern (‹ und ›), wie im WPS Writer;
+    """Eine Seite des Bandes. Ist sie breiter als das Fenster, erscheinen am Rand Pfeile zum Blättern (‹ und ›), wie in der Vorlage Writer;
     das Mausrad blättert ebenfalls. Der Rollbalken bleibt weg — er würde die Knöpfe verdecken."""
     SCHRITT = 0.6                              # Anteil der sichtbaren Breite je Klick
 
@@ -454,7 +454,7 @@ class RegisterBand(QWidget):
         g.setContentsMargins(0, 0, 0, 0)
         self._stile_host, self._stile_gitter, self._stil_knoepfe = host, g, []
         self.stile_aktualisieren()
-        # wie im WPS: drei Spalten sichtbar, der Rest wird durchgescrollt
+ # wie in der Vorlage: drei Spalten sichtbar, der Rest wird durchgescrollt
         sa = QScrollArea()
         sa.setObjectName("stileGalerie")
         sa.setWidget(host)

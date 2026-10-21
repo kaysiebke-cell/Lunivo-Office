@@ -1,5 +1,5 @@
 """Optionen — das Fenster hinter „☰ Menü ▸ Optionen“ (F9), aufgebaut in drei Zweigen:
-Leichter lesen · Wie im WPS Writer · Nur bei Lunivo. Links der Baum, rechts die Seite.
+Leichter lesen · Allgemein · Nur bei Lunivo. Links der Baum, rechts die Seite.
 
 Was hier steht, wirkt. Was noch keine Wirkung hat, steht je Seite unter „Noch nicht umgesetzt“,
 damit nichts stillschweigend verschwindet.
@@ -337,7 +337,7 @@ class OptionenAnsicht(QWidget):
         zweige = [
             ("Leichter lesen", [("lesehilfe", "Lesehilfe", self._lesehilfe), ("schriften", "Schriftarten", self._schriften),
                                 ("sprache", "Sprache", self._sprache), ("rechtschreibung", "Rechtschreibprüfung", self._rechtschreibung)]),
-            ("Wie im WPS Writer", [("ansicht", "Ansicht", self._ansicht), ("bearbeiten", "Bearbeiten", self._bearbeiten),
+            ("Allgemein", [("ansicht", "Ansicht", self._ansicht), ("bearbeiten", "Bearbeiten", self._bearbeiten),
                                    ("speichern", "Allgemein und Speichern", self._speichern),
                                    ("sicherung", "Sicherungseinstellungen", self._sicherung),
                                    ("speicherort", "Speicherort für Dateien", self._speicherort),
@@ -744,7 +744,7 @@ class OptionenAnsicht(QWidget):
             p.haken(f, key, text, False)
         p.hinweis("Die Kompatibilitätsoptionen werden als Einstellungen in die DOCX-Datei geschrieben; Word liest sie beim Öffnen. "
                   "Bilder werden nur verkleinert (auf höchstens 1600 Punkte Kantenlänge), wenn „nicht komprimieren“ aus ist.")
-        p.hinweis("DOCX ist das Austauschformat mit der höchsten Treue. ODT, DOC und RTF gehen über LibreOffice (Datei ▸ Exportieren).")
+        p.hinweis("DOCX ist das Austauschformat mit der höchsten Treue. ODT, DOC und RTF gehen über ein Umwandlungsprogramm (Datei ▸ Exportieren).")
         p.abschluss()
         return p
 
@@ -1404,7 +1404,7 @@ class OptionenAnsicht(QWidget):
         schriften = [n for n in LESESCHRIFTEN if n in QFontDatabase.families()]
         schr_ordner = os.path.expanduser("~/.local/share/fonts/lunivo-office")
         karten = [
-            ("LibreOffice", "Word-Dateien, PDF und EPUB", bool(soffice), lo_pfad, "nicht installiert"),
+            ("Umwandlungsprogramm", "ODT, DOC, RTF und EPUB", bool(soffice), lo_pfad, "nicht installiert"),
             ("LanguageTool", "„Gründlich prüfen“ — Grammatik über die eigenen Regeln hinaus", bool(lt), languagetool.ordner(), "./… holen"),
             (f"Stimmen zum Vorlesen ({len(stimmen)})", "aufgenommene Stimmen statt der blechernen des Systems", bool(stimmen), piper, "stimme-holen.sh"),
             (f"Schriften zum leichteren Lesen ({len(schriften)})", ", ".join(schriften) or "OpenDyslexic, Lexend, Atkinson Hyperlegible",

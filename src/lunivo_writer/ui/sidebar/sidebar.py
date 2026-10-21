@@ -266,7 +266,7 @@ class SchreibhilfePanel(QWidget):
         if self.effekt_panel is None:
             host = QWidget()
             v = QVBoxLayout(host); v.setContentsMargins(12, 10, 12, 10); v.setSpacing(8)
-            kopf = QHBoxLayout(); kopf.setSpacing(4)                      # wie im WPS: „Formatierung ▾“, rechts Anheften und Schließen
+            kopf = QHBoxLayout(); kopf.setSpacing(4) # wie in der Vorlage: „Formatierung ▾“, rechts Anheften und Schließen
             titel = QToolButton(); titel.setText("Formatierung"); titel.setPopupMode(QToolButton.InstantPopup); titel.setAutoRaise(True)
             titel.setToolButtonStyle(Qt.ToolButtonTextOnly)
             menue = QMenu(titel); menue.addAction("Texteffekte formatieren"); titel.setMenu(menue)

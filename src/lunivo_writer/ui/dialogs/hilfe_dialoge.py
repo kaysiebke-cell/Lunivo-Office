@@ -142,7 +142,7 @@ def handbuch(parent) -> QDialog:
             if blk.text().strip() == "Woher dieses Programm kommt":          # die Gliederung nennt es kürzer
                 stellen.setdefault("Woher es kommt", blk)
         blk = blk.next()
-    ueber_kopf = QListWidgetItem("Lunivo-Office\nEin Raum für Worte — das Handbuch"); ueber_kopf.setData(Qt.UserRole, "")
+    ueber_kopf = QListWidgetItem("Lunivo Writer\nEin Raum für Worte — das Handbuch"); ueber_kopf.setData(Qt.UserRole, "")
     f = ueber_kopf.font(); f.setBold(True); ueber_kopf.setFont(f); ueber_kopf.setSizeHint(QSize(0, 52))
     nav.addItem(ueber_kopf)
     for gruppe, titel in GRUPPEN:
@@ -218,7 +218,7 @@ def _erweiterungen_liste() -> list[tuple[bool, str, str, str]]:
     from lunivo_writer.services import vorlesen
     from lunivo_writer.services.integrations import languagetool, libreoffice
     schriften = [f for f in ("OpenDyslexic", "Lexend", "Atkinson Hyperlegible") if f.lower() in {x.lower() for x in QFontDatabase.families()}]
-    return [(bool(libreoffice.finde_soffice()), "LibreOffice", "Alte Word-Dateien (DOC), ODT und RTF", "ca. 694 MB"),
+    return [(bool(libreoffice.finde_soffice()), "Umwandlungsprogramm", "Alte Word-Dateien (DOC), ODT und RTF", "ca. 694 MB"),
             (bool(languagetool.verfuegbar()), "LanguageTool", "„Gründlich prüfen“ — Grammatik über die eigenen Regeln hinaus", "ca. 386 MB"),
             (bool(vorlesen.piper_da()), "Stimmen zum Vorlesen", "aufgenommene Stimmen statt der blechernen des Systems", "ca. 439 MB"),
             (len(schriften) == 3, f"Schriften zum leichteren Lesen ({len(schriften)}/3)", "OpenDyslexic, Lexend, Atkinson Hyperlegible", "ca. 1 MB")]
@@ -253,7 +253,7 @@ def erweiterungen(parent) -> QDialog:
 def ueber(parent, version: str) -> QDialog:
     d, v = _dialog(parent, "Über Lunivo Writer", 460)
     for text in (f"Lunivo Writer {version}\nEin Raum für Worte",
-                 "Die Prüfung und der Wortschatz stammen aus der Schreibhilfe.\nAlte Formate (DOC, ODT, RTF) wandelt LibreOffice im Hintergrund.",
+                 "Die Prüfung und der Wortschatz stammen aus der Schreibhilfe.\nAlte Formate (DOC, ODT, RTF) wandelt ein Umwandlungsprogramm im Hintergrund.",
                  "Was geschrieben wird, bleibt auf diesem Rechner.\nNichts geht hinaus, ohne dass du es selbst schickst."):
         l = QLabel(text); l.setWordWrap(True); v.addWidget(l); v.addSpacing(6)
     v.addStretch(1)

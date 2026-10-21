@@ -25,11 +25,11 @@ def test_roundtrip_ueber_libreoffice(app, tmp_path, ext):
     l = formats.load(_beispiel(tmp_path))
     out = str(tmp_path / ("x" + ext))
     rep = formats.save(out, l.doc, l.page, l.meta)
-    assert os.path.getsize(out) > 500 and any("LibreOffice" in w for w in rep.warnings)
+    assert os.path.getsize(out) > 500 and any("Umwandlungsprogramm" in w for w in rep.warnings)
     back = formats.load(out)
     txt = back.doc.toPlainText()
     assert "Überschrift" in txt and "Normaler Text mit Fett" in txt and "Punkt" in txt
-    assert any("LibreOffice" in w for w in back.report.warnings)
+    assert any("Umwandlungsprogramm" in w for w in back.report.warnings)
     # Fett bleibt erhalten
     b = back.doc.find("Fett"); assert b.charFormat().fontWeight() >= 600
     assert back.doc.firstBlock().blockFormat().headingLevel() == 1

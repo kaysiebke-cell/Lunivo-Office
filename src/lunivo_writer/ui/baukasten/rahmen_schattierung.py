@@ -459,7 +459,7 @@ class _SchattierungSeite(QWidget):
     def __init__(self, fuell: str | None, muster: tuple[str, str] | None, fuer: list[str] | None):
         super().__init__()
         g = QGridLayout(self); g.setContentsMargins(14, 12, 14, 10); g.setHorizontalSpacing(14); g.setVerticalSpacing(8)
-        # links: zwei Gruppen (Ausfüllen, Muster), dann eine senkrechte Linie, rechts Vorschau und „Übernehmen für“ — wie im WPS
+ # links: zwei Gruppen (Ausfüllen, Muster), dann eine senkrechte Linie, rechts Vorschau und „Übernehmen für“ — wie in der Vorlage
         links = QVBoxLayout(); links.setSpacing(8)
         ag = QGroupBox("Ausfüllen"); ah = QHBoxLayout(ag)
         self.fuell = FarbFeld(fuell or "", "Füllfarbe", keine_text="Keine Farbe"); self.fuell.setMinimumWidth(160)

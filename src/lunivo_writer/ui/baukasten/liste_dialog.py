@@ -31,7 +31,7 @@ from lunivo_writer.ui.baukasten.mass_feld import EinheitFeld, spin
 
 PLATZHALTER = "①"
 _SCHLUESSEL = "listen/benutzer"
-_KACHEL = QSize(144, 102)                  # die Kacheln füllen das Raster wie im WPS: vier je Zeile, jede mit Rahmen
+_KACHEL = QSize(144, 102) # die Kacheln füllen das Raster wie in der Vorlage: vier je Zeile, jede mit Rahmen
 
 
 def benutzerlisten() -> list[dict]:
@@ -170,7 +170,7 @@ class NummerierungAnpassenDialog(QDialog):
         self.format, self.art, self.start, self.schrift = self.zf.format, self.zf.art, self.zf.start, self.zf.schrift
         v.addWidget(self.zf)
         vg = QGroupBox("Vorschau"); vh = QHBoxLayout(vg)
-        self.vorschau = VorschauFlaeche(self._male, 190); self.vorschau.setFixedWidth(200)          # schmal und in der Mitte, wie im WPS
+        self.vorschau = VorschauFlaeche(self._male, 190); self.vorschau.setFixedWidth(200) # schmal und in der Mitte, wie in der Vorlage
         vh.addStretch(1); vh.addWidget(self.vorschau); vh.addStretch(1)
         v.addWidget(vg)
         self.hinweis = QLabel(); self.hinweis.setStyleSheet("color: #e8590c;"); v.addWidget(self.hinweis)
@@ -215,7 +215,7 @@ class NummerierungAnpassenDialog(QDialog):
         self.vorschau.update()
 
     def _male(self, p, rect) -> None:
-        """Vorschau wie im WPS: oben und unten graue Balken, dazwischen drei Nummern mit je zwei schwarzen Zeilen."""
+        """Vorschau wie in der Vorlage: oben und unten graue Balken, dazwischen drei Nummern mit je zwei schwarzen Zeilen."""
         s = self.spec()
         r = QRectF(rect)
         grau, schwarz = QPen(QColor("#9aa0a6"), 3), QPen(QColor("#111111"), 3)
@@ -292,7 +292,7 @@ class GliederungAnpassenDialog(QDialog):
         v.addLayout(oben)
         self.mehr = QPushButton("Erweitern"); self.mehr.setCheckable(True); self.mehr.toggled.connect(self._erweitern)
         self.ok = fussleiste(self, v, self.mehr)
-        # ---- erweiterter Teil (wie im WPS unter „Reduzieren“)
+ # ---- erweiterter Teil (wie in der Vorlage unter „Reduzieren“)
         self.unten = QWidget(); ug = QGridLayout(self.unten); ug.setContentsMargins(0, 0, 0, 0); ug.setHorizontalSpacing(24)
         self.position = _Positionen(); ug.addWidget(self.position, 0, 0, 5, 1)
         self.norm = QCheckBox("Nummerieren nach Norm")
@@ -385,7 +385,7 @@ class GliederungAnpassenDialog(QDialog):
         return {"ebenen": [M.ebene_aus(e) for e in self._e]}
 
     def _male(self, p, rect) -> None:
-        """Die neun Ebenen mit ihren Nummern; die gewählte Ebene hat schwarze Linien, die anderen graue (wie im WPS)."""
+        """Die neun Ebenen mit ihren Nummern; die gewählte Ebene hat schwarze Linien, die anderen graue (wie in der Vorlage)."""
         d = self.defn()
         zaehler = [0] * M.EBENEN
         r = QRectF(rect).adjusted(10, 8, -10, -8)
@@ -426,14 +426,14 @@ class ListenDialog(QDialog):
         self.liste = QListWidget(); self.vorschau = VorschauFlaeche(self._male, 150)
         self.vorschau.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         bg.addWidget(self.liste, 1, 0); bg.addWidget(self.vorschau, 1, 1)
-        bg.setColumnStretch(0, 1); bg.setColumnStretch(1, 1)                  # Liste und Vorschau gleich breit, wie im WPS
+        bg.setColumnStretch(0, 1); bg.setColumnStretch(1, 1) # Liste und Vorschau gleich breit, wie in der Vorlage
         bg.setRowStretch(1, 1)
         self.reiter.addTab(b, "Benutzerdefinierte Liste")
         self._fuelle_benutzer()
         # ---- Knöpfe
         self.anpassen = QPushButton("Anpassen …"); self.loeschen = QPushButton("Löschen")
         self.anpassen.clicked.connect(self._anpassen); self.loeschen.clicked.connect(self._loeschen)
-        gruppe = QGroupBox("Listennummerierung"); gh = QHBoxLayout(gruppe)          # wie im WPS: unter allen Reitern dieselbe Gruppe
+        gruppe = QGroupBox("Listennummerierung"); gh = QHBoxLayout(gruppe) # wie in der Vorlage: unter allen Reitern dieselbe Gruppe
         gh.addStretch(1); gh.addWidget(self.loeschen); gh.addWidget(self.anpassen)
         v.addWidget(gruppe)
         fussleiste(self, v)

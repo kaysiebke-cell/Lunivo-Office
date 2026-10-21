@@ -105,7 +105,7 @@ def load(path: str, kennwort: str | None = None) -> Loaded:
             doc, page, meta, rep = docx_reader.read_docx(docx_pfad)
         finally:
             tmp.cleanup()
-        rep.warn(f"„{os.path.basename(path)}“ wurde über LibreOffice nach DOCX umgewandelt und dann gelesen; "
+        rep.warn(f"„{os.path.basename(path)}“ wurde über das Umwandlungsprogramm nach DOCX umgewandelt und dann gelesen; "
                  "beim Speichern als DOCX gilt das umgewandelte Format.")
         return Loaded(doc, page, meta, rep)
     raise DocumentIOError(
@@ -179,12 +179,12 @@ def save(path: str, doc: QTextDocument, page: PageSettings, meta: dict | None = 
                 zwischen = os.path.join(tmp, "dokument.docx")
                 docx_writer.write_docx(zwischen, doc, page, meta)
                 libreoffice.aus_docx(zwischen, path)
-            rep.warn(f"{e[1:].upper()} wurde über LibreOffice aus der DOCX-Fassung erzeugt. "
-                     "Die Treue zum Original hängt von LibreOffice ab.")
+            rep.warn(f"{e[1:].upper()} wurde über das Umwandlungsprogramm aus der DOCX-Fassung erzeugt. "
+                     "Die Treue zum Original hängt vom Umwandlungsprogramm ab.")
             return rep
         if e != ".odt":
-            raise DocumentIOError(f"{e[1:].upper()} braucht LibreOffice zum Umwandeln; es ist nicht installiert.")
-        rep.warn("ODT wurde ohne LibreOffice über Qt geschrieben (Text, Formatierung, Tabellen, Bilder). "
+            raise DocumentIOError(f"{e[1:].upper()} braucht das Umwandlungsprogramm; es ist nicht installiert.")
+        rep.warn("ODT wurde ohne Umwandlungsprogramm über Qt geschrieben (Text, Formatierung, Tabellen, Bilder). "
                  "Seitenrand, Kopf- und Fußzeile sind darin nicht enthalten.")
         w = QTextDocumentWriter(path, b"ODF")
         if not w.write(doc):

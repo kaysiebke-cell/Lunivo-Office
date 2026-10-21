@@ -172,7 +172,7 @@ class DruckAnsicht(QWidget):
         f.addWidget(_kopf("Seiten"))
         self.leere = haken("Leere Seiten mitdrucken", "leere", True)
         f.addStretch(1)
-        self.reiter.addTab(w, "Lunivo-Office")
+        self.reiter.addTab(w, "Lunivo Writer")
 
     # ---- Reiter „Drucker“ ------------------------------------------------------------------------------------------------
     def _druckerseite(self, s):

@@ -99,7 +99,7 @@ def _alle(zahlenart: str, formate: tuple[str, str, str]) -> dict:
     return gliederung([zahlenart], [fmt(i) for i in range(EBENEN)])
 
 
-# Die Vorlagen des Reiters „Gliederung nummeriert“ (ohne „Kein“): erst die sieben wie im WPS, dann zwei klassische; Name für die Kachel
+ # Die Vorlagen des Reiters „Gliederung nummeriert“ (ohne „Kein“): erst die sieben wie in der Vorlage, dann zwei klassische; Name für die Kachel
 VORLAGEN = (
     ("1. / 1.1. / 1.1.1.", _alle("dezimal", (".", ".", "."))),
     ("I. / I.I / I.I.I", _alle("roem_gross", (".", "", ""))),

@@ -38,7 +38,7 @@ class FormFeldDialog(QDialog):
             f.addRow("Aktion beim Klicken", self.aktion)
         v = QVBoxLayout(self)
         v.addLayout(f)
-        info = QLabel("Felder werden in DOCX als Inhaltssteuerelemente gespeichert und lassen sich in Word und LibreOffice ausfüllen.")
+        info = QLabel("Felder werden in DOCX als Inhaltssteuerelemente gespeichert und lassen sich auch in anderen Textprogrammen ausfüllen.")
         info.setWordWrap(True)
         info.setStyleSheet("color: palette(mid);")
         v.addWidget(info)

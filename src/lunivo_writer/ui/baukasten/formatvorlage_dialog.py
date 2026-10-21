@@ -88,7 +88,7 @@ class FormatvorlageDialog(QDialog):
         self.basis.setCurrentIndex(max(0, self.basis.findData(basis if basis in namen else "")))
         self.leiste.setze({**stile.definition("Standard"), **(start or {})} if not start else start)
         if not self.leiste.werte()["groesse"]:
-            self.leiste.groesse.setCurrentText("11")                # wie im WPS steht eine Größe da, nicht ein leeres Feld
+            self.leiste.groesse.setCurrentText("11") # wie in der Vorlage steht eine Größe da, nicht ein leeres Feld
         self.leiste.geaendert.connect(self._neu)
         self.basis.currentIndexChanged.connect(self._basis_geaendert)
         self.name.textChanged.connect(self._pruefen)

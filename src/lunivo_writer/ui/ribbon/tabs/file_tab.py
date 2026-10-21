@@ -29,10 +29,7 @@ DATEI = {"name": "Datei", "gruppen": [
                                     _k("einstellungen", "Druckeinstellungen", "druckerWaehlen")]},
     {"name": "Dokument", "knoepfe": [_k("inhalt", "Dokumentinformationen", "eigenschaften", True),
                                      _k("sperren", "Dokument schützen", "dokumentSchuetzen"),
-                                     _k("verknuepft", "Dokument teilen (optional)", "dokumentTeilen"),
-                                     _k("//", "x"),
-                                     _k("buch", "Mit WPS Writer öffnen", "mitWpsOeffnen"),
-                                     _k("buch", "Mit LibreOffice öffnen", "mitLibreOfficeOeffnen")]},
+                                     _k("verknuepft", "Dokument teilen (optional)", "dokumentTeilen")]},
     {"name": "Programm", "knoepfe": [_k("optionen", "Optionen / Einstellungen", "w.optionenOeffnen", True),
                                      _k("schliessen", "Schließen", "schliessen")]},
 ]}
