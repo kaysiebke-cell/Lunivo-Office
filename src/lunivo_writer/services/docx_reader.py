@@ -345,6 +345,8 @@ class _Reader:
             f.setFontCapitalization(QFont.AllUppercase)
         elif self._flag(run, para, "small_caps"):
             f.setFontCapitalization(QFont.SmallCaps)
+        from lunivo_writer.editor import texteffekt
+        texteffekt.aus_rpr(run._r.rPr, f)
         return f
 
     _HL = {"yellow": "#FFFF00", "green": "#00FF00", "cyan": "#00FFFF", "magenta": "#FF00FF",

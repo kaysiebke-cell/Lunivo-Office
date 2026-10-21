@@ -700,6 +700,9 @@ class _Writer:
                 run._r.get_or_add_rPr().append(shd)
         if cf.textOutline().style() != Qt.NoPen:
             f.outline = True
+        if cf.textOutline().style() != Qt.NoPen or (cf.hasProperty(QTextFormat.ForegroundBrush) and cf.foreground().color().alpha() < 255):
+            from lunivo_writer.editor import texteffekt
+            texteffekt.in_rpr(run._r.get_or_add_rPr(), cf)
         if cf.hasProperty(P_VERSTECKT):
             f.hidden = True
         ls = cf.fontLetterSpacing()

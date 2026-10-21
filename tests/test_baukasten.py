@@ -634,3 +634,23 @@ def test_texteffekte(app):
     cf = e.document().firstBlock().begin().fragment().charFormat()
     assert cf.textOutline().style() == Qt.DashLine
     stile.loeschen("EffektTest")
+
+
+def test_texteffekte_docx_rundlauf(app, tmp_path):
+    from PySide6.QtCore import Qt
+    from PySide6.QtGui import QTextCursor
+    from lunivo_writer.editor import texteffekt as T
+    from lunivo_writer.models.page import PageSettings
+    from lunivo_writer.services import file_service as formats
+    from lunivo_writer.ui.document.document_editor import DocumentEditor
+    e = DocumentEditor(); e.setPlainText("Effekt")
+    c = e.textCursor(); c.select(QTextCursor.Document); e.setTextCursor(c)
+    e._merge(T.zu_format({"farbe": "#c92a2a", "transparenz": 40, "kontur": True, "kontur_farbe": "#1864ab", "kontur_breite": 1.5,
+                          "kontur_art": "gestrichelt"}))
+    pfad = str(tmp_path / "t.docx")
+    formats.save(pfad, e.document(), PageSettings())
+    geladen = formats.load(pfad)                        # das Dokument gehört dem Ergebnis: es muss am Leben bleiben
+    cf = geladen.doc.firstBlock().begin().fragment().charFormat()
+    w = T.aus_format(cf)
+    assert cf.textOutline().style() == Qt.DashLine and w["kontur_farbe"] == "#1864ab" and w["kontur_breite"] == 1.5
+    assert w["transparenz"] == 40 and w["farbe"] == "#c92a2a"
