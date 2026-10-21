@@ -8,7 +8,7 @@ gehört. Die Abschnitte klappen auf und zu; Schatten, Reflektion, Leuchten, Mate
 """
 from __future__ import annotations
 
-from PySide6.QtCore import QRectF, QSize, Qt, Signal
+from PySide6.QtCore import QRectF, QSize, Qt, QTimer, Signal
 from PySide6.QtGui import QColor, QFont, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import (
     QButtonGroup, QComboBox, QDialog, QScrollArea, QGridLayout, QHBoxLayout, QLabel, QPushButton, QRadioButton, QTabWidget, QToolButton, QVBoxLayout, QWidget,
@@ -73,19 +73,22 @@ def _linien_icon(art: str, form: str, groesse: QSize = QSize(86, 14)) -> QIcon:
     return QIcon(pm)
 
 
-class TexteffektDialog(QDialog):
+class TexteffektPanel(QWidget):
+    """Der Inhalt von „Texteffekte formatieren“ als eigenes Widget: Reiter, Abschnitte, Regler. Es steckt im Fenster ``TexteffektDialog`` und in der rechten
+    Seitenleiste. ``geaendert(werte)`` kommt bei jeder Änderung durch den Benutzer (nicht bei ``setze``), damit die Seitenleiste sofort anwenden kann."""
+    geaendert = Signal(dict)
+
     def __init__(self, parent=None, werte: dict | None = None):
         super().__init__(parent)
-        self.setWindowTitle("Texteffekte formatieren")
         w = {**T.EFFEKT, **(werte or {})}
         self._fx = {k: dict(w[k]) for k in ("verlauf", "kontur_verlauf", "schatten", "reflektion", "leuchten", "d3") if w.get(k)}
-        v = QVBoxLayout(self)
+        self._stumm = True
+        v = QVBoxLayout(self); v.setContentsMargins(0, 0, 0, 0)
         self.reiter = IconReiter(); v.addWidget(self.reiter, 1)
         self.reiter.addTab(self._scroll(self._seite_fuellung(w)), self._tab_icon("A", True), "TEXTFÜLLUNG UND -KONTUR")
         self.reiter.addTab(self._scroll(self._seite_effekte(w)), self._tab_icon("A", False), "EFFEKTE")
-        self.resize(422, 558)
-        fussleiste(self, v, nur_ok=True)                          # wie im WPS: nur „OK“; das Schließen-Kreuz bricht ab
         self.setze(w)
+        self._stumm = False
 
     @staticmethod
     def _scroll(seite: QWidget) -> QWidget:
@@ -339,6 +342,14 @@ class TexteffektDialog(QDialog):
 
     # ---- Werte
     def setze(self, w: dict) -> None:
+        """Werte ins Panel schreiben (ohne ``geaendert`` zu melden)."""
+        alt, self._stumm = self._stumm, True
+        try:
+            self._setze(w)
+        finally:
+            self._stumm = alt
+
+    def _setze(self, w: dict) -> None:
         self._fx = {k: dict(w[k]) for k in ("verlauf", "kontur_verlauf", "schatten", "reflektion", "leuchten", "d3") if w.get(k)}
         for r in (self.r_keine, self.r_farbe, self.r_verlauf, self.k_keine, self.k_linie, self.k_verlauf):
             r.blockSignals(True)
@@ -400,7 +411,13 @@ class TexteffektDialog(QDialog):
         self._neu()
 
     def _neu(self, *_) -> None:
+        if not self._stumm:
+            QTimer.singleShot(0, self._melden)
         self.linie_knopf.setText("Keine" if self.k_keine.isChecked() else T.KONTUR_ARTEN[self.k_art.currentData()][0])
+
+    def _melden(self) -> None:
+        if not self._stumm:
+            self.geaendert.emit(self.werte())
 
     def _male(self, p: QPainter, rect) -> None:
         w = self.werte()
@@ -415,3 +432,21 @@ class TexteffektDialog(QDialog):
             kontur = (QColor(w["kontur_farbe"]), w["kontur_breite"] * X.PX, w.get("kontur_form", "einfach"), w["kontur_art"])
         X.vorschau_zeichnen(p, QRectF(rect), "Beispieltext", f, {k: v for k, v in w.items() if k in ("verlauf", "kontur_verlauf", "kontur_form", "schatten", "reflektion", "leuchten", "d3")},
                             face, kontur)
+
+
+class TexteffektDialog(QDialog):
+    """Das Fenster „Texteffekte formatieren“: das Panel mit „OK“ (wie im WPS; das Schließen-Kreuz bricht ab). Felder des Panels sind hier erreichbar."""
+
+    def __init__(self, parent=None, werte: dict | None = None):
+        super().__init__(parent)
+        self.setWindowTitle("Texteffekte formatieren")
+        v = QVBoxLayout(self)
+        self.panel = TexteffektPanel(self, werte)
+        v.addWidget(self.panel, 1)
+        self.resize(422, 558)
+        fussleiste(self, v, nur_ok=True)
+
+    def __getattr__(self, name: str):
+        if name == "panel":                                  # noch nicht gebaut: kein Umweg über das Panel
+            raise AttributeError(name)
+        return getattr(self.panel, name)

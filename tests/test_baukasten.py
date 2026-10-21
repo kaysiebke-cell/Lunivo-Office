@@ -992,3 +992,63 @@ def test_seitenrahmen_vorn_und_hinten(app):
     assert rot(bild(True, "vorn")) and not rot(bild(True, "hinten"))              # Vordergrund: nur beim Zeichnen „vorn“
     assert rot(bild(False, "hinten")) and not rot(bild(False, "vorn"))            # Hintergrund: nur beim Zeichnen „hinten“
     assert rot(bild(False, "immer"))
+
+
+def test_texteffekte_in_der_seitenleiste(app, tmp_path):
+    from PySide6.QtCore import QEventLoop, QSettings, QTimer
+    from PySide6.QtGui import QTextCursor
+    from lunivo_writer.services.settings_service import Settings
+    from lunivo_writer.ui.main_window import MainWindow
+    from lunivo_writer.editor import texteffekt as T
+    w = MainWindow(Settings(QSettings(str(tmp_path / "s.ini"), QSettings.IniFormat)))
+    w.show(); w.new_document()
+    e = w.current_editor(); e.setPlainText("Seitenleiste")
+    c = e.textCursor(); c.select(QTextCursor.Document); e.setTextCursor(c)
+    w.befehle.texteffekte()                                                    # öffnet den Bereich in der Seitenleiste, kein Fenster
+    assert not w.sidebar.isHidden() and w.sidebar.texteffekte_sichtbar()
+    p = w.sidebar.effekt_panel
+    p.s_abst.regler.setValue(120)                                              # Regler bewegen: wirkt sofort an der Markierung
+    schleife = QEventLoop(); QTimer.singleShot(50, schleife.quit); schleife.exec()
+    r = T.aus_format(e.document().firstBlock().begin().fragment().charFormat())
+    assert r["schatten"]["abstand"] == 12.0
+    w.sidebar.zeige_bereich(0)
+    assert not w.sidebar.texteffekte_sichtbar()
+
+
+def test_texteffekte_knopf_im_band_oeffnet_die_seitenleiste(app, tmp_path):
+    from PySide6.QtCore import QSettings
+    from PySide6.QtWidgets import QToolButton
+    from lunivo_writer.services.settings_service import Settings
+    from lunivo_writer.ui.main_window import MainWindow
+    w = MainWindow(Settings(QSettings(str(tmp_path / "s.ini"), QSettings.IniFormat)))
+    w.show(); w.new_document(); w.current_editor().setPlainText("Text")
+    knoepfe = [b for b in w.findChildren(QToolButton) if b.toolTip() in ("Texteffekte", "Texteffekte formatieren")]
+    assert knoepfe, "der Knopf „Texteffekte“ fehlt im Band"
+    w.sidebar.hide()
+    knoepfe[0].click()
+    assert w.sidebar.texteffekte_sichtbar()
+
+
+def test_texteffekte_menue_im_band(app, tmp_path):
+    from PySide6.QtCore import QSettings
+    from PySide6.QtGui import QTextCursor
+    from lunivo_writer.editor import texteffekt as T
+    from lunivo_writer.services.settings_service import Settings
+    from lunivo_writer.ui.main_window import MainWindow
+    w = MainWindow(Settings(QSettings(str(tmp_path / "s.ini"), QSettings.IniFormat)))
+    w.show(); w.new_document(); e = w.current_editor(); e.setPlainText("Menü")
+    c = e.textCursor(); c.select(QTextCursor.Document); e.setTextCursor(c)
+    m = w.befehle.menue_texteffekteKlappe()
+    titel = [a.text().replace("&", "") for a in m.actions() if a.text()]
+    assert titel[:4] == ["WordArt", "Schatten", "Spiegelung(R)", "Leuchteffekt(G)"] and "3D-Drehung" in titel and titel[-1].startswith("Weitere Texteffekte")
+    assert not [a for a in m.actions() if a.text() == "3D-Drehung"][0].isEnabled()
+    sub = {a.text().replace("&", ""): a.menu() for a in m.actions() if a.menu()}
+    sub["Schatten"].gewaehlt.emit("0")                                        # erster Schatten der Auswahl
+    assert T.aus_format(e.document().firstBlock().begin().fragment().charFormat())["schatten"]["art"] == "aussen"
+    sub["Leuchteffekt(G)"].gewaehlt.emit("3")
+    r = T.aus_format(e.document().firstBlock().begin().fragment().charFormat())
+    assert r["leuchten"] and r["schatten"]                                    # der Schatten bleibt, wenn ein Leuchten dazukommt
+    sub["WordArt"].gewaehlt.emit("3")                                        # WordArt „Blaue Kontur“ ersetzt alle Effekte
+    r = T.aus_format(e.document().firstBlock().begin().fragment().charFormat())
+    assert r["kontur"] and r["fuell"] == "keine" and not r.get("schatten")
+    sub["Schatten"].gewaehlt.emit("")

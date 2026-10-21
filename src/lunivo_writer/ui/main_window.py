@@ -350,6 +350,7 @@ class MainWindow(QMainWindow):
         e = tab.editor
         e.zoomChanged.connect(lambda f, ed=e: ed is self.current_editor() and self._zoom_anzeigen(f))
         e.formatChanged.connect(self._sync_later)
+        e.formatChanged.connect(self._effekt_sync)
         e.pageInfoChanged.connect(lambda *_: self._sync_status())
         e.document().modificationChanged.connect(lambda _m: self._update_tab_titles())
         e.document().contentsChanged.connect(self._sync_status)
@@ -1321,6 +1322,26 @@ class MainWindow(QMainWindow):
         sicht = not self.sidebar.isHidden()
         for i, b in self._rechts.items():
             b.setChecked(sicht and self.sidebar.stapel.currentIndex() == i)
+
+    def texteffekte_seitenleiste(self):
+        """Den Bereich „Texteffekte formatieren“ in der Seitenleiste öffnen; Änderungen gelten sofort für die Markierung."""
+        from lunivo_writer.editor import texteffekt
+        if self.current_editor() is None:
+            return
+        if self.sidebar.isHidden():
+            self.toggle_sidebar()
+
+        def anwenden(w: dict):
+            e = self.current_editor()
+            if e is not None:
+                e._merge(texteffekt.zu_format(w))
+        self.sidebar.zeige_texteffekte(texteffekt.aus_format(self.befehle._fmt()), anwenden)
+
+    def _effekt_sync(self):
+        """Folgt die Markierung einer anderen Formatierung, zeigt der offene Bereich „Texteffekte“ deren Werte."""
+        if self.sidebar.texteffekte_sichtbar() and self.current_editor() is not None:
+            from lunivo_writer.editor import texteffekt
+            self.sidebar.aktualisiere_texteffekte(texteffekt.aus_format(self.befehle._fmt()))
 
     def toggle_sidebar(self):
         on = self.sidebar.isHidden()

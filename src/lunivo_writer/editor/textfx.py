@@ -444,3 +444,31 @@ def voreinstellung_icon(fx: dict, groesse=(52, 40), text: str = "A", farbe: str 
     vorschau_zeichnen(p, QRectF(0, 0, groesse[0], groesse[1] * 0.92), text, f, fx, QColor(farbe))
     p.end()
     return QIcon(pm)
+
+
+def wordart_vorgaben() -> list[tuple[str, dict]]:
+    """Die 15 Formatvorlagen im Menü „Texteffekte ▸ WordArt“: Füllung, Kontur, Schatten (vollständige Effekte, ersetzen die bisherigen)."""
+    def e(**k):
+        return {"fuell": "farbe", "farbe": "#111417", "transparenz": 0, "kontur": False, "kontur_farbe": "#000000", "kontur_breite": 0.75, "kontur_art": "einfach", **k}
+    sch = {"art": "aussen", "farbe": "#000000", "transparenz": 55, "groesse": 100, "weich": 2, "abstand": 3, "winkel": 45}
+    return [("Schwarz", e()), ("Blau", e(farbe="#4a90d9")), ("Orange", e(farbe="#f08c2e")),
+            ("Blaue Kontur", e(fuell="keine", kontur=True, kontur_farbe="#4a90d9", kontur_breite=1.25)), ("Gelb", e(farbe="#ffc61a")), ("Grau", e(farbe="#7f8790")),
+            ("Blau mit Schatten", e(farbe="#2f6fb5", schatten=sch)), ("Gelbe Kontur", e(fuell="keine", kontur=True, kontur_farbe="#ffc61a", kontur_breite=1.25)),
+            ("Hellblaue Kontur", e(fuell="keine", kontur=True, kontur_farbe="#8fb8ea", kontur_breite=1.0)), ("Dunkelgrau", e(farbe="#495057")),
+            ("Schwarz mit Schatten", e(schatten=sch)), ("Schwarz mit blauer Kontur", e(kontur=True, kontur_farbe="#4a90d9", kontur_breite=1.0)),
+            ("Blauer Verlauf", e(fuell="verlauf", farbe="", verlauf={"farbe1": "#5b9be0", "farbe2": "#1c4fa3", "winkel": 90}, schatten=sch)),
+            ("Orange Kontur", e(fuell="keine", kontur=True, kontur_farbe="#f08c2e", kontur_breite=1.25)), ("Graue Kontur", e(fuell="keine", kontur=True, kontur_farbe="#868e96", kontur_breite=1.25))]
+
+
+def wordart_icon(w: dict, groesse=(52, 40)):
+    """Kachelbild einer WordArt-Formatvorlage."""
+    from PySide6.QtGui import QFont, QIcon, QPixmap
+    pm = QPixmap(*groesse); pm.fill(QColor("white"))
+    p = QPainter(pm)
+    f = QFont("Liberation Sans"); f.setPixelSize(int(groesse[1] * 0.7)); f.setBold(True)
+    face = QColor(0, 0, 0, 0) if w.get("fuell") == "keine" else QColor((w.get("verlauf") or {}).get("farbe1") or w.get("farbe") or "#111417")
+    kontur = (QColor(w["kontur_farbe"]), w.get("kontur_breite", 1.0) * PX, "einfach", "einfach") if w.get("kontur") else None
+    fx = {k: v for k, v in w.items() if k in ("verlauf", "schatten", "reflektion", "leuchten", "d3")}
+    vorschau_zeichnen(p, QRectF(0, 0, groesse[0], groesse[1] * 0.95), "A", f, fx, face, kontur)
+    p.end()
+    return QIcon(pm)

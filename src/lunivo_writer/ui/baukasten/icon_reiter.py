@@ -25,7 +25,7 @@ class IconReiter(QWidget):
         i = self._seiten.addWidget(seite)
         k = QToolButton(); k.setText(text); k.setIcon(icon); k.setIconSize(QSize(26, 26)); k.setCheckable(True)
         k.setToolButtonStyle(Qt.ToolButtonTextUnderIcon); k.setAutoRaise(True)
-        k.setStyleSheet("QToolButton { border: none; border-bottom: 2px solid transparent; padding: 4px 14px; color: palette(mid); }"
+        k.setStyleSheet("QToolButton { border: none; border-bottom: 2px solid transparent; padding: 4px 14px; color: palette(window-text); }"
                         "QToolButton:checked { color: palette(highlight); border-bottom: 2px solid palette(highlight); }")
         self._gruppe.addButton(k, i); self._kopf.addWidget(k)
         if i == 0:

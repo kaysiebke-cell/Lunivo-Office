@@ -5,7 +5,7 @@ from PySide6.QtCore import QTimer, Qt, Signal
 from PySide6.QtGui import QColor, QPalette
 from PySide6.QtWidgets import (QCheckBox, 
     QButtonGroup, QFrame, QHBoxLayout, QLabel, QLineEdit, QMessageBox, QPushButton, QScrollArea,
-    QStackedWidget, QVBoxLayout, QWidget,
+    QStackedWidget, QToolButton, QMenu, QVBoxLayout, QWidget,
 )
 
 from lunivo_writer.ui.baukasten.beschriftung import md_escape, md_label, text_label
@@ -256,6 +256,48 @@ class SchreibhilfePanel(QWidget):
         m = QLabel(text); m.setWordWrap(True)
         m.setStyleSheet("color: palette(mid); padding: 8px;")
         self.liste.insertWidget(0, m)
+
+    # ---- Texteffekte formatieren (Eigenschaften-Bereich, nur sichtbar, solange der Benutzer ihn gerufen hat)
+    effekt_panel = None
+
+    def zeige_texteffekte(self, werte: dict, anwenden) -> None:
+        """„Texteffekte formatieren“ in der Seitenleiste zeigen. ``anwenden(werte)`` wird bei jeder Änderung gerufen — die Wirkung ist sofort sichtbar."""
+        from lunivo_writer.ui.baukasten.texteffekt_dialog import TexteffektPanel
+        if self.effekt_panel is None:
+            host = QWidget()
+            v = QVBoxLayout(host); v.setContentsMargins(12, 10, 12, 10); v.setSpacing(8)
+            kopf = QHBoxLayout(); kopf.setSpacing(4)                      # wie im WPS: „Formatierung ▾“, rechts Anheften und Schließen
+            titel = QToolButton(); titel.setText("Formatierung"); titel.setPopupMode(QToolButton.InstantPopup); titel.setAutoRaise(True)
+            titel.setToolButtonStyle(Qt.ToolButtonTextOnly)
+            menue = QMenu(titel); menue.addAction("Texteffekte formatieren"); titel.setMenu(menue)
+            kopf.addWidget(titel); kopf.addStretch(1)
+            self.effekt_anheften = QToolButton(); self.effekt_anheften.setText("⚲"); self.effekt_anheften.setCheckable(True); self.effekt_anheften.setAutoRaise(True)
+            self.effekt_anheften.setToolTip("Anheften: der Bereich folgt der Markierung und bleibt offen")
+            zu = QToolButton(); zu.setText("✕"); zu.setAutoRaise(True); zu.setToolTip("Schließen"); zu.clicked.connect(lambda: self.zeige_bereich(0))
+            kopf.addWidget(self.effekt_anheften); kopf.addWidget(zu)
+            v.addLayout(kopf)
+            self.effekt_panel = TexteffektPanel(host, werte)
+            v.addWidget(self.effekt_panel, 1)
+            self._effekt_seite = host
+            self._effekt_index = self.stapel.addWidget(host)
+        else:
+            try:
+                self.effekt_panel.geaendert.disconnect()
+            except (RuntimeError, TypeError):
+                pass
+            self.effekt_panel.setze({**werte})
+        self.effekt_panel.geaendert.connect(anwenden)
+        self.zeige_bereich(self._effekt_index)
+
+    def texteffekte_sichtbar(self) -> bool:
+        return self.effekt_panel is not None and self.stapel.currentIndex() == self._effekt_index and not self.isHidden()
+
+    def aktualisiere_texteffekte(self, werte: dict) -> None:
+        """Die Werte des Panels an die Markierung anpassen (wenn der Benutzer gerade nicht darin bedient)."""
+        from PySide6.QtWidgets import QApplication
+        f = QApplication.focusWidget()
+        if self.effekt_panel is not None and not (f is not None and self.effekt_panel.isAncestorOf(f)):
+            self.effekt_panel.setze(werte)
 
     def zeige_bereich(self, i: int) -> None:
         """0 = Schreibhilfe, 1 = KI-Chat."""
