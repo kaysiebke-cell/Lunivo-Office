@@ -352,8 +352,9 @@ class Befehle:
         if not self.ed:
             return
         from lunivo_writer.ui.baukasten.liste_dialog import ListenDialog
+        from lunivo_writer.ui.baukasten.fenster_stapel import ausfuehren
         d = ListenDialog(self.w, self.ed.liste_spec(), seite=seite)
-        if d.exec():
+        if ausfuehren(d):
             self.ed.set_liste(d.ergebnis())
 
     def menue_aufzaehlungKlappe(self):
@@ -741,11 +742,12 @@ class Befehle:
         if not self.ed:
             return
         from lunivo_writer.ui.baukasten.rahmen_schattierung import RahmenSchattierungDialog
+        from lunivo_writer.ui.baukasten.fenster_stapel import ausfuehren
         fuell, muster = self.ed.absatzschatten()
         alt_rand = self.ed.page.border
         d = RahmenSchattierungDialog(self.w, rahmen=self.ed.absatzrahmen(), fuell=fuell, muster=muster, seitenrand=alt_rand,
                                      fuer=["Absatz"], seite=seite)
-        if not d.exec():
+        if not ausfuehren(d):
             return
         linie = d.rahmen()
         if linie is not None:
@@ -778,9 +780,10 @@ class Befehle:
         """Fenster „Neue Formatvorlage“ (Baukasten); die Werte kommen vom Absatz an der Schreibmarke."""
         from lunivo_writer.editor import stile
         from lunivo_writer.ui.baukasten.formatvorlage_dialog import FormatvorlageDialog
+        from lunivo_writer.ui.baukasten.fenster_stapel import ausfuehren
         d = FormatvorlageDialog(self.w, start=(self.ed.stil_aus_auswahl() if self.ed else None), belegt=self._taste_belegt,
                                 standard_tab_mm=self.ed.standard_tab_mm() if self.ed else None)
-        if not d.exec():
+        if not ausfuehren(d):
             return
         erg = d.ergebnis()
         std = erg.pop("tab_standard", None)
@@ -799,8 +802,9 @@ class Befehle:
         """Rechtsklick auf eine Vorlage in der Galerie ▸ Ändern …: dasselbe Fenster, der Name steht fest."""
         from lunivo_writer.editor import stile
         from lunivo_writer.ui.baukasten.formatvorlage_dialog import FormatvorlageDialog
+        from lunivo_writer.ui.baukasten.fenster_stapel import ausfuehren
         d = FormatvorlageDialog(self.w, aendern=name, belegt=self._taste_belegt, standard_tab_mm=self.ed.standard_tab_mm() if self.ed else None)
-        if not d.exec():
+        if not ausfuehren(d):
             return
         erg = d.ergebnis()
         std = erg.pop("tab_standard", None)
@@ -1327,8 +1331,9 @@ class Befehle:
         d0 = self.ed.document().defaultFont()
         w = aus_format(self._fmt(), d0.family(), d0.pointSizeF())
         w["versteckt"] = self.ed.ist_versteckt()
+        from lunivo_writer.ui.baukasten.fenster_stapel import ausfuehren
         d = SchriftartDialog(self.w, w)
-        if d.exec():
+        if ausfuehren(d):
             neu = d.werte()
             if neu.pop("als_standard", False):                  # „Standard …“: Schrift und Größe für neue Dokumente merken
                 if neu["schrift"]:

@@ -129,9 +129,11 @@ class FarbPalette(QMenu):
             mehr = QPushButton("Weitere Farben …"); mehr.setFlat(True); mehr.setStyleSheet("text-align: left; padding: 4px 6px;")
             mehr.clicked.connect(self._weitere)
             v.addWidget(mehr)
-            pip = QPushButton("Pipette"); pip.setFlat(True); pip.setStyleSheet("text-align: left; padding: 4px 6px;")
-            pip.clicked.connect(self._pipette)
-            v.addWidget(pip)
+            from lunivo_writer.ui.baukasten import pipette as _pip
+            if _pip.AKTIV:
+                pip = QPushButton("Pipette"); pip.setFlat(True); pip.setStyleSheet("text-align: left; padding: 4px 6px;")
+                pip.clicked.connect(self._pipette)
+                v.addWidget(pip)
         self._spalte = v
         a = QWidgetAction(self)
         a.setDefaultWidget(wid)

@@ -915,7 +915,8 @@ class MainWindow(QMainWindow):
             "erste": px_to_mm(bf.textIndent()), "vor": bf.topMargin() * 0.75, "nach": bf.bottomMargin() * 0.75, "zeilen": lh,
             "zeilen_art": lart, "zeilen_pt": lpt, "ebene": bf.headingLevel(), "opt": absatzopt.lesen(bf),
             "umbruch": seitenfluss.ist_manuell(bf), "tabs": aus_block(bf)})
-        if d.exec():
+        from lunivo_writer.ui.baukasten.fenster_stapel import ausfuehren
+        if ausfuehren(d):
             w = d.werte()
             if w["ebene"] != bf.headingLevel():                       # die Gliederungsebene ist die Überschriftsebene des Absatzes
                 e.apply_style("Standard" if not w["ebene"] else f"Überschrift {w['ebene']}")

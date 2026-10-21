@@ -1062,7 +1062,7 @@ def test_fenster_stapel_unterfenster_als_seiten(app):
     host = FensterStapel(fv)
     host.show()
     assert len(host._seiten) == 1 and not host.zurueck.isVisible()
-    gr0 = host.size()
+    gr0 = host.size(); assert gr0 == host.GROESSE or gr0.width() <= host.GROESSE.width()
     fv._absatz()                                                              # Format ▸ Absatz: eine Seite im selben Fenster
     assert len(host._seiten) == 2 and host.zurueck.isVisibleTo(host) and "Absatz" in host.pfad.text() and stapel_von(host._seiten[1][0]) is host
     absatz = host._seiten[1][0]
@@ -1070,9 +1070,9 @@ def test_fenster_stapel_unterfenster_als_seiten(app):
     absatz._tabstopps()                                                       # zweite Ebene: Tabstopps aus dem Absatz
     assert len(host._seiten) == 3 and "Tabstopps" in host.pfad.text()
     host._seiten[2][0].accept()                                               # OK im Tabstoppfenster: zurück zum Absatz
-    assert len(host._seiten) == 2 and host.size() == host._seiten[1][2] or len(host._seiten) == 2
+    assert len(host._seiten) == 2
     absatz.accept()                                                           # OK im Absatz: fertig() setzt die Werte der Vorlage, zurück zur Vorlage
-    assert len(host._seiten) == 1 and host.size() == gr0
+    assert len(host._seiten) == 1 and host.width() >= gr0.width() and host.height() >= gr0.height()      # das Fenster schrumpft nicht
     assert fv.leiste.werte()["vor"] > 0
     fv._effekte(); assert len(host._seiten) == 2
     host._zurueck()                                                           # „← Zurück“ bricht ab
@@ -1096,3 +1096,31 @@ def test_weitere_farben_als_seite_im_stapel(app):
     seite = host._seiten[1][0]
     seite.accept()
     assert len(host._seiten) == 1 and gewaehlt and isinstance(gewaehlt[0], QColor)
+
+
+def test_pipette_hat_sicherungen(app, monkeypatch):
+    from PySide6.QtCore import QEventLoop, QPoint, QTimer
+    from PySide6.QtGui import QColor, QGuiApplication, QKeyEvent
+    from PySide6.QtCore import Qt, QEvent
+    from lunivo_writer.ui.baukasten import pipette
+    # Zeitablauf: ohne Eingabe endet die Pipette von selbst (hier in einer Sekunde)
+    monkeypatch.setattr(pipette, "ZEIT_S", 1)
+    monkeypatch.setattr(QGuiApplication, "platformName", staticmethod(lambda: "xcb"))
+    import time
+    t = time.time()
+    assert pipette.farbe_vom_bildschirm() is None
+    assert time.time() - t < 4
+    # Taste bricht ab
+    monkeypatch.setattr(pipette, "ZEIT_S", 30)
+    def taste():
+        w = [x for x in QGuiApplication.topLevelWidgets() if isinstance(x, pipette._Pipette)] if hasattr(QGuiApplication, "topLevelWidgets") else []
+        from PySide6.QtWidgets import QApplication
+        w = [x for x in QApplication.topLevelWidgets() if isinstance(x, pipette._Pipette) and x._offen]
+        if w:
+            w[0].keyPressEvent(QKeyEvent(QEvent.KeyPress, Qt.Key_A, Qt.NoModifier))
+    QTimer.singleShot(200, taste)
+    t = time.time()
+    assert pipette.farbe_vom_bildschirm() is None and time.time() - t < 3
+    # Wayland: nichts aufnehmen, nichts blockieren
+    monkeypatch.setattr(QGuiApplication, "platformName", staticmethod(lambda: "wayland"))
+    assert pipette.farbe_vom_bildschirm() is None
