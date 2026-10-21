@@ -270,11 +270,14 @@ def test_neues_fenster_und_anordnen(app, tmp_path):
 
 
 def test_absatzdialog_und_objekte_waehlen(app, tmp_path):
-    from lunivo_writer.ui.dialogs.dokument_dialoge import ParagraphDialog
-    d = ParagraphDialog(5, 0, 8, 6, 12, 1.5, None, 1, True)
-    assert d.align.currentIndex() == 1 and d.umbruch.isChecked() and d.vorschau.w["first"] == 8
-    d.left.setValue(12)
-    assert d.vorschau.w["left"] == 12
+    from lunivo_writer.ui.baukasten.absatz_dialog import AbsatzDialog
+    d = AbsatzDialog(None, {"ausr": "mitte", "einzug": 5, "erste": -8, "vor": 6, "nach": 12, "zeilen": 1.5, "umbruch": True, "tabs": [(30.0, "rechts")]})
+    assert d.ausr.currentData() == "mitte" and d.umbruch.isChecked() and d.sonder.currentData() == "haengend"
+    d.links.setValue(12); d.sonder.setCurrentIndex(1); d.zeilen_art.setCurrentIndex(2)
+    w = d.werte()
+    assert w["einzug"] == 12 and w["erste"] == 8 and w["zeilen"] == 2.0 and w["tabs"] == [(30.0, "rechts")]
+    v = AbsatzDialog(None, {"vor": 3}, umfang="vorlage")
+    assert v.reiter.count() == 1 and not v.tabs_knopf.isVisibleTo(v) and v.werte()["vor"] == 3
     w = win(tmp_path)
     w.new_document()
     e = w.current_editor()

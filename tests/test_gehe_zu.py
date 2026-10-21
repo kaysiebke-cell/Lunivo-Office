@@ -43,13 +43,13 @@ def test_tabstopps_dialog_und_docx(app, tmp_path):
     from PySide6.QtGui import QTextOption
     from lunivo_writer.models.page import PageSettings
     from lunivo_writer.services import file_service as formats
-    from lunivo_writer.ui.dialogs.tabstopp_dialog import TabstoppDialog
+    from lunivo_writer.ui.baukasten.tabstopp_dialog import TabstoppDialog, zu_qt
     ed = DocumentEditor()
     ed.setPlainText("a\tb")
     d = TabstoppDialog(None, [])
-    d.pos.setValue(50); d.art.setCurrentIndex(2); d.festlegen()
-    d.pos.setValue(100); d.art.setCurrentIndex(1); d.festlegen()
-    ed.set_tabstopps(d.ergebnis())
+    d.pos.setValue(50); d.art.button(2).setChecked(True); d.festlegen()
+    d.pos.setValue(100); d.art.button(1).setChecked(True); d.festlegen()
+    ed.set_tabstopps(zu_qt(d.stopps()))
     pfad = str(tmp_path / "t.docx")
     formats.save(pfad, ed.document(), PageSettings())
     t = formats.load(pfad).doc.firstBlock().blockFormat().tabPositions()

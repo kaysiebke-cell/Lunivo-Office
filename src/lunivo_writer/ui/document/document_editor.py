@@ -60,6 +60,7 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.page = PageSettings()
+        self.stil_tasten()
         self.setAcceptRichText(True)
         self.setFrameShape(QTextEdit.NoFrame)          # das Blatt hat keinen Rahmen; es steht frei auf der Arbeitsfläche
         self.setUndoRedoEnabled(True)
@@ -696,6 +697,15 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         rtl = self.textCursor().blockFormat().layoutDirection() == Qt.RightToLeft
         self._block_merge(lambda bf: bf.setLayoutDirection(Qt.LeftToRight if rtl else Qt.RightToLeft))
 
+    def _hat_mehrstufig(self) -> bool:
+        from lunivo_writer.editor.zusatz import B_MEHRSTUFIG
+        b = self.document().firstBlock()
+        while b.isValid():
+            if b.blockFormat().hasProperty(B_MEHRSTUFIG):
+                return True
+            b = b.next()
+        return False
+
     def _hat_rahmen(self) -> bool:
         from lunivo_writer.editor.zusatz import B_RAHMEN
         b = self.document().firstBlock()
@@ -1070,8 +1080,10 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         fmt = QTextListFormat(); fmt.setStyle(style); fmt.setIndent(1)
         cur.createList(fmt)
 
-    def list_remove(self) -> None:
+    def list_remove(self, nur_qt: bool = False) -> None:
         """Aufzählung/Nummerierung vom Absatz an der Schreibmarke (bzw. der Auswahl) nehmen."""
+        if not nur_qt:
+            self.set_mehrstufig(None)
         cur = self.textCursor()
         cur.beginEditBlock()
         von, bis = sorted((cur.anchor(), cur.position()))
@@ -1086,6 +1098,19 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         cur.endEditBlock()
 
     def list_level(self, delta: int) -> None:
+        m = self._mehrstufig_am_zeiger()
+        if m:                                                    # mehrstufige Liste: die Ebene der markierten Absätze ändern
+            from lunivo_writer.editor import mehrstufig
+            from lunivo_writer.editor.zusatz import B_MEHRSTUFIG
+
+            def f(bf):
+                w = mehrstufig.aus_block(bf.stringProperty(B_MEHRSTUFIG)) if bf.hasProperty(B_MEHRSTUFIG) else None
+                if w:
+                    n = max(1, min(mehrstufig.EBENEN, w[0] + delta))
+                    bf.setProperty(B_MEHRSTUFIG, mehrstufig.block_wert(n, w[1]))
+                    bf.setLeftMargin(mm_to_px(w[1]["ebenen"][n - 1]["einzug"]))
+            self._block_merge(f); self.viewport().update()
+            return
         cur = self.textCursor()
         lst = cur.currentList()
         if not lst:
@@ -1119,9 +1144,27 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         else:
             bf.clearProperty(STYLE_PROP)
         bf.setTopMargin(d["vor"] / 0.75); bf.setBottomMargin(d["nach"] / 0.75)
+        if d.get("zeilen"):
+            bf.setLineHeight(d["zeilen"] * 100, LH_PROPORTIONAL)
+        if d.get("einzug"):
+            bf.setLeftMargin(mm_to_px(d["einzug"]))
         if d["ausr"]:
             bf.setAlignment({"links": Qt.AlignLeft, "mitte": Qt.AlignHCenter, "rechts": Qt.AlignRight, "block": Qt.AlignJustify}[d["ausr"]])
+        if d.get("rahmen"):
+            from lunivo_writer.editor.zusatz import B_RAHMEN
+            bf.setProperty(B_RAHMEN, d["rahmen"])
+        if d.get("muster") or d.get("fuell"):
+            from lunivo_writer.editor import muster as M
+            from lunivo_writer.editor.zusatz import B_MUSTER
+            fuell = d.get("fuell") or None
+            if d.get("muster"):
+                bf.setBackground(M.pinsel(d["muster"], d.get("musterfarbe") or "#000000", fuell))
+                bf.setProperty(B_MUSTER, M.als_text(d["muster"], d.get("musterfarbe") or "#000000", fuell))
+            else:
+                bf.setBackground(QBrush(QColor(fuell)))
         cc.setBlockFormat(bf)
+        if d.get("liste"):
+            self._liste_auf_block(blk, d["liste"])
         sel = QTextCursor(blk)
         sel.movePosition(QTextCursor.StartOfBlock)
         sel.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
@@ -1134,6 +1177,113 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         if d["farbe"]:
             f.setForeground(QColor(d["farbe"]))
         sel.mergeCharFormat(f)
+        if d.get("effekt"):
+            from lunivo_writer.editor import texteffekt
+            e = texteffekt.aus_text(d["effekt"], d.get("farbe", ""))
+            if e:
+                sel.mergeCharFormat(texteffekt.zu_format(e))
+
+    def stil_tasten(self) -> None:
+        """Die Tastenkombinationen der Formatvorlagen (nur gültig, solange der Editor den Fokus hat)."""
+        from PySide6.QtGui import QKeySequence, QShortcut
+        for s in getattr(self, "_stil_kurz", []):
+            s.setEnabled(False); s.deleteLater()
+        self._stil_kurz = []
+        for n in stile.namen():
+            t = stile.definition(n).get("taste", "")
+            if t:
+                sc = QShortcut(QKeySequence(t), self); sc.setContext(Qt.WidgetShortcut)
+                sc.activated.connect(lambda n=n: self.apply_style(n))
+                self._stil_kurz.append(sc)
+
+    def _liste_auf_block(self, blk, text: str) -> None:
+        """Absatz einer Formatvorlage mit Liste: aufeinanderfolgende Absätze mit derselben Liste zählen gemeinsam."""
+        from lunivo_writer.editor import listen
+        spec = listen.aus_text(text)
+        if spec is None:
+            return
+        if "ebenen" in spec:
+            from lunivo_writer.editor.mehrstufig import block_wert
+            from lunivo_writer.editor.zusatz import B_MEHRSTUFIG
+            c = QTextCursor(blk); bf = c.blockFormat()
+            bf.setProperty(B_MEHRSTUFIG, block_wert(1, spec)); bf.setLeftMargin(mm_to_px(spec["ebenen"][0]["einzug"])); bf.setTextIndent(0)
+            c.setBlockFormat(bf)
+            return
+        fmt = listen.zu_format(spec)
+        vor = blk.previous().textList() if blk.previous().isValid() else None
+        if vor is not None and listen.aus_format(vor.format()) == {k: v for k, v in spec.items() if k != "zeichen"}:
+            vor.add(blk)
+            self._nummern_zeichen(vor, spec.get("zeichen"))
+        else:
+            self._nummern_zeichen(QTextCursor(blk).createList(fmt), spec.get("zeichen"))
+
+    def liste_spec(self):
+        """Die Liste des Absatzes an der Schreibmarke (siehe ``editor.listen``) oder None."""
+        from lunivo_writer.editor import listen, mehrstufig
+        m = self._mehrstufig_am_zeiger()
+        if m:
+            return m[1]
+        l = self.textCursor().currentList()
+        return listen.aus_format(l.format()) if l else None
+
+    def _mehrstufig_am_zeiger(self):
+        """(Ebene, Gliederung) des Absatzes an der Schreibmarke, wenn er zu einer mehrstufigen Liste gehört."""
+        from lunivo_writer.editor import mehrstufig
+        from lunivo_writer.editor.zusatz import B_MEHRSTUFIG
+        bf = self.textCursor().blockFormat()
+        return mehrstufig.aus_block(bf.stringProperty(B_MEHRSTUFIG)) if bf.hasProperty(B_MEHRSTUFIG) else None
+
+    def set_mehrstufig(self, defn, ebene_nr: int | None = None) -> None:
+        """Die markierten Absätze in eine mehrstufige Liste setzen (``defn=None``: herausnehmen). Der Text rückt ein, die Nummer steht davor."""
+        from lunivo_writer.editor import mehrstufig
+        from lunivo_writer.editor.zusatz import B_MEHRSTUFIG
+
+        def f(bf):
+            alt = mehrstufig.aus_block(bf.stringProperty(B_MEHRSTUFIG)) if bf.hasProperty(B_MEHRSTUFIG) else None
+            if defn is None:
+                if alt:
+                    bf.clearProperty(B_MEHRSTUFIG); bf.setLeftMargin(0)
+                return
+            n = ebene_nr or (alt[0] if alt else 1)
+            bf.setProperty(B_MEHRSTUFIG, mehrstufig.block_wert(n, defn))
+            bf.setLeftMargin(mm_to_px(defn["ebenen"][n - 1]["einzug"])); bf.setTextIndent(0)
+        if defn is not None:
+            self.list_remove(nur_qt=True)
+        self._block_merge(f)
+        self.viewport().update()
+
+    def set_liste(self, spec) -> None:
+        """Liste setzen: ändert die Liste des Absatzes (alle ihre Absätze) oder legt für die Auswahl eine neue an; None nimmt sie weg."""
+        from lunivo_writer.editor import listen
+        if spec is None:
+            self.list_remove(); return
+        if "ebenen" in spec:
+            self.set_mehrstufig(spec); return
+        self.set_mehrstufig(None)
+        cur = self.textCursor()
+        lst = cur.currentList()
+        if lst:
+            lst.setFormat(listen.zu_format(spec, lst.format().indent()))
+        else:
+            lst = cur.createList(listen.zu_format(spec))
+        self._nummern_zeichen(lst, spec.get("zeichen"))
+
+    @staticmethod
+    def _nummern_zeichen(lst, zeichen) -> None:
+        """Schrift der Nummern: Qt zeichnet sie mit dem Zeichenformat des Absatzes."""
+        if not zeichen:
+            return
+        from lunivo_writer.ui.baukasten.text_format import zu_format
+        for i in range(lst.count()):
+            c = QTextCursor(lst.item(i))
+            f = zu_format(zeichen)
+            if not zeichen.get("farbe"):
+                f.clearProperty(QTextFormat.ForegroundBrush)
+            if not zeichen.get("groesse"):
+                f.clearProperty(QTextFormat.FontPointSize)
+            if not zeichen.get("schrift"):
+                f.clearProperty(QTextFormat.FontFamilies)
+            c.mergeBlockCharFormat(f)
 
     def stil_neu_anwenden(self, name: str) -> int:
         """Nach „Formatvorlagen verwalten“: alle Absätze dieser Vorlage im Dokument neu formatieren."""
@@ -1163,6 +1313,8 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
 
     def stil_aus_auswahl(self) -> dict:
         """Definition für eine neue Formatvorlage nach dem Absatz, in dem die Schreibmarke steht."""
+        from lunivo_writer.editor import texteffekt
+        from lunivo_writer.editor.listen import als_text
         c = self.textCursor()
         bf, cf = c.blockFormat(), c.charFormat()
         ausr = {Qt.AlignHCenter: "mitte", Qt.AlignRight: "rechts", Qt.AlignJustify: "block"}
@@ -1170,7 +1322,16 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         fam = cf.fontFamilies()
         return {"groesse": round(cf.fontPointSize(), 1) if cf.fontPointSize() > 0 else 0, "fett": cf.fontWeight() >= 600,
                 "kursiv": cf.fontItalic(), "farbe": cf.foreground().color().name() if cf.foreground().style() != Qt.NoBrush and cf.hasProperty(QTextFormat.ForegroundBrush) else "",
-                "schrift": fam[0] if fam else "", "vor": round(bf.topMargin() * 0.75, 1), "nach": round(bf.bottomMargin() * 0.75, 1), "ausr": a}
+                "schrift": fam[0] if fam else "", "vor": round(bf.topMargin() * 0.75, 1), "nach": round(bf.bottomMargin() * 0.75, 1), "ausr": a,
+                **self._rahmen_felder(), "liste": als_text(self.liste_spec()),
+                "effekt": texteffekt.als_text(texteffekt.aus_format(cf))}
+
+    def _rahmen_felder(self) -> dict:
+        """Rahmen und Schattierung des Absatzes an der Schreibmarke als Felder einer Formatvorlage."""
+        l = self.absatzrahmen()
+        fuell, muster = self.absatzschatten()
+        return {"rahmen": l.text() if l else "", "fuell": fuell or "", "muster": muster[0] if muster else "",
+                "musterfarbe": muster[1] if muster else ""}
 
     def stil_entfernen(self, name: str) -> int:
         """Eine gelöschte eigene Vorlage: die Absätze behalten ihr Aussehen, verlieren aber die Zuordnung."""
@@ -1530,8 +1691,8 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         self._schmuck_zeichnen(p)
         if self.gitter:
             self._gitter_zeichnen(p)
-        if not self.web and self._hat_rahmen():
-            from lunivo_writer.editor.pagination import absatzrahmen_zeichnen
+        if not self.web and (self._hat_rahmen() or self._hat_mehrstufig()):
+            from lunivo_writer.editor.pagination import absatz_zusatz_zeichnen
             if sp:
                 g = self._sp_geo()
                 for lp in range(max(1, self.document().pageCount())):
@@ -1539,12 +1700,12 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
                     p.save()
                     p.setClipRect(QRectF(x0 - 6, y0, g["cb"] + 12, g["ch"]))
                     p.translate(x0, y0 - lp * g["ch"])
-                    absatzrahmen_zeichnen(p, self.document(), self.zoom)
+                    absatz_zusatz_zeichnen(p, self.document(), self.zoom)
                     p.restore()
             else:
                 p.save()
                 p.translate(0, -self.verticalScrollBar().value())
-                absatzrahmen_zeichnen(p, self.document(), self.zoom)
+                absatz_zusatz_zeichnen(p, self.document(), self.zoom)
                 p.restore()
         if self.page.zeilennummern and not self.web and not self._mehrspaltig():
             self._zeilennummern_zeichnen(p)
@@ -1757,6 +1918,28 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         self.setTextCursor(end)
 
     def keyPressEvent(self, e) -> None:
+        folge = self._folge_vorher(e)
+        self._taste(e)
+        if folge:
+            self._folge_danach(*folge)
+
+    def _folge_vorher(self, e):
+        """Return am Ende eines Absatzes, dessen Vorlage einen „folgenden Absatz“ kennt → (Name der Folgevorlage, Absatznummer)."""
+        if e.key() not in (Qt.Key_Return, Qt.Key_Enter) or self.isReadOnly() or (e.modifiers() & ~Qt.KeypadModifier):
+            return None
+        c = self.textCursor()
+        if c.hasSelection() or not c.atBlockEnd() or c.currentTable():
+            return None
+        name = self._stil_name(c.blockFormat())
+        folge = stile.definition(name).get("folge") if name else None
+        return (folge, c.blockNumber()) if folge and folge != name else None
+
+    def _folge_danach(self, folge: str, nr: int) -> None:
+        c = self.textCursor()
+        if c.blockNumber() == nr + 1:                                   # der neue Absatz bekommt die Folgevorlage
+            self._stil_auf_block(c.block(), folge)
+
+    def _taste(self, e) -> None:
         if e.key() == Qt.Key_Tab and e.modifiers() == Qt.NoModifier and not self.isReadOnly() and not self.textCursor().currentTable():
             from lunivo_writer.editor.vorlagen import naechste_luecke
             ziel = naechste_luecke(self.document(), self.textCursor().selectionEnd())

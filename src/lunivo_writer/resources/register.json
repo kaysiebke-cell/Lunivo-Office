@@ -2025,10 +2025,6 @@
          "tun": "vorlageNeu"
         },
         {
-         "name": "Formatvorlagen verwalten",
-         "tun": "vorlagenVerwalten"
-        },
-        {
          "name": "Formatvorlage löschen…",
          "tun": "vorlageLoeschen"
         }

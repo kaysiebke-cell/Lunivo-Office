@@ -869,7 +869,9 @@ class _Reader:
                     WD_ALIGN_PARAGRAPH.JUSTIFY: "block"}.get(pf.alignment, "")
             stile.anlegen(st.name, groesse=f.size.pt if f.size else 0, fett=bool(f.bold), kursiv=bool(f.italic), farbe=farbe,
                           schrift=f.name or "", vor=pf.space_before.pt if pf.space_before is not None else 0,
-                          nach=pf.space_after.pt if pf.space_after is not None else 0, ausr=ausr)
+                          nach=pf.space_after.pt if pf.space_after is not None else 0, ausr=ausr,
+                          zeilen=float(pf.line_spacing) if isinstance(pf.line_spacing, float) else 0,
+                          einzug=round(pf.left_indent.mm, 1) if pf.left_indent is not None else 0)
             self.neue_vorlagen.append(st.name)
         if stile.ist_eigen(st.name):
             b.setProperty(STYLE_PROP, stile.PRAEFIX + st.name)

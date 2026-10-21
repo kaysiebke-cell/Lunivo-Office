@@ -168,6 +168,16 @@ class Befehle:
 
     def an_zeichenumriss(self): return self._fmt().textOutline().style() != Qt.NoPen
 
+    def texteffekte(self, k=None):
+        """Fenster „Texteffekte formatieren“ (Baukasten): Füllung und Kontur der Markierung."""
+        if not self.ed:
+            return
+        from lunivo_writer.editor import texteffekt
+        from lunivo_writer.ui.baukasten.texteffekt_dialog import TexteffektDialog
+        d = TexteffektDialog(self.w, texteffekt.aus_format(self._fmt()))
+        if d.exec():
+            self.ed._merge(texteffekt.zu_format(d.werte()))
+
     def effekt(self, k=None):
         if not self.ed:
             return
@@ -175,6 +185,8 @@ class Befehle:
         m.addAction("Kapitälchen", lambda: self.ed.set_capitalization(QFont.SmallCaps))
         m.addAction("Großbuchstaben (Anzeige)", lambda: self.ed.set_capitalization(QFont.AllUppercase))
         m.addAction("Normal", lambda: self.ed.set_capitalization(QFont.MixedCase))
+        m.addSeparator()
+        m.addAction("Texteffekte …", self.texteffekte)
         m.addSeparator()
         for t, px in (("Zeichenabstand: eng", -1.0), ("Zeichenabstand: normal", 0.0), ("Zeichenabstand: weit", 2.0),
                       ("Zeichenabstand: sehr weit", 4.0)):
@@ -268,6 +280,8 @@ class Befehle:
             text, _kind, _stil, marke = self._LISTENARTEN[k]
             r.kachel(k, text, liste_zeichner(marke), aktuell=k == aktuell)
         r.gewaehlt.connect(self._liste_waehlen)
+        r.fuss("Weitere Aufzählungszeichen …" if art == "bullet" else "Weitere Nummerierungen …",
+               lambda: self.listeDialog("aufzaehlung" if art == "bullet" else "nummerierung"))
         return r
 
     def _liste_waehlen(self, schluessel: str) -> None:
@@ -281,6 +295,15 @@ class Befehle:
         if l and l.format().style() == stil:                 # schon diese Art: nichts umschalten
             return
         self.ed.toggle_list(kind, stil)
+
+    def listeDialog(self, seite: str = "aufzaehlung"):
+        """Fenster „Nummerierung und Aufzählungszeichen“ (Baukasten); das Ergebnis gilt für den Absatz an der Schreibmarke."""
+        if not self.ed:
+            return
+        from lunivo_writer.ui.baukasten.liste_dialog import ListenDialog
+        d = ListenDialog(self.w, self.ed.liste_spec(), seite=seite)
+        if d.exec():
+            self.ed.set_liste(d.ergebnis())
 
     def menue_aufzaehlungKlappe(self):
         return self._listenraster("bullet", "Aufzählungszeichen", ("disc", "circle", "square"))
@@ -681,23 +704,73 @@ class Befehle:
         if d.seitenrand() != alt_rand:
             self._seite_aendern(border=d.seitenrand())
 
-    def stileVerwalten(self, k=None):
+    def _stile_fertig(self) -> None:
+        """Nach jeder Änderung an den Vorlagen: Galerie neu füllen, Tastenkombinationen der Vorlagen in allen Dokumenten neu setzen."""
+        getattr(self.w.band, "stile_aktualisieren", lambda: None)()
+        for t in self.w._doc_tabs():
+            t.editor.stil_tasten()
+
+    def _taste_belegt(self, taste: str, eigene: str | None = None) -> str | None:
+        """Name dessen, was die Tastenkombination schon hat (Befehl im Fenster oder andere Vorlage), sonst None."""
+        from PySide6.QtGui import QAction, QKeySequence
         from lunivo_writer.editor import stile
-        from lunivo_writer.ui.dialogs.oberflaeche_dialoge import StileVerwaltenDialog
+        seq = QKeySequence(taste)
+        for a in self.w.findChildren(QAction):
+            if any(s == seq for s in a.shortcuts()):
+                return a.text().replace("&", "").replace(" …", "").strip() or taste
+        for n in stile.namen():
+            if n != eigene and stile.definition(n).get("taste") == taste:
+                return f"Formatvorlage „{n}“"
+        return None
 
-        def speichern():
-            self.w.settings.set("stile/aenderungen", stile.als_json())
-            self.w.settings.set("stile/eigene", stile.als_json_neu())
+    def neueFormatvorlage(self, k=None):
+        """Fenster „Neue Formatvorlage“ (Baukasten); die Werte kommen vom Absatz an der Schreibmarke."""
+        from lunivo_writer.editor import stile
+        from lunivo_writer.ui.baukasten.formatvorlage_dialog import FormatvorlageDialog
+        d = FormatvorlageDialog(self.w, start=(self.ed.stil_aus_auswahl() if self.ed else None), belegt=self._taste_belegt)
+        if not d.exec():
+            return
+        erg = d.ergebnis()
+        grund = stile.anlegen(erg.pop("name"), basis=erg.pop("basis"), folge=erg.pop("folge"), **erg)
+        if grund:
+            QMessageBox.warning(self.w, "Neue Formatvorlage", grund)
+            return
+        self.w.settings.set("stile/eigene", stile.als_json_neu())
+        self._stile_fertig()
 
-        def anwenden(name):
-            for t in self.w._doc_tabs():
-                t.editor.stil_neu_anwenden(name)
+    def formatvorlageAendern(self, name: str):
+        """Rechtsklick auf eine Vorlage in der Galerie ▸ Ändern …: dasselbe Fenster, der Name steht fest."""
+        from lunivo_writer.editor import stile
+        from lunivo_writer.ui.baukasten.formatvorlage_dialog import FormatvorlageDialog
+        d = FormatvorlageDialog(self.w, aendern=name, belegt=self._taste_belegt)
+        if not d.exec():
+            return
+        erg = d.ergebnis()
+        erg.pop("name"); basis, folge = erg.pop("basis"), erg.pop("folge")
+        if stile.ist_eigen(name):
+            stile.loeschen(name)
+            stile.anlegen(name, basis=basis, folge=folge, **erg)
+        else:
+            stile.aendern(name, **erg)
+        self.w.settings.set("stile/aenderungen", stile.als_json())
+        self.w.settings.set("stile/eigene", stile.als_json_neu())
+        for t in self.w._doc_tabs():
+            t.editor.stil_neu_anwenden(name)
+        self._stile_fertig()
 
-        def entfernen(name):
-            for t in self.w._doc_tabs():
-                t.editor.stil_entfernen(name)
-        StileVerwaltenDialog(self.w, speichern, anwenden, auswahl=(self.ed.stil_aus_auswahl if self.ed else None), entfernen=entfernen,
-                             aktualisiert=getattr(self.w.band, "stile_aktualisieren", lambda: None)).exec()
+    def formatvorlageLoeschen(self, name: str):
+        from lunivo_writer.editor import stile
+        if not stile.ist_eigen(name):
+            return
+        if QMessageBox.question(self.w, "Formatvorlage löschen", f"„{name}“ löschen? Absätze behalten ihr Aussehen, gelten aber wieder als „Standard“.") != QMessageBox.Yes:
+            return
+        for t in self.w._doc_tabs():
+            t.editor.stil_entfernen(name)
+        stile.loeschen(name)
+        self.w.settings.set("stile/eigene", stile.als_json_neu())
+        self._stile_fertig()
+
+    vorlageNeu = neueFormatvorlage                                  # Menüleiste ▸ Start ▸ Stile ▸ Neue Formatvorlage …
 
     # ==== Einfügen ===========================================================================================================
     def leereSeite(self, k=None, quer=False):
@@ -1187,17 +1260,21 @@ class Befehle:
     def schriftartMehr(self, k=None):
         if not self.ed:
             return
-        from PySide6.QtWidgets import QFontDialog
-        cf = self._fmt()
-        start = cf.font() if cf.fontFamilies() else self.ed.document().defaultFont()      # (cf.fontFamily() stürzt in PySide ab)
-        ok, font = QFontDialog.getFont(start, self.w, "Schriftart")
-        if ok:
-            f = QTextCharFormat()
-            f.setFontFamilies([font.family()]); f.setFontPointSize(font.pointSizeF())
-            f.setFontWeight(font.weight()); f.setFontItalic(font.italic())
-            f.setFontStrikeOut(font.strikeOut())
-            f.setUnderlineStyle(QTextCharFormat.SingleUnderline if font.underline() else QTextCharFormat.NoUnderline)
-            self.ed._merge(f)
+        """Fenster „Schriftart“ (Baukasten): Schrift, Schnitt, Größe, Farbe, Unterstreichung, Effekte, Zeichenabstand."""
+        from lunivo_writer.ui.baukasten.schriftart_dialog import SchriftartDialog
+        from lunivo_writer.ui.baukasten.text_format import aus_format, zu_format
+        d0 = self.ed.document().defaultFont()
+        w = aus_format(self._fmt(), d0.family(), d0.pointSizeF())
+        w["versteckt"] = self.ed.ist_versteckt()
+        d = SchriftartDialog(self.w, w)
+        if d.exec():
+            neu = d.werte()
+            self.ed._merge(zu_format(neu))
+            if "effekt" in neu:
+                from lunivo_writer.editor import texteffekt
+                self.ed._merge(texteffekt.zu_format(neu["effekt"]))
+            if neu["versteckt"] != w["versteckt"]:
+                self.ed.set_versteckt(neu["versteckt"])
 
     def papierformatFenster(self, k=None): self.w.page_setup()
     def fusszeileBearbeiten(self, k=None): self.w.edit_header_footer(False)

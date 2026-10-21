@@ -53,3 +53,4 @@ B_SPALTE = QTextFormat.UserProperty + 6          # 1: Spaltenumbruch vor diesem 
 B_RAHMEN = QTextFormat.UserProperty + 5          # Absatzrahmen: "farbe|breite_pt|art" und ggf. "|seiten" (siehe editor/linie.py)
 B_ANKER = QTextFormat.UserProperty + 8           # 1: leerer Hilfsabsatz vor einem schwebenden Bild (Anker, wird nicht gespeichert)
 B_MUSTER = QTextFormat.UserProperty + 9           # Schattierungsmuster: "schlüssel|musterfarbe|füllfarbe" (siehe editor/muster.py)
+B_MEHRSTUFIG = QTextFormat.UserProperty + 36      # Absatz einer mehrstufigen Liste: "ebene|JSON der Gliederung" (siehe editor/mehrstufig.py)

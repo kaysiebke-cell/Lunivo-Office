@@ -8,13 +8,14 @@ import json
 import os
 from lunivo_writer.core import paths
 
-from PySide6.QtCore import QSize, Qt, Signal
+from PySide6.QtCore import QPropertyAnimation, QSize, Qt, Signal
 from PySide6.QtGui import QAction, QColor, QFont
 from PySide6.QtWidgets import (
     QComboBox, QFontComboBox, QFrame, QGridLayout, QHBoxLayout, QLabel, QMenu, QScrollArea,
     QSizePolicy, QStackedWidget, QTabBar, QToolButton, QVBoxLayout, QWidget,
 )
 
+from lunivo_writer.ui.baukasten.text_format import groesse_feld, schrift_feld
 from lunivo_writer.ui.document.document_editor import STYLES
 from lunivo_writer.ui.widgets import icons
 from lunivo_writer.ui.ribbon.plan import plan
@@ -30,9 +31,72 @@ def lade_register() -> dict:
     # Start ▸ Stile: Startknopf für „Formatvorlagen verwalten“ (alt: Dialog unter „Neue Formatvorlage“)
     for t in d["register"]:
         for g in t.get("gruppen", []):
-            if t["name"] == "Start" and g["name"] == "Stile":
-                g.setdefault("pfeil", "stileVerwalten")
+            pass
     return d
+
+
+class _BandSeite(QScrollArea):
+    """Eine Seite des Bandes. Ist sie breiter als das Fenster, erscheinen am Rand Pfeile zum Blättern (‹ und ›), wie im WPS Writer;
+    das Mausrad blättert ebenfalls. Der Rollbalken bleibt weg — er würde die Knöpfe verdecken."""
+    SCHRITT = 0.6                              # Anteil der sichtbaren Breite je Klick
+
+    def __init__(self):
+        super().__init__()
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.pfeile: dict[str, QToolButton] = {}
+        for seite, zeichen in (("links", "‹"), ("rechts", "›")):
+            b = QToolButton(self)
+            b.setText(zeichen); b.setAutoRepeat(True); b.setAutoRepeatDelay(350); b.setAutoRepeatInterval(120)
+            b.setCursor(Qt.ArrowCursor); b.setFocusPolicy(Qt.NoFocus)
+            b.setToolTip("Weiter nach " + seite)
+            b.setStyleSheet("QToolButton { border: none; border-radius: 0; font-size: 16pt; font-weight: 600; padding: 0 3px; "
+                            "background: palette(window); color: palette(window-text); }"
+                            "QToolButton:hover { background: palette(midlight); }")
+            b.clicked.connect(lambda _c=False, s=seite: self.blaettern(-1 if s == "links" else 1))
+            b.hide()
+            self.pfeile[seite] = b
+        leiste = self.horizontalScrollBar()
+        leiste.valueChanged.connect(self._pfeile_zeigen)
+        leiste.rangeChanged.connect(self._pfeile_zeigen)
+        self._anim = QPropertyAnimation(leiste, b"value", self)
+        self._anim.setDuration(160)
+
+    def blaettern(self, richtung: int) -> None:
+        leiste = self.horizontalScrollBar()
+        ziel = leiste.value() + richtung * max(120, int(self.viewport().width() * self.SCHRITT))
+        self._anim.stop()
+        self._anim.setStartValue(leiste.value())
+        self._anim.setEndValue(max(leiste.minimum(), min(leiste.maximum(), ziel)))
+        self._anim.start()
+
+    def _pfeile_zeigen(self, *_) -> None:
+        leiste = self.horizontalScrollBar()
+        mehr = leiste.maximum() > 0
+        self.pfeile["links"].setVisible(mehr and leiste.value() > 0)
+        self.pfeile["rechts"].setVisible(mehr and leiste.value() < leiste.maximum())
+        self._pfeile_legen()
+
+    def _pfeile_legen(self) -> None:
+        h = self.viewport().height()
+        w = 22
+        self.pfeile["links"].setGeometry(0, 0, w, h)
+        self.pfeile["rechts"].setGeometry(self.width() - w, 0, w, h)
+        for b in self.pfeile.values():
+            b.raise_()
+
+    def resizeEvent(self, ev):
+        super().resizeEvent(ev)
+        self._pfeile_zeigen()
+
+    def wheelEvent(self, ev):
+        leiste = self.horizontalScrollBar()
+        if leiste.maximum() > 0:
+            d = ev.angleDelta().x() or ev.angleDelta().y()
+            leiste.setValue(leiste.value() - d)
+            ev.accept()
+        else:
+            super().wheelEvent(ev)
 
 
 def _zweizeilig(text: str) -> str:
@@ -172,12 +236,10 @@ class RegisterBand(QWidget):
 
     # ---- Reiter und Gruppen -------------------------------------------------------------------------------
     def _reiter(self, r: dict):
-        scroll = QScrollArea()
+        scroll = _BandSeite()
         scroll.setObjectName("bandSeite")
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.NoFrame)
-        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         seite = QWidget()
         h = QHBoxLayout(seite)
         h.setContentsMargins(6, 2, 6, 0)
@@ -269,12 +331,8 @@ class RegisterBand(QWidget):
                 return float(t.replace(",", "."))
             except ValueError:
                 return None
-        font = VorschauFontCombo(lambda n: vs.zeigen(lambda e: e.set_font_family(n)), vs.ende)
-        font.setFixedWidth(150)
-        groesse = VorschauCombo(lambda t: (pt := _zu_pt(t)) is not None and vs.zeigen(lambda e: e.set_font_size(pt)), vs.ende)
-        groesse.setEditable(True)
-        groesse.setFixedWidth(62)
-        groesse.addItems([str(x) for x in (8, 9, 10, 10.5, 11, 12, 14, 16, 18, 20, 24, 28, 36, 48, 72)])
+        font = schrift_feld(VorschauFontCombo(lambda n: vs.zeigen(lambda e: e.set_font_family(n)), vs.ende))
+        groesse = groesse_feld(VorschauCombo(lambda t: (pt := _zu_pt(t)) is not None and vs.zeigen(lambda e: e.set_font_size(pt)), vs.ende))
         stil = VorschauCombo(lambda n: vs.zeigen(lambda e: e.apply_style("Standard" if n == "Fließtext" else n)), vs.ende)
         stil.addItems(["Fließtext"] + [n for n in STYLES if n != "Standard"])
         stil.setParent(self)                                   # die Stile stehen in der Galerie; die Auswahl bleibt nur für den Abgleich
@@ -355,12 +413,8 @@ class RegisterBand(QWidget):
             stil = VorschauCombo(lambda n: vs.zeigen(lambda e: e.apply_style("Standard" if n == "Fließtext" else n)), vs.ende)
             stil.setFixedWidth(150)
             stil.addItems(["Fließtext"] + [n for n in STYLES if n != "Standard"])
-            font = VorschauFontCombo(lambda n: vs.zeigen(lambda e: e.set_font_family(n)), vs.ende)
-            font.setFixedWidth(150)
-            groesse = VorschauCombo(lambda t: (pt := _zu_pt(t)) is not None and vs.zeigen(lambda e: e.set_font_size(pt)), vs.ende)
-            groesse.setEditable(True)
-            groesse.setFixedWidth(60)
-            groesse.addItems([str(x) for x in (8, 9, 10, 10.5, 11, 12, 14, 16, 18, 20, 24, 28, 36, 48, 72)])
+            font = schrift_feld(VorschauFontCombo(lambda n: vs.zeigen(lambda e: e.set_font_family(n)), vs.ende))
+            groesse = groesse_feld(VorschauCombo(lambda t: (pt := _zu_pt(t)) is not None and vs.zeigen(lambda e: e.set_font_size(pt)), vs.ende))
             for w in (stil, font, groesse):
                 spalte.addWidget(w)
             inhalt.addLayout(spalte)
@@ -412,16 +466,55 @@ class RegisterBand(QWidget):
         sa.setFixedWidth(3 * 85 + 4)
         sa.setFixedHeight(host.sizeHint().height() + 2)
         sa.setStyleSheet("QScrollArea#stileGalerie, QScrollArea#stileGalerie > QWidget > QWidget { background: transparent; }")
-        pfeil = QToolButton(); pfeil.setText("›"); pfeil.setAutoRaise(True); pfeil.setFixedWidth(16)
-        pfeil.setToolTip("Weitere Formatvorlagen")
-        pfeil.clicked.connect(lambda: sa.horizontalScrollBar().setValue(
-            (sa.horizontalScrollBar().value() + 85) if sa.horizontalScrollBar().value() < sa.horizontalScrollBar().maximum() else 0))
+        pfeil = QToolButton(); pfeil.setText("▾"); pfeil.setAutoRaise(True); pfeil.setFixedWidth(16)
+        pfeil.setToolTip("Alle Formatvorlagen")
+        pfeil.clicked.connect(lambda: self._stile_popup(pfeil))
         sa.viewport().installEventFilter(self)
         self._stile_scroll = sa
         aussen = QWidget()
         h = QHBoxLayout(aussen); h.setContentsMargins(0, 0, 0, 0); h.setSpacing(0)
         h.addWidget(sa); h.addWidget(pfeil, 0, Qt.AlignVCenter)
         return aussen
+
+    def _stile_popup(self, unter: QWidget) -> None:
+        """Alle Formatvorlagen als Galerie (Pfeil rechts neben der Reihe): Probe in der Vorlage, Name darunter; Überfahren zeigt live."""
+        from lunivo_writer.editor import stile
+        from lunivo_writer.ui.baukasten import GalerieAuswahl
+        w = self.b.w
+        m = GalerieAuswahl(w, titel="Stile")
+        e = w.current_editor()
+        aktuell = e.current_style() if e is not None else None
+        aktuell = "Standard" if aktuell == "Fließtext" else aktuell
+        mehr = w.settings.get_bool("ui/stile_mehr", True)
+        selten = {f"Überschrift {i}" for i in range(5, 10)}               # „Weitere Stile“: die selten gebrauchten
+        for name in STILE_KATALOG + [n for n in stile.namen() if n not in STILE_KATALOG]:
+            if not mehr and name in selten and name != aktuell:
+                continue
+            d = stile.definition(name)
+            f = QFont("Liberation Sans")
+            f.setPointSizeF(min(15.0, max(9.0, float(d["groesse"] or 10) * 0.8)))
+            f.setBold(name.startswith("Überschrift") or name == "Titel" or bool(d["fett"]))
+            f.setItalic(name in ("Untertitel", "Zitat") or bool(d["kursiv"]))
+            m.kachel(name, name, f, farbe=d["farbe"] or None, aktuell=name == aktuell,
+                     tipp=name + (" (eigene Vorlage)" if stile.ist_eigen(name) else ""))
+        m.gewaehlt.connect(w.stil_anwenden)
+        m.ueberfahren.connect(lambda name: w.vorschau.zeigen(lambda ed: ed.apply_style("Standard" if name == "Fließtext" else name)))
+        m.verlassen.connect(w.vorschau.ende)
+        m.aktion("Neue Formatvorlage …", lambda: self.b.neueFormatvorlage(), icons.icon("pinsel", 18))
+        m.aktion("Stil löschen", lambda: self.b.formatvorlageLoeschen(aktuell), icons.icon("radierer", 18),
+                 aktiv=bool(aktuell) and stile.ist_eigen(aktuell))
+        m.aktion("Weitere Stile anzeigen", lambda an: w.settings.set("ui/stile_mehr", an), haken=mehr)
+
+        def kontext(name, pos):
+            km = QMenu(m)
+            km.addAction("Ändern …", lambda: (m.close(), self.b.formatvorlageAendern(name)))
+            if stile.ist_eigen(name):
+                km.addAction("Löschen", lambda: (m.close(), self.b.formatvorlageLoeschen(name)))
+            km.exec(pos)
+        m.kontext.connect(kontext)
+        m.aboutToHide.connect(w.vorschau.ende)
+        from PySide6.QtCore import QPoint
+        m.popup(unter.mapToGlobal(QPoint(-m.sizeHint().width() + unter.width() + 4, unter.height())))
 
     def stile_aktualisieren(self) -> None:
         """Die Galerie neu füllen — die eingebauten Vorlagen und die selbst angelegten (editor/stile.py)."""

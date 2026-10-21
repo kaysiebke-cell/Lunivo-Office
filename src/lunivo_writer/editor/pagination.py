@@ -789,7 +789,7 @@ def zeichne_seite(p: QPainter, d: QTextDocument, page: PageSettings, n: int, tot
         p.setClipRect(QRectF(-10, 0, cb + 20, ch))
         p.translate(0, -(lp - 1) * ch)
         d.drawContents(p, QRectF(0, (lp - 1) * ch, cb, ch))
-        absatzrahmen_zeichnen(p, d)
+        absatz_zusatz_zeichnen(p, d)
         p.restore()
         if balken:                                          # Änderungsbalken neben den Zeilen mit verfolgten Änderungen
             seite_b, zeilen = balken
@@ -813,6 +813,13 @@ def zeichne_seite(p: QPainter, d: QTextDocument, page: PageSettings, n: int, tot
             x = ml + j * (cb + luecke) - luecke / 2
             p.drawLine(int(x), int(mt), int(x), int(mt + ch))
         p.restore()
+
+
+def absatz_zusatz_zeichnen(p: QPainter, d: QTextDocument, faktor: float = 1.0) -> None:
+    """Was an den Absätzen nicht von Qt kommt: Rahmen und die Nummern mehrstufiger Listen."""
+    from lunivo_writer.editor.mehrstufig import nummern_zeichnen
+    absatzrahmen_zeichnen(p, d, faktor)
+    nummern_zeichnen(p, d, faktor)
 
 
 def absatzrahmen_zeichnen(p: QPainter, d: QTextDocument, faktor: float = 1.0, polster: float = 4.0) -> None:

@@ -24,7 +24,7 @@ from lunivo_writer.proofing.proofing_service import WritingAssistant
 from lunivo_writer.core.document_manager import DocumentManager
 from lunivo_writer.ui.statusbar.status_bar import StatusBar
 from lunivo_writer.ui.baukasten import weitere_farben
-from lunivo_writer.ui.dialogs.dokument_dialoge import FindReplaceDialog, HeaderFooterDialog, PageSetupDialog, ParagraphDialog, TableDialog
+from lunivo_writer.ui.dialogs.dokument_dialoge import FindReplaceDialog, HeaderFooterDialog, PageSetupDialog, TableDialog
 from lunivo_writer.ui.document.document_tabs import DocTabs
 from lunivo_writer.ui.document.document_area import DocumentTab
 from lunivo_writer.ui.ribbon.menue_tafel import MenueTafel
@@ -899,28 +899,36 @@ class MainWindow(QMainWindow):
         e = self.current_editor()
         if not e:
             return
+        from lunivo_writer.ui.baukasten.absatz_dialog import AbsatzDialog
+        from lunivo_writer.ui.baukasten.tabstopp_dialog import aus_qt, zu_qt
         bf = e.textCursor().blockFormat()
         lh = bf.lineHeight() / 100 if bf.lineHeightType() == 1 and bf.lineHeight() else 1.0
         al = bf.alignment()
-        ai = 1 if al & Qt.AlignHCenter else 2 if al & Qt.AlignRight else 3 if al & Qt.AlignJustify else 0
-        d = ParagraphDialog(px_to_mm(bf.leftMargin()), px_to_mm(bf.rightMargin()), px_to_mm(bf.textIndent()),
-                            bf.topMargin() * 0.75, bf.bottomMargin() * 0.75, lh, self, ai,
-                            bool(bf.pageBreakPolicy() & QTextFormat.PageBreak_AlwaysBefore))
+        rtl = bf.layoutDirection() == Qt.RightToLeft
+        d = AbsatzDialog(self, {
+            "ausr": "mitte" if al & Qt.AlignHCenter else "rechts" if al & Qt.AlignRight else "block" if al & Qt.AlignJustify else "links",
+            "rtl": rtl, "einzug": px_to_mm(bf.leftMargin()), "rechts": px_to_mm(bf.rightMargin()),
+            "erste": px_to_mm(bf.textIndent()), "vor": bf.topMargin() * 0.75, "nach": bf.bottomMargin() * 0.75, "zeilen": lh,
+            "umbruch": bool(bf.pageBreakPolicy() & QTextFormat.PageBreak_AlwaysBefore), "tabs": aus_qt(bf.tabPositions())})
         if d.exec():
-            e.set_alignment([Qt.AlignLeft, Qt.AlignHCenter, Qt.AlignRight, Qt.AlignJustify][d.align.currentIndex()])
-            e.set_page_break_before(d.umbruch.isChecked())
-            e.set_indents(d.left.value(), d.right.value(), d.first.value())
-            e.set_paragraph_spacing(d.before.value(), d.after.value())
-            e.set_line_spacing(d.line.value())
+            w = d.werte()
+            e.set_alignment({"mitte": Qt.AlignHCenter, "rechts": Qt.AlignRight, "block": Qt.AlignJustify}.get(w["ausr"], Qt.AlignLeft))
+            e.set_page_break_before(w["umbruch"])
+            e.set_indents(w["einzug"], w["rechts"], w["erste"])
+            e.set_paragraph_spacing(w["vor"], w["nach"])
+            e.set_line_spacing(w["zeilen"])
+            e.set_tabstopps(zu_qt(w["tabs"]))
+            if w["rtl"] != rtl:
+                e.toggle_rtl()
 
     def tabstopp_dialog(self):
         e = self.current_editor()
         if not e:
             return
-        from lunivo_writer.ui.dialogs.tabstopp_dialog import TabstoppDialog
-        d = TabstoppDialog(self, e.textCursor().blockFormat().tabPositions())
+        from lunivo_writer.ui.baukasten.tabstopp_dialog import TabstoppDialog, aus_qt, zu_qt
+        d = TabstoppDialog(self, aus_qt(e.textCursor().blockFormat().tabPositions()))
         if d.exec():
-            e.set_tabstopps(d.ergebnis())
+            e.set_tabstopps(zu_qt(d.stopps()))
 
     def _lesehilfe_auf(self, e):
         from lunivo_writer.ui.dialogs.lesehilfe_dialog import PAPIERTOENE

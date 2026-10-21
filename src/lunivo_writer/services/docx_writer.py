@@ -300,6 +300,10 @@ class _Writer:
         if d["farbe"]:
             st.font.color.rgb = RGBColor.from_string(d["farbe"].lstrip("#").upper())
         st.paragraph_format.space_before, st.paragraph_format.space_after = Pt(d["vor"]), Pt(d["nach"])
+        if d.get("zeilen"):
+            st.paragraph_format.line_spacing = float(d["zeilen"])
+        if d.get("einzug"):
+            st.paragraph_format.left_indent = Mm(float(d["einzug"]))
         if d["ausr"]:
             st.paragraph_format.alignment = {"links": WD_ALIGN_PARAGRAPH.LEFT, "mitte": WD_ALIGN_PARAGRAPH.CENTER,
                                              "rechts": WD_ALIGN_PARAGRAPH.RIGHT, "block": WD_ALIGN_PARAGRAPH.JUSTIFY}[d["ausr"]]

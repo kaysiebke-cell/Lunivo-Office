@@ -23,7 +23,12 @@ VORGABE = {
 NAMEN = list(VORGABE)                  # nur die eingebauten; mit den selbst angelegten: namen()
 _EIGEN: dict[str, dict] = {}            # Änderungen an eingebauten Vorlagen
 _NEU: dict[str, dict] = {}              # selbst angelegte Vorlagen (Name → Definition)
-VORLAGE = {"ebene": 0, "groesse": 0, "fett": False, "kursiv": False, "farbe": "", "schrift": "", "vor": 0, "nach": 0, "ausr": ""}
+# zeilen: Zeilenabstand als Vielfaches (0 = nichts setzen), einzug: linker Einzug in mm (0 = nichts setzen)
+# rahmen: ``Linie.text()`` des Absatzrahmens, fuell/muster/musterfarbe: Schattierung, liste: ``listen.als_text``, effekt: ``texteffekt.als_text`` (Kontur, Transparenz der Farbe), taste: Tastenkombination ("" = nichts setzen; die Taste erbt eine Vorlage nicht von ihrer Basis)
+VORLAGE = {"ebene": 0, "groesse": 0, "fett": False, "kursiv": False, "farbe": "", "schrift": "", "vor": 0, "nach": 0, "ausr": "",
+           "zeilen": 0, "einzug": 0, "rahmen": "", "fuell": "", "muster": "", "musterfarbe": "", "liste": "", "taste": "", "effekt": ""}
+FELDER = tuple(VORLAGE)                 # die Felder, die eine Vorlage festlegen kann
+MAX_BASIS = 6                           # so tief darf „basiert auf“ verschachtelt sein
 PRAEFIX = "x:"                          # Kennung am Absatz: "x:Name" = selbst angelegte Vorlage
 
 
@@ -39,18 +44,29 @@ def laden_neu(text: str) -> None:
     global _NEU
     try:
         d = json.loads(text or "{}")
-        _NEU = {k: {**VORLAGE, **{f: v for f, v in x.items() if f in VORLAGE}} for k, x in d.items()
+        _NEU = {k: {**VORLAGE, **{f: v for f, v in x.items() if f in VORLAGE}, **_meta(x)} for k, x in d.items()
                 if isinstance(x, dict) and k and k not in VORGABE}
     except ValueError:
         _NEU = {}
+
+
+def _meta(x: dict) -> dict:
+    """„basiert auf“, „folgender Absatz“ und die Abweichungen von der Basis (nur bei Vorlagen mit Basis)."""
+    m = {}
+    if isinstance(x.get("basis"), str) and x["basis"]:
+        m["basis"] = x["basis"]
+        m["abw"] = {f: v for f, v in (x.get("abw") or {}).items() if f in VORLAGE and f != "ebene"}
+    if isinstance(x.get("folge"), str) and x["folge"]:
+        m["folge"] = x["folge"]
+    return m
 
 
 def als_json_neu() -> str:
     return json.dumps(_NEU, ensure_ascii=False)
 
 
-def anlegen(name: str, **felder) -> str | None:
-    """Neue Vorlage anlegen. → None bei Erfolg, sonst der Grund (Name leer oder schon vergeben)."""
+def pruefe_name(name: str) -> str | None:
+    """Darf eine neue Vorlage so heißen? → None, sonst der Grund."""
     name = " ".join(name.split())
     if not name:
         return "Bitte einen Namen eingeben."
@@ -58,7 +74,25 @@ def anlegen(name: str, **felder) -> str | None:
         return f"Eine Formatvorlage „{name}“ gibt es schon."
     if PRAEFIX in name[:2] or "|" in name:
         return "Der Name darf nicht mit „x:“ beginnen und kein „|“ enthalten."
-    _NEU[name] = {**VORLAGE, **{f: v for f, v in felder.items() if f in VORLAGE}, "ebene": 0}
+    return None
+
+
+def anlegen(name: str, *, basis: str = "", folge: str = "", **felder) -> str | None:
+    """Neue Vorlage anlegen. → None bei Erfolg, sonst der Grund (Name leer oder schon vergeben).
+    ``basis``: Vorlage, auf der sie aufbaut — was die neue nicht selbst ändert, folgt der Basis. ``folge``: Vorlage des nächsten Absatzes."""
+    name = " ".join(name.split())
+    grund = pruefe_name(name)
+    if grund:
+        return grund
+    werte = {f: v for f, v in felder.items() if f in VORLAGE and f != "ebene"}
+    if basis and (basis in _NEU or basis in VORGABE) and basis != name:
+        b = definition(basis)                                    # nur das, was von der Basis abweicht, gehört der Vorlage selbst
+        eintrag = {**VORLAGE, "ebene": 0, "basis": basis, "abw": {f: v for f, v in werte.items() if b.get(f) != v}}
+    else:
+        eintrag = {**VORLAGE, **werte, "ebene": 0}
+    if folge and folge != name and (folge in _NEU or folge in VORGABE):
+        eintrag["folge"] = folge
+    _NEU[name] = eintrag
     return None
 
 
@@ -79,15 +113,29 @@ def als_json() -> str:
     return json.dumps(_EIGEN, ensure_ascii=False)
 
 
-def definition(name: str) -> dict:
+def definition(name: str, _tiefe: int = 0) -> dict:
     if name in _NEU:
-        return {**_NEU[name], "key": PRAEFIX + name}
-    return {**VORGABE.get(name, VORGABE["Standard"]), **_EIGEN.get(name, {})}
+        e = _NEU[name]
+        if e.get("basis") and _tiefe < MAX_BASIS and (e["basis"] in _NEU or e["basis"] in VORGABE):
+            d = {**definition(e["basis"], _tiefe + 1), **e.get("abw", {}), "ebene": 0}
+            d.pop("folge", None)
+            d["taste"] = e.get("abw", {}).get("taste", "")
+        else:
+            d = {k: e[k] for k in VORLAGE}
+        d["key"] = PRAEFIX + name
+        if e.get("folge"):
+            d["folge"] = e["folge"]
+        return d
+    return {**VORLAGE, **VORGABE.get(name, VORGABE["Standard"]), **_EIGEN.get(name, {})}
 
 
 def aendern(name: str, **felder) -> None:
     if name in _NEU:
-        _NEU[name].update({f: v for f, v in felder.items() if f in VORLAGE and f != "ebene"})
+        neu = {f: v for f, v in felder.items() if f in VORLAGE and f != "ebene"}
+        if _NEU[name].get("basis"):
+            _NEU[name].setdefault("abw", {}).update(neu)
+        else:
+            _NEU[name].update(neu)
         return
     _EIGEN.setdefault(name, {}).update(felder)
 

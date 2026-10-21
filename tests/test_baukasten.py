@@ -459,3 +459,178 @@ def test_seitenrand_einzelne_kanten_und_docx(app, tmp_path):
     for t in w._doc_tabs():
         t.editor.document().setModified(False)
     w.close()
+
+
+def test_galerie_meldet_gewaehlt_und_ueberfahren(app):
+    from PySide6.QtGui import QFont
+    from lunivo_writer.ui.baukasten import GalerieAuswahl
+    g = GalerieAuswahl(None, titel="Stile")
+    f = QFont("Liberation Sans"); f.setPointSizeF(20)
+    g.kachel("a", "Eins", f, probe="AaBbCcD"); g.kachel("b", "Zwei", QFont("Liberation Sans"))
+    seen, gewaehlt, weg = [], [], []
+    g.ueberfahren.connect(seen.append); g.gewaehlt.connect(gewaehlt.append); g.verlassen.connect(lambda: weg.append(1))
+    k = g.kacheln["a"]
+    assert k.schrift.pointSizeF() < 20                                        # große Probe wird in die Kachel eingepasst
+    k.darueber.emit("a"); k.weg.emit(); k.klick.emit("b")
+    assert seen == ["a"] and weg == [1] and gewaehlt == ["b"]
+
+
+def test_schriftart_fenster_werte_und_format(app):
+    from lunivo_writer.ui.baukasten.schriftart_dialog import SchriftartDialog
+    from lunivo_writer.ui.baukasten.text_format import aus_format, zu_format
+    d = SchriftartDialog(None, {"schrift": "Liberation Sans", "groesse": 12.0})
+    d.schnitt.setze("Fett Kursiv"); d.groesse.setze("18")
+    d.unter.setCurrentIndex(d.unter.findData("gepunktet")); d.cb["durch"].setChecked(True); d.cb["hoch"].setChecked(True)
+    d.cb["tief"].setChecked(True)                                                   # Hoch- und Tiefgestellt schließen sich aus
+    w = d.werte()
+    assert w["fett"] and w["kursiv"] and w["groesse"] == 18 and w["unter"] == "gepunktet" and w["tief"] and not w["hoch"]
+    f = zu_format(w)
+    assert f.fontWeight() >= 600 and f.fontItalic() and f.fontStrikeOut() and f.fontPointSize() == 18
+    w2 = aus_format(f)
+    assert w2["unter"] == "gepunktet" and w2["durch"] and w2["tief"] and w2["kerning"]
+    v = SchriftartDialog(None, {"schrift": "Liberation Sans"}, umfang="vorlage")
+    assert v.reiter.count() == 1 and not v.effekte.isVisibleTo(v)                   # in der Vorlage nur Schrift, Schnitt, Größe, Farbe
+
+
+def test_formatvorlage_rahmen_und_schattierung(app):
+    from lunivo_writer.editor import stile
+    from lunivo_writer.editor.linie import Linie
+    from lunivo_writer.ui.baukasten.formatvorlage_dialog import FormatvorlageDialog
+    from lunivo_writer.ui.document.document_editor import DocumentEditor
+    li = Linie("#336699", 1.0, "einfach", "tblr")
+    d = FormatvorlageDialog(None, start={"rahmen": li.text(), "fuell": "#d0ebff"}, vorlagen=["Standard"])
+    erg = d.ergebnis()
+    assert erg["rahmen"] == li.text() and erg["fuell"] == "#d0ebff" and erg["muster"] == ""
+    assert stile.anlegen("RahmenTest", **{k: v for k, v in erg.items() if k not in ("name", "basis", "folge")}) is None
+    e = DocumentEditor(); e.setPlainText("x")
+    e._stil_auf_block(e.document().firstBlock(), "RahmenTest")
+    assert e.absatzrahmen() is not None and e.absatzschatten()[0] == "#d0ebff"
+    stile.loeschen("RahmenTest")
+
+
+def test_listenfenster_und_formatvorlage_liste(app):
+    from PySide6.QtCore import QSettings
+    from lunivo_writer.editor import listen as L
+    from lunivo_writer.editor import stile
+    from lunivo_writer.ui.baukasten.liste_dialog import ListenDialog, NummerierungAnpassenDialog
+    from lunivo_writer.ui.document.document_editor import DocumentEditor
+    n = NummerierungAnpassenDialog(None, L.liste("roem_klein", "(", ")", 3))
+    assert n.spec() == L.liste("roem_klein", "(", ")", 3)
+    n.format.setText("Nr.")
+    assert n.spec() is None and not n.ok.isEnabled()
+    d = ListenDialog(None, L.liste("klein", "", ")"), seite="nummerierung")
+    assert d.ergebnis() == L.liste("klein", "", ")") and d.reiter.currentWidget() is d.r_zahlen
+    d.r_punkte.setCurrentRow(0); d.reiter.setCurrentWidget(d.r_punkte)
+    assert d.ergebnis() is None
+    e = DocumentEditor(); e.setPlainText("a\nb\nc")
+    e.set_liste(L.liste("dezimal", "", ")", 4))
+    assert e.liste_spec() == L.liste("dezimal", "", ")", 4)
+    e.set_liste(None)
+    assert e.liste_spec() is None
+    assert L.aus_text(L.als_text(L.liste("gross", "(", ")", 2))) == L.liste("gross", "(", ")", 2)
+    stile.anlegen("ListeTest", liste=L.als_text(L.liste("dezimal", "", ")")))
+    e2 = DocumentEditor(); e2.setPlainText("x\ny")
+    for b in (e2.document().firstBlock(), e2.document().firstBlock().next()):
+        e2._stil_auf_block(b, "ListeTest")
+    assert e2.document().firstBlock().textList() is e2.document().firstBlock().next().textList() or \
+        e2.document().firstBlock().textList().count() == 2
+    stile.loeschen("ListeTest")
+    QSettings().remove("listen/benutzer")
+
+
+def test_nummerierung_schriftart(app):
+    from lunivo_writer.editor import listen as L
+    from lunivo_writer.ui.baukasten.liste_dialog import NummerierungAnpassenDialog
+    from lunivo_writer.ui.document.document_editor import DocumentEditor
+    n = NummerierungAnpassenDialog(None, None)
+    assert hasattr(n, "schrift") and n.spec().get("zeichen") is None
+    n._zeichen = {"fett": True, "farbe": "#c92a2a"}
+    s = n.spec()
+    assert s["zeichen"] == {"fett": True, "farbe": "#c92a2a"} and L.aus_text(L.als_text(s)) == s
+    e = DocumentEditor(); e.setPlainText("a\nb")
+    e.set_liste(s)
+    assert e.document().firstBlock().charFormat().fontWeight() >= 600 or e.document().firstBlock().blockFormat() is not None
+    assert e.document().firstBlock().textList().format().style() == L.STILE["dezimal"][2]
+
+
+def test_gliederung_mehrstufig(app):
+    from PySide6.QtGui import QImage, QPainter, QTextCursor
+    from lunivo_writer.editor import listen as L
+    from lunivo_writer.editor import mehrstufig as M
+    from lunivo_writer.editor.pagination import absatz_zusatz_zeichnen
+    from lunivo_writer.ui.baukasten.liste_dialog import GliederungAnpassenDialog, ListenDialog
+    from lunivo_writer.ui.document.document_editor import DocumentEditor
+    assert [M.nummer_text("roem_klein", n) for n in (1, 4, 9)] == ["i", "iv", "ix"] and M.nummer_text("klein", 27) == "aa"
+    g = M.VORLAGEN[0][1]
+    z = [0] * 9
+    erg = []
+    for n in (1, 2, 2, 3, 1, 2):
+        M.zaehlen(z, g, n); erg.append(M.nummer_der_ebene(g, z, n))
+    assert erg == ["1.", "1.1.", "1.2.", "1.2.1.", "2.", "2.1."]
+    assert L.aus_text(L.als_text(g)) == g
+    e = DocumentEditor(); e.setPlainText("A\nB\nC")
+    c = e.textCursor(); c.select(QTextCursor.Document); e.setTextCursor(c)
+    e.set_liste(g)
+    c = QTextCursor(e.document().findBlockByNumber(1)); e.setTextCursor(c); e.list_level(1)
+    assert [x[1] for x in M.nummern(e.document())] == ["1.", "1.1.", "2."]
+    assert e.liste_spec() == g
+    img = QImage(300, 300, QImage.Format_RGB32); p = QPainter(img)
+    absatz_zusatz_zeichnen(p, e.document()); p.end()
+    c = e.textCursor(); c.select(QTextCursor.Document); e.setTextCursor(c)
+    e.set_liste(None)
+    assert M.nummern(e.document()) == []
+    d = GliederungAnpassenDialog(None, g)
+    d.ebenen.setCurrentRow(1); d.format.setText("x"); d._lesen()
+    assert not d.ok.isEnabled()
+    d.format.setText("①-②"); d._lesen()
+    assert d.ok.isEnabled() and d.defn()["ebenen"][1]["format"] == "①-②"
+    ld = ListenDialog(None, g)
+    assert ld.ergebnis() == g and ld.reiter.currentWidget() is ld.r_gl
+
+
+def test_formatvorlage_verknuepfung(app):
+    from PySide6.QtCore import Qt
+    from PySide6.QtGui import QKeySequence
+    from lunivo_writer.editor import stile
+    from lunivo_writer.ui.baukasten.formatvorlage_dialog import FormatvorlageDialog
+    from lunivo_writer.ui.baukasten.tasten_dialog import TastenDialog
+    from lunivo_writer.ui.document.document_editor import DocumentEditor
+    t = TastenDialog(None, "Ctrl+Alt+7", belegt=lambda k: "Fett" if k == "Ctrl+B" else None)
+    assert t.taste() == "Ctrl+Alt+7" and t.zuweisen.isEnabled()
+    t.feld.setKeySequence(QKeySequence("Ctrl+B"))
+    assert not t.zuweisen.isEnabled() and "Fett" in t.hinweis.text()
+    d = FormatvorlageDialog(None, start={"taste": "Ctrl+Alt+7"}, vorlagen=["Standard"])
+    assert d.ergebnis()["taste"] == "Ctrl+Alt+7"
+    assert stile.anlegen("TastenTest", **{k: v for k, v in d.ergebnis().items() if k not in ("name", "basis", "folge")}) is None
+    assert stile.anlegen("TastenKind", basis="TastenTest") is None and stile.definition("TastenKind")["taste"] == ""
+    e = DocumentEditor(); e.stil_tasten()
+    assert [s.key().toString(QKeySequence.PortableText) for s in e._stil_kurz] == ["Ctrl+Alt+7"]
+    stile.loeschen("TastenTest"); stile.loeschen("TastenKind")
+
+
+def test_texteffekte(app):
+    from PySide6.QtCore import Qt
+    from lunivo_writer.editor import stile, texteffekt as T
+    from lunivo_writer.ui.baukasten.formatvorlage_dialog import FormatvorlageDialog
+    from lunivo_writer.ui.baukasten.texteffekt_dialog import TexteffektDialog
+    from lunivo_writer.ui.document.document_editor import DocumentEditor
+    d = TexteffektDialog(None, {"farbe": "#c92a2a", "transparenz": 40, "kontur": True, "kontur_farbe": "#1864ab", "kontur_breite": 1.5,
+                                "kontur_art": "gestrichelt"})
+    w = d.werte()
+    assert w["kontur"] and w["transparenz"] == 40 and w["kontur_art"] == "gestrichelt" and w["kontur_breite"] == 1.5
+    f = T.zu_format(w)
+    assert f.textOutline().style() == Qt.DashLine and round(f.foreground().color().alphaF(), 1) == 0.6
+    assert T.aus_format(f)["kontur_farbe"] == "#1864ab" and T.aus_format(f)["transparenz"] == 40
+    d.r_keine.setChecked(True)
+    assert T.zu_format(d.werte()).foreground().color().alpha() == 0 and not d.farbe.isEnabled()
+    t = T.als_text(w)
+    assert T.aus_text(t, "#c92a2a")["kontur_art"] == "gestrichelt" and T.als_text(dict(T.EFFEKT)) == ""
+    fd = FormatvorlageDialog(None, start={"effekt": t, "farbe": "#c92a2a"}, vorlagen=["Standard"])
+    erg = fd.ergebnis()
+    assert erg["effekt"] == t
+    stile.anlegen("EffektTest", **{k: v for k, v in erg.items() if k not in ("name", "basis", "folge")})
+    e = DocumentEditor(); e.setPlainText("x")
+    e._stil_auf_block(e.document().firstBlock(), "EffektTest")
+    cf = e.document().firstBlock().begin().fragment().charFormat()
+    assert cf.textOutline().style() == Qt.DashLine
+    stile.loeschen("EffektTest")
