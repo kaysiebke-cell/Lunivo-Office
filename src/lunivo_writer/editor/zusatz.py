@@ -64,3 +64,4 @@ P_DOPPELT = QTextFormat.UserProperty + 43        # 1: doppelt durchgestrichen (L
 P_BETONUNG = QTextFormat.UserProperty + 44       # Betonungszeichen über/unter den Buchstaben: "punkt" | "kreis" | "komma" | "unten" (Lunivo zeichnet sie)
 P_UNTER = QTextFormat.UserProperty + 45          # Zeichenformat: Art der Unterstreichung, die Qt nicht kennt (doppelt, dick, lang, nur Wörter …); Lunivo zeichnet sie (siehe editor/textfx.py)
 P_RASTER = QTextFormat.UserProperty + 46        # 0: „am Raster ausrichten“ ist aus (Fenster Schriftart, Zeichenabstand); nur gesetzt, wenn abweichend (DOCX w:snapToGrid)
+B_BILDANKER = QTextFormat.UserProperty + 47       # Absatz mit frei positionierten Bildern (DOCX wp:anchor ohne Textumbruch): JSON-Liste, siehe editor/freie_bilder.py

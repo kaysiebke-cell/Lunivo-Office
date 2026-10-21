@@ -85,8 +85,7 @@ def aufbauen(ed, zeilen: list[str], benutzer: dict, heute: str) -> None:
         pos = 0
         for m in LUECKE.finditer(text):
             c.insertText(text[pos:m.start()], cf)
-            lf = QTextCharFormat(cf); lf.setBackground(QBrush(QColor(LUECKE_FARBE)))
-            c.insertText(m.group(0), lf)
+            c.insertText(m.group(0), cf)               # die Farbe der Lücke zeigt nur der Editor (Zusatzauswahl), sie steht nicht im Dokument
             pos = m.end()
         c.insertText(text[pos:], cf)
     c.endEditBlock()

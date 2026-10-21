@@ -45,7 +45,7 @@ def _has(fmt, prop) -> bool:
     return fmt.hasProperty(prop)
 
 
-from lunivo_writer.editor.zusatz import B_SPALTE, P_OBJEKT, P_VERSTECKT  # noqa: E402
+from lunivo_writer.editor.zusatz import B_BILDANKER, B_SPALTE, P_OBJEKT, P_VERSTECKT  # noqa: E402
 from lunivo_writer.editor.formular import P_FORM  # noqa: E402
 from lunivo_writer.editor.abschnitte import B_ABSCHNITT  # noqa: E402
 from lunivo_writer.editor import umbruch
@@ -120,14 +120,15 @@ class _Writer:
             s.start_type = {"naechste": WD_SECTION.NEW_PAGE, "fortlaufend": WD_SECTION.CONTINUOUS,
                             "gerade": WD_SECTION.EVEN_PAGE, "ungerade": WD_SECTION.ODD_PAGE}.get(typ, WD_SECTION.NEW_PAGE)
         self._seitenschmuck(s, p)
-        paare = [(s.header, p.header, p.kopf_verknuepft), (s.footer, p.footer, p.fuss_verknuepft)]
+        paare = [(s.header, p.header, p.kopf_verknuepft, "kopf"), (s.footer, p.footer, p.fuss_verknuepft, "fuss")]
         if p.diff_first:
             s.different_first_page_header_footer = True
-            paare += [(s.first_page_header, p.first_header, p.kopf_verknuepft), (s.first_page_footer, p.first_footer, p.fuss_verknuepft)]
-        for part, hf, verknuepft in paare:
+            paare += [(s.first_page_header, p.first_header, p.kopf_verknuepft, "kopf1"), (s.first_page_footer, p.first_footer, p.fuss_verknuepft, "fuss1")]
+        for part, hf, verknuepft, ort in paare:
             if nr > 0 and verknuepft:
                 continue                                            # bleibt „mit vorherigem verknüpft“
-            if hf.is_empty() and nr == 0:
+            bilder = [a for a in (getattr(p, "bilder", None) or []) if a.get("ort") == ort and a.get("bild") is not None]
+            if hf.is_empty() and nr == 0 and not bilder:
                 continue
             part.is_linked_to_previous = False
             lines = hf.text.split("\n")
@@ -136,6 +137,8 @@ class _Writer:
                 para.alignment = {"center": WD_ALIGN_PARAGRAPH.CENTER,
                                   "right": WD_ALIGN_PARAGRAPH.RIGHT}.get(hf.align, WD_ALIGN_PARAGRAPH.LEFT)
                 self._text_with_fields(para, line)
+            for a in bilder:
+                self._frei_bild(part.paragraphs[0], a, a["bild"])
 
     def _abschnitt_ende(self, para) -> None:
         """Am Ende des Absatzes, der einen Abschnitt beschließt: dessen Einrichtung als w:sectPr in den Absatz schreiben."""
@@ -274,7 +277,9 @@ class _Writer:
 
     # ---- Grundschrift --------------------------------------------------
     def _sprache(self) -> None:
-        kennung = self.meta.get("sprache")
+        # Ohne Angabe gilt die Sprache des Dokuments (Silbentrennung/Korrektur), nicht die Vorgabe „en-US“ der Vorlage —
+        # sonst prüfen andere Programme deutschen Text als Englisch und unterringeln jedes Wort.
+        kennung = self.meta.get("sprache") or str(getattr(self.page, "silben_sprache", "") or "").replace("_", "-")
         if not kennung:
             return
         rpr = self.d.styles.element.find(qn("w:docDefaults") + "/" + qn("w:rPrDefault") + "/" + qn("w:rPr"))
@@ -365,6 +370,10 @@ class _Writer:
 
     def write_block(self, blk: QTextBlock, para):
         bf = blk.blockFormat()
+        if bf.hasProperty(B_BILDANKER):                                   # frei positionierte Bilder dieses Absatzes
+            from lunivo_writer.editor import freie_bilder as FB
+            for a in FB.aus_absatz(bf):
+                self._frei_bild(para, a, FB.bild_im_dokument(self.q, a.get("n", "")))
         style_name = bf.property(STYLE_PROP) if _has(bf, STYLE_PROP) else None
         lvl = bf.headingLevel()
         lst = blk.textList()
@@ -873,6 +882,52 @@ class _Writer:
                 dp.set("title", "lunivo:" + str(imf.property(P_OBJEKT)))
         if seite:
             self._verankern(run, "right" if seite == "rechts" else "left")
+
+    def _frei_bild(self, para, a: dict, img: QImage) -> None:
+        """Ein frei positioniertes Bild (siehe editor/freie_bilder.py) als wp:anchor ohne Umbruch in den Absatz schreiben."""
+        if img is None or img.isNull():
+            return
+        buf = QBuffer()
+        buf.open(QIODevice.WriteOnly)
+        img.save(buf, "PNG")
+        b, h = float(a.get("b") or img.width()), float(a.get("h") or img.height())
+        run = para.add_run()
+        run.add_picture(io.BytesIO(bytes(buf.data())), width=Emu(int(b * EMU_PER_PX)), height=Emu(int(h * EMU_PER_PX)))
+        for inline in run._r.xpath(".//wp:inline"):
+            anker = OxmlElement("wp:anchor")
+            for k, v in (("distT", "0"), ("distB", "0"), ("distL", "0"), ("distR", "0"), ("simplePos", "0"),
+                         ("relativeHeight", "251658240" if a.get("hinter") else "251659264"), ("behindDoc", "1" if a.get("hinter") else "0"),
+                         ("locked", "0"), ("layoutInCell", "1"), ("allowOverlap", "1")):
+                anker.set(k, v)
+            sp = OxmlElement("wp:simplePos"); sp.set("x", "0"); sp.set("y", "0")
+
+            def lage(tag, bezug, ausr, versatz):
+                el = OxmlElement(tag); el.set("relativeFrom", bezug)
+                if ausr:
+                    al = OxmlElement("wp:align"); al.text = ausr; el.append(al)
+                else:
+                    po = OxmlElement("wp:posOffset"); po.text = str(int(round(float(versatz or 0) * EMU_PER_PX))); el.append(po)
+                return el
+            ph = lage("wp:positionH", {"seite": "page", "rand": "margin"}.get(a.get("bh"), "column"), a.get("ah"), a.get("xh"))
+            pv = lage("wp:positionV", {"seite": "page", "rand": "margin"}.get(a.get("bv"), "paragraph"), a.get("av"), a.get("yv"))
+            extent = inline.find(qn("wp:extent"))
+            ee = OxmlElement("wp:effectExtent")
+            for k in ("l", "t", "r", "b"):
+                ee.set(k, "0")
+            for e in [sp, ph, pv] + ([extent] if extent is not None else []) + [ee, OxmlElement("wp:wrapNone")]:
+                anker.append(e)
+            for k in list(inline):
+                if k is not extent and k.tag != qn("wp:effectExtent"):
+                    anker.append(k)
+            inline.getparent().replace(inline, anker)
+        if a.get("ellipse"):
+            for geom in run._r.xpath(".//a:prstGeom"):
+                geom.set("prst", "ellipse")
+        if a.get("rand"):
+            for sppr in run._r.xpath(".//pic:spPr"):
+                ln = OxmlElement("a:ln"); ln.set("w", str(int(round(float(a["rand"].get("b", 1)) * EMU_PER_PX))))
+                fill = OxmlElement("a:solidFill"); clr = OxmlElement("a:srgbClr"); clr.set("val", str(a["rand"].get("farbe", "#ffffff")).lstrip("#").upper())
+                fill.append(clr); ln.append(fill); sppr.append(ln)
 
     def _verankern(self, run, ausrichtung: str) -> None:
         """Macht aus dem Bild im Text (wp:inline) ein umflossenes Bild (wp:anchor, Umbruch „Quadrat“, links/rechts)."""

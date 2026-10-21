@@ -1203,7 +1203,7 @@ def test_vorlagen_galerie_zeigt_eigene_vorlagen(app, tmp_path):
     g = VorlagenGalerie(s, True); g.resize(1200, 800); g.show()
     namen = [k.name for k in g._kacheln]
     assert namen[0] == "Leeres Dokument" and "Mein Brief" in namen and "Brief" in namen
-    assert g.knoepfe["eigene"].text().endswith("1")
+    assert g.reiter_w.tabText(2).endswith("1")
     g._reiter_setzen("eigene"); assert [k.name for k in g._kacheln if k.isVisible()] == ["Mein Brief"]
     g.suche.setText("xyz"); assert not [k for k in g._kacheln if k.isVisible()]
     g.suche.setText(""); g._reiter_setzen("alle")
@@ -1233,3 +1233,133 @@ def test_vorlagen_rubriken_aus_unterordnern(app, tmp_path):
     g.rubrik_oeffnen(None); g.suche.setText("technik")
     assert [k.name for k in g._sichtbar()] == ["Kay Technik"]                               # die Suche findet auch in Rubriken
     g._timer.stop()
+
+
+def test_pdf_schrift_bleibt_schwarz_im_dunklen_thema(app, tmp_path):
+    """Text ohne eigene Farbe darf im PDF nicht die helle Textfarbe des dunklen Themas bekommen (blasse, fast weiße Schrift)."""
+    from PySide6.QtCore import QSize, Qt
+    from PySide6.QtGui import QColor, QImage, QPainter, QPalette, QTextDocument
+    from PySide6.QtPdf import QPdfDocument
+    from lunivo_writer.editor.pagination import export_pdf
+    from lunivo_writer.models.page import PageSettings
+    alt = app.palette()
+    dunkel = QPalette(alt)
+    for rolle in (QPalette.Text, QPalette.WindowText, QPalette.ButtonText):
+        dunkel.setColor(rolle, QColor("#e8eaed"))
+    app.setPalette(dunkel)
+    try:
+        d = QTextDocument(); d.setPlainText("Hallo dunkles Thema\nZweite Zeile")
+        pdf = str(tmp_path / "d.pdf"); export_pdf(pdf, d, PageSettings())
+        q = QPdfDocument(); q.load(pdf); gr = QSize(700, 990)
+        img = QImage(gr, QImage.Format_RGB32); img.fill(Qt.white)
+        p = QPainter(img); p.drawImage(0, 0, q.render(0, gr)); p.end()
+        assert min(img.pixelColor(x, y).lightness() for x in range(60, 400) for y in range(60, 200)) < 80
+    finally:
+        app.setPalette(alt)
+
+
+def test_docx_schreibt_dokumentsprache_statt_englisch(app, tmp_path):
+    """Ohne eigene Angabe steht die Sprache des Dokuments (de-DE) in der DOCX, nicht die Vorgabe en-US der Vorlage."""
+    import zipfile
+    from PySide6.QtGui import QTextDocument
+    from lunivo_writer.models.page import PageSettings
+    from lunivo_writer.services import docx_writer
+    d = QTextDocument(); d.setPlainText("Sehr geehrte Damen und Herren")
+    pfad = str(tmp_path / "s.docx"); docx_writer.write_docx(pfad, d, PageSettings(), {})
+    xml = zipfile.ZipFile(pfad).read("word/styles.xml").decode("utf-8")
+    assert 'w:lang w:val="de-DE"' in xml and 'w:lang w:val="en-US"' not in xml
+
+
+def test_luecken_sind_nur_in_der_ansicht_gelb(app, tmp_path):
+    """Die gelbe Farbe der Lücken «…» ist eine Zusatzauswahl des Editors: nicht im Textformat, nicht in der DOCX."""
+    import zipfile
+    from PySide6.QtGui import QTextCharFormat
+    from lunivo_writer.services import docx_writer
+    from lunivo_writer.editor import vorlagen
+    from lunivo_writer.ui.document.document_editor import DocumentEditor
+    from lunivo_writer.models.page import PageSettings
+    ed = DocumentEditor()
+    vorlagen.aufbauen(ed, ["Hallo «Name»,", "Text"], {}, "heute")
+    ed._overlays_neu()
+    farben = [e.format.background().color().name() for e in ed.extraSelections()]
+    assert "#fff3bf" in farben                                         # in der Ansicht gelb …
+    from PySide6.QtCore import Qt
+    b = ed.document().firstBlock()
+    it = b.begin(); stile = []
+    while not it.atEnd():
+        stile.append(it.fragment().charFormat().background().style()); it += 1
+    assert stile and all(st == Qt.NoBrush for st in stile)             # … im Textformat nicht
+    pfad = str(tmp_path / "l.docx"); docx_writer.write_docx(pfad, ed.document(), PageSettings(), {})
+    assert "FFF3BF" not in zipfile.ZipFile(pfad).read("word/document.xml").decode("utf-8")
+
+
+def _rot(b=40, h=30):
+    from PySide6.QtCore import Qt
+    from PySide6.QtGui import QImage
+    img = QImage(b, h, QImage.Format_RGB32); img.fill(Qt.red)
+    return img
+
+
+def test_frei_positionierte_bilder_ueberleben_docx_und_werden_gezeichnet(app, tmp_path):
+    """Kopfzeilenbild und Bild am Absatz (ohne Textumbruch): schreiben, lesen, zeichnen — Lage und Schichtfolge bleiben."""
+    from PySide6.QtCore import QUrl
+    from PySide6.QtGui import QTextCursor, QTextDocument
+    from lunivo_writer.editor import freie_bilder as FB
+    from lunivo_writer.editor.pagination import seite_als_bild
+    from lunivo_writer.models.page import PageSettings, mm_to_px
+    from lunivo_writer.services import docx_writer, file_service
+    d = QTextDocument(); d.setPlainText("Hallo\nZweiter Absatz")
+    name = FB.neuer_name(d); d.addResource(QTextDocument.ImageResource, QUrl(name), _rot())
+    FB.an_absatz(QTextCursor(d.firstBlock()), {"n": name, "b": 40.0, "h": 30.0, "bh": "seite", "xh": 100.0, "bv": "seite", "yv": 400.0,
+                                                "hinter": False, "ellipse": False, "ah": "", "av": ""})
+    ps = PageSettings()
+    ps.bilder = [{"ort": "kopf", "bild": _rot(80, 50), "b": 80.0, "h": 50.0, "bh": "seite", "xh": 10.0, "bv": "seite", "yv": 10.0,
+                  "hinter": True, "ellipse": False, "ah": "", "av": ""}]
+    pfad = str(tmp_path / "f.docx"); docx_writer.write_docx(pfad, d, ps, {})
+    g = file_service.load(pfad)
+    assert len(g.page.bilder) == 1 and g.page.bilder[0]["ort"] == "kopf" and g.page.bilder[0]["hinter"]
+    angaben = [a for b in [g.doc.firstBlock()] for a in FB.aus_absatz(b.blockFormat())]
+    assert len(angaben) == 1 and abs(angaben[0]["yv"] - 400.0) < 1 and angaben[0]["bv"] == "seite"
+    img = seite_als_bild(g.doc, g.page, 1, 1.0)
+    assert img.pixelColor(50, 30).red() > 200 and img.pixelColor(50, 30).green() < 60          # Bild in der Kopfzeile, oben links
+    assert img.pixelColor(120, 410).red() > 200 and img.pixelColor(120, 410).green() < 60      # Bild am Absatz, weiter unten
+    assert img.pixelColor(300, 300).green() > 200                                                # sonst weißes Blatt
+
+
+def test_frei_bild_ausrichtung_und_ellipse(app):
+    from lunivo_writer.editor import freie_bilder as FB
+    r = FB.rechteck({"b": 100.0, "h": 50.0, "bh": "seite", "ah": "center", "bv": "seite", "av": "bottom"}, 800, 1000, 100, 100, 600, 800)
+    assert (r.x(), r.y()) == (350.0, 950.0)
+    r = FB.rechteck({"b": 10.0, "h": 10.0, "bh": "rand", "xh": 5.0, "bv": "absatz", "yv": -20.0}, 800, 1000, 100, 100, 600, 800, absatz_y=300.0)
+    assert (r.x(), r.y()) == (105.0, 280.0)
+
+
+def test_frei_bild_im_editor_auswaehlen_verschieben_loeschen(app):
+    """Klick wählt ein Bild vor dem Text, Ziehen verschiebt es (Rückgängig stellt es her), Entf löscht es."""
+    from PySide6.QtCore import QEvent, QPointF, Qt, QUrl
+    from PySide6.QtGui import QKeyEvent, QMouseEvent, QTextCursor, QTextDocument
+    from lunivo_writer.editor import freie_bilder as FB
+    from lunivo_writer.ui.document.document_editor import DocumentEditor
+    ed = DocumentEditor(); ed.resize(900, 700); ed.show()
+    ed.setPlainText("Text\nzweiter Absatz")
+    name = FB.neuer_name(ed.document()); ed.document().addResource(QTextDocument.ImageResource, QUrl(name), _rot(80, 60))
+    FB.an_absatz(QTextCursor(ed.document().firstBlock()), {"n": name, "b": 80.0, "h": 60.0, "bh": "seite", "xh": 200.0, "bv": "seite", "yv": 300.0,
+                                                          "hinter": False, "ellipse": False, "ah": "", "av": ""})
+    app.processEvents(); ed.viewport().repaint(); app.processEvents()
+    assert ed._frei_treffer, "das Bild wurde beim Zeichnen nicht gefunden"
+    mitte = ed._frei_treffer[0][2].center()
+
+    def maus(art, pos, tasten=Qt.LeftButton):
+        e = QMouseEvent(art, QPointF(pos), QPointF(pos), Qt.LeftButton, tasten, Qt.NoModifier)
+        {QEvent.MouseButtonPress: ed.mousePressEvent, QEvent.MouseMove: ed.mouseMoveEvent, QEvent.MouseButtonRelease: ed.mouseReleaseEvent}[art](e)
+    maus(QEvent.MouseButtonPress, mitte)
+    maus(QEvent.MouseMove, mitte + QPointF(40, 30))
+    maus(QEvent.MouseButtonRelease, mitte + QPointF(40, 30), Qt.NoButton)
+    a = FB.aus_absatz(ed.document().firstBlock().blockFormat())[0]
+    z = ed.zoom
+    assert abs(a["xh"] - (200.0 + 40 / z)) < 1.5 and abs(a["yv"] - (300.0 + 30 / z)) < 1.5
+    ed.document().undo()
+    assert abs(FB.aus_absatz(ed.document().firstBlock().blockFormat())[0]["xh"] - 200.0) < 1.5
+    ed._frei_sel = ("t", 0, 0)
+    ed.keyPressEvent(QKeyEvent(QEvent.KeyPress, Qt.Key_Delete, Qt.NoModifier))
+    assert FB.aus_absatz(ed.document().firstBlock().blockFormat()) == []

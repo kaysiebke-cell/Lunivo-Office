@@ -30,7 +30,7 @@ def test_seiten_und_befehle(app, tmp_path):
     w.new_document()
     w.backstage_oeffnen()
     b = w.backstage
-    assert set(b.seiten) == {"zuletzt", "speichern_als", "drucken", "schuetzen", "info", "oeffnen_mit", "optionen"}
+    assert set(b.seiten) == {"zuletzt", "vorlage", "speichern_als", "drucken", "schuetzen", "info", "oeffnen_mit", "optionen", "hilfe"}
     b._zeigen("info")
     t = w.current_tab()
     # Eigenschaften werden ins Dokument übernommen

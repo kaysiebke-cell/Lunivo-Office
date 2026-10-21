@@ -120,6 +120,14 @@ Die Auswahl steht in der Gruppe **Absatz**. **Anpassen …** öffnet das Fenster
 
 Das Fenster hat drei Reiter: **Rahmen**, **Seitenrand** und **Schattierung**. Unter **Seitenrand** liegt auch der Kunstrahmen; „Immer im Vordergrund“ legt ihn vor oder hinter den Text. Die **Optionen …** stellen den Abstand zum Text und zum Seitenrand ein.
 
+### Bilder auf dem Blatt
+
+Bilder, die nicht im Text stehen, sondern an einer festen Stelle des Blattes liegen — ein Foto im Kreis, eine Unterschrift, ein Band im Briefkopf, eine Zierleiste im Fuß —, zeigt das Programm an ihrer Stelle, hinter oder vor dem Text, so wie sie in der Datei stehen. Das gilt auch in der Vorschau, im Druck und im PDF, und beim Speichern bleiben sie erhalten.
+
+Ein Klick auf ein Bild vor dem Text wählt es aus: Ziehen verschiebt es, die Griffe an den Ecken und Kanten ändern die Größe (an den Ecken bleibt das Seitenverhältnis, mit `Umschalt` ändert es sich frei), `Entf` löscht es, `Esc` hebt die Auswahl auf. Ein Bild **hinter** dem Text (zum Beispiel das Band im Briefkopf) wählt man mit `Strg+Alt` und Klick. Das Verschieben lässt sich mit `Strg+Z` zurücknehmen.
+
+Zweifarbig umgefärbte Bilder (zum Beispiel grau statt bunt) und Fotos in einer Ellipse mit Rand werden dargestellt. Eingebettete Vektorzeichnungen, die nur aus Linien und Flächen bestehen, zeigt das Programm noch nicht.
+
 ### Was sich einfügen lässt
 
 Unter `Einfügen`: Seiten, Tabellen, Illustrationen (Bilder, Formen, Diagramme), Links (Hyperlink, Textmarke, Querverweis), Kopf- und Fußzeile, Text (Initialen, Textbausteine), Symbole (Formeln, Sonderzeichen).

@@ -1324,8 +1324,9 @@ class MainWindow(QMainWindow):
     def backstage_oeffnen(self, seite: str = "zuletzt", unter: str | None = None):
         import time
         self._bs_zeit = time.monotonic()
-        self.band.stapel.hide()
-        self.band.linie.hide()
+        for name in ("stapel", "linie"):                              # die Oberfläche „Symbolleisten“ hat nur eine Leiste, kein Band mit Reitern
+            if hasattr(self.band, name):
+                getattr(self.band, name).hide()
         self.arbeit.hide()
         self.backstage.oeffnen(seite, unter)
         self.backstage.show()
@@ -1337,9 +1338,10 @@ class MainWindow(QMainWindow):
             return
         self.backstage.hide()
         self.arbeit.show()
-        if not self.band._eingeklappt:
+        if hasattr(self.band, "stapel") and not self.band._eingeklappt:
             self.band.stapel.show()
-        self.band.linie.show()
+        if hasattr(self.band, "linie"):
+            self.band.linie.show()
         if hasattr(self.band, "menue_knopf"):
             self.band.menue_knopf.setChecked(False)
         self.ki.geaendert.emit()                                   # Einstellungen der Optionen übernehmen (KI, Anbieter …)

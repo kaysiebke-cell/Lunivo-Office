@@ -58,6 +58,7 @@ class PageSettings:
     silbentrennung: bool = False             # automatische Silbentrennung (Seitenansicht, Druck, PDF; DOCX: autoHyphenation)
     silben_sprache: str = "de_DE"
     kopf_verknuepft: bool = False            # Abschnitt ab dem zweiten: Kopfzeile wie im vorigen Abschnitt
+    bilder: list = field(default_factory=list)   # frei positionierte Bilder in Kopf-/Fußzeilen (siehe editor/freie_bilder.py)
     fuss_verknuepft: bool = False
 
     @property
@@ -95,7 +96,7 @@ class PageSettings:
             self, header=HeaderFooter(self.header.text, self.header.align), footer=HeaderFooter(self.footer.text, self.footer.align),
             border=dict(self.border) if self.border else None, watermark=dict(self.watermark) if self.watermark else None,
             first_header=HeaderFooter(self.first_header.text, self.first_header.align),
-            first_footer=HeaderFooter(self.first_footer.text, self.first_footer.align))
+            first_footer=HeaderFooter(self.first_footer.text, self.first_footer.align), bilder=list(self.bilder))
 
     @property
     def spalten_breite_px(self) -> float:

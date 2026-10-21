@@ -19,7 +19,7 @@ def test_optionen_baum_und_wirkung(app, tmp_path, monkeypatch):
     w = win(tmp_path, monkeypatch); w.new_document()
     d = OptionenDialog(w, "lesehilfe")
     zweige = [d.baum.topLevelItem(i).text(0) for i in range(d.baum.topLevelItemCount())]
-    assert zweige == ["Leichter lesen", "Wie im WPS Writer", "Nur bei Lunivo"]
+    assert zweige == ["Leichter lesen", "Allgemein", "Nur bei Lunivo"]
     assert sum(d.baum.topLevelItem(i).childCount() for i in range(3)) == 19
     # Papierton wirkt auf den Editor und wird gespeichert
     from PySide6.QtWidgets import QComboBox

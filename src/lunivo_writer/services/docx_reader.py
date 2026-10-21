@@ -59,12 +59,15 @@ _QT_ALIGN = {
 }
 
 # Was beim Lesen nicht übernommen wird → Hinweis
+_MC_ALT = "{http://schemas.openxmlformats.org/markup-compatibility/2006}AlternateContent"
+_MC_CHOICE = "{http://schemas.openxmlformats.org/markup-compatibility/2006}Choice"
+
 _UNSUPPORTED = [
     ("//w:txbxContent", "Textfelder werden nicht dargestellt und gehen beim Speichern verloren."),
     ("//m:oMath", "Formeln werden nicht dargestellt und gehen beim Speichern verloren."),
-    ("//w:pict | //wps:wsp | //wpg:wgp", "Formen und gezeichnete Objekte werden nicht dargestellt."),
-    ("//w:drawing[.//wp:anchor][not(.//wp:wrapSquare or .//wp:wrapTight or .//wp:wrapThrough)]",
-     "Frei positionierte Bilder ohne Umbruch um den Text werden als Bild im Text eingefügt."),
+    ("//w:pict | //wps:wsp[not(.//a:blip)] | //wpg:wgp", "Formen und gezeichnete Objekte werden nicht dargestellt."),
+    ("//w:drawing[.//wp:anchor[.//wp:wrapTopAndBottom]]",
+     "Bilder mit „Oben und unten“-Umbruch werden als Bild im Text eingefügt."),
 ]
 
 
@@ -459,15 +462,29 @@ class _Reader:
         right = eff(lambda p: p.right_indent)
         first = eff(lambda p: p.first_line_indent)
         if left is not None:
-            b.setLeftMargin(_emu_to_px(left))
+            lpx = _emu_to_px(left)
+            info = self._list_info(para)
+            if info is not None and lpx > 0:                          # Qt rückt Listenabsätze selbst um 40 px je Ebene ein
+                lpx = max(0.0, lpx - 40.0 * (info[1] + 1))
+            b.setLeftMargin(lpx)
         if right is not None:
             b.setRightMargin(_emu_to_px(right))
         if first is not None:
-            b.setTextIndent(_emu_to_px(first))
+            hanging_liste = first < 0 and self._list_info(para) is not None
+            # Hängender Einzug einer Liste: Das Zeichen steht links vom Text, alle Zeilen beginnen bei „links“ — Qt setzt das Zeichen selbst
+            # vor den Text; ein negativer Erstzeileneinzug würde die erste Zeile gegenüber den folgenden verschieben.
+            b.setTextIndent(0 if hanging_liste else _emu_to_px(first))
         sb = eff(lambda p: p.space_before)
         sa = eff(lambda p: p.space_after)
         b.setTopMargin(_pt_to_px(sb.pt) if sb is not None else 0)
         b.setBottomMargin(_pt_to_px(sa.pt) if sa is not None else 0)
+        sp = ppr.find(qn("w:spacing")) if ppr is not None else None
+        if sp is not None:                                            # „Automatisch“ (aus Webseiten): Word und andere setzen 14 pt davor/danach
+            wahr = ("1", "true", "on")
+            if (sp.get(qn("w:beforeAutospacing")) or "").lower() in wahr:
+                b.setTopMargin(_pt_to_px(14.0))
+            if (sp.get(qn("w:afterAutospacing")) or "").lower() in wahr:
+                b.setBottomMargin(_pt_to_px(14.0))
         ls = eff(lambda p: p.line_spacing)
         if ls is not None:
             if isinstance(ls, float) or (isinstance(ls, int) and ls < 100):
@@ -831,6 +848,12 @@ class _Reader:
                 self._flush_break(cursor)
                 self._add_image(child, cursor, cfmt)
                 added = True
+            elif tag == _MC_ALT:                                      # Word legt Formen (Foto im Kreis) in „Alternativer Inhalt“: die Wahl nehmen
+                wahl = child.find(_MC_CHOICE)
+                for dr in (wahl.iter(qn("w:drawing")) if wahl is not None else []):
+                    self._flush_break(cursor)
+                    self._add_image(dr, cursor, cfmt)
+                    added = True
             elif tag in (qn("w:footnoteReference"), qn("w:endnoteReference")):
                 self._flush_break(cursor)
                 art = "f" if tag == qn("w:footnoteReference") else "e"
@@ -848,7 +871,82 @@ class _Reader:
         from lunivo_writer.editor.zusatz import roemisch
         return str(n) if art == "f" else roemisch(n)
 
+    def _frei(self, drawing, teil=None, inline_ok: bool = False):
+        """Ein Bild, das frei auf dem Blatt liegt (wp:anchor ohne Textumbruch) → (Angabe, QImage); ``False``, wenn es nicht darstellbar ist
+        (Vektorbild); ``None``, wenn es kein solches Bild ist (steht im Text oder umflossen). Siehe editor/freie_bilder.py."""
+        from lunivo_writer.editor.freie_bilder import emu_zu_px
+        anker = drawing.xpath("wp:anchor") or (drawing.xpath("wp:inline") if inline_ok else [])
+        if not anker or _xp(anker[0], "wp:wrapSquare | wp:wrapTight | wp:wrapThrough | wp:wrapTopAndBottom"):
+            return None
+        a = anker[0]
+        blips = drawing.xpath(".//a:blip")
+        if not blips:
+            return None
+        rid = blips[0].get(qn("r:embed"))
+        try:
+            blob = (teil or self.d.part).related_parts[rid].blob
+        except KeyError:
+            self.report.warn("Ein Bild fehlt im Dokument und wurde übersprungen.")
+            return False
+        from lunivo_writer.editor.freie_bilder import bild_aus_daten
+        img = bild_aus_daten(blob)
+        if img.isNull():
+            self.report.warn("Ein Bild hat ein nicht lesbares Format (zum Beispiel eine Vektorzeichnung) und wird nicht angezeigt.")
+            return False
+        duo = _xp(drawing, ".//a:blip/a:duotone")
+        if duo and len(duo[0]) >= 2:                                   # zweifarbig umgefärbt (zum Beispiel grau statt grün)
+            from lunivo_writer.editor.freie_bilder import duoton, farbe_aus_element
+            try:
+                img = duoton(img, farbe_aus_element(duo[0][0], _NS), farbe_aus_element(duo[0][1], _NS))
+            except Exception:                                          # noqa: BLE001 — ein ungewöhnlicher Effekt darf das Laden nicht verhindern
+                pass
+        ext = _xp(a, "wp:extent")
+        b = emu_zu_px(ext[0].get("cx")) if ext else float(img.width())
+        h = emu_zu_px(ext[0].get("cy")) if ext else float(img.height())
+        rand = None
+        for ln in _xp(drawing, ".//a:ln[a:solidFill]"):                  # Umrandung der Form (der weiße Ring um ein Foto)
+            try:
+                from lunivo_writer.editor.freie_bilder import farbe_aus_element
+                f = farbe_aus_element(_xp(ln, "a:solidFill/*")[0], _NS)
+                rand = {"b": max(0.5, emu_zu_px(ln.get("w") or 9525)), "farbe": f.name()}
+            except Exception:                                              # noqa: BLE001
+                rand = None
+            break
+        angabe = {"b": b, "h": h, "hinter": (a.get("behindDoc") or "0").lower() in ("1", "true"), "bh": "spalte", "bv": "absatz",
+                  "xh": 0.0, "yv": 0.0, "ah": "", "av": "",
+                  "ellipse": bool(_xp(drawing, ".//a:prstGeom[@prst='ellipse']"))}
+        if rand:
+            angabe["rand"] = rand
+        for achse, el in (("h", _xp(a, "wp:positionH")), ("v", _xp(a, "wp:positionV"))):
+            if not el:
+                continue
+            bezug = el[0].get("relativeFrom", "")
+            if achse == "h":
+                angabe["bh"] = {"page": "seite", "margin": "rand", "leftMargin": "rand", "insideMargin": "rand", "outsideMargin": "rand",
+                                "rightMargin": "rand"}.get(bezug, "spalte")
+            else:
+                angabe["bv"] = {"page": "seite", "margin": "rand", "topMargin": "rand", "insideMargin": "rand", "outsideMargin": "rand",
+                                "bottomMargin": "rand"}.get(bezug, "absatz")
+            al = _xp(el[0], "wp:align/text()")
+            off = _xp(el[0], "wp:posOffset/text()")
+            if al:
+                angabe["ah" if achse == "h" else "av"] = al[0]
+            elif off:
+                angabe["xh" if achse == "h" else "yv"] = emu_zu_px(off[0])
+        return angabe, img
+
     def _add_image(self, drawing, cursor: QTextCursor, cfmt: QTextCharFormat):
+        frei = self._frei(drawing)
+        if frei is False:
+            return
+        if frei is not None:
+            from lunivo_writer.editor import freie_bilder as FB
+            angabe, bild = frei
+            name = FB.neuer_name(self.doc)
+            self.doc.addResource(QTextDocument.ImageResource, QUrl(name), bild)
+            angabe["n"] = name
+            FB.an_absatz(cursor, angabe)
+            return
         blips = drawing.xpath(".//a:blip")
         if not blips:
             return
@@ -858,8 +956,9 @@ class _Reader:
         except KeyError:
             self.report.warn("Ein Bild fehlt im Dokument und wurde übersprungen.")
             return
-        img = QImage()
-        if not img.loadFromData(blob):
+        from lunivo_writer.editor.freie_bilder import bild_aus_daten
+        img = bild_aus_daten(blob)
+        if img.isNull():
             self.report.warn("Ein Bild hat ein nicht lesbares Format und wurde übersprungen.")
             return
         extent = drawing.xpath(".//wp:extent")
@@ -1018,11 +1117,55 @@ class _Reader:
         ps.fuss_verknuepft = (not erster) and s.footer.is_linked_to_previous
         ps.header = self._hf(s.header)
         ps.footer = self._hf(s.footer)
+        ps.bilder = self._hf_bilder(s.header, "kopf", s, ps) + self._hf_bilder(s.footer, "fuss", s, ps)
         if s.different_first_page_header_footer:
             ps.diff_first = True
             ps.first_header = self._hf(s.first_page_header)
             ps.first_footer = self._hf(s.first_page_footer)
+            ps.bilder += self._hf_bilder(s.first_page_header, "kopf1", s, ps) + self._hf_bilder(s.first_page_footer, "fuss1", s, ps)
         return ps
+
+    def _hf_bilder(self, teil, ort: str, s, ps: PageSettings) -> list[dict]:
+        """Frei positionierte Bilder einer Kopf- oder Fußzeile (zum Beispiel ein Band über dem Briefkopf). „Am Absatz“ wird auf das Blatt
+        umgerechnet: der Absatz steht im Abstand der Kopfzeile vom oberen Rand, der der Fußzeile über dem unteren."""
+        from lunivo_writer.models.page import mm_to_px
+        if teil.is_linked_to_previous:
+            return []
+        out = []
+        for dr in teil._element.iter(qn("w:drawing")):
+            frei = self._frei(dr, teil.part, inline_ok=True)
+            if not frei:
+                continue
+            angabe, bild = frei
+            angabe["ort"], angabe["bild"] = ort, bild
+            if dr.xpath("wp:inline"):                                  # Bild im Text der Kopf-/Fußzeile (Zierleiste): am Rand, am Absatz eingerückt
+                ind = _xp(dr, "ancestor::w:p[1]/w:pPr/w:ind/@w:left")
+                try:
+                    angabe["xh"] = float(ind[0]) / 15.0 if ind else 0.0                      # Twips → px
+                except ValueError:
+                    angabe["xh"] = 0.0
+                angabe["bh"] = "rand"
+                try:
+                    abstand = (s.header_distance if ort.startswith("kopf") else s.footer_distance).mm
+                except Exception:                                                  # noqa: BLE001
+                    abstand = 12.7
+                angabe["bv"] = "seite"
+                angabe["yv"] = mm_to_px(abstand) if ort.startswith("kopf") else mm_to_px(ps.height_mm - abstand) - angabe["h"]
+                angabe["hinter"] = False
+                out.append(angabe)
+                continue
+            if angabe["bv"] == "absatz":
+                try:
+                    abstand = (s.header_distance if ort.startswith("kopf") else s.footer_distance).mm
+                except Exception:                                                  # noqa: BLE001
+                    abstand = 12.7
+                if ort.startswith("kopf"):
+                    angabe["yv"] = mm_to_px(abstand) + angabe["yv"]
+                else:
+                    angabe["yv"] = mm_to_px(ps.height_mm - abstand) - 20 + angabe["yv"]
+                angabe["bv"] = "seite"
+            out.append(angabe)
+        return out
 
     def _abschnitt_beginn(self, s) -> str:
         from lunivo_writer.editor.abschnitte import VOM_DOCX

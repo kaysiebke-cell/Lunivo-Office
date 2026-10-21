@@ -12,7 +12,7 @@ import os
 
 from PySide6.QtCore import QSize, Qt, QTimer, QUrl, Signal
 from PySide6.QtGui import QColor, QDesktopServices, QIcon, QImage, QPainter, QPixmap
-from PySide6.QtWidgets import (QFileDialog, QFrame, QGridLayout, QInputDialog, QHBoxLayout, QLabel, QLineEdit, QPushButton, QScrollArea, QToolButton, QVBoxLayout,
+from PySide6.QtWidgets import (QTabBar, QFileDialog, QFrame, QGridLayout, QInputDialog, QHBoxLayout, QLabel, QLineEdit, QPushButton, QScrollArea, QToolButton, QVBoxLayout,
                                QWidget)
 
 from lunivo_writer.editor import vorlagen
@@ -25,7 +25,7 @@ _VORSCHAU: dict[tuple, QPixmap] = {}                     # (Art, Schlüssel, Än
 def _blatt_bild(doc, page) -> QPixmap:
     """Erste Seite eines Dokuments, auf Kachelbreite verkleinert."""
     from lunivo_writer.editor.pagination import seite_als_bild
-    img = seite_als_bild(doc, page, 1, 0.45)
+    img = seite_als_bild(doc, page, 1, 0.8)
     return QPixmap.fromImage(img.scaled(KACHEL, Qt.KeepAspectRatio, Qt.SmoothTransformation))
 
 
@@ -35,6 +35,10 @@ def _geruest_bild(muster: dict, benutzer: dict) -> QPixmap:
     from lunivo_writer.models.page import PageSettings
     ed = QTextEdit()
     vorlagen.aufbauen(ed, muster["zeilen"], benutzer, QLocale("de_DE").toString(QDate.currentDate(), "d. MMMM yyyy"))
+    from PySide6.QtGui import QBrush, QTextCharFormat, QTextCursor
+    c = QTextCursor(ed.document()); c.select(QTextCursor.Document)
+    f = QTextCharFormat(); f.setForeground(QBrush(QColor("#000000"))); f.setBackground(QBrush(Qt.NoBrush))
+    c.mergeCharFormat(f)                                      # in der Vorschau sind die Lücken schlichter Text: lesbar, ohne Farbe und Gelb
     return _blatt_bild(ed.document(), PageSettings())
 
 
@@ -100,16 +104,14 @@ class VorlagenGalerie(QWidget):
         kopf.addWidget(self.titel); kopf.addStretch(1)
         self.neue_rubrik = QPushButton("Neue Rubrik …"); self.neue_rubrik.clicked.connect(self._rubrik_anlegen); kopf.addWidget(self.neue_rubrik)
         v.addLayout(kopf)
-        self.reiter_w = QWidget(); self.reiterzeile = QHBoxLayout(self.reiter_w); self.reiterzeile.setContentsMargins(0, 0, 0, 0); self.reiterzeile.setSpacing(22)
-        self.knoepfe: dict[str, QPushButton] = {}
-        for schl, text in (("alle", "Alle"), ("geruest", "Mitgeliefert"), ("eigene", "Meine Vorlagen")):
-            k = QPushButton(text); k.setFlat(True); k.setCursor(Qt.PointingHandCursor); k.setCheckable(True)
-            k.setStyleSheet("QPushButton { border: none; border-bottom: 2px solid transparent; padding: 6px 2px; font-size: 11pt; color: palette(mid); }"
-                            "QPushButton:checked { color: palette(window-text); font-weight: 600; border-bottom: 2px solid palette(highlight); }")
-            k.clicked.connect(lambda _=False, s=schl: self._reiter_setzen(s))
-            self.knoepfe[schl] = k; self.reiterzeile.addWidget(k)
-        self.reiterzeile.addStretch(1)
-        v.addWidget(self.reiter_w)
+        self.reiter_w = QTabBar(); self.reiter_w.setObjectName("bandReiter")            # dieselbe Gestalt wie die Register des Bandes
+        self.reiter_w.setDrawBase(False); self.reiter_w.setExpanding(False); self.reiter_w.setCursor(Qt.PointingHandCursor)
+        self.reiter_w.setFocusPolicy(Qt.NoFocus)
+        self._schluessel = ("alle", "geruest", "eigene")
+        for text in ("Alle", "Mitgeliefert", "Meine Vorlagen"):
+            self.reiter_w.addTab(text)
+        self.reiter_w.currentChanged.connect(lambda i: self._reiter_setzen(self._schluessel[i]))
+        v.addWidget(self.reiter_w, 0, Qt.AlignLeft)
         linie = QFrame(); linie.setFrameShape(QFrame.HLine); linie.setFrameShadow(QFrame.Sunken); v.addWidget(linie)
         self.suche = QLineEdit(); self.suche.setPlaceholderText("Vorlage suchen"); self.suche.setClearButtonEnabled(True)
         self.suche.setFixedWidth(420); self.suche.setMinimumHeight(34); self.suche.textChanged.connect(self._anordnen)
@@ -122,7 +124,7 @@ class VorlagenGalerie(QWidget):
 
         fuss = QHBoxLayout(); fuss.setContentsMargins(0, 8, 0, 12)
         hin = QLabel("Geöffnet wird immer eine Abschrift. Die Vorlage selbst bleibt, wie sie ist — auch nach dem dritten Brief.")
-        hin.setStyleSheet("color: palette(mid);"); fuss.addWidget(hin, 1)
+        hin.setStyleSheet("color: palette(mid);"); hin.setWordWrap(True); hin.setMinimumWidth(120); fuss.addWidget(hin, 1)   # darf umbrechen, sonst wird das Fenster breiter als der Schirm
         self.speichern = QPushButton("Dieses Dokument als Vorlage behalten …"); self.speichern.setEnabled(kann_speichern)
         self.speichern.clicked.connect(lambda: self.als_vorlage.emit(self._ziel()))
         waehlen = QPushButton("Vorlagenordner wählen …"); waehlen.clicked.connect(self._ordner_waehlen)
@@ -193,8 +195,8 @@ class VorlagenGalerie(QWidget):
             self.suche_alle += r["kacheln"]
         for p in self.lose:
             k = self._datei_kachel(p); self._kacheln.append(k); self.suche_alle.append(k); n_e += 1
-        self.knoepfe["alle"].setText(f"Alle  {len(self.rubriken) + len(self.lose) + 1}")
-        self.knoepfe["geruest"].setText(f"Mitgeliefert  {n_g}"); self.knoepfe["eigene"].setText(f"Meine Vorlagen  {n_e}")
+        for i, text in enumerate((f"Alle  {len(self.rubriken) + len(self.lose) + 1}", f"Mitgeliefert  {n_g}", f"Meine Vorlagen  {n_e}")):
+            self.reiter_w.setTabText(i, text)
         self._offen = [k for k in self._kacheln + self.suche_alle if k.art != "leer"]
         self._timer.start()
 
@@ -234,8 +236,10 @@ class VorlagenGalerie(QWidget):
 
     def _reiter_setzen(self, schl: str) -> None:
         self._reiter = schl
-        for s, k in self.knoepfe.items():
-            k.setChecked(s == schl)
+        i = self._schluessel.index(schl)
+        if self.reiter_w.currentIndex() != i:
+            self.reiter_w.setCurrentIndex(i)
+            return                                                    # currentChanged ruft uns noch einmal auf
         self._anordnen()
 
     def _sichtbar(self) -> list[_Kachel]:

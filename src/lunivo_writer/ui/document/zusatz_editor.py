@@ -310,8 +310,10 @@ class ZusatzMixin:
                     self._bereich_format(pos, bis, {P_AENDERUNG: "ins", P_AUTOR: name, P_DATUM: self._jetzt()})
                     c.endEditBlock()
                     self._hat_zusatz = True
-        if self._hat_zusatz:
+        neu_luecke = 0 < hinzu < 60 and any(self.document().characterAt(i) in "«»" for i in range(pos, pos + hinzu))
+        if self._hat_zusatz or getattr(self, "_luecken_da", False) or neu_luecke or entfernt:
             self._zus_timer.start()
+        if self._hat_zusatz:
             QTimer.singleShot(0, self.zusatzGeaendert.emit)
 
     def aenderung_annehmen(self, b: dict, annehmen: bool = True) -> None:
@@ -376,6 +378,18 @@ class ZusatzMixin:
             fmt.setUnderlineColor(QColor(self.WELLE.get(f["art"], "#868e96")))
             e = QTextEdit.ExtraSelection(); e.cursor = c; e.format = fmt
             sel.append(e)
+        n_text = doc.characterCount()
+        if n_text < 300000:                                  # Lücken «…» der Vorlagen und Textbausteine: gelb nur in der Ansicht, nie in der Datei
+            from lunivo_writer.editor.vorlagen import LUECKE, LUECKE_FARBE
+            text = doc.toPlainText()
+            self._luecken_da = "«" in text
+            if self._luecken_da:
+                fmt = QTextCharFormat(); fmt.setBackground(QColor(LUECKE_FARBE))
+                for m in LUECKE.finditer(text):
+                    c = QTextCursor(doc)
+                    c.setPosition(m.start()); c.setPosition(m.end(), QTextCursor.KeepAnchor)
+                    e = QTextEdit.ExtraSelection(); e.cursor = c; e.format = fmt
+                    sel.append(e)
         modus = self.opt_text("ui/feldschattierung", "Bei Auswahl") if hasattr(self, "opt_text") else "Nie"
         if modus != "Nie":
             from lunivo_writer.editor.anzeige_extra import feldbereiche

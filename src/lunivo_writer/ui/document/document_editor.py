@@ -17,6 +17,7 @@ from lunivo_writer.models.page import PageSettings, mm_to_px, px_to_mm
 from lunivo_writer.proofing.autokorrektur import kleinste_aenderung
 from lunivo_writer.editor.pagination import bind_layout, paginated_copy
 from lunivo_writer.editor import stile
+from lunivo_writer.ui.document.freie_bilder_bedienung import FreieBilderMixin
 from lunivo_writer.ui.document.zusatz_editor import ZusatzMixin
 
 BLATT_ABSTAND_PX = 32            # grauer Zwischenraum zwischen zwei Blättern (bei 100 % Zoom)
@@ -51,7 +52,7 @@ def _ziel_fragment(html: str, standard: QFont):
     return QTextDocumentFragment(d)
 
 
-class DocumentEditor(ZusatzMixin, QTextEdit):
+class DocumentEditor(FreieBilderMixin, ZusatzMixin, QTextEdit):
     pageInfoChanged = Signal(int, int)       # aktuelle Seite, Seitenzahl
     formatChanged = Signal()                 # Cursor-Format hat sich geändert
     zoomChanged = Signal(float)
@@ -452,6 +453,8 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         return QMouseEvent(e.type(), QPointF(x, y), e.globalPosition(), e.button(), e.buttons(), e.modifiers())
 
     def mousePressEvent(self, e) -> None:
+        if self._frei_maus(e, "press"):
+            return
         super().mousePressEvent(self._maus_abgebildet(e))
 
     def _ziehen_abgebildet(self, e):
@@ -496,6 +499,8 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         return ""
 
     def mouseMoveEvent(self, e) -> None:
+        if self._frei_maus(e, "move"):
+            return
         zone = self._kopffuss_zone(e.position().y())
         if zone and not e.buttons() and self.opt("ui/kopffuss_tipp", True):
             from PySide6.QtWidgets import QToolTip
@@ -552,6 +557,7 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
                     p.save(); p.scale(z, z)
                     seitenschmuck(p, self.page, False, QRectF(0, a / z, vp.width() / z, g["H"] / z), "hinten", False)
                     p.restore()
+        self._frei_zeichnen(p, sicht, True)                                  # frei positionierte Bilder hinter dem Text
         doc = self.document()
         lay = doc.documentLayout()
         ctx = QAbstractTextDocumentLayout.PaintContext()
@@ -584,6 +590,7 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
             ctx.clip = QRectF(-6, lp * g["ch"], g["cb"] + 12, g["ch"])
             lay.draw(p, ctx)
             p.restore()
+        self._frei_zeichnen(p, sicht, False)                                 # … und davor (Foto, Unterschrift)
         p.end()
 
     def set_web(self, an: bool) -> None:
@@ -1705,6 +1712,8 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         return c
 
     def mouseReleaseEvent(self, e) -> None:
+        if self._frei_maus(e, "release"):
+            return
         if e.button() == Qt.MiddleButton and not self.opt("bearbeiten/mittlere_taste", True):
             e.accept()                                  # mittlere Maustaste fügt nichts ein (Optionen ▸ Bearbeiten)
             return
@@ -2093,6 +2102,8 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         self.setTextCursor(end)
 
     def keyPressEvent(self, e) -> None:
+        if self._frei_taste(e):
+            return
         folge = self._folge_vorher(e)
         self._taste(e)
         if folge:

@@ -774,6 +774,21 @@ def _druckmarken(p: QPainter, page: PageSettings, grenzen: bool, zuschnitt: bool
     p.restore()
 
 
+def _inhalt_zeichnen(p: QPainter, d: QTextDocument, rect: QRectF) -> None:
+    """Wie ``QTextDocument.drawContents``, aber mit schwarzer Grundschrift: Text ohne eigene Farbe nähme sonst die Textfarbe des
+    Programms — im dunklen Thema fast weiß, und das Papier (PDF, Druck) bekäme blasse Schrift."""
+    from PySide6.QtGui import QAbstractTextDocumentLayout, QColor, QPalette
+    ctx = QAbstractTextDocumentLayout.PaintContext()
+    pal = QPalette(ctx.palette)
+    pal.setColor(QPalette.Text, QColor("#000000")); pal.setColor(QPalette.WindowText, QColor("#000000"))
+    ctx.palette = pal
+    p.save()
+    p.setClipRect(rect)
+    ctx.clip = rect
+    d.documentLayout().draw(p, ctx)
+    p.restore()
+
+
 def zeichne_seite(p: QPainter, d: QTextDocument, page: PageSettings, n: int, total: int, base: QFont,
                   hintergrund: bool = True, balken: tuple | None = None, nr_offset: int = 0, gesamt: int | None = None) -> None:
     """Eine Seite (Nummer n, 1-basiert) mit Seitenschmuck, Kopf-/Fußzeile und Text; Maßstab 96 dpi, Ursprung links oben."""
@@ -781,6 +796,13 @@ def zeichne_seite(p: QPainter, d: QTextDocument, page: PageSettings, n: int, tot
     ml, mt = mm_to_px(page.margin_left_mm), mm_to_px(page.margin_top_mm)
     ph = mm_to_px(page.height_mm)
     seitenschmuck(p, page, hintergrund, None, "hinten")
+    from lunivo_writer.editor import freie_bilder as FB
+    idx = getattr(d, "_frei_idx", None)
+    if idx is None:
+        idx = d._frei_idx = FB.koerper_index(d, ch, max(1, int(page.spalten)))
+    frei = FB.objekte_der_seite(page, d, n, idx)
+    for a, bild, r in FB.vorne_hinten(frei, True):                  # Bilder hinter dem Text (zum Beispiel ein Band im Briefkopf)
+        FB.bild_zeichnen(p, bild, r, bool(a.get("ellipse")), a.get("rand"))
     kopf, fuss = (page.first_header, page.first_footer) if (n == 1 and page.diff_first) else (page.header, page.footer)
     _draw_hf(p, kopf, QRectF(ml, mm_to_px(8), cw, mm_to_px(10)), n + nr_offset, gesamt or total, base)
     _draw_hf(p, fuss, QRectF(ml, ph - mm_to_px(18), cw, mm_to_px(10)), n + nr_offset, gesamt or total, base)
@@ -803,7 +825,7 @@ def zeichne_seite(p: QPainter, d: QTextDocument, page: PageSettings, n: int, tot
         for y, nd, _nid in info["noten"]:
             p.save()
             p.translate(0, y)
-            nd.drawContents(p, QRectF(0, 0, cw, nd.size().height()))
+            _inhalt_zeichnen(p, nd, QRectF(0, 0, cw, nd.size().height()))
             p.restore()
         p.restore()
     n_sp = max(1, int(page.spalten))
@@ -817,10 +839,12 @@ def zeichne_seite(p: QPainter, d: QTextDocument, page: PageSettings, n: int, tot
         p.translate(ml + j * (cb + luecke), mt)
         p.setClipRect(QRectF(-10, 0, cb + 20, ch))
         p.translate(0, -(lp - 1) * ch)
-        d.drawContents(p, QRectF(0, (lp - 1) * ch, cb, ch))
+        _inhalt_zeichnen(p, d, QRectF(0, (lp - 1) * ch, cb, ch))
         absatz_zusatz_zeichnen(p, d)
         p.restore()
         if j == n_sp - 1:                                    # der Seitenrahmen „im Vordergrund“ liegt über dem Text der Seite
+            for a, bild, r in FB.vorne_hinten(frei, False):          # Bilder vor dem Text (Foto, Unterschrift)
+                FB.bild_zeichnen(p, bild, r, bool(a.get("ellipse")), a.get("rand"))
             seitenschmuck(p, page, False, None, "vorn", False)
         if balken:                                          # Änderungsbalken neben den Zeilen mit verfolgten Änderungen
             seite_b, zeilen = balken
