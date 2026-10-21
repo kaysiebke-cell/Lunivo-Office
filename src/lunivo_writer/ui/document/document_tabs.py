@@ -25,7 +25,7 @@ class DocTabs(QObject):
         self.leiste = QWidget()
         self.leiste.setObjectName("dokLeiste")
         h = QHBoxLayout(self.leiste)
-        h.setContentsMargins(6, 3, 6, 0)
+        h.setContentsMargins(6, 3, 6, 8)
         h.setSpacing(2)
         h.addWidget(self.bar)
         plus = QToolButton()

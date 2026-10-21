@@ -181,6 +181,8 @@ class Backstage(QWidget):
     def _zeigen(self, schl: str):
         if schl == "optionen":
             self._optionen_zeigen()
+        elif schl == "drucken":
+            self._drucken_zeigen()
         self.stapel.setCurrentWidget(self.seiten[schl])
         self.liste.setCurrentItem(self.zeilen[schl])
 
@@ -284,14 +286,29 @@ class Backstage(QWidget):
         v.addStretch(1)
         return sa
 
-    def _drucken(self):
-        sa, v = self._seite("Drucken")
-        self._gruppe(v, "Ausdruck", "Öffnet das Druckfenster mit Vorschau, Seitenbereich und Druckoptionen.")
-        self._knopf(v, "Drucken …", "drucken", "drucken")
-        self._knopf(v, "Druckvorschau", "vorschau", "vorschau")
-        self._knopf(v, "Drucker auswählen …", "druckerWaehlen", "drucker2")
-        v.addStretch(1)
-        return sa
+    def _drucken(self) -> QWidget:
+        """Platzhalter: das Druckfenster samt Vorschau wird erst gebaut, wenn die Seite gezeigt wird."""
+        ph = QWidget()
+        QVBoxLayout(ph).setContentsMargins(0, 0, 0, 0)
+        ph._ansicht = None
+        return ph
+
+    def _drucken_zeigen(self) -> None:
+        ph = self.seiten["drucken"]
+        t = self.w.current_tab()
+        if ph._ansicht is not None or t is None:
+            return
+        v = ph.layout()
+        ph._ansicht = self.w.druck_ansicht(t)
+        v.addWidget(ph._ansicht, 1)
+        fuss = QHBoxLayout(); fuss.setContentsMargins(14, 8, 14, 12)
+        hilfe = QPushButton("Hilfe"); hilfe.clicked.connect(self.w.druck_hilfe)
+        drucken = QPushButton("Drucken"); drucken.setObjectName("optFertig"); drucken.setDefault(True); drucken.setCursor(Qt.PointingHandCursor)
+        drucken.setMinimumSize(100, 34); hilfe.setMinimumHeight(34)
+        drucken.clicked.connect(lambda: (self.schliessen.emit(), self.w.drucke_nach_wahl(t, ph._ansicht.ergebnis())))
+        ph._ansicht.geaendert.connect(lambda: drucken.setEnabled(ph._ansicht.gueltig()))
+        fuss.addWidget(hilfe); fuss.addStretch(1); fuss.addWidget(drucken)
+        v.addLayout(fuss)
 
     def _schuetzen(self):
         sa, v = self._seite("Datei schützen")

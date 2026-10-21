@@ -1124,3 +1124,44 @@ def test_pipette_hat_sicherungen(app, monkeypatch):
     # Wayland: nichts aufnehmen, nichts blockieren
     monkeypatch.setattr(QGuiApplication, "platformName", staticmethod(lambda: "wayland"))
     assert pipette.farbe_vom_bildschirm() is None
+
+
+def test_druck_bereich_und_blattseiten():
+    from lunivo_writer.editor.druck import bereich_lesen, papier_name, seiten_nach_wahl
+    assert bereich_lesen("1-3, 5", 10) == [1, 2, 3, 5]
+    assert bereich_lesen("8-12", 10) == [8, 9, 10] and bereich_lesen("x", 10) is None and bereich_lesen("20", 10) is None
+    assert seiten_nach_wahl({"bereich": "alle", "blattseiten": "vorder"}, 5) == [1, 3, 5]
+    assert seiten_nach_wahl({"bereich": "seiten", "seiten_text": "2-4", "blattseiten": "rueck"}, 5) == [2, 4]
+    assert papier_name(210, 297) == "A4" and papier_name(297, 210) == "A4" and papier_name(100, 100) == "Benutzerdefiniert"
+
+
+def test_druckfenster_wahl_und_pruefung(app):
+    from lunivo_writer.ui.baukasten.druck_dialog import DruckDialog
+    d = DruckDialog(None, 4, (210, 297), False, {"schwarz": True})
+    e = d.ergebnis()
+    assert e["bereich"] == "alle" and e["papier"] == "A4" and e["schwarz"] and e["steuerelemente"] and not e["platzhalter"]
+    d.ansicht.text.setText("9")                                   # Seite außerhalb → Drucken nicht möglich
+    assert not d.ok.isEnabled() and d.ergebnis()["bereich"] == "seiten"
+    d.ansicht.text.setText("2-3"); d.ansicht.pro_blatt.setCurrentIndex(d.ansicht.pro_blatt.findData(2))
+    assert d.ok.isEnabled() and d.ansicht.von.text() == "/ 1"
+    d.ansicht.papier2.setCurrentIndex(d.ansicht.papier2.findData("A5"))   # Reiter „Drucker“ und „Standard“ teilen die Wahl
+    assert d.ergebnis()["papier"] == "A5"
+
+
+def test_drucken_ausgabe_in_pdf(app, tmp_path):
+    from PySide6.QtGui import QTextDocument
+    from PySide6.QtPdf import QPdfDocument
+    from PySide6.QtPrintSupport import QPrinter
+    from lunivo_writer.editor.druck import drucken
+    from lunivo_writer.models.page import PageSettings
+    d = QTextDocument(); d.setPlainText("Zeile\n" * 140)
+    ps = PageSettings()
+
+    def seiten(ein):
+        pr = QPrinter(); pr.setOutputFileName(str(tmp_path / "o.pdf"))
+        drucken(pr, d, ps, {}, dict({"bereich": "alle", "pro_blatt": 1}, **ein))
+        q = QPdfDocument(); q.load(str(tmp_path / "o.pdf")); return q.pageCount()
+    alle = seiten({})
+    assert alle >= 3
+    assert seiten({"bereich": "seiten", "seiten_text": "2"}) == 1
+    assert seiten({"pro_blatt": 4}) == 1

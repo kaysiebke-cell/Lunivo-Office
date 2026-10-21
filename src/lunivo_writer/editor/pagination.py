@@ -330,6 +330,28 @@ def _ohne_hintergruende(d: QTextDocument) -> None:
         b = b.next()
 
 
+def _text_schwarz(d: QTextDocument) -> None:
+    """„Text schwarz drucken“ in der Kopie: jede Schriftfarbe wird schwarz (Verknüpfungen und Platzhalter eingeschlossen)."""
+    from PySide6.QtGui import QBrush, QColor, QTextCursor
+    c = QTextCursor(d)
+    c.select(QTextCursor.Document)
+    f = QTextCharFormat(); f.setForeground(QBrush(QColor("#000000"))); c.mergeCharFormat(f)
+
+
+def _formularteile_ausblenden(d: QTextDocument, steuer: bool, platzhalter: bool) -> None:
+    """Steuerelemente (Felder mit Wert, Schaltflächen, Kästchen) und/oder Platzhaltertexte leerer Felder werden in der Kopie unsichtbar."""
+    from PySide6.QtCore import Qt as _Qt
+    from PySide6.QtGui import QBrush, QColor, QTextCursor
+    from lunivo_writer.editor import formular as FO
+    unsichtbar = QTextCharFormat()
+    unsichtbar.setForeground(QBrush(QColor(0, 0, 0, 0)))
+    unsichtbar.setBackground(QBrush(_Qt.NoBrush))
+    unsichtbar.setUnderlineStyle(QTextCharFormat.NoUnderline)
+    for v, e, m in FO.bereiche(d):
+        if (m.get("leer") and platzhalter) or (not m.get("leer") and steuer):
+            c = QTextCursor(d); c.setPosition(v); c.setPosition(e, QTextCursor.KeepAnchor); c.mergeCharFormat(unsichtbar)
+
+
 def _ohne_hervorhebungen(d: QTextDocument) -> None:
     """Nur die Texthervorhebung (Marker) entfällt; Absatz- und Tabellenhintergründe bleiben."""
     from PySide6.QtCore import Qt as _Qt
@@ -444,6 +466,10 @@ def render(qdoc: QTextDocument, page: PageSettings, device, first: int = 1, last
         luecken_entfernen(d)
     if opt.get("hintergrund") is False:
         _ohne_hintergruende(d)
+    if opt.get("steuerelemente") is False or opt.get("platzhalter") is False:
+        _formularteile_ausblenden(d, opt.get("steuerelemente") is False, opt.get("platzhalter") is False)
+    if opt.get("schwarz"):
+        _text_schwarz(d)
     if opt.get("hervorhebungen") is False:
         _ohne_hervorhebungen(d)
     if opt.get("textmarken"):
@@ -470,6 +496,8 @@ def render(qdoc: QTextDocument, page: PageSettings, device, first: int = 1, last
     if opt.get("balken") in ("links", "rechts", "außen") and d.characterCount() < 400000:
         balken = (opt["balken"], AX.aenderungszeilen(d))
     liste = seiten_liste(total, first, last, opt)
+    if opt.get("nur_seiten") is not None:
+        liste = [n for n in liste if n in opt["nur_seiten"]]
     if opt.get("leere") is False:
         leer = _leere_seiten(d, page, total)
         liste = [n for n in liste if n not in leer] or liste[:1]
@@ -543,6 +571,8 @@ def render_dokument(qdoc: QTextDocument, page: PageSettings, device, first: int 
         if i != start and layout:
             layout(ps)
         sub = dict(opt, painter=painter, abschnitt={"offset": o, "gesamt": gesamt, "weiter": gedruckt > 0})
+        if opt.get("nur_seiten") is not None:
+            sub["nur_seiten"] = {n - o for n in opt["nur_seiten"]}
         render(d, ps, device, lo, hi, dpi, sub)
         for k in sammlung:
             for e in sub.get(k) or []:
