@@ -56,5 +56,12 @@ if [ "${1:-}" = "--test" ]; then
   cd "$HIER" && QT_QPA_PLATFORM=offscreen exec "$VENV/bin/python" -m pytest tests -q
 fi
 
+# Selbstheilung: Ordner ohne Zugriffsrecht (ein versehentliches chmod) machen Python-Importe unmöglich — sie werden wieder geöffnet.
+find "$HIER/src" -type d ! -perm -u+rwx -exec chmod u+rwx {} + 2>/dev/null || true
+# Versehentliche Bildschirmfotos („import os“ im Terminal startet das ImageMagick-Programm import) im Quellordner melden.
+for f in $(find "$HIER/src" -maxdepth 4 -type f ! -name '*.*' -size +1M 2>/dev/null); do
+  echo "Hinweis: $f ist keine Programmdatei (vermutlich ein Bildschirmfoto durch 'import …' im Terminal) – bitte löschen." >&2
+done
+
 cd "$HIER"
 PYTHONPATH="$HIER/src" exec "$VENV/bin/python" -m lunivo_writer "$@"
