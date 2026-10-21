@@ -45,7 +45,7 @@ def _has(fmt, prop) -> bool:
     return fmt.hasProperty(prop)
 
 
-from lunivo_writer.editor.zusatz import B_BILDANKER, B_SPALTE, P_OBJEKT, P_VERSTECKT  # noqa: E402
+from lunivo_writer.editor.zusatz import abstand_davor_px, B_BILDANKER, B_SPALTE, P_OBJEKT, P_VERSTECKT  # noqa: E402
 from lunivo_writer.editor.formular import P_FORM  # noqa: E402
 from lunivo_writer.editor.abschnitte import B_ABSCHNITT  # noqa: E402
 from lunivo_writer.editor import umbruch
@@ -115,6 +115,7 @@ class _Writer:
         s.orientation = WD_ORIENT.LANDSCAPE if p.landscape else WD_ORIENT.PORTRAIT
         s.top_margin, s.bottom_margin = Mm(p.margin_top_mm), Mm(p.margin_bottom_mm)
         s.left_margin, s.right_margin = Mm(p.margin_left_mm), Mm(p.margin_right_mm)
+        s.header_distance, s.footer_distance = Mm(p.kopf_abstand_mm), Mm(p.fuss_abstand_mm)
         if typ:
             from docx.enum.section import WD_SECTION
             s.start_type = {"naechste": WD_SECTION.NEW_PAGE, "fortlaufend": WD_SECTION.CONTINUOUS,
@@ -416,7 +417,7 @@ class _Writer:
             ppr.insert_element_before(bidi, "w:adjustRightInd", "w:snapToGrid", "w:spacing", "w:ind", "w:contextualSpacing",
                                       "w:mirrorIndents", "w:suppressOverlap", "w:jc", "w:textDirection", "w:textAlignment",
                                       "w:textboxTightWrap", "w:outlineLvl", "w:divId", "w:cnfStyle", "w:rPr", "w:sectPr", "w:pPrChange")
-        pf.space_before = Pt(bf.topMargin() * PX_TO_PT)
+        pf.space_before = Pt(abstand_davor_px(bf) * PX_TO_PT)
         pf.space_after = Pt(bf.bottomMargin() * PX_TO_PT)
         lh, lht = bf.lineHeight(), bf.lineHeightType()
         if int(lht) == LH_PROPORTIONAL and lh and lh != 100:
@@ -897,7 +898,7 @@ class _Writer:
             anker = OxmlElement("wp:anchor")
             for k, v in (("distT", "0"), ("distB", "0"), ("distL", "0"), ("distR", "0"), ("simplePos", "0"),
                          ("relativeHeight", "251658240" if a.get("hinter") else "251659264"), ("behindDoc", "1" if a.get("hinter") else "0"),
-                         ("locked", "0"), ("layoutInCell", "1"), ("allowOverlap", "1")):
+                         ("locked", "1" if a.get("verankern") else "0"), ("layoutInCell", "1"), ("allowOverlap", "1" if a.get("ueberlappen", True) else "0")):
                 anker.set(k, v)
             sp = OxmlElement("wp:simplePos"); sp.set("x", "0"); sp.set("y", "0")
 
@@ -923,11 +924,38 @@ class _Writer:
         if a.get("ellipse"):
             for geom in run._r.xpath(".//a:prstGeom"):
                 geom.set("prst", "ellipse")
+        if a.get("dreh"):
+            for xf in run._r.xpath(".//pic:spPr/a:xfrm"):
+                xf.set("rot", str(int(round(float(a["dreh"]) * 60000))))
+        f = a.get("fuell")
+        if f and f.get("art") in ("farbe", "verlauf", "graduell", "muster"):                     # Textur und Bild bleiben im Programm
+            from lunivo_writer.editor import muster as MU
+            for sppr in run._r.xpath(".//pic:spPr"):
+                def farbe(hexwert):
+                    c = OxmlElement("a:srgbClr"); c.set("val", str(hexwert).lstrip("#").upper()); return c
+                if f["art"] == "farbe":
+                    el = OxmlElement("a:solidFill"); el.append(farbe(f["farbe"]))
+                elif f["art"] == "muster":
+                    el = OxmlElement("a:pattFill"); el.set("prst", MU.ooxml_von(f.get("key", "rein")))
+                    fg, bg = OxmlElement("a:fgClr"), OxmlElement("a:bgClr"); fg.append(farbe(f.get("farbe", "#000000"))); bg.append(farbe(f.get("grund") or "#ffffff"))
+                    el.append(fg); el.append(bg)
+                else:                                                                           # Verlauf von hell nach dunkel, von oben nach unten
+                    dunkel = f.get("dunkel", f["farbe"]); hell = f.get("hell", "#ffffff")
+                    el = OxmlElement("a:gradFill"); lst = OxmlElement("a:gsLst")
+                    for pos, c in ((0, hell), (100000, dunkel)):
+                        gs = OxmlElement("a:gs"); gs.set("pos", str(pos)); gs.append(farbe(c)); lst.append(gs)
+                    lin = OxmlElement("a:lin"); lin.set("ang", "5400000"); el.append(lst); el.append(lin)
+                geom = sppr.find(qn("a:prstGeom"))
+                (geom.addnext(el) if geom is not None else sppr.append(el))
         if a.get("rand"):
             for sppr in run._r.xpath(".//pic:spPr"):
                 ln = OxmlElement("a:ln"); ln.set("w", str(int(round(float(a["rand"].get("b", 1)) * EMU_PER_PX))))
                 fill = OxmlElement("a:solidFill"); clr = OxmlElement("a:srgbClr"); clr.set("val", str(a["rand"].get("farbe", "#ffffff")).lstrip("#").upper())
-                fill.append(clr); ln.append(fill); sppr.append(ln)
+                fill.append(clr); ln.append(fill)
+                dash = {"gepunktet": "sysDot", "fein_gestrichelt": "sysDash", "gestrichelt": "dash", "strichpunkt": "dashDot", "strichpunktpunkt": "lgDashDotDot"}.get(a["rand"].get("art", "einfach"))
+                if dash:
+                    pd = OxmlElement("a:prstDash"); pd.set("val", dash); ln.append(pd)
+                sppr.append(ln)
 
     def _verankern(self, run, ausrichtung: str) -> None:
         """Macht aus dem Bild im Text (wp:inline) ein umflossenes Bild (wp:anchor, Umbruch „Quadrat“, links/rechts)."""

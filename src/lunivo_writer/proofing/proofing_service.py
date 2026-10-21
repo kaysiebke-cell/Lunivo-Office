@@ -222,7 +222,7 @@ class WritingAssistant(QObject):
         wort = self._wort_an(pos)
         vorschlaege: list[tuple[str, dict | None]] = []
         for f in gefunden:
-            if f["neu"] and f["art"] != "hinweis":
+            if f["neu"]:                                     # auch bei Hinweisen („Textiler → Textil er“): was die Seitenleiste mit „Ändern“ anbietet
                 vorschlaege.append((f["neu"], f))
         if wort and self.settings.get_bool("schreibhilfe/vorschlaege", True):
             from lunivo_writer.proofing import pruefung

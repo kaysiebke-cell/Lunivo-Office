@@ -54,6 +54,39 @@ def _verletzt(b, naechster, ch: float, w: dict) -> bool:
     return False
 
 
+def _seitenanfang(doc, ch: float) -> bool:
+    """Am Anfang einer Seite, die durch den Textfluss entsteht, entfällt der Abstand vor dem Absatz (wie in Word und LibreOffice). Nach einem
+    Seitenumbruch, den der Benutzer gesetzt hat, und am Dokumentanfang bleibt er. Der eingestellte Wert steht in ``B_VORHER``."""
+    from lunivo_writer.editor.zusatz import B_VORHER
+    geaendert = False
+    for _ in range(MAX_DURCHGAENGE + 2):
+        schritt = False
+        b = doc.firstBlock()
+        while b.isValid():
+            if not b.isVisible() or b.layout() is None:
+                b = b.next(); continue
+            bf = b.blockFormat()
+            hat = bf.hasProperty(B_VORHER)
+            if hat and bf.topMargin() > 0.01:                       # der Benutzer hat den Abstand inzwischen selbst geändert: vergessen
+                bf.clearProperty(B_VORHER); QTextCursor(b).setBlockFormat(bf); hat = False; geaendert = schritt = True
+                bf = b.blockFormat()
+            soll = hat and bf.doubleProperty(B_VORHER) or bf.topMargin()
+            z = _zeilen(b, ch)
+            if z and soll > 0.01:
+                seite, y = z[0][0], z[0][1]
+                am_anfang = seite >= 1 and (y % ch) <= (bf.topMargin() + 1.0) and not ist_manuell(bf)
+                if am_anfang and not hat:
+                    bf.setProperty(B_VORHER, float(bf.topMargin())); bf.setTopMargin(0.0)
+                    QTextCursor(b).setBlockFormat(bf); geaendert = schritt = True
+                elif hat and not (seite >= 1 and (y % ch) <= 1.0 and not ist_manuell(bf)):
+                    bf.setTopMargin(float(bf.doubleProperty(B_VORHER))); bf.clearProperty(B_VORHER)
+                    QTextCursor(b).setBlockFormat(bf); geaendert = schritt = True
+            b = b.next()
+        if not schritt:
+            break
+    return geaendert
+
+
 def anwenden(doc, ch: float) -> bool:
     """Umbruchregeln auf das Dokument anwenden (``ch`` = Höhe der Textfläche einer Seite in Bildpunkten). → True, wenn sich etwas geändert hat."""
     from lunivo_writer.editor import absatzopt
@@ -90,6 +123,7 @@ def anwenden(doc, ch: float) -> bool:
                 bf = b.blockFormat(); bf.setPageBreakPolicy(QTextBlockFormat.PageBreak_AlwaysBefore); bf.setProperty(B_AUTOUMBRUCH, 1)
                 QTextCursor(b).setBlockFormat(bf)
             aenderung = True
+        aenderung |= _seitenanfang(doc, ch)
     finally:
         c.endEditBlock()
         doc.setModified(war_geaendert)

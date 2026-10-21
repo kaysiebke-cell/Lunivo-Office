@@ -192,24 +192,78 @@ def rechteck(a: dict, blatt_b: float, blatt_h: float, ml: float, mt: float, inha
     return QRectF(x, y, b, h)
 
 
-def bild_zeichnen(p: QPainter, bild: QImage, r: QRectF, ellipse: bool = False, rand: dict | None = None) -> None:
-    """Bild in ``r``; ``ellipse``: in einer Ellipse beschnitten; ``rand``: {"b": px, "farbe": "#rrggbb"} eine Linie um die Form."""
+def fuell_pinsel(fuell: dict | None, r: QRectF, fuellbild: QImage | None = None):
+    """Der Pinsel für die Füllung eines Bildes (hinter durchsichtigen Stellen): ``farbe``, ``verlauf``, ``graduell`` (zwei Farben), ``muster``,
+    ``textur`` oder ``bild``. ``None``: keine Füllung."""
+    from PySide6.QtCore import Qt
+    from PySide6.QtGui import QBrush, QColor, QLinearGradient
+    if not fuell:
+        return None
+    art = fuell.get("art", "farbe")
+    if art == "farbe":
+        return QBrush(QColor(fuell["farbe"]))
+    if art in ("verlauf", "graduell"):
+        dunkel = QColor(fuell["farbe"]) if art == "verlauf" else QColor(fuell.get("dunkel", fuell.get("farbe")))
+        hell = QColor(fuell["farbe"]).lighter(160) if art == "verlauf" else QColor(fuell.get("hell", "#ffffff"))
+        g = QLinearGradient(r.topLeft(), r.bottomLeft()); g.setColorAt(0, hell); g.setColorAt(1, dunkel)
+        return QBrush(g)
+    if art == "muster":
+        from lunivo_writer.editor import muster as M
+        return M.pinsel(fuell.get("key", "rein"), fuell.get("farbe", "#000000"), fuell.get("grund") or "#ffffff")
+    if art == "textur":
+        from lunivo_writer.ui.baukasten.objekt_menues import _textur
+        return QBrush(_textur(fuell.get("key", "papier"), 64))
+    if art == "bild" and fuellbild is not None and not fuellbild.isNull():
+        return QBrush(fuellbild.scaled(int(max(1, r.width())), int(max(1, r.height()))))
+    return QBrush(Qt.NoBrush)
+
+
+def _stift(rand: dict):
+    """Die Kontur eines Bildes als Stift (Stärke in Bildpunkten, Art wie bei den Linien)."""
+    from PySide6.QtCore import Qt
+    from PySide6.QtGui import QColor, QPen
+    from lunivo_writer.editor.linie import STILE
+    pen = QPen(QColor(rand.get("farbe", "#ffffff")), float(rand.get("b", 1.0)))
+    strich = STILE.get(rand.get("art", "einfach"), STILE["einfach"])[1]
+    if isinstance(strich, tuple):
+        pen.setDashPattern(list(strich))
+    else:
+        pen.setStyle(strich)
+    return pen
+
+
+def bild_zeichnen(p: QPainter, bild: QImage, r: QRectF, ellipse: bool = False, rand: dict | None = None, dreh: float = 0.0,
+                  fuell: dict | None = None, fuellbild: QImage | None = None, fx: dict | None = None) -> None:
+    """Bild in ``r``; ``ellipse``: in einer Ellipse beschnitten; ``rand``: {"b": px, "farbe": "#rrggbb", "art": Linienart} eine Linie um die Form;
+    ``dreh``: Grad um die Mitte; ``fuell``: Füllung hinter dem Bild (siehe ``fuell_pinsel``)."""
     if bild is None or bild.isNull() or r.width() <= 0 or r.height() <= 0:
         return
+    if dreh:                                                       # um die Mitte gedreht
+        p.save(); p.translate(r.center()); p.rotate(dreh); p.translate(-r.center())
+        bild_zeichnen(p, bild, r, ellipse, rand, 0.0, fuell, fuellbild, fx)
+        p.restore()
+        return
+    if fx:                                                         # Leuchten, Schatten, Reflektion hinter dem Bild; Weiche Kanten am Bild selbst
+        from lunivo_writer.editor import bildeffekte as E
+        E.unter_zeichnen(p, bild, r, ellipse, fx)
+        if fx.get("weich"):
+            bild = E.weiche_kanten(bild, r, ellipse, float(fx["weich"].get("radius", 6.0)))
     p.save()
     p.setRenderHint(QPainter.SmoothPixmapTransform)
     p.setRenderHint(QPainter.Antialiasing)
     if ellipse:
         pfad = QPainterPath(); pfad.addEllipse(r)
         p.setClipPath(pfad)
+    pinsel = fuell_pinsel(fuell, r, fuellbild)
+    if pinsel is not None:
+        p.fillRect(r, pinsel)
     p.drawImage(r, bild)
     p.restore()
     if rand:
         from PySide6.QtCore import Qt
-        from PySide6.QtGui import QColor, QPen
         p.save()
         p.setRenderHint(QPainter.Antialiasing)
-        p.setPen(QPen(QColor(rand.get("farbe", "#ffffff")), float(rand.get("b", 1.0))))
+        p.setPen(_stift(rand))
         p.setBrush(Qt.NoBrush)
         k = float(rand.get("b", 1.0)) / 2
         (p.drawEllipse if ellipse else p.drawRect)(r.adjusted(k, k, -k, -k))
@@ -259,7 +313,9 @@ def objekte_der_seite(page, d: QTextDocument, n: int, index: dict) -> list[tuple
         bild = bild_im_dokument(d, a.get("n", ""))
         if bild is not None:
             x = ml + spalte * (cb + luecke)
-            a = dict(a, _ay=mt + y, _sx=x)                         # Absatz-Oberkante und Spaltenrand merken (zum Verschieben nötig)
+            a = dict(a, _ay=mt + y, _sx=x)
+            if (a.get("fuell") or {}).get("art") == "bild":
+                a["_fuellbild"] = bild_im_dokument(d, a["fuell"].get("n", ""))                         # Absatz-Oberkante und Spaltenrand merken (zum Verschieben nötig)
             liste.append((a, bild, rechteck(a, bw, bh, ml, mt, cw, ch, mt + y, x, n)))
     return liste
 

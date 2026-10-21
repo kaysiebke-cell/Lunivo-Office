@@ -59,6 +59,8 @@ class PageSettings:
     silben_sprache: str = "de_DE"
     kopf_verknuepft: bool = False            # Abschnitt ab dem zweiten: Kopfzeile wie im vorigen Abschnitt
     bilder: list = field(default_factory=list)   # frei positionierte Bilder in Kopf-/Fußzeilen (siehe editor/freie_bilder.py)
+    kopf_abstand_mm: float = 12.7            # Abstand der Kopfzeile vom oberen Blattrand (DOCX w:header)
+    fuss_abstand_mm: float = 12.7            # Abstand der Fußzeile vom unteren Blattrand (DOCX w:footer)
     fuss_verknuepft: bool = False
 
     @property
@@ -89,6 +91,17 @@ class PageSettings:
     @property
     def content_height_px(self) -> float:
         return mm_to_px(self.height_mm - self.margin_top_mm - self.margin_bottom_mm)
+
+    ZEILE_KOPF_PX = 16.0                       # Höhe einer Zeile in Kopf-/Fußzeile (Schrift 11 pt mit Zeilenabstand)
+
+    def erste_seite_versatz_px(self) -> float:
+        """Wie weit der Text der ersten Seite nach unten rückt, weil die Kopfzeile länger ist als der obere Rand: Der Text beginnt erst unter der
+        Kopfzeile (so machen es Word und andere). Gilt für die Kopfzeile der ersten Seite, bei „Erste Seite anders“ für die eigene."""
+        hf = self.first_header if self.diff_first else self.header
+        if hf.is_empty():
+            return 0.0
+        unten = mm_to_px(self.kopf_abstand_mm) + len(hf.text.split("\n")) * self.ZEILE_KOPF_PX
+        return max(0.0, unten - mm_to_px(self.margin_top_mm))
 
     def copy(self) -> "PageSettings":
         import dataclasses

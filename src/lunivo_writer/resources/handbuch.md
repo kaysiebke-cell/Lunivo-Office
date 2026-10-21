@@ -136,17 +136,35 @@ Unter `Einfügen`: Seiten, Tabellen, Illustrationen (Bilder, Formen, Diagramme),
 
 Im Register `Überprüfen`, Gruppe **Änderungen**: zeichnet auf, was geändert wurde, und zeigt es farbig. Einzelne Änderungen lassen sich annehmen oder ablehnen — nützlich, wenn jemand anders gegenliest.
 
-## Die rechte Maustaste
+## Die rechte Maustaste und die Mini-Leiste
 
-Für die meisten Befehle ist sie der kürzeste Weg: Wer sie drückt, hat den Zeiger schon dort, wo er etwas ändern will. Es gehen **zwei Kästen** auf: oben eine kleine Formatleiste (Schrift, Größe, fett, kursiv, Farbe, Ausrichtung), darunter das Menü. Es zeigt nur, was an dieser Stelle etwas bewirkt:
+Für die meisten Befehle ist die rechte Maustaste der kürzeste Weg: Wer sie drückt, hat den Zeiger schon dort, wo er etwas ändern will. Es gehen zwei Dinge auf: oben die **Mini-Leiste**, darunter das **Menü**.
+
+### Die Mini-Leiste
+
+Zwei Zeilen mit dem, was man beim Schreiben ständig anfasst. Sie erscheint auch von selbst über einer Auswahl (`Optionen → Ansicht` schaltet beides ein oder aus).
 
 |  |  |
 |---|---|
-| auf einem unterschlängelten Wort | Der Vorschlag steht oben. Dazu **Wort in Ruhe lassen** und **Übergehen**. |
-| auf einem Hyperlink | Die Adresse, dazu bearbeiten, Adresse kopieren, entfernen. |
-| in einer Tabelle | Zellen einfügen, Zellen löschen und Tabelleneigenschaften. |
-| auf einem Bild, einer Zeichnung oder einem Diagramm | Was zu dem Ding gehört: Größe, Füllung, Kontur, Anordnen. |
-| immer | Zwischenablage, **Absatz**, **Aufzählung und Nummerierung**, **Formatvorlage**, Hyperlink, Kommentar. |
+| **Obere Zeile** | **Kopieren**, **Einfügen** (der Pfeil bietet „Einfügen“ und „Einfügen ohne Formatierung“), Schriftart, Schriftgröße, **A⁺** und **A⁻** (größer und kleiner). |
+| **Untere Zeile** | **Ausschneiden**, **Format übertragen**, **F**, **K**, **U**, **Hervorheben** und **Schriftfarbe** (ein Klick auf das Symbol nimmt die zuletzt gewählte Farbe, der Pfeil öffnet die Palette), **Ausrichtung** und **Zeilenabstand**. |
+
+### Das Menü
+
+Auf einem Wort, das die Schreibhilfe markiert hat, stehen ganz oben die **Vorschläge** (fett, ein Klick ersetzt das Wort), darunter **Einmal ignorieren**, **Alle ignorieren** und **Zum Wörterbuch hinzufügen**. Das gilt auch für die Hinweise der Schreibhilfe, zum Beispiel „Zwei Wörter ohne Lücke“.
+
+|  |  |
+|---|---|
+| **Kopieren**, **Ausschneiden**, **Einfügen** | Die Zwischenablage. Grau, wo es gerade nichts zu tun gibt (ohne Auswahl, bei leerer Zwischenablage). |
+| **Einfügen ohne Formatierung**, **Inhalte einfügen …** (`Strg+Alt+V`) | Nur Text einfügen; oder aus den Formaten der Zwischenablage wählen: mit Formatierung, unformatierter Text oder Bild. |
+| **Format übertragen** | Das Aussehen der Auswahl auf anderen Text übernehmen. |
+| **Schriftart …** (`Strg+D`), **Absatz …**, **Aufzählungszeichen und Nummerierung …** | Die Fenster aus dem Band. |
+| **Hyperlink …** (`Strg+K`), **Neuer Kommentar** | Link und Kommentar an der Auswahl. |
+| **Alles auswählen** | Der ganze Text. |
+
+Bei einem Bild kommen die Punkte zum Umbruch hinzu (mit Text in der Zeile, links, rechts, oben und unten), bei markiertem Text **Ausgeblendeter Text** und **KI: Text in Bild**.
+
+Ein Rechtsklick auf einen **Knopf** in der Leiste oder im Band macht etwas anderes auf: Dort lässt sich das Zeichen austauschen.
 
 ## Formatvorlagen
 
@@ -345,6 +363,8 @@ Lunivo Writer ist ein eigenes Programm mit eigenem Code, gebaut für Menschen, d
 | `Strg+Umschalt+S` | Speichern unter |
 | `Strg+P` | Drucken |
 | `Strg+Z` / `Strg+Y` | Rückgängig / Wiederholen |
+| `Strg+D` | Fenster Schriftart |
+| `Strg+Alt+V` | Inhalte einfügen |
 | `Strg+B` / `I` / `U` | Fett / Kursiv / Unterstrichen |
 | `Strg+Enter` | Seitenumbruch |
 | `Strg+F` / `Strg+H` | Suchen / Ersetzen |

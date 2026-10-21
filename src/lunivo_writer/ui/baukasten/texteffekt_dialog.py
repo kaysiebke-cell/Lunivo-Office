@@ -74,6 +74,7 @@ def _linien_icon(art: str, form: str, groesse: QSize = QSize(86, 14)) -> QIcon:
 
 
 class TexteffektPanel(QWidget):
+    TITEL = ("TEXTFÜLLUNG UND -KONTUR", "EFFEKTE")                  # die Reiter; ein Objekt-Panel (objektformat_panel.py) setzt eigene
     """Der Inhalt von „Texteffekte formatieren“ als eigenes Widget: Reiter, Abschnitte, Regler. Es steckt im Fenster ``TexteffektDialog`` und in der rechten
     Seitenleiste. ``geaendert(werte)`` kommt bei jeder Änderung durch den Benutzer (nicht bei ``setze``), damit die Seitenleiste sofort anwenden kann."""
     geaendert = Signal(dict)
@@ -85,8 +86,8 @@ class TexteffektPanel(QWidget):
         self._stumm = True
         v = QVBoxLayout(self); v.setContentsMargins(0, 0, 0, 0)
         self.reiter = IconReiter(); v.addWidget(self.reiter, 1)
-        self.reiter.addTab(self._scroll(self._seite_fuellung(w)), self._tab_icon("A", True), "TEXTFÜLLUNG UND -KONTUR")
-        self.reiter.addTab(self._scroll(self._seite_effekte(w)), self._tab_icon("A", False), "EFFEKTE")
+        self.reiter.addTab(self._scroll(self._seite_fuellung(w)), self._tab_icon("A", True), self.TITEL[0])
+        self.reiter.addTab(self._scroll(self._seite_effekte(w)), self._tab_icon("A", False), self.TITEL[1])
         self.setze(w)
         self._stumm = False
 
@@ -351,6 +352,11 @@ class TexteffektPanel(QWidget):
 
     def _setze(self, w: dict) -> None:
         self._fx = {k: dict(w[k]) for k in ("verlauf", "kontur_verlauf", "schatten", "reflektion", "leuchten", "d3") if w.get(k)}
+        self._setze_fuellung(w)
+        self._setze_effekte(w)
+        self._neu()
+
+    def _setze_fuellung(self, w: dict) -> None:
         for r in (self.r_keine, self.r_farbe, self.r_verlauf, self.k_keine, self.k_linie, self.k_verlauf):
             r.blockSignals(True)
         verl = "verlauf" in self._fx or w["fuell"] == "verlauf"
@@ -366,6 +372,8 @@ class TexteffektPanel(QWidget):
         self.kv1.setFarbe(kvv["farbe1"]); self.kv2.setFarbe(kvv["farbe2"]); self.kv_winkel.setValue(kvv["winkel"])
         self.k_farbe.setFarbe(w["kontur_farbe"]); self.k_breite.setValue(w["kontur_breite"])
         self.k_art.setCurrentIndex(max(0, self.k_art.findData(w["kontur_art"]))); self.k_form.setCurrentIndex(max(0, self.k_form.findData(w.get("kontur_form", "einfach"))))
+
+    def _setze_effekte(self, w: dict) -> None:
         for n in ("schatten", "reflektion", "leuchten"):
             self._teil_in_regler(n)
         d = self._fx.get("d3", {})
@@ -374,14 +382,20 @@ class TexteffektPanel(QWidget):
         self._setze_material(d.get("material", "matt"), d.get("beleuchtung", "neutral"))
         for n, k in (("schatten", self.schatten_knopf), ("reflektion", self.refl_knopf), ("leuchten", self.leucht_knopf)):
             k.setText("Vorhanden" if n in self._fx else "Keine")
-        self._neu()
 
     def werte(self) -> dict:
+        w, fx = self._werte_fuellung()
+        fx.update(self._werte_effekte())
+        w.update(fx)
+        return w
+
+    def _werte_fuellung(self) -> tuple[dict, dict]:
+        """(Werte der Füllung und Kontur, zusätzliche Schlüssel dazu: Verlauf, Konturverlauf, Konturform)."""
         verl = self.r_verlauf.isChecked()
         w = {"fuell": "keine" if self.r_keine.isChecked() else "farbe", "farbe": self.farbe.farbe, "transparenz": int(self.trans.value()),
              "kontur": not self.k_keine.isChecked(), "kontur_farbe": self.k_farbe.farbe or "#000000", "kontur_breite": self.k_breite.value(),
              "kontur_art": self.k_art.currentData()}
-        fx = {k: v for k, v in self._fx.items() if k in ("schatten", "reflektion", "leuchten")}
+        fx = {}
         if verl:
             w["fuell"] = "verlauf"
             fx["verlauf"] = {"farbe1": self.v1.farbe or "#000000", "farbe2": self.v2.farbe or "#ffffff", "winkel": self.v_winkel.value()}
@@ -390,6 +404,11 @@ class TexteffektPanel(QWidget):
         form = self.k_form.currentData()
         if form != "einfach" and w["kontur"]:
             fx["kontur_form"] = form
+        return w, fx
+
+    def _werte_effekte(self) -> dict:
+        """Schatten, Reflektion, Leuchten und 3D mit den Werten der Regler (gemeinsam für Text und Objekte)."""
+        fx = {k: v for k, v in self._fx.items() if k in ("schatten", "reflektion", "leuchten")}
         if "schatten" in fx:
             fx["schatten"] = {**fx["schatten"], "farbe": self.s_farbe.farbe or "#000000", "transparenz": self.s_trans.value(), "groesse": self.s_gross.value(),
                               "weich": self.s_weich.value(), "abstand": self.s_abst.value(), "winkel": self.s_winkel.value()}
@@ -400,8 +419,7 @@ class TexteffektPanel(QWidget):
         if self.d_tiefe.value() > 0 or self.d_kontur.value() > 0:
             fx["d3"] = {"tiefe": self.d_tiefe.value(), "tiefe_farbe": self.d_tiefe_f.farbe or "#868e96", "kontur": self.d_kontur.value(),
                         "kontur_farbe": self.d_kontur_f.farbe or "#343a40", "material": self._material, "beleuchtung": self._licht, "winkel": self.d_winkel.value()}
-        w.update(fx)
-        return w
+        return fx
 
     def _einschalten(self, name: str) -> None:
         """Ein Regler eines Effekts wurde bewegt: der Effekt ist damit an (mit den Werten, die die Regler zeigen)."""
@@ -416,8 +434,11 @@ class TexteffektPanel(QWidget):
         self.linie_knopf.setText("Keine" if self.k_keine.isChecked() else T.KONTUR_ARTEN[self.k_art.currentData()][0])
 
     def _melden(self) -> None:
-        if not self._stumm:
-            self.geaendert.emit(self.werte())
+        try:
+            if not self._stumm:
+                self.geaendert.emit(self.werte())
+        except RuntimeError:                       # das Fenster wurde schon abgebaut, bevor die verzögerte Meldung kam
+            pass
 
     def _male(self, p: QPainter, rect) -> None:
         w = self.werte()

@@ -101,7 +101,8 @@ class FarbPalette(QMenu):
     verlauf_gewaehlt = Signal(object)  # QColor: die Farbe der gewählten „Graduellen Füllung“ (nur mit ``verlauf=True``)
 
     def __init__(self, parent=None, *, keine_text: str | None = "Keine Farbe", start=None, titel: str = "Farbe",
-                 zuletzt: bool = True, weitere: bool = True, verlauf: bool = False):
+                 zuletzt: bool = True, weitere: bool = True, verlauf: bool = False, verlauf_titel: str = "Graduelle Füllung",
+                 weitere_text: str = "Weitere Farben …", automatisch: str | None = None):
         super().__init__(parent)
         self._start, self._titel = start, titel
         wid = QWidget()
@@ -116,7 +117,7 @@ class FarbPalette(QMenu):
         v.addWidget(self._titel_zeile("Standardfarben"))
         v.addLayout(self._raster([list(F.STANDARD_FARBEN)]))
         if verlauf: # „Graduelle Füllung“ wie in der Vorlage: dieselben Farben als Verläufe
-            v.addWidget(self._titel_zeile("Graduelle Füllung"))
+            v.addWidget(self._titel_zeile(verlauf_titel))
             g = QGridLayout(); g.setSpacing(2); g.setContentsMargins(0, 0, 0, 0); g.setAlignment(Qt.AlignLeft | Qt.AlignTop)
             for i, farbe in enumerate(F.STANDARD_FARBEN):
                 g.addWidget(_VerlaufKachel(self, farbe), 0, i)
@@ -125,8 +126,12 @@ class FarbPalette(QMenu):
         if letzte:
             v.addWidget(self._titel_zeile("Zuletzt benutzt"))
             v.addLayout(self._raster([letzte]))
+        if automatisch:                                    # „Automatisch“ mit schwarzem Feld (Vorlage: Füllung)
+            auto = QPushButton(automatisch); auto.setFlat(True); auto.setStyleSheet("text-align: left; padding: 4px 6px;")
+            pm = QPixmap(14, 14); pm.fill(QColor("black")); auto.setIcon(QIcon(pm)); auto.clicked.connect(lambda: self.waehle(QColor("#000000")))
+            v.addWidget(auto)
         if weitere:
-            mehr = QPushButton("Weitere Farben …"); mehr.setFlat(True); mehr.setStyleSheet("text-align: left; padding: 4px 6px;")
+            mehr = QPushButton(weitere_text); mehr.setFlat(True); mehr.setStyleSheet("text-align: left; padding: 4px 6px;")
             mehr.clicked.connect(self._weitere)
             v.addWidget(mehr)
             from lunivo_writer.ui.baukasten import pipette as _pip

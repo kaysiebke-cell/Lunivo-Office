@@ -1,6 +1,7 @@
 """Hauptfenster: Menüleiste, Schnellzugriff, Ribbon, Dokumentreiter, Statusleiste."""
 from __future__ import annotations
 
+from lunivo_writer.editor.zusatz import abstand_davor_px
 import os
 from datetime import datetime
 
@@ -350,6 +351,7 @@ class MainWindow(QMainWindow):
         e = tab.editor
         e.zoomChanged.connect(lambda f, ed=e: ed is self.current_editor() and self._zoom_anzeigen(f))
         e.formatChanged.connect(self._sync_later)
+        e.freiAuswahlGeaendert.connect(self._sync_later)
         e.formatChanged.connect(self._effekt_sync)
         e.pageInfoChanged.connect(lambda *_: self._sync_status())
         e.document().modificationChanged.connect(lambda _m: self._update_tab_titles())
@@ -382,6 +384,8 @@ class MainWindow(QMainWindow):
         self.band.kontext("bild", bf is not None and art not in ("form", "gruppe", "smartart"))
         self.band.kontext("form", art in ("form", "gruppe"))
         self.band.kontext("smartart", art == "smartart")
+        self.band.kontext("zeichen", bool(e) and getattr(e, "_frei_sel", None) is not None)
+        self._zeichen_masse(e)
         f = self.band.felder
         if e is None or not f:
             return
@@ -805,6 +809,7 @@ class MainWindow(QMainWindow):
         tabelle = [("F3", b.schnellbaustein), ("F4", b.vorlesen), ("F5", self.toggle_sidebar), ("F6", b.welcheHilfe),
                    ("F7", lambda: self.assistant.pruefen(True)), ("F8", b.kiKorrektur),
                    ("Ctrl++", b.groesser), ("Ctrl+-", b.kleiner), ("Ctrl+0", b.normal),
+                   ("Ctrl+D", b.schriftartMehr), ("Ctrl+Alt+V", b.inhalteEinfuegen),
                    ("Ctrl+Shift+H", b.ausblenden), ("Ctrl+Tab", lambda: self._tab_weiter(1)), ("Ctrl+Shift+Tab", lambda: self._tab_weiter(-1))]
         self._kuerzel = []
         for taste, fn in tabelle:
@@ -982,7 +987,7 @@ class MainWindow(QMainWindow):
         d = AbsatzDialog(self, {
             "ausr": "mitte" if al & Qt.AlignHCenter else "rechts" if al & Qt.AlignRight else "block" if al & Qt.AlignJustify else "links",
             "rtl": rtl, "einzug": px_to_mm(bf.leftMargin()), "rechts": px_to_mm(bf.rightMargin()),
-            "erste": px_to_mm(bf.textIndent()), "vor": bf.topMargin() * 0.75, "nach": bf.bottomMargin() * 0.75, "zeilen": lh,
+            "erste": px_to_mm(bf.textIndent()), "vor": abstand_davor_px(bf) * 0.75, "nach": bf.bottomMargin() * 0.75, "zeilen": lh,
             "zeilen_art": lart, "zeilen_pt": lpt, "ebene": bf.headingLevel(), "opt": absatzopt.lesen(bf),
             "umbruch": seitenfluss.ist_manuell(bf), "tabs": aus_block(bf)})
         from lunivo_writer.ui.baukasten.fenster_stapel import ausfuehren
@@ -1409,6 +1414,57 @@ class MainWindow(QMainWindow):
             if e is not None:
                 e._merge(texteffekt.zu_format(w))
         self.sidebar.zeige_texteffekte(texteffekt.aus_format(self.befehle._fmt()), anwenden)
+
+    def objektformat_seitenleiste(self, reiter: int = 0, fuellung: str | None = None) -> None:
+        """Den Bereich „Formatierung“ für das markierte Bild in der Seitenleiste öffnen (Füllung und Linie, Effekte); Änderungen gelten sofort."""
+        from PySide6.QtGui import QImage
+        from PySide6.QtWidgets import QFileDialog
+        from lunivo_writer.editor import bildlayout as BL
+        e = self.current_editor()
+        z = BL.ziel(e) if e is not None else None
+        w = BL.format_lesen(e, z) if z is not None else None
+        if w is None:
+            return
+        if self.sidebar.isHidden():
+            self.toggle_sidebar()
+
+        def anwenden(neu: dict):
+            ed = self.current_editor()
+            if ed is not None:
+                BL.format_aus_panel(ed, BL.ziel(ed), neu)
+
+        def bild():
+            ed = self.current_editor()
+            pfad, _ = QFileDialog.getOpenFileName(self, "Bild als Füllung", "", "Bilder (*.png *.jpg *.jpeg *.bmp *.gif)")
+            if ed is not None and pfad:
+                BL.fuellbild_setzen(ed, BL.ziel(ed), QImage(pfad))
+        self.sidebar.zeige_objektformat(w, anwenden, reiter, bild)
+        if fuellung:
+            self.sidebar.objekt_panel.fuellung_waehlen(fuellung)
+
+    def _zeichen_masse(self, e) -> None:
+        """Höhe und Breite im Reiter Zeichentools mit dem markierten Bild abgleichen."""
+        f = self.band.felder
+        if e is None or "bild_breite" not in f or getattr(e, "_frei_sel", None) is None:
+            return
+        from lunivo_writer.editor import bildlayout as BL
+        m = BL.masse_lesen(e, BL.ziel(e))
+        if m is None:
+            return
+        for schl, wert in (("bild_breite", m[0]), ("bild_hoehe", m[1])):
+            sp = f[schl]
+            if not sp.hasFocus() and abs(sp.value() - wert) > 0.05:
+                sp.blockSignals(True); sp.setValue(wert); sp.blockSignals(False)
+        f["bild_verhaeltnis"][0] = m[0] / max(0.1, m[1])
+
+    def objektformat_folgen(self) -> None:
+        """Wählt der Benutzer ein anderes Bild, zeigt der offene Bereich dessen Werte."""
+        e = self.current_editor()
+        if self.sidebar.objektformat_sichtbar() and e is not None:
+            from lunivo_writer.editor import bildlayout as BL
+            w = BL.format_lesen(e, BL.ziel(e))
+            if w is not None:
+                self.sidebar.aktualisiere_objektformat(w)
 
     def _effekt_sync(self):
         """Folgt die Markierung einer anderen Formatierung, zeigt der offene Bereich „Texteffekte“ deren Werte."""

@@ -391,9 +391,49 @@ class RegisterBand(QWidget):
                 sps["oben"].value(), sps["unten"].value(), sps["links"].value(), sps["rechts"].value()))
         inhalt.addWidget(host, 0, Qt.AlignTop)
 
+    def _knoepfe_masse(self, g: dict, inhalt: QHBoxLayout):
+        """Höhe und Breite des markierten Bildes (Zeichentools); „Seitenverhältnis sperren“ hält das Verhältnis beim Ändern."""
+        from lunivo_writer.ui.dialogs.dokument_dialoge import _MassSpin
+        from PySide6.QtWidgets import QCheckBox
+        host = QWidget()
+        gitter = QGridLayout(host)
+        gitter.setContentsMargins(0, 0, 0, 0); gitter.setHorizontalSpacing(4); gitter.setVerticalSpacing(2)
+        spins = {}
+        for zeile, schl, name in ((0, "hoehe", "Höhe:"), (1, "breite", "Breite:")):
+            sp = _MassSpin(); sp.setRange(1.0, 2000.0); sp.setDecimals(1); sp.setSingleStep(1.0); sp.setKeyboardTracking(False); sp.setFixedWidth(90)
+            gitter.addWidget(QLabel(name), zeile, 0); gitter.addWidget(sp, zeile, 1)
+            spins[schl] = sp
+            self.felder["bild_" + schl] = sp
+            self.knoepfe.append((sp, None, True))
+        sperre = QCheckBox("Seitenverhältnis sperren"); sperre.setChecked(True)
+        gitter.addWidget(sperre, 2, 0, 1, 2)
+        self.felder["bild_sperre"] = sperre
+        verhaeltnis = [1.0]
+
+        def geaendert(wer: str):
+            b, h = spins["breite"].value(), spins["hoehe"].value()
+            if sperre.isChecked() and verhaeltnis[0] > 0:
+                for sp in spins.values():
+                    sp.blockSignals(True)
+                if wer == "breite":
+                    h = b / verhaeltnis[0]; spins["hoehe"].setValue(h)
+                else:
+                    b = h * verhaeltnis[0]; spins["breite"].setValue(b)
+                for sp in spins.values():
+                    sp.blockSignals(False)
+            else:
+                verhaeltnis[0] = b / max(0.1, h)
+            self.b.zeichenMasse(b, h)
+        spins["breite"].valueChanged.connect(lambda _v: geaendert("breite"))
+        spins["hoehe"].valueChanged.connect(lambda _v: geaendert("hoehe"))
+        self.felder["bild_verhaeltnis"] = verhaeltnis
+        inhalt.addWidget(host, 0, Qt.AlignTop)
+
     def _knoepfe(self, g: dict, inhalt: QHBoxLayout):
         if g.get("felder") == "raender":
             return self._knoepfe_raender(g, inhalt)
+        if g.get("felder") == "masse":
+            return self._knoepfe_masse(g, inhalt)
         if g.get("felder") == "zeile":
             return self._knoepfe_schrift(g, inhalt)
         if g.get("reihenfolge"):

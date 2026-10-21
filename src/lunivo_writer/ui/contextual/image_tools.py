@@ -26,6 +26,22 @@ FORMTOOLS = {"name": "Form- und WordArt-Tools", "kontext": "form", "gruppen": [
                                      _k("textflussumbruch", "Textumbruch / Position", "anordnen", text=True)]}]}
 
 
+ZEICHENTOOLS = {"name": "Zeichentools", "kontext": "zeichen", "gruppen": [
+    {"name": "Formstile", "knoepfe": [_k("stift", "Formstile", klappe="zeichenFormstile", gross=True),
+                                      _k("toenung", "Formfüllung", klappe="zeichenFuellung", text=True),
+                                      _k("linie", "Gliederung", klappe="zeichenGliederung", text=True),
+                                      _k("texteffekt", "Formeffekte", "zeichenEffekte", text=True)]},
+    {"name": "Format", "knoepfe": [_k("pinselchen", "Format übertragen", "zeichenFormatUebertragen", True)]},
+    {"name": "Anordnen", "knoepfe": [_k("ausrichten", "Ausrichten", klappe="zeichenAusrichten", text=True),
+                                     _k("gruppieren", "Gruppieren", "gruppieren", text=True),
+                                     _k("objektdrehen", "Drehen", klappe="zeichenDrehen", text=True),
+                                     _k("ebeneHoch", "Eine Ebene nach vorne", "zeichenVorn", text=True),
+                                     _k("ebeneTief", "Eine Ebene nach hinten", "zeichenHinten", text=True),
+                                     _k("textflussumbruch", "Textumbruch", "zeichenUmbruch", text=True)]},
+    {"name": "Größe", "felder": "masse", "pfeil": "zeichenLayout", "knoepfe": []},
+]}
+
+
 SMARTARTTOOLS = {"name": "SmartArt-Tools", "kontext": "smartart", "gruppen": [
     {"name": "Inhalt", "knoepfe": [_k("notiz", "Text und Layout bearbeiten …", "smartartText", True)]},
     {"name": "Darstellung", "knoepfe": [_k("smartart", "Layout ändern", klappe="smartartLayout", gross=True),

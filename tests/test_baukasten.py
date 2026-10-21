@@ -1363,3 +1363,172 @@ def test_frei_bild_im_editor_auswaehlen_verschieben_loeschen(app):
     ed._frei_sel = ("t", 0, 0)
     ed.keyPressEvent(QKeyEvent(QEvent.KeyPress, Qt.Key_Delete, Qt.NoModifier))
     assert FB.aus_absatz(ed.document().firstBlock().blockFormat()) == []
+
+
+def test_frei_bild_hinter_text_ohne_tasten_anklickbar_wo_kein_text_liegt(app):
+    """Ein Bild hinter dem Text (Band im Briefkopf) lässt sich mit einfachem Klick wählen, wenn an der Stelle kein Text steht; und das
+    Anklicken klappt auch, nachdem nur ein kleiner Teil neu gezeichnet wurde (blinkende Schreibmarke)."""
+    from PySide6.QtCore import QEvent, QPointF, Qt, QUrl
+    from PySide6.QtGui import QMouseEvent, QTextCursor, QTextDocument
+    from lunivo_writer.editor import freie_bilder as FB
+    from lunivo_writer.ui.document.document_editor import DocumentEditor
+    ed = DocumentEditor(); ed.resize(900, 700); ed.show()
+    ed.setPlainText("Text")
+    name = FB.neuer_name(ed.document()); ed.document().addResource(QTextDocument.ImageResource, QUrl(name), _rot(200, 100))
+    FB.an_absatz(QTextCursor(ed.document().firstBlock()), {"n": name, "b": 200.0, "h": 100.0, "bh": "seite", "xh": 300.0, "bv": "seite", "yv": 400.0,
+                                                          "hinter": True, "ellipse": False, "ah": "", "av": ""})
+    app.processEvents()
+    ed.viewport().repaint(0, 0, 5, 5); app.processEvents()                    # nur ein kleiner Teil wird neu gezeichnet
+    mitte = ed._frei_liste()[0][3].center()
+    ed.mousePressEvent(QMouseEvent(QEvent.MouseButtonPress, QPointF(mitte), QPointF(mitte), Qt.LeftButton, Qt.LeftButton, Qt.NoModifier))
+    assert ed._frei_sel is not None
+
+
+def test_rechtsklickmenue_deutsch_und_mini_leiste_zwei_zeilen(app, tmp_path):
+    from PySide6.QtCore import QSettings
+    from lunivo_writer.services.settings_service import Settings
+    from lunivo_writer.ui.main_window import MainWindow
+    from lunivo_writer.ui.widgets.kontextmenue import menue_bauen
+    from lunivo_writer.ui.widgets.mini_leiste import MiniLeiste
+    w = MainWindow(Settings(QSettings(str(tmp_path / "s.ini"), QSettings.IniFormat)))
+    w.new_document(); e = w.current_editor(); e.insertPlainText("Text")
+    texte = [a.text() for a in menue_bauen(e, w).actions() if not a.isSeparator()]
+    assert texte[:3] == ["Kopieren", "Ausschneiden", "Einfügen"] and "Schriftart …" in texte and "Neuer Kommentar" in texte
+    assert not any(t in ("Undo", "Redo", "Cut", "Copy", "Paste", "Select All") for t in texte)           # keine englischen Standardtexte
+    m = MiniLeiste(w)
+    assert {"kopieren", "einfuegen", "ausschneiden", "formatUebertragen", "fett", "hervorhebenJetzt", "schriftfarbeJetzt", "ausrichtung", "zeilenabstand"} <= set(m.knoepfe)
+    assert m.schriftart.count() > 5 and m.groesse.count() >= 10
+    assert m.knoepfe["schriftfarbeJetzt"].menu() is not None and m.knoepfe["zeilenabstand"].menu() is not None
+    for x in w._doc_tabs():
+        x.editor.document().setModified(False)                         # sonst fragt das Schließen nach und der Test hängt
+    w.close()
+
+
+def test_layout_fenster_werte_und_bildwechsel_frei_text(app):
+    """Das Fenster „Layout“ liefert seine Werte; auf einem Bild angewendet wechselt es zwischen frei (hinter/vor dem Text) und im Text."""
+    from PySide6.QtCore import QUrl
+    from PySide6.QtGui import QTextCursor, QTextDocument
+    from lunivo_writer.editor import bildlayout as BL
+    from lunivo_writer.editor import freie_bilder as FB
+    from lunivo_writer.ui.baukasten.layout_dialog import LayoutDialog
+    from lunivo_writer.ui.document.document_editor import DocumentEditor
+    d = LayoutDialog(None, {"umbruch": "vor", "breite": {"mm": 30.0}, "hoehe": {"mm": 20.0}, "original": (60.0, 40.0)})
+    w = d.werte()
+    assert w["umbruch"] == "vor" and abs(w["breite"]["mm"] - 30.0) < 0.01 and w["h"]["modus"] == "abs"
+    assert not d._abstand_box.isEnabled()                                      # gilt nur bei Quadrat, Passend, Transparent
+    d.kacheln.setze("quadrat", True); assert d._abstand_box.isEnabled()
+    ed = DocumentEditor(); ed.resize(900, 700); ed.show(); ed.setPlainText("Text\nzweiter Absatz")
+    name = FB.neuer_name(ed.document()); ed.document().addResource(QTextDocument.ImageResource, QUrl(name), _rot(80, 60))
+    FB.an_absatz(QTextCursor(ed.document().firstBlock()), {"n": name, "b": 80.0, "h": 60.0, "bh": "seite", "xh": 200.0, "bv": "seite", "yv": 300.0,
+                                                          "hinter": False, "ellipse": False, "ah": "", "av": ""})
+    app.processEvents(); ed.viewport().repaint(); app.processEvents()
+    ed._frei_sel = ed._frei_liste()[0][0]
+    z = BL.ziel(ed)
+    assert z[0] == "frei" and BL.lesen(ed, z)["umbruch"] == "vor"
+    BL.anwenden(ed, z, {"umbruch": "hinter", "drehung": 15.0})                  # bleibt frei, wandert hinter den Text und dreht sich
+    a = FB.aus_absatz(ed.document().firstBlock().blockFormat())[0]
+    assert a["hinter"] is True and abs(a["dreh"] - 15.0) < 0.01
+    ed._frei_rev = None; ed._frei_sel = ed._frei_liste()[0][0]
+    BL.anwenden(ed, BL.ziel(ed), {"umbruch": "textfluss"})                       # zurück in den Text
+    assert FB.aus_absatz(ed.document().firstBlock().blockFormat()) == [] and ed._bild_cursor() is not None
+    BL.anwenden(ed, BL.ziel(ed), {"umbruch": "vor"})                              # und wieder frei
+    assert len(FB.aus_absatz(ed.document().firstBlock().blockFormat())) == 1
+
+
+def test_objekt_menues_und_bildformat_roundtrip(app, tmp_path):
+    """Formstile, Füllung und Kontur wirken auf ein freies Bild und bleiben in der DOCX."""
+    from PySide6.QtCore import QUrl
+    from PySide6.QtGui import QTextCursor, QTextDocument
+    from lunivo_writer.editor import bildlayout as BL
+    from lunivo_writer.editor import freie_bilder as FB
+    from lunivo_writer.editor.pagination import seite_als_bild
+    from lunivo_writer.models.page import PageSettings
+    from lunivo_writer.services import docx_writer, file_service
+    from lunivo_writer.ui.baukasten.objekt_menues import FuellMenue, KonturMenue, formstil_werte, formstile
+    assert len(formstile().knoepfe) == 42 and formstil_werte("z12")["fuell"]["art"] == "farbe"
+    f, k = FuellMenue(), KonturMenue()
+    assert [a.text() for a in f.actions() if not a.menu()][-5:] == ["Graduell", "Textur", "Muster(N)", "Fülleffekte…", "Bild(P)"] and any(a.text() == "Bild(P)" for a in f.actions())
+    assert [a.text() for a in k.actions() if a.menu()] == ["Linienart(W)", "Strichart", "Pfeilart"]
+    from lunivo_writer.ui.document.document_editor import DocumentEditor
+    ed = DocumentEditor(); ed.resize(900, 700); ed.show(); ed.setPlainText("Text")
+    name = FB.neuer_name(ed.document()); ed.document().addResource(QTextDocument.ImageResource, QUrl(name), _rot(80, 60))
+    FB.an_absatz(QTextCursor(ed.document().firstBlock()), {"n": name, "b": 80.0, "h": 60.0, "bh": "seite", "xh": 200.0, "bv": "seite", "yv": 300.0,
+                                                          "hinter": False, "ellipse": False, "ah": "", "av": ""})
+    app.processEvents(); ed.viewport().repaint(); app.processEvents()
+    ed._frei_sel = ed._frei_liste()[0][0]
+    BL.format_setzen(ed, BL.ziel(ed), fuell={"art": "farbe", "farbe": "#2f9e44"}, rand={"b": 3.0, "farbe": "#1c7ed6", "art": "gestrichelt"})
+    a = FB.aus_absatz(ed.document().firstBlock().blockFormat())[0]
+    assert a["fuell"]["farbe"] == "#2f9e44" and a["rand"]["art"] == "gestrichelt"
+    pfad = str(tmp_path / "f.docx"); docx_writer.write_docx(pfad, ed.document(), PageSettings(), {})
+    g = file_service.load(pfad)
+    b2 = FB.aus_absatz(g.doc.firstBlock().blockFormat())[0]
+    assert b2["fuell"]["farbe"].lower() == "#2f9e44" and b2["rand"]["art"] == "gestrichelt" and abs(b2["rand"]["b"] - 3.0) < 0.2
+
+
+def test_weitere_linien_und_effekte_oeffnen_die_seitenleiste_formatierung(app, tmp_path):
+    """„Weitere Linien …“ / „Weitere Effekte …“ zeigen den Bereich „Formatierung“ für das markierte Bild; Änderungen wirken sofort."""
+    from PySide6.QtCore import QUrl
+    from PySide6.QtGui import QTextCursor, QTextDocument
+    from lunivo_writer.editor import freie_bilder as FB
+    w = _fenster(tmp_path); w.show()
+    ed = w.current_editor()
+    ed.setPlainText("Text")
+    name = FB.neuer_name(ed.document()); ed.document().addResource(QTextDocument.ImageResource, QUrl(name), _rot(80, 60))
+    FB.an_absatz(QTextCursor(ed.document().firstBlock()), {"n": name, "b": 80.0, "h": 60.0, "bh": "seite", "xh": 200.0, "bv": "seite", "yv": 300.0,
+                                                          "hinter": False, "ellipse": False, "ah": "", "av": ""})
+    ed._frei_liste(); ed._frei_sel = ("t", 0, 0)
+    ed._frei_effekte()
+    assert w.sidebar.objektformat_sichtbar() and w.sidebar.objekt_panel.reiter.currentIndex() == 1
+    ed._frei_linien_fenster()
+    assert w.sidebar.objekt_panel.reiter.currentIndex() == 0
+    _zu(w)
+
+
+def test_zeichentools_register_und_funktionen(app, tmp_path):
+    """Markiertes freies Bild → Register „Zeichentools“; Ausrichten, Drehen, Ebene, Maße, Format übertragen wirken auf das Bild."""
+    from PySide6.QtCore import QUrl
+    from PySide6.QtGui import QTextCursor, QTextDocument
+    from lunivo_writer.editor import bildlayout as BL, freie_bilder as FB
+    w = _fenster(tmp_path); w.show()
+    ed = w.current_editor()
+    ed.setPlainText("Text")
+    name = FB.neuer_name(ed.document()); ed.document().addResource(QTextDocument.ImageResource, QUrl(name), _rot(80, 60))
+    FB.an_absatz(QTextCursor(ed.document().firstBlock()), {"n": name, "b": 80.0, "h": 60.0, "bh": "seite", "xh": 200.0, "bv": "seite", "yv": 300.0,
+                                                          "hinter": False, "ellipse": False, "ah": "", "av": "",
+                                                          "rand": {"b": 3.0, "farbe": "#ff0000", "art": "einfach"}})
+    ed._frei_liste()
+    i = w.band.kontext_index["zeichen"]
+    assert not w.band.reiter.isTabVisible(i)
+    ed._frei_sel = ("t", 0, 0)
+    w._sync_format()
+    assert w.band.reiter.isTabVisible(i)
+    b = w.band.b
+    b.zeichenAusrichten(None, "rechts"); b.zeichenDrehen(None, 90); b.zeichenEbene(None, "hinter"); b.zeichenMasse(40.0, 20.0)
+    a = FB.aus_absatz(ed.document().firstBlock().blockFormat())[0]
+    assert a["ah"] == "right" and a["dreh"] == 90.0 and a["hinter"] is True
+    assert abs(a["b"] - 40 * 96 / 25.4) < 0.5 and abs(a["h"] - 20 * 96 / 25.4) < 0.5
+    merk = BL.format_merken(BL.ziel(ed))
+    assert merk["rand"]["farbe"] == "#ff0000"
+    ed._frei_sel = None
+    w._sync_format()
+    assert not w.band.reiter.isTabVisible(i)
+    _zu(w)
+
+
+def test_fuelleffekte_graduell_textur_muster_oeffnen_die_seitenleiste(app, tmp_path):
+    from PySide6.QtCore import QUrl
+    from PySide6.QtGui import QTextCursor, QTextDocument
+    from lunivo_writer.editor import freie_bilder as FB
+    w = _fenster(tmp_path); w.show()
+    ed = w.current_editor(); ed.setPlainText("Text")
+    name = FB.neuer_name(ed.document()); ed.document().addResource(QTextDocument.ImageResource, QUrl(name), _rot(80, 60))
+    FB.an_absatz(QTextCursor(ed.document().firstBlock()), {"n": name, "b": 80.0, "h": 60.0, "bh": "seite", "xh": 200.0, "bv": "seite", "yv": 300.0,
+                                                          "hinter": False, "ellipse": False, "ah": "", "av": ""})
+    ed._frei_liste(); ed._frei_sel = ("t", 0, 0)
+    m = ed.frei_fuell_menue(ed)
+    for text, radio in (("Textur", "r_textur"), ("Muster(N)", "r_muster"), ("Graduell", "r_verlauf")):
+        next(a for a in m.actions() if a.text() == text).trigger()
+        assert w.sidebar.objektformat_sichtbar() and getattr(w.sidebar.objekt_panel, radio).isChecked()
+        app.processEvents()
+        assert FB.aus_absatz(ed.document().firstBlock().blockFormat())[0]["fuell"]["art"] in ("textur", "muster", "graduell", "verlauf")
+    _zu(w)

@@ -17,6 +17,7 @@ from lunivo_writer.models.page import PageSettings, mm_to_px, px_to_mm
 from lunivo_writer.proofing.autokorrektur import kleinste_aenderung
 from lunivo_writer.editor.pagination import bind_layout, paginated_copy
 from lunivo_writer.editor import stile
+from lunivo_writer.editor.zusatz import abstand_davor_px
 from lunivo_writer.ui.document.freie_bilder_bedienung import FreieBilderMixin
 from lunivo_writer.ui.document.zusatz_editor import ZusatzMixin
 
@@ -56,6 +57,7 @@ class DocumentEditor(FreieBilderMixin, ZusatzMixin, QTextEdit):
     pageInfoChanged = Signal(int, int)       # aktuelle Seite, Seitenzahl
     formatChanged = Signal()                 # Cursor-Format hat sich geändert
     zoomChanged = Signal(float)
+    freiAuswahlGeaendert = Signal()           # ein frei positioniertes Bild wurde markiert oder die Markierung aufgehoben
     pageApplied = Signal()                    # Seiteneinrichtung oder Größe hat sich geändert
 
     def __init__(self, parent=None):
@@ -205,6 +207,7 @@ class DocumentEditor(FreieBilderMixin, ZusatzMixin, QTextEdit):
                 ff.setRightMargin,
             ):
                 setze(0)
+            ff.setTopMargin(page.erste_seite_versatz_px())       # lange Kopfzeile: Text der ersten Seite beginnt darunter
             root.setFrameFormat(ff)
             self.setFixedWidth(int(mm_to_px(page.width_mm) * self.zoom))
             self._sp_einrichten()
@@ -1486,7 +1489,7 @@ class DocumentEditor(FreieBilderMixin, ZusatzMixin, QTextEdit):
         fam = cf.fontFamilies()
         return {"groesse": round(cf.fontPointSize(), 1) if cf.fontPointSize() > 0 else 0, "fett": cf.fontWeight() >= 600,
                 "kursiv": cf.fontItalic(), "farbe": cf.foreground().color().name() if cf.foreground().style() != Qt.NoBrush and cf.hasProperty(QTextFormat.ForegroundBrush) else "",
-                "schrift": fam[0] if fam else "", "vor": round(bf.topMargin() * 0.75, 1), "nach": round(bf.bottomMargin() * 0.75, 1), "ausr": a,
+                "schrift": fam[0] if fam else "", "vor": round(abstand_davor_px(bf) * 0.75, 1), "nach": round(bf.bottomMargin() * 0.75, 1), "ausr": a,
                 **self._rahmen_felder(), "liste": als_text(self.liste_spec()),
                 "effekt": texteffekt.als_text(texteffekt.aus_format(cf)),
                 "tabs": tabs_text(aus_block(bf)), **self._zeichen_felder(cf), **self._absatz_felder(bf)}
@@ -1658,10 +1661,16 @@ class DocumentEditor(FreieBilderMixin, ZusatzMixin, QTextEdit):
         c.setCharFormat(f)
 
     def contextMenuEvent(self, e) -> None:
-        m = self.createStandardContextMenu()
+        from lunivo_writer.ui.widgets.kontextmenue import menue_bauen
+        fenster = self.window()
+        m = menue_bauen(self, fenster) if hasattr(fenster, "befehle") else self.createStandardContextMenu()
         if self.kontext_hook is not None:
             pos = self.cursorForPosition(e.pos()).position()
             self.kontext_hook(m, pos)
+        from lunivo_writer.editor import bildlayout as BL
+        if BL.ziel(self) is not None and not self.isReadOnly():
+            m.addSeparator()
+            m.addAction("Layout …", self.bild_layout_dialog)
         if self._bild_cursor() is not None and not self.isReadOnly():
             from lunivo_writer.editor import umbruch as U
             m.addSeparator()

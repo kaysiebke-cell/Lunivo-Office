@@ -479,7 +479,8 @@ class _Reader:
         b.setTopMargin(_pt_to_px(sb.pt) if sb is not None else 0)
         b.setBottomMargin(_pt_to_px(sa.pt) if sa is not None else 0)
         sp = ppr.find(qn("w:spacing")) if ppr is not None else None
-        if sp is not None:                                            # „Automatisch“ (aus Webseiten): Word und andere setzen 14 pt davor/danach
+        leer = not "".join(para._p.xpath(".//w:t/text()")).strip() if hasattr(para._p, "xpath") else False
+        if sp is not None and not leer:                               # „Automatisch“ (aus Webseiten): 14 pt davor/danach; leere Absätze behalten nur ihre Höhe
             wahr = ("1", "true", "on")
             if (sp.get(qn("w:beforeAutospacing")) or "").lower() in wahr:
                 b.setTopMargin(_pt_to_px(14.0))
@@ -600,6 +601,9 @@ class _Reader:
         base_cfmt = QTextCharFormat()
         base_cfmt.setFontFamilies([self._font_name(_NoRun(), para)])
         base_cfmt.setFontPointSize(self._font_size_pt(_NoRun(), para))
+        sz = _xp(para._p, "w:pPr/w:rPr/w:sz/@w:val")                       # Schrift des Absatzzeichens: sie bestimmt die Höhe leerer Absätze
+        if sz and sz[0].isdigit():
+            base_cfmt.setFontPointSize(int(sz[0]) / 2.0)
         self._start_block(bfmt, base_cfmt, cursor, reuse)
 
         info = None if in_table else self._list_info(para)
@@ -909,6 +913,10 @@ class _Reader:
                 from lunivo_writer.editor.freie_bilder import farbe_aus_element
                 f = farbe_aus_element(_xp(ln, "a:solidFill/*")[0], _NS)
                 rand = {"b": max(0.5, emu_zu_px(ln.get("w") or 9525)), "farbe": f.name()}
+                dash = _xp(ln, "a:prstDash/@val")
+                rand["art"] = {"sysDot": "gepunktet", "dot": "gepunktet", "sysDash": "fein_gestrichelt", "dash": "gestrichelt", "lgDash": "gestrichelt",
+                               "dashDot": "strichpunkt", "lgDashDot": "strichpunkt", "lgDashDotDot": "strichpunktpunkt",
+                               "sysDashDot": "strichpunkt", "sysDashDotDot": "strichpunktpunkt"}.get(dash[0] if dash else "", "einfach")
             except Exception:                                              # noqa: BLE001
                 rand = None
             break
@@ -917,6 +925,16 @@ class _Reader:
                   "ellipse": bool(_xp(drawing, ".//a:prstGeom[@prst='ellipse']"))}
         if rand:
             angabe["rand"] = rand
+        fl = _xp(drawing, ".//pic:spPr/a:solidFill/*")  # Füllung der Form hinter dem Bild
+        if fl:
+            try:
+                from lunivo_writer.editor.freie_bilder import farbe_aus_element
+                angabe["fuell"] = {"art": "farbe", "farbe": farbe_aus_element(fl[0], _NS).name()}
+            except Exception:                                              # noqa: BLE001
+                pass
+        rot = _xp(drawing, ".//a:xfrm/@rot")
+        if rot and rot[0].lstrip("-").isdigit() and int(rot[0]):
+            angabe["dreh"] = int(rot[0]) / 60000.0
         for achse, el in (("h", _xp(a, "wp:positionH")), ("v", _xp(a, "wp:positionV"))):
             if not el:
                 continue
@@ -1110,6 +1128,10 @@ class _Reader:
             ps.margin_right_mm = s.right_margin.mm
         except Exception:
             self.report.warn("Seitengröße oder Ränder fehlen; es gilt A4 mit 2,5 cm Rand.")
+        try:
+            ps.kopf_abstand_mm, ps.fuss_abstand_mm = s.header_distance.mm, s.footer_distance.mm
+        except Exception:                                                  # noqa: BLE001
+            pass
         self._seitenschmuck(ps, s)
         if basis is not None:                                    # Hintergrund, Silbentrennung und Wasserzeichen gelten für das ganze Dokument
             ps.color, ps.silbentrennung, ps.watermark = basis.color, basis.silbentrennung, basis.watermark
@@ -1302,6 +1324,21 @@ class _NoRun:
     style = None
 
 
+_ERSATZ = {"Calibri Light": ["Carlito"], "Calibri": ["Carlito"], "Cambria": ["Caladea"], "Segoe UI": ["Noto Sans"]}
+
+
+def _schriften_ersatz() -> None:
+    """Word-Schriften ohne Entsprechung im System ersetzt Qt sonst durch irgendeine breite Schrift (so wurde aus „Calibri Light“ Noto Sans).
+    Die metrikgleichen Schriften (Carlito, Caladea) halten Zeilenhöhe und Umbruch gleich — wie es LibreOffice mit seiner Ersetzungstabelle tut."""
+    from PySide6.QtGui import QFont, QFontDatabase
+    vorhanden = set(QFontDatabase.families())
+    for name, ersatz in _ERSATZ.items():
+        wahl = [e for e in ersatz if e in vorhanden]
+        if wahl and name not in vorhanden:
+            QFont.insertSubstitutions(name, wahl)
+
+
 def read_docx(path: str):
     """→ (QTextDocument, PageSettings, meta-dict, IOReport). Wirft DocumentIOError."""
+    _schriften_ersatz()
     return _Reader(path).run()

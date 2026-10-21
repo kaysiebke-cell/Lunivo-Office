@@ -12,13 +12,59 @@ from lunivo_writer.ui.baukasten.farbpalette import FarbFeld
 from lunivo_writer.ui.baukasten.menue_liste import MenueListe
 
 
-def linien_symbol(art: str, groesse: QSize = QSize(56, 14), farbe: str = "#343a40") -> QIcon:
+def linien_symbol(art: str, groesse: QSize = QSize(56, 14), farbe: str = "#343a40", breite_pt: float = 1.5) -> QIcon:
     pm = QPixmap(groesse); pm.fill(Qt.transparent)
     p = QPainter(pm)
     p.setRenderHint(QPainter.Antialiasing)
-    Linie(farbe, 1.5, art).zeichne(p, 2, groesse.height() / 2, groesse.width() - 2, groesse.height() / 2, 96 / 72)
+    Linie(farbe, breite_pt, art).zeichne(p, 2, groesse.height() / 2, groesse.width() - 2, groesse.height() / 2, 96 / 72)
     p.end()
     return QIcon(pm)
+
+
+class LinienZeile(QWidget):
+    """Eine Zeile in einem Menü: links ein Text (kann leer sein), rechts die Linie in ihrer Art und Stärke — wie die Auswahl „Linienart“ und
+    „Strichart“ der Vorlage. Meldet den Klick mit ``angeklickt``."""
+
+    angeklickt = Signal()
+
+    def __init__(self, text: str, art: str = "einfach", breite_pt: float = 1.5, farbe: str | None = None, parent=None):
+        super().__init__(parent)
+        self._text, self._art, self._breite, self._farbe = text, art, breite_pt, farbe
+        self.setMouseTracking(True); self.setCursor(Qt.PointingHandCursor)
+        self.setMinimumHeight(30); self.setMinimumWidth(190 if text else 150)
+        self._hover = False
+
+    def enterEvent(self, e):
+        self._hover = True; self.update()
+
+    def leaveEvent(self, e):
+        self._hover = False; self.update()
+
+    def mouseReleaseEvent(self, e):
+        if e.button() == Qt.LeftButton:
+            self.angeklickt.emit()
+
+    def paintEvent(self, e):
+        p = QPainter(self); p.setRenderHint(QPainter.Antialiasing)
+        pal = self.palette()
+        if self._hover:
+            p.fillRect(self.rect(), pal.color(QPalette.Highlight).lighter(170) if pal.color(QPalette.Window).lightness() > 128 else pal.color(QPalette.Midlight))
+        p.setPen(pal.color(QPalette.WindowText))
+        rand = 10
+        if self._text:
+            p.drawText(QRectF(rand, 0, 70, self.height()), Qt.AlignVCenter | Qt.AlignLeft, self._text)
+        x1 = rand + (80 if self._text else 0)
+        farbe = self._farbe or pal.color(QPalette.WindowText).name()
+        Linie(farbe, self._breite, self._art).zeichne(p, x1, self.height() / 2, self.width() - rand, self.height() / 2, 96 / 72)
+
+
+def linien_menue_zeile(menue, text: str, art: str, breite_pt: float, aktion) -> LinienZeile:
+    """Hängt eine ``LinienZeile`` als Eintrag in ein Menü; ein Klick ruft ``aktion`` und schließt das Menü."""
+    from PySide6.QtWidgets import QWidgetAction
+    z = LinienZeile(text, art, breite_pt)
+    a = QWidgetAction(menue); a.setDefaultWidget(z); menue.addAction(a)
+    z.angeklickt.connect(lambda: (aktion(), menue.hide(), [m.hide() for m in QApplication.topLevelWidgets() if m.isVisible() and m.inherits("QMenu")]))
+    return z
 
 
 class LinienWahl(QWidget):

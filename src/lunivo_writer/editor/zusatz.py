@@ -65,3 +65,9 @@ P_BETONUNG = QTextFormat.UserProperty + 44       # Betonungszeichen über/unter 
 P_UNTER = QTextFormat.UserProperty + 45          # Zeichenformat: Art der Unterstreichung, die Qt nicht kennt (doppelt, dick, lang, nur Wörter …); Lunivo zeichnet sie (siehe editor/textfx.py)
 P_RASTER = QTextFormat.UserProperty + 46        # 0: „am Raster ausrichten“ ist aus (Fenster Schriftart, Zeichenabstand); nur gesetzt, wenn abweichend (DOCX w:snapToGrid)
 B_BILDANKER = QTextFormat.UserProperty + 47       # Absatz mit frei positionierten Bildern (DOCX wp:anchor ohne Textumbruch): JSON-Liste, siehe editor/freie_bilder.py
+B_VORHER = QTextFormat.UserProperty + 48           # Absatz am Seitenanfang: der unterdrückte Abstand davor in Bildpunkten (wird nicht gespeichert; siehe editor/seitenfluss.py)
+
+
+def abstand_davor_px(bf) -> float:
+    """Der Abstand vor dem Absatz, wie ihn der Benutzer eingestellt hat — auch wenn Lunivo ihn am Seitenanfang gerade unterdrückt."""
+    return bf.doubleProperty(B_VORHER) if bf.hasProperty(B_VORHER) else bf.topMargin()

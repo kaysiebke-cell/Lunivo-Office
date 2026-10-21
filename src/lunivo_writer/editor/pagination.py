@@ -154,11 +154,14 @@ def paginated_copy(qdoc: QTextDocument, page: PageSettings, noten: dict | None =
     root = d.rootFrame()
     ff = root.frameFormat()
     ff.setMargin(0)
+    ff.setTopMargin(page.erste_seite_versatz_px())         # lange Kopfzeile: Text der ersten Seite beginnt darunter
     root.setFrameFormat(ff)
     d.setDocumentMargin(0)
     d.setPageSize(QSizeF(page.content_width_px if einspaltig else page.spalten_breite_px, page.content_height_px))
     if am_fuss and fussnoten != "spaeter":                 # „spaeter“: render() ruft es nach den übrigen Änderungen selbst auf
         fussnoten_am_seitenende(d, page, noten)
+    from lunivo_writer.editor import seitenfluss
+    seitenfluss.anwenden(d, page.content_height_px)        # Umbruchregeln und kein Abstand am Seitenanfang, auch für Dokumente, die nie im Editor lagen
     return d
 
 
@@ -802,7 +805,7 @@ def zeichne_seite(p: QPainter, d: QTextDocument, page: PageSettings, n: int, tot
         idx = d._frei_idx = FB.koerper_index(d, ch, max(1, int(page.spalten)))
     frei = FB.objekte_der_seite(page, d, n, idx)
     for a, bild, r in FB.vorne_hinten(frei, True):                  # Bilder hinter dem Text (zum Beispiel ein Band im Briefkopf)
-        FB.bild_zeichnen(p, bild, r, bool(a.get("ellipse")), a.get("rand"))
+        FB.bild_zeichnen(p, bild, r, bool(a.get("ellipse")), a.get("rand"), float(a.get("dreh", 0.0)), a.get("fuell"), a.get("_fuellbild") or (a.get("fuell") or {}).get("bild"), a.get("fx"))
     kopf, fuss = (page.first_header, page.first_footer) if (n == 1 and page.diff_first) else (page.header, page.footer)
     _draw_hf(p, kopf, QRectF(ml, mm_to_px(8), cw, mm_to_px(10)), n + nr_offset, gesamt or total, base)
     _draw_hf(p, fuss, QRectF(ml, ph - mm_to_px(18), cw, mm_to_px(10)), n + nr_offset, gesamt or total, base)
@@ -844,7 +847,7 @@ def zeichne_seite(p: QPainter, d: QTextDocument, page: PageSettings, n: int, tot
         p.restore()
         if j == n_sp - 1:                                    # der Seitenrahmen „im Vordergrund“ liegt über dem Text der Seite
             for a, bild, r in FB.vorne_hinten(frei, False):          # Bilder vor dem Text (Foto, Unterschrift)
-                FB.bild_zeichnen(p, bild, r, bool(a.get("ellipse")), a.get("rand"))
+                FB.bild_zeichnen(p, bild, r, bool(a.get("ellipse")), a.get("rand"), float(a.get("dreh", 0.0)), a.get("fuell"), a.get("_fuellbild") or (a.get("fuell") or {}).get("bild"), a.get("fx"))
             seitenschmuck(p, page, False, None, "vorn", False)
         if balken:                                          # Änderungsbalken neben den Zeilen mit verfolgten Änderungen
             seite_b, zeilen = balken
