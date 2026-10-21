@@ -168,3 +168,37 @@ def drucken(printer, qdoc, page, opt: dict, ein: dict, noten: dict | None = None
         except OSError:
             pass
     return math.ceil(len(seiten) / pro_blatt)
+
+
+class Zwischenseiten:
+    """Das Dokument einmal als Zwischen-PDF ausgegeben und geladen; jede Seite lässt sich in beliebiger Größe rastern (Druckvorschau)."""
+
+    def __init__(self, qdoc, page, opt: dict, noten: dict | None = None):
+        from PySide6.QtPdf import QPdfDocument
+        fd, self._pfad = tempfile.mkstemp(suffix=".pdf", prefix="lunivo-vorschau-")
+        os.close(fd)
+        zwischen_pdf(qdoc, page, dict(opt, nur_seiten=None), noten, self._pfad)
+        self._pdf = QPdfDocument()
+        self._pdf.load(self._pfad)
+
+    def anzahl(self) -> int:
+        return self._pdf.pageCount()
+
+    def groesse_px(self, n: int, zoom: float = 1.0) -> tuple[int, int]:
+        """Größe der Seite n bei 96 dpi mal Zoom."""
+        ps = self._pdf.pagePointSize(n - 1)
+        return max(1, round(ps.width() * 96 / 72 * zoom)), max(1, round(ps.height() * 96 / 72 * zoom))
+
+    def bild(self, n: int, zoom: float = 1.0) -> QImage:
+        from PySide6.QtCore import QSize
+        gr = QSize(*self.groesse_px(n, zoom))
+        bild = QImage(gr, QImage.Format_RGB32); bild.fill(Qt.white)       # die PDF-Seite ist durchsichtig: aufs weiße Blatt legen
+        p = QPainter(bild); p.drawImage(0, 0, self._pdf.render(n - 1, gr)); p.end()
+        return bild
+
+    def schliessen(self) -> None:
+        self._pdf.close()
+        try:
+            os.remove(self._pfad)
+        except OSError:
+            pass

@@ -36,7 +36,7 @@ EINTRAEGE = [
     ("schliessen", "Schließen", "schliessen", "tun", "schliessen"),
     ("-4", "", "", "trenner", None),
     ("optionen", "Erweiterte Einstellungen", "zahnrad", "seite", None),
-    ("hilfe", "Hilfe", "buch", "tun", "tastenHilfe"),
+    ("hilfe", "Hilfe", "buch", "seite", None),
 ]
 
 EXPORTE = [("PDF-Dokument (.pdf)", "speichernPdf"), ("Word-Dokument (.docx)", "exportierenDocx"),
@@ -133,7 +133,7 @@ class Backstage(QWidget):
         for schl in ("speichern", "speichern_als", "drucken", "schuetzen", "info", "oeffnen_mit", "ort", "schliessen"):
             self.zeilen[schl].setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable if haben_dok else Qt.NoItemFlags)
         bauer = {"zuletzt": self._zuletzt, "speichern_als": self._speichern_als, "drucken": self._drucken,
-                 "schuetzen": self._schuetzen, "info": self._info, "oeffnen_mit": self._oeffnen_mit, "optionen": self._optionen}
+                 "hilfe": self._hilfe, "schuetzen": self._schuetzen, "info": self._info, "oeffnen_mit": self._oeffnen_mit, "optionen": self._optionen}
         for schl, f in bauer.items():
             seite_w = f()
             self.seiten[schl] = seite_w
@@ -309,6 +309,15 @@ class Backstage(QWidget):
         ph._ansicht.geaendert.connect(lambda: drucken.setEnabled(ph._ansicht.gueltig()))
         fuss.addWidget(hilfe); fuss.addStretch(1); fuss.addWidget(drucken)
         v.addLayout(fuss)
+
+    def _hilfe(self):
+        sa, v = self._seite("Hilfe")
+        self._knopf(v, "Handbuch", "handbuch", "buch")
+        self._knopf(v, "Tastenkürzel", "tastenHilfe", "tasten")
+        self._knopf(v, "Erweiterungen", "erweiterungen", "zahnrad")
+        self._knopf(v, "Über Lunivo Writer", "ueber", "inhalt")
+        v.addStretch(1)
+        return sa
 
     def _schuetzen(self):
         sa, v = self._seite("Datei schützen")

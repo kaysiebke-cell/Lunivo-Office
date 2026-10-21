@@ -648,6 +648,12 @@ class MainWindow(QMainWindow):
         return a
 
     def print_dialog(self):
+        """Drucken (Strg+P, Schnellzugriff, Druckvorschau): die Seite „Drucken“ im Menü, kein eigenes Fenster."""
+        if self.current_tab():
+            self.backstage_oeffnen("drucken")
+
+    def druckfenster(self):
+        """Dasselbe als eigenes Fenster (für Aufrufer ohne Menü)."""
         t = self.current_tab()
         if not t:
             return
@@ -689,10 +695,12 @@ class MainWindow(QMainWindow):
         t = self.current_tab()
         if not t:
             return
-        pr = self._neuer_drucker()
-        dlg = QPrintPreviewDialog(pr, self)
-        dlg.paintRequested.connect(lambda p: print_document(p, t.editor.document(), t.page, dict(self.druckoptionen(), noten=t.editor.noten)))
-        dlg.resize(1000, 800)
+        from lunivo_writer.editor.druck import Zwischenseiten, optionen_aus
+        from lunivo_writer.ui.baukasten.druckvorschau import DruckVorschau
+        opt = optionen_aus(self.druckoptionen(), self.druck_start(), t.editor.noten)
+        dlg = DruckVorschau(self, Zwischenseiten(t.editor.document(), t.page, opt, t.editor.noten))
+        dlg.drucken.connect(lambda: QTimer.singleShot(0, self.print_dialog))
+        dlg.showMaximized()
         dlg.exec()
 
     def ausgabe_ppi(self) -> int:
@@ -1585,6 +1593,5 @@ class MainWindow(QMainWindow):
         self.showFullScreen() if on else self.showNormal()
 
     def about(self):
-        QMessageBox.about(self, "Über Lunivo Writer",
-                          f"Lunivo Writer {__version__}\nNative Textverarbeitung (Python, Qt 6 / PySide6).\n"
-                          "Keine Webtechnik, kein Webserver. Dokumente bleiben auf diesem Rechner.")
+        from lunivo_writer.ui.dialogs import hilfe_dialoge
+        hilfe_dialoge.ueber(self, __version__).exec()

@@ -1165,3 +1165,30 @@ def test_drucken_ausgabe_in_pdf(app, tmp_path):
     assert alle >= 3
     assert seiten({"bereich": "seiten", "seiten_text": "2"}) == 1
     assert seiten({"pro_blatt": 4}) == 1
+
+
+def test_druckvorschau_ansichten_und_zoom(app):
+    from PySide6.QtGui import QTextDocument
+    from lunivo_writer.editor.druck import Zwischenseiten
+    from lunivo_writer.models.page import PageSettings
+    from lunivo_writer.ui.baukasten.druckvorschau import DruckVorschau
+    d = QTextDocument(); d.setPlainText("Zeile\n" * 140)
+    v = DruckVorschau(None, Zwischenseiten(d, PageSettings(), {}))
+    v.resize(1000, 700); v.show()
+    assert v._gesamt >= 3 and len(v._seiten) == 1
+    v.ansicht.setCurrentIndex(1); assert len(v._seiten) == 2
+    v.ansicht.setCurrentIndex(2); assert len(v._seiten) == v._gesamt
+    z = v._zoom; v._zoom_setzen(z * 1.25); assert abs(v._zoom - z * 1.25) < 1e-6
+    v._gehe(2); assert v.nr.value() == 2
+    assert v._q.bild(1).pixelColor(2, 2).name() == "#ffffff"
+    v.close()
+
+
+def test_handbuch_fenster_hat_gliederung(app):
+    from PySide6.QtWidgets import QListWidget, QTextBrowser
+    from lunivo_writer.ui.dialogs import hilfe_dialoge
+    d = hilfe_dialoge.handbuch(None)
+    nav = d.findChild(QListWidget)
+    eintraege = [nav.item(i).text() for i in range(nav.count()) if nav.item(i).data(0x100)]
+    assert "Das erste Blatt" in eintraege and "Wenn etwas klemmt" in eintraege and len(eintraege) >= 18
+    assert "Lunivo" in d.findChild(QTextBrowser).toPlainText()
