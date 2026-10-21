@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import json
 
-from lunivo_writer.editor.listen import STILE, ZEICHEN_FELDER
+from lunivo_writer.editor.listen import STILE, zeichen_filtern
 
 PLATZHALTER = "①②③④⑤⑥⑦⑧⑨"
 EBENEN = 9
@@ -36,12 +36,53 @@ def nummer_text(stil: str, n: int) -> str:
     return s if stil == "roem_klein" else s.upper()
 
 
-def ebene(stil: str = "dezimal", format: str = "①.", start: int = 1, ausr: float = 0.0, einzug: float = 8.0, zeichen: dict | None = None) -> dict:
+# Weitere Felder einer Ebene (nur gesetzt, wenn sie von der Vorgabe abweichen):
+#   tab (Tabstopp-Leerstelle nach, mm; Vorgabe = einzug), ausr_art ("links" | "mitte" | "rechts": woran die Nummer an ``ausr`` hängt),
+#   danach ("tab" | "leer" | "nichts": was zwischen Nummer und Text steht), neu (Ebene, nach der neu gezählt wird; None = nach jeder höheren),
+#   norm (Nummern höherer Ebenen als Dezimalzahlen), vorlage (Formatvorlage, die Absätze auf diese Ebene setzt)
+EXTRA = {"tab": None, "ausr_art": "links", "danach": "tab", "neu": None, "norm": False, "vorlage": ""}
+
+
+def ebene(stil: str = "dezimal", format: str = "①.", start: int = 1, ausr: float = 0.0, einzug: float = 8.0, zeichen: dict | None = None,
+          **mehr) -> dict:
     d = {"stil": stil, "format": format, "start": max(1, int(start)), "ausr": float(ausr), "einzug": float(einzug)}
-    z = {k: zeichen[k] for k in ZEICHEN_FELDER if zeichen and zeichen.get(k)}
+    z = zeichen_filtern(zeichen)
     if z:
         d["zeichen"] = z
+    for k, v in mehr.items():
+        if k in EXTRA and v not in (None, EXTRA[k], False, ""):
+            d[k] = v
     return d
+
+
+def ebene_aus(x: dict) -> dict:
+    """Eine Ebene aus einem Wörterbuch (JSON, Dialog) mit allen bekannten Feldern neu aufbauen."""
+    return ebene(x["stil"], x["format"], x["start"], x["ausr"], x["einzug"], x.get("zeichen"), **{k: x.get(k) for k in EXTRA})
+
+
+def aufzaehlung(zeichen: str) -> dict:
+    """Aufzählung mit einem Zeichen (◆ ✤ ➤ ✓ ✧ …), das Lunivo selbst zeichnet; Ebenen wie bei einer Gliederung eingerückt."""
+    return {"ebenen": [ebene("dezimal", zeichen, 1, i * 7.0, i * 7.0 + 7.0) for i in range(EBENEN)]}
+
+
+GLYPHEN = ("◆", "✤", "➤", "✓", "✧")                  # die Aufzählungszeichen des Reiters „Aufzählungszeichen“ neben Punkt und Quadrat
+
+
+def ist_aufzaehlung(defn: dict) -> bool:
+    """Gliederung ohne einen einzigen Platzhalter für Nummern: eine Aufzählung mit eigenem Zeichen."""
+    return not any(ch in e["format"] for e in defn["ebenen"] for ch in PLATZHALTER)
+
+
+def als_mehrstufig(spec: dict) -> dict:
+    """Eine einfache Liste (``editor.listen``) mit eigener Position als Gliederung: Ebene 1 ist die Liste, tiefere Ebenen zählen für sich."""
+    pos = spec.get("pos") or {}
+    e = []
+    for i in range(EBENEN):
+        f = (spec["praefix"] + PLATZHALTER[i] + spec["suffix"]) if i else (spec["praefix"] + PLATZHALTER[0] + spec["suffix"])
+        e.append(ebene(spec["stil"], f, spec["start"] if not i else 1, pos.get("ausr", 0.0) + i * 7.0, pos.get("einzug", 8.0) + i * 7.0,
+                       spec.get("zeichen"), tab=(pos.get("tab", pos.get("einzug", 8.0)) + i * 7.0), ausr_art=pos.get("ausr_art", "links"),
+                       danach=pos.get("danach", "tab")))
+    return {"ebenen": e}
 
 
 def gliederung(stile: list[str], formate: list[str]) -> dict:
@@ -50,20 +91,25 @@ def gliederung(stile: list[str], formate: list[str]) -> dict:
                        for i in range(EBENEN)]}
 
 
-def _alle(zahlenart: str, suffix: str) -> dict:
-    """Ebene n zeigt „1.1.n“ : ``①.②.…``"""
-    return gliederung([zahlenart], ["".join(PLATZHALTER[k] + "." for k in range(i + 1)) if suffix == "." else
-                                    ".".join(PLATZHALTER[k] for k in range(i + 1)) for i in range(EBENEN)])
+def _alle(zahlenart: str, formate: tuple[str, str, str]) -> dict:
+    """Ebene n zeigt die Nummern aller Ebenen davor (``①.②.``); ``formate`` bestimmt, ob Ebene 1, 2 und tiefer mit Punkt enden (``"."``) oder nicht (``""``)."""
+    def fmt(i: int) -> str:
+        ende = formate[min(i, 2)]
+        return ".".join(PLATZHALTER[k] for k in range(i + 1)) + ende
+    return gliederung([zahlenart], [fmt(i) for i in range(EBENEN)])
 
 
-# Die Vorlagen des Reiters „Gliederung nummeriert“ (ohne „Kein“); Name für die Kachel
+# Die Vorlagen des Reiters „Gliederung nummeriert“ (ohne „Kein“): erst die sieben wie im WPS, dann zwei klassische; Name für die Kachel
 VORLAGEN = (
-    ("1. / 1.1. / 1.1.1.", _alle("dezimal", ".")),
-    ("1 / 1.1 / 1.1.1", _alle("dezimal", "")),
+    ("1. / 1.1. / 1.1.1.", _alle("dezimal", (".", ".", "."))),
+    ("I. / I.I / I.I.I", _alle("roem_gross", (".", "", ""))),
+    ("i. / i.i. / i.i.i.", _alle("roem_klein", (".", ".", "."))),
+    ("i. / i.i / i.i.i", _alle("roem_klein", (".", "", ""))),
+    ("1 / 1.1. / 1.1.1.", _alle("dezimal", ("", ".", "."))),
+    ("1. / 1.1 / 1.1.1", _alle("dezimal", (".", "", ""))),
+    ("A. / A.A. / A.A.A.", _alle("gross", (".", ".", "."))),
     ("I. / A. / 1. / a) / i)", gliederung(["roem_gross", "gross", "dezimal", "klein", "roem_klein"],
                                          ["①.", "②.", "③.", "④)", "⑤)", "⑥.", "⑦.", "⑧)", "⑨)"])),
-    ("A. / A.A. / A.A.A.", _alle("gross", ".")),
-    ("i. / i.i. / i.i.i.", _alle("roem_klein", ".")),
     ("1) / a) / i)", gliederung(["dezimal", "klein", "roem_klein"], ["①)", "②)", "③)", "④)", "⑤)", "⑥)", "⑦)", "⑧)", "⑨)"])),
 )
 
@@ -80,7 +126,7 @@ def aus_text(text: str | None) -> dict | None:
         e = d["ebenen"]
         if len(e) != EBENEN:
             return None
-        return {"ebenen": [ebene(x["stil"], x["format"], x["start"], x["ausr"], x["einzug"], x.get("zeichen")) for x in e]}
+        return {"ebenen": [ebene_aus(x) for x in e]}
     except (ValueError, KeyError, TypeError):
         return None
 
@@ -100,10 +146,12 @@ def aus_block(text: str) -> tuple[int, dict] | None:
 
 def nummer_der_ebene(defn: dict, zaehler: list[int], ebene_nr: int) -> str:
     """Die Nummer als Text für einen Absatz der Ebene ``ebene_nr`` (1…9) bei diesen Zählerständen."""
-    f = defn["ebenen"][ebene_nr - 1]["format"]
+    e = defn["ebenen"][ebene_nr - 1]
+    f = e["format"]
     for i, ch in enumerate(PLATZHALTER):
         if ch in f:
-            f = f.replace(ch, nummer_text(defn["ebenen"][i]["stil"], zaehler[i]) if i < ebene_nr else "")
+            stil = "dezimal" if e.get("norm") and i != ebene_nr - 1 else defn["ebenen"][i]["stil"]       # „Nummerieren nach Norm“
+            f = f.replace(ch, nummer_text(stil, zaehler[i]) if i < ebene_nr else "")
     return f
 
 
@@ -112,7 +160,9 @@ def zaehlen(zaehler: list[int], defn: dict, ebene_nr: int) -> None:
     i = ebene_nr - 1
     zaehler[i] = defn["ebenen"][i]["start"] if zaehler[i] == 0 else zaehler[i] + 1
     for k in range(i + 1, EBENEN):
-        zaehler[k] = 0
+        neu = defn["ebenen"][k].get("neu")                  # „Neu nummerieren nach Ebene …“: sonst nach jeder höheren Ebene
+        if neu is None or ebene_nr <= neu:
+            zaehler[k] = 0
 
 
 def nummern(d) -> list[tuple]:
@@ -132,10 +182,62 @@ def nummern(d) -> list[tuple]:
     return aus
 
 
+def _marker_font(b, e: dict):
+    """Schrift und Farbe der Nummer: die des Absatzes, mit den Änderungen der Ebene („Schriftart …“)."""
+    from PySide6.QtGui import QColor, QFont
+    frag = b.begin()
+    cf = (frag.fragment().charFormat() if not frag.atEnd() else b.charFormat())
+    f = QFont(cf.font())
+    zc = e.get("zeichen") or {}
+    if zc.get("schrift"):
+        f.setFamily(zc["schrift"])
+    if zc.get("groesse"):
+        f.setPointSizeF(float(zc["groesse"]))
+    if "fett" in zc:
+        f.setBold(bool(zc["fett"]))
+    if "kursiv" in zc:
+        f.setItalic(bool(zc["kursiv"]))
+    farbe = QColor(zc["farbe"]) if zc.get("farbe") else (cf.foreground().color() if cf.foreground().style() else QColor("black"))
+    return f, farbe
+
+
+def _text_breite(text: str, f, geraet) -> float:
+    from PySide6.QtGui import QTextLayout
+    ml = QTextLayout(text, f, geraet)
+    ml.beginLayout(); z = ml.createLine(); z.setLineWidth(1e6); ml.endLayout()
+    return z.naturalTextWidth()
+
+
+def einrichten_alle(d) -> None:
+    """Einzug aller Absätze mehrstufiger Listen setzen: Text ab „Einzug bei“, erste Zeile ab „Tabstopp-Leerstelle“ — oder direkt nach der
+    Nummer („Text danach“: Leerzeichen, Nichts). Ändert nur Absätze, deren Werte sich ändern."""
+    from PySide6.QtGui import QTextCursor
+    from lunivo_writer.models.page import mm_to_px
+    from lunivo_writer.editor.zusatz import B_MEHRSTUFIG
+    geraet = d.documentLayout().paintDevice()
+    c = QTextCursor(d)
+    c.joinPreviousEditBlock()
+    for b, text, n, e in nummern(d):
+        links = mm_to_px(e["einzug"])
+        tab = mm_to_px(e.get("tab", e["einzug"]))
+        if e.get("danach", "tab") != "tab":
+            f, _ = _marker_font(b, e)
+            w = _text_breite(text, f, geraet)
+            if e.get("ausr_art") == "mitte":
+                w = w / 2
+            elif e.get("ausr_art") == "rechts":
+                w = 0.0
+            tab = mm_to_px(e["ausr"]) + w + (_text_breite(" ", f, geraet) if e["danach"] == "leer" else 0.0)
+        bf = b.blockFormat()
+        if abs(bf.leftMargin() - links) > 0.01 or abs(bf.textIndent() - (tab - links)) > 0.01:
+            cc = QTextCursor(b); bf.setLeftMargin(links); bf.setTextIndent(tab - links); cc.setBlockFormat(bf)
+    c.endEditBlock()
+
+
 def nummern_zeichnen(p, d, faktor: float = 1.0) -> None:
     """Die Nummern der mehrstufigen Listen vor die Absätze zeichnen. Koordinaten: Dokument (wie ``absatzrahmen_zeichnen``)."""
     from PySide6.QtCore import QPointF
-    from PySide6.QtGui import QColor, QFont, QTextLayout
+    from PySide6.QtGui import QTextLayout
     from lunivo_writer.models.page import mm_to_px
     lay = d.documentLayout()
     for b, text, n, e in nummern(d):
@@ -143,22 +245,12 @@ def nummern_zeichnen(p, d, faktor: float = 1.0) -> None:
         if tl is None or tl.lineCount() == 0:
             continue
         z = tl.lineAt(0)
-        frag = b.begin()
-        cf = (frag.fragment().charFormat() if not frag.atEnd() else b.charFormat())
-        f = QFont(cf.font())
-        zc = e.get("zeichen") or {}
-        if zc.get("schrift"):
-            f.setFamily(zc["schrift"])
-        if zc.get("groesse"):
-            f.setPointSizeF(float(zc["groesse"]))
-        if "fett" in zc:
-            f.setBold(bool(zc["fett"]))
-        if "kursiv" in zc:
-            f.setItalic(bool(zc["kursiv"]))
-        farbe = QColor(zc["farbe"]) if zc.get("farbe") else (cf.foreground().color() if cf.foreground().style() else QColor("black"))
-        x = tl.position().x() + z.x() - mm_to_px(e["einzug"] - e["ausr"])
+        f, farbe = _marker_font(b, e)
         ml = QTextLayout(text, f, lay.paintDevice())
-        ml.beginLayout(); zeile = ml.createLine(); ml.endLayout()
+        ml.beginLayout(); zeile = ml.createLine(); zeile.setLineWidth(1e6); ml.endLayout()
+        w = zeile.naturalTextWidth()
+        basis = tl.position().x() - b.blockFormat().leftMargin() + mm_to_px(e["ausr"])
+        x = basis - (w / 2 if e.get("ausr_art") == "mitte" else w if e.get("ausr_art") == "rechts" else 0.0)
         y = tl.position().y() + z.y() + z.ascent() - zeile.ascent()
         p.save(); p.setPen(farbe)
         ml.draw(p, QPointF(x, y))

@@ -24,9 +24,15 @@ NAMEN = list(VORGABE)                  # nur die eingebauten; mit den selbst ang
 _EIGEN: dict[str, dict] = {}            # Änderungen an eingebauten Vorlagen
 _NEU: dict[str, dict] = {}              # selbst angelegte Vorlagen (Name → Definition)
 # zeilen: Zeilenabstand als Vielfaches (0 = nichts setzen), einzug: linker Einzug in mm (0 = nichts setzen)
-# rahmen: ``Linie.text()`` des Absatzrahmens, fuell/muster/musterfarbe: Schattierung, liste: ``listen.als_text``, effekt: ``texteffekt.als_text`` (Kontur, Transparenz der Farbe), taste: Tastenkombination ("" = nichts setzen; die Taste erbt eine Vorlage nicht von ihrer Basis)
+# rahmen: ``Linie.text()`` des Absatzrahmens, fuell/muster/musterfarbe: Schattierung, liste: ``listen.als_text``, tabs: ``tabstopp_dialog.als_text``, effekt: ``texteffekt.als_text`` (Kontur, Transparenz der Farbe), taste: Tastenkombination ("" = nichts setzen; die Taste erbt eine Vorlage nicht von ihrer Basis)
 VORLAGE = {"ebene": 0, "groesse": 0, "fett": False, "kursiv": False, "farbe": "", "schrift": "", "vor": 0, "nach": 0, "ausr": "",
-           "zeilen": 0, "einzug": 0, "rahmen": "", "fuell": "", "muster": "", "musterfarbe": "", "liste": "", "taste": "", "effekt": ""}
+           "zeilen": 0, "einzug": 0, "rahmen": "", "fuell": "", "muster": "", "musterfarbe": "", "liste": "", "taste": "", "effekt": "", "tabs": "",
+           # die übrigen Felder des Fensters „Schriftart“
+           "unter": "", "unterfarbe": "", "durch": False, "doppelt": False, "hoch": False, "tief": False, "kapital": False, "gross": False,
+           "versteckt": False, "abstand": 0.0, "kerning": True, "betonung": "", "schrift_asien": "", "schnitt_asien": "", "groesse_asien": 0.0,
+           "schrift_komplex": "", "schnitt_komplex": "", "groesse_komplex": 0.0, "skala": 100.0, "position": 0.0, "kern_ab": 0.0, "raster": True,
+           # die übrigen Felder des Fensters „Absatz“
+           "rechts": 0, "erste": 0, "rtl": False, "umbruch": False, "zeilen_art": "faktor", "zeilen_pt": 12.0, "gliederung": 0, "opt": ""}
 FELDER = tuple(VORLAGE)                 # die Felder, die eine Vorlage festlegen kann
 MAX_BASIS = 6                           # so tief darf „basiert auf“ verschachtelt sein
 PRAEFIX = "x:"                          # Kennung am Absatz: "x:Name" = selbst angelegte Vorlage

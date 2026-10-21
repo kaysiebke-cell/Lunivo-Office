@@ -316,10 +316,13 @@ class _Reader:
         raw = run.font.underline
         if raw not in (None, True, False):
             from docx.enum.text import WD_UNDERLINE as U
-            stil = {U.DASH: QTextCharFormat.DashUnderline, U.DOTTED: QTextCharFormat.DotLine,
-                    U.DOT_DASH: QTextCharFormat.DashDotLine, U.WAVY: QTextCharFormat.WaveUnderline}.get(raw)
-            if stil is not None:
-                f.setUnderlineStyle(stil)
+            from lunivo_writer.ui.baukasten.text_format import unter_format
+            art = {U.WORDS: "woerter", U.DOUBLE: "doppelt", U.THICK: "dick", U.DOTTED: "gepunktet", U.DOTTED_HEAVY: "dick_gepunktet", U.DASH: "gestrichelt",
+                   U.DASH_HEAVY: "dick_gestrichelt", U.DASH_LONG: "lang", U.DASH_LONG_HEAVY: "dick_lang", U.DOT_DASH: "strichpunkt",
+                   U.DOT_DASH_HEAVY: "dick_strichpunkt", U.DOT_DOT_DASH: "strichpunktpunkt", U.DOT_DOT_DASH_HEAVY: "dick_strichpunktpunkt",
+                   U.WAVY: "wellig", U.WAVY_HEAVY: "dick_wellig", U.WAVY_DOUBLE: "doppelwellig"}.get(raw)
+            if art:
+                f.merge(unter_format(art))
         if run.font.outline:
             from PySide6.QtGui import QPen
             f.setTextOutline(QPen(QColor("#000000")))
@@ -345,9 +348,53 @@ class _Reader:
             f.setFontCapitalization(QFont.AllUppercase)
         elif self._flag(run, para, "small_caps"):
             f.setFontCapitalization(QFont.SmallCaps)
+        self._schrift_zusatz(run._r.rPr, f)
         from lunivo_writer.editor import texteffekt
         texteffekt.aus_rpr(run._r.rPr, f)
         return f
+
+    def _schrift_zusatz(self, rpr, f: QTextCharFormat) -> None:
+        """Schrift für asiatische und komplexe Zeichen, Betonungszeichen und doppeltes Durchstreichen (Fenster „Schriftart“)."""
+        from lunivo_writer.editor.zusatz import P_BETONUNG, P_DOPPELT, P_FONT_ASIEN, P_FONT_KOMPLEX
+        if rpr is None:
+            return
+        rf = rpr.find(qn("w:rFonts"))
+        haupt = f.fontFamilies()[0] if f.fontFamilies() else ""
+        if rf is not None:
+            fam = [haupt]
+            for attr, prop in (("w:eastAsia", P_FONT_ASIEN), ("w:cs", P_FONT_KOMPLEX)):
+                n = rf.get(qn(attr))
+                if n and n != haupt:
+                    schnitt = ""; gr = ""
+                    if attr == "w:cs":
+                        bcs, ics = rpr.find(qn("w:bCs")), rpr.find(qn("w:iCs"))
+                        schnitt = ("Fett " if bcs is not None and bcs.get(qn("w:val")) not in ("0", "false") else "") + \
+                                  ("Kursiv" if ics is not None and ics.get(qn("w:val")) not in ("0", "false") else "")
+                        sz = rpr.find(qn("w:szCs"))
+                        gr = f"{int(sz.get(qn('w:val'))) / 2:g}" if sz is not None and sz.get(qn("w:val")) else ""
+                    f.setProperty(prop, f"{n}|{schnitt.strip()}|{gr}")
+                    fam.append(n)
+            if len(fam) > 1:
+                f.setFontFamilies(list(dict.fromkeys(fam)))
+        w_ = rpr.find(qn("w:w"))
+        if w_ is not None and w_.get(qn("w:val")) and w_.get(qn("w:val")).isdigit():
+            f.setFontStretch(int(w_.get(qn("w:val"))))                                    # Skalieren
+        pos = rpr.find(qn("w:position"))
+        if pos is not None and pos.get(qn("w:val")) not in (None, "0"):
+            try:                                                                          # Position in Halbpunkten → Prozent der Schriftgröße
+                gr = f.fontPointSize() or 11.0
+                f.setBaselineOffset(int(pos.get(qn("w:val"))) / 2 / gr * 100)
+            except ValueError:
+                pass
+        sg = rpr.find(qn("w:snapToGrid"))
+        if sg is not None and sg.get(qn("w:val")) in ("0", "false", "off"):
+            from lunivo_writer.editor.zusatz import P_RASTER
+            f.setProperty(P_RASTER, 0)
+        if rpr.find(qn("w:dstrike")) is not None and rpr.find(qn("w:dstrike")).get(qn("w:val")) not in ("0", "false"):
+            f.setProperty(P_DOPPELT, 1); f.setFontStrikeOut(True)
+        em = rpr.find(qn("w:em"))
+        if em is not None and em.get(qn("w:val")) not in (None, "none"):
+            f.setProperty(P_BETONUNG, {"dot": "punkt", "circle": "kreis", "comma": "komma", "underDot": "unten"}.get(em.get(qn("w:val")), "punkt"))
 
     _HL = {"yellow": "#FFFF00", "green": "#00FF00", "cyan": "#00FFFF", "magenta": "#FF00FF",
            "blue": "#0000FF", "red": "#FF0000", "darkBlue": "#000080", "darkCyan": "#008080",
@@ -445,6 +492,10 @@ class _Reader:
             b.setProperty(B_MUSTER, muster.als_text(art, mf, ff))
         elif shd and shd[0].get(qn("w:fill")) not in (None, "auto"):
             b.setBackground(QBrush(QColor("#" + shd[0].get(qn("w:fill")))))
+        from lunivo_writer.editor import absatzopt
+        opt = absatzopt.aus_ppr(para._p.pPr)
+        if opt:
+            absatzopt.setzen(b, {**absatzopt.VORGABE, **opt})
         stops = list(pf.tab_stops)
         if stops:
             from docx.enum.text import WD_TAB_ALIGNMENT
@@ -453,6 +504,10 @@ class _Reader:
                    WD_TAB_ALIGNMENT.DECIMAL: QTextOption.DelimiterTab}
             b.setTabPositions([QTextOption.Tab(_emu_to_px(t.position), art.get(t.alignment, QTextOption.LeftTab))
                                for t in stops])
+            from docx.enum.text import WD_TAB_LEADER
+            from lunivo_writer.editor import tabfuell
+            lk = {WD_TAB_LEADER.DOTS: "punkt", WD_TAB_LEADER.DASHES: "strich", WD_TAB_LEADER.LINES: "linie", WD_TAB_LEADER.MIDDLE_DOT: "mitte"}
+            tabfuell.setzen(b, {round(_emu_to_px(t.position), 2): lk[t.leader] for t in stops if t.leader in lk})
         lvl = self._heading_level(para)
         if lvl:
             b.setHeadingLevel(lvl)
@@ -683,6 +738,9 @@ class _Reader:
                 col = e.get(qn("w:color")) or "000000"
                 art = art_aus_docx(e.get(qn("w:val")))
                 li = Linie(f"#{col.lower() if col.lower() != 'auto' else '000000'}", int(e.get(qn("w:sz")) or 8) / 8, art).mit_seiten("".join(k for k, _e in da))
+                abst = {k: e2.get(qn("w:space")) for k, e2 in da}
+                if any(v not in (None, "4") for v in abst.values()):          # eigener Abstand zum Text (w:space in pt)
+                    li.abstand = ",".join(str(int(abst.get(k) or 4)) for k in "tblr")
                 bfmt.setProperty(B_RAHMEN, li.text())
         try:
             name = self._ps(para).name
@@ -989,6 +1047,13 @@ class _Reader:
                 ps.spalten = min(n, 4)
                 ps.spalten_abstand_mm = int(co.get(qn("w:space"), "720")) / 1440 * 25.4
                 ps.spalten_linie = co.get(qn("w:sep"), "0").lower() in ("1", "true", "on")
+        dt = self.d.settings.element.find(qn("w:defaultTabStop"))                      # Standardtabstopps des Dokuments (Twips)
+        if dt is not None and dt.get(qn("w:val"), "").isdigit() and int(dt.get(qn("w:val"))) > 0:
+            from PySide6.QtGui import QTextOption
+            from lunivo_writer.models.page import mm_to_px
+            opt = self.doc.defaultTextOption()
+            opt.setTabStopDistance(mm_to_px(int(dt.get(qn("w:val"))) / 1440 * 25.4))
+            self.doc.setDefaultTextOption(opt)
         ah = self.d.settings.element.find(qn("w:autoHyphenation"))
         if ah is not None and ah.get(qn("w:val"), "true").lower() not in ("false", "0", "off"):
             ps.silbentrennung = True
@@ -1004,6 +1069,19 @@ class _Reader:
                              "breite_pt": int(e.get(qn("w:sz")) or 8) / 8.0,
                              "art": art_aus_docx(e.get(qn("w:val"))),
                              "abstand_mm": int(e.get(qn("w:space")) or 24) / 72 * 25.4}
+                from lunivo_writer.editor.seitenrahmen import KUNST
+                wert = e.get(qn("w:val"))
+                if wert in [k for k, _n in KUNST if k]:                              # Kunstrahmen
+                    ps.border["kunst"] = wert
+                if pb.get(qn("w:offsetFrom")) == "text":                              # Abstand vom Text, je Seite (pt)
+                    ps.border["messen"] = "text"
+                ab = [int((pb.find(qn(f"w:{x}")).get(qn("w:space")) if pb.find(qn(f"w:{x}")) is not None else None) or 0) for x in ("top", "bottom", "left", "right")]
+                ps.border["abstand"] = ",".join(str(x) for x in ab)
+                ps.border["vordergrund"] = pb.get(qn("w:zOrder"), "front") != "back"
+                st = self.d.settings.element
+                ps.border["kopf"] = st.find(qn("w:bordersDoNotSurroundHeader")) is None
+                ps.border["fuss"] = st.find(qn("w:bordersDoNotSurroundFooter")) is None
+                ps.border["ausrichten"] = st.find(qn("w:alignBordersAndEdges")) is not None
 
     def _hf(self, part) -> HeaderFooter:
         if part.is_linked_to_previous or not part.paragraphs:

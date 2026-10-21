@@ -376,7 +376,7 @@ def _bf_ohne(bf):
     return bf
 
 
-def seitenschmuck(p: QPainter, page: PageSettings, hintergrund: bool = True, flaeche=None) -> None:
+def seitenschmuck(p: QPainter, page: PageSettings, hintergrund: bool = True, flaeche=None, rahmen: str = "immer", wasserzeichen: bool = True) -> None:
     """Seitenfarbe, Seitenrahmen und Wasserzeichen. Koordinaten: Seite in 96-dpi-Bildpunkten, Ursprung links oben.
     `flaeche` (QRectF) überschreibt das Seitenrechteck — der Editor zeichnet damit jede Seite einzeln."""
     from PySide6.QtCore import QRectF as _R
@@ -387,13 +387,12 @@ def seitenschmuck(p: QPainter, page: PageSettings, hintergrund: bool = True, fla
     if hintergrund and page.color:
         p.fillRect(r, QColor(page.color))
     b = page.border
-    if b:
-        a = mm_to_px(b.get("abstand_mm", 8.0))
-        from lunivo_writer.editor.linie import Linie
-        Linie(b.get("farbe", "#000000"), float(b.get("breite_pt", 1.0)), b.get("art", "einfach"), b.get("seiten", "tblr")).rahmen_zeichnen(
-            p, QRectF(r).adjusted(a, a, -a, -a), 96 / 72)
+    # „Immer im Vordergrund anzeigen“: der Rahmen liegt über dem Text (``rahmen="vorn"``) oder dahinter (``"hinten"``); ``"immer"`` zeichnet ihn in jedem Fall
+    if b and (rahmen == "immer" or (rahmen == "vorn") == bool(b.get("vordergrund", True))):
+        from lunivo_writer.editor import seitenrahmen
+        seitenrahmen.zeichnen(p, b, page, QRectF(r))
     w = page.watermark
-    if w and w.get("text"):
+    if wasserzeichen and w and w.get("text"):
         f = QFont("Liberation Sans")
         f.setPixelSize(max(8, int(w.get("groesse_pt", 80) * 96 / 72)))
         f.setBold(True)
@@ -751,7 +750,7 @@ def zeichne_seite(p: QPainter, d: QTextDocument, page: PageSettings, n: int, tot
     cw, ch = page.content_width_px, page.content_height_px
     ml, mt = mm_to_px(page.margin_left_mm), mm_to_px(page.margin_top_mm)
     ph = mm_to_px(page.height_mm)
-    seitenschmuck(p, page, hintergrund)
+    seitenschmuck(p, page, hintergrund, None, "hinten")
     kopf, fuss = (page.first_header, page.first_footer) if (n == 1 and page.diff_first) else (page.header, page.footer)
     _draw_hf(p, kopf, QRectF(ml, mm_to_px(8), cw, mm_to_px(10)), n + nr_offset, gesamt or total, base)
     _draw_hf(p, fuss, QRectF(ml, ph - mm_to_px(18), cw, mm_to_px(10)), n + nr_offset, gesamt or total, base)
@@ -791,6 +790,8 @@ def zeichne_seite(p: QPainter, d: QTextDocument, page: PageSettings, n: int, tot
         d.drawContents(p, QRectF(0, (lp - 1) * ch, cb, ch))
         absatz_zusatz_zeichnen(p, d)
         p.restore()
+        if j == n_sp - 1:                                    # der Seitenrahmen „im Vordergrund“ liegt über dem Text der Seite
+            seitenschmuck(p, page, False, None, "vorn", False)
         if balken:                                          # Änderungsbalken neben den Zeilen mit verfolgten Änderungen
             seite_b, zeilen = balken
             rechts = seite_b == "rechts" or (seite_b == "außen" and n % 2 == 0)
@@ -818,8 +819,12 @@ def zeichne_seite(p: QPainter, d: QTextDocument, page: PageSettings, n: int, tot
 def absatz_zusatz_zeichnen(p: QPainter, d: QTextDocument, faktor: float = 1.0) -> None:
     """Was an den Absätzen nicht von Qt kommt: Rahmen und die Nummern mehrstufiger Listen."""
     from lunivo_writer.editor.mehrstufig import nummern_zeichnen
+    from lunivo_writer.editor.tabfuell import zeichnen as tabfuell_zeichnen
+    from lunivo_writer.editor.textfx import absaetze_zeichnen as effekte_zeichnen
     absatzrahmen_zeichnen(p, d, faktor)
+    effekte_zeichnen(p, d)
     nummern_zeichnen(p, d, faktor)
+    tabfuell_zeichnen(p, d)
 
 
 def absatzrahmen_zeichnen(p: QPainter, d: QTextDocument, faktor: float = 1.0, polster: float = 4.0) -> None:
@@ -843,7 +848,12 @@ def absatzrahmen_zeichnen(p: QPainter, d: QTextDocument, faktor: float = 1.0, po
             continue
         r = lay.blockBoundingRect(bloecke[0]).united(lay.blockBoundingRect(bloecke[-1]))
         pd = polster * faktor
-        rr = r.adjusted(-pd, -pd + 1, pd, pd - 1)
+        eigen = linie.polster()
+        if eigen:                                                      # eigener Abstand (Rahmen und Schattierung ▸ Optionen), pt → Bildpunkte
+            o, u, l, rt = (x * 96 / 72 * faktor for x in eigen)
+            rr = r.adjusted(-l, -o, rt, u)
+        else:
+            rr = r.adjusted(-pd, -pd + 1, pd, pd - 1)
         zwischen = [(lay.blockBoundingRect(x).bottom() + lay.blockBoundingRect(y).top()) / 2
                     for x, y in zip(bloecke, bloecke[1:])]
         linie.rahmen_zeichnen(p, rr, 96 / 72 * faktor, zwischen)

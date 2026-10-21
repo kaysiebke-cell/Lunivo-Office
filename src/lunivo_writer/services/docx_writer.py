@@ -54,6 +54,25 @@ from lunivo_writer.editor import muster
 from lunivo_writer.editor.zusatz import B_ART, B_CAP, B_MUSTER, B_RAHMEN, B_TOC, P_AENDERUNG, P_AUTOR, P_DATUM, P_FELD, P_INDEX, P_KOMMENTAR, P_NOTE
 
 
+_RPR_FOLGE = ("w:rStyle", "w:rFonts", "w:b", "w:bCs", "w:i", "w:iCs", "w:caps", "w:smallCaps", "w:strike", "w:dstrike", "w:outline", "w:shadow",
+              "w:emboss", "w:imprint", "w:noProof", "w:snapToGrid", "w:vanish", "w:webHidden", "w:color", "w:spacing", "w:w", "w:kern", "w:position",
+              "w:sz", "w:szCs", "w:highlight", "w:u", "w:effect", "w:bdr", "w:shd", "w:fitText", "w:vertAlign", "w:rtl", "w:cs", "w:em", "w:lang",
+              "w:eastAsianLayout", "w:specVanish", "w:oMath")
+
+
+def _rpr_einfuegen(rpr, el) -> None:
+    """Ein Element an ``w:rPr`` in der Reihenfolge einfügen, die das Schema verlangt."""
+    tag = el.tag
+    namen = [qn(t) for t in _RPR_FOLGE]
+    nach = _RPR_FOLGE[namen.index(tag) + 1:] if tag in namen else ()
+    rpr.insert_element_before(el, *nach)
+
+
+def absatzopt_prop():
+    from lunivo_writer.editor.zusatz import B_ABSATZOPT
+    return B_ABSATZOPT
+
+
 class _Writer:
     def __init__(self, qdoc: QTextDocument, page: PageSettings, meta: dict):
         self.q = qdoc
@@ -130,7 +149,31 @@ class _Writer:
         (nach.addprevious(sp) if nach is not None else ppr.append(sp))
         self.write_section(Section(sp, self.d.part), ps, typ if k > 0 else None, k)
 
+    def _standard_tabstopp(self) -> None:
+        """Die Standardtabstopps des Dokuments als w:defaultTabStop (Twips) in die Einstellungen schreiben."""
+        from lunivo_writer.models.page import px_to_mm
+        dist = self.q.defaultTextOption().tabStopDistance()
+        st = self.d.settings.element
+        for alt in st.findall(qn("w:defaultTabStop")):
+            st.remove(alt)
+        if dist <= 0:
+            return
+        e = OxmlElement("w:defaultTabStop"); e.set(qn("w:val"), str(int(round(px_to_mm(dist) / 25.4 * 1440))))
+        nach = ("w:autoHyphenation", "w:consecutiveHyphenLimit", "w:hyphenationZone", "w:doNotHyphenateCaps", "w:showEnvelope", "w:summaryLength",
+                "w:clickAndTypeStyle", "w:defaultTableStyle", "w:evenAndOddHeaders", "w:bookFoldRevPrinting", "w:bookFoldPrinting", "w:bookFoldPrintingSheets",
+                "w:drawingGridHorizontalSpacing", "w:drawingGridVerticalSpacing", "w:displayHorizontalDrawingGridEvery", "w:displayVerticalDrawingGridEvery",
+                "w:doNotUseMarginsForDrawingGridOrigin", "w:drawingGridHorizontalOrigin", "w:drawingGridVerticalOrigin", "w:doNotShadeFormData",
+                "w:noPunctuationKerning", "w:characterSpacingControl", "w:printTwoOnOne", "w:strictFirstAndLastChars", "w:noLineBreaksAfter",
+                "w:noLineBreaksBefore", "w:savePreviewPicture", "w:doNotValidateAgainstSchema", "w:saveInvalidXml", "w:ignoreMixedContent",
+                "w:alwaysShowPlaceholderText", "w:doNotDemarcateInvalidXml", "w:saveXmlDataOnly", "w:useXSLTWhenSaving", "w:saveThroughXslt",
+                "w:showXMLTags", "w:alwaysMergeEmptyNamespace", "w:updateFields", "w:hdrShapeDefaults", "w:footnotePr", "w:endnotePr", "w:compat",
+                "w:docVars", "w:rsids", "w:mathPr", "w:attachedSchema", "w:themeFontLang", "w:clrSchemeMapping", "w:doNotIncludeSubdocsInStats",
+                "w:doNotAutoCompressPictures", "w:forceUpgrade", "w:captions", "w:readModeInkLockDown", "w:smartTagType", "w:schemaLibrary",
+                "w:shapeDefaults", "w:doNotEmbedSmartTags", "w:decimalSymbol", "w:listSeparator")
+        st.insert_element_before(e, *nach)
+
     def _dokument_ebene(self, p) -> None:
+        self._standard_tabstopp()
         doc_el = self.d.element
         for alt in doc_el.findall(qn("w:background")):
             doc_el.remove(alt)
@@ -156,17 +199,28 @@ class _Writer:
             sp.remove(alt)
         if p.border:
             b = p.border
+            from lunivo_writer.editor.seitenrahmen import abstaende_pt
             pb = OxmlElement("w:pgBorders")
-            pb.set(qn("w:offsetFrom"), "page")
+            pb.set(qn("w:offsetFrom"), "text" if b.get("messen") == "text" else "page")
+            pb.set(qn("w:zOrder"), "front" if b.get("vordergrund", True) else "back")
+            ab = dict(zip(("top", "bottom", "left", "right"), abstaende_pt(b)))
             for seite, kurz in (("top", "t"), ("left", "l"), ("bottom", "b"), ("right", "r")):
                 if kurz not in b.get("seiten", "tblr"):
                     continue
                 e = OxmlElement(f"w:{seite}")
-                e.set(qn("w:val"), docx_wert(b.get("art", "einfach")))
+                e.set(qn("w:val"), b["kunst"] if b.get("kunst") else docx_wert(b.get("art", "einfach")))
                 e.set(qn("w:sz"), str(max(2, int(round(b.get("breite_pt", 1.0) * 8)))))
-                e.set(qn("w:space"), str(int(round(b.get("abstand_mm", 8.0) / 25.4 * 72))))
+                e.set(qn("w:space"), str(min(31, int(round(ab[seite])))))
                 e.set(qn("w:color"), b.get("farbe", "#000000").lstrip("#").upper())
                 pb.append(e)
+            st = self.d.settings.element                                        # Kopf-/Fußzeile umgeben, am Seitenrand ausrichten (Einstellungen des Dokuments)
+            for tag, an in (("w:bordersDoNotSurroundHeader", not b.get("kopf")), ("w:bordersDoNotSurroundFooter", not b.get("fuss")),
+                            ("w:alignBordersAndEdges", bool(b.get("ausrichten")))):
+                for alt in st.findall(qn(tag)):
+                    st.remove(alt)
+                if an and tag != "w:alignBordersAndEdges" or (tag == "w:alignBordersAndEdges" and an):
+                    el = OxmlElement(tag); st.insert_element_before(el, *("w:compat", "w:docVars", "w:rsids", "w:mathPr", "w:themeFontLang", "w:clrSchemeMapping",
+                                                                         "w:shapeDefaults", "w:decimalSymbol", "w:listSeparator"))
             pg_mar = sp.find(qn("w:pgMar"))
             (pg_mar.addnext(pb) if pg_mar is not None else sp.append(pb))
         for alt in sp.findall(qn("w:cols")):
@@ -360,7 +414,8 @@ class _Writer:
             pf.line_spacing = lh / 100.0
         elif int(lht) == LH_FIXED and lh:
             pf.line_spacing = Pt(lh * PX_TO_PT)
-        if bf.pageBreakPolicy() & QTextFormat.PageBreak_AlwaysBefore:
+        from lunivo_writer.editor.seitenfluss import ist_manuell
+        if ist_manuell(bf):
             if bf.hasProperty(B_SPALTE):                              # Spaltenumbruch: <w:br w:type="column"/> am Absatzanfang
                 from docx.enum.text import WD_BREAK
                 para.add_run().add_break(WD_BREAK.COLUMN)
@@ -372,12 +427,21 @@ class _Writer:
             from PySide6.QtGui import QTextOption
             art = {QTextOption.RightTab: WD_TAB_ALIGNMENT.RIGHT, QTextOption.CenterTab: WD_TAB_ALIGNMENT.CENTER,
                    QTextOption.DelimiterTab: WD_TAB_ALIGNMENT.DECIMAL}
+            from docx.enum.text import WD_TAB_LEADER
+            from lunivo_writer.editor import tabfuell
+            fuell = tabfuell.lesen(bf)
+            leader = {"punkt": WD_TAB_LEADER.DOTS, "strich": WD_TAB_LEADER.DASHES, "linie": WD_TAB_LEADER.LINES, "mitte": WD_TAB_LEADER.MIDDLE_DOT}
             for t in tabs:
-                pf.tab_stops.add_tab_stop(Emu(int(t.position * EMU_PER_PX)), art.get(t.type, WD_TAB_ALIGNMENT.LEFT))
+                f = next((fz for p_, fz in fuell.items() if abs(p_ - t.position) < 0.05), "")
+                pf.tab_stops.add_tab_stop(Emu(int(t.position * EMU_PER_PX)), art.get(t.type, WD_TAB_ALIGNMENT.LEFT),
+                                          leader.get(f, WD_TAB_LEADER.SPACES))
         nach_shd = ("w:tabs", "w:suppressAutoHyphens", "w:kinsoku", "w:wordWrap", "w:overflowPunct", "w:topLinePunct", "w:autoSpaceDE",
                     "w:autoSpaceDN", "w:bidi", "w:adjustRightInd", "w:snapToGrid", "w:spacing", "w:ind", "w:contextualSpacing",
                     "w:mirrorIndents", "w:suppressOverlap", "w:jc", "w:textDirection", "w:textAlignment", "w:textboxTightWrap",
                     "w:outlineLvl", "w:divId", "w:cnfStyle", "w:rPr", "w:sectPr", "w:pPrChange")
+        from lunivo_writer.editor import absatzopt
+        if bf.hasProperty(absatzopt_prop()):
+            absatzopt.in_ppr(para._p.get_or_add_pPr(), absatzopt.lesen(bf))
         if bf.hasProperty(B_RAHMEN):
             li = Linie.aus_text(bf.stringProperty(B_RAHMEN))
             bdr = OxmlElement("w:pBdr")
@@ -388,7 +452,8 @@ class _Writer:
                 e = OxmlElement(f"w:{seite}")
                 e.set(qn("w:val"), val)
                 e.set(qn("w:sz"), str(max(2, int(round(li.breite_pt * 8)))))
-                e.set(qn("w:space"), "4")
+                pol = li.polster()
+                e.set(qn("w:space"), str(int(round(pol[{"t": 0, "b": 1, "l": 2, "r": 3, "h": 0}[kurz]]))) if pol else "4")
                 e.set(qn("w:color"), (li.farbe or "#000000").lstrip("#").upper())
                 bdr.append(e)
             if len(bdr):
@@ -663,6 +728,10 @@ class _Writer:
             rf = rpr.find(qn("w:rFonts"))
             for a in ("w:hAnsi", "w:cs", "w:eastAsia"):
                 rf.set(qn(a), fam)
+            from lunivo_writer.editor.zusatz import P_FONT_ASIEN, P_FONT_KOMPLEX
+            for prop, attr in ((P_FONT_ASIEN, "w:eastAsia"), (P_FONT_KOMPLEX, "w:cs")):      # Schrift für asiatische und komplexe Zeichen
+                if cf.hasProperty(prop) and cf.stringProperty(prop).split("|")[0]:
+                    rf.set(qn(attr), cf.stringProperty(prop).split("|")[0])
         elif _has(cf, QTextFormat.FontFamily):
             f.name = cf.stringProperty(QTextFormat.FontFamily)
         if _has(cf, QTextFormat.FontPointSize) and cf.fontPointSize() > 0:
@@ -672,13 +741,43 @@ class _Writer:
         if _has(cf, QTextFormat.FontItalic):
             f.italic = cf.fontItalic()
         ustil = cf.underlineStyle()
-        if ustil != QTextCharFormat.NoUnderline and not is_link:
-            from docx.enum.text import WD_UNDERLINE
-            f.underline = {QTextCharFormat.DashUnderline: WD_UNDERLINE.DASH, QTextCharFormat.DotLine: WD_UNDERLINE.DOTTED,
-                           QTextCharFormat.DashDotLine: WD_UNDERLINE.DOT_DASH,
-                           QTextCharFormat.WaveUnderline: WD_UNDERLINE.WAVY}.get(ustil, True)
-        if cf.fontStrikeOut():
+        from lunivo_writer.editor.zusatz import P_UNTER
+        eigene = cf.stringProperty(P_UNTER) if cf.hasProperty(P_UNTER) else ""
+        if (ustil != QTextCharFormat.NoUnderline or eigene) and not is_link:
+            from docx.enum.text import WD_UNDERLINE as U
+            f.underline = {"woerter": U.WORDS, "doppelt": U.DOUBLE, "dick": U.THICK, "dick_gepunktet": U.DOTTED_HEAVY, "dick_gestrichelt": U.DASH_HEAVY,
+                           "lang": U.DASH_LONG, "dick_lang": U.DASH_LONG_HEAVY, "dick_strichpunkt": U.DOT_DASH_HEAVY, "dick_strichpunktpunkt": U.DOT_DOT_DASH_HEAVY,
+                           "dick_wellig": U.WAVY_HEAVY, "doppelwellig": U.WAVY_DOUBLE}.get(eigene) or {
+                QTextCharFormat.DashUnderline: U.DASH, QTextCharFormat.DotLine: U.DOTTED, QTextCharFormat.DashDotLine: U.DOT_DASH,
+                QTextCharFormat.DashDotDotLine: U.DOT_DOT_DASH, QTextCharFormat.WaveUnderline: U.WAVY}.get(ustil, True)
+        from lunivo_writer.editor.zusatz import P_BETONUNG, P_DOPPELT, P_FONT_KOMPLEX
+        if cf.hasProperty(P_DOPPELT) and cf.property(P_DOPPELT):
+            f.double_strike = True
+        elif cf.fontStrikeOut():
             f.strike = True
+        if cf.hasProperty(P_FONT_KOMPLEX):                       # Schnitt und Größe für komplexe Zeichen
+            _fam, schnitt, gr = (cf.stringProperty(P_FONT_KOMPLEX).split("|") + ["", "", ""])[:3]
+            f.cs_bold = True if "Fett" in schnitt else None
+            f.cs_italic = True if "Kursiv" in schnitt else None
+            try:
+                if float(gr or 0) > 0:
+                    sz = OxmlElement("w:szCs"); sz.set(qn("w:val"), str(int(round(float(gr) * 2))))
+                    _rpr_einfuegen(run._r.get_or_add_rPr(), sz)
+            except ValueError:
+                pass
+        from lunivo_writer.editor.zusatz import P_RASTER
+        rpr_ = run._r.get_or_add_rPr()
+        if cf.hasProperty(QTextFormat.FontStretch) and cf.fontStretch() not in (0, 100):               # Skalieren
+            e_ = OxmlElement("w:w"); e_.set(qn("w:val"), str(int(cf.fontStretch()))); _rpr_einfuegen(rpr_, e_)
+        if cf.hasProperty(QTextFormat.TextBaselineOffset) and cf.baselineOffset() and cf.verticalAlignment() == QTextCharFormat.AlignNormal:  # Position
+            gr = cf.fontPointSize() if cf.hasProperty(QTextFormat.FontPointSize) and cf.fontPointSize() > 0 else 11.0
+            e_ = OxmlElement("w:position"); e_.set(qn("w:val"), str(int(round(cf.baselineOffset() * gr / 100 * 2)))); _rpr_einfuegen(rpr_, e_)
+        if cf.hasProperty(P_RASTER) and not cf.property(P_RASTER):
+            e_ = OxmlElement("w:snapToGrid"); e_.set(qn("w:val"), "0"); _rpr_einfuegen(rpr_, e_)
+        if cf.hasProperty(P_BETONUNG) and cf.stringProperty(P_BETONUNG):
+            em = OxmlElement("w:em")
+            em.set(qn("w:val"), {"punkt": "dot", "kreis": "circle", "komma": "comma", "unten": "underDot"}.get(cf.stringProperty(P_BETONUNG), "dot"))
+            _rpr_einfuegen(run._r.get_or_add_rPr(), em)
         va = cf.verticalAlignment()
         if va == QTextCharFormat.AlignSuperScript:
             f.superscript = True
@@ -700,7 +799,8 @@ class _Writer:
                 run._r.get_or_add_rPr().append(shd)
         if cf.textOutline().style() != Qt.NoPen:
             f.outline = True
-        if cf.textOutline().style() != Qt.NoPen or (cf.hasProperty(QTextFormat.ForegroundBrush) and cf.foreground().color().alpha() < 255):
+        from lunivo_writer.editor.zusatz import P_EFFEKT
+        if cf.textOutline().style() != Qt.NoPen or cf.stringProperty(P_EFFEKT) or (cf.hasProperty(QTextFormat.ForegroundBrush) and cf.foreground().color().alpha() < 255):
             from lunivo_writer.editor import texteffekt
             texteffekt.in_rpr(run._r.get_or_add_rPr(), cf)
         if cf.hasProperty(P_VERSTECKT):

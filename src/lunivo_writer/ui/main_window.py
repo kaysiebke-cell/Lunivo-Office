@@ -899,25 +899,32 @@ class MainWindow(QMainWindow):
         e = self.current_editor()
         if not e:
             return
+        from lunivo_writer.editor import absatzopt, seitenfluss
         from lunivo_writer.ui.baukasten.absatz_dialog import AbsatzDialog
-        from lunivo_writer.ui.baukasten.tabstopp_dialog import aus_qt, zu_qt
+        from lunivo_writer.ui.baukasten.tabstopp_dialog import aus_block
         bf = e.textCursor().blockFormat()
         lh = bf.lineHeight() / 100 if bf.lineHeightType() == 1 and bf.lineHeight() else 1.0
+        lart = {2: "genau", 3: "mindestens"}.get(int(bf.lineHeightType()), "faktor")
+        lpt = round(bf.lineHeight() * 0.75, 1) if lart != "faktor" else 12.0
         al = bf.alignment()
         rtl = bf.layoutDirection() == Qt.RightToLeft
         d = AbsatzDialog(self, {
             "ausr": "mitte" if al & Qt.AlignHCenter else "rechts" if al & Qt.AlignRight else "block" if al & Qt.AlignJustify else "links",
             "rtl": rtl, "einzug": px_to_mm(bf.leftMargin()), "rechts": px_to_mm(bf.rightMargin()),
             "erste": px_to_mm(bf.textIndent()), "vor": bf.topMargin() * 0.75, "nach": bf.bottomMargin() * 0.75, "zeilen": lh,
-            "umbruch": bool(bf.pageBreakPolicy() & QTextFormat.PageBreak_AlwaysBefore), "tabs": aus_qt(bf.tabPositions())})
+            "zeilen_art": lart, "zeilen_pt": lpt, "ebene": bf.headingLevel(), "opt": absatzopt.lesen(bf),
+            "umbruch": seitenfluss.ist_manuell(bf), "tabs": aus_block(bf)})
         if d.exec():
             w = d.werte()
+            if w["ebene"] != bf.headingLevel():                       # die Gliederungsebene ist die Überschriftsebene des Absatzes
+                e.apply_style("Standard" if not w["ebene"] else f"Überschrift {w['ebene']}")
             e.set_alignment({"mitte": Qt.AlignHCenter, "rechts": Qt.AlignRight, "block": Qt.AlignJustify}.get(w["ausr"], Qt.AlignLeft))
             e.set_page_break_before(w["umbruch"])
+            e.set_absatzopt(w["opt"])
             e.set_indents(w["einzug"], w["rechts"], w["erste"])
             e.set_paragraph_spacing(w["vor"], w["nach"])
-            e.set_line_spacing(w["zeilen"])
-            e.set_tabstopps(zu_qt(w["tabs"]))
+            e.set_line_height(w["zeilen_art"], w["zeilen"] if w["zeilen_art"] == "faktor" else w["zeilen_pt"])
+            e.set_tabstopps(w["tabs"])
             if w["rtl"] != rtl:
                 e.toggle_rtl()
 
@@ -925,10 +932,10 @@ class MainWindow(QMainWindow):
         e = self.current_editor()
         if not e:
             return
-        from lunivo_writer.ui.baukasten.tabstopp_dialog import TabstoppDialog, aus_qt, zu_qt
-        d = TabstoppDialog(self, aus_qt(e.textCursor().blockFormat().tabPositions()))
+        from lunivo_writer.ui.baukasten.tabstopp_dialog import TabstoppDialog, aus_block
+        d = TabstoppDialog(self, aus_block(e.textCursor().blockFormat()))
         if d.exec():
-            e.set_tabstopps(zu_qt(d.stopps()))
+            e.set_tabstopps(d.stopps())
 
     def _lesehilfe_auf(self, e):
         from lunivo_writer.ui.dialogs.lesehilfe_dialog import PAPIERTOENE

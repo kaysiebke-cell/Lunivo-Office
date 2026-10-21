@@ -54,3 +54,13 @@ B_RAHMEN = QTextFormat.UserProperty + 5          # Absatzrahmen: "farbe|breite_p
 B_ANKER = QTextFormat.UserProperty + 8           # 1: leerer Hilfsabsatz vor einem schwebenden Bild (Anker, wird nicht gespeichert)
 B_MUSTER = QTextFormat.UserProperty + 9           # Schattierungsmuster: "schlüssel|musterfarbe|füllfarbe" (siehe editor/muster.py)
 B_MEHRSTUFIG = QTextFormat.UserProperty + 36      # Absatz einer mehrstufigen Liste: "ebene|JSON der Gliederung" (siehe editor/mehrstufig.py)
+B_TABFUELL = QTextFormat.UserProperty + 37        # Füllzeichen der Tabstopps: "Position in px:Füllzeichen;…" (siehe editor/tabfuell.py)
+B_ABSATZOPT = QTextFormat.UserProperty + 38       # Absatzoptionen (Absatz-Fenster, Reiter Zeilen- und Seitenumbruch): "Schlüssel=Wert;…", nur Abweichungen (siehe editor/absatzopt.py)
+B_AUTOUMBRUCH = QTextFormat.UserProperty + 39     # 1: Seitenumbruch, den Lunivo wegen einer Umbruchregel eingefügt hat (wird nicht gespeichert; siehe editor/seitenfluss.py)
+P_EFFEKT = QTextFormat.UserProperty + 40         # Zeichenformat: Texteffekte, die Lunivo selbst zeichnet (JSON, siehe editor/textfx.py)
+P_FONT_ASIEN = QTextFormat.UserProperty + 41     # Zeichenformat: Schrift für asiatischen Text als "Familie|Schnitt|Größe" (Fenster Schriftart); steht auch in der Familienliste
+P_FONT_KOMPLEX = QTextFormat.UserProperty + 42   # dasselbe für komplexe Schriftzeichen (Arabisch, Hebräisch …)
+P_DOPPELT = QTextFormat.UserProperty + 43        # 1: doppelt durchgestrichen (Lunivo zeichnet die zweite Linie)
+P_BETONUNG = QTextFormat.UserProperty + 44       # Betonungszeichen über/unter den Buchstaben: "punkt" | "kreis" | "komma" | "unten" (Lunivo zeichnet sie)
+P_UNTER = QTextFormat.UserProperty + 45          # Zeichenformat: Art der Unterstreichung, die Qt nicht kennt (doppelt, dick, lang, nur Wörter …); Lunivo zeichnet sie (siehe editor/textfx.py)
+P_RASTER = QTextFormat.UserProperty + 46        # 0: „am Raster ausrichten“ ist aus (Fenster Schriftart, Zeichenabstand); nur gesetzt, wenn abweichend (DOCX w:snapToGrid)

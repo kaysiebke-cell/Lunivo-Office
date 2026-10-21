@@ -132,13 +132,12 @@ class Befehle:
     def an_unter(self): return self._fmt().underlineStyle() != QTextCharFormat.NoUnderline
 
     def menue_unterstrichKlappe(self):
+        from lunivo_writer.ui.baukasten.text_format import UNTERSTREICHUNG, unter_format
         m = QMenu()
-        for t, st in (("Einfach", QTextCharFormat.SingleUnderline), ("Gestrichelt", QTextCharFormat.DashUnderline),
-                      ("Gepunktet", QTextCharFormat.DotLine), ("Strich-Punkt", QTextCharFormat.DashDotLine),
-                      ("Wellenlinie", QTextCharFormat.WaveUnderline)):
-            m.addAction(t, lambda _=False, st=st: self.ed and self.ed.set_underline_style(st))
+        for k, t in UNTERSTREICHUNG[1:]:                              # dieselben Arten wie im Fenster „Schriftart“
+            m.addAction(t, lambda _=False, k=k: self.ed and self.ed._merge(unter_format(k)))
         m.addSeparator()
-        m.addAction("Keine Unterstreichung", lambda: self.ed and self.ed.set_underline_style(QTextCharFormat.NoUnderline))
+        m.addAction("Keine Unterstreichung", lambda: self.ed and self.ed._merge(unter_format("")))
         return m
 
     def objekteWaehlen(self, k=None):
@@ -727,25 +726,35 @@ class Befehle:
         """Fenster „Neue Formatvorlage“ (Baukasten); die Werte kommen vom Absatz an der Schreibmarke."""
         from lunivo_writer.editor import stile
         from lunivo_writer.ui.baukasten.formatvorlage_dialog import FormatvorlageDialog
-        d = FormatvorlageDialog(self.w, start=(self.ed.stil_aus_auswahl() if self.ed else None), belegt=self._taste_belegt)
+        d = FormatvorlageDialog(self.w, start=(self.ed.stil_aus_auswahl() if self.ed else None), belegt=self._taste_belegt,
+                                standard_tab_mm=self.ed.standard_tab_mm() if self.ed else None)
         if not d.exec():
             return
         erg = d.ergebnis()
+        std = erg.pop("tab_standard", None)
+        if self.ed and std:
+            self.ed.set_standard_tab_mm(std)
+        merken = erg.pop("zur_vorlage", True)                 # „Zur Vorlage hinzufügen“: auch für künftige Dokumente speichern
         grund = stile.anlegen(erg.pop("name"), basis=erg.pop("basis"), folge=erg.pop("folge"), **erg)
         if grund:
             QMessageBox.warning(self.w, "Neue Formatvorlage", grund)
             return
-        self.w.settings.set("stile/eigene", stile.als_json_neu())
+        if merken:
+            self.w.settings.set("stile/eigene", stile.als_json_neu())
         self._stile_fertig()
 
     def formatvorlageAendern(self, name: str):
         """Rechtsklick auf eine Vorlage in der Galerie ▸ Ändern …: dasselbe Fenster, der Name steht fest."""
         from lunivo_writer.editor import stile
         from lunivo_writer.ui.baukasten.formatvorlage_dialog import FormatvorlageDialog
-        d = FormatvorlageDialog(self.w, aendern=name, belegt=self._taste_belegt)
+        d = FormatvorlageDialog(self.w, aendern=name, belegt=self._taste_belegt, standard_tab_mm=self.ed.standard_tab_mm() if self.ed else None)
         if not d.exec():
             return
         erg = d.ergebnis()
+        std = erg.pop("tab_standard", None)
+        if self.ed and std:
+            self.ed.set_standard_tab_mm(std)
+        erg.pop("zur_vorlage", None)
         erg.pop("name"); basis, folge = erg.pop("basis"), erg.pop("folge")
         if stile.ist_eigen(name):
             stile.loeschen(name)
@@ -1269,6 +1278,12 @@ class Befehle:
         d = SchriftartDialog(self.w, w)
         if d.exec():
             neu = d.werte()
+            if neu.pop("als_standard", False):                  # „Standard …“: Schrift und Größe für neue Dokumente merken
+                if neu["schrift"]:
+                    self.w.settings.set("standard/schrift", neu["schrift"])
+                if neu["groesse"]:
+                    self.w.settings.set("standard/groesse", neu["groesse"])
+                self.w.statusBar().showMessage("Die Schrift gilt jetzt als Standard für neue Dokumente.", 5000)
             self.ed._merge(zu_format(neu))
             if "effekt" in neu:
                 from lunivo_writer.editor import texteffekt

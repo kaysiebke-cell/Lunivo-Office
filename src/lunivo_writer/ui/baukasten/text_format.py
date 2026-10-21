@@ -208,36 +208,67 @@ class TextFormatLeiste(QWidget):
 
 
 # ---- Zeichenformat <-> Werte, gemeinsam für das Fenster „Schriftart“ und den Editor --------------------------------------------
-UNTERSTREICHUNG = (("", "(Keine)"), ("einfach", "Einfach"), ("gepunktet", "Gepunktet"), ("gestrichelt", "Gestrichelt"),
-                   ("strichpunkt", "Strich-Punkt"), ("strichpunktpunkt", "Strich-Punkt-Punkt"), ("wellig", "Wellenlinie"))
+UNTERSTREICHUNG = (("", "(Keine)"), ("woerter", "Nur Wörter"), ("einfach", "Einfach"), ("doppelt", "Doppelt"), ("dick", "Dick"),
+                   ("gepunktet", "Gepunktet"), ("dick_gepunktet", "Dick gepunktet"), ("gestrichelt", "Gestrichelt"), ("dick_gestrichelt", "Dick gestrichelt"),
+                   ("lang", "Lang gestrichelt"), ("dick_lang", "Dick lang gestrichelt"), ("strichpunkt", "Strich-Punkt"), ("dick_strichpunkt", "Dick Strich-Punkt"),
+                   ("strichpunktpunkt", "Strich-Punkt-Punkt"), ("dick_strichpunktpunkt", "Dick Strich-Punkt-Punkt"), ("wellig", "Wellenlinie"),
+                   ("dick_wellig", "Dicke Wellenlinie"), ("doppelwellig", "Doppelte Wellenlinie"))
+# Was Qt selbst unterstreicht; alle anderen Arten zeichnet Lunivo (``P_UNTER``) und lässt Qt eine einfache Linie als Rückfall setzen
 _UNTER_QT = {"einfach": QTextCharFormat.SingleUnderline, "gepunktet": QTextCharFormat.DotLine, "gestrichelt": QTextCharFormat.DashUnderline,
              "strichpunkt": QTextCharFormat.DashDotLine, "strichpunktpunkt": QTextCharFormat.DashDotDotLine, "wellig": QTextCharFormat.WaveUnderline}
+_UNTER_RUECKFALL = {"doppelt": QTextCharFormat.SingleUnderline, "dick": QTextCharFormat.SingleUnderline, "dick_gepunktet": QTextCharFormat.DotLine,
+                    "dick_gestrichelt": QTextCharFormat.DashUnderline, "lang": QTextCharFormat.DashUnderline, "dick_lang": QTextCharFormat.DashUnderline,
+                    "dick_strichpunkt": QTextCharFormat.DashDotLine, "dick_strichpunktpunkt": QTextCharFormat.DashDotDotLine,
+                    "dick_wellig": QTextCharFormat.WaveUnderline, "doppelwellig": QTextCharFormat.WaveUnderline, "woerter": QTextCharFormat.NoUnderline}
 ZEICHEN = {"schrift": "", "fett": False, "kursiv": False, "groesse": 0.0, "farbe": "", "unter": "", "unterfarbe": "",
            "durch": False, "hoch": False, "tief": False, "kapital": False, "gross": False, "versteckt": False,
-           "abstand": 0.0, "kerning": True}
+           "abstand": 0.0, "kerning": True, "doppelt": False, "betonung": "", "skala": 100.0, "position": 0.0, "kern_ab": 0.0, "raster": True,
+           "schrift_asien": "", "schnitt_asien": "", "groesse_asien": 0.0, "schrift_komplex": "", "schnitt_komplex": "", "groesse_komplex": 0.0}
+BETONUNG = (("", "(Keine)"), ("punkt", "Punkt oberhalb"), ("kreis", "Kreis oberhalb"), ("komma", "Komma oberhalb"), ("unten", "Punkt unterhalb"))
+
+
+def unter_format(art: str) -> QTextCharFormat:
+    """Nur die Unterstreichung als Zeichenformat (zum Zusammenführen, ohne anderes anzufassen)."""
+    from lunivo_writer.editor.zusatz import P_UNTER
+    f = QTextCharFormat()
+    f.setUnderlineStyle(_UNTER_QT.get(art) or _UNTER_RUECKFALL.get(art, QTextCharFormat.NoUnderline))
+    f.setProperty(P_UNTER, art if art in _UNTER_RUECKFALL else "")                    # nur die Arten, die Lunivo selbst zeichnet
+    return f
 
 
 def zu_format(w: dict) -> QTextCharFormat:
     """Die Werte eines Zeichenfensters als Zeichenformat (zum Anwenden im Editor und für Vorschauen)."""
+    from lunivo_writer.editor.zusatz import P_BETONUNG, P_DOPPELT, P_FONT_ASIEN, P_FONT_KOMPLEX
     f = QTextCharFormat()
-    if w.get("schrift"):
-        f.setFontFamilies([w["schrift"]])
+    familien = [x for x in (w.get("schrift"), w.get("schrift_asien"), w.get("schrift_komplex")) if x]
+    if familien:                                  # Qt nimmt für Zeichen, die die erste Schrift nicht hat, die nächste (asiatisch, komplex)
+        f.setFontFamilies(list(dict.fromkeys(familien)))
+    f.setProperty(P_FONT_ASIEN, f'{w.get("schrift_asien", "")}|{w.get("schnitt_asien", "")}|{w.get("groesse_asien", 0.0):g}')
+    f.setProperty(P_FONT_KOMPLEX, f'{w.get("schrift_komplex", "")}|{w.get("schnitt_komplex", "")}|{w.get("groesse_komplex", 0.0):g}')
+    f.setProperty(P_DOPPELT, 1 if w.get("doppelt") else 0)
+    f.setProperty(P_BETONUNG, w.get("betonung", ""))
     f.setFontWeight(QFont.Bold if w.get("fett") else QFont.Normal)
     f.setFontItalic(bool(w.get("kursiv")))
     if w.get("groesse"):
         f.setFontPointSize(float(w["groesse"]))
     if w.get("farbe"):
         f.setForeground(QColor(w["farbe"]))
-    f.setUnderlineStyle(_UNTER_QT.get(w.get("unter"), QTextCharFormat.NoUnderline))
+    f.merge(unter_format(w.get("unter") or ""))
     if w.get("unter") and w.get("unterfarbe"):
         f.setUnderlineColor(QColor(w["unterfarbe"]))
-    f.setFontStrikeOut(bool(w.get("durch")))
+    f.setFontStrikeOut(bool(w.get("durch") or w.get("doppelt")))
     f.setVerticalAlignment(QTextCharFormat.AlignSuperScript if w.get("hoch") else QTextCharFormat.AlignSubScript if w.get("tief")
                            else QTextCharFormat.AlignNormal)
     f.setFontCapitalization(QFont.AllUppercase if w.get("gross") else QFont.SmallCaps if w.get("kapital") else QFont.MixedCase)
     f.setFontLetterSpacingType(QFont.AbsoluteSpacing)
     f.setFontLetterSpacing(float(w.get("abstand") or 0) / 0.75)
-    f.setFontKerning(bool(w.get("kerning", True)))
+    kern_ab = float(w.get("kern_ab") or 0)                     # „Unterschneidung ab … Punkte“: erst ab dieser Größe
+    f.setFontKerning(bool(w.get("kerning", True)) and (kern_ab <= 0 or float(w.get("groesse") or 11) >= kern_ab))
+    f.setFontStretch(int(round(float(w.get("skala") or 100))))                       # „Skalieren“: Breite der Zeichen in Prozent
+    gr = float(w.get("groesse") or 11)
+    f.setBaselineOffset(float(w.get("position") or 0) / gr * 100 if gr else 0.0)     # „Position“: Pt höher (+) oder tiefer (−), in Prozent der Schriftgröße
+    from lunivo_writer.editor.zusatz import P_RASTER
+    f.setProperty(P_RASTER, 1 if w.get("raster", True) else 0)
     return f
 
 
@@ -250,16 +281,34 @@ def aus_format(cf: QTextCharFormat, standard_schrift: str = "", standard_groesse
     w["groesse"] = cf.fontPointSize() or standard_groesse
     if cf.hasProperty(QTextFormat.ForegroundBrush) and cf.foreground().style() != Qt.NoBrush:
         w["farbe"] = cf.foreground().color().name()
-    w["unter"] = next((k for k, q in _UNTER_QT.items() if cf.underlineStyle() == q), "")
+    from lunivo_writer.editor.zusatz import P_UNTER
+    w["unter"] = cf.stringProperty(P_UNTER) if cf.hasProperty(P_UNTER) and cf.stringProperty(P_UNTER) else \
+        next((k for k, q in _UNTER_QT.items() if cf.underlineStyle() == q), "")
     if w["unter"] and cf.underlineColor().isValid():
         w["unterfarbe"] = cf.underlineColor().name()
-    w["durch"] = cf.fontStrikeOut()
+    from lunivo_writer.editor.zusatz import P_BETONUNG, P_DOPPELT, P_FONT_ASIEN, P_FONT_KOMPLEX
+    w["doppelt"] = bool(cf.hasProperty(P_DOPPELT) and cf.property(P_DOPPELT))
+    w["durch"] = cf.fontStrikeOut() and not w["doppelt"]
+    w["betonung"] = cf.stringProperty(P_BETONUNG) if cf.hasProperty(P_BETONUNG) else ""
+    for art, prop in (("asien", P_FONT_ASIEN), ("komplex", P_FONT_KOMPLEX)):
+        if cf.hasProperty(prop):
+            f_, sn, gr = (cf.stringProperty(prop).split("|") + ["", "", ""])[:3]
+            w[f"schrift_{art}"] = f_; w[f"schnitt_{art}"] = sn
+            try:
+                w[f"groesse_{art}"] = float(gr or 0)
+            except ValueError:
+                pass
     w["hoch"] = cf.verticalAlignment() == QTextCharFormat.AlignSuperScript
     w["tief"] = cf.verticalAlignment() == QTextCharFormat.AlignSubScript
     w["kapital"] = cf.fontCapitalization() == QFont.SmallCaps
     w["gross"] = cf.fontCapitalization() == QFont.AllUppercase
     w["abstand"] = round(cf.fontLetterSpacing() * 0.75, 1) if cf.fontLetterSpacingType() == QFont.AbsoluteSpacing else 0.0
     w["kerning"] = cf.fontKerning() if cf.hasProperty(QTextFormat.FontKerning) else True       # ohne Angabe gilt: an
+    w["skala"] = float(cf.fontStretch()) if cf.hasProperty(QTextFormat.FontStretch) and cf.fontStretch() else 100.0
+    gr = w["groesse"] or standard_groesse or 11
+    w["position"] = round(cf.baselineOffset() * gr / 100, 1) if cf.hasProperty(QTextFormat.TextBaselineOffset) else 0.0
+    from lunivo_writer.editor.zusatz import P_RASTER
+    w["raster"] = not (cf.hasProperty(P_RASTER) and not cf.property(P_RASTER))
     return w
 
 

@@ -62,10 +62,21 @@ class Linie:
     breite_pt: float = 1.0
     art: str = "einfach"
     seiten: str = ALLE_SEITEN
+    abstand: str = ""                    # Abstand zum Text in pt: "oben,unten,links,rechts" (leer = Vorgabe), nur beim Absatzrahmen
 
     def text(self) -> str:
         basis = f"{self.farbe}|{self.breite_pt:g}|{self.art}"
+        if self.abstand:
+            return f"{basis}|{self.seiten}|{self.abstand}"
         return basis if self.seiten == ALLE_SEITEN else f"{basis}|{self.seiten}"
+
+    def polster(self) -> tuple[float, float, float, float] | None:
+        """(oben, unten, links, rechts) in pt, wenn ein eigener Abstand gesetzt ist."""
+        try:
+            o, u, l, r = (float(x) for x in self.abstand.split(","))
+            return o, u, l, r
+        except ValueError:
+            return None
 
     @classmethod
     def aus_text(cls, text: str | None) -> "Linie | None":
@@ -74,12 +85,12 @@ class Linie:
         t = text.split("|")
         try:
             return cls(t[0] or "#000000", float(t[1]) if len(t) > 1 and t[1] else 1.0, t[2] if len(t) > 2 and t[2] else "einfach",
-                       t[3] if len(t) > 3 else ALLE_SEITEN)
+                       t[3] if len(t) > 3 else ALLE_SEITEN, t[4] if len(t) > 4 else "")
         except ValueError:
             return None
 
     def mit_seiten(self, seiten: str) -> "Linie":
-        return Linie(self.farbe, self.breite_pt, self.art, "".join(s for s in "tblrh" if s in seiten))
+        return Linie(self.farbe, self.breite_pt, self.art, "".join(s for s in "tblrh" if s in seiten), self.abstand)
 
     def stift(self, massstab: float = 1.0) -> QPen:
         """QPen der Linie (bei Mehrfachlinien die Gesamtbreite); ``massstab`` rechnet pt in Bildpunkte um (96/72 am Bildschirm, mal Zoom)."""

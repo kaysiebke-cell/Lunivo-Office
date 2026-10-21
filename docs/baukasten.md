@@ -61,4 +61,20 @@ gepunktet, Strich-Punkt).
   eingestellte Linie.
 - **Fenster „Rahmen und Schattierung“** (`ui/baukasten/rahmen_schattierung.py`, Muster in `editor/muster.py`): Reiter Rahmen (Einstellung, Linienart, Farbe, Breite, Vorschau mit Kantenknöpfen), Seitenrand und Schattierung (Füllfarbe, 37 Muster, Musterfarbe). Gespeichert wird das Muster am Absatz (`B_MUSTER`) und in DOCX als `w:shd`.
 
+## Fenster für Absatz, Schrift, Listen, Tasten und Effekte
+
+Alle Fenster liefern Werte und formatieren selbst nichts; der Aufrufer (Band, Editor, Formatvorlage) setzt das Ergebnis. Die Knopfzeile
+unten kommt überall von `fussleiste` (`dialog_rahmen.py`), Maße von `EinheitFeld` / `MassSpin` (`mass_feld.py`).
+
+| Baustein | Datei | Was dahinter steckt |
+|---|---|---|
+| Absatz | `absatz_dialog.py` | Einzüge, Abstände, Zeilenabstand (Faktor, Mindestens, Genau), Gliederungsebene, Seitenumbruch, Absatzoptionen (`editor/absatzopt.py`); Umbruchregeln wirkt `editor/seitenfluss.py` |
+| Tabstopps | `tabstopp_dialog.py` | Position, Ausrichtung, Füllzeichen (`editor/tabfuell.py`, gezeichnet), Standardtabstopps (`w:defaultTabStop`) |
+| Schriftart | `schriftart_dialog.py` | alle Felder wie im WPS: asiatisch/westlich/komplex, Unterstreichungsarten, Betonungszeichen, Effekte, Zeichenabstand; Zeichnen der Extras in `editor/textfx.py` |
+| Texteffekte | `texteffekt_dialog.py` | Füllung (Farbe, Verlauf), Kontur, Schatten, Reflektion, Leuchten, 3D; Zeichnen in `editor/textfx.py`, DOCX als `w14:*` in `editor/texteffekt.py` |
+| Nummerierung | `liste_dialog.py` | Aufzählung, Nummerierung, mehrstufige Gliederung (`editor/mehrstufig.py`, selbst gezeichnet), Anpassen-Fenster |
+| Tastenkombination | `tasten_dialog.py` | eine Tastenkombination aufnehmen, Belegung prüfen |
+| Formatvorlage | `formatvorlage_dialog.py` | Name, Basis, Folgevorlage, Leiste, Format ▾ mit Schriftart, Absatz, Tabstopps, Rahmen, Nummerierung, Texteffekte, Verknüpfung |
+| Hilfen | `schiebe_feld.py`, `voreinstellung_menue.py`, `pipette.py` | Regler mit Feld, Popup mit Bildchen in Abschnitten, Farbe vom Bildschirm |
+
 Tests: `tests/test_baukasten.py`.

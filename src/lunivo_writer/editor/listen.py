@@ -30,13 +30,21 @@ NUMMERIERUNGEN = (("dezimal", "", "."), ("dezimal", "", ")"), ("roem_gross", "",
 ZEICHEN_FELDER = ("schrift", "fett", "kursiv", "groesse", "farbe")
 
 
-def liste(stil: str, praefix: str = "", suffix: str = ".", start: int = 1, zeichen: dict | None = None) -> dict:
+def zeichen_filtern(w: dict | None) -> dict:
+    """Aus den Werten eines Schriftart-Fensters nur das, was für Nummern gilt und gesetzt ist."""
+    return {k: w[k] for k in ZEICHEN_FELDER if w and w.get(k)}
+
+
+def liste(stil: str, praefix: str = "", suffix: str = ".", start: int = 1, zeichen: dict | None = None, pos: dict | None = None) -> dict:
+    """``pos``: eigene Position der Nummer (``ausr``, ``ausr_art``, ``tab``, ``einzug`` in mm) — dann zeichnet Lunivo die Nummer selbst."""
     if STILE[stil][1]:
         return {"stil": stil, "praefix": "", "suffix": "", "start": 1}
     d = {"stil": stil, "praefix": praefix, "suffix": suffix, "start": max(1, int(start))}
-    z = {k: zeichen[k] for k in ZEICHEN_FELDER if zeichen and zeichen.get(k)}
+    z = zeichen_filtern(zeichen)
     if z:
         d["zeichen"] = z
+    if pos:
+        d["pos"] = {k: pos[k] for k in ("ausr", "ausr_art", "tab", "einzug", "danach") if k in pos}
     return d
 
 
@@ -72,7 +80,8 @@ def als_text(spec: dict | None) -> str:
         from lunivo_writer.editor.mehrstufig import als_text as g
         return g(spec)
     t = "|".join((spec["stil"], spec["praefix"].replace("|", ""), spec["suffix"].replace("|", ""), str(spec["start"])))
-    return t + "|" + json.dumps(spec["zeichen"], ensure_ascii=False) if spec.get("zeichen") else t
+    extra = {k: spec[k] for k in ("zeichen", "pos") if spec.get(k)}
+    return t + "|" + json.dumps(extra, ensure_ascii=False) if extra else t
 
 
 def aus_text(text: str | None) -> dict | None:
@@ -83,6 +92,7 @@ def aus_text(text: str | None) -> dict | None:
     if len(t) not in (4, 5) or t[0] not in STILE:
         return None
     try:
-        return liste(t[0], t[1], t[2], int(t[3]), json.loads(t[4]) if len(t) == 5 else None)
+        extra = json.loads(t[4]) if len(t) == 5 else {}
+        return liste(t[0], t[1], t[2], int(t[3]), extra.get("zeichen"), extra.get("pos"))
     except ValueError:
         return None

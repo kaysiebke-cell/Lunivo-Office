@@ -19,14 +19,16 @@ from __future__ import annotations
 from PySide6.QtCore import QPointF, QRectF, QSize, Qt, Signal
 from PySide6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (
-    QComboBox, QDialog, QDoubleSpinBox, QGridLayout, QHBoxLayout, QLabel, QListWidget, QListWidgetItem, QPushButton, QTabWidget,
+    QCheckBox, QComboBox, QDialog, QDoubleSpinBox, QFrame, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QListWidget, QListWidgetItem, QPushButton, QTabWidget,
     QToolButton, QVBoxLayout, QWidget,
 )
 
 from lunivo_writer.editor import muster as M
 from lunivo_writer.editor.linie import LINIENBREITEN, STILE, Linie
+from lunivo_writer.ui.baukasten.dialog_rahmen import VorschauFlaeche, fussleiste
 from lunivo_writer.ui.baukasten.farbpalette import FarbFeld
 from lunivo_writer.ui.baukasten.linien import RahmenSeiten, rahmen_symbol
+from lunivo_writer.ui.baukasten.mass_feld import _PT_MM, EinheitFeld
 
 KANTEN = (("t", "Oben", RahmenSeiten.OBEN), ("b", "Unten", RahmenSeiten.UNTEN), ("l", "Links", RahmenSeiten.LINKS),
           ("r", "Rechts", RahmenSeiten.RECHTS), ("h", "Zwischen Absätzen", RahmenSeiten.INNEN_H))
@@ -168,6 +170,7 @@ class _RahmenSeite(QWidget):
         super().__init__()
         self.seitenrand, self.innen_h = seitenrand, innen_h
         self.abstand_mm = abstand_mm if abstand_mm is not None else 8.0
+        self.rand_optionen = {"messen": "text", "abstand": (1.0, 1.0, 4.0, 4.0), "ausrichten": False, "vordergrund": True, "kopf": False, "fuss": False}   # Seitenrand ▸ Optionen
         basis = linie or Linie("#000000", 0.75, "einfach")
         self.seiten = linie.seiten if linie else ""
         g = QGridLayout(self)
@@ -187,6 +190,8 @@ class _RahmenSeite(QWidget):
         self.einstellung["raster"].setEnabled(False); self.einstellung["raster"].setToolTip("Nur für Tabellen")
         self.einstellung["alle"].setEnabled(innen_h)
         self.einstellung["alle"].setToolTip("" if innen_h else "Nur, wenn mehrere Absätze oder Tabellenzellen gemeint sind")
+        if seitenrand:                                           # um eine Seite gibt es nur Ohne, Kontur und Anpassen
+            self.einstellung["alle"].setVisible(False); self.einstellung["raster"].setVisible(False)
         spalte.addStretch(1)
         g.addLayout(spalte, 1, 0, 3, 1)
         # --- Linie
@@ -204,6 +209,14 @@ class _RahmenSeite(QWidget):
             self.breite.addItem(_breite_symbol(b), f"{b:g}".replace(".", ",") + " Pt", b)
         g.addWidget(_kopf("Breite:"), 4, 1, Qt.AlignBottom)
         g.addWidget(self.breite, 5, 1, Qt.AlignTop)
+        self.kunst = QComboBox()                                 # Art: Kunstrahmen aus Figuren statt einer Linie (nur um die Seite)
+        from lunivo_writer.editor.seitenrahmen import KUNST
+        for k, name in KUNST:
+            self.kunst.addItem(name, k)
+        self.kunst_kopf = _kopf("Art:")
+        g.addWidget(self.kunst_kopf, 6, 1, Qt.AlignBottom); g.addWidget(self.kunst, 7, 1, Qt.AlignTop)
+        self.kunst.setVisible(seitenrand); self.kunst_kopf.setVisible(seitenrand)
+        self.kunst.currentIndexChanged.connect(lambda _i: self._neu())
         # --- Vorschau
         g.addWidget(_kopf("Vorschau"), 0, 2)
         hinweis = QLabel(HINWEIS); hinweis.setStyleSheet("color: palette(mid); font-size: 9pt;")
@@ -237,13 +250,14 @@ class _RahmenSeite(QWidget):
         g.addWidget(kasten, 1, 2, 4, 2, Qt.AlignTop | Qt.AlignLeft)
         self.vorschau.kante.connect(lambda k: self.kantenknoepfe[k].toggle() if k in self.kantenknoepfe else None)
         # --- Übernehmen für, Optionen
-        g.addWidget(_kopf("Übernehmen für:"), 6, 2, 1, 2, Qt.AlignBottom)
+        g.addWidget(_kopf("Übernehmen für:"), 6, 2, 2, 2, Qt.AlignBottom)
         self.fuer = QComboBox(); self.fuer.addItems(fuer or ["Absatz"])
-        g.addWidget(self.fuer, 7, 2, 1, 3)
-        self.optionen = QPushButton("Optionen …"); self.optionen.setVisible(seitenrand)
+        g.addWidget(self.fuer, 8, 2, 1, 3)
+        self.optionen = QPushButton("Optionen …")
         self.optionen.clicked.connect(self._optionen)
-        g.addWidget(self.optionen, 8, 4, Qt.AlignRight)
-        g.setRowStretch(9, 1); g.setColumnStretch(3, 1)
+        self.polster = linie.polster() if linie and linie.polster() else (1.0, 1.0, 4.0, 4.0)    # Abstand zum Text: oben, unten, links, rechts (pt)
+        g.addWidget(self.optionen, 9, 4, Qt.AlignRight)
+        g.setRowStretch(10, 1); g.setColumnStretch(3, 1)
         # --- Anfangswerte, Verkabelung
         i = self.arten.row(next((self.arten.item(r) for r in range(self.arten.count()) if self.arten.item(r).data(Qt.UserRole) == basis.art), self.arten.item(0)))
         self.arten.setCurrentRow(i)
@@ -256,7 +270,8 @@ class _RahmenSeite(QWidget):
     # ---- Zustand
     def linie_wert(self) -> Linie:
         it = self.arten.currentItem()
-        return Linie(self.farbe.farbe or "#000000", float(self.breite.currentData()), it.data(Qt.UserRole) if it else "einfach")
+        ab = ",".join(f"{x:g}" for x in self.polster) if not self.seitenrand and self.polster != (1.0, 1.0, 4.0, 4.0) else ""
+        return Linie(self.farbe.farbe or "#000000", float(self.breite.currentData()), it.data(Qt.UserRole) if it else "einfach", abstand=ab)
 
     def _setze_einstellung(self, art: str) -> None:
         if art == "ohne":
@@ -288,11 +303,139 @@ class _RahmenSeite(QWidget):
         v.update()
         self.geaendert.emit()
 
+    def _abstand_vorschau(self) -> None:
+        """Der Abstand, den die Vorschau des Seitenrahmens zeigt (in mm)."""
+        o = self.rand_optionen
+        self.abstand_mm = sum(o["abstand"]) / 4 / 72 * 25.4 if o["messen"] == "seitenrand" else 6.0
+
     def _optionen(self) -> None:
+        if self.seitenrand:                              # Rahmen um die Seite: Abstand, Gemessen von, Optionen
+            d = _SeitenOptionenDialog(self, self.rand_optionen, self.linie_wert())
+            if d.exec():
+                self.rand_optionen = d.werte()
+                self._abstand_vorschau()
+                self._neu()
+            return
+        if not self.seitenrand:                          # Absatzrahmen: Abstand zum Text auf allen vier Seiten
+            d = _PolsterDialog(self, self.polster, self.linie_wert())
+            if d.exec():
+                self.polster = d.werte()
+                self._neu()
+            return
         d = _AbstandDialog(self, self.abstand_mm)
         if d.exec():
             self.abstand_mm = d.wert()
             self._neu()
+
+
+def _blatt_vorschau(p: QPainter, rect) -> tuple[QRectF, QRectF]:
+    """Das Blatt der Optionen-Fenster: oben weiß, nach unten vom Feld abgeschnitten, darauf ein Textblock (die erste Zeile eingerückt).
+    → (Blatt, Textblock) in Fensterkoordinaten."""
+    r = QRectF(rect)
+    blatt = QRectF(r.center().x() - 96, r.top(), 192, r.height() + 60)
+    p.fillRect(blatt, QColor("white")); p.setPen(QColor("#c4c9ce")); p.drawRect(blatt)
+    text = QRectF(blatt.left() + 32, blatt.top() + 32, 128, 70)
+    p.setPen(QPen(QColor("#868e96"), 1.2))
+    y, n = text.top(), 0
+    while y < text.bottom() - 0.5:
+        p.drawLine(int(text.left() + (42 if n == 0 else 0)), int(y), int(text.right()), int(y)); y += 5; n += 1
+    return blatt, text
+
+
+class _PolsterDialog(QDialog):
+    """„Optionen …“ am Absatzrahmen: Abstand des Rahmens vom Text, oben, unten, links und rechts (mit Einheit), dazu eine Vorschau."""
+    def __init__(self, parent, werte: tuple[float, float, float, float], linie: Linie | None = None):
+        super().__init__(parent)
+        self.setWindowTitle("Rahmen- und Schattierungsoptionen"); self.resize(345, 328); self.setMinimumSize(0, 0)
+        self._linie = linie
+        v = QVBoxLayout(self)
+        gr = QGroupBox("Vom Text"); g = QGridLayout(gr)
+        einh = ("pt", "mm", "cm", "in")
+        self.felder = {}
+        for name, schl, wert, zeile, spalte in (("Oben:", "o", werte[0], 0, 0), ("Unten:", "u", werte[1], 1, 0), ("Links:", "l", werte[2], 0, 2),
+                                                 ("Rechts:", "r", werte[3], 1, 2)):
+            f = EinheitFeld(wert * _PT_MM, 0.0, 31 * _PT_MM, einh, "pt"); self.felder[schl] = f
+            g.addWidget(QLabel(name), zeile, spalte); g.addWidget(f, zeile, spalte + 1)
+            f.valueChanged.connect(lambda *_: self.vorschau.update())
+        g.setColumnStretch(1, 1); g.setColumnStretch(3, 1); g.setHorizontalSpacing(8)
+        v.addWidget(gr)
+        vg = QGroupBox("Vorschau"); vh = QVBoxLayout(vg)
+        self.vorschau = VorschauFlaeche(self._male, 130, flaeche=False); self.vorschau.setFixedHeight(130); vh.addWidget(self.vorschau)
+        v.addWidget(vg); v.addStretch(1)
+        fussleiste(self, v)
+
+    def werte(self) -> tuple[float, float, float, float]:
+        f = self.felder
+        return tuple(round(f[k].value() / _PT_MM, 2) for k in ("o", "u", "l", "r"))
+
+    def _male(self, p, rect) -> None:
+        """Ein Blatt mit Textzeilen; der Rahmen um den Absatz hat die eingestellten Abstände zum Text."""
+        blatt, text = _blatt_vorschau(p, rect)
+        o, u, l, rt = self.werte()
+        k = 1.4                                                    # pt → Bildpunkte der Vorschau
+        p.setPen(QPen(QColor("#212529"), 1)); p.setBrush(Qt.NoBrush)
+        p.drawRect(QRectF(text.left() - l * k, text.top() - o * k, text.width() + (l + rt) * k, text.height() + (o + u) * k))
+
+
+class _SeitenOptionenDialog(QDialog):
+    """„Optionen …“ am Seitenrand: Abstand (vom Text oder vom Seitenrand), „Gemessen von“, die vier Optionen und eine Vorschau der Seite."""
+    def __init__(self, parent, w: dict, linie: Linie | None = None):
+        super().__init__(parent)
+        self.setWindowTitle("Rahmen- und Schattierungsoptionen"); self.resize(635, 478); self.setMinimumSize(0, 0)
+        v = QVBoxLayout(self)
+        self.abstand_gruppe = QGroupBox("Vom Text"); g = QGridLayout(self.abstand_gruppe)
+        einh = ("pt", "mm", "cm", "in")
+        o, u, l, r = w["abstand"]
+        self.felder = {}
+        for name, schl, wert, zeile, spalte in (("Oben:", "o", o, 0, 0), ("Unten:", "u", u, 1, 0), ("Links:", "l", l, 0, 2), ("Rechts:", "r", r, 1, 2)):
+            f = EinheitFeld(wert * _PT_MM, 0.0, 31 * _PT_MM, einh, "pt"); self.felder[schl] = f
+            g.addWidget(QLabel(name), zeile, spalte); g.addWidget(f, zeile, spalte + 1)
+            f.valueChanged.connect(lambda *_: self.vorschau.update())
+        g.setColumnStretch(1, 1); g.setColumnStretch(3, 1)
+        v.addWidget(self.abstand_gruppe)
+        v.addWidget(QLabel("Gemessen von:"))
+        self.messen = QComboBox(); self.messen.addItem("Text", "text"); self.messen.addItem("Seitenrand", "seitenrand")
+        self.messen.setCurrentIndex(0 if w["messen"] == "text" else 1); self.messen.setFixedWidth(150)
+        self.messen.currentIndexChanged.connect(self._messen)
+        v.addWidget(self.messen)
+        og = QGroupBox("Optionen"); ol = QGridLayout(og)
+        self.ausrichten = QCheckBox("Absatzrahmen und Tabellenränder am Seitenrand ausrichten"); self.ausrichten.setChecked(w["ausrichten"])
+        self.vordergrund = QCheckBox("Immer im Vordergrund anzeigen"); self.vordergrund.setChecked(w["vordergrund"])
+        self.kopf = QCheckBox("Kopfzeile umgeben"); self.kopf.setChecked(w["kopf"])
+        self.fuss = QCheckBox("Fußzeile umgeben"); self.fuss.setChecked(w["fuss"])
+        ol.addWidget(self.ausrichten, 0, 0, 1, 3)
+        ol.addWidget(self.vordergrund, 1, 0); ol.addWidget(self.kopf, 1, 1); ol.addWidget(self.fuss, 1, 2)
+        v.addWidget(og)
+        vg = QGroupBox("Vorschau"); vh = QVBoxLayout(vg)
+        self.vorschau = VorschauFlaeche(self._male, 130, flaeche=False); self.vorschau.setFixedHeight(130); vh.addWidget(self.vorschau)
+        v.addWidget(vg); v.addStretch(1)
+        self._linie = linie
+        for c in (self.ausrichten, self.vordergrund, self.kopf, self.fuss):
+            c.toggled.connect(lambda *_: self.vorschau.update())
+        fussleiste(self, v)
+        self._messen()
+
+    def _messen(self, *_) -> None:
+        text = self.messen.currentData() == "text"
+        self.abstand_gruppe.setTitle("Vom Text" if text else "Vom Seitenrand")
+        self.kopf.setEnabled(text); self.fuss.setEnabled(text)             # Kopf- und Fußzeile gehören zum Text-Bezug
+        self.vorschau.update()
+
+    def werte(self) -> dict:
+        f = self.felder
+        return {"messen": self.messen.currentData(), "abstand": tuple(round(f[k].value() / _PT_MM, 2) for k in ("o", "u", "l", "r")),
+                "ausrichten": self.ausrichten.isChecked(), "vordergrund": self.vordergrund.isChecked(), "kopf": self.kopf.isChecked(), "fuss": self.fuss.isChecked()}
+
+    def _male(self, p, rect) -> None:
+        """Ein Blatt mit Text; der Rahmen liegt je nach „Gemessen von“ um den Text oder am Blattrand."""
+        blatt, text = _blatt_vorschau(p, rect)
+        w = self.werte()
+        o, u, l, rt = (x * 1.2 for x in w["abstand"])
+        p.setPen(QPen(QColor("#212529"), 1)); p.setBrush(Qt.NoBrush)
+        if w["messen"] == "text":
+            p.drawRect(QRectF(text.left() - l, text.top() - o, text.width() + l + rt, text.height() + o + u))
+        else:
+            p.drawRect(QRectF(blatt.left() + l, blatt.top() + o, blatt.width() - l - rt, blatt.height() - o - u))
 
 
 class _AbstandDialog(QDialog):
@@ -304,10 +447,7 @@ class _AbstandDialog(QDialog):
         z = QHBoxLayout(); z.addWidget(QLabel("Abstand vom Seitenrand"))
         self.feld = QDoubleSpinBox(); self.feld.setRange(2, 30); self.feld.setSuffix(" mm"); self.feld.setValue(mm)
         z.addWidget(self.feld); v.addLayout(z)
-        zu = QHBoxLayout(); zu.addStretch(1)
-        ab, ok = QPushButton("Abbrechen"), QPushButton("OK"); ok.setDefault(True)
-        ab.clicked.connect(self.reject); ok.clicked.connect(self.accept)
-        zu.addWidget(ab); zu.addWidget(ok); v.addLayout(zu)
+        fussleiste(self, v)
 
     def wert(self) -> float:
         return self.feld.value()
@@ -319,29 +459,33 @@ class _SchattierungSeite(QWidget):
 
     def __init__(self, fuell: str | None, muster: tuple[str, str] | None, fuer: list[str] | None):
         super().__init__()
-        g = QGridLayout(self); g.setContentsMargins(14, 12, 14, 10); g.setHorizontalSpacing(24); g.setVerticalSpacing(5)
-        g.addWidget(_kopf("Ausfüllen"), 0, 0)
-        self.fuell = FarbFeld(fuell or "", "Füllfarbe", keine_text="Keine Farbe")
-        g.addWidget(self.fuell, 1, 0, Qt.AlignLeft)
-        g.addWidget(_kopf("Muster"), 2, 0)
-        kasten = QWidget(); kv = QVBoxLayout(kasten)
-        kv.addWidget(_kopf("Formatvorlage:"))
-        self.art = QComboBox(); self.art.setIconSize(QSize(16, 16)); self.art.setMaxVisibleItems(18)
+        g = QGridLayout(self); g.setContentsMargins(14, 12, 14, 10); g.setHorizontalSpacing(14); g.setVerticalSpacing(8)
+        # links: zwei Gruppen (Ausfüllen, Muster), dann eine senkrechte Linie, rechts Vorschau und „Übernehmen für“ — wie im WPS
+        links = QVBoxLayout(); links.setSpacing(8)
+        ag = QGroupBox("Ausfüllen"); ah = QHBoxLayout(ag)
+        self.fuell = FarbFeld(fuell or "", "Füllfarbe", keine_text="Keine Farbe"); self.fuell.setMinimumWidth(160)
+        ah.addWidget(self.fuell); ah.addStretch(1)
+        links.addWidget(ag)
+        mg = QGroupBox("Muster"); kv = QVBoxLayout(mg)
+        kv.addWidget(QLabel("Formatvorlage:"))
+        self.art = QComboBox(); self.art.setIconSize(QSize(16, 16)); self.art.setMaxVisibleItems(18); self.art.setMinimumWidth(230)
         for k, name, _o in M.MUSTER:
             self.art.addItem(_muster_symbol(k), name, k)
         kv.addWidget(self.art)
-        kv.addWidget(_kopf("Farbe:"))
+        kv.addWidget(QLabel("Farbe:"))
         self.farbe = FarbFeld("" if not muster or muster[1] in ("", "#000000") else muster[1], "Musterfarbe", keine_text="Automatisch")
-        kv.addWidget(self.farbe, 0, Qt.AlignLeft)
-        kv.addStretch(1)
-        g.addWidget(kasten, 3, 0)
-        g.addWidget(_kopf("Vorschau"), 0, 1)
-        self.vorschau = _Vorschau(kanten_klick=False)
-        g.addWidget(self.vorschau, 1, 1, 3, 1, Qt.AlignTop)
-        g.addWidget(_kopf("Übernehmen für:"), 4, 1, Qt.AlignBottom)
-        self.fuer = QComboBox(); self.fuer.addItems(fuer or ["Absatz"])
-        g.addWidget(self.fuer, 5, 1)
-        g.setRowStretch(6, 1); g.setColumnStretch(1, 1)
+        kv.addWidget(self.farbe)
+        links.addWidget(mg); links.addStretch(1)
+        g.addLayout(links, 0, 0, 3, 1)
+        trenner = QFrame(); trenner.setFrameShape(QFrame.VLine); trenner.setFrameShadow(QFrame.Sunken)
+        g.addWidget(trenner, 0, 1, 3, 1)
+        g.addWidget(_kopf("Vorschau"), 0, 2)
+        self.vorschau = _Vorschau(kanten_klick=False); self.vorschau.setFixedSize(190, 130)         # klein, in der Mitte
+        g.addWidget(self.vorschau, 1, 2, Qt.AlignHCenter | Qt.AlignVCenter)
+        fz = QVBoxLayout(); fz.addWidget(_kopf("Übernehmen für:"))
+        self.fuer = QComboBox(); self.fuer.addItems(fuer or ["Absatz"]); fz.addWidget(self.fuer)
+        g.addLayout(fz, 2, 2)
+        g.setRowStretch(1, 1); g.setColumnStretch(0, 2); g.setColumnStretch(2, 3)
         self.art.setCurrentIndex(max(0, self.art.findData(muster[0] if muster else "loeschen")))
         self.art.currentIndexChanged.connect(lambda _i: self._neu())
         self.fuell.farbeGeaendert.connect(lambda _f: self._neu())
@@ -370,7 +514,7 @@ class RahmenSchattierungDialog(QDialog):
                  seite: str = "rahmen"):
         super().__init__(parent)
         self.setWindowTitle("Rahmen und Schattierung")
-        self.resize(640, 400)
+        self.resize(783, 481)
         v = QVBoxLayout(self)
         self.reiter = QTabWidget(); v.addWidget(self.reiter, 1)
         self.p_rahmen = _RahmenSeite(rahmen, innen_h=innen_h, fuer=fuer)
@@ -380,14 +524,17 @@ class RahmenSchattierungDialog(QDialog):
             sr = seitenrand or {}
             li = Linie(sr.get("farbe", "#000000"), float(sr.get("breite_pt", 1.0)), sr.get("art", "einfach"), sr.get("seiten", "tblr")) if seitenrand else None
             self.p_rand = _RahmenSeite(li, seitenrand=True, fuer=["Gesamtes Dokument"], abstand_mm=float(sr.get("abstand_mm", 8.0)))
+            if seitenrand:                                                                  # Optionen des vorhandenen Seitenrahmens
+                from lunivo_writer.editor.seitenrahmen import abstaende_pt
+                self.p_rand.rand_optionen = {"messen": sr.get("messen", "seitenrand"), "abstand": abstaende_pt(sr), "ausrichten": bool(sr.get("ausrichten")),
+                                             "vordergrund": sr.get("vordergrund", True), "kopf": bool(sr.get("kopf")), "fuss": bool(sr.get("fuss"))}
+                self.p_rand.kunst.setCurrentIndex(max(0, self.p_rand.kunst.findData(sr.get("kunst", ""))))
+                self.p_rand._abstand_vorschau()
             self.reiter.addTab(self.p_rand, "Seitenrand")
         self.p_schatt = _SchattierungSeite(fuell, muster, fuer)
         self.reiter.addTab(self.p_schatt, "Schattierung")
         self.reiter.setCurrentIndex({"rahmen": 0, "seitenrand": 1 if mit_seitenrand else 0}.get(seite, self.reiter.count() - 1))
-        zu = QHBoxLayout(); zu.addStretch(1)
-        ab, ok = QPushButton("Abbrechen"), QPushButton("OK"); ok.setDefault(True)
-        ab.clicked.connect(self.reject); ok.clicked.connect(self.accept)
-        zu.addWidget(ab); zu.addWidget(ok); v.addLayout(zu)
+        fussleiste(self, v)
 
     # ---- Ergebnis
     def rahmen(self) -> Linie | None:
@@ -402,5 +549,10 @@ class RahmenSchattierungDialog(QDialog):
         if self.p_rand is None or not self.p_rand.seiten:
             return None
         li = self.p_rand.linie_wert()
-        return {"art": li.art, "farbe": li.farbe, "breite_pt": li.breite_pt, "abstand_mm": self.p_rand.abstand_mm,
-                "seiten": "".join(c for c in "tblr" if c in self.p_rand.seiten)}
+        o = self.p_rand.rand_optionen
+        erg = {"art": li.art, "farbe": li.farbe, "breite_pt": li.breite_pt, "abstand_mm": round(sum(o["abstand"]) / 4 / 72 * 25.4, 2),
+               "seiten": "".join(c for c in "tblr" if c in self.p_rand.seiten), "messen": o["messen"], "abstand": ",".join(f"{x:g}" for x in o["abstand"]),
+               "ausrichten": o["ausrichten"], "vordergrund": o["vordergrund"], "kopf": o["kopf"], "fuss": o["fuss"]}
+        if self.p_rand.kunst.currentData():
+            erg["kunst"] = self.p_rand.kunst.currentData()
+        return erg

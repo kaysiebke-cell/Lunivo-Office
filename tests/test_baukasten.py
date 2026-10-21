@@ -263,7 +263,7 @@ def test_rahmenfenster_liefert_linie_schattierung_und_seitenrand(app):
     d.p_schatt.art.setCurrentIndex(d.p_schatt.art.findData("pct25"))
     assert d.schattierung() == ("#fff3bf", ("pct25", "#000000"))
     d.p_rand.einstellung["kontur"].click()
-    assert d.seitenrand()["art"] == "einfach" and d.seitenrand()["abstand_mm"] == 8.0
+    assert d.seitenrand()["art"] == "einfach" and d.seitenrand()["messen"] == "text" and d.seitenrand()["abstand"] == "1,1,4,4"      # Vorgabe wie im WPS
     d2 = RahmenSchattierungDialog(None, rahmen=Linie("#000000", 1.0, "einfach", "lr"), fuell="#d0ebff", seite="schattierung")
     assert d2.rahmen().seiten == "lr" and d2.schattierung() == ("#d0ebff", None) and d2.reiter.currentIndex() == 2
     d.show(); app.processEvents()
@@ -479,17 +479,21 @@ def test_schriftart_fenster_werte_und_format(app):
     from lunivo_writer.ui.baukasten.schriftart_dialog import SchriftartDialog
     from lunivo_writer.ui.baukasten.text_format import aus_format, zu_format
     d = SchriftartDialog(None, {"schrift": "Liberation Sans", "groesse": 12.0})
-    d.schnitt.setze("Fett Kursiv"); d.groesse.setze("18")
+    d.schnitt.setCurrentText("Fett Kursiv"); d.groesse.setCurrentText("18")
+    d.asien.setCurrentText("Noto Sans CJK JP"); d.betonung.setCurrentIndex(d.betonung.findData("kreis")); d.cb["doppelt"].setChecked(True)
+    d.cb["doppelt"].setChecked(False)
     d.unter.setCurrentIndex(d.unter.findData("gepunktet")); d.cb["durch"].setChecked(True); d.cb["hoch"].setChecked(True)
     d.cb["tief"].setChecked(True)                                                   # Hoch- und Tiefgestellt schließen sich aus
     w = d.werte()
     assert w["fett"] and w["kursiv"] and w["groesse"] == 18 and w["unter"] == "gepunktet" and w["tief"] and not w["hoch"]
     f = zu_format(w)
     assert f.fontWeight() >= 600 and f.fontItalic() and f.fontStrikeOut() and f.fontPointSize() == 18
+    assert f.fontFamilies() == ["Liberation Sans", "Noto Sans CJK JP"]              # asiatische Schrift hinter der westlichen
     w2 = aus_format(f)
     assert w2["unter"] == "gepunktet" and w2["durch"] and w2["tief"] and w2["kerning"]
+    assert w2["schrift_asien"] == "Noto Sans CJK JP" and w2["betonung"] == "kreis" and not w2["doppelt"]
     v = SchriftartDialog(None, {"schrift": "Liberation Sans"}, umfang="vorlage")
-    assert v.reiter.count() == 1 and not v.effekte.isVisibleTo(v)                   # in der Vorlage nur Schrift, Schnitt, Größe, Farbe
+    assert v.reiter.count() == 2 and v.effekte.isVisibleTo(v) and not v.effekt_knopf.isVisibleTo(v)    # in der Vorlage dasselbe Fenster, ohne Texteffekte und Standard
 
 
 def test_formatvorlage_rahmen_und_schattierung(app):
@@ -580,7 +584,7 @@ def test_gliederung_mehrstufig(app):
     e.set_liste(None)
     assert M.nummern(e.document()) == []
     d = GliederungAnpassenDialog(None, g)
-    d.ebenen.setCurrentRow(1); d.format.setText("x"); d._lesen()
+    d.ebenen.setCurrentRow(1); d.format.setText(""); d._lesen()
     assert not d.ok.isEnabled()
     d.format.setText("①-②"); d._lesen()
     assert d.ok.isEnabled() and d.defn()["ebenen"][1]["format"] == "①-②"
@@ -622,7 +626,7 @@ def test_texteffekte(app):
     assert f.textOutline().style() == Qt.DashLine and round(f.foreground().color().alphaF(), 1) == 0.6
     assert T.aus_format(f)["kontur_farbe"] == "#1864ab" and T.aus_format(f)["transparenz"] == 40
     d.r_keine.setChecked(True)
-    assert T.zu_format(d.werte()).foreground().color().alpha() == 0 and not d.farbe.isEnabled()
+    assert T.zu_format(d.werte()).foreground().color().alpha() == 0
     t = T.als_text(w)
     assert T.aus_text(t, "#c92a2a")["kontur_art"] == "gestrichelt" and T.als_text(dict(T.EFFEKT)) == ""
     fd = FormatvorlageDialog(None, start={"effekt": t, "farbe": "#c92a2a"}, vorlagen=["Standard"])
@@ -654,3 +658,337 @@ def test_texteffekte_docx_rundlauf(app, tmp_path):
     w = T.aus_format(cf)
     assert cf.textOutline().style() == Qt.DashLine and w["kontur_farbe"] == "#1864ab" and w["kontur_breite"] == 1.5
     assert w["transparenz"] == 40 and w["farbe"] == "#c92a2a"
+
+
+def test_formatvorlage_tabstopps(app):
+    from lunivo_writer.editor import stile
+    from lunivo_writer.ui.baukasten.formatvorlage_dialog import FormatvorlageDialog
+    from lunivo_writer.ui.baukasten.tabstopp_dialog import als_text, aus_block, aus_text
+    from lunivo_writer.ui.document.document_editor import DocumentEditor
+    assert aus_text(als_text([(30.0, "rechts", "punkt"), (80.5, "mitte", "")])) == [(30.0, "rechts", "punkt"), (80.5, "mitte", "")]
+    d = FormatvorlageDialog(None, start={"tabs": "30:rechts:punkt"}, vorlagen=["Standard"])
+    erg = d.ergebnis()
+    assert erg["tabs"] == "30:rechts:punkt"
+    stile.anlegen("TabTest", **{k: v for k, v in erg.items() if k not in ("name", "basis", "folge")})
+    e = DocumentEditor(); e.setPlainText("a\tb")
+    e._stil_auf_block(e.document().firstBlock(), "TabTest")
+    assert aus_block(e.document().firstBlock().blockFormat()) == [(30.0, "rechts", "punkt")]
+    stile.loeschen("TabTest")
+
+
+def test_absatzrahmen_abstand_optionen(app, tmp_path):
+    from lunivo_writer.editor.linie import Linie
+    from lunivo_writer.models.page import PageSettings
+    from lunivo_writer.services import file_service as formats
+    from lunivo_writer.ui.baukasten.rahmen_schattierung import RahmenSchattierungDialog, _PolsterDialog
+    from lunivo_writer.ui.document.document_editor import DocumentEditor
+    li = Linie("#000000", 1.0, "einfach", "tblr", "3,5,10,12")
+    assert Linie.aus_text(li.text()).polster() == (3.0, 5.0, 10.0, 12.0) and Linie.aus_text(Linie().text()).polster() is None
+    d = RahmenSchattierungDialog(None, rahmen=li, mit_seitenrand=False, fuer=["Absatz"])
+    assert d.p_rahmen.polster == (3.0, 5.0, 10.0, 12.0) and d.rahmen().abstand == "3,5,10,12"
+    p = _PolsterDialog(None, (3.0, 5.0, 10.0, 12.0))
+    assert p.werte() == (3.0, 5.0, 10.0, 12.0)
+    e = DocumentEditor(); e.setPlainText("x"); e.set_absatzrahmen(li.text())
+    pfad = str(tmp_path / "r.docx")
+    formats.save(pfad, e.document(), PageSettings())
+    geladen = formats.load(pfad)
+    assert Linie.aus_text(geladen.doc.firstBlock().blockFormat().stringProperty(__import__("lunivo_writer.editor.zusatz", fromlist=["B_RAHMEN"]).B_RAHMEN)).polster() == (3.0, 5.0, 10.0, 12.0)
+
+
+def test_gliederung_position_norm_neu_vorlage(app):
+    from PySide6.QtGui import QTextCursor
+    from lunivo_writer.editor import listen as L
+    from lunivo_writer.editor import mehrstufig as M
+    from lunivo_writer.ui.baukasten.liste_dialog import GliederungAnpassenDialog, ListenDialog, NummerierungAnpassenDialog
+    from lunivo_writer.ui.document.document_editor import DocumentEditor
+    # Nummerieren nach Norm: höhere Ebenen als Dezimalzahlen
+    g = M.gliederung(["roem_gross", "gross"], ["①.", "①.②."])
+    g["ebenen"][1]["norm"] = True
+    z = [0] * 9
+    M.zaehlen(z, g, 1); M.zaehlen(z, g, 2)
+    assert M.nummer_der_ebene(g, z, 2) == "1.A."
+    # Neu nummerieren nach Ebene 1 (Ebene 3 zählt weiter, wenn nur Ebene 2 dazwischen steht)
+    g = M.gliederung(["dezimal"], ["①.", "①.②.", "①.②.③."])
+    g["ebenen"][2]["neu"] = 1
+    z = [0] * 9
+    for n in (1, 2, 3, 2, 3):
+        M.zaehlen(z, g, n)
+    assert z[2] == 2
+    # Aufzählung mit eigenem Zeichen, Position und Text danach
+    a = M.aufzaehlung("➤"); assert M.ist_aufzaehlung(a) and not M.ist_aufzaehlung(M.VORLAGEN[0][1])
+    e = DocumentEditor(); e.setPlainText("A\nB")
+    c = e.textCursor(); c.select(QTextCursor.Document); e.setTextCursor(c)
+    e.set_liste(a)
+    assert M.nummern(e.document())[0][1] == "➤"
+    d = GliederungAnpassenDialog(None, a, titel="Aufzählungszeichen anpassen")
+    d.mehr.setChecked(True); d.danach.setCurrentIndex(1); d.vorlage.setCurrentIndex(1); d.norm.setChecked(True)
+    r = d.defn()["ebenen"][0]
+    assert r["danach"] == "leer" and r["vorlage"] == "Standard" and r["norm"]
+    # einfache Nummerierung mit eigener Position
+    n = NummerierungAnpassenDialog(None, None)
+    assert n.spec().get("pos") is None
+    n.position.ausr.setValue(5.0)
+    s = n.spec()
+    assert s["pos"]["ausr"] == 5.0 and L.aus_text(L.als_text(s)) == s
+    e.set_liste(s)
+    assert M.nummern(e.document())[1][1] == "2."
+    # Aufzählungskacheln: Kein, Punkt, Quadrat und fünf Zeichen
+    ld = ListenDialog(None)
+    assert ld.r_punkte.count() == 8
+
+
+def test_tabstopp_fuellzeichen(app, tmp_path):
+    from PySide6.QtGui import QImage, QPainter
+    from lunivo_writer.models.page import PageSettings
+    from lunivo_writer.services import file_service as formats
+    from lunivo_writer.editor.pagination import absatz_zusatz_zeichnen
+    from lunivo_writer.ui.baukasten.tabstopp_dialog import TabstoppDialog, aus_block
+    from lunivo_writer.ui.document.document_editor import DocumentEditor
+    d = TabstoppDialog(None, [])
+    d.pos.setValue(100); d.art.button(2).setChecked(True); d.fuell.button(1).setChecked(True); d.festlegen()
+    assert d.stopps() == [(100.0, "rechts", "punkt")]
+    e = DocumentEditor(); e.setPlainText("Kapitel\t12")
+    e.set_tabstopps(d.stopps())
+    assert aus_block(e.document().firstBlock().blockFormat()) == [(100.0, "rechts", "punkt")]
+    img = QImage(500, 200, QImage.Format_RGB32); img.fill(0xffffff); p = QPainter(img)
+    absatz_zusatz_zeichnen(p, e.document()); p.end()
+    pfad = str(tmp_path / "t.docx"); formats.save(pfad, e.document(), PageSettings())
+    geladen = formats.load(pfad)
+    assert aus_block(geladen.doc.firstBlock().blockFormat()) == [(100.0, "rechts", "punkt")]
+
+
+def test_seitenfluss_zusammenhalten_und_kontrolle(app):
+    from PySide6.QtCore import QEventLoop, QTimer
+    from PySide6.QtGui import QTextBlockFormat, QTextCursor, QTextFormat
+    from lunivo_writer.editor import absatzopt, seitenfluss
+    from lunivo_writer.ui.document.document_editor import DocumentEditor
+    e = DocumentEditor()
+    e.setPlainText("\n".join(f"Absatz {i}" for i in range(80)))
+    ch = e.page.content_height_px
+    e.document().documentLayout().blockBoundingRect(e.document().lastBlock())     # Layout erzwingen
+
+    def seite(b):
+        tl = b.layout(); return int((tl.position().y() + tl.lineAt(0).y() + 0.5) // ch)
+    # den ersten Absatz suchen, der am Seitenanfang landet, und davor einen langen Absatz einfügen, der über die Grenze reicht
+    doc = e.document()
+    lang = doc.findBlockByNumber(len([b for b in range(80) if seite(doc.findBlockByNumber(b)) == 0]) - 1)
+    c = QTextCursor(lang); c.movePosition(QTextCursor.EndOfBlock); c.insertText(" " + "lang " * 400)
+    doc.documentLayout().blockBoundingRect(doc.lastBlock())
+    z = seitenfluss._zeilen(lang, ch)
+    assert z[0][0] != z[-1][0]                                 # der Absatz läuft über die Seitengrenze
+    bf = lang.blockFormat(); absatzopt.setzen(bf, {**absatzopt.VORGABE, "zusammen": True}); QTextCursor(lang).setBlockFormat(bf)
+    war = doc.isModified()
+    assert seitenfluss.anwenden(doc, ch)
+    assert doc.isModified() == war
+    z = seitenfluss._zeilen(doc.findBlockByNumber(lang.blockNumber()), ch)
+    assert z[0][0] == z[-1][0]                                 # jetzt steht er ganz auf einer Seite
+    assert not seitenfluss.ist_manuell(doc.findBlockByNumber(lang.blockNumber()).blockFormat())
+    # ohne die Regel (und ohne Absatzkontrolle) verschwindet der eigene Umbruch wieder
+    bf = doc.findBlockByNumber(lang.blockNumber()).blockFormat(); absatzopt.setzen(bf, {**absatzopt.VORGABE, "kontrolle": False})
+    QTextCursor(doc.findBlockByNumber(lang.blockNumber())).setBlockFormat(bf)
+    seitenfluss.anwenden(doc, ch)
+    z = seitenfluss._zeilen(doc.findBlockByNumber(lang.blockNumber()), ch)
+    assert z[0][0] != z[-1][0]
+
+
+def test_texteffekte_erweitert_docx_und_zeichnen(app, tmp_path):
+    from PySide6.QtGui import QImage, QPainter, QTextCursor
+    from lunivo_writer.editor import texteffekt as T
+    from lunivo_writer.editor.pagination import absatz_zusatz_zeichnen
+    from lunivo_writer.models.page import PageSettings
+    from lunivo_writer.services import file_service as formats
+    from lunivo_writer.ui.baukasten.texteffekt_dialog import TexteffektDialog
+    from lunivo_writer.ui.document.document_editor import DocumentEditor
+    d = TexteffektDialog(None, {})
+    d.r_verlauf.setChecked(True); d.v1.setFarbe("#c92a2a"); d.v2.setFarbe("#1864ab"); d.v_winkel.setValue(45)
+    d._setze_teil("schatten", {"art": "aussen", "farbe": "#000000", "transparenz": 40, "groesse": 100, "weich": 3, "abstand": 4, "winkel": 45}, "Unten rechts")
+    d._setze_teil("reflektion", {"groesse": 50, "transparenz": 50, "weich": 0, "abstand": 2}, "x")
+    d._setze_teil("leuchten", {"farbe": "#4c6ef5", "groesse": 8, "transparenz": 60}, "x")
+    d.d_tiefe.setValue(5); d._setze_material("plastik", None)
+    d.k_linie.setChecked(True); d.k_form.setCurrentIndex(1); d.k_art.setCurrentIndex(3)
+    w = d.werte()
+    assert w["fuell"] == "verlauf" and w["verlauf"]["winkel"] == 45 and w["schatten"]["abstand"] == 4 and w["d3"]["material"] == "plastik"
+    assert w["kontur_form"] == "doppelt" and w["kontur_art"] == "gestrichelt"
+    e = DocumentEditor(); e.setPlainText("Effekte")
+    c = e.textCursor(); c.select(QTextCursor.Document); e.setTextCursor(c)
+    e._merge(T.zu_format(w))
+    assert e._hat_effekt()
+    img = QImage(500, 200, QImage.Format_RGB32); img.fill(0xffffff); p = QPainter(img)
+    absatz_zusatz_zeichnen(p, e.document()); p.end()
+    pfad = str(tmp_path / "e.docx"); formats.save(pfad, e.document(), PageSettings())
+    geladen = formats.load(pfad)
+    r = T.aus_format(geladen.doc.firstBlock().begin().fragment().charFormat())
+    assert r["fuell"] == "verlauf" and r["verlauf"]["farbe2"].lower() == "#1864ab" and abs(r["verlauf"]["winkel"] - 45) < 1
+    assert r["schatten"]["abstand"] == 4 and r["reflektion"]["groesse"] == 50 and r["leuchten"]["groesse"] == 8
+    assert r["d3"]["tiefe"] == 5 and r["d3"]["material"] == "plastik" and r["kontur_form"] == "doppelt" and r["kontur_art"] == "gestrichelt"
+    # ein Effekt lässt sich wieder abschalten
+    e._merge(T.zu_format(dict(T.EFFEKT)))
+    assert not e._hat_effekt()
+
+
+def test_schriftart_asiatisch_komplex_betonung_docx(app, tmp_path):
+    from PySide6.QtGui import QImage, QPainter, QTextCursor
+    from lunivo_writer.editor.pagination import absatz_zusatz_zeichnen
+    from lunivo_writer.models.page import PageSettings
+    from lunivo_writer.services import file_service as formats
+    from lunivo_writer.ui.baukasten.text_format import aus_format, zu_format
+    from lunivo_writer.ui.document.document_editor import DocumentEditor
+    w = {"schrift": "Liberation Sans", "groesse": 12.0, "schrift_asien": "Noto Sans CJK JP", "schrift_komplex": "Times New Roman",
+         "schnitt_komplex": "Fett", "groesse_komplex": 14.0, "betonung": "punkt", "doppelt": True}
+    e = DocumentEditor(); e.setPlainText("Text mit Zeichen")
+    c = e.textCursor(); c.select(QTextCursor.Document); e.setTextCursor(c)
+    e._merge(zu_format(w))
+    assert e._hat_effekt()
+    img = QImage(500, 200, QImage.Format_RGB32); img.fill(0xffffff); p = QPainter(img)
+    absatz_zusatz_zeichnen(p, e.document()); p.end()
+    pfad = str(tmp_path / "s.docx"); formats.save(pfad, e.document(), PageSettings())
+    geladen = formats.load(pfad)
+    r = aus_format(geladen.doc.firstBlock().begin().fragment().charFormat())
+    assert r["schrift_asien"] == "Noto Sans CJK JP" and r["schrift_komplex"] == "Times New Roman" and r["betonung"] == "punkt" and r["doppelt"]
+    assert "Fett" in r["schnitt_komplex"] and r["groesse_komplex"] == 14.0
+
+
+def test_formatvorlage_schriftart_alle_felder(app):
+    from lunivo_writer.editor import stile
+    from lunivo_writer.ui.baukasten.formatvorlage_dialog import FormatvorlageDialog
+    from lunivo_writer.ui.baukasten.text_format import aus_format
+    from lunivo_writer.ui.document.document_editor import DocumentEditor
+    d = FormatvorlageDialog(None, start={"unter": "wellig", "doppelt": True, "kapital": True, "betonung": "punkt", "schrift_asien": "Noto Sans CJK JP",
+                                         "abstand": 1.5, "versteckt": False}, vorlagen=["Standard"])
+    erg = d.ergebnis()
+    assert erg["unter"] == "wellig" and erg["doppelt"] and erg["kapital"] and erg["abstand"] == 1.5 and erg["kerning"] is True
+    stile.anlegen("ZeichenTest", **{k: v for k, v in erg.items() if k not in ("name", "basis", "folge")})
+    e = DocumentEditor(); e.setPlainText("Text")
+    e._stil_auf_block(e.document().firstBlock(), "ZeichenTest")
+    w = aus_format(e.document().firstBlock().begin().fragment().charFormat())
+    assert w["unter"] == "wellig" and w["doppelt"] and w["kapital"] and w["betonung"] == "punkt" and w["schrift_asien"] == "Noto Sans CJK JP"
+    stile.loeschen("ZeichenTest")
+    # eine Vorlage ohne diese Felder lässt unterstrichenen Text, wie er ist
+    from PySide6.QtGui import QTextCharFormat, QTextCursor
+    e.setPlainText("unter"); c = e.textCursor(); c.select(QTextCursor.Document)
+    f = QTextCharFormat(); f.setUnderlineStyle(QTextCharFormat.SingleUnderline); c.mergeCharFormat(f)
+    e._stil_auf_block(e.document().firstBlock(), "Standard")
+    assert e.document().firstBlock().begin().fragment().charFormat().underlineStyle() == QTextCharFormat.SingleUnderline
+
+
+def test_schriftart_zeichenabstand_unterstreichung_docx(app, tmp_path):
+    from PySide6.QtGui import QTextCursor
+    from lunivo_writer.models.page import PageSettings
+    from lunivo_writer.services import file_service as formats
+    from lunivo_writer.ui.baukasten.schriftart_dialog import SchriftartDialog
+    from lunivo_writer.ui.baukasten.text_format import aus_format, zu_format
+    from lunivo_writer.ui.document.document_editor import DocumentEditor
+    d = SchriftartDialog(None, {"schrift": "Liberation Sans", "groesse": 12.0, "skala": 150.0, "position": 3.0, "unter": "dick_wellig", "raster": False})
+    w = d.werte()
+    assert w["skala"] == 150.0 and abs(w["position"] - 3.0) < 0.05 and w["unter"] == "dick_wellig" and not w["raster"]
+    e = DocumentEditor(); e.setPlainText("Zeichenabstand")
+    c = e.textCursor(); c.select(QTextCursor.Document); e.setTextCursor(c)
+    e._merge(zu_format(w))
+    r = aus_format(e.document().firstBlock().begin().fragment().charFormat())
+    assert r["skala"] == 150.0 and abs(r["position"] - 3.0) < 0.2 and r["unter"] == "dick_wellig"
+    pfad = str(tmp_path / "z.docx"); formats.save(pfad, e.document(), PageSettings())
+    geladen = formats.load(pfad)
+    r2 = aus_format(geladen.doc.firstBlock().begin().fragment().charFormat())
+    assert r2["skala"] == 150.0 and abs(r2["position"] - 3.0) < 0.6 and r2["unter"] == "dick_wellig" and not r2["raster"]
+
+
+def test_standardtabstopps(app, tmp_path):
+    from lunivo_writer.models.page import PageSettings
+    from lunivo_writer.services import file_service as formats
+    from lunivo_writer.ui.baukasten.tabstopp_dialog import TabstoppDialog
+    from lunivo_writer.ui.document.document_editor import DocumentEditor
+    d = TabstoppDialog(None, [], 15.0)
+    assert abs(d.standard_abstand() - 15.0) < 1e-6
+    assert TabstoppDialog(None, []).standard_abstand() is None
+    e = DocumentEditor(); e.setPlainText("a\tb")
+    e.set_standard_tab_mm(20.0)
+    assert abs(e.standard_tab_mm() - 20.0) < 0.01
+    pfad = str(tmp_path / "st.docx"); formats.save(pfad, e.document(), PageSettings())
+    geladen = formats.load(pfad)
+    assert abs(round(geladen.doc.defaultTextOption().tabStopDistance() / (96 / 25.4), 1) - 20.0) < 0.2
+
+
+def test_formatvorlage_absatz_beide_reiter(app):
+    from lunivo_writer.editor import absatzopt, stile
+    from lunivo_writer.ui.baukasten.absatz_dialog import AbsatzDialog
+    from lunivo_writer.ui.baukasten.formatvorlage_dialog import FormatvorlageDialog
+    from lunivo_writer.ui.document.document_editor import DocumentEditor
+    assert AbsatzDialog(None, {}, umfang="vorlage").reiter.count() == 2
+    d = FormatvorlageDialog(None, start={"rechts": 12, "erste": -6, "umbruch": True, "zeilen_art": "genau", "zeilen_pt": 18,
+                                         "opt": absatzopt.als_text({**absatzopt.VORGABE, "zusammen": True, "nicht_trennen": True}), "gliederung": 2}, vorlagen=["Standard"])
+    erg = d.ergebnis()
+    assert erg["rechts"] == 12 and erg["umbruch"] and erg["zeilen_art"] == "genau" and "zusammen=1" in erg["opt"] and erg["gliederung"] == 2
+    stile.anlegen("AbsatzTest", **{k: v for k, v in erg.items() if k not in ("name", "basis", "folge", "zur_vorlage")})
+    e = DocumentEditor(); e.setPlainText("Text")
+    e._stil_auf_block(e.document().firstBlock(), "AbsatzTest")
+    bf = e.document().firstBlock().blockFormat()
+    assert bf.rightMargin() > 0 and bf.textIndent() < 0 and int(bf.lineHeightType()) == 2 and bf.headingLevel() == 2
+    assert absatzopt.lesen(bf)["zusammen"] and e._stil_name(bf) == "AbsatzTest"
+    stile.loeschen("AbsatzTest")
+
+
+def test_texteffekte_alle_regler_bedienbar(app):
+    from lunivo_writer.ui.baukasten.texteffekt_dialog import TexteffektDialog
+    d = TexteffektDialog(None, {})
+    alle = [d.s_farbe, d.s_trans, d.s_gross, d.s_weich, d.s_abst, d.s_winkel, d.r_gross, d.r_trans, d.r_weich, d.r_abst, d.l_farbe, d.l_gross, d.l_trans,
+            d.farbe, d.trans, d.v1, d.v2, d.v_winkel, d.k_farbe, d.k_breite, d.k_art, d.k_form, d.kv1, d.kv2, d.kv_winkel, d.d_tiefe, d.d_kontur,
+            d.d_tiefe_f, d.d_kontur_f, d.d_licht, d.d_winkel]
+    assert all(x.isEnabled() for x in alle)                                   # nichts ist ausgegraut
+
+    def zieh(x, v):                                                            # wie mit der Maus am Regler ziehen
+        x.regler.setValue(int(round(v * x._f)))
+    d.s_abst.regler.setValue(120)                                              # ein Regler schaltet seinen Effekt ein
+    assert d.werte()["schatten"]["abstand"] == 12.0
+    zieh(d.r_gross, 70.0); assert d.werte()["reflektion"]["groesse"] == 70.0
+    zieh(d.l_gross, 9.0); assert d.werte()["leuchten"]["groesse"] == 9.0
+    zieh(d.v_winkel, 30); assert d.r_verlauf.isChecked() and d.werte()["verlauf"]["winkel"] == 30
+    zieh(d.k_breite, 2.0); assert d.k_linie.isChecked() and d.werte()["kontur"]
+    zieh(d.kv_winkel, 45); assert d.k_verlauf.isChecked() and d.werte()["kontur_verlauf"]["winkel"] == 45
+    d.d_tiefe.setValue(5.0); d.d_winkel.setValue(40.0)
+    assert d.werte()["d3"]["tiefe"] == 5.0 and d.werte()["d3"]["winkel"] == 40.0
+    zieh(d.trans, 30); assert d.r_farbe.isChecked() and d.werte()["transparenz"] == 30
+
+
+def test_seitenrand_optionen_und_kunstrahmen(app, tmp_path):
+    from PySide6.QtCore import QRectF
+    from PySide6.QtGui import QImage, QPainter
+    from lunivo_writer.editor import seitenrahmen
+    from lunivo_writer.models.page import PageSettings
+    from lunivo_writer.services import file_service as formats
+    from lunivo_writer.ui.baukasten.rahmen_schattierung import RahmenSchattierungDialog, _SeitenOptionenDialog
+    from lunivo_writer.ui.document.document_editor import DocumentEditor
+    d = RahmenSchattierungDialog(None, seitenrand={"art": "einfach", "farbe": "#c92a2a", "breite_pt": 3.0, "abstand_mm": 8.0, "seiten": "tblr",
+                                                    "messen": "text", "abstand": "2,3,6,7", "kopf": True, "vordergrund": False, "kunst": "stars"})
+    assert d.p_rand.rand_optionen["abstand"] == (2.0, 3.0, 6.0, 7.0) and d.p_rand.kunst.currentData() == "stars"
+    o = _SeitenOptionenDialog(None, d.p_rand.rand_optionen)
+    assert o.messen.currentData() == "text" and o.kopf.isChecked() and not o.vordergrund.isChecked() and o.werte()["abstand"] == (2.0, 3.0, 6.0, 7.0)
+    o.messen.setCurrentIndex(1); o.ausrichten.setChecked(True)
+    assert o.werte()["messen"] == "seitenrand" and o.werte()["ausrichten"] and not o.kopf.isEnabled()
+    r = d.p_rand.linie_wert()
+    assert not d.p_rand.einstellung["alle"].isVisibleTo(d.p_rand) and not d.p_rand.einstellung["raster"].isVisibleTo(d.p_rand)
+    erg = d.seitenrand()
+    assert erg["messen"] == "text" and erg["abstand"] == "2,3,6,7" and erg["kunst"] == "stars" and not erg["vordergrund"]
+    pg = PageSettings(); pg.border = erg
+    img = QImage(800, 1100, QImage.Format_RGB32); img.fill(0xffffff); p = QPainter(img)
+    seitenrahmen.zeichnen(p, erg, pg, QRectF(0, 0, 794, 1123)); p.end()
+    e = DocumentEditor(); e.setPlainText("Seite")
+    pfad = str(tmp_path / "sr.docx"); formats.save(pfad, e.document(), pg)
+    g = formats.load(pfad).page.border
+    assert g["messen"] == "text" and g["abstand"] == "2,3,6,7" and g["kunst"] == "stars" and g["kopf"] and not g["fuss"] and not g["vordergrund"]
+
+
+def test_seitenrahmen_vorn_und_hinten(app):
+    from PySide6.QtCore import QRectF
+    from PySide6.QtGui import QColor, QImage, QPainter
+    from lunivo_writer.editor.pagination import seitenschmuck
+    from lunivo_writer.models.page import PageSettings
+
+    def bild(vorn: bool, rahmen: str) -> QImage:
+        pg = PageSettings(); pg.border = {"art": "einfach", "farbe": "#c92a2a", "breite_pt": 6.0, "abstand_mm": 10.0, "seiten": "tblr", "vordergrund": vorn}
+        img = QImage(300, 300, QImage.Format_RGB32); img.fill(QColor("white"))
+        p = QPainter(img); seitenschmuck(p, pg, False, QRectF(0, 0, 300, 300), rahmen, False); p.end()
+        return img
+    rot = lambda img: img.pixelColor(150, 38).red() > 150 and img.pixelColor(150, 38).green() < 100            # liegt der Rahmen an der Kante?
+    assert rot(bild(True, "vorn")) and not rot(bild(True, "hinten"))              # Vordergrund: nur beim Zeichnen „vorn“
+    assert rot(bild(False, "hinten")) and not rot(bild(False, "vorn"))            # Hintergrund: nur beim Zeichnen „hinten“
+    assert rot(bild(False, "immer"))

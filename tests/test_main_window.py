@@ -274,10 +274,12 @@ def test_absatzdialog_und_objekte_waehlen(app, tmp_path):
     d = AbsatzDialog(None, {"ausr": "mitte", "einzug": 5, "erste": -8, "vor": 6, "nach": 12, "zeilen": 1.5, "umbruch": True, "tabs": [(30.0, "rechts")]})
     assert d.ausr.currentData() == "mitte" and d.umbruch.isChecked() and d.sonder.currentData() == "haengend"
     d.links.setValue(12); d.sonder.setCurrentIndex(1); d.zeilen_art.setCurrentIndex(2)
+    g = AbsatzDialog(None, {"zeilen_art": "genau", "zeilen_pt": 14})
+    assert g.werte()["zeilen_art"] == "genau" and g.werte()["zeilen_pt"] == 14
     w = d.werte()
-    assert w["einzug"] == 12 and w["erste"] == 8 and w["zeilen"] == 2.0 and w["tabs"] == [(30.0, "rechts")]
+    assert abs(w["einzug"] - 12) < 1e-6 and abs(w["erste"] - 8) < 1e-6 and w["zeilen"] == 2.0 and w["tabs"] == [(30.0, "rechts")]
     v = AbsatzDialog(None, {"vor": 3}, umfang="vorlage")
-    assert v.reiter.count() == 1 and not v.tabs_knopf.isVisibleTo(v) and v.werte()["vor"] == 3
+    assert v.reiter.count() == 2 and abs(v.werte()["vor"] - 3) < 1e-6          # in der Vorlage dasselbe Fenster mit beiden Reitern
     w = win(tmp_path)
     w.new_document()
     e = w.current_editor()

@@ -9,13 +9,15 @@ Das Fenster weist nichts selbst zu; wer es aufruft (Formatvorlage, später Makro
 from __future__ import annotations
 
 from PySide6.QtGui import QKeySequence
-from PySide6.QtWidgets import QDialog, QGroupBox, QHBoxLayout, QKeySequenceEdit, QLabel, QPushButton, QVBoxLayout
+from PySide6.QtWidgets import QDialog, QGroupBox, QHBoxLayout, QKeySequenceEdit, QLabel, QVBoxLayout
+
+from lunivo_writer.ui.baukasten.dialog_rahmen import fussleiste
 
 
 class TastenDialog(QDialog):
     def __init__(self, parent=None, aktuell: str = "", *, belegt=None):
         super().__init__(parent)
-        self.setWindowTitle("Tastenkombination")
+        self.setWindowTitle("Tastenkombination"); self.resize(311, 122)
         self._belegt = belegt
         v = QVBoxLayout(self)
         g = QGroupBox("Tasten"); h = QHBoxLayout(g)
@@ -25,11 +27,7 @@ class TastenDialog(QDialog):
         v.addWidget(g)
         self.hinweis = QLabel(); self.hinweis.setStyleSheet("color: #e8590c;"); self.hinweis.setWordWrap(True)
         v.addWidget(self.hinweis)
-        zu = QHBoxLayout(); zu.addStretch(1)
-        self.zuweisen = QPushButton("Zuweisen"); self.zuweisen.setDefault(True)
-        schliessen = QPushButton("Schließen")
-        self.zuweisen.clicked.connect(self.accept); schliessen.clicked.connect(self.reject)
-        zu.addWidget(self.zuweisen); zu.addWidget(schliessen); v.addLayout(zu)
+        self.zuweisen = fussleiste(self, v, ok_text="Zuweisen", abbrechen_text="Schließen")
         self.feld.keySequenceChanged.connect(self._pruefen)
         self._pruefen()
 

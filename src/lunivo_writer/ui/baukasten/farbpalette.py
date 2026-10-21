@@ -60,15 +60,34 @@ class _Kachel(QWidget):
         p.setPen(stift); p.setBrush(Qt.NoBrush); p.drawRect(r)
 
 
+class _VerlaufKachel(_Kachel):
+    """Kachel der Zeile „Graduelle Füllung“: ein Farbverlauf von hell nach dunkel in der Farbe; ein Klick meldet die Farbe als Verlauf."""
+
+    def mouseReleaseEvent(self, e):
+        if e.button() == Qt.LeftButton and self.rect().contains(e.position().toPoint()):
+            self._p.verlauf_gewaehlt.emit(QColor(self.farbe)); self._p.close()
+
+    def paintEvent(self, e):
+        from PySide6.QtGui import QLinearGradient
+        p = QPainter(self)
+        r = QRectF(self.rect()).adjusted(1.5, 1.5, -1.5, -1.5)
+        g = QLinearGradient(r.topLeft(), r.bottomRight())
+        g.setColorAt(0, QColor(self.farbe).lighter(150)); g.setColorAt(1, QColor(self.farbe).darker(140))
+        p.fillRect(r, g)
+        pal = self.palette()
+        p.setPen(QPen(pal.highlight().color() if self._an else pal.mid().color(), 2 if self._an else 1)); p.setBrush(Qt.NoBrush); p.drawRect(r)
+
+
 class FarbPalette(QMenu):
     """Popup mit „Keine Farbe“, Themenfarben (Grundfarben + Abstufungen), Standardfarben, zuletzt Benutzten, „Weitere Farben …“."""
 
     gewaehlt = Signal(object)        # QColor — oder None für „Keine Farbe“
     ueberfahren = Signal(object)     # QColor unter der Maus (für Live-Vorschau)
     verlassen = Signal()
+    verlauf_gewaehlt = Signal(object)  # QColor: die Farbe der gewählten „Graduellen Füllung“ (nur mit ``verlauf=True``)
 
     def __init__(self, parent=None, *, keine_text: str | None = "Keine Farbe", start=None, titel: str = "Farbe",
-                 zuletzt: bool = True, weitere: bool = True):
+                 zuletzt: bool = True, weitere: bool = True, verlauf: bool = False):
         super().__init__(parent)
         self._start, self._titel = start, titel
         wid = QWidget()
@@ -82,6 +101,12 @@ class FarbPalette(QMenu):
         v.addLayout(self._raster(F.thema_raster()))
         v.addWidget(self._titel_zeile("Standardfarben"))
         v.addLayout(self._raster([list(F.STANDARD_FARBEN)]))
+        if verlauf:                                         # „Graduelle Füllung“ wie im WPS: dieselben Farben als Verläufe
+            v.addWidget(self._titel_zeile("Graduelle Füllung"))
+            g = QGridLayout(); g.setSpacing(2); g.setContentsMargins(0, 0, 0, 0); g.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+            for i, farbe in enumerate(F.STANDARD_FARBEN):
+                g.addWidget(_VerlaufKachel(self, farbe), 0, i)
+            v.addLayout(g)
         letzte = F.zuletzt_laden() if zuletzt else []
         if letzte:
             v.addWidget(self._titel_zeile("Zuletzt benutzt"))
@@ -90,6 +115,9 @@ class FarbPalette(QMenu):
             mehr = QPushButton("Weitere Farben …"); mehr.setFlat(True); mehr.setStyleSheet("text-align: left; padding: 4px 6px;")
             mehr.clicked.connect(self._weitere)
             v.addWidget(mehr)
+            pip = QPushButton("Pipette"); pip.setFlat(True); pip.setStyleSheet("text-align: left; padding: 4px 6px;")
+            pip.clicked.connect(self._pipette)
+            v.addWidget(pip)
         self._spalte = v
         a = QWidgetAction(self)
         a.setDefaultWidget(wid)
@@ -129,6 +157,15 @@ class FarbPalette(QMenu):
         self.gewaehlt.emit(farbe)
         self.close()
 
+    def _pipette(self) -> None:
+        """„Pipette“: eine Farbe vom Bildschirm aufnehmen."""
+        from lunivo_writer.ui.baukasten.pipette import farbe_vom_bildschirm
+        self.close()
+        c = farbe_vom_bildschirm(self.parentWidget())
+        if c is not None:
+            F.zuletzt_merken(c.name())
+            self.gewaehlt.emit(c)
+
     def _weitere(self) -> None:
         self.close()
         c = weitere_farben(self.parentWidget(), self._start, self._titel)
@@ -140,10 +177,11 @@ class FarbFeld(QPushButton):
     """Knopf für Dialoge, der seine Farbe zeigt; ein Klick öffnet die Palette. ``farbe`` ist ein Hex-Text ('' = keine)."""
 
     farbeGeaendert = Signal(str)
+    verlaufGewaehlt = Signal(str)          # Farbe, die als Farbverlauf gemeint ist (nur mit ``verlauf=True``)
 
-    def __init__(self, farbe: str = "#000000", titel: str = "Farbe", keine_text: str | None = None, parent=None):
+    def __init__(self, farbe: str = "#000000", titel: str = "Farbe", keine_text: str | None = None, parent=None, verlauf: bool = False):
         super().__init__(parent)
-        self.farbe, self.titel, self.keine_text = farbe, titel, keine_text
+        self.farbe, self.titel, self.keine_text, self._verlauf = farbe, titel, keine_text, verlauf
         self.clicked.connect(self._waehle)
         self._zeige()
 
@@ -152,8 +190,9 @@ class FarbFeld(QPushButton):
         self._zeige()
 
     def _waehle(self) -> None:
-        pal = FarbPalette(self, keine_text=self.keine_text, start=self.farbe or None, titel=self.titel)
+        pal = FarbPalette(self, keine_text=self.keine_text, start=self.farbe or None, titel=self.titel, verlauf=self._verlauf)
         pal.gewaehlt.connect(self._uebernehmen)
+        pal.verlauf_gewaehlt.connect(lambda c: self.verlaufGewaehlt.emit(c.name()))
         self._zeige_popup(pal)
 
     def _zeige_popup(self, pal: QMenu) -> None:

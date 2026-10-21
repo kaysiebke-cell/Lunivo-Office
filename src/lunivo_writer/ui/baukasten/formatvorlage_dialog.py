@@ -11,33 +11,38 @@ from __future__ import annotations
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QFont, QTextBlockFormat, QTextCharFormat
 from PySide6.QtWidgets import (
-    QComboBox, QDialog, QFormLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit, QMenu, QPushButton,
+    QCheckBox, QComboBox, QDialog, QFormLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit, QMenu, QPushButton,
     QVBoxLayout, QWidget,
 )
 
 from lunivo_writer.editor import stile
-from lunivo_writer.ui.baukasten.dialog_rahmen import VorschauFlaeche
+from lunivo_writer.ui.baukasten.dialog_rahmen import VorschauFlaeche, fussleiste
 from lunivo_writer.ui.baukasten.farbpalette import weitere_farben
 from lunivo_writer.ui.baukasten.mass_feld import MassSpin, spin
 from lunivo_writer.ui.baukasten.text_format import TextFormatLeiste, zeichne_absaetze, zu_format
 
-RAHMEN_FELDER = ("rahmen", "fuell", "muster", "musterfarbe", "liste", "effekt")      # Felder, die nicht zur Leiste gehören
+ZEICHEN_ZUSATZ = ("unter", "unterfarbe", "durch", "doppelt", "hoch", "tief", "kapital", "gross", "versteckt", "abstand", "kerning", "betonung", "schrift_asien",
+                  "schnitt_asien", "groesse_asien", "schrift_komplex", "schnitt_komplex", "groesse_komplex", "skala", "position", "kern_ab", "raster")
+ABSATZ_ZUSATZ = ("rechts", "erste", "rtl", "umbruch", "zeilen_art", "zeilen_pt", "gliederung", "opt")
+RAHMEN_FELDER = ("rahmen", "fuell", "muster", "musterfarbe", "liste", "effekt", "tabs") + ZEICHEN_ZUSATZ + ABSATZ_ZUSATZ      # Felder, die nicht zur Leiste gehören
 KEINE = "(keine)"
 GLEICHE = "(dieselbe Vorlage)"
 
 
 class FormatvorlageDialog(QDialog):
     def __init__(self, parent=None, *, start: dict | None = None, vorlagen: list[str] | None = None, name: str = "Formatvorlage1",
-                 basis: str = "Standard", aendern: str | None = None, belegt=None):
+                 basis: str = "Standard", aendern: str | None = None, belegt=None, standard_tab_mm: float | None = None):
         """``aendern``: Name einer vorhandenen Vorlage — dann ist es das Fenster „Formatvorlage ändern“ (Name fest)."""
         super().__init__(parent)
         self.aendern = aendern
+        self._tab_std = standard_tab_mm                              # Standardtabstopps des Dokuments (mm); nur hier einzustellen, gilt für das Dokument
+        self._tab_std_neu = None
         self._belegt = belegt                                       # Funktion (Taste, eigener Name) → Name, der sie schon hat, oder None
         self._taste = (start or {}).get("taste", "")
         self.setWindowTitle("Formatvorlage ändern" if aendern else "Neue Formatvorlage")
-        self.setMinimumWidth(560)
+        self.resize(614, 520)
         self._farbe = (start or {}).get("farbe", "")
-        self._rs = {k: (start or {}).get(k, "") for k in RAHMEN_FELDER}      # Rahmen und Schattierung (kein Feld der Leiste)
+        self._rs = {k: (start or {}).get(k, stile.VORLAGE[k]) for k in RAHMEN_FELDER}      # Rahmen und Schattierung (kein Feld der Leiste)
         v = QVBoxLayout(self)
         # --- Eigenschaften
         eig = QGroupBox("Eigenschaften"); f = QFormLayout(eig)
@@ -60,17 +65,16 @@ class FormatvorlageDialog(QDialog):
         self._w: dict = {}
         fv.addWidget(self.vorschau)
         v.addWidget(fo)
-        # --- Knöpfe
-        zu = QHBoxLayout()
+        # --- Zur Vorlage hinzufügen, Knöpfe
+        self.zur_vorlage = QCheckBox("Zur Vorlage hinzufügen")
+        self.zur_vorlage.setToolTip("Die Formatvorlage auch für künftige Dokumente merken (sonst gilt sie nur, solange Lunivo läuft, und in den Dokumenten, die sie benutzen)")
+        self.zur_vorlage.setVisible(not aendern)
+        v.addWidget(self.zur_vorlage)
         self.format = QPushButton("Format ▾")
         m = QMenu(self.format)
-        m.addAction("Schriftart …", self._schriftart); m.addAction("Absatz …", self._absatz); m.addAction("Rahmen …", self._rahmen); m.addAction("Nummerierung …", self._liste); m.addAction("Texteffekte …", self._effekte); m.addAction("Verknüpfung …", self._verknuepfung)
+        m.addAction("Schriftart …", self._schriftart); m.addAction("Absatz …", self._absatz); m.addAction("Tabstopps …", self._tabs); m.addAction("Rahmen …", self._rahmen); m.addAction("Nummerierung …", self._liste); m.addAction("Texteffekte …", self._effekte); m.addAction("Verknüpfung …", self._verknuepfung)
         self.format.setMenu(m)
-        zu.addWidget(self.format); zu.addStretch(1)
-        ab, self.ok = QPushButton("Abbrechen"), QPushButton("OK"); self.ok.setDefault(True)
-        ab.clicked.connect(self.reject); self.ok.clicked.connect(self._ok)
-        zu.addWidget(ab); zu.addWidget(self.ok)
-        v.addLayout(zu)
+        self.ok = fussleiste(self, v, self.format, bei_ok=self._ok)
         # --- Anfangswerte und Verdrahtung
         if aendern:
             e = stile._NEU.get(aendern, {})
@@ -79,7 +83,7 @@ class FormatvorlageDialog(QDialog):
             if aendern not in stile._NEU:                           # eingebaute Vorlagen haben weder Basis noch Folgevorlage
                 self.basis.setEnabled(False); self.folge.setEnabled(False)
             self._farbe = start.get("farbe", "")
-            self._rs = {k: start.get(k, "") for k in RAHMEN_FELDER}
+            self._rs = {k: start.get(k, stile.VORLAGE[k]) for k in RAHMEN_FELDER}
             self._taste = start.get("taste", "")
         self.basis.setCurrentIndex(max(0, self.basis.findData(basis if basis in namen else "")))
         self.leiste.setze({**stile.definition("Standard"), **(start or {})} if not start else start)
@@ -134,7 +138,7 @@ class FormatvorlageDialog(QDialog):
         if b:
             d = stile.definition(b)
             self._farbe = d.get("farbe", "")
-            self._rs = {k: d.get(k, "") for k in RAHMEN_FELDER}
+            self._rs = {k: d.get(k, stile.VORLAGE[k]) for k in RAHMEN_FELDER}
             self.leiste.setze(d)
         self._neu()
 
@@ -144,26 +148,32 @@ class FormatvorlageDialog(QDialog):
         self.ok.setEnabled(grund is None)
 
     def _schriftart(self) -> None:
-        """Format ▸ Schriftart …: dasselbe Fenster wie im Band, aber nur mit den Feldern, die eine Vorlage kennt."""
-        from lunivo_writer.ui.baukasten.schriftart_dialog import SchriftartDialog
+        """Format ▸ Schriftart …: dasselbe Fenster wie im Band, mit allen Feldern; die Vorlage merkt sie sich."""
+        from lunivo_writer.ui.baukasten.schriftart_dialog import zeichen_waehlen
         w = self.leiste.werte()
-        d = SchriftartDialog(self, {"schrift": w["schrift"], "groesse": w["groesse"], "fett": w["fett"], "kursiv": w["kursiv"], "farbe": self._farbe},
-                             umfang="vorlage")
-        if d.exec():
-            n = d.werte()
+        n = zeichen_waehlen(self, {**{k: self._rs[k] for k in ZEICHEN_ZUSATZ}, "schrift": w["schrift"], "groesse": w["groesse"], "fett": w["fett"],
+                                   "kursiv": w["kursiv"], "farbe": self._farbe})
+        if n is not None:
             self._farbe = n["farbe"]
+            self._rs.update({k: n[k] for k in ZEICHEN_ZUSATZ})
             self.leiste.setze({**w, "schrift": n["schrift"], "groesse": n["groesse"], "fett": n["fett"], "kursiv": n["kursiv"]})
             self._neu()
 
     def _absatz(self) -> None:
-        """Format ▸ Absatz …: dasselbe Fenster wie im Band, aber nur mit den Feldern, die eine Vorlage kennt."""
+        """Format ▸ Absatz …: dasselbe Fenster wie im Band, mit beiden Reitern; die Vorlage merkt sich alle Felder (auch Tabstopps und Umbruchregeln)."""
+        from lunivo_writer.editor import absatzopt
         from lunivo_writer.ui.baukasten.absatz_dialog import AbsatzDialog
-        w = self.leiste.werte()
-        d = AbsatzDialog(self, {"ausr": w["ausr"] or "links", "einzug": w["einzug"], "vor": w["vor"], "nach": w["nach"],
-                                "zeilen": w["zeilen"] or 1.0}, umfang="vorlage")
+        from lunivo_writer.ui.baukasten.tabstopp_dialog import als_text, aus_text
+        w, r = self.leiste.werte(), self._rs
+        d = AbsatzDialog(self, {"ausr": w["ausr"] or "links", "einzug": w["einzug"], "vor": w["vor"], "nach": w["nach"], "zeilen": w["zeilen"] or 1.0,
+                                "rechts": r["rechts"], "erste": r["erste"], "rtl": r["rtl"], "umbruch": r["umbruch"], "zeilen_art": r["zeilen_art"],
+                                "zeilen_pt": r["zeilen_pt"], "ebene": r["gliederung"], "opt": absatzopt.aus_text(r["opt"]), "tabs": aus_text(r["tabs"])},
+                        umfang="vorlage")
         if d.exec():
             n = d.werte()
             self.leiste.setze({**w, "ausr": "" if n["ausr"] == "links" else n["ausr"], "einzug": n["einzug"], "vor": n["vor"], "nach": n["nach"], "zeilen": n["zeilen"]})
+            self._rs.update({"rechts": n["rechts"], "erste": n["erste"], "rtl": n["rtl"], "umbruch": n["umbruch"], "zeilen_art": n["zeilen_art"],
+                             "zeilen_pt": n["zeilen_pt"], "gliederung": n["ebene"], "opt": absatzopt.als_text(n["opt"]), "tabs": als_text(n["tabs"])})
             self._neu()
 
     def _rahmen(self) -> None:
@@ -206,6 +216,16 @@ class FormatvorlageDialog(QDialog):
             self._rs["effekt"] = texteffekt.als_text(n)
             self._neu()
 
+    def _tabs(self) -> None:
+        """Format ▸ Tabstopps …: dasselbe Fenster wie im Absatz; die Vorlage merkt sich die Tabstopps."""
+        from lunivo_writer.ui.baukasten.tabstopp_dialog import TabstoppDialog, als_text, aus_text
+        d = TabstoppDialog(self, aus_text(self._rs["tabs"]), self._tab_std if self._tab_std is not None else 12.7)
+        if d.exec():
+            self._rs["tabs"] = als_text(d.stopps())
+            if d.standard_abstand():
+                self._tab_std_neu = d.standard_abstand()
+            self._neu()
+
     def _verknuepfung(self) -> None:
         """Format ▸ Verknüpfung …: die Tastenkombination, die die Vorlage auf den Absatz anwendet."""
         from lunivo_writer.ui.baukasten.tasten_dialog import TastenDialog
@@ -225,4 +245,7 @@ class FormatvorlageDialog(QDialog):
         felder["farbe"] = self._farbe
         felder.update(self._rs)
         felder["taste"] = self._taste
+        if self._tab_std_neu:
+            felder["tab_standard"] = self._tab_std_neu                         # gilt für das Dokument, nicht für die Vorlage (siehe Aufrufer)
+        felder["zur_vorlage"] = self.zur_vorlage.isChecked() or bool(self.aendern)
         return {"name": " ".join(self.name.text().split()), "basis": self.basis.currentData() or "", "folge": self.folge.currentData() or "", **felder}

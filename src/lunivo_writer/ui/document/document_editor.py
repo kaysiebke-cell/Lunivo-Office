@@ -13,7 +13,7 @@ from lunivo_writer.services.docx_reader import LH_PROPORTIONAL, STYLE_PROP
 from lunivo_writer.editor import sprechblasen as SB
 from lunivo_writer.editor.anzeige_extra import VersteckterText, aenderungszeilen, feldbereiche
 from lunivo_writer.editor.zusatz import P_VERSTECKT
-from lunivo_writer.models.page import PageSettings, mm_to_px
+from lunivo_writer.models.page import PageSettings, mm_to_px, px_to_mm
 from lunivo_writer.proofing.autokorrektur import kleinste_aenderung
 from lunivo_writer.editor.pagination import bind_layout, paginated_copy
 from lunivo_writer.editor import stile
@@ -98,6 +98,12 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         self.cursorPositionChanged.connect(lambda: self.zeilenfokus and self.viewport().update())
         self.currentCharFormatChanged.connect(lambda *_: self.formatChanged.emit())
         self.document().contentsChanged.connect(self._timer.start)
+        self._fluss = QTimer(self); self._fluss.setSingleShot(True); self._fluss.setInterval(500)      # Umbruchregeln nach dem Tippen prüfen
+        self._fluss.timeout.connect(self._seitenfluss)
+        self._fluss_laeuft = False
+        self._effekt_cache: bool | None = None
+        self.document().contentsChanged.connect(lambda: setattr(self, "_effekt_cache", None))
+        self.document().contentsChanged.connect(self._fluss_planen)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)       # die Seite wächst mit, der graue Grund scrollt
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.cursorPositionChanged.connect(self._scroll_outer)
@@ -158,6 +164,10 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         self._verbinde_groesse()
         doc.setDocumentMargin(0)
         doc.contentsChanged.connect(self._timer.start)
+        doc.contentsChanged.connect(self._fluss_planen)
+        doc.contentsChanged.connect(lambda: setattr(self, "_effekt_cache", None))
+        self._effekt_cache = None
+        self._fluss.start()
         doc.contentsChange.connect(self._inhalt_geaendert)
         self.apply_page(page)
         doc.setModified(False)
@@ -533,6 +543,15 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
                 alpha = int(26 * (1 - t) ** 2 + 2)
                 p.fillRect(QRectF(blatt.left() + i * 0.5, blatt.bottom(), blatt.width() - i, i), QColor(16, 24, 40, alpha))
             p.fillRect(blatt, papier)
+        if self.page.border and not self.page.border.get("vordergrund", True):      # Seitenrahmen hinter dem Text
+            from lunivo_writer.editor.pagination import seitenschmuck
+            z = self.zoom
+            for k in range(self._blatt_anzahl()):
+                a = self.blatt_oben(k)
+                if QRectF(0, a, vp.width(), g["H"]).intersects(sicht):
+                    p.save(); p.scale(z, z)
+                    seitenschmuck(p, self.page, False, QRectF(0, a / z, vp.width() / z, g["H"] / z), "hinten", False)
+                    p.restore()
         doc = self.document()
         lay = doc.documentLayout()
         ctx = QAbstractTextDocumentLayout.PaintContext()
@@ -697,6 +716,48 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         rtl = self.textCursor().blockFormat().layoutDirection() == Qt.RightToLeft
         self._block_merge(lambda bf: bf.setLayoutDirection(Qt.LeftToRight if rtl else Qt.RightToLeft))
 
+    def _fluss_planen(self) -> None:
+        if not self._fluss_laeuft:
+            self._fluss.start()
+
+    def _seitenfluss(self) -> None:
+        """Umbruchregeln (Zusammenhalten, nicht vom nächsten Absatz trennen, Absatzkontrolle) auf die Seiten anwenden."""
+        if self.web or self._fluss_laeuft:
+            return
+        from lunivo_writer.editor import seitenfluss
+        self._fluss_laeuft = True
+        try:
+            if seitenfluss.anwenden(self.document(), self.page.content_height_px):
+                self.viewport().update()
+        finally:
+            self._fluss_laeuft = False
+
+    def _hat_effekt(self) -> bool:
+        """Gibt es Textstücke mit Effekten, die Lunivo selbst zeichnet (Verlauf, Schatten, Spiegelung, Leuchten, 3D)? Das Ergebnis gilt bis zur nächsten Änderung."""
+        if self._effekt_cache is not None:
+            return self._effekt_cache
+        from lunivo_writer.editor.textfx import hat_zeichen_effekt
+        gefunden = False
+        b = self.document().firstBlock()
+        while b.isValid() and not gefunden:
+            it = b.begin()
+            while not it.atEnd():
+                if hat_zeichen_effekt(it.fragment().charFormat()):
+                    gefunden = True; break
+                it += 1
+            b = b.next()
+        self._effekt_cache = gefunden
+        return gefunden
+
+    def _hat_tabfuell(self) -> bool:
+        from lunivo_writer.editor.zusatz import B_TABFUELL
+        b = self.document().firstBlock()
+        while b.isValid():
+            if b.blockFormat().hasProperty(B_TABFUELL):
+                return True
+            b = b.next()
+        return False
+
     def _hat_mehrstufig(self) -> bool:
         from lunivo_writer.editor.zusatz import B_MEHRSTUFIG
         b = self.document().firstBlock()
@@ -738,7 +799,7 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
                 continue
             p.save()
             p.scale(z, z)
-            seitenschmuck(p, pg, False, QRectF(0, a / z, vp.width() / z, (b - a) / z))
+            seitenschmuck(p, pg, False, QRectF(0, a / z, vp.width() / z, (b - a) / z), "vorn")
             p.restore()
 
     def _gitter_zeichnen(self, p: QPainter) -> None:
@@ -1044,7 +1105,10 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         self._block_merge(lambda bf: bf.setLeftMargin(max(0.0, bf.leftMargin() + d)))
 
     def set_page_break_before(self, an: bool) -> None:
+        from lunivo_writer.editor.zusatz import B_AUTOUMBRUCH
+
         def f(bf):
+            bf.clearProperty(B_AUTOUMBRUCH)                 # ein selbst gesetzter Umbruch ersetzt einen, den Lunivo eingefügt hatte
             bf.setPageBreakPolicy(QTextFormat.PageBreak_AlwaysBefore if an else QTextFormat.PageBreak_Auto)
         self._block_merge(f)
 
@@ -1054,11 +1118,39 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
             bf.setTextIndent(mm_to_px(first_mm))
         self._block_merge(f)
 
+    def standard_tab_mm(self) -> float:
+        """Standardtabstopps des Dokuments (Abstand in mm)."""
+        return round(px_to_mm(self.document().defaultTextOption().tabStopDistance()), 2)
+
+    def set_standard_tab_mm(self, mm: float) -> None:
+        if mm <= 0:
+            return
+        opt = self.document().defaultTextOption()
+        opt.setTabStopDistance(mm_to_px(mm))
+        self.document().setDefaultTextOption(opt)
+        self.document().setModified(True)
+        self.viewport().update()
+
+    def set_absatzopt(self, w: dict) -> None:
+        """Absatzoptionen (Umbruchregeln, Zeilenumbruch, Zeichenabstand, Raster) der markierten Absätze setzen."""
+        from lunivo_writer.editor import absatzopt
+        self._block_merge(lambda bf: absatzopt.setzen(bf, w))
+
     def set_tabstopps(self, stopps) -> None:
-        self._block_merge(lambda bf: bf.setTabPositions(list(stopps)))
+        """Tabstopps als Liste aus (Millimeter, Ausrichtung, Füllzeichen) setzen."""
+        from lunivo_writer.ui.baukasten.tabstopp_dialog import zu_block
+        self._block_merge(lambda bf: zu_block(bf, stopps))
+        self.viewport().update()
 
     def set_line_spacing(self, factor: float) -> None:
         self._block_merge(lambda bf: bf.setLineHeight(factor * 100, LH_PROPORTIONAL))
+
+    def set_line_height(self, art: str, wert: float) -> None:
+        """Zeilenabstand: ``faktor`` (Vielfaches), ``mindestens`` oder ``genau`` (Punkt)."""
+        if art == "faktor":
+            self.set_line_spacing(wert); return
+        typ = {"genau": 2, "mindestens": 3}[art]                 # QTextBlockFormat.FixedHeight / MinimumHeight
+        self._block_merge(lambda bf: bf.setLineHeight(wert / 0.75, typ))
 
     def set_paragraph_spacing(self, before_pt: float, after_pt: float) -> None:
         def f(bf):
@@ -1108,8 +1200,7 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
                 if w:
                     n = max(1, min(mehrstufig.EBENEN, w[0] + delta))
                     bf.setProperty(B_MEHRSTUFIG, mehrstufig.block_wert(n, w[1]))
-                    bf.setLeftMargin(mm_to_px(w[1]["ebenen"][n - 1]["einzug"]))
-            self._block_merge(f); self.viewport().update()
+            self._block_merge(f); mehrstufig.einrichten_alle(self.document()); self.viewport().update()
             return
         cur = self.textCursor()
         lst = cur.currentList()
@@ -1144,8 +1235,23 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         else:
             bf.clearProperty(STYLE_PROP)
         bf.setTopMargin(d["vor"] / 0.75); bf.setBottomMargin(d["nach"] / 0.75)
-        if d.get("zeilen"):
+        if d.get("zeilen_art") in ("genau", "mindestens"):
+            bf.setLineHeight(d.get("zeilen_pt", 12.0) / 0.75, 2 if d["zeilen_art"] == "genau" else 3)
+        elif d.get("zeilen"):
             bf.setLineHeight(d["zeilen"] * 100, LH_PROPORTIONAL)
+        if d.get("rechts"):
+            bf.setRightMargin(mm_to_px(d["rechts"]))
+        if d.get("erste"):
+            bf.setTextIndent(mm_to_px(d["erste"]))
+        if d.get("rtl"):
+            bf.setLayoutDirection(Qt.RightToLeft)
+        if d.get("umbruch"):
+            bf.setPageBreakPolicy(QTextFormat.PageBreak_AlwaysBefore)
+        if d.get("gliederung") and d.get("key"):                    # Gliederungsebene einer eigenen Vorlage: Überschriftsebene (Qt kennt 1 bis 6)
+            bf.setHeadingLevel(min(6, int(d["gliederung"])))
+        if d.get("opt"):
+            from lunivo_writer.editor import absatzopt
+            absatzopt.setzen(bf, absatzopt.aus_text(d["opt"]))
         if d.get("einzug"):
             bf.setLeftMargin(mm_to_px(d["einzug"]))
         if d["ausr"]:
@@ -1163,25 +1269,68 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
             else:
                 bf.setBackground(QBrush(QColor(fuell)))
         cc.setBlockFormat(bf)
+        if d.get("tabs"):
+            from lunivo_writer.ui.baukasten.tabstopp_dialog import aus_text as tabs_aus, zu_block
+            bf = QTextCursor(blk).blockFormat(); zu_block(bf, tabs_aus(d["tabs"]))
+            QTextCursor(blk).setBlockFormat(bf)
         if d.get("liste"):
             self._liste_auf_block(blk, d["liste"])
         sel = QTextCursor(blk)
         sel.movePosition(QTextCursor.StartOfBlock)
         sel.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
-        f = QTextCharFormat()
-        f.setFontWeight(QFont.Bold if d["fett"] else QFont.Normal)
-        f.setFontItalic(d["kursiv"])
-        f.setFontPointSize(d["groesse"] or self.document().defaultFont().pointSizeF() or 11)
-        if d["schrift"]:
-            f.setFontFamilies([d["schrift"]])
-        if d["farbe"]:
-            f.setForeground(QColor(d["farbe"]))
+        f = self._zeichen_der_vorlage(d)
         sel.mergeCharFormat(f)
+        if d.get("versteckt"):
+            f2 = QTextCharFormat(); f2.setProperty(P_VERSTECKT, 1); sel.mergeCharFormat(f2)
         if d.get("effekt"):
             from lunivo_writer.editor import texteffekt
             e = texteffekt.aus_text(d["effekt"], d.get("farbe", ""))
             if e:
                 sel.mergeCharFormat(texteffekt.zu_format(e))
+        self._ebene_der_vorlage(blk, name)
+
+    def _zeichen_der_vorlage(self, d: dict) -> QTextCharFormat:
+        """Das Zeichenformat einer Vorlage (alle Felder des Fensters „Schriftart“). Was die Vorlage nicht setzt, bleibt in der Auswahl, wie es ist."""
+        from lunivo_writer.editor.zusatz import P_BETONUNG, P_DOPPELT, P_FONT_ASIEN, P_FONT_KOMPLEX, P_RASTER
+        from lunivo_writer.ui.baukasten.text_format import ZEICHEN, zu_format
+        zw = {k: d.get(k, v) for k, v in ZEICHEN.items()}
+        f = zu_format(zw)
+        if not zw["groesse"]:
+            f.setFontPointSize(self.document().defaultFont().pointSizeF() or 11)
+        Q = QTextFormat
+        for schluessel, props in ((("unter",), (Q.TextUnderlineStyle,)), (("unterfarbe",), (Q.TextUnderlineColor,)),
+                                  (("durch", "doppelt"), (Q.FontStrikeOut,)), (("hoch", "tief"), (Q.TextVerticalAlignment,)),
+                                  (("kapital", "gross"), (Q.FontCapitalization,)), (("abstand",), (Q.FontLetterSpacingType, Q.FontLetterSpacing)),
+                                  (("kerning", "kern_ab"), (Q.FontKerning,)), (("skala",), (Q.FontStretch,)), (("position",), (Q.TextBaselineOffset,)),
+                                  (("raster",), (P_RASTER,)), (("doppelt",), (P_DOPPELT,)), (("betonung",), (P_BETONUNG,)),
+                                  (("schrift_asien",), (P_FONT_ASIEN,)), (("schrift_komplex",), (P_FONT_KOMPLEX,))):
+            if all(zw[k] == ZEICHEN[k] for k in schluessel):
+                for pr in props:
+                    f.clearProperty(pr)
+        if not (zw["schrift"] or zw["schrift_asien"] or zw["schrift_komplex"]):
+            f.clearProperty(Q.FontFamilies)
+        return f
+
+    def _ebene_der_vorlage(self, blk, name: str) -> None:
+        """„Verbinden mit Formatvorlage“ (Gliederung anpassen): ein Absatz mit dieser Vorlage gehört zur verbundenen Ebene der Gliederung."""
+        from lunivo_writer.editor import mehrstufig
+        from lunivo_writer.editor.zusatz import B_MEHRSTUFIG
+        b = blk.previous()
+        defn = None
+        while b.isValid():                                       # die nächste Gliederung davor, sonst die erste im Dokument
+            if b.blockFormat().hasProperty(B_MEHRSTUFIG):
+                w = mehrstufig.aus_block(b.blockFormat().stringProperty(B_MEHRSTUFIG))
+                defn = w[1] if w else None
+                break
+            b = b.previous()
+        if defn is None:
+            return
+        for i, e in enumerate(defn["ebenen"]):
+            if e.get("vorlage") == name:
+                c = QTextCursor(blk); bf = c.blockFormat()
+                bf.setProperty(B_MEHRSTUFIG, mehrstufig.block_wert(i + 1, defn)); c.setBlockFormat(bf)
+                mehrstufig.einrichten_alle(self.document())
+                return
 
     def stil_tasten(self) -> None:
         """Die Tastenkombinationen der Formatvorlagen (nur gültig, solange der Editor den Fokus hat)."""
@@ -1206,8 +1355,10 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
             from lunivo_writer.editor.mehrstufig import block_wert
             from lunivo_writer.editor.zusatz import B_MEHRSTUFIG
             c = QTextCursor(blk); bf = c.blockFormat()
-            bf.setProperty(B_MEHRSTUFIG, block_wert(1, spec)); bf.setLeftMargin(mm_to_px(spec["ebenen"][0]["einzug"])); bf.setTextIndent(0)
+            bf.setProperty(B_MEHRSTUFIG, block_wert(1, spec))
             c.setBlockFormat(bf)
+            from lunivo_writer.editor import mehrstufig
+            mehrstufig.einrichten_alle(self.document())
             return
         fmt = listen.zu_format(spec)
         vor = blk.previous().textList() if blk.previous().isValid() else None
@@ -1242,14 +1393,14 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
             alt = mehrstufig.aus_block(bf.stringProperty(B_MEHRSTUFIG)) if bf.hasProperty(B_MEHRSTUFIG) else None
             if defn is None:
                 if alt:
-                    bf.clearProperty(B_MEHRSTUFIG); bf.setLeftMargin(0)
+                    bf.clearProperty(B_MEHRSTUFIG); bf.setLeftMargin(0); bf.setTextIndent(0)
                 return
             n = ebene_nr or (alt[0] if alt else 1)
             bf.setProperty(B_MEHRSTUFIG, mehrstufig.block_wert(n, defn))
-            bf.setLeftMargin(mm_to_px(defn["ebenen"][n - 1]["einzug"])); bf.setTextIndent(0)
         if defn is not None:
             self.list_remove(nur_qt=True)
         self._block_merge(f)
+        mehrstufig.einrichten_alle(self.document())
         self.viewport().update()
 
     def set_liste(self, spec) -> None:
@@ -1259,6 +1410,9 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
             self.list_remove(); return
         if "ebenen" in spec:
             self.set_mehrstufig(spec); return
+        if spec.get("pos"):                              # eigene Position der Nummer: Lunivo zeichnet sie selbst (wie bei der Gliederung)
+            from lunivo_writer.editor import mehrstufig
+            self.set_mehrstufig(mehrstufig.als_mehrstufig(spec)); return
         self.set_mehrstufig(None)
         cur = self.textCursor()
         lst = cur.currentList()
@@ -1300,10 +1454,12 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
 
     @staticmethod
     def _stil_name(bf) -> str:
+        key = bf.property(STYLE_PROP) if bf.hasProperty(STYLE_PROP) else None
+        if key and str(key).startswith(stile.PRAEFIX):                # eine eigene Vorlage geht vor der Überschriftsebene, die sie setzen kann
+            return stile.key_zu_name(str(key)) or "Standard"
         lvl = bf.headingLevel()
         if lvl in (1, 2, 3):
             return f"Überschrift {lvl}"
-        key = bf.property(STYLE_PROP) if bf.hasProperty(STYLE_PROP) else None
         for pfad in ("Title", "Subtitle", "Quote", "No Spacing"):
             if key == pfad:
                 return stile.key_zu_name(pfad)
@@ -1315,6 +1471,7 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         """Definition für eine neue Formatvorlage nach dem Absatz, in dem die Schreibmarke steht."""
         from lunivo_writer.editor import texteffekt
         from lunivo_writer.editor.listen import als_text
+        from lunivo_writer.ui.baukasten.tabstopp_dialog import als_text as tabs_text, aus_block
         c = self.textCursor()
         bf, cf = c.blockFormat(), c.charFormat()
         ausr = {Qt.AlignHCenter: "mitte", Qt.AlignRight: "rechts", Qt.AlignJustify: "block"}
@@ -1324,7 +1481,25 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
                 "kursiv": cf.fontItalic(), "farbe": cf.foreground().color().name() if cf.foreground().style() != Qt.NoBrush and cf.hasProperty(QTextFormat.ForegroundBrush) else "",
                 "schrift": fam[0] if fam else "", "vor": round(bf.topMargin() * 0.75, 1), "nach": round(bf.bottomMargin() * 0.75, 1), "ausr": a,
                 **self._rahmen_felder(), "liste": als_text(self.liste_spec()),
-                "effekt": texteffekt.als_text(texteffekt.aus_format(cf))}
+                "effekt": texteffekt.als_text(texteffekt.aus_format(cf)),
+                "tabs": tabs_text(aus_block(bf)), **self._zeichen_felder(cf), **self._absatz_felder(bf)}
+
+    @staticmethod
+    def _absatz_felder(bf) -> dict:
+        """Die Felder des Fensters „Absatz“ (außer Ausrichtung, Einzug links, Abstände), als Felder einer Formatvorlage."""
+        from lunivo_writer.editor import absatzopt, seitenfluss
+        lart = {2: "genau", 3: "mindestens"}.get(int(bf.lineHeightType()), "faktor")
+        return {"rechts": round(px_to_mm(bf.rightMargin()), 1), "erste": round(px_to_mm(bf.textIndent()), 1), "rtl": bf.layoutDirection() == Qt.RightToLeft,
+                "umbruch": seitenfluss.ist_manuell(bf), "zeilen_art": lart, "zeilen_pt": round(bf.lineHeight() * 0.75, 1) if lart != "faktor" else 12.0,
+                "gliederung": 0, "opt": absatzopt.als_text(absatzopt.lesen(bf))}
+
+    def _zeichen_felder(self, cf) -> dict:
+        """Die Felder des Fensters „Schriftart“ (ohne Schrift, Größe, Schnitt, Farbe) eines Zeichenformats, als Felder einer Formatvorlage."""
+        from lunivo_writer.ui.baukasten.text_format import aus_format
+        w = aus_format(cf)
+        keys = ("unter", "unterfarbe", "durch", "doppelt", "hoch", "tief", "kapital", "gross", "abstand", "kerning", "betonung", "schrift_asien", "schnitt_asien",
+                "groesse_asien", "schrift_komplex", "schnitt_komplex", "groesse_komplex", "skala", "position", "kern_ab", "raster")
+        return {**{k: w[k] for k in keys}, "versteckt": cf.hasProperty(P_VERSTECKT)}
 
     def _rahmen_felder(self) -> dict:
         """Rahmen und Schattierung des Absatzes an der Schreibmarke als Felder einer Formatvorlage."""
@@ -1691,7 +1866,7 @@ class DocumentEditor(ZusatzMixin, QTextEdit):
         self._schmuck_zeichnen(p)
         if self.gitter:
             self._gitter_zeichnen(p)
-        if not self.web and (self._hat_rahmen() or self._hat_mehrstufig()):
+        if not self.web and (self._hat_rahmen() or self._hat_mehrstufig() or self._hat_tabfuell() or self._hat_effekt()):
             from lunivo_writer.editor.pagination import absatz_zusatz_zeichnen
             if sp:
                 g = self._sp_geo()
