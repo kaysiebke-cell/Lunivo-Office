@@ -177,9 +177,9 @@ class AbsatzDialog(QDialog):
         return o
 
     def _tabstopps(self) -> None:
+        from lunivo_writer.ui.baukasten.fenster_stapel import zeige_unter
         d = TabstoppDialog(self, self._tabs)
-        if d.exec():
-            self._tabs = d.stopps()
+        zeige_unter(self, d, lambda: setattr(self, "_tabs", d.stopps()))
 
     def _male(self, p, rect) -> None:
         """Vorhergehender Absatz (grau), der eigene mit Einzügen und Abständen, folgender Absatz (grau)."""

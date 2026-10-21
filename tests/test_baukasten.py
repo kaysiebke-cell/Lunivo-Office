@@ -1052,3 +1052,47 @@ def test_texteffekte_menue_im_band(app, tmp_path):
     r = T.aus_format(e.document().firstBlock().begin().fragment().charFormat())
     assert r["kontur"] and r["fuell"] == "keine" and not r.get("schatten")
     sub["Schatten"].gewaehlt.emit("")
+
+
+def test_fenster_stapel_unterfenster_als_seiten(app):
+    from PySide6.QtWidgets import QDialog
+    from lunivo_writer.ui.baukasten.fenster_stapel import FensterStapel, stapel_von
+    from lunivo_writer.ui.baukasten.formatvorlage_dialog import FormatvorlageDialog
+    fv = FormatvorlageDialog(None, start={"groesse": 12}, vorlagen=["Standard"])
+    host = FensterStapel(fv)
+    host.show()
+    assert len(host._seiten) == 1 and not host.zurueck.isVisible()
+    gr0 = host.size()
+    fv._absatz()                                                              # Format ▸ Absatz: eine Seite im selben Fenster
+    assert len(host._seiten) == 2 and host.zurueck.isVisibleTo(host) and "Absatz" in host.pfad.text() and stapel_von(host._seiten[1][0]) is host
+    absatz = host._seiten[1][0]
+    absatz.vor.setValue(10.0)
+    absatz._tabstopps()                                                       # zweite Ebene: Tabstopps aus dem Absatz
+    assert len(host._seiten) == 3 and "Tabstopps" in host.pfad.text()
+    host._seiten[2][0].accept()                                               # OK im Tabstoppfenster: zurück zum Absatz
+    assert len(host._seiten) == 2 and host.size() == host._seiten[1][2] or len(host._seiten) == 2
+    absatz.accept()                                                           # OK im Absatz: fertig() setzt die Werte der Vorlage, zurück zur Vorlage
+    assert len(host._seiten) == 1 and host.size() == gr0
+    assert fv.leiste.werte()["vor"] > 0
+    fv._effekte(); assert len(host._seiten) == 2
+    host._zurueck()                                                           # „← Zurück“ bricht ab
+    assert len(host._seiten) == 1
+    fv.accept()                                                               # OK der Vorlage beendet das ganze Fenster
+    assert host.result() == QDialog.Accepted
+
+
+def test_weitere_farben_als_seite_im_stapel(app):
+    from PySide6.QtGui import QColor
+    from lunivo_writer.ui.baukasten.fenster_stapel import FensterStapel
+    from lunivo_writer.ui.baukasten.formatvorlage_dialog import FormatvorlageDialog
+    from lunivo_writer.ui.baukasten.farbpalette import FarbPalette
+    fv = FormatvorlageDialog(None, start={"groesse": 12}, vorlagen=["Standard"])
+    host = FensterStapel(fv); host.show()
+    pal = FarbPalette(fv.leiste, keine_text=None)                  # eine Palette in der Formatvorlage
+    gewaehlt = []
+    pal.gewaehlt.connect(gewaehlt.append)
+    pal._weitere()                                                  # „Weitere Farben …“: Seite „Farben“ im selben Fenster
+    assert len(host._seiten) == 2 and "Farben" in host.pfad.text()
+    seite = host._seiten[1][0]
+    seite.accept()
+    assert len(host._seiten) == 1 and gewaehlt and isinstance(gewaehlt[0], QColor)

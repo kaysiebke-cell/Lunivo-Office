@@ -116,11 +116,14 @@ class _Zahlenformat(QWidget):
         self.zeichen = dict(zeichen or {})
 
     def _schriftart(self) -> None:
-        from lunivo_writer.ui.baukasten.schriftart_dialog import zeichen_waehlen
-        w = zeichen_waehlen(self, self.zeichen)
-        if w is not None:
-            self.zeichen = L.zeichen_filtern(w)
+        from lunivo_writer.ui.baukasten.fenster_stapel import zeige_unter
+        from lunivo_writer.ui.baukasten.schriftart_dialog import ZEICHEN, SchriftartDialog
+        d = SchriftartDialog(self, {**ZEICHEN, **(self.zeichen or {})}, umfang="vorlage")
+
+        def fertig() -> None:
+            self.zeichen = L.zeichen_filtern(d.werte())
             self.geaendert.emit()
+        zeige_unter(self, d, fertig)
 
 
 class _Positionen(QWidget):
@@ -499,21 +502,27 @@ class ListenDialog(QDialog):
         self.vorschau.update()
 
     def _anpassen(self) -> None:
+        from lunivo_writer.ui.baukasten.fenster_stapel import zeige_unter
         s = self._auswahl()
         if s is not None and "ebenen" not in s and L.STILE[s["stil"]][1]:      # Punkt, Kreis, Quadrat: als eigenes Zeichen anpassen
             s = M.aufzaehlung({"disc": "●", "circle": "○", "square": "■"}[s["stil"]])
         if s is not None and "ebenen" in s:
             bullets = M.ist_aufzaehlung(s)
             g = GliederungAnpassenDialog(self, s, titel="Aufzählungszeichen anpassen" if bullets else "Gliederung anpassen")
-            if g.exec():
+
+            def fertig_gl() -> None:
                 ziel = self.r_punkte if M.ist_aufzaehlung(g.defn()) else self.r_gl
                 self._eintragen_gl(g.defn(), ziel)
                 self.reiter.setCurrentWidget(ziel); ziel.setCurrentRow(ziel.count() - 1)
+            zeige_unter(self, g, fertig_gl)
             return
         d = NummerierungAnpassenDialog(self, s)
-        if d.exec() and d.spec():
-            self._eintragen(d.spec())
-            self.reiter.setCurrentWidget(self.r_zahlen); self.r_zahlen.setCurrentRow(self.r_zahlen.count() - 1)
+
+        def fertig_nr() -> None:
+            if d.spec():
+                self._eintragen(d.spec())
+                self.reiter.setCurrentWidget(self.r_zahlen); self.r_zahlen.setCurrentRow(self.r_zahlen.count() - 1)
+        zeige_unter(self, d, fertig_nr)
 
     def _loeschen(self) -> None:
         s = self._auswahl()

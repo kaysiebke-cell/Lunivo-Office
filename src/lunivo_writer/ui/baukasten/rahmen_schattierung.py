@@ -309,23 +309,22 @@ class _RahmenSeite(QWidget):
         self.abstand_mm = sum(o["abstand"]) / 4 / 72 * 25.4 if o["messen"] == "seitenrand" else 6.0
 
     def _optionen(self) -> None:
+        from lunivo_writer.ui.baukasten.fenster_stapel import zeige_unter
         if self.seitenrand:                              # Rahmen um die Seite: Abstand, Gemessen von, Optionen
             d = _SeitenOptionenDialog(self, self.rand_optionen, self.linie_wert())
-            if d.exec():
+
+            def fertig_seite() -> None:
                 self.rand_optionen = d.werte()
                 self._abstand_vorschau()
                 self._neu()
+            zeige_unter(self, d, fertig_seite)
             return
-        if not self.seitenrand:                          # Absatzrahmen: Abstand zum Text auf allen vier Seiten
-            d = _PolsterDialog(self, self.polster, self.linie_wert())
-            if d.exec():
-                self.polster = d.werte()
-                self._neu()
-            return
-        d = _AbstandDialog(self, self.abstand_mm)
-        if d.exec():
-            self.abstand_mm = d.wert()
+        d = _PolsterDialog(self, self.polster, self.linie_wert())      # Absatzrahmen: Abstand zum Text auf allen vier Seiten
+
+        def fertig_absatz() -> None:
+            self.polster = d.werte()
             self._neu()
+        zeige_unter(self, d, fertig_absatz)
 
 
 def _blatt_vorschau(p: QPainter, rect) -> tuple[QRectF, QRectF]:

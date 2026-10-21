@@ -25,6 +25,20 @@ def weitere_farben(parent, start=None, titel: str = "Farbe") -> QColor | None:
     return c
 
 
+def weitere_farben_unter(parent, fertig, start=None, titel: str = "Farbe") -> None:
+    """Wie ``weitere_farben``, aber als Unterfenster: Liegt ``parent`` in einem ``FensterStapel``, öffnet sich „Farben“ als Seite im selben Fenster;
+    ``fertig(farbe)`` läuft nach „OK“ (sonst öffnet sich das Fenster wie bisher)."""
+    from lunivo_writer.ui.baukasten.farbwaehler import FarbenDialog
+    from lunivo_writer.ui.baukasten.fenster_stapel import zeige_unter
+    d = FarbenDialog(parent, start, titel)
+
+    def ok() -> None:
+        c = d.farbe()
+        F.zuletzt_merken(c.name())
+        fertig(c)
+    zeige_unter(parent, d, ok)
+
+
 def farb_symbol(farbe: str | None, groesse: int = 14) -> QIcon:
     pm = QPixmap(groesse, groesse)
     pm.fill(QColor(farbe) if farbe else Qt.transparent)
@@ -168,9 +182,7 @@ class FarbPalette(QMenu):
 
     def _weitere(self) -> None:
         self.close()
-        c = weitere_farben(self.parentWidget(), self._start, self._titel)
-        if c is not None:
-            self.gewaehlt.emit(c)
+        weitere_farben_unter(self.parentWidget(), self.gewaehlt.emit, self._start, self._titel)
 
 
 class FarbFeld(QPushButton):

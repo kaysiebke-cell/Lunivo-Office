@@ -149,90 +149,109 @@ class FormatvorlageDialog(QDialog):
 
     def _schriftart(self) -> None:
         """Format ▸ Schriftart …: dasselbe Fenster wie im Band, mit allen Feldern; die Vorlage merkt sie sich."""
-        from lunivo_writer.ui.baukasten.schriftart_dialog import zeichen_waehlen
+        from lunivo_writer.ui.baukasten.fenster_stapel import zeige_unter
+        from lunivo_writer.ui.baukasten.schriftart_dialog import ZEICHEN, SchriftartDialog
         w = self.leiste.werte()
-        n = zeichen_waehlen(self, {**{k: self._rs[k] for k in ZEICHEN_ZUSATZ}, "schrift": w["schrift"], "groesse": w["groesse"], "fett": w["fett"],
-                                   "kursiv": w["kursiv"], "farbe": self._farbe})
-        if n is not None:
+        d = SchriftartDialog(self, {**ZEICHEN, **{k: self._rs[k] for k in ZEICHEN_ZUSATZ}, "schrift": w["schrift"], "groesse": w["groesse"], "fett": w["fett"],
+                                    "kursiv": w["kursiv"], "farbe": self._farbe}, umfang="vorlage")
+
+        def fertig() -> None:
+            n = d.werte()
             self._farbe = n["farbe"]
             self._rs.update({k: n[k] for k in ZEICHEN_ZUSATZ})
             self.leiste.setze({**w, "schrift": n["schrift"], "groesse": n["groesse"], "fett": n["fett"], "kursiv": n["kursiv"]})
             self._neu()
+        zeige_unter(self, d, fertig)
 
     def _absatz(self) -> None:
         """Format ▸ Absatz …: dasselbe Fenster wie im Band, mit beiden Reitern; die Vorlage merkt sich alle Felder (auch Tabstopps und Umbruchregeln)."""
         from lunivo_writer.editor import absatzopt
         from lunivo_writer.ui.baukasten.absatz_dialog import AbsatzDialog
         from lunivo_writer.ui.baukasten.tabstopp_dialog import als_text, aus_text
+        from lunivo_writer.ui.baukasten.fenster_stapel import zeige_unter
         w, r = self.leiste.werte(), self._rs
         d = AbsatzDialog(self, {"ausr": w["ausr"] or "links", "einzug": w["einzug"], "vor": w["vor"], "nach": w["nach"], "zeilen": w["zeilen"] or 1.0,
                                 "rechts": r["rechts"], "erste": r["erste"], "rtl": r["rtl"], "umbruch": r["umbruch"], "zeilen_art": r["zeilen_art"],
                                 "zeilen_pt": r["zeilen_pt"], "ebene": r["gliederung"], "opt": absatzopt.aus_text(r["opt"]), "tabs": aus_text(r["tabs"])},
                         umfang="vorlage")
-        if d.exec():
+
+        def fertig() -> None:
             n = d.werte()
             self.leiste.setze({**w, "ausr": "" if n["ausr"] == "links" else n["ausr"], "einzug": n["einzug"], "vor": n["vor"], "nach": n["nach"], "zeilen": n["zeilen"]})
             self._rs.update({"rechts": n["rechts"], "erste": n["erste"], "rtl": n["rtl"], "umbruch": n["umbruch"], "zeilen_art": n["zeilen_art"],
                              "zeilen_pt": n["zeilen_pt"], "gliederung": n["ebene"], "opt": absatzopt.als_text(n["opt"]), "tabs": als_text(n["tabs"])})
             self._neu()
+        zeige_unter(self, d, fertig)
 
     def _rahmen(self) -> None:
         """Format ▸ Rahmen …: das Fenster „Rahmen und Schattierung“ ohne den Reiter Seitenrand (der gehört nicht zu einer Vorlage)."""
         from lunivo_writer.editor.linie import Linie
+        from lunivo_writer.ui.baukasten.fenster_stapel import zeige_unter
         from lunivo_writer.ui.baukasten.rahmen_schattierung import RahmenSchattierungDialog
         r = self._rs
         d = RahmenSchattierungDialog(self, rahmen=Linie.aus_text(r["rahmen"]) if r["rahmen"] else None, fuell=r["fuell"] or None,
                                      muster=(r["muster"], r["musterfarbe"] or "#000000") if r["muster"] else None,
                                      mit_seitenrand=False, fuer=["Absatz"])
-        if d.exec():
+
+        def fertig() -> None:
             linie = d.rahmen()
             fuell, muster = d.schattierung()
             self._rs.update({"rahmen": linie.text() if linie is not None else "", "fuell": fuell or "",
                              "muster": muster[0] if muster else "", "musterfarbe": muster[1] if muster else ""})
             self._neu()
+        zeige_unter(self, d, fertig)
 
     def _liste(self) -> None:
         """Format ▸ Nummerierung …: dasselbe Fenster wie im Band; die Vorlage merkt sich die gewählte Liste."""
         from lunivo_writer.editor import listen
+        from lunivo_writer.ui.baukasten.fenster_stapel import zeige_unter
         from lunivo_writer.ui.baukasten.liste_dialog import ListenDialog
         d = ListenDialog(self, listen.aus_text(self._rs["liste"]))
-        if d.exec():
+
+        def fertig() -> None:
             self._rs["liste"] = listen.als_text(d.ergebnis())
             self._neu()
+        zeige_unter(self, d, fertig)
 
     def _effekte(self) -> None:
         """Format ▸ Texteffekte …: Füllung (Farbe der Vorlage, Transparenz) und Kontur."""
         from lunivo_writer.editor import texteffekt
+        from lunivo_writer.ui.baukasten.fenster_stapel import zeige_unter
         from lunivo_writer.ui.baukasten.texteffekt_dialog import TexteffektDialog
         w = texteffekt.aus_text(self._rs["effekt"], self._farbe) or {**texteffekt.EFFEKT, "farbe": self._farbe}
         if w["transparenz"] >= 100:
             w["fuell"] = "keine"
         d = TexteffektDialog(self, w)
-        if d.exec():
+
+        def fertig() -> None:
             n = d.werte()
             if n["fuell"] == "keine":
                 n["transparenz"] = 100
             self._farbe = n["farbe"]
             self._rs["effekt"] = texteffekt.als_text(n)
             self._neu()
+        zeige_unter(self, d, fertig)
 
     def _tabs(self) -> None:
         """Format ▸ Tabstopps …: dasselbe Fenster wie im Absatz; die Vorlage merkt sich die Tabstopps."""
+        from lunivo_writer.ui.baukasten.fenster_stapel import zeige_unter
         from lunivo_writer.ui.baukasten.tabstopp_dialog import TabstoppDialog, als_text, aus_text
         d = TabstoppDialog(self, aus_text(self._rs["tabs"]), self._tab_std if self._tab_std is not None else 12.7)
-        if d.exec():
+
+        def fertig() -> None:
             self._rs["tabs"] = als_text(d.stopps())
             if d.standard_abstand():
                 self._tab_std_neu = d.standard_abstand()
             self._neu()
+        zeige_unter(self, d, fertig)
 
     def _verknuepfung(self) -> None:
         """Format ▸ Verknüpfung …: die Tastenkombination, die die Vorlage auf den Absatz anwendet."""
         from lunivo_writer.ui.baukasten.tasten_dialog import TastenDialog
         eigen = self.aendern or self.name.text()
+        from lunivo_writer.ui.baukasten.fenster_stapel import zeige_unter
         d = TastenDialog(self, self._taste, belegt=(lambda t: self._belegt(t, eigen)) if self._belegt else None)
-        if d.exec():
-            self._taste = d.taste()
+        zeige_unter(self, d, lambda: setattr(self, "_taste", d.taste()))
 
     def _ok(self) -> None:
         if self.aendern or stile.pruefe_name(self.name.text()) is None:

@@ -213,10 +213,13 @@ class SchriftartDialog(QDialog):
 
     def _texteffekte(self) -> None:
         from lunivo_writer.ui.baukasten.texteffekt_dialog import TexteffektDialog
+        from lunivo_writer.ui.baukasten.fenster_stapel import zeige_unter
         d = TexteffektDialog(self, {**(self._effekt or {}), "farbe": self.farbe.farbe})
-        if d.exec():
+
+        def fertig() -> None:
             self._effekt = d.werte()
             self.farbe.setFarbe(self._effekt["farbe"]); self._neu()
+        zeige_unter(self, d, fertig)
 
     def _standard(self) -> None:
         """„Standard …“: diese Schrift gilt künftig für neue Dokumente (der Aufrufer speichert sie)."""
