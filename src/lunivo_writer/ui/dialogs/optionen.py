@@ -449,6 +449,7 @@ class OptionenAnsicht(QWidget):
             refs["papier"].setCurrentText(st["papier"])
             refs["buch"].setCurrentIndex(refs["buch"].findData(st["buchstaben"]))
             refs["wort"].setCurrentIndex(refs["wort"].findData(st["wort"]))
+            refs["luft"].setCurrentIndex(refs["luft"].findData(st["luft"]))
             refs["groesser"].setCurrentIndex(refs["groesser"].findData(st["groesser"]))
             refs["zurueck"].setCurrentIndex(refs["zurueck"].findData(st["zurueck"]))
             erlaeutert.setText(" ".join(st["text"]))
@@ -457,20 +458,16 @@ class OptionenAnsicht(QWidget):
         f = p.gruppe("Leichter lesen")
         refs["papier"] = p.auswahl(f, "lesehilfe/papier", "Papierton", list(PAPIERTOENE), "Weiß", anwenden)
         refs["buch"] = p.stufen(f, "lesehilfe/buchstaben", "Buchstabenabstand",
-                                [("normal", 0.0), ("etwas mehr", 0.45), ("deutlich mehr", 0.9), ("sehr viel", 1.35)], 0.0, anwenden)
+                                LS.BUCHSTABEN, 0.0, anwenden)
         refs["wort"] = p.stufen(f, "lesehilfe/wort", "Wortabstand",
-                                [("normal", 0.0), ("etwas mehr", 1.8), ("deutlich mehr", 3.6), ("sehr viel", 5.4)], 0.0, anwenden)
+                                LS.WORT, 0.0, anwenden)
+        refs["luft"] = p.stufen(f, "lesehilfe/zeilenluft", "Zeilenluft", LS.ZEILENLUFT, 1.0, anwenden)
         f = p.gruppe("Beim Schreiben")
         refs["fokus"] = p.haken(f, "lesehilfe/zeilenfokus", "Zeilenfokus", False, lambda on: self.w.lesehilfe_anwenden())
         refs["groesser"] = p.wahl(f, "lesehilfe/groesser", "Absatz beim Schreiben",
-                                  [("nicht vergrößern", "keine"), ("etwas größer", "etwas"), ("deutlich größer", "deutlich")], "keine", anwenden)
+                                  LS.GROESSER, "keine", anwenden)
         refs["zurueck"] = p.wahl(f, "lesehilfe/zurueck", "Übriger Text",
-                                 [("gleich lassen", "keine"), ("etwas blasser", "etwas"), ("deutlich blasser", "deutlich")], "keine", anwenden)
-        c = QComboBox(); c.addItem("normal"); c.setEnabled(False)
-        c.setToolTip("Zeilenluft braucht einen eigenen Textsatz: Qt kennt den Zeilenabstand nur als Format des Absatzes, das das Dokument "
-                     "(und den Rückgängig-Verlauf) ändern würde. Der Zeilenabstand der Absätze steht unter Start ▸ Absatz.")
-        c.setProperty("optName", "Zeilenluft")
-        f.addRow("Zeilenluft", c)
+                                 LS.ZURUECK, "keine", anwenden)
         f = p.gruppe("Schrift und Sprache")
         p.aktion("Schrift zum leichteren Lesen", "Zur Schriftwahl", lambda: self.gehe_zu("schriften"))
         self._silbentrennung_haken(p, f)

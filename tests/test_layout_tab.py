@@ -69,7 +69,7 @@ def test_pruefung_steht_in_der_schreibhilfe_und_ueberpruefen_hat_den_rest(app, t
             knopf = next(k for k in seite.findChildren(QToolButton) if k.toolTip().startswith("Dokumentprüfung"))
             assert knopf.isEnabled() and knopf.menu() is not None          # früher: Menü fehlte, Knopf war grau
             namen = [a.text() for a in knopf.menu().actions()]
-            assert {"Prüfen", "Rechtschreibung", "Thesaurus", "Barrierefreiheit prüfen"} <= set(namen)
+            assert {"Prüfen", "Gründlich prüfen", "KI-Korrektur", "Barrierefreiheit prüfen"} <= set(namen)
     for verboten in ("Rechtschreibung", "Thesaurus", "Gründlich prüfen", "Korrektursprache", "Barrierefreiheit prüfen"):
         assert not any(t.startswith(verboten) for t in texte["Überprüfen"]), verboten
     assert any(t.startswith("Neuer Kommentar") for t in texte["Überprüfen"])

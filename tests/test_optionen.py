@@ -39,7 +39,7 @@ def test_optionen_ki_seite_speichert_schluessel_privat(app, tmp_path, monkeypatc
     feld.setText("sk-ant-test"); feld.editingFinished.emit()
     assert w.ki.konfig["apiKey"] == "sk-ant-test"
     assert oct(os.stat(w.ki.konfig.pfad).st_mode & 0o777) == "0o600"
-    assert w.sidebar.ki_knoepfe[0].isEnabled()            # Knöpfe werden frei, sobald ein Schlüssel da ist
+    assert w.sidebar.ki_banner.isHidden()            # der Hinweis „KI einrichten“ verschwindet, sobald ein Schlüssel da ist
 
 
 def test_autokorr_einzelschalter_wirkt(app, tmp_path, monkeypatch):
@@ -157,12 +157,13 @@ def test_seitenleiste_und_optionen_gehen_hand_in_hand(app, tmp_path, monkeypatch
     sb = w.sidebar
     # Stufe 1/2: Schalter der Schreibhilfe
     w.assistant.setze("wellen", False)
-    assert not sb.chips["wellen"].isChecked()
+    zeile = next(z for z in sb.werk["Schreiben"].zeilen if z.f.tun == "wellen")            # der Schalter steht auf dem Reiter „Schreiben“
+    assert zeile.zustand.text() == "aus"
     w.assistant.setze("wellen", True)
-    assert sb.chips["wellen"].isChecked()
+    assert zeile.zustand.text() == "an"
     # Für wen? (Optionen -> Seitenleiste)
     w.assistant.setze_thema("Amt")
-    assert any(b.text() == "Amt" and b.isChecked() for b in sb.gruppe.buttons())
+    assert sb.thema.currentText() == "Amt"
     # Stufe 4: KI -> Seitenleiste wird über dasselbe Signal neu bewertet
     gesehen = []
     w.ki.geaendert.connect(lambda: gesehen.append(1))

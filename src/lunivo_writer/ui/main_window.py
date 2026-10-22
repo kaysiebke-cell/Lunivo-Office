@@ -5,7 +5,7 @@ from lunivo_writer.editor.zusatz import abstand_davor_px
 import os
 from datetime import datetime
 
-from PySide6.QtCore import QEvent, QObject, QTimer, QUrl, Qt, Signal
+from PySide6.QtCore import QEvent, QObject, QSize, QTimer, QUrl, Qt, Signal
 from PySide6.QtGui import QAction, QActionGroup, QColor, QDesktopServices, QFont, QKeySequence, QPalette, QTextFormat
 from PySide6.QtPrintSupport import QPrintDialog, QPrintPreviewDialog, QPrinter
 from PySide6.QtWidgets import (
@@ -1023,6 +1023,7 @@ class MainWindow(QMainWindow):
         s = self.settings
         e.set_lesehilfe(PAPIERTOENE.get(s.get("lesehilfe/papier", "Weiß"), "#ffffff"),
                         float(s.get("lesehilfe/buchstaben", 0)), float(s.get("lesehilfe/wort", 0)))
+        e.set_zeilenluft(float(s.get("lesehilfe/zeilenluft", 1.0)))
         e.set_zeilenfokus(s.get_bool("lesehilfe/zeilenfokus", False))
         e.set_lesefokus({"etwas": 1.05, "deutlich": 1.10}.get(str(s.get("lesehilfe/groesser", "keine")), 1.0),
                         {"etwas": 0.62, "deutlich": 0.38}.get(str(s.get("lesehilfe/zurueck", "keine")), 1.0))
@@ -1158,7 +1159,10 @@ class MainWindow(QMainWindow):
         except v.VorlesenFehler as ex:
             QMessageBox.information(self, "Vorlesen", str(ex))
             return
-        self.lbl_msg.setText("Vorlesen …" if ok else "Nichts zum Vorlesen.")
+        if ok:
+            self.lbl_msg.setText("Vorlesen …")
+        else:
+            QMessageBox.information(self, "Vorlesen", "Es gibt nichts zum Vorlesen. Schreiben Sie etwas oder markieren Sie eine Stelle.")
 
     def stimme_waehlen(self):
         from lunivo_writer.services import vorlesen as v
@@ -1380,43 +1384,53 @@ class MainWindow(QMainWindow):
         self._tafel.zeigen_unter(self.band.menue_knopf)
 
     def _leiste_rechts(self):
-        """Schmale Leiste rechts: Chat und Schreibhilfe schalten die Seitenleiste um."""
+        """Schmale Leiste rechts: Die vier Reiter der Schreibhilfe (Prüfen, Lesen, Schreiben, KI) und der KI-Chat schalten die Seitenleiste um."""
         from PySide6.QtWidgets import QFrame, QToolButton, QVBoxLayout
         from lunivo_writer.ui.widgets import icons
         leiste = QFrame()
         leiste.setObjectName("leisteRechts")
-        leiste.setFixedWidth(44)
+        leiste.setFixedWidth(48)
         v = QVBoxLayout(leiste)
         v.setContentsMargins(4, 8, 4, 8)
         v.setSpacing(6)
         self._rechts = {}
-        for i, (sym, tip) in enumerate((("tafel", "Schreibhilfe"), ("chat", "KI-Chat"))):
+        for name, sym, tip in (("Prüfen", "haken", "Prüfen — die Funde der Schreibhilfe"), ("Lesen", "brille", "Lesen — Lesehilfe, Vorlesen"),
+                               ("Schreiben", "stift", "Schreiben — Schalter, Textbausteine, Sprache"), ("KI", "assistent", "KI — Korrektur, Übersetzen, Aktionen"),
+                               ("Chat", "chat", "KI-Chat")):
             b = QToolButton()
-            b.setIcon(icons.icon(sym, 20))
-            b.setToolTip(tip)
+            b.setIcon(icons.icon(sym, 22)); b.setIconSize(QSize(22, 22))
+            b.setToolTip(tip); b.setAccessibleName(name)
             b.setCheckable(True)
-            b.setFixedSize(34, 34)
-            b.clicked.connect(lambda _=False, i=i: self._rechts_klick(i))
+            b.setFixedSize(38, 38)
+            b.clicked.connect(lambda _=False, n=name: self._rechts_klick(n))
+            if name == "Chat":
+                v.addSpacing(8)
             v.addWidget(b)
-            self._rechts[i] = b
+            self._rechts[name] = b
         v.addStretch(1)
         self.sidebar.bereich_geaendert.connect(lambda _i: self._rechts_sync())
         self._rechts_sync()
         return leiste
 
-    def _rechts_klick(self, i: int):
-        if not self.sidebar.isHidden() and self.sidebar.stapel.currentIndex() == i:
+    def _rechts_klick(self, name: str):
+        """Ein Knopf der Leiste: öffnet die Seitenleiste auf dem Reiter; ein zweiter Klick auf denselben Reiter schließt sie wieder."""
+        ist_chat = name == "Chat"
+        schon_da = (not self.sidebar.isHidden() and ((ist_chat and self.sidebar.stapel.currentIndex() == 1)
+                    or (not ist_chat and self.sidebar.stapel.currentIndex() == 0 and self.sidebar.aktueller_reiter == name)))
+        if schon_da:
             self.toggle_sidebar()
         else:
             if self.sidebar.isHidden():
                 self.toggle_sidebar()
-            self.sidebar.zeige_bereich(i)
+            self.sidebar.zeige_bereich(1) if ist_chat else self.sidebar.zeige_reiter(name)
         self._rechts_sync()
 
     def _rechts_sync(self):
         sicht = not self.sidebar.isHidden()
-        for i, b in self._rechts.items():
-            b.setChecked(sicht and self.sidebar.stapel.currentIndex() == i)
+        i = self.sidebar.stapel.currentIndex()
+        for name, b in self._rechts.items():
+            an = sicht and ((name == "Chat" and i == 1) or (name != "Chat" and i == 0 and self.sidebar.aktueller_reiter == name))
+            b.setChecked(an)
 
     def texteffekte_seitenleiste(self):
         """Den Bereich „Texteffekte formatieren“ in der Seitenleiste öffnen; Änderungen gelten sofort für die Markierung."""

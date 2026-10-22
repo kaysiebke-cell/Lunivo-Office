@@ -485,6 +485,14 @@ class KI:
     def eigener_assistent(self, text, prompt):
         return self._text(prompt, text)
 
+    def satz_umschreiben(self, satz: str, grund: str = "") -> dict:
+        """Ein zu langer oder verschachtelter Satz in kürzere Sätze — der Sinn bleibt, nichts kommt dazu."""
+        anweisung = ("Der folgende deutsche Satz ist zu lang oder zu verschachtelt (" + grund.rstrip(".") + "). Schreibe ihn in zwei oder mehr kürzere, klare Sätze um. "
+                     "Ändere den Sinn nicht, erfinde nichts dazu, behalte Ton und Wortwahl bei. "
+                     + EMPFAENGER.get(self.k["empfaenger"], EMPFAENGER["egal"])
+                     + " Antworte ausschließlich mit den neuen Sätzen: keine Erklärung, keine Anführungszeichen, keine Vorrede.")
+        return self._text(anweisung, satz, "textanalyse")
+
     def text_aktion(self, text, aktion): return self._text(anweisung_text_aktion(self.k, aktion), text)
 
     werkzeug_frage = staticmethod(lambda name, argumente, server: False)      # vom KI-Dienst ersetzt: fragt den Benutzer vor jedem Werkzeugaufruf

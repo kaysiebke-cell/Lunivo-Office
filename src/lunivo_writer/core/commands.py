@@ -518,14 +518,27 @@ class Befehle:
     def woerterZaehlen(self, k=None):
         self.w.word_count()
 
-    def rechtschreibung(self, k=None):
+    def _jetzt_pruefen(self) -> None:
+        """Prüfen (F7): ohne Text eine deutliche Rückmeldung statt einer leeren Seitenleiste."""
+        if not self.ed or not self.ed.toPlainText().strip():
+            QMessageBox.information(self.w, "Prüfen", "Es steht noch kein Text da, den ich prüfen könnte.")
+            return
         self.w.assistant.pruefen(True)
 
+    def rechtschreibung(self, k=None):
+        self._jetzt_pruefen()
+
     def w_pruefen(self, k=None):
-        self.w.assistant.pruefen(True)
+        self._jetzt_pruefen()
 
     def gruendlichPruefen(self, k=None):
         self.w.assistant.gruendlich()
+
+    def wellen(self, k=None):
+        """Rote Wellenlinien beim Schreiben an/aus (derselbe Schalter wie „We“ in der Seitenleiste und in „Welche Hilfe wann“)."""
+        self.w.assistant.setze("wellen", not self.w.assistant.an("wellen"))
+
+    def an_wellen(self): return self.w.assistant.an("wellen")
 
     def vorhersage(self, k=None):
         self.w.assistant.setze("vorhersage", not self.w.assistant.an("vorhersage"))
@@ -1554,6 +1567,7 @@ class Befehle:
             self.w.statusBar().showMessage(f"Aktion „{e['name']}“ angelegt (KI ▸ Eigene Assistenten).", 5000)
 
     def menue_assistenten(self):
+        """Das Menü „KI-Aktionen“: die eigenen Schnellen KI-Aktionen, neue anlegen, entfernen und alle bisherigen Ergebnisse."""
         m = QMenu()
 
         def fuellen():
@@ -1562,15 +1576,32 @@ class Befehle:
             for a in liste:
                 m.addAction(a["name"], lambda _=False, a=a: self.w.ki.assistent(a))
             if not liste:
-                m.addAction("Noch keine eigenen Assistenten").setEnabled(False)
+                m.addAction("Noch keine eigenen KI-Aktionen").setEnabled(False)
             m.addSeparator()
-            m.addAction("Neuen Assistenten erstellen …", self.w_assistentErstellen)
+            m.addAction("Neue Schnelle KI-Aktion …", self.w_assistentErstellen)
             if liste:
-                entf = m.addMenu("Assistenten entfernen")
+                entf = m.addMenu("KI-Aktion entfernen")
                 for a in liste:
-                    entf.addAction(a["name"], lambda _=False, a=a: self.w.ki.konfig.assistent_entfernen(a["id"]))
+                    entf.addAction(a["name"], lambda _=False, a=a: (self.w.ki.konfig.assistent_entfernen(a["id"]), self.w.ki.geaendert.emit()))
+            m.addSeparator()
+            m.addAction("Alle Ergebnisse anzeigen", self.w_kiErgebnisse)
         m.aboutToShow.connect(fuellen)
         fuellen()
+        return m
+
+    def menue_silbenTrennungMenue(self):
+        """Zur Silbentrennung: wo man die Trennstriche sieht (die Bearbeitungsansicht zeigt sie nicht) und die Einstellungen."""
+        m = QMenu()
+        m.addAction("Trennstriche in der Druckvorschau ansehen", self.silbentrennungVorschau)
+        m.addAction("Einstellungen der Silbentrennung …", lambda: self.w.show_options("sprache"))
+        return m
+
+    def silbentrennungVorschau(self, k=None):
+        self.tun("vorschau")
+
+    def menue_silbenMenue(self):
+        m = QMenu()
+        m.addAction("Silben einstellen …", self.silbenEinstellen)
         return m
 
     # ---- Sendungen --------------------------------------------------------------------------------------------
@@ -2074,7 +2105,7 @@ class Befehle:
     def lesehilfe(self, k=None):
         from lunivo_writer.ui.dialogs.lesehilfe_dialog import LesehilfeDialog
         d = LesehilfeDialog(self.w)
-        d.show()
+        d.zeige_unter(k if hasattr(k, "mapToGlobal") else None)
         self._lh = d
 
     def ausblenden(self, k=None):
@@ -2499,22 +2530,33 @@ class Befehle:
     # ==== KI ========================================================================================================
     def kiKorrektur(self, k=None): self.w.ki.korrigieren()
     def kiVorschlaege(self, k=None):
-        self.w.sidebar.zeige_bereich(0); self.w.ki.vorschlaege_holen()
+        self.w.sidebar._funde_zeigen(); self.w.ki.vorschlaege_holen()
     def kiUmformulieren(self, k=None): self.w.ki.text_aktion("umformulieren")
     def kiZusammenfassen(self, k=None):
-        self.w.sidebar.zeige_bereich(0); self.w.ki.zusammenfassen()
-    def w_kiUebersetzen(self, k=None): self.w.ki.uebersetzen()
+        self.w.sidebar._funde_zeigen(); self.w.ki.zusammenfassen()
+    def w_kiUebersetzen(self, k=None): self.w.ki.uebersetzen()                      # Markierung → ersetzen, sonst Übersetzung zeigen
+    def w_kiUebersetzenErsetzen(self, k=None): self.w.ki.uebersetzen(modus="ersetzen")
+    def w_kiUebersetzenZeigen(self, k=None): self.w.ki.uebersetzen(modus="zeigen")
+
+    def menue_uebersetzenMenue(self):
+        m = QMenu()
+        m.addAction("Markierung im Text ersetzen", self.w_kiUebersetzenErsetzen)
+        m.addAction("Übersetzung in Schreibhilfe und Chat zeigen", self.w_kiUebersetzenZeigen)
+        m.addSeparator()
+        m.addAction("Sprache wählen …", self.w_kiSprache)
+        return m
+
     def kiEntwerfen(self, k=None): self.w.chat_oeffnen("Entwirf einen Text zu folgendem Anliegen: ")
     def w_chatUmschalten(self, k=None): self.w.chat_oeffnen("")
-    def w_kiKonfiguration(self, k=None):
+    def _ki_einstellungen(self, reiter: int) -> None:
         from lunivo_writer.ui.baukasten.fenster_stapel import ausfuehren
         from lunivo_writer.ui.dialogs.ki_dialoge import KIEinstellungenDialog
-        ausfuehren(KIEinstellungenDialog(self.w, 1))
+        ausfuehren(KIEinstellungenDialog(self.w, reiter))
 
-    def w_eigenenAnbieterHinzufuegen(self, k=None):
-        from lunivo_writer.ui.baukasten.fenster_stapel import ausfuehren
-        from lunivo_writer.ui.dialogs.ki_dialoge import KIEinstellungenDialog
-        ausfuehren(KIEinstellungenDialog(self.w, 0))
+    def w_kiEinstellungen(self, k=None): self._ki_einstellungen(0)
+    def w_kiKonfiguration(self, k=None): self._ki_einstellungen(1)
+    def w_kiSprache(self, k=None): self._ki_einstellungen(2)
+    def w_eigenenAnbieterHinzufuegen(self, k=None): self._ki_einstellungen(0)
 
     def w_kiErgebnisse(self, k=None):
         from lunivo_writer.ui.dialogs.ki_dialoge import ErgebnisseDialog

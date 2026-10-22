@@ -140,8 +140,11 @@ def ausgabe_seiten(logisch: int, page: PageSettings) -> int:
 
 
 def paginated_copy(qdoc: QTextDocument, page: PageSettings, noten: dict | None = None, silben: bool | None = None,
-                   einspaltig: bool = False, versteckt: bool = False, fussnoten: bool | str = True) -> QTextDocument:
+                   einspaltig: bool = False, versteckt: bool = False, fussnoten: bool | str = True, lese_luft: bool = False) -> QTextDocument:
     d = qdoc.clone()
+    if not lese_luft:                                   # Druck, PDF, Seitenzahl: ohne den Zusatzabstand der Lesehilfe (nur die Anzeige im Editor behält ihn)
+        from lunivo_writer.editor import lese_zeilenluft
+        lese_zeilenluft.zuruecknehmen(d)
     bind_layout(d)
     if not versteckt:                                   # ausgeblendeter Text zählt weder für Seiten noch für den Druck
         from lunivo_writer.editor.anzeige_extra import versteckte_entfernen

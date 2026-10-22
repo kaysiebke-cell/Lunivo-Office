@@ -119,13 +119,17 @@ def test_tabellentools_wirken(app, tmp_path, monkeypatch):
 def test_seitenleiste_bereiche(app, tmp_path, monkeypatch):
     w = win(tmp_path, monkeypatch)
     assert not hasattr(w.sidebar, "bereiche")          # keine Reiterknöpfe über der Schreibhilfe
-    assert [b.text() for b in w.sidebar.chips.values()] == ["We", "Vo", "Ko"]
-    assert all(b.toolTip() for b in w.sidebar.chips.values())
+    assert not w.sidebar.chips                          # We/Vo/Ko stehen auf dem Reiter „Schreiben“
+    assert [w.sidebar.pruefen.text(), w.sidebar.ki_korrektur.text(), w.sidebar.ki_vorschlaege.text()] == ["Prüfen", "KI-Korrektur", "Vorschläge"]
     assert w.sidebar.stapel.count() == 2 and w.sidebar._seite_ki.widget() is not None
-    w._rechts_klick(1)
-    assert w.sidebar.stapel.currentIndex() == 1 and w._rechts[1].isChecked() and not w._rechts[0].isChecked()
-    w._rechts_klick(1)
-    assert w.sidebar.isHidden() and not w._rechts[1].isChecked()
+    w._rechts_klick("Chat")
+    assert w.sidebar.stapel.currentIndex() == 1 and w._rechts["Chat"].isChecked() and not w._rechts["Prüfen"].isChecked()
+    w._rechts_klick("Lesen")                              # die Reiter der Schreibhilfe stehen in der Leiste rechts
+    assert w.sidebar.stapel.currentIndex() == 0 and w.sidebar.aktueller_reiter == "Lesen" and w._rechts["Lesen"].isChecked() and not w._rechts["Chat"].isChecked()
+    w._rechts_klick("KI")
+    assert w.sidebar.aktueller_reiter == "KI" and w._rechts["KI"].isChecked() and not w._rechts["Lesen"].isChecked()
+    w._rechts_klick("KI")
+    assert w.sidebar.isHidden() and not w._rechts["KI"].isChecked()
 
 
 def test_ki_korrektur_ende_zu_ende(app, tmp_path, monkeypatch):
@@ -153,6 +157,9 @@ def test_ki_korrektur_ende_zu_ende(app, tmp_path, monkeypatch):
         c = QTextCursor(e.document()); c.setPosition(len("Wir hat keine ")); c.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
         f = QTextCharFormat(); f.setFontWeight(QFont.Bold); c.mergeCharFormat(f)
         e.document().setModified(False)
+        import time
+        for _ in range(40):                      # die Seitenverwaltung ändert das Blatt kurz nach dem Setzen; erst danach fragen (sonst „weitergeschrieben“)
+            app.processEvents(); time.sleep(0.03)
         w.ki.korrigieren()
         warte(w.ki.laeuft, 8000); warte(w.ki.laeuft, 8000) if e.toPlainText().startswith("Wir hat") else None
         assert e.toPlainText() == "Wir haben keine Zahlung erhalten."
@@ -171,10 +178,10 @@ def test_ki_ohne_schluessel_oeffnet_nichts_nach_aussen(app, tmp_path, monkeypatc
     w = win(tmp_path, monkeypatch)
     w.ki.konfig.d["modell"] = "claude-opus-5"; w.ki.konfig.d["apiKey"] = ""
     aufgerufen = []
-    monkeypatch.setattr(w, "show_options", lambda seite=None: aufgerufen.append(seite))
+    monkeypatch.setattr(w.befehle, "w_kiEinstellungen", lambda k=None: aufgerufen.append("einstellungen"))
     w.current_editor().setPlainText("Text")
     w.ki.korrigieren()
-    assert aufgerufen == ["ki"] and not w.sidebar.ki_knoepfe[0].isEnabled()
+    assert aufgerufen == ["einstellungen"] and not w.sidebar.ki_banner.isHidden()
 
 
 def test_rechtschreib_ignorieren_schalter(app, tmp_path, monkeypatch):
@@ -379,7 +386,7 @@ def test_ki_ergebnisse_und_band(app, tmp_path, monkeypatch):
     d.liste.setCurrentRow(1)
     assert d.text.toPlainText().startswith("Kurz gesagt")
     namen = {k.toolTip() for k in w.band.findChildren(QToolButton)}
-    assert {"Alle Ergebnisse anzeigen", "Grammatik & Rechtschreibung"} <= namen
+    assert {"KI-Aktionen", "KI-Einstellungen", "Dokumentprüfung"} <= namen
     assert w.befehle.hat("w.kiErgebnisse")
 
 
@@ -524,10 +531,13 @@ def test_aktionen_in_schreibhilfe_und_chat(app, tmp_path, monkeypatch):
     e = k.assistent_hinzufuegen("Kürzer", "Kürze den Text.", "hinweis", "kontext")
     w.ki.geaendert.emit()
     namen = lambda leiste: [b.text() for b in leiste.knoepfe]            # noqa: E731
-    assert namen(w.sidebar.aktionen) == ["Kürzer", "＋ Neue Aktion"] and namen(w.sidebar.chat.aktionen) == ["Kürzer", "＋ Neue Aktion"]
+    def menue():
+        m = w.befehle.klappe("assistenten"); m.aboutToShow.emit()
+        return [a.text() for a in m.actions() if a.text()]
+    assert menue()[0] == "Kürzer" and namen(w.sidebar.chat.aktionen) == ["Kürzer", "＋ Neue Aktion"]
     # Entfernen wirkt überall
     k.assistent_entfernen(e["id"]); w.ki.geaendert.emit()
-    assert namen(w.sidebar.aktionen) == ["＋ Neue Aktion"] and namen(w.sidebar.chat.aktionen) == ["＋ Neue Aktion"]
+    assert menue()[0] == "Noch keine eigenen KI-Aktionen" and namen(w.sidebar.chat.aktionen) == ["＋ Neue Aktion"]
     # Das Ergebnis einer Aktion kommt als Antwort in den Chat und in die Ergebnisliste
     e = k.assistent_hinzufuegen("Kürzer", "Kürze den Text.", "hinweis")
     w.current_editor().setPlainText("Ein langer Text, der gekürzt werden soll.")
@@ -555,7 +565,7 @@ def test_textbausteine_welche_hilfe_und_zusammenfassen(app, tmp_path, monkeypatc
     w = win(tmp_path, monkeypatch)
     monkeypatch.setattr(bausteine, "_pfad", lambda: str(tmp_path / "b.json"))
     # Seitenleiste: der vierte KI-Knopf
-    assert [b.text() for b in w.sidebar.ki_knoepfe][-1] == "Zusammenfassen" and len(w.sidebar.ki_knoepfe) == 4
+    assert "Text zusammenfassen" in [z.f.name for z in w.sidebar.werk["KI"].zeilen]
     # Mitgelieferte Bausteine mit Kürzel; F3 setzt das Kürzel ein
     assert len(bausteine.standard()) >= 10 and bausteine.finde_kuerzel("BT")["name"] == "Blindtext"
     e = w.current_editor()
@@ -579,3 +589,248 @@ def test_textbausteine_welche_hilfe_und_zusammenfassen(app, tmp_path, monkeypatc
     w.assistant.setze("wellen", True)
     assert h.schalter["wellen"].isChecked()
     assert w.befehle.hat("textbausteine")
+
+
+def test_lesehilfe_fenster_nach_vorlage(app, tmp_path, monkeypatch):
+    """Das Fenster „Lesehilfe“ hat die sieben Felder (Zeilenluft eingeschlossen) der Vorlage, wirkt sofort und „Abbrechen“ stellt den alten Stand wieder her."""
+    from lunivo_writer.ui.dialogs.lesehilfe_dialog import LesehilfeDialog
+    w = win(tmp_path, monkeypatch)
+    d = LesehilfeDialog(w)
+    assert list(d.felder) == ["papier", "buchstaben", "wort", "zeilenluft", "zeilenfokus", "groesser", "zurueck"]
+    d.felder["papier"].setCurrentText("Creme")
+    d.felder["buchstaben"].setCurrentIndex(d.felder["buchstaben"].findData(0.9))
+    d.felder["zeilenfokus"].setCurrentIndex(1)
+    assert w.settings.get("lesehilfe/papier") == "Creme" and float(w.settings.get("lesehilfe/buchstaben")) == 0.9
+    assert w.settings.get_bool("lesehilfe/zeilenfokus", False)
+    d.reject()
+    assert w.settings.get("lesehilfe/papier", "Weiß") != "Creme" and not w.settings.get_bool("lesehilfe/zeilenfokus", False)
+
+
+def test_zeilenluft_nur_in_der_anzeige(app, tmp_path, monkeypatch):
+    """Die Zeilenluft der Lesehilfe vergrößert die Anzeige beim Bearbeiten; Datei, Druck und PDF bekommen den ursprünglichen Abstand."""
+    from PySide6.QtGui import QTextBlockFormat, QTextCursor
+    from lunivo_writer.editor import lese_zeilenluft as LZ
+    from lunivo_writer.editor.pagination import paginated_copy
+    from lunivo_writer.services import file_service
+    w = win(tmp_path, monkeypatch)
+    e = w.current_editor()
+    e.setPlainText("Erster Absatz\nZweiter Absatz")
+    c = QTextCursor(e.document().lastBlock()); bf = c.blockFormat(); bf.setLineHeight(150.0, 1); c.setBlockFormat(bf)
+    e.document().setModified(False)
+    hoehe0 = e.document().documentLayout().documentSize().height()
+    e.set_zeilenluft(1.35)
+    b1, b2 = e.document().firstBlock().blockFormat(), e.document().lastBlock().blockFormat()
+    assert abs(b1.lineHeight() - 135.0) < 0.01 and abs(b2.lineHeight() - 202.5) < 0.01 and LZ.aktiv(e.document())
+    assert not e.document().isModified()
+    assert e.document().documentLayout().documentSize().height() > hoehe0
+    # Speichern: die Datei und das offene Dokument — Datei ohne Zusatz, Dokument behält ihn
+    pfad = str(tmp_path / "z.docx")
+    file_service.save(pfad, e.document(), e.page, {})
+    g = file_service.load(pfad)
+    assert g.doc.firstBlock().blockFormat().lineHeight() in (0.0, 100.0) and abs(g.doc.lastBlock().blockFormat().lineHeight() - 150.0) < 1.0
+    assert LZ.aktiv(e.document())
+    # Druck/PDF-Kopie ohne Zusatz, die Anzeigekopie mit
+    assert not LZ.aktiv(paginated_copy(e.document(), e.page, {}))
+    assert LZ.aktiv(paginated_copy(e.document(), e.page, {}, lese_luft=True))
+    # Zurück auf „normal“ stellt die Originalwerte her
+    e.set_zeilenluft(1.0)
+    assert not LZ.aktiv(e.document()) and abs(e.document().lastBlock().blockFormat().lineHeight() - 150.0) < 0.01
+
+
+def test_reiter_schreibhilfe_ist_durchgehend_verdrahtet(app, tmp_path, monkeypatch):
+    """Jeder Knopf und jeder Menüpunkt des Reiters Schreibhilfe hat einen Befehl; jedes Symbol kommt nur einmal vor; die Schalter sind die echten."""
+    from lunivo_writer.ui.ribbon.plan import plan
+    from lunivo_writer.ui.widgets import icons
+    w = win(tmp_path, monkeypatch)
+    tab = next(r for r in plan(w.band.daten) if r["name"] == "Schreibhilfe")
+    namen = [g["name"] for g in tab["gruppen"]]
+    assert namen == ["Lesen", "Prüfen", "Beim Schreiben", "Vorlesen", "Sprache", "Bausteine", "KI", "Anzeigen"]
+    symbole, ohne = [], []
+    def pruefe(e):
+        if e.get("trenner"):
+            return
+        if e.get("menue"):
+            for m in e["menue"]:
+                pruefe(m)
+        t, kl = e.get("tun"), e.get("klappe")
+        if t and not w.befehle.hat(t):
+            ohne.append(t)
+        if kl and w.befehle.klappe(kl) is None:
+            ohne.append(kl)
+        if not (t or kl or e.get("menue")):
+            ohne.append(e.get("name"))
+    for g in tab["gruppen"]:
+        if g.get("pfeil") and not w.befehle.hat(g["pfeil"]):
+            ohne.append(g["pfeil"])
+        for e in g["knoepfe"]:
+            pruefe(e)
+            symbole.append(e["symbol"])
+    assert not ohne, ohne
+    assert all(icons.hat(s) for s in symbole), [s for s in symbole if not icons.hat(s)]
+    assert len(symbole) == len(set(symbole)), sorted(s for s in set(symbole) if symbole.count(s) > 1)
+    # die Schalter wirken auf dieselben Einstellungen wie die Seitenleiste
+    assert w.befehle.zustand("wellen") is True
+    w.befehle.tun("wellen")
+    assert not w.assistant.an("wellen") and w.befehle.zustand("wellen") is False
+    w.befehle.tun("wellen")
+    assert w.assistant.an("wellen")
+    # die Einstellungs-Knöpfe öffnen das eine Fenster auf dem richtigen Reiter
+    gesehen = []
+    import lunivo_writer.ui.baukasten.fenster_stapel as FS
+    monkeypatch.setattr(FS, "ausfuehren", lambda d: gesehen.append(d.reiter.currentIndex()))
+    monkeypatch.setattr(type(w.ki), "verfuegbar", lambda self: True)
+    w.befehle.tun("w.kiEinstellungen"); w.befehle.tun("w.kiKonfiguration"); w.befehle.tun("w.kiSprache"); w.befehle.tun("w.eigenenAnbieterHinzufuegen")
+    assert gesehen == [0, 1, 2, 0]
+
+
+def test_schreibhilfe_knoepfe_melden_sich_sichtbar(app, tmp_path, monkeypatch):
+    """Ohne Text oder ohne KI zeigt jeder Knopf des Reiters eine Meldung oder ein Fenster — nicht nur eine Zeile in der Statusleiste."""
+    from PySide6.QtWidgets import QMessageBox
+    w = win(tmp_path, monkeypatch)
+    meldungen, fenster = [], []
+    monkeypatch.setattr(QMessageBox, "information", staticmethod(lambda *a, **k: meldungen.append(a[1]) or QMessageBox.Ok))
+    monkeypatch.setattr(w.befehle, "w_kiEinstellungen", lambda k=None: fenster.append("einstellungen"))
+    monkeypatch.setattr(type(w.ki), "verfuegbar", lambda self: False)
+    w.current_editor().setPlainText("")
+    for befehl in ("w.pruefen", "vorlesen", "kiTextInBild", "thesaurus"):
+        meldungen.clear(); w.befehle.tun(befehl)
+        assert meldungen, befehl
+    w.current_editor().setPlainText("Ein Text.")
+    for befehl in ("kiKorrektur", "kiUmformulieren", "kiZusammenfassen", "w.kiUebersetzen", "kiVorschlaege"):
+        fenster.clear(); w.befehle.tun(befehl)
+        assert fenster == ["einstellungen"], befehl
+    # Silbentrennung: Menü mit Vorschau und Einstellungen
+    m = w.befehle.klappe("silbenTrennungMenue")
+    assert [a.text() for a in m.actions()] == ["Trennstriche in der Druckvorschau ansehen", "Einstellungen der Silbentrennung …"]
+
+
+def test_werkbank_katalog_band_und_seitenleiste_teilen_sich_eine_liste(app, tmp_path, monkeypatch):
+    """Jede Zeile der Werkbank hat einen Befehl; Schalter zeigen den echten Zustand; Band und Seitenleiste lesen denselben Katalog."""
+    from PySide6.QtCore import QEvent, Qt
+    from PySide6.QtGui import QKeyEvent
+    from lunivo_writer.ui.schreibhilfe_katalog import KATALOG, REITER, fuer_gruppe
+    w = win(tmp_path, monkeypatch)
+    assert list(w.sidebar.werk) == list(REITER[1:])
+    for f in KATALOG:
+        if f.art == "menue":
+            assert w.befehle.klappe(f.klappe) is not None, f.name
+        else:
+            assert w.befehle.hat(f.tun), (f.name, f.tun)
+        assert not f.klappe or w.befehle.klappe(f.klappe) is not None, f.name
+    # Schalter: Wellenlinien in der Werkbank = der Schalter „We“ oben = der Befehl
+    zeile = next(z for z in w.sidebar.werk["Schreiben"].zeilen if z.f.tun == "wellen")
+    assert zeile.zustand.text() == "an" and w.assistant.an("wellen")
+    zeile.setFocus()
+    zeile.keyPressEvent(QKeyEvent(QEvent.KeyPress, Qt.Key_Space, Qt.NoModifier))            # Tastatur genügt
+    assert zeile.zustand.text() == "aus" and not w.assistant.an("wellen")
+    w.assistant.setze("wellen", True)
+    assert zeile.zustand.text() == "an"
+    # Das Band hat jede Funktion seiner Gruppen aus dem Katalog
+    from lunivo_writer.ui.ribbon.plan import plan
+    tab = next(r for r in plan(w.band.daten) if r["name"] == "Schreibhilfe")
+    band = {k["name"] for g in tab["gruppen"] for k in g["knoepfe"]}
+    for f in KATALOG:
+        if f.gruppe:
+            assert f.name.removesuffix(" …") in band, f.name
+    assert len(fuer_gruppe("KI")) >= 7
+
+
+def test_uebersetzen_markierung_ersetzen_oder_in_schreibhilfe_und_chat_zeigen(app, tmp_path, monkeypatch):
+    """Markierter Text wird direkt im Dokument übersetzt; ohne Markierung (oder mit „zeigen“) erscheint die Übersetzung in Schreibhilfe und Chat."""
+    import time
+    from PySide6.QtGui import QTextCursor
+    w = win(tmp_path, monkeypatch)
+    monkeypatch.setattr(type(w.ki), "verfuegbar", lambda self: True)
+    monkeypatch.setattr(w.ki, "_einwilligung", lambda modell=None: True)
+    monkeypatch.setattr(w.ki.ki, "uebersetzen", lambda text, sprache: {"text": "Hello world", "cent": None})
+    e = w.current_editor()
+    e.setPlainText("Hallo Welt")
+    for _ in range(40):
+        app.processEvents(); time.sleep(0.03)
+    def warte(bedingung):
+        for _ in range(300):
+            app.processEvents()
+            if bedingung():
+                return True
+            time.sleep(0.02)
+        return False
+    # 1. markieren → im Dokument ersetzen
+    c = e.textCursor(); c.select(QTextCursor.Document); e.setTextCursor(c)
+    w.befehle.tun("w.kiUebersetzen")
+    assert warte(lambda: e.toPlainText() == "Hello world")
+    # 2. keine Markierung → Übersetzung wird gezeigt, der Text bleibt
+    e.setPlainText("Hallo Welt")
+    for _ in range(40):
+        app.processEvents(); time.sleep(0.03)
+    c = e.textCursor(); c.clearSelection(); e.setTextCursor(c)
+    w.befehle.tun("w.kiUebersetzen")
+    assert warte(lambda: any("Übersetzung" in z["text"] or z["text"] == "Hello world" for z in w.sidebar.chat.verlauf))
+    assert e.toPlainText() == "Hallo Welt" and w.sidebar.werk_reiter.checkedId() == 0
+    # 3. markiert, aber ausdrücklich „zeigen“ → Text bleibt
+    c = e.textCursor(); c.select(QTextCursor.Document); e.setTextCursor(c)
+    w.sidebar.chat.verlauf.clear()
+    w.befehle.tun("w.kiUebersetzenZeigen")
+    assert warte(lambda: any(z["text"] == "Hello world" for z in w.sidebar.chat.verlauf))
+    assert e.toPlainText() == "Hallo Welt"
+
+
+def test_fundkarte_bleibt_schmal_und_der_lautsprecher_sichtbar(app, tmp_path, monkeypatch):
+    """Viele Leerzeichen hintereinander werden kurz gezeigt; die Karte ist nicht breiter als die Seitenleiste, der Lautsprecher steht bei den Knöpfen."""
+    from lunivo_writer.services import vorlesen
+    from lunivo_writer.ui.sidebar.panels.writing_panel import FundKarte, kurz
+    assert kurz("␣" * 34) == "␣×34" and kurz("abc") == "abc" and kurz("aaaaa") == "aaaaa"
+    monkeypatch.setattr(vorlesen, "verfuegbar", lambda: True)
+    w = win(tmp_path, monkeypatch)
+    w.show()
+    fund = {"art": "fehler", "alt": "x", "neu": "y", "zeigeAlt": "␣" * 60, "zeigeNeu": "␣", "grund": "Mehrere Leerzeichen", "von": 0, "bis": 1}
+    w.sidebar.zeige([fund])
+    app.processEvents()
+    karte = w.sidebar.findChildren(FundKarte)[0]
+    assert karte.sizeHint().width() <= w.sidebar.maximumWidth()
+    assert not any(s.horizontalScrollBar().isVisible() for s in w.sidebar.findChildren(type(w.sidebar._seite_ki)))
+
+
+def test_langer_satz_bekommt_einen_vorschlag_zum_annehmen_oder_verwerfen(app, tmp_path, monkeypatch):
+    """Der Hinweis „Langer Satz“ hat einen Knopf „Vorschlag“: die KI schreibt kürzer, man nimmt an (Satz ersetzt) oder verwirft (alles bleibt)."""
+    import time
+    from lunivo_writer.ui.sidebar.panels.writing_panel import FundKarte
+    w = win(tmp_path, monkeypatch)
+    monkeypatch.setattr(type(w.ki), "verfuegbar", lambda self: True)
+    monkeypatch.setattr(w.ki, "_einwilligung", lambda modell=None: True)
+    satz = " ".join(["wort"] * 30) + "."
+    monkeypatch.setattr(w.ki.ki, "satz_umschreiben", lambda s, g="": {"text": "Erster Satz. Zweiter Satz.", "cent": None})
+    e = w.current_editor()
+    e.setPlainText(satz)
+    for _ in range(40):
+        app.processEvents(); time.sleep(0.03)
+    w.assistant.pruefen(True)
+    for _ in range(200):
+        app.processEvents()
+        if any(f["art"] == "hinweis" for f in w.assistant.funde):
+            break
+        time.sleep(0.02)
+    karte = None
+    for _ in range(300):                                   # die Karte entsteht, sobald die Funde im Hauptthread angekommen sind
+        app.processEvents()
+        karte = next((k for k in w.sidebar.findChildren(FundKarte) if k.fund["art"] == "hinweis"), None)
+        if karte is not None:
+            break
+        time.sleep(0.02)
+    assert karte is not None
+    karte.vorschlag_knopf.click()
+    for _ in range(300):
+        app.processEvents()
+        if not karte.vorschlag_feld.isHidden():
+            break
+        time.sleep(0.02)
+    assert not karte.vorschlag_feld.isHidden() and karte.vorschlag_text.text() == "Erster Satz. Zweiter Satz."
+    karte.verwerfen.click()                                   # verwerfen: nichts ändert sich, der Knopf ist wieder da
+    assert karte.vorschlag_feld.isHidden() and karte.vorschlag_knopf.isEnabled() and e.toPlainText() == satz
+    karte.vorschlag_knopf.click()
+    for _ in range(300):
+        app.processEvents()
+        if not karte.vorschlag_feld.isHidden():
+            break
+        time.sleep(0.02)
+    karte.annehmen.click()                                    # annehmen: der lange Satz ist ersetzt
+    assert e.toPlainText().startswith("Erster Satz. Zweiter Satz.")

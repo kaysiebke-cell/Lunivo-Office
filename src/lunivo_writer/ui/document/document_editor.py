@@ -913,7 +913,7 @@ class DocumentEditor(FreieBilderMixin, ZusatzMixin, QTextEdit):
             self._pages = live
             self._extra_seiten = 0
         else:
-            self._paged = paginated_copy(self.document(), self.page, self.noten, silben=False, einspaltig=True, versteckt=self.versteckt_zeigen)
+            self._paged = paginated_copy(self.document(), self.page, self.noten, silben=False, einspaltig=True, versteckt=self.versteckt_zeigen, lese_luft=True)
             self._breaks = self._seitenwechsel(self._paged)
             druck = max(1, self._paged.pageCount())
             from lunivo_writer.editor import abschnitte as AB
@@ -1784,6 +1784,15 @@ class DocumentEditor(FreieBilderMixin, ZusatzMixin, QTextEdit):
         f.setLetterSpacing(QFont.AbsoluteSpacing, buchstaben)
         f.setWordSpacing(wort)
         self.document().setDefaultFont(f)
+
+    def set_zeilenluft(self, faktor: float) -> None:
+        """Lesehilfe „Zeilenluft“: nur in dieser Anzeige; gespeichert und gedruckt wird ohne (editor/lese_zeilenluft.py)."""
+        from lunivo_writer.editor import lese_zeilenluft as LZ
+        if abs(getattr(self, "_lese_luft", 1.0) - faktor) < 1e-6 and (faktor == 1.0 or LZ.aktiv(self.document())):
+            return
+        self._lese_luft = float(faktor)
+        LZ.anwenden(self.document(), faktor)
+        self._timer.start()                                 # Seitenumbrüche neu berechnen
 
     # ---- Lesehilfe am Schirm: Absatz größer, Übriger Text blasser ---------------------------------------------------------
     # Wie in der ersten Fassung ändert das nichts am Dokument: Der Text wird nur anders gezeigt, gedruckt und gespeichert

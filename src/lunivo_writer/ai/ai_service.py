@@ -68,6 +68,11 @@ class KIDienst(QObject):
         self._werkzeug_ok = r == QMessageBox.Yes
         self._antwort_ereignis.set()
 
+    def _hinweis_fenster(self, titel: str, text: str) -> None:
+        """Ein Hinweis, den man nicht übersehen kann (statt nur einer Zeile in der Statusleiste)."""
+        self.status.emit(text)
+        QMessageBox.information(self.w, titel, text)
+
     def merke_ergebnis(self, titel: str, text: str, vorlage: str = "") -> None:
         import time
         self.ergebnisse.append({"titel": titel, "text": text, "vorlage": vorlage[:300], "zeit": time.strftime("%H:%M")})
@@ -116,14 +121,14 @@ class KIDienst(QObject):
         if self._beschaeftigt:
             return
         if not self.verfuegbar():
-            self.status.emit("Dafür fehlt der KI-Schlüssel — oder Ollama auf diesem Rechner. Optionen ▸ Schreibhilfe und KI.")
-            self.w.show_options("ki")
+            self.status.emit("Dafür fehlt ein KI-Modell — Ollama auf diesem Rechner oder ein Schlüssel. Die KI-Einstellungen sind offen.")
+            self.w.befehle.w_kiEinstellungen()
             return
         eing = eing or self._eingabe()
         if eing is not None:
             eing["_titel"] = meldung.strip(" .…„“").strip() or "KI"
         if eing is None or not eing["text"].strip():
-            self.status.emit("Es steht noch kein Text da.")
+            self._hinweis_fenster("KI", "Es steht noch kein Text da. Schreiben Sie etwas oder markieren Sie eine Stelle.")
             return
         if not self._einwilligung():
             self.status.emit("Abgebrochen — es wurde nichts gesendet.")
@@ -172,7 +177,7 @@ class KIDienst(QObject):
         c = ed.textCursor()
         text = (beschreibung or (c.selectedText().replace(" ", "\n") if c.hasSelection() else "")).strip()
         if not text:
-            self.status.emit("Erst einen Text markieren, der das Bild beschreibt.")
+            self._hinweis_fenster("Text in Bild", "Markieren Sie zuerst den Text, der das Bild beschreibt.")
             return
         if not self.konfig["aufgaben"].get("bildgenerierung", "").startswith(K.EIGEN_MARKE):
             self.status.emit("Dafür fehlt ein Modell mit „Bilder“ — in der KI-Konfiguration eintragen.")
@@ -242,8 +247,20 @@ class KIDienst(QObject):
         self.starte("Die KI liest den ganzen Text …", self.ki.korrigieren,
                     lambda r, e: self._einsetzen(r, e, "Korrigiert.", "Markierung korrigiert."))
 
-    def uebersetzen(self, sprache: str | None = None) -> None:
+    def uebersetzen(self, sprache: str | None = None, modus: str = "auto") -> None:
+        """Übersetzen in die gewählte Sprache. ``modus``: „ersetzen“ setzt die Übersetzung an die Stelle der Markierung, „zeigen“ zeigt sie in der Schreibhilfe
+        und im Chat (der Text bleibt unberührt), „auto“ ersetzt eine Markierung und zeigt sonst die Übersetzung des ganzen Textes."""
         s = sprache or self.konfig["sprache"]
+        ed = self.w.current_editor()
+        markiert = bool(ed is not None and ed.textCursor().hasSelection())
+        if modus == "zeigen" or (modus == "auto" and not markiert):
+            titel = f"Übersetzung nach {s}"
+
+            def zeigen(r, e):
+                self.hinweis.emit(titel, r["text"], r.get("cent"))
+                self.aktionErgebnis.emit(titel, r["text"], r.get("cent"))
+            self.starte(f"Wird nach {s} übersetzt …", lambda t: self.ki.uebersetzen(t, s), zeigen)
+            return
         self.starte(f"Wird nach {s} übersetzt …", lambda t: self.ki.uebersetzen(t, s),
                     lambda r, e: self._einsetzen(r, e, f"Nach {s} übersetzt.", f"Markierung nach {s} übersetzt."))
 
@@ -293,7 +310,7 @@ class KIDienst(QObject):
             c.select(c.SelectionType.WordUnderCursor)
         wort = c.selectedText().strip()
         if not wort:
-            self.status.emit("Erst ein Wort markieren oder den Zeiger hineinsetzen.")
+            self._hinweis_fenster("Thesaurus", "Markieren Sie ein Wort oder setzen Sie die Schreibmarke hinein.")
             return
         von, bis = c.selectionStart(), c.selectionEnd()
         text = ed.document().toPlainText()
@@ -307,6 +324,16 @@ class KIDienst(QObject):
                 return
             danach(wort, lst, von, bis)
         self.starte(f"Suche Wörter für „{wort}“ …", lambda _t: self.ki.synonyme(wort, umgebung), fertig, eing)
+
+    def satz_vorschlag(self, fund: dict, danach) -> None:
+        """Zu einem Hinweis („Langer Satz …“) einen Umschreibe-Vorschlag holen; ``danach(vorschlag)`` bekommt {alt, neu, grund} im Hauptthread."""
+        ed = self.w.current_editor()
+        if ed is None:
+            return
+        satz = fund.get("stelle") or ed.document().toPlainText()[fund["von"]:fund["bis"]]
+        eing = {"ed": ed, "text": satz, "basis": fund["von"], "markiert": True, "rev": ed.document().revision()}
+        self.starte("Die KI schlägt kürzere Sätze vor …", lambda t: self.ki.satz_umschreiben(t, fund["grund"]),
+                    lambda r, e: danach({"alt": satz, "neu": r["text"].strip(), "grund": fund["grund"]}), eing=eing)
 
     def vorschlag_einsetzen(self, v: dict) -> bool:
         ed = self.w.current_editor()

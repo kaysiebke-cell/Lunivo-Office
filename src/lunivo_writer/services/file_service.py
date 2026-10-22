@@ -146,6 +146,9 @@ def _has_rich_content(doc: QTextDocument) -> bool:
 
 
 def save(path: str, doc: QTextDocument, page: PageSettings, meta: dict | None = None) -> IOReport:
+    from lunivo_writer.editor import lese_zeilenluft
+    if lese_zeilenluft.aktiv(doc):                       # der Zusatzabstand der Lesehilfe gehört nicht in die Datei
+        doc = lese_zeilenluft.bereinigte_kopie(doc)
     e = ext(path)
     if e == ".docx":
         kw = (meta or {}).get("kennwort")

@@ -7,6 +7,16 @@ from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QVBoxLay
 from lunivo_writer.ui.baukasten.beschriftung import md_escape, md_label, text_label
 from lunivo_writer.ui.widgets import icons
 
+import re
+
+_LAUF = re.compile(r"(.)\1{5,}")
+
+
+def kurz(text: str) -> str:
+    """Lange gleiche Zeichenfolgen (viele Leerzeichen hintereinander) kurz zeigen: „␣×34“ — sonst wird die Karte breiter als die Seitenleiste."""
+    return _LAUF.sub(lambda m: f"{m.group(1)}×{len(m.group(0))}", text)
+
+
 FARBE = {"fehler": "#e8590c", "tipp": "#1c7ed6", "hinweis": "#868e96"}
 
 
@@ -25,9 +35,9 @@ def marke(art: str) -> QLabel:
 
 
 class FundKarte(QFrame):
-    def __init__(self, fund: dict, assistent, parent=None):
+    def __init__(self, fund: dict, assistent, parent=None, dienst=None):
         super().__init__(parent)
-        self.fund, self.a = fund, assistent
+        self.fund, self.a, self.d = fund, assistent, dienst
         self.setObjectName("FundKarte")
         self.setStyleSheet(KARTE.format(name="QFrame#FundKarte"))
         v = QVBoxLayout(self)
@@ -37,9 +47,9 @@ class FundKarte(QFrame):
         kopf.addWidget(marke(fund["art"])); kopf.addStretch(1)
         v.addLayout(kopf)
         if fund["art"] != "hinweis" and fund["neu"] != "":
-            t = md_label(f"~~{md_escape(fund['zeigeAlt'])}~~  →  **{md_escape(fund['zeigeNeu'])}**")
+            t = md_label(f"~~{md_escape(kurz(fund['zeigeAlt']))}~~  →  **{md_escape(kurz(fund['zeigeNeu']))}**")
         else:
-            t = text_label(f"„{fund['zeigeAlt'][:80]}“" if fund["alt"] else "")
+            t = text_label(f"„{kurz(fund['zeigeAlt'])[:80]}“" if fund["alt"] else "")
         t.setStyleSheet("border: none; background: transparent; font-size: 11pt;")
         v.addWidget(t)
         g = QLabel(fund["grund"])
@@ -55,15 +65,58 @@ class FundKarte(QFrame):
             b = QPushButton("Ändern")
             b.clicked.connect(lambda: self.a.aendern(self.fund))
             z.addWidget(b)
-        z.addStretch(1)
         from lunivo_writer.services import vorlesen
-        if vorlesen.verfuegbar():
+        if vorlesen.verfuegbar():                                        # gleich neben den anderen Knöpfen: immer sichtbar
             ohr = QPushButton()
-            ohr.setIcon(icons.icon("vorlesen", 16)); ohr.setFlat(True); ohr.setCursor(Qt.PointingHandCursor)
-            ohr.setToolTip("Das Wort anhören")
+            ohr.setIcon(icons.icon("vorlesen", 18)); ohr.setCursor(Qt.PointingHandCursor)
+            ohr.setToolTip("Das Wort anhören"); ohr.setAccessibleName("Das Wort anhören")
             ohr.clicked.connect(self._hoeren)
             z.addWidget(ohr)
+        if fund["art"] == "hinweis" and fund.get("stelle") and dienst is not None:           # ein Hinweis auf einen Satz: die KI macht einen Vorschlag
+            self.vorschlag_knopf = QPushButton("Vorschlag")
+            self.vorschlag_knopf.setToolTip("Die KI schreibt den Satz kürzer — Sie nehmen es an oder verwerfen es")
+            self.vorschlag_knopf.clicked.connect(self._vorschlag_holen)
+            z.addWidget(self.vorschlag_knopf)
+        z.addStretch(1)
+        self._aktionen = z
         v.addLayout(z)
+        # Der Vorschlag der KI, erst sichtbar, wenn er da ist
+        self.vorschlag_feld = QFrame(); self.vorschlag_feld.setStyleSheet("QFrame { border: none; background: transparent; }")
+        vv = QVBoxLayout(self.vorschlag_feld); vv.setContentsMargins(0, 0, 0, 0); vv.setSpacing(6)
+        self.vorschlag_text = QLabel(); self.vorschlag_text.setWordWrap(True); self.vorschlag_text.setStyleSheet("font-size: 11pt; font-weight: 600;")
+        vv.addWidget(self.vorschlag_text)
+        vz = QHBoxLayout(); vz.setSpacing(8)
+        self.annehmen = QPushButton("Annehmen"); self.annehmen.clicked.connect(self._annehmen)
+        self.verwerfen = QPushButton("Verwerfen"); self.verwerfen.clicked.connect(self._verwerfen)
+        vz.addWidget(self.annehmen); vz.addWidget(self.verwerfen); vz.addStretch(1)
+        vv.addLayout(vz)
+        self.vorschlag_feld.hide()
+        v.addWidget(self.vorschlag_feld)
+
+    def _vorschlag_holen(self):
+        self.vorschlag_knopf.setEnabled(False); self.vorschlag_knopf.setText("Die KI schreibt …")
+        self.d.satz_vorschlag(self.fund, self._vorschlag_da)
+        if not self.d._beschaeftigt:                       # es kam nicht zum Lauf (kein Modell, kein Text): der Knopf bleibt bedienbar
+            self.vorschlag_knopf.setEnabled(True); self.vorschlag_knopf.setText("Vorschlag")
+
+    def _vorschlag_da(self, v: dict):
+        try:
+            self._v = v
+            self.vorschlag_text.setText(v["neu"])
+            self.vorschlag_feld.show()
+            self.vorschlag_knopf.hide()
+        except RuntimeError:                                 # die Karte gibt es nicht mehr (die Funde wurden inzwischen neu geholt)
+            pass
+
+    def _annehmen(self):
+        if self.d.vorschlag_einsetzen(self._v):
+            self.d.assistant.gelernt.ki_vermerken(self._v, True)
+            self.a.pruefen(voll=True)                        # der Hinweis verschwindet, wenn der Satz kürzer ist
+
+    def _verwerfen(self):
+        self.d.assistant.gelernt.ki_vermerken(self._v, False)
+        self.vorschlag_feld.hide()
+        self.vorschlag_knopf.setEnabled(True); self.vorschlag_knopf.setText("Vorschlag"); self.vorschlag_knopf.show()
 
     def _zeigen(self):
         ed = self.a.editor
@@ -96,8 +149,8 @@ class VorschlagKarte(QFrame):
         t = md_label(f"~~{md_escape(v['alt'])}~~\n\n**{md_escape(v['neu'])}**")
         lay.addWidget(g); lay.addWidget(t)
         z = QHBoxLayout(); z.addStretch(1)
-        b1 = QPushButton("Einsetzen"); b1.clicked.connect(self._einsetzen)
-        b2 = QPushButton("Lassen"); b2.clicked.connect(self._lassen)
+        b1 = QPushButton("Annehmen"); b1.clicked.connect(self._einsetzen)
+        b2 = QPushButton("Verwerfen"); b2.clicked.connect(self._lassen)
         z.addWidget(b1); z.addWidget(b2); lay.addLayout(z)
 
     def _lassen(self):

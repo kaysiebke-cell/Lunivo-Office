@@ -13,11 +13,12 @@ class SchwebKnopf(QToolButton):
     def __init__(self, editor, symbol: str, tipp: str, aktion):
         super().__init__(editor)
         self.editor = editor
-        self.setIcon(icons.icon(symbol, 26)); self.setIconSize(QSize(26, 26)); self.setToolTip(tipp)
+        self.setIcon(icons.icon(symbol, 26)); self.setIconSize(QSize(26, 26)); self.setToolTip(tipp); self.setAccessibleName(tipp)
         self.setFixedSize(48, 48)
         self.setCursor(self.cursor())
-        self.setStyleSheet("QToolButton { background: white; border: 1px solid #ced4da; border-radius: 8px; }"
-                           "QToolButton:hover { background: #f1f3f5; }")
+        self.setStyleSheet("QToolButton { background: palette(button); border: 1px solid palette(mid); border-radius: 8px; }"      # Farben des Designs: das Symbol bleibt im hellen wie im dunklen Design lesbar
+                           "QToolButton:hover { background: palette(alternate-base); }"
+                           "QToolButton:focus { border: 2px solid #2f6fb5; }")
         self.clicked.connect(lambda: aktion())
         editor.installEventFilter(self)
         self.platzieren()
