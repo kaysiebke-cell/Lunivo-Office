@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
 
 from lunivo_writer.ui.baukasten.beschriftung import md_escape, md_label, text_label
 from lunivo_writer.ai import ki as K
+from lunivo_writer.ui.baukasten.fenster_stapel import zeige_unter
 from lunivo_writer.ui.widgets.flow_layout import FlowLayout
 
 
@@ -211,6 +212,8 @@ class ModellListe(QWidget):
             it = QListWidgetItem(f"{a['name']}\n{' · '.join(t for t in teile if t)}")
             it.setData(Qt.UserRole, a["id"])
             self.liste.addItem(it)
+        if self.liste.count():
+            self.liste.setCurrentRow(0)                    # der erste Eintrag ist gewählt: ✎ und 🗑 sind sofort bedienbar
         self._knoepfe()
 
     def _knoepfe(self, *_):
@@ -223,13 +226,12 @@ class ModellListe(QWidget):
         return self.k.anbieter_holen(it.data(Qt.UserRole)) if it else None
 
     def _neu(self) -> None:
-        if AnbieterDialog(self.fenster, self.k).exec():
-            self._fuellen()
+        zeige_unter(self, AnbieterDialog(self.fenster, self.k), self._fuellen)
 
     def _bearbeiten(self) -> None:
         a = self._aktuell()
-        if a and AnbieterDialog(self.fenster, self.k, a).exec():
-            self._fuellen()
+        if a:
+            zeige_unter(self, AnbieterDialog(self.fenster, self.k, a), self._fuellen)
 
     def _entfernen(self) -> None:
         a = self._aktuell()
@@ -257,6 +259,8 @@ class ModellListeDialog(QDialog):
 def modell_combo(konfig: K.KIKonfig, aufgabe: str, gewaehlt: str | None = None) -> QComboBox:
     """Die Auswahl „welches Modell für diese Aufgabe?“ — dieselbe in der Modellzuweisung und in den erweiterten Einstellungen des Chats."""
     c = QComboBox()
+    c.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLengthWithIcon)       # lange Modellnamen machen das Feld nicht breiter als die Seitenleiste
+    c.setMinimumContentsLength(12)
     c.addItem("Standard (KI-Modell der Optionen)", "")
     for m in konfig.alle_modelle():
         if aufgabe == "bildgenerierung":               # nur Anbieter mit „Bilder“ — Claude und Text-Modelle kennen das nicht
@@ -281,9 +285,6 @@ class ModellZuweisung(QWidget):
         self.f = QFormLayout()
         v.addLayout(self.f)
         self.felder: dict[str, QComboBox] = {}
-        o = QPushButton("Einstellungen der Übersetzung"); o.setFlat(True); o.setCursor(Qt.PointingHandCursor)
-        o.clicked.connect(lambda: fenster.show_options("sprache"))
-        v.addWidget(o, 0, Qt.AlignLeft)
         v.addStretch(1)
         self.aufbauen()
 
@@ -327,14 +328,194 @@ class KIKonfigurationDialog(QDialog):
         self.accept()
 
 
-REITER = ("KI-Modelle", "Modellzuweisung", "MCP-Server", "Websuche")
+class SprachePanel(QWidget):
+    """Die Sprachen der Schreibhilfe: „Sprache für die Überprüfung“ (Sprache des Dokuments) und „Übersetzen nach“ (Ziel der KI-Übersetzung).
+    Das Modell für die Übersetzung steht in der Modellzuweisung."""
+
+    def __init__(self, fenster):
+        super().__init__()
+        self.fenster = fenster
+        b = fenster.befehle
+        v = QVBoxLayout(self); v.setContentsMargins(0, 8, 0, 0)
+        z = QHBoxLayout(); z.setSpacing(24)                                  # die beiden Sprachen stehen nebeneinander, die Beschriftung jeweils darüber
+        self.pruefung = QComboBox()
+        for kennung, name in b.SPRACHEN:
+            self.pruefung.addItem(name, kennung)
+        self.pruefung.setCurrentIndex(max(0, self.pruefung.findData(b.pruefsprache_aktuell())))
+        self.pruefung.setEnabled(fenster.current_tab() is not None)
+        self.sprache = QComboBox(); self.sprache.addItems(K.SPRACHEN)
+        self.sprache.setCurrentText(fenster.ki.konfig["sprache"])
+        for titel, box in (("Sprache für die Überprüfung", self.pruefung), ("Übersetzen nach", self.sprache)):
+            sp = QVBoxLayout(); sp.setSpacing(4)
+            sp.addWidget(text_label(titel, fett=True, umbruch=False)); sp.addWidget(box)
+            z.addLayout(sp, 1)
+        v.addLayout(z)
+        h = QLabel("Die Sprache für die Überprüfung wird in der Datei vermerkt. Die Schreibhilfe selbst prüft weiter auf Deutsch. "
+                   "Das Modell für die Übersetzung wählen Sie im Reiter „Modellzuweisung“ (Aufgabe „Übersetzung“).")
+        h.setWordWrap(True); h.setStyleSheet("color: palette(mid);")
+        v.addWidget(h); v.addStretch(1)
+
+    def uebernehmen(self) -> None:
+        self.fenster.ki.konfig.setze("sprache", self.sprache.currentText())
+        if self.pruefung.isEnabled() and self.pruefung.currentData() != self.fenster.befehle.pruefsprache_aktuell():
+            self.fenster.befehle.pruefsprache_setzen(self.pruefung.currentData())
+
+
+class McpDialog(QDialog):
+    """Ein MCP-Server: Name, Startbefehl, ein/aus; „Testen“ startet ihn kurz und zeigt seine Werkzeuge."""
+
+    def __init__(self, fenster, e: dict | None = None):
+        super().__init__(fenster)
+        from PySide6.QtWidgets import QCheckBox
+        self.setWindowTitle("MCP-Server bearbeiten" if e else "MCP-Server hinzufügen")
+        self.setMinimumWidth(520)
+        v = QVBoxLayout(self)
+        f = QFormLayout()
+        self.name = QLineEdit(e["name"] if e else ""); self.name.setPlaceholderText("Name")
+        self.befehl = QLineEdit(e["befehl"] if e else "")
+        self.befehl.setPlaceholderText("Startbefehl, z. B. npx -y @modelcontextprotocol/server-filesystem ~/Dokumente")
+        f.addRow("Name *", self.name); f.addRow("Befehl *", self.befehl)
+        v.addLayout(f)
+        v.addWidget(QLabel("Der Server läuft auf diesem Rechner und startet nur während einer Chat-Frage. Jeder Werkzeugaufruf der KI wird vorher erfragt."))
+        self.an = QCheckBox("Im KI-Chat verwenden"); self.an.setChecked(e["an"] if e else True)
+        v.addWidget(self.an)
+        self.stand = QLabel(""); self.stand.setWordWrap(True)
+        t = QPushButton("Testen"); t.clicked.connect(self._testen)
+        v.addWidget(t, 0, Qt.AlignLeft); v.addWidget(self.stand)
+        bb = QDialogButtonBox()
+        bb.addButton("Abbrechen", QDialogButtonBox.RejectRole)
+        bb.addButton("Speichern", QDialogButtonBox.AcceptRole)
+        bb.accepted.connect(self._ok); bb.rejected.connect(self.reject)
+        v.addWidget(bb)
+
+    def _testen(self) -> None:
+        from lunivo_writer.ai import mcp as M
+        try:
+            w = M.pruefen(self.befehl.text())
+            self.stand.setText(f"Verbunden — {len(w)} Werkzeug(e): " + ", ".join(t["name"] for t in w[:12]))
+        except M.McpFehler as e:
+            self.stand.setText(f"Nicht erreichbar: {e}")
+
+    def _ok(self) -> None:
+        if not self.name.text().strip() or not self.befehl.text().strip():
+            QMessageBox.information(self, "MCP-Server", "Name und Befehl werden gebraucht.")
+            return
+        self.accept()
+
+    def werte(self) -> tuple:
+        return self.name.text(), self.befehl.text(), self.an.isChecked()
+
+
+class McpListe(QWidget):
+    """Die eingetragenen MCP-Server: hinzufügen, bearbeiten, entfernen."""
+
+    def __init__(self, fenster, konfig: K.KIKonfig):
+        super().__init__()
+        self.fenster, self.k = fenster, konfig
+        v = QVBoxLayout(self); v.setContentsMargins(0, 8, 0, 0)
+        v.addWidget(QLabel("MCP-Server geben der KI im Chat Werkzeuge (Dateien lesen, Daten abfragen …). Gilt für Ollama und eigene Anbieter."))
+        z = QHBoxLayout()
+        self.liste = QListWidget(); z.addWidget(self.liste, 1)
+        s = QVBoxLayout()
+        self.neu = QToolButton(); self.neu.setText("+"); self.neu.setToolTip("Server hinzufügen")
+        self.bearb = QToolButton(); self.bearb.setText("✎"); self.bearb.setToolTip("Bearbeiten")
+        self.weg = QToolButton(); self.weg.setText("🗑"); self.weg.setToolTip("Entfernen")
+        for b in (self.neu, self.bearb, self.weg):
+            s.addWidget(b)
+        s.addStretch(1); z.addLayout(s); v.addLayout(z, 1)
+        self.neu.clicked.connect(self._neu); self.bearb.clicked.connect(self._bearbeiten); self.weg.clicked.connect(self._entfernen)
+        self.liste.currentRowChanged.connect(self._knoepfe)
+        self.liste.itemDoubleClicked.connect(lambda _i: self._bearbeiten())
+        self.fuellen()
+
+    def fuellen(self) -> None:
+        self.liste.clear()
+        for m in self.k["mcp"]:
+            it = QListWidgetItem(f"{m['name']}{'' if m['an'] else '  (aus)'}\n{m['befehl']}")
+            it.setData(Qt.UserRole, m["id"]); self.liste.addItem(it)
+        if self.liste.count():
+            self.liste.setCurrentRow(0)
+        self._knoepfe()
+
+    def _knoepfe(self, *_) -> None:
+        an = self.liste.currentRow() >= 0
+        self.bearb.setEnabled(an); self.weg.setEnabled(an)
+
+    def _aktuell(self):
+        it = self.liste.currentItem()
+        return next((m for m in self.k["mcp"] if it and m["id"] == it.data(Qt.UserRole)), None)
+
+    def _neu(self) -> None:
+        d = McpDialog(self.fenster)
+        zeige_unter(self, d, lambda: (self.k.mcp_speichern(None, *d.werte()), self.fuellen()))
+
+    def _bearbeiten(self) -> None:
+        m = self._aktuell()
+        if m:
+            d = McpDialog(self.fenster, m)
+            zeige_unter(self, d, lambda: (self.k.mcp_speichern(m["id"], *d.werte()), self.fuellen()))
+
+    def _entfernen(self) -> None:
+        m = self._aktuell()
+        if m and QMessageBox.question(self, "Entfernen", f"„{m['name']}“ aus der Liste entfernen?") == QMessageBox.Yes:
+            self.k.mcp_entfernen(m["id"]); self.fuellen()
+
+
+class WebsuchePanel(QWidget):
+    """Websuche für den KI-Chat: Anbieter, Adresse oder Schlüssel, Zahl der Treffer. Ein: die Frage geht an den Suchanbieter."""
+
+    def __init__(self, konfig: K.KIKonfig):
+        super().__init__()
+        from PySide6.QtWidgets import QCheckBox, QSpinBox
+        from lunivo_writer.ai import websuche as W
+        self.k = konfig
+        o = konfig.websuche_optionen()
+        v = QVBoxLayout(self); v.setContentsMargins(0, 8, 0, 0)
+        self.an = QCheckBox("Websuche im KI-Chat verwenden"); self.an.setChecked(bool(o["an"]))
+        v.addWidget(self.an)
+        h = QLabel("Ist die Websuche an, geht Ihre Frage an den Suchanbieter (bei einer SearXNG-Instanz auf diesem Rechner bleibt sie hier). "
+                   "Die Treffer werden der KI als Quellen mitgegeben.")
+        h.setWordWrap(True); h.setStyleSheet("color: palette(mid);")
+        v.addWidget(h)
+        f = QFormLayout()
+        self.anbieter = QComboBox()
+        for schl, name in W.ANBIETER:
+            self.anbieter.addItem(name, schl)
+        self.anbieter.setCurrentIndex(max(0, self.anbieter.findData(o["anbieter"])))
+        self.url = QLineEdit(o["url"]); self.url.setPlaceholderText("https://searx.example.org")
+        self.schluessel = QLineEdit(o["schluessel"]); self.schluessel.setEchoMode(QLineEdit.Password)
+        self.anzahl = QSpinBox(); self.anzahl.setRange(1, 10); self.anzahl.setValue(int(o["anzahl"]))
+        f.addRow("Anbieter", self.anbieter); f.addRow("Adresse (SearXNG)", self.url); f.addRow("API-Schlüssel (Brave)", self.schluessel)
+        f.addRow("Treffer", self.anzahl)
+        v.addLayout(f)
+        t = QPushButton("Testen"); t.clicked.connect(self._testen)
+        self.stand = QLabel(""); self.stand.setWordWrap(True)
+        v.addWidget(t, 0, Qt.AlignLeft); v.addWidget(self.stand); v.addStretch(1)
+
+    def werte(self) -> dict:
+        return {"an": self.an.isChecked(), "anbieter": self.anbieter.currentData(), "url": self.url.text().strip(),
+                "schluessel": self.schluessel.text().strip(), "anzahl": self.anzahl.value()}
+
+    def _testen(self) -> None:
+        from lunivo_writer.ai import websuche as W
+        try:
+            t = W.suche(self.werte(), "Lunivo Writer")
+            self.stand.setText(f"Verbunden — {len(t)} Treffer.")
+        except (OSError, ValueError) as e:
+            self.stand.setText(f"Nicht erreichbar: {getattr(e, 'reason', e)}")
+
+    def uebernehmen(self) -> None:
+        self.k.websuche_setzen(**self.werte())
+
+
+REITER = ("KI-Modelle", "Modellzuweisung", "Sprache", "MCP-Server", "Websuche")
 
 
 class KIEinstellungenDialog(QDialog):
     """Das eine Fenster für alles zur KI: verbundene Modelle, Modellzuweisung, MCP-Server und Websuche.
 
     Dieselbe Konfiguration (``KIKonfig``) wie in der Seitenleiste der Schreibhilfe, im KI-Chat und in den Optionen. Bis ein Modell verbunden ist,
-    sind „Modellzuweisung“, „MCP-Server“ und „Websuche“ grau; die beiden letzten sind noch nicht freigeschaltet."""
+    sind alle übrigen Reiter grau."""
 
     def __init__(self, fenster, start: int = 0):
         super().__init__(fenster)
@@ -363,10 +544,13 @@ class KIEinstellungenDialog(QDialog):
         self.zuweisung = ModellZuweisung(fenster)
         zv.addWidget(self.zuweisung)
         self.stapel.addWidget(z)
-        # 3 und 4: noch nicht freigeschaltet
-        for n in REITER[2:]:
-            p = QWidget(); pv = QVBoxLayout(p); pv.addWidget(QLabel(n + " ist noch nicht freigeschaltet.")); pv.addStretch(1)
-            self.stapel.addWidget(p)
+        # 3 Sprache, 4 MCP-Server, 5 Websuche
+        self.sprache = SprachePanel(fenster)
+        self.stapel.addWidget(self.sprache)
+        self.mcp = McpListe(fenster, self.k)
+        self.stapel.addWidget(self.mcp)
+        self.websuche = WebsuchePanel(self.k)
+        self.stapel.addWidget(self.websuche)
         bb = QDialogButtonBox()
         bb.addButton("Abbrechen", QDialogButtonBox.RejectRole)
         bb.addButton("OK", QDialogButtonBox.AcceptRole)
@@ -378,24 +562,24 @@ class KIEinstellungenDialog(QDialog):
         self.reiter.setCurrentIndex(start if self.reiter.isTabEnabled(start) else 0)
 
     def freischalten(self) -> None:
-        """Ohne verbundenes Modell ist nur der erste Reiter bedienbar; MCP-Server und Websuche bleiben grau."""
+        """Ohne verbundenes Modell ist nur der erste Reiter bedienbar; mit Modell (auch Ollama auf diesem Rechner) sind alle frei."""
         da = self.fenster.ki.verfuegbar()
-        self.reiter.setTabEnabled(1, da)
-        for i in (2, 3):
-            self.reiter.setTabEnabled(i, False)
-            self.reiter.setTabToolTip(i, "Noch nicht freigeschaltet.")
-        if not da:
-            self.reiter.setTabToolTip(1, "Erst ein KI-Modell verbinden.")
+        for i in (1, 2, 3, 4):
+            self.reiter.setTabEnabled(i, da)
+            self.reiter.setTabToolTip(i, "" if da else "Erst ein KI-Modell verbinden.")
 
     def neues_modell(self) -> None:
-        if AnbieterDialog(self.fenster, self.k).exec():
+        def fertig():
             self.liste._fuellen()
             self.zuweisung.aufbauen()
             self.fenster.ki.geaendert.emit()
             self.freischalten()
+        zeige_unter(self, AnbieterDialog(self.fenster, self.k), fertig)
 
     def _ok(self) -> None:
         self.zuweisung.uebernehmen()
+        self.sprache.uebernehmen()
+        self.websuche.uebernehmen()
         self.accept()
 
 

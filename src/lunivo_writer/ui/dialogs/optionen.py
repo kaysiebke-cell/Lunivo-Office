@@ -533,15 +533,16 @@ class OptionenAnsicht(QWidget):
         p.abschluss()
         return p
 
+    def _uebersetzung_oeffnen(self) -> None:
+        from lunivo_writer.ui.baukasten.fenster_stapel import ausfuehren
+        from lunivo_writer.ui.dialogs.ki_dialoge import KIEinstellungenDialog
+        ausfuehren(KIEinstellungenDialog(self.w, 2))
+        self.w.ki.geaendert.emit()
+
     def _sprache(self, titel):
         p = _Seite(self.w, titel, ["Weitere Prüfsprachen (derzeit Deutsch)"])
         f = p.gruppe("Sprache")
-        pr = QComboBox(); pr.addItem("Deutsch"); pr.setToolTip("Weitere Prüfsprachen gibt es in der Qt-Fassung noch nicht")
-        f.addRow("Sprache für die Prüfung", pr)
-        c = QComboBox(); c.addItems(K.SPRACHEN)
-        c.setCurrentText(self.w.ki.konfig["sprache"])
-        c.currentTextChanged.connect(lambda t: (self.w.ki.konfig.setze("sprache", t), self.w.ki.geaendert.emit()))
-        f.addRow("Übersetzen nach", c)
+        p.aktion("Sprache für die Überprüfung und Übersetzen nach", "KI-Einstellungen ▸ Sprache …", self._uebersetzung_oeffnen)
         f = p.gruppe("Was geprüft wird")
         p.haken(f, "schreibhilfe/wellen", "Rechtschreibung während der Eingabe", True, lambda on: self.w.assistant.setze("wellen", on))
         p.haken(f, "rsGrammatik", "Grammatik mitprüfen", True, lambda _: self.w.assistant.pruefen(voll=True))
@@ -556,8 +557,7 @@ class OptionenAnsicht(QWidget):
     def _rechtschreibung(self, titel):
         p = _Seite(self.w, titel)
         f = p.gruppe("Rechtschreibprüfung")
-        pr = QComboBox(); pr.addItem("Deutsch"); pr.setToolTip("Weitere Prüfsprachen gibt es in der Qt-Fassung noch nicht")
-        f.addRow("Sprache für die Prüfung", pr)
+        p.aktion("Sprache für die Prüfung", "KI-Einstellungen ▸ Sprache …", self._uebersetzung_oeffnen)
         p.haken(f, "schreibhilfe/wellen", "Rechtschreibung während der Eingabe prüfen", True, lambda on: self.w.assistant.setze("wellen", on))
         p.haken(f, "schreibhilfe/vorschlaege", "Immer Korrekturvorschläge unterbreiten", True)
         p.haken(f, "rsGrammatik", "Grammatik mitprüfen", True, lambda _: self.w.assistant.pruefen(voll=True))
@@ -1249,13 +1249,15 @@ class OptionenAnsicht(QWidget):
             aufgaben_fuellen(); modell_fuellen(); anbieter_fuellen()
 
         def anbieter_neu():
+            from lunivo_writer.ui.baukasten.fenster_stapel import ausfuehren
             from lunivo_writer.ui.dialogs.ki_dialoge import KIEinstellungenDialog
-            KIEinstellungenDialog(self.w, 0).exec()
+            ausfuehren(KIEinstellungenDialog(self.w, 0))
             alles_neu(); geaendert.emit()
 
         def modelle_bearbeiten():
+            from lunivo_writer.ui.baukasten.fenster_stapel import ausfuehren
             from lunivo_writer.ui.dialogs.ki_dialoge import KIEinstellungenDialog
-            KIEinstellungenDialog(self.w, 0).exec()
+            ausfuehren(KIEinstellungenDialog(self.w, 0))
             alles_neu(); geaendert.emit()
         neuer.clicked.connect(anbieter_neu)
         mb.clicked.connect(modelle_bearbeiten)

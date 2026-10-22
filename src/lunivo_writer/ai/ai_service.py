@@ -28,11 +28,13 @@ class _Lauf(QRunnable):
 
 
 class KIDienst(QObject):
+    werkzeugFrage = Signal(str, str, str)     # Werkzeug, Argumente, Server — die Rückfrage läuft im Hauptthread
     status = Signal(str)
     laeuft = Signal(bool)
     vorschlaege = Signal(list)                # Liste von {alt, neu, grund}
     hinweis = Signal(str, str, object)        # Titel, Text, Kosten (cent) — Karte in der Seitenleiste
     chatAntwort = Signal(str, object)
+    aktionErgebnis = Signal(str, str, object)  # Name, Text, Kosten — das Ergebnis einer Schnellen KI-Aktion (der Chat zeigt es als Antwort)
     geaendert = Signal()                      # Einstellungen haben sich geändert
 
     def __init__(self, assistant, fenster, parent=None):
@@ -46,7 +48,25 @@ class KIDienst(QObject):
         self._pool = QThreadPool(self)
         self._sig = _Sig()
         self._sig.fertig.connect(self._fertig)
+        self.werkzeugFrage.connect(self._werkzeug_fragen)
+        self.ki.werkzeug_frage = self._werkzeug_erlaubt
         self.konfig.d["empfaenger"] = assistant.thema
+
+    def _werkzeug_erlaubt(self, name: str, argumente: dict, server: str) -> bool:
+        """Aus dem Arbeitsfaden: fragt im Hauptfenster, ob die KI das Werkzeug aufrufen darf, und wartet auf die Antwort."""
+        import json
+        import threading
+        self._antwort_ereignis = threading.Event()
+        self._werkzeug_ok = False
+        self.werkzeugFrage.emit(name, json.dumps(argumente, ensure_ascii=False)[:600], server)
+        self._antwort_ereignis.wait(300)
+        return self._werkzeug_ok
+
+    def _werkzeug_fragen(self, name: str, argumente: str, server: str) -> None:
+        r = QMessageBox.question(self.w, "Werkzeug aufrufen?", f"Die KI möchte das Werkzeug „{name}“ des MCP-Servers „{server}“ aufrufen.\n\n"
+                                 f"Angaben: {argumente}\n\nErlauben?")
+        self._werkzeug_ok = r == QMessageBox.Yes
+        self._antwort_ereignis.set()
 
     def merke_ergebnis(self, titel: str, text: str, vorlage: str = "") -> None:
         import time
@@ -234,14 +254,18 @@ class KIDienst(QObject):
                     lambda r, e: self._einsetzen(r, e, n + ".", "Markierung: " + n + "."))
 
     def assistent(self, a: dict) -> None:
-        """Eigener Assistent: ein Name und ein Prompt. Wirkung „ersetzen“ wie Korrigieren, „hinweis“ wie Zusammenfassen."""
+        """Schnelle KI-Aktion (Eigener Assistent): ein Name und ein Prompt. Wirkung „ersetzen“ wie Korrigieren, „anhaengen“ hinter den Text, „hinweis“ wie
+        Zusammenfassen. Das Ergebnis geht außerdem als Antwort in den KI-Chat."""
         arbeit = lambda t: self.ki.eigener_assistent(t, a["prompt"])           # noqa: E731
+
+        def melden(r) -> None:
+            self.aktionErgebnis.emit(a["name"], r["text"], r.get("cent"))
         if a["modus"] == "ersetzen":
-            self.starte(f"„{a['name']}“ …", arbeit, lambda r, e: self._einsetzen(r, e, a["name"] + ".", "Markierung: " + a["name"] + "."))
+            self.starte(f"„{a['name']}“ …", arbeit, lambda r, e: (self._einsetzen(r, e, a["name"] + ".", "Markierung: " + a["name"] + "."), melden(r)))
         elif a["modus"] == "anhaengen":
-            self.starte(f"„{a['name']}“ …", arbeit, lambda r, e: self._anhaengen(r, e, a["name"]))
+            self.starte(f"„{a['name']}“ …", arbeit, lambda r, e: (self._anhaengen(r, e, a["name"]), melden(r)))
         else:
-            self.starte(f"„{a['name']}“ …", arbeit, lambda r, e: self.hinweis.emit(a["name"], r["text"], r.get("cent")))
+            self.starte(f"„{a['name']}“ …", arbeit, lambda r, e: (self.hinweis.emit(a["name"], r["text"], r.get("cent")), melden(r)))
 
     def zusammenfassen(self) -> None:
         self.starte("Die KI fasst zusammen …", self.ki.zusammenfassen,

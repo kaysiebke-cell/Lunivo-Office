@@ -1782,11 +1782,21 @@ class Befehle:
         n, ok = QInputDialog.getItem(self.w, "Sprache für die Korrekturhilfen", "Sprache des Dokuments (wird in der Datei vermerkt).\n"
                                      "Die Schreibhilfe selbst prüft weiter auf Deutsch.", namen, start, False)
         if ok:
-            kennung = self.SPRACHEN[namen.index(n)][0]
+            self.pruefsprache_setzen(self.SPRACHEN[namen.index(n)][0])
+
+    def pruefsprache_aktuell(self) -> str:
+        t = self.w.current_tab()
+        return (t.meta.get("sprache") if t is not None else "") or self.w.settings.get("pruefsprache", "de-DE")
+
+    def pruefsprache_setzen(self, kennung: str) -> None:
+        """Die Sprache des Dokuments für die Korrekturhilfen (wird in der Datei vermerkt) — vom Band und vom Fenster „KI-Einstellungen“ benutzt."""
+        n = dict(self.SPRACHEN).get(kennung, kennung)
+        if self.w.current_tab() is not None:
             self.w.current_tab().meta["sprache"] = kennung
-            self.w.settings.set("pruefsprache", kennung)
-            self.ed.document().setModified(True)
-            self.w.statusBar().showMessage(f"Dokumentsprache: {n}.", 4000)
+            if self.ed:
+                self.ed.document().setModified(True)
+        self.w.settings.set("pruefsprache", kennung)
+        self.w.statusBar().showMessage(f"Dokumentsprache: {n}.", 4000)
 
     # ---- Verweise: Beschriftungen, Textmarken, Querverweise, Index, Zitate -------------------------------------
     def beschriftung(self, k=None):
@@ -2483,12 +2493,14 @@ class Befehle:
     def kiEntwerfen(self, k=None): self.w.chat_oeffnen("Entwirf einen Text zu folgendem Anliegen: ")
     def w_chatUmschalten(self, k=None): self.w.chat_oeffnen("")
     def w_kiKonfiguration(self, k=None):
+        from lunivo_writer.ui.baukasten.fenster_stapel import ausfuehren
         from lunivo_writer.ui.dialogs.ki_dialoge import KIEinstellungenDialog
-        KIEinstellungenDialog(self.w, 1).exec()
+        ausfuehren(KIEinstellungenDialog(self.w, 1))
 
     def w_eigenenAnbieterHinzufuegen(self, k=None):
+        from lunivo_writer.ui.baukasten.fenster_stapel import ausfuehren
         from lunivo_writer.ui.dialogs.ki_dialoge import KIEinstellungenDialog
-        KIEinstellungenDialog(self.w, 0).exec()
+        ausfuehren(KIEinstellungenDialog(self.w, 0))
 
     def w_kiErgebnisse(self, k=None):
         from lunivo_writer.ui.dialogs.ki_dialoge import ErgebnisseDialog

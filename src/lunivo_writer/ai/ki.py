@@ -91,7 +91,7 @@ class KIKonfig:
     def __init__(self, pfad: str):
         self.pfad = pfad
         self.d = {"modell": "claude-opus-5", "sprache": "Englisch", "empfaenger": "egal", "zettel": "",
-                  "apiKey": "", "anbieter": [], "aufgaben": {}, "kosten": 0.0, "claude_erlaubt": False, "assistenten": [], "chat": {}}
+                  "apiKey": "", "anbieter": [], "aufgaben": {}, "kosten": 0.0, "claude_erlaubt": False, "assistenten": [], "chat": {}, "mcp": [], "websuche": {}}
         try:
             with open(pfad, encoding="utf-8") as fh:
                 self.d.update(json.load(fh))
@@ -135,6 +135,29 @@ class KIKonfig:
     def chat_optionen(self) -> dict:
         """Die erweiterten Einstellungen des KI-Chats (Länge, Temperatur, Top P, Stoppfolgen, Antwort direkt einfügen) mit ihren Vorgaben."""
         return {**CHAT_VORGABE, **(self.d.get("chat") or {})}
+
+    def websuche_optionen(self) -> dict:
+        from lunivo_writer.ai import websuche as W
+        return {**W.VORGABE, **(self.d.get("websuche") or {})}
+
+    def websuche_setzen(self, **teile) -> None:
+        self.d["websuche"] = {**(self.d.get("websuche") or {}), **teile}
+        self.speichern()
+
+    def mcp_speichern(self, id_: str | None, name: str, befehl: str, an: bool = True) -> dict:
+        """MCP-Server anlegen (``id_`` None) oder ändern."""
+        import uuid
+        e = next((m for m in self.d["mcp"] if m["id"] == id_), None) if id_ else None
+        if e is None:
+            e = {"id": "m" + uuid.uuid4().hex[:8]}
+            self.d["mcp"].append(e)
+        e.update(name=(name or "").strip()[:60] or "MCP-Server", befehl=(befehl or "").strip(), an=bool(an))
+        self.speichern()
+        return e
+
+    def mcp_entfernen(self, id_: str) -> None:
+        self.d["mcp"] = [m for m in self.d["mcp"] if m["id"] != id_]
+        self.speichern()
 
     def chat_setzen(self, **teile) -> None:
         self.d["chat"] = {**(self.d.get("chat") or {}), **teile}
@@ -464,12 +487,98 @@ class KI:
 
     def text_aktion(self, text, aktion): return self._text(anweisung_text_aktion(self.k, aktion), text)
 
+    werkzeug_frage = staticmethod(lambda name, argumente, server: False)      # vom KI-Dienst ersetzt: fragt den Benutzer vor jedem Werkzeugaufruf
+
     def chat(self, verlauf: list[dict], dokumenttext: str = "") -> dict:
         system = ("Du bist ein Schreibassistent in einem Textverarbeitungsprogramm und antwortest kurz und klar auf Deutsch. "
                   "Erfinde nichts dazu. " + EMPFAENGER.get(self.k["empfaenger"], EMPFAENGER["egal"]))
         if dokumenttext.strip():
             system += "\n\nDer Mensch arbeitet gerade an diesem Text:\n" + dokumenttext[:12000]
-        return self._text(system, verlauf, "chatbot", self.k.chat_optionen())
+        notiz = ""
+        ws = self.k.websuche_optionen()
+        if ws["an"] and verlauf:
+            from lunivo_writer.ai import websuche as W
+            try:
+                treffer = W.suche(ws, verlauf[-1]["text"])
+                if treffer:
+                    system += ("\n\nErgebnisse einer Websuche zur Frage (nenne die Nummer der Quelle, wenn du sie benutzt):\n" + W.als_text(treffer))
+            except (OSError, ValueError) as e:
+                notiz = f"(Die Websuche hat nicht geklappt: {getattr(e, 'reason', e)})\n\n"
+        server = [m for m in self.k["mcp"] if m.get("an") and m.get("befehl")]
+        modell = self.modell("chatbot")
+        if server and (modell.startswith(EIGEN_MARKE) or modell.startswith(OLLAMA_MARKE)):
+            r = self._chat_werkzeuge(system, verlauf, server, modell, self.k.chat_optionen())
+        else:
+            r = self._text(system, verlauf, "chatbot", self.k.chat_optionen())
+        if notiz and "text" in r:
+            r["text"] = notiz + r["text"]
+        return r
+
+    def _chat_werkzeuge(self, system: str, verlauf: list[dict], server: list[dict], modell: str, optionen: dict) -> dict:
+        """Chat mit MCP-Werkzeugen über die OpenAI-kompatible Schnittstelle (Ollama und eigene Anbieter): das Modell darf Werkzeuge verlangen; jeder
+        Aufruf wird erst nach Rückfrage beim Benutzer ausgeführt."""
+        from lunivo_writer.ai import mcp as M
+        if modell.startswith(EIGEN_MARKE):
+            a = self.k.anbieter_holen(modell[len(EIGEN_MARKE):])
+            if not a:
+                return {"fehler": "Der gewählte Anbieter ist nicht mehr da."}
+            url, name, kopf = a["url"] + "/chat/completions", a["modell"], ({"authorization": "Bearer " + a["schluessel"]} if a["schluessel"] else {})
+        else:
+            url, name, kopf = OLLAMA_URL + "/v1/chat/completions", modell[len(OLLAMA_MARKE):], {}
+        clients, tools, wo = [], [], {}
+        try:
+            for sv in server:
+                try:
+                    c = M.McpClient(sv["befehl"])
+                except M.McpFehler as e:
+                    return {"fehler": f"MCP-Server „{sv['name']}“: {e}"}
+                clients.append(c)
+                for t in c.werkzeuge():
+                    n = t["name"] if t["name"] not in wo else f"{sv['name']}_{t['name']}"
+                    wo[n] = (c, t["name"], sv["name"])
+                    tools.append({"type": "function", "function": {"name": n, "description": t.get("description", ""), "parameters": t.get("inputSchema") or {"type": "object", "properties": {}}}})
+            nachrichten = [{"role": "system", "content": system}] + _nachrichten(verlauf)
+            for _runde in range(6):
+                bitte = {"model": name, "messages": nachrichten, "tools": tools, "temperature": float(optionen.get("temperatur", 0.2))}
+                if optionen.get("topP") is not None:
+                    bitte["top_p"] = float(optionen["topP"])
+                if optionen.get("maxLaenge"):
+                    bitte["max_tokens"] = int(optionen["maxLaenge"])
+                with _post(url, kopf, bitte, 300) as r:
+                    daten = json.loads(r.read().decode("utf-8"))
+                msg = ((daten.get("choices") or [{}])[0].get("message")) or {}
+                aufrufe = msg.get("tool_calls") or []
+                if not aufrufe:
+                    erg = ohne_gruebeln(msg.get("content") or "").strip()
+                    return {"text": erg} if erg else {"fehler": "Es kam keine Antwort zurück."}
+                nachrichten.append({"role": "assistant", "content": msg.get("content") or "", "tool_calls": aufrufe})
+                for aufruf in aufrufe:
+                    f = aufruf.get("function") or {}
+                    try:
+                        arg = json.loads(f.get("arguments") or "{}") if isinstance(f.get("arguments"), str) else (f.get("arguments") or {})
+                    except ValueError:
+                        arg = {}
+                    ziel = wo.get(f.get("name", ""))
+                    if ziel is None:
+                        ergebnis = "Dieses Werkzeug gibt es nicht."
+                    elif not self.werkzeug_frage(ziel[1], arg, ziel[2]):
+                        ergebnis = "Der Benutzer hat den Aufruf abgelehnt."
+                    else:
+                        try:
+                            ergebnis = ziel[0].aufrufen(ziel[1], arg)
+                        except M.McpFehler as e:
+                            ergebnis = f"Fehler: {e}"
+                    nachrichten.append({"role": "tool", "tool_call_id": aufruf.get("id", ""), "content": str(ergebnis)[:8000]})
+            return {"fehler": "Die KI hat zu viele Werkzeugaufrufe gebraucht. Bitte die Frage genauer stellen."}
+        except M.McpFehler as e:
+            return {"fehler": f"MCP: {e}"}
+        except urllib.error.HTTPError as e:
+            return {"fehler": f"Der Anbieter meldet Fehler {e.code} — unterstützt das Modell Werkzeuge?"}
+        except (urllib.error.URLError, OSError, ValueError) as e:
+            return {"fehler": f"Es hat nicht geklappt: {getattr(e, 'reason', e)}"}
+        finally:
+            for c in clients:
+                c.schliessen()
 
     def vorschlaege(self, text: str) -> dict:
         r = self.anfrage(anweisung_vorschlaege(self.k), text, VORSCHLAG_BAUPLAN, self.modell("textanalyse"))

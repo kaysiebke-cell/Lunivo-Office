@@ -344,10 +344,10 @@ def test_ki_einstellungen_schnelle_aktion_und_chat(app, tmp_path, monkeypatch):
     k = w.ki.konfig
     monkeypatch.setattr(type(w.ki), "verfuegbar", lambda self: False)
     d = KIEinstellungenDialog(w)
-    assert [d.reiter.isTabEnabled(i) for i in range(4)] == [True, False, False, False]
+    assert [d.reiter.isTabEnabled(i) for i in range(5)] == [True, False, False, False, False]
     monkeypatch.setattr(type(w.ki), "verfuegbar", lambda self: True)
     d2 = KIEinstellungenDialog(w, 1)
-    assert d2.reiter.currentIndex() == 1 and d2.reiter.isTabEnabled(1) and not d2.reiter.isTabEnabled(3)
+    assert d2.reiter.currentIndex() == 1 and all(d2.reiter.isTabEnabled(i) for i in range(5))
     a = SchnelleAktionDialog(w)
     a._vorlage("Kürzer machen", "Kürze den Text.")
     a.r_schnell.setChecked(True); a.ergebnis.setCurrentIndex(1)
@@ -415,3 +415,128 @@ def test_chat_erweiterte_einstellungen(app, tmp_path, monkeypatch):
     gesehen.clear()
     w.ki.ki.zusammenfassen("Text")
     assert "temperature" not in gesehen and "top_p" not in gesehen
+
+
+def test_mcp_und_websuche_im_chat(app, tmp_path, monkeypatch):
+    """Mit verbundenem Modell sind alle Reiter frei; ein MCP-Server liefert Werkzeuge, die Websuche bringt Quellen in die Anweisung."""
+    import json as _json
+    import pathlib
+    import sys as _sys
+    from lunivo_writer.ai import ki as K, mcp as M, websuche as W
+    from lunivo_writer.ui.dialogs.ki_dialoge import KIEinstellungenDialog
+    w = win(tmp_path, monkeypatch)
+    k = w.ki.konfig
+    monkeypatch.setattr(type(w.ki), "verfuegbar", lambda self: True)
+    d = KIEinstellungenDialog(w, 3)
+    assert all(d.reiter.isTabEnabled(i) for i in range(5)) and d.reiter.currentIndex() == 3
+    # MCP: Verbindung testen und Werkzeug aufrufen
+    befehl = f"{_sys.executable} {pathlib.Path(__file__).parent / 'fake_mcp_server.py'}"
+    assert [t["name"] for t in M.pruefen(befehl)] == ["echo"]
+    e = k.mcp_speichern(None, "Fake", befehl, True)
+    d.mcp.fuellen()
+    assert d.mcp.liste.count() == 1
+    # Chat mit Werkzeug: erst verlangt das Modell „echo“, dann antwortet es mit dem Ergebnis
+    k.anbieter_hinzufuegen("Lokal", "http://localhost:11434/v1", "", "m", ["text"])
+    k.setze("modell", K.EIGEN_MARKE + k["anbieter"][0]["id"])
+    zuege = []
+
+    class _R:
+        def __init__(s, d): s.d = d
+        def __enter__(s): return s
+        def __exit__(s, *a): return False
+        def read(s): return _json.dumps(s.d).encode()
+
+    def falsch(url, kopf, body, timeout):
+        zuege.append(body)
+        if len(zuege) == 1:
+            return _R({"choices": [{"message": {"content": "", "tool_calls": [{"id": "1", "function": {"name": "echo", "arguments": '{"text": "hallo"}'}}]}}]})
+        return _R({"choices": [{"message": {"content": "Antwort: " + zuege[-1]["messages"][-1]["content"]}}]})
+    monkeypatch.setattr(K, "_post", falsch)
+    monkeypatch.setattr(w.ki.ki, "werkzeug_frage", lambda n, a, s: True)
+    r = w.ki.ki.chat([{"rolle": "mensch", "text": "Sag hallo"}])
+    assert r["text"] == "Antwort: ECHO:hallo" and zuege[0]["tools"][0]["function"]["name"] == "echo"
+    # abgelehnter Aufruf wird nicht ausgeführt
+    zuege.clear()
+    monkeypatch.setattr(w.ki.ki, "werkzeug_frage", lambda n, a, s: False)
+    assert "abgelehnt" in w.ki.ki.chat([{"rolle": "mensch", "text": "Sag hallo"}])["text"]
+    k.mcp_entfernen(e["id"])
+    # Websuche: die Treffer stehen in der Anweisung
+    gesehen = {}
+
+    class _S:
+        def __enter__(s): return s
+        def __exit__(s, *a): return False
+        def read(s): return _json.dumps({"results": [{"title": "Titel", "url": "http://q", "content": "Inhalt"}]}).encode()
+    monkeypatch.setattr(W.urllib.request, "urlopen", lambda req, timeout=0: _S())
+    assert W.suche({"anbieter": "searxng", "url": "http://x", "anzahl": 3}, "was")[0]["titel"] == "Titel"
+    k.websuche_setzen(an=True, anbieter="searxng", url="http://x")
+    zuege.clear()
+
+    def falsch2(url, kopf, body, timeout):
+        gesehen.update(body)
+        return _R({"choices": [{"message": {"content": "ok"}}]})
+    monkeypatch.setattr(K, "_post", falsch2)
+    assert w.ki.ki.chat([{"rolle": "mensch", "text": "was"}])["text"] == "ok"
+    assert "Websuche" in gesehen["messages"][0]["content"] and "http://q" in gesehen["messages"][0]["content"]
+
+
+def test_sprache_tab(app, tmp_path, monkeypatch):
+    from lunivo_writer.ui.dialogs.ki_dialoge import KIEinstellungenDialog
+    w = win(tmp_path, monkeypatch)
+    monkeypatch.setattr(type(w.ki), "verfuegbar", lambda self: True)
+    d = KIEinstellungenDialog(w, 2)
+    assert d.reiter.tabText(2) == "Sprache" and d.reiter.currentIndex() == 2
+    d.sprache.sprache.setCurrentText("Türkisch")
+    d.sprache.pruefung.setCurrentIndex(d.sprache.pruefung.findData("en-US"))
+    d._ok()
+    assert w.ki.konfig["sprache"] == "Türkisch" and w.befehle.pruefsprache_aktuell() == "en-US"
+
+
+def test_ki_einstellungen_bleiben_in_einem_fenster(app, tmp_path, monkeypatch):
+    """„+“, „✎“ in KI-Modelle und MCP-Server öffnen ihr Formular als Seite im selben Fenster (Fensterstapel), nicht als neues Fenster."""
+    from lunivo_writer.ui.baukasten.fenster_stapel import FensterStapel
+    from lunivo_writer.ui.dialogs.ki_dialoge import AnbieterDialog, KIEinstellungenDialog, McpDialog
+    w = win(tmp_path, monkeypatch)
+    monkeypatch.setattr(type(w.ki), "verfuegbar", lambda self: True)
+    d = KIEinstellungenDialog(w, 0)
+    host = FensterStapel(d, w)
+    d.liste._neu()
+    assert len(host._seiten) == 2 and isinstance(host._seiten[-1][0], AnbieterDialog)
+    host._seiten[-1][0].reject()
+    assert len(host._seiten) == 1
+    d.reiter.setCurrentIndex(3)
+    d.mcp._neu()
+    assert len(host._seiten) == 2 and isinstance(host._seiten[-1][0], McpDialog)
+    top = host._seiten[-1][0]
+    top.name.setText("Test"); top.befehl.setText("echo"); top.accept()
+    assert len(host._seiten) == 1 and w.ki.konfig["mcp"][-1]["name"] == "Test" and d.mcp.liste.count() == 1
+
+
+def test_aktionen_in_schreibhilfe_und_chat(app, tmp_path, monkeypatch):
+    """Eine Schnelle KI-Aktion steht aus derselben Liste im Band, in der Schreibhilfe-Seitenleiste und im KI-Chat; ihr Ergebnis erscheint im Chat."""
+    from lunivo_writer.ai import ki as K
+    w = win(tmp_path, monkeypatch)
+    monkeypatch.setattr(type(w.ki), "verfuegbar", lambda self: True)
+    k = w.ki.konfig
+    e = k.assistent_hinzufuegen("Kürzer", "Kürze den Text.", "hinweis", "kontext")
+    w.ki.geaendert.emit()
+    namen = lambda leiste: [b.text() for b in leiste.knoepfe]            # noqa: E731
+    assert namen(w.sidebar.aktionen) == ["Kürzer", "＋ Neue Aktion"] and namen(w.sidebar.chat.aktionen) == ["Kürzer", "＋ Neue Aktion"]
+    # Entfernen wirkt überall
+    k.assistent_entfernen(e["id"]); w.ki.geaendert.emit()
+    assert namen(w.sidebar.aktionen) == ["＋ Neue Aktion"] and namen(w.sidebar.chat.aktionen) == ["＋ Neue Aktion"]
+    # Das Ergebnis einer Aktion kommt als Antwort in den Chat und in die Ergebnisliste
+    e = k.assistent_hinzufuegen("Kürzer", "Kürze den Text.", "hinweis")
+    w.current_editor().setPlainText("Ein langer Text, der gekürzt werden soll.")
+    monkeypatch.setattr(w.ki, "_einwilligung", lambda modell=None: True)
+    monkeypatch.setattr(w.ki.ki, "eigener_assistent", lambda text, prompt: {"text": "Kurz.", "cent": None})
+    w.ki._pool.setMaxThreadCount(1)
+    w.ki.assistent(e)
+    for _ in range(200):
+        app.processEvents()
+        if w.ki.ergebnisse:
+            break
+        import time; time.sleep(0.02)
+    app.processEvents()
+    assert w.ki.ergebnisse and w.ki.ergebnisse[-1]["text"] == "Kurz."
+    assert any(z["text"] == "Kurz." for z in w.sidebar.chat.verlauf)

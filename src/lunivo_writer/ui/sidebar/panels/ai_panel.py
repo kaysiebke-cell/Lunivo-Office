@@ -2,14 +2,39 @@
 from __future__ import annotations
 
 from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QTextCursor
 from PySide6.QtWidgets import (
-    QApplication, QCheckBox, QFrame, QHBoxLayout, QLabel, QLineEdit, QPushButton, QScrollArea, QSlider, QToolButton, QVBoxLayout, QWidget,
+    QApplication, QCheckBox, QPlainTextEdit, QFrame, QHBoxLayout, QLabel, QLineEdit, QPushButton, QScrollArea, QSlider, QToolButton, QVBoxLayout, QWidget,
 )
 
 from lunivo_writer.ai import ki as K
 from lunivo_writer.ui.baukasten.beschriftung import md_escape, md_label, text_label
 
 
+
+
+class ChatEingabe(QPlainTextEdit):
+    """Mehrzeiliges Eingabefeld für den Chat: Enter schickt ab, Umschalt+Enter macht eine neue Zeile. ``text()``/``setText()`` wie beim Einzeiler."""
+    abgeschickt = Signal()
+
+    def __init__(self):
+        super().__init__()
+        self.setPlaceholderText("Frage an die KI …")
+        self.setMinimumHeight(110)
+        self.setTabChangesFocus(True)
+
+    def keyPressEvent(self, e) -> None:
+        if e.key() in (Qt.Key_Return, Qt.Key_Enter) and not (e.modifiers() & Qt.ShiftModifier):
+            self.abgeschickt.emit()
+            return
+        super().keyPressEvent(e)
+
+    def text(self) -> str:
+        return self.toPlainText()
+
+    def setText(self, t: str) -> None:
+        self.setPlainText(t)
+        self.moveCursor(QTextCursor.End)
 
 
 class ChatPanel(QWidget):
@@ -48,21 +73,26 @@ class ChatPanel(QWidget):
         sc = QScrollArea(); sc.setWidgetResizable(True); sc.setWidget(host); sc.setMinimumHeight(180); sc.setFrameShape(QFrame.NoFrame)
         self.scroll = sc
         v.addWidget(sc, 1)
+        # Meine Aktionen: dieselbe Leiste wie in der Schreibhilfe
+        from lunivo_writer.ui.baukasten.aktionen_leiste import AktionenLeiste
+        self.aktionen = AktionenLeiste()
+        self.aktionen.verbinde(dienst, fenster)
+        v.addWidget(self.aktionen)
+        dienst.aktionErgebnis.connect(self._aktion_ergebnis)
         # Eingabe
         self.eingabezeile = QWidget()
         ev = QVBoxLayout(self.eingabezeile); ev.setContentsMargins(0, 0, 0, 0); ev.setSpacing(4)
-        z = QHBoxLayout()
-        self.eingabe = QLineEdit(); self.eingabe.setPlaceholderText("Frage an die KI …")
-        self.eingabe.returnPressed.connect(self.senden)
-        b = QPushButton("Senden"); b.clicked.connect(self.senden)
-        z.addWidget(self.eingabe, 1); z.addWidget(b)
-        ev.addLayout(z)
+        self.eingabe = ChatEingabe()
+        self.eingabe.abgeschickt.connect(self.senden)
+        ev.addWidget(self.eingabe)
         self.tokens = QLabel("Tokens: 0"); self.tokens.setStyleSheet("color: palette(mid);"); self.tokens.setAlignment(Qt.AlignRight)
         self.tokens.setToolTip("Grobe Schätzung: etwa vier Zeichen je Token")
-        self.eingabe.textChanged.connect(lambda t: self.tokens.setText(f"Tokens: {(len(t) + 3) // 4}"))
+        self.eingabe.textChanged.connect(lambda: self.tokens.setText(f"Tokens: {(len(self.eingabe.text()) + 3) // 4}"))
         ev.addWidget(self.tokens)
         self._erweitert(ev)
         z2 = QHBoxLayout()
+        senden = QPushButton("Senden"); senden.clicked.connect(self.senden)
+        z2.addWidget(senden)
         bild = QPushButton("Bild"); bild.setFlat(True); bild.setToolTip("Aus dem Text im Feld (oder der Markierung) ein Bild erzeugen und einfügen")
         bild.clicked.connect(self._bild)
         neu = QPushButton("Leeren"); neu.setFlat(True); neu.setToolTip("Gespräch leeren"); neu.clicked.connect(self.leeren)
@@ -137,8 +167,9 @@ class ChatPanel(QWidget):
         self.eingabezeile.setVisible(da)
 
     def _einstellungen(self) -> None:
+        from lunivo_writer.ui.baukasten.fenster_stapel import ausfuehren
         from lunivo_writer.ui.dialogs.ki_dialoge import KIEinstellungenDialog
-        KIEinstellungenDialog(self.w, 0).exec()
+        ausfuehren(KIEinstellungenDialog(self.w, 0))
         self.d.geaendert.emit()
 
     def _blase(self, text: str, ki: bool, cent=None) -> None:
@@ -187,6 +218,12 @@ class ChatPanel(QWidget):
         if t:
             self._blase("Bild: " + t, False)
         self.d.bild_aus_text(t or None)
+
+    def _aktion_ergebnis(self, name: str, text: str, cent) -> None:
+        """Das Ergebnis einer Schnellen KI-Aktion steht im Chat wie eine Antwort (und ist Teil des Gesprächs)."""
+        self.verlauf.append({"rolle": "mensch", "text": f"Aktion „{name}“ auf den Text anwenden."})
+        self.verlauf.append({"rolle": "ki", "text": text})
+        self._blase(f"„{name}“: {text}", True, cent)
 
     def _antwort(self, text: str, cent) -> None:
         if not text.startswith("⚠"):

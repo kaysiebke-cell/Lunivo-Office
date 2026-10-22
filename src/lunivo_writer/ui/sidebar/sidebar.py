@@ -148,6 +148,9 @@ class SchreibhilfePanel(QWidget):
             ki.addWidget(b)
             self.ki_knoepfe.append(b)
         v.addLayout(ki)
+        from lunivo_writer.ui.baukasten.aktionen_leiste import AktionenLeiste
+        self.aktionen = AktionenLeiste()
+        v.addWidget(self.aktionen)
         self.ki_info = QLabel("")
         self.ki_info.setWordWrap(True)
         self.ki_info.setStyleSheet("color: palette(mid); font-size: 9pt;")
@@ -163,12 +166,14 @@ class SchreibhilfePanel(QWidget):
         self._ollama_gefunden.connect(self._ollama_da)
         self._seite_ki = QScrollArea()
         self._seite_ki.setWidgetResizable(True)
+        self._seite_ki.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)        # der Chat passt sich der Breite an, nichts wird seitlich abgeschnitten
         self._seite_ki.setFrameShape(QFrame.NoFrame)
         self.stapel.addWidget(self._seite_ki)
 
     # ---- KI ------------------------------------------------------------------------------------
     def verbinde_ki(self, dienst, fenster) -> None:
         self.ki, self.fenster = dienst, fenster
+        self.aktionen.verbinde(dienst, fenster)
         k, v_, e_ = self.ki_knoepfe
         k.clicked.connect(dienst.korrigieren)
         v_.clicked.connect(dienst.vorschlaege_holen)
