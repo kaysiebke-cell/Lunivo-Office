@@ -1038,6 +1038,21 @@ class Befehle:
         if self.ed:
             self.ed.toggle_rtl()
 
+    def textrichtungLinks(self, k=None):
+        if self.ed and self.an_textrichtung():
+            self.ed.toggle_rtl()
+
+    def textrichtungRechts(self, k=None):
+        if self.ed and not self.an_textrichtung():
+            self.ed.toggle_rtl()
+
+    def zeilenumbruch(self, k=None):
+        """Zeilenumbruch ohne neuen Absatz (Umschalt+Enter)."""
+        if self.ed:
+            c = self.ed.textCursor()
+            c.insertText("\u2028")
+            self.ed.setTextCursor(c)
+
     def an_textrichtung(self):
         return bool(self.ed and self.ed.textCursor().blockFormat().layoutDirection() == Qt.RightToLeft)
 

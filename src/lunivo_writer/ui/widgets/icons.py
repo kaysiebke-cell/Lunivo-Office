@@ -170,8 +170,9 @@ def _svg(pfad: str, farbe: str) -> bytes:
             return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path {zug} fill="{farbe}" d="{e["d"]}"/></svg>').encode()
         return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="{farbe}" stroke-width="{STRICH / s:.4f}" '
                 f'stroke-linecap="round" stroke-linejoin="round"><path {zug} d="{e["d"]}"/></svg>').encode()
+    strich = STRICH + (0.35 if QColor(farbe).lightness() > 220 else 0)      # auf Dunkel etwas kräftiger gezeichnet
     return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="{farbe}" '
-            f'stroke-width="{STRICH}" stroke-linecap="round" stroke-linejoin="round"><path d="{pfad}"/></svg>').encode()
+            f'stroke-width="{strich}" stroke-linecap="round" stroke-linejoin="round"><path d="{pfad}"/></svg>').encode()
 
 
 def _pixmap(name: str, farbe: str, px: int) -> QPixmap:
@@ -198,6 +199,8 @@ def icon(name: str, px: int = 20) -> QIcon:
         return QIcon()
     pal = QApplication.palette()
     normal = pal.color(QPalette.ButtonText).name()
+    if QColor(normal).lightness() > 128:                 # dunkler Hintergrund: Symbole fast weiß, damit man sie gut erkennt
+        normal = "#f4f6f8"
     off = pal.color(QPalette.Disabled, QPalette.ButtonText).name()
     ic = QIcon()
     ic.addPixmap(_pixmap(name, normal, px), QIcon.Normal)

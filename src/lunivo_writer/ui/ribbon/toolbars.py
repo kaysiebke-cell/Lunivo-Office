@@ -208,6 +208,8 @@ class Symbolleisten(QWidget):
             a.setChecked(bool(self.b.zustand(name)))
             a.blockSignals(False)
         if hat_dokument is not None:
+            import shiboken6
+            self.knoepfe = [e for e in self.knoepfe if shiboken6.isValid(e[0])]       # Knöpfe der Bildleiste können inzwischen abgebaut sein
             for k, name, braucht in self.knoepfe:
                 if braucht and not k.property("fehlt"):
                     k.setEnabled(hat_dokument)

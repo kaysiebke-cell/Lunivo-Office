@@ -162,32 +162,29 @@
        "klappe": "nummerierungKlappe"
       },
       {
-       "symbol": "einzug",
-       "name": "Einzug & Listenebene",
+       "symbol": "ebeneTief",
+       "name": "Einzug verringern",
+       "gross": false,
+       "tun": "einzugWeniger"
+      },
+      {
+       "symbol": "ebeneHoch",
+       "name": "Einzug vergrößern",
+       "gross": false,
+       "tun": "einzugMehr"
+      },
+      {
+       "symbol": "textrichtung",
+       "name": "Textrichtung",
        "gross": false,
        "menue": [
         {
-         "name": "Einzug vergrößern",
-         "tun": "einzugMehr"
+         "name": "Von links nach rechts",
+         "tun": "textrichtungLinks"
         },
         {
-         "name": "Einzug verringern",
-         "tun": "einzugWeniger"
-        },
-        {
-         "name": "Genaues Maß…",
-         "tun": "einzugGenau"
-        },
-        {
-         "trenner": true
-        },
-        {
-         "name": "Listenebene verringern",
-         "tun": "ebeneTiefer"
-        },
-        {
-         "name": "Listenebene erhöhen",
-         "tun": "ebeneHoeher"
+         "name": "Von rechts nach links",
+         "tun": "textrichtungRechts"
         }
        ]
       },
@@ -198,11 +195,33 @@
        "tun": "sortieren"
       },
       {
-       "symbol": "¶",
-       "name": "Steuerzeichen",
+       "symbol": "zeilenumbruch",
+       "name": "Umbrüche",
        "gross": false,
-       "tun": "steuerzeichenZeigen",
-       "haken": true
+       "menue": [
+        {
+         "name": "Zeilenumbruch",
+         "tun": "zeilenumbruch"
+        },
+        {
+         "name": "Seitenumbruch",
+         "tun": "seitenumbruch"
+        },
+        {
+         "name": "Spaltenumbruch",
+         "tun": "spaltenumbruch"
+        },
+        {
+         "name": "Textflussumbruch",
+         "tun": "textflussumbruch"
+        }
+       ]
+      },
+      {
+       "symbol": "tabstopp",
+       "name": "Tabulatoren",
+       "gross": false,
+       "tun": "tabstopps"
       },
       {
        "zeilenumbruch": true
@@ -1496,6 +1515,13 @@
        "name": "Textbegrenzungen",
        "gross": false,
        "tun": "markenZeigen",
+       "haken": true
+      },
+      {
+       "symbol": "¶",
+       "name": "Steuerzeichen",
+       "gross": false,
+       "tun": "steuerzeichenZeigen",
        "haken": true
       }
      ],
