@@ -826,11 +826,23 @@ def test_langer_satz_bekommt_einen_vorschlag_zum_annehmen_oder_verwerfen(app, tm
     assert not karte.vorschlag_feld.isHidden() and karte.vorschlag_text.text() == "Erster Satz. Zweiter Satz."
     karte.verwerfen.click()                                   # verwerfen: nichts ändert sich, der Knopf ist wieder da
     assert karte.vorschlag_feld.isHidden() and karte.vorschlag_knopf.isEnabled() and e.toPlainText() == satz
-    karte.vorschlag_knopf.click()
+    def neue_karte():                                         # die Seitenleiste baut die Karten bei neuen Funden neu auf
+        return next((k for k in w.sidebar.findChildren(FundKarte) if k.fund["art"] == "hinweis"), None)
     for _ in range(300):
         app.processEvents()
-        if not karte.vorschlag_feld.isHidden():
+        karte = neue_karte()
+        if karte is not None:
             break
         time.sleep(0.02)
+    karte.vorschlag_knopf.click()
+    for i in range(300):
+        app.processEvents()
+        karte = neue_karte()
+        if karte is not None and not karte.vorschlag_feld.isHidden():
+            break
+        if i % 50 == 49 and karte is not None and karte.vorschlag_knopf.isEnabled():
+            karte.vorschlag_knopf.click()                     # die Karte wurde zwischendurch neu gebaut: erneut anfragen
+        time.sleep(0.02)
+    assert not karte.vorschlag_feld.isHidden()
     karte.annehmen.click()                                    # annehmen: der lange Satz ist ersetzt
     assert e.toPlainText().startswith("Erster Satz. Zweiter Satz.")

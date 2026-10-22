@@ -266,8 +266,9 @@ class SchreibhilfePanel(QWidget):
     def _karten_leeren(self) -> None:
         while self.liste.count() > 1:
             it = self.liste.takeAt(0)
-            if it.widget():
-                it.widget().hide(); it.widget().setParent(None); it.widget().deleteLater()
+            w_ = it.widget()
+            if w_ is not None:
+                w_.hide(); w_.setParent(None); w_.deleteLater()
 
     def _leer(self, text: str) -> None:
         m = QLabel(text); m.setWordWrap(True)
@@ -372,10 +373,11 @@ class SchreibhilfePanel(QWidget):
     def zeige(self, funde: list) -> None:
         while self.liste.count() > 1:
             it = self.liste.takeAt(0)
-            if it.widget():
-                it.widget().hide()
-                it.widget().setParent(None)
-                it.widget().deleteLater()
+            w_ = it.widget()                                  # einmal holen: nach setParent(None) kennt der Eintrag sein Widget nicht mehr
+            if w_ is not None:
+                w_.hide()
+                w_.setParent(None)
+                w_.deleteLater()
         if not funde:
             self.meldung = QLabel(LEER if self.a._geprueft_rev >= 0 else "Noch nicht geprüft.")
             self.meldung.setWordWrap(True)

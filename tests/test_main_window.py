@@ -448,3 +448,42 @@ def test_geoeffnetes_dokument_zeigt_kommentar_blasen_sofort(app, tmp_path):
     ed = w.current_editor()
     assert len(ed.kommentare) == 1 and ed._blasen_flaeche is not None and ed._blasen_flaeche.isVisible()
     assert len(ed.blasen_layout(300)) == 1
+
+
+def test_aenderungen_und_noten_im_feld_links_sind_echte_funktionen(app, tmp_path, monkeypatch):
+    """Änderungen: verfolgen ein/aus, Karten mit Zeigen/Annehmen/Ablehnen, alle auf einmal. Noten: Fußnote/Endnote anlegen, Karten mit Zeigen/Bearbeiten/Löschen."""
+    from PySide6.QtWidgets import QInputDialog
+    w = win(tmp_path)
+    w.new_document(); w.show()
+    e = w.current_editor()
+    e.setPlainText("Ein Satz zum Prüfen.")
+    nav = w.navigation
+    monkeypatch.setattr(QInputDialog, "getMultiLineText", staticmethod(lambda *a, **k: ("Notiztext", True)))
+    # --- Änderungen
+    nav.zeige_tab("aenderungen"); nav.show()
+    assert nav.anzahl("aenderungen") == 0 and not nav._aend_leer.isHidden()
+    nav.verfolgen_knopf.click()                                                  # schaltet das Verfolgen ein
+    assert w.befehle.an_verfolgen() and nav.verfolgen_knopf.text() == "an"
+    c = e.textCursor(); c.setPosition(len("Ein Satz zum Prüfen.")); e.setTextCursor(c)
+    e.insertPlainText(" Neu dazu.")
+    e.select_range(0, 3)
+    e.insertPlainText("Das")                                                      # zweite verfolgte Änderung
+    nav.aktualisieren()
+    assert nav.anzahl("aenderungen") >= 1
+    erste = nav._aend_karten[0]
+    anz = nav.anzahl("aenderungen")
+    [b for b in erste.findChildren(type(nav.verfolgen_knopf)) if b.text() == "Annehmen"][0].click()      # eine Änderung annehmen
+    assert nav.anzahl("aenderungen") == anz - 1
+    nav._befehl("aenderungenUebernehmen")                                          # alle annehmen
+    assert nav.anzahl("aenderungen") == 0
+    # --- Noten
+    nav.zeige_tab("noten")
+    assert nav.anzahl("noten") == 0 and not nav._noten_leer.isHidden()
+    c = e.textCursor(); c.setPosition(3); e.setTextCursor(c)
+    nav._befehl("fussnote")
+    assert nav.anzahl("noten") == 1 and len(e.noten["f"]) == 1
+    nav._befehl("endnote")
+    assert nav.anzahl("noten") == 2
+    karte = nav._noten_karten[0]
+    [b for b in karte.findChildren(type(nav.verfolgen_knopf)) if b.text() == "Löschen"][0].click()
+    assert nav.anzahl("noten") == 1

@@ -24,3 +24,17 @@ def app():
         w.deleteLater()
     a.sendPostedEvents(None, QEvent.DeferredDelete)
     a.processEvents()
+
+
+@pytest.fixture(autouse=True)
+def _fenster_aufraeumen(request):
+    """Nach jedem Test die offenen Fenster abbauen: sonst häufen sich Fenster und Timer an und der Lauf wird immer langsamer."""
+    yield
+    if "app" not in request.fixturenames:
+        return
+    from PySide6.QtCore import QEvent
+    a = QApplication.instance()
+    for w in a.topLevelWidgets():
+        w.deleteLater()
+    a.sendPostedEvents(None, QEvent.DeferredDelete)
+    a.processEvents()
