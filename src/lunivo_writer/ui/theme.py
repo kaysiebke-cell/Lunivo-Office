@@ -48,7 +48,10 @@ QToolButton { border: none; border-radius: 5px; padding: 2px; background: transp
 QToolButton:hover { background: %(hover)s; }
 QToolButton:pressed, QToolButton:checked { background: %(weich)s; }
 QToolButton:disabled { color: %(grau)s; }
-QToolButton::menu-button { border: none; width: 12px; border-top-right-radius: 5px; border-bottom-right-radius: 5px; }
+QToolButton[popupMode="1"] { padding-right: 16px; }
+QToolButton::menu-button { border: none; width: 16px; border-top-right-radius: 5px; border-bottom-right-radius: 5px; }
+QToolButton::menu-arrow { image: url(%(pfeil_unten)s); width: 9px; height: 9px; }
+QToolButton::menu-indicator { image: none; width: 0px; }
 QToolButton::menu-button:hover { background: %(hover)s; }
 QPushButton { border: 1px solid %(rand)s; border-radius: 6px; padding: 5px 14px; background: %(karte)s; }
 QPushButton:hover { background: %(hover)s; }

@@ -368,41 +368,23 @@ class Befehle:
         l = self.ed.textCursor().currentList() if self.ed else None
         return bool(l) and l.format().style() == QTextListFormat.ListDecimal
 
-    _LISTENARTEN = {
-        "disc": ("Punkt", "bullet", QTextListFormat.ListDisc, "disc"), "circle": ("Kreis", "bullet", QTextListFormat.ListCircle, "circle"),
-        "square": ("Quadrat", "bullet", QTextListFormat.ListSquare, "square"),
-        "dezimal": ("1. 2. 3.", "number", QTextListFormat.ListDecimal, "1.|2.|3."),
-        "klein": ("a. b. c.", "number", QTextListFormat.ListLowerAlpha, "a.|b.|c."),
-        "gross": ("A. B. C.", "number", QTextListFormat.ListUpperAlpha, "A.|B.|C."),
-        "roem_klein": ("i. ii. iii.", "number", QTextListFormat.ListLowerRoman, "i.|ii.|iii."),
-        "roem_gross": ("I. II. III.", "number", QTextListFormat.ListUpperRoman, "I.|II.|III."),
-    }
-
-    def _listenraster(self, art: str, titel: str, schluessel: tuple[str, ...]) -> RasterAuswahl:
-        """Bild-Raster für Aufzählungs- bzw. Nummerierungsarten; die gerade benutzte Art ist hervorgehoben."""
-        l = self.ed.textCursor().currentList() if self.ed else None
-        aktuell = next((k for k in schluessel if l and l.format().style() == self._LISTENARTEN[k][2]), None)
-        r = RasterAuswahl(self.w, titel=titel, spalten=3, groesse=QSize(48, 40))
-        r.kachel("keine", "Keine", liste_zeichner(None), aktuell=l is None)
-        for k in schluessel:
-            text, _kind, _stil, marke = self._LISTENARTEN[k]
-            r.kachel(k, text, liste_zeichner(marke), aktuell=k == aktuell)
-        r.gewaehlt.connect(self._liste_waehlen)
+    def _listenraster(self, art: str, titel: str) -> RasterAuswahl:
+        """Auswahl der Aufzählungs- bzw. Nummerierungsarten: dieselben Kacheln und Listen wie im Fenster „Nummerierung und Aufzählungszeichen“."""
+        from lunivo_writer.ui.baukasten.liste_dialog import aufzaehlungen, kachel_bild, nummerierungen
+        arten = aufzaehlungen() if art == "bullet" else nummerierungen()
+        aktuell = self.ed.liste_spec() if self.ed else None
+        r = RasterAuswahl(self.w, titel=titel, spalten=4, groesse=QSize(96, 68))
+        r.kachel("keine", "Keine", kachel_bild(None, QSize(96, 68)), aktuell=aktuell is None)
+        for i, spec in enumerate(arten):
+            r.kachel(str(i), "", kachel_bild(spec, QSize(96, 68)), aktuell=aktuell == spec)
+        r.gewaehlt.connect(lambda k: self._liste_setzen(None if k == "keine" else arten[int(k)]))
         r.fuss("Weitere Aufzählungszeichen …" if art == "bullet" else "Weitere Nummerierungen …",
                lambda: self.listeDialog("aufzaehlung" if art == "bullet" else "nummerierung"))
         return r
 
-    def _liste_waehlen(self, schluessel: str) -> None:
-        if not self.ed:
-            return
-        if schluessel == "keine":
-            self.ed.list_remove()
-            return
-        _text, kind, stil, _marke = self._LISTENARTEN[schluessel]
-        l = self.ed.textCursor().currentList()
-        if l and l.format().style() == stil:                 # schon diese Art: nichts umschalten
-            return
-        self.ed.toggle_list(kind, stil)
+    def _liste_setzen(self, spec) -> None:
+        if self.ed:
+            self.ed.set_liste(spec)
 
     def listeDialog(self, seite: str = "aufzaehlung"):
         """Fenster „Nummerierung und Aufzählungszeichen“ (Baukasten); das Ergebnis gilt für den Absatz an der Schreibmarke."""
@@ -415,10 +397,10 @@ class Befehle:
             self.ed.set_liste(d.ergebnis())
 
     def menue_aufzaehlungKlappe(self):
-        return self._listenraster("bullet", "Aufzählungszeichen", ("disc", "circle", "square"))
+        return self._listenraster("bullet", "Aufzählungszeichen")
 
     def menue_nummerierungKlappe(self):
-        return self._listenraster("number", "Nummerierung", ("dezimal", "klein", "gross", "roem_klein", "roem_gross"))
+        return self._listenraster("number", "Nummerierung")
 
     def menue_tabelleKlappe(self):
         """Tabelle einfügen wie bei WPS: Zellen überfahren, klicken; darunter der Dialog und die Schnelltabellen."""
@@ -1078,6 +1060,10 @@ class Befehle:
     def farbschema(self, k=None):
         if self.ed and (n := self._wahl("Farben", self.FARBSCHEMEN)):
             self.ed.apply_design(None, None, self.FARBSCHEMEN[n])
+
+    def designEffekte(self, k=None):
+        """Effekte des Designs: die Texteffekte (Schatten, Leuchten, Spiegelung …) für den markierten Text."""
+        self.texteffekte(k)
 
     def designSchriften(self, k=None):
         if self.ed and (n := self._wahl("Schriftarten", self.SCHRIFTPAARE)):

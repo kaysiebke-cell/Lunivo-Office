@@ -300,16 +300,16 @@ def test_listenraster_setzt_und_entfernt_listen(app, tmp_path):
     w = _fenster(tmp_path)
     e = w.current_editor(); e.insertPlainText("Eins\nZwei")
     r = w.befehle.menue_aufzaehlungKlappe()
-    assert set(r.knoepfe) == {"keine", "disc", "circle", "square"} and r.knoepfe["keine"].isChecked()
-    r.knoepfe["circle"].click()
-    assert e.textCursor().currentList().format().style() == QTextListFormat.ListCircle
+    assert set(r.knoepfe) == {"keine"} | {str(i) for i in range(7)} and r.knoepfe["keine"].isChecked()      # Punkt, Quadrat und fünf Zeichen
+    r.knoepfe["1"].click()                                  # Quadrat
+    assert e.textCursor().currentList().format().style() == QTextListFormat.ListSquare
     n = w.befehle.menue_nummerierungKlappe()
-    assert set(n.knoepfe) == {"keine", "dezimal", "klein", "gross", "roem_klein", "roem_gross"}
-    n.knoepfe["roem_gross"].click()
+    assert set(n.knoepfe) == {"keine"} | {str(i) for i in range(7)}
+    n.knoepfe["2"].click()                                  # I. II. III.
     assert e.textCursor().currentList().format().style() == QTextListFormat.ListUpperRoman
     n2 = w.befehle.menue_nummerierungKlappe()
-    assert n2.knoepfe["roem_gross"].isChecked() and not n2.knoepfe["dezimal"].isChecked()
-    n2.knoepfe["roem_gross"].click()                       # gleiche Art nochmal: bleibt (kein Umschalten wie beim Knopf)
+    assert n2.knoepfe["2"].isChecked() and not n2.knoepfe["0"].isChecked()
+    n2.knoepfe["2"].click()                                # gleiche Art nochmal: bleibt
     assert e.textCursor().currentList() is not None
     n2.knoepfe["keine"].click()
     assert e.textCursor().currentList() is None

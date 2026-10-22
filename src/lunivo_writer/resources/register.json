@@ -1049,24 +1049,28 @@
        "symbol": "vor",
        "name": "Nächster Kommentar",
        "gross": false,
+       "text": true,
        "tun": "kommentarWeiter"
       },
       {
        "symbol": "zurueck",
        "name": "Voriger Kommentar",
        "gross": false,
+       "text": true,
        "tun": "kommentarZurueck"
       },
       {
        "symbol": "kommentarweg",
        "name": "Kommentar löschen",
        "gross": false,
+       "text": true,
        "tun": "kommentarWeg"
       },
       {
        "symbol": "kommentareweg",
        "name": "Alle Kommentare löschen",
        "gross": false,
+       "text": true,
        "tun": "kommentareAlleWeg"
       }
      ]
@@ -1085,48 +1089,56 @@
        "symbol": "markup",
        "name": "Markup anzeigen",
        "gross": false,
+       "text": true,
        "tun": "markupUmschalten"
       },
       {
        "symbol": "bereich",
        "name": "Überarbeitungsbereich",
        "gross": false,
+       "text": true,
        "tun": "ueberarbeitungsbereich"
       },
       {
        "symbol": "annehmen",
        "name": "Änderung annehmen",
        "gross": false,
+       "text": true,
        "tun": "aenderungAnnehmen"
       },
       {
        "symbol": "ablehnen",
        "name": "Änderung ablehnen",
        "gross": false,
+       "text": true,
        "tun": "aenderungAblehnen"
       },
       {
        "symbol": "vor",
        "name": "Nächste Änderung",
        "gross": false,
+       "text": true,
        "tun": "aenderungWeiter"
       },
       {
        "symbol": "zurueck",
        "name": "Vorige Änderung",
        "gross": false,
+       "text": true,
        "tun": "aenderungZurueck"
       },
       {
        "symbol": "alleAn",
        "name": "Alle annehmen",
        "gross": false,
+       "text": true,
        "tun": "aenderungenUebernehmen"
       },
       {
        "symbol": "alleAb",
        "name": "Alle verwerfen",
        "gross": false,
+       "text": true,
        "tun": "aenderungenVerwerfen"
       }
      ]
@@ -1543,7 +1555,7 @@
        "tun": "kleiner"
       },
       {
-       "symbol": "100 %",
+       "symbol": "prozent100",
        "name": "100 %",
        "gross": false,
        "tun": "normal"
@@ -1630,18 +1642,21 @@
        "symbol": "automatisch",
        "name": "Wie das System",
        "gross": false,
+       "text": true,
        "tun": "w.setzeThema:[\"auto\"]"
       },
       {
        "symbol": "hell",
        "name": "Immer hell",
        "gross": false,
+       "text": true,
        "tun": "w.setzeThema:[\"light\"]"
       },
       {
        "symbol": "dunkel",
        "name": "Immer dunkel",
        "gross": false,
+       "text": true,
        "tun": "w.setzeThema:[\"dark\"]"
       }
      ]

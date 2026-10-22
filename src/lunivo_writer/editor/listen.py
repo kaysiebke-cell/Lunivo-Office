@@ -24,7 +24,7 @@ STILE = {
 AUFZAEHLUNGEN = tuple(k for k, v in STILE.items() if v[1])
 # Nummerierungen der Auswahl (Reiter „Nummerierung“): (Stil, Präfix, Suffix)
 NUMMERIERUNGEN = (("dezimal", "", "."), ("dezimal", "", ")"), ("roem_gross", "", "."), ("gross", "", "."),
-                  ("klein", "", ")"), ("klein", "", ""), ("roem_klein", "", "."))
+                  ("klein", "", ")"), ("klein", "", "."), ("roem_klein", "", "."))
 
 
 ZEICHEN_FELDER = ("schrift", "fett", "kursiv", "groesse", "farbe")

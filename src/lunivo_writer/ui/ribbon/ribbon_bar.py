@@ -140,7 +140,9 @@ class RegisterBand(QWidget):
         self.kopf.setContentsMargins(6, 2, 6, 0)
         self.kopf.setSpacing(2)
         self.menue_knopf = QToolButton()
-        self.menue_knopf.setText("☰ Menü ▾")
+        self.menue_knopf.setText("☰ Menü")
+        self.menue_knopf.setIcon(icons.icon("klappe", 12)); self.menue_knopf.setIconSize(QSize(12, 12))
+        self.menue_knopf.setToolButtonStyle(Qt.ToolButtonTextBesideIcon); self.menue_knopf.setLayoutDirection(Qt.RightToLeft)
         self.menue_knopf.setAutoRaise(True)
         self.kopf.addWidget(self.menue_knopf)
         self.schnell = QHBoxLayout()
@@ -518,7 +520,7 @@ class RegisterBand(QWidget):
         sa.setFixedWidth(3 * 85 + 4)
         sa.setFixedHeight(host.sizeHint().height() + 2)
         sa.setStyleSheet("QScrollArea#stileGalerie, QScrollArea#stileGalerie > QWidget > QWidget { background: transparent; }")
-        pfeil = QToolButton(); pfeil.setText("▾"); pfeil.setAutoRaise(True); pfeil.setFixedWidth(16)
+        pfeil = QToolButton(); pfeil.setIcon(icons.icon("klappe", 14)); pfeil.setIconSize(QSize(14, 14)); pfeil.setAutoRaise(True); pfeil.setFixedWidth(18)
         pfeil.setToolTip("Alle Formatvorlagen")
         pfeil.clicked.connect(lambda: self._stile_popup(pfeil))
         sa.viewport().installEventFilter(self)
@@ -669,14 +671,19 @@ class RegisterBand(QWidget):
         if menue:
             menu = QMenu(k)
             ok = self._menue_fuellen(menu, menue)
-            k.setPopupMode(QToolButton.InstantPopup)
+            k.setPopupMode(QToolButton.MenuButtonPopup)             # Symbol und Pfeil getrennt: der Pfeil sitzt nicht im Symbol
+            akt.triggered.connect(lambda _=False, kk=k: kk.showMenu())
         elif klappe and self.b.klappe(klappe) is not None:
             menu = self.b.klappe(klappe)
             menu.setParent(k, Qt.Popup)
-            k.setPopupMode(QToolButton.MenuButtonPopup if tun else QToolButton.InstantPopup)
+            k.setPopupMode(QToolButton.MenuButtonPopup)
+            if not tun:
+                akt.triggered.connect(lambda _=False, kk=k: kk.showMenu())
             ok = True
         if menu is not None:
             k.setMenu(menu)
+            if gross:
+                k.setMinimumWidth(k.minimumWidth() + 20)          # Platz für den Pfeil-Bereich, damit die Beschriftung nicht gekürzt wird
         if tun:
             ok = ok or self.b.hat(tun)
             akt.triggered.connect(lambda _=False, t=tun, kk=k: (self.b.tun(t, kk), self.aktualisieren()))
