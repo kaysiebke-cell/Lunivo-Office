@@ -1763,6 +1763,8 @@ class DocumentEditor(FreieBilderMixin, ZusatzMixin, QTextEdit):
             pos = self.cursorForPosition(e.pos()).position()
             if FO.klick(self, pos, self.window()) or kasten_umschalten(self, pos):
                 return
+            if (n := self.note_an(pos)) is not None and self.cursorRect(self.cursorForPosition(e.pos())).adjusted(-6, 0, 6, 0).contains(e.pos()):
+                self.noteAngeklickt.emit(*n)
         c = self.cursorForPosition(e.pos())
         c2 = QTextCursor(c)
         c2.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor)

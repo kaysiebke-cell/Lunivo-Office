@@ -121,6 +121,10 @@ class MainWindow(QMainWindow):
         mitte.addWidget(self._leiste_rechts())
         self.arbeit.setLayout(mitte)
         lay.addWidget(self.arbeit, 1)
+        from lunivo_writer.ui.document.noten_feld import NotenFeld
+        self.noten_feld = NotenFeld(self.current_editor)
+        self.noten_feld.geaendert.connect(lambda: self.navigation.aktualisieren())
+        lay.addWidget(self.noten_feld)
         from lunivo_writer.ui.backstage import Backstage
         self.backstage = Backstage(self)
         self.backstage.schliessen.connect(self.backstage_schliessen)
@@ -367,6 +371,7 @@ class MainWindow(QMainWindow):
         e.autor = self.autor_angaben
         e.mini_hook = self.mini_zeigen
         e.zusatzGeaendert.connect(self.navigation.spaeter)
+        e.noteAngeklickt.connect(lambda art, nid: self.noten_feld.oeffnen(art, nid))
         e.set_marken(self.settings.get_bool("ui/marken", False))
         self.formatzeichen_anwenden(e)
         self.lineale_anwenden(tab)
@@ -814,6 +819,7 @@ class MainWindow(QMainWindow):
                    ("F7", lambda: self.assistant.pruefen(True)), ("F8", b.kiKorrektur),
                    ("Ctrl++", b.groesser), ("Ctrl+-", b.kleiner), ("Ctrl+0", b.normal),
                    ("Ctrl+D", b.schriftartMehr), ("Ctrl+Alt+V", b.inhalteEinfuegen),
+                   ("Ctrl+Alt+F", b.fussnote), ("Ctrl+Alt+D", b.endnote),
                    ("Ctrl+Shift+H", b.ausblenden), ("Ctrl+Tab", lambda: self._tab_weiter(1)), ("Ctrl+Shift+Tab", lambda: self._tab_weiter(-1))]
         self._kuerzel = []
         for taste, fn in tabelle:

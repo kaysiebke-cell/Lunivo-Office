@@ -25,6 +25,7 @@ def autor_farbe(autor: str) -> QColor:
 
 class ZusatzMixin:
     zusatzGeaendert = Signal()
+    noteAngeklickt = Signal(str, int)      # Art („f“/„e“) und Nummer der Note, deren Zeichen im Text angeklickt wurde
 
     def _zusatz_init(self) -> None:
         self.kommentare: dict = {}
@@ -261,6 +262,22 @@ class ZusatzMixin:
         self.noten_neu_nummerieren()
         self.document().setModified(True)
         self._zus_geaendert()
+
+    def note_an(self, pos: int):
+        """(Art, Id) der Note, deren Zeichen an Stelle `pos` liegt (oder direkt davor), sonst None."""
+        for s in self.noten_stellen():
+            if s["von"] <= pos <= s["bis"]:
+                return s["art"], s["id"]
+        return None
+
+    def notentext_geaendert(self) -> None:
+        """Der Text einer Note wurde im Notenfeld geändert: Seitenansicht und Karten links ziehen nach (gebündelt, nicht bei jedem Zeichen)."""
+        self.zusatzGeaendert.emit()
+        if not hasattr(self, "_noten_timer"):
+            from PySide6.QtCore import QTimer
+            self._noten_timer = QTimer(self); self._noten_timer.setSingleShot(True); self._noten_timer.setInterval(400)
+            self._noten_timer.timeout.connect(lambda: self._recount() if hasattr(self, "_recount") else None)
+        self._noten_timer.start()
 
     def note_springen(self, delta: int):
         return self._springe(self.noten_stellen(), delta)

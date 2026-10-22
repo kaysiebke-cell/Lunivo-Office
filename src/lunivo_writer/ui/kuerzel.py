@@ -7,7 +7,7 @@ HILFE = [
                    ("Strg+Umschalt+Tab", "Voriges Dokument"), ("Strg+O", "Öffnen"), ("Strg+S", "Speichern"),
                    ("Strg+Umschalt+S", "Speichern unter"), ("Strg+P", "Drucken"), ("Strg+Q", "Beenden")]),
     ("Schreiben", [("Strg+Z", "Rückgängig"), ("Strg+Y", "Wiederholen"), ("Strg+B", "Fett"), ("Strg+I", "Kursiv"),
-                   ("Strg+U", "Unterstrichen"), ("Strg+K", "Hyperlink"), ("Strg+D", "Fenster Schriftart"), ("Strg+Alt+V", "Inhalte einfügen"), ("Strg+F", "Suchen"), ("Strg+H", "Ersetzen"),
+                   ("Strg+U", "Unterstrichen"), ("Strg+K", "Hyperlink"), ("Strg+D", "Fenster Schriftart"), ("Strg+Alt+V", "Inhalte einfügen"), ("Strg+Alt+F", "Fußnote einfügen"), ("Strg+Alt+D", "Endnote einfügen"), ("Strg+F", "Suchen"), ("Strg+H", "Ersetzen"),
                    ("Strg+A", "Alles auswählen"), ("Strg+Enter", "Seitenumbruch"), ("Strg+L / E / R / J", "Links / Zentriert / Rechts / Blocksatz"),
                    ("Strg++ / Strg+− / Strg+0", "Ansicht größer / kleiner / 100 %"), ("Strg+1 … 6", "Wortvorschlag nehmen"),
                    ("F3", "Textbaustein einfügen"), ("Tab", "Zur nächsten Lücke «…» (sonst Einzug)"), ("Strg+Klick", "Hyperlink öffnen")]),

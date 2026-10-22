@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from PySide6.QtCore import QObject, QRunnable, QThreadPool, QTimer, Signal
 
+import re
 from lunivo_writer.services.gelernt import Gelernt
 from lunivo_writer.proofing import autokorrektur, fund as fundlib, inkrement, pruefung, vorhersage
 
@@ -16,7 +17,14 @@ ART_REIHENFOLGE = {"fehler": 0, "tipp": 1, "hinweis": 2}
 
 
 def zeige_leer(s: str) -> str:
-    return s.replace(" ", "␣").replace("\n", "⏎")
+    """Leerzeichen und Zeilenumbrüche in Worten statt in Symbolen: „2 Leerzeichen“, „Zeilenumbruch“ (auch gut vorlesbar)."""
+    def wort(m):
+        t = m.group(0)
+        if t.startswith("\n"):
+            return "Zeilenumbruch" if len(t) == 1 else f"{len(t)} Zeilenumbrüche"
+        return "1 Leerzeichen" if len(t) == 1 else f"{len(t)} Leerzeichen"
+    ganz = not s.strip(" \n")
+    return re.sub(r" +|\n+", lambda m: wort(m) if ganz else f"[{wort(m)}]", s)
 
 
 class _Signale(QObject):

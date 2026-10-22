@@ -1965,8 +1965,9 @@ class Befehle:
             self.ed.kommentare_alle_loeschen()
 
     def _note(self, art, titel):
-        if self.ed and (t := self._text_abfragen(titel, "Text der Note:")):
-            self.ed.note_neu(art, t)
+        """Neue Note: das Zeichen kommt in den Text, unten öffnet sich das Notenfeld mit dem Cursor darin."""
+        if self.ed:
+            self.w.noten_feld.oeffnen(art, self.ed.note_neu(art, ""))
 
     def fussnote(self, k=None): self._note("f", "Fußnote einfügen")
     def endnote(self, k=None): self._note("e", "Endnote einfügen")
@@ -1979,10 +1980,8 @@ class Befehle:
     def notenZeigen(self, k=None): self.w.zeige_navigation("noten")
 
     def note_bearbeiten(self, art, nid):
-        if self.ed and (t := self._text_abfragen("Note bearbeiten", "Text der Note:", self.ed.noten[art].get(nid, ""))):
-            self.ed.noten[art][nid] = t
-            self.ed.document().setModified(True)
-            self.w.navigation.aktualisieren()
+        if self.ed:
+            self.w.noten_feld.oeffnen(art, nid)
 
     def verfolgen(self, k=None):
         if self.ed:

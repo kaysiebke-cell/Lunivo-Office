@@ -310,6 +310,7 @@ def test_kommentar_note_verfolgen_ueber_befehle(app, tmp_path, monkeypatch):
     assert len(e.kommentare) == 1 and w.navigation.anzahl("kommentare") == 1
     c = e.textCursor(); c.setPosition(e.document().characterCount() - 1); e.setTextCursor(c)
     w.befehle.fussnote()
+    w.noten_feld.eingabe.setPlainText("Mein Text")                              # unten im Notenfeld getippt
     w.navigation.aktualisieren()
     assert len(e.noten["f"]) == 1 and w.navigation.anzahl("noten") == 1
     assert not w.befehle.an_verfolgen()
@@ -487,3 +488,44 @@ def test_aenderungen_und_noten_im_feld_links_sind_echte_funktionen(app, tmp_path
     karte = nav._noten_karten[0]
     [b for b in karte.findChildren(type(nav.verfolgen_knopf)) if b.text() == "Löschen"][0].click()
     assert nav.anzahl("noten") == 1
+
+
+def test_tastenkuerzel_fuer_fussnote_und_endnote(app, tmp_path, monkeypatch):
+    """Strg+Alt+F setzt eine Fußnote, Strg+Alt+D eine Endnote (wie in der Hilfe beschrieben)."""
+    from PySide6.QtWidgets import QInputDialog
+    w = win(tmp_path)
+    w.new_document(); w.show()
+    e = w.current_editor()
+    e.insertPlainText("Ein Satz mit Quelle.")
+    monkeypatch.setattr(QInputDialog, "getMultiLineText", staticmethod(lambda *a, **k: ("Beleg", True)))
+    kuerzel = {sc.key().toString(): sc for sc in w._kuerzel}
+    kuerzel["Ctrl+Alt+F"].activated.emit()
+    kuerzel["Ctrl+Alt+D"].activated.emit()
+    assert len(e.noten["f"]) == 1 and len(e.noten["e"]) == 1
+
+
+def test_notenfeld_unten_schreibt_in_dieselbe_note_wie_das_feld_links(app, tmp_path):
+    """Strg+Alt+F öffnet unten das Notenfeld mit dem Cursor darin; Tippen, Klick aufs Zeichen und das Feld links arbeiten an derselben Note."""
+    from PySide6.QtCore import Qt
+    from PySide6.QtTest import QTest
+    w = win(tmp_path)
+    w.new_document(); w.show()
+    e = w.current_editor()
+    e.insertPlainText("Ein Satz mit Quelle.")
+    w.befehle.fussnote()
+    assert w.noten_feld.isVisible()
+    assert w.noten_feld.titel.text() == "Fußnote 1"
+    w.noten_feld.eingabe.setPlainText("Müller 2025, S. 4")                          # getippt: steht sofort in der Note
+    assert list(e.noten["f"].values()) == ["Müller 2025, S. 4"]
+    w.navigation.aktualisieren()
+    assert w.navigation.anzahl("noten") == 1
+    QTest.keyClick(w.noten_feld.eingabe, Qt.Key_Escape)                           # Esc: Feld zu, Text bleibt
+    assert not w.noten_feld.isVisible() and list(e.noten["f"].values()) == ["Müller 2025, S. 4"]
+    nid = next(iter(e.noten["f"]))
+    e.noteAngeklickt.emit("f", nid)                                                 # Klick auf das Zeichen im Text
+    assert w.noten_feld.isVisible() and w.noten_feld.eingabe.toPlainText() == "Müller 2025, S. 4"
+    w.noten_feld.zumachen()
+    w.befehle.note_bearbeiten("f", nid)                                            # „Bearbeiten“ im Feld links: dasselbe Feld
+    assert w.noten_feld.isVisible()
+    w.befehle.endnote()
+    assert w.noten_feld.titel.text() == "Endnote i"
