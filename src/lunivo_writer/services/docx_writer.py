@@ -956,6 +956,37 @@ class _Writer:
                 if dash:
                     pd = OxmlElement("a:prstDash"); pd.set("val", dash); ln.append(pd)
                 sppr.append(ln)
+        if a.get("fx"):
+            for sppr in run._r.xpath(".//pic:spPr"):
+                lst = self._effekte_element(a["fx"])
+                if len(lst):
+                    sppr.append(lst)
+
+    @staticmethod
+    def _effekte_element(fx: dict):
+        """Schatten, Leuchten, Spiegelung und weiche Kanten als ``a:effectLst`` (Längen in Punkt → EMU, Winkel in 1/60000 Grad)."""
+        pt = 12700
+
+        def farbe(el, hexfarbe: str, transparenz) -> None:
+            c = OxmlElement("a:srgbClr"); c.set("val", str(hexfarbe or "#000000").lstrip("#").upper())
+            al = OxmlElement("a:alpha"); al.set("val", str(int(round((100 - float(transparenz)) * 1000)))); c.append(al); el.append(c)
+        lst = OxmlElement("a:effectLst")
+        if fx.get("leuchten"):
+            g = fx["leuchten"]; el = OxmlElement("a:glow"); el.set("rad", str(int(float(g.get("groesse", 8)) * pt)))
+            farbe(el, g.get("farbe", "#4c6ef5"), g.get("transparenz", 60)); lst.append(el)
+        if fx.get("schatten"):
+            sc = fx["schatten"]; el = OxmlElement("a:outerShdw")
+            el.set("blurRad", str(int(float(sc.get("weich", 4)) * pt))); el.set("dist", str(int(float(sc.get("abstand", 4)) * pt)))
+            el.set("dir", str(int(float(sc.get("winkel", 45)) * 60000))); el.set("algn", "ctr"); el.set("rotWithShape", "0")
+            farbe(el, sc.get("farbe", "#000000"), sc.get("transparenz", 60)); lst.append(el)
+        if fx.get("reflektion"):
+            r = fx["reflektion"]; el = OxmlElement("a:reflection")
+            el.set("blurRad", str(int(float(r.get("weich", 0.5)) * pt))); el.set("stA", str(int(round((100 - float(r.get("transparenz", 50))) * 1000))))
+            el.set("endA", "0"); el.set("endPos", str(int(float(r.get("groesse", 50)) * 1000))); el.set("dist", str(int(float(r.get("abstand", 0)) * pt)))
+            el.set("dir", "5400000"); el.set("sy", "-100000"); el.set("algn", "bl"); el.set("rotWithShape", "0"); lst.append(el)
+        if fx.get("weich"):
+            el = OxmlElement("a:softEdge"); el.set("rad", str(int(float(fx["weich"].get("radius", 6)) * pt))); lst.append(el)
+        return lst
 
     def _verankern(self, run, ausrichtung: str) -> None:
         """Macht aus dem Bild im Text (wp:inline) ein umflossenes Bild (wp:anchor, Umbruch „Quadrat“, links/rechts)."""

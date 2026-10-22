@@ -234,6 +234,18 @@ class RegisterBand(QWidget):
             self.schnell.addWidget(k)
             self.knoepfe.append((k, aktion, sym in ("speichern", "pdf", "drucken", "vorschau", "zurueck", "vor")))
 
+    def ki_schnell(self, aktionen: list, ausfuehren) -> None:
+        """„Schnelle KI-Aktionen“ mit Zugriff „Schnellzugriff“: je ein Knopf hinter den übrigen der Schnellzugriffsleiste."""
+        for k in getattr(self, "_ki_schnell_knoepfe", []):
+            self.schnell.removeWidget(k); k.hide(); k.setParent(None); k.deleteLater()
+        self._ki_schnell_knoepfe = []
+        for a in aktionen:
+            k = QToolButton(); k.setAutoRaise(True); k.setToolTip("KI: " + a["name"])
+            k.setIcon(icons.icon("assistent", 18)); k.setIconSize(QSize(18, 18))
+            k.clicked.connect(lambda _=False, a=a: ausfuehren(a))
+            self.schnell.addWidget(k)
+            self._ki_schnell_knoepfe.append(k)
+
     # ---- Reiter und Gruppen -------------------------------------------------------------------------------
     def _reiter(self, r: dict):
         scroll = _BandSeite()

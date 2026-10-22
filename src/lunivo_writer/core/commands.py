@@ -1531,18 +1531,13 @@ class Befehle:
 
     # ---- KI: eigene Assistenten ----------------------------------------------------------------------------------------
     def w_assistentErstellen(self, k=None):
-        from PySide6.QtWidgets import QComboBox, QDialog, QDialogButtonBox, QFormLayout, QLineEdit as _LE, QPlainTextEdit
-        d = QDialog(self.w); d.setWindowTitle("Eigenen Assistenten erstellen")
-        form = QFormLayout(d)
-        name = _LE(); prompt = QPlainTextEdit(); prompt.setPlaceholderText("Was soll die KI mit dem Text tun? z. B. „Prüfe die genannten Fakten und nenne Zweifel.“")
-        modus = QComboBox(); modus.addItems(["Ergebnis als Karte zeigen (hinweis)", "Text ersetzen (ersetzen)"])
-        for lab, w in (("Name", name), ("Anweisung", prompt), ("Wirkung", modus)):
-            form.addRow(lab, w)
-        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel); bb.accepted.connect(d.accept); bb.rejected.connect(d.reject)
-        form.addRow(bb)
-        if d.exec() and name.text().strip() and prompt.toPlainText().strip():
-            self.w.ki.konfig.assistent_hinzufuegen(name.text(), prompt.toPlainText(), "ersetzen" if modus.currentIndex() == 1 else "hinweis")
-            self.w.statusBar().showMessage(f"Assistent „{name.text().strip()}“ angelegt (KI ▸ Eigene Assistenten).", 5000)
+        """„Schnelle KI-Aktion erstellen“ — dasselbe wie „Eigenen Assistenten erstellen“: ein Eintrag in der Liste der Assistenten."""
+        from lunivo_writer.ui.dialogs.ki_dialoge import SchnelleAktionDialog
+        d = SchnelleAktionDialog(self.w)
+        if d.exec():
+            e = self.w.ki.konfig.assistent_hinzufuegen(*d.werte())
+            self.w.ki.geaendert.emit()
+            self.w.statusBar().showMessage(f"Aktion „{e['name']}“ angelegt (KI ▸ Eigene Assistenten).", 5000)
 
     def menue_assistenten(self):
         m = QMenu()
@@ -2488,13 +2483,16 @@ class Befehle:
     def kiEntwerfen(self, k=None): self.w.chat_oeffnen("Entwirf einen Text zu folgendem Anliegen: ")
     def w_chatUmschalten(self, k=None): self.w.chat_oeffnen("")
     def w_kiKonfiguration(self, k=None):
-        from lunivo_writer.ui.dialogs.ki_dialoge import KIKonfigurationDialog
-        KIKonfigurationDialog(self.w).exec()
+        from lunivo_writer.ui.dialogs.ki_dialoge import KIEinstellungenDialog
+        KIEinstellungenDialog(self.w, 1).exec()
 
     def w_eigenenAnbieterHinzufuegen(self, k=None):
-        from lunivo_writer.ui.dialogs.ki_dialoge import AnbieterDialog
-        if AnbieterDialog(self.w, self.w.ki.konfig).exec():
-            self.w.ki.geaendert.emit()
+        from lunivo_writer.ui.dialogs.ki_dialoge import KIEinstellungenDialog
+        KIEinstellungenDialog(self.w, 0).exec()
+
+    def w_kiErgebnisse(self, k=None):
+        from lunivo_writer.ui.dialogs.ki_dialoge import ErgebnisseDialog
+        ErgebnisseDialog(self.w).exec()
 
     def kiTextInBild(self, k=None): self.w.ki.bild_aus_text()
     def kiTextAktion(self, k=None, aktion="verbessern"): self.w.ki.text_aktion(aktion)

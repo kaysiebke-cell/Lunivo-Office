@@ -1691,6 +1691,11 @@ class DocumentEditor(FreieBilderMixin, ZusatzMixin, QTextEdit):
         if ki is not None and self.textCursor().hasSelection() and not self.isReadOnly():
             m.addSeparator()
             m.addAction("KI: Text in Bild", ki.bild_aus_text)
+            aktionen = [a for a in ki.konfig["assistenten"] if a.get("zugriff", "kontext") == "kontext"]
+            if aktionen:
+                sub = m.addMenu("KI-Aktionen")
+                for a in aktionen:
+                    sub.addAction(a["name"], lambda _=False, a=a: ki.assistent(a))
         mini = self.mini_hook is not None and self.opt("ui/mini_rechtsklick", True) and not self.isReadOnly()
         if mini:
             self.mini_hook(self, e.globalPos(), True)

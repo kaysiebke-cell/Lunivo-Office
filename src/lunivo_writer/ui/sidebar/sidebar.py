@@ -207,7 +207,7 @@ class SchreibhilfePanel(QWidget):
             self.ki_info.setText("Die drei Knöpfe sind grau, weil kein KI-Schlüssel gespeichert ist. "
                                  "Ollama auf diesem Rechner geht ohne Schlüssel und ohne Geld.")
             self.ki_aktion.setText("Einrichten …")
-            self._ki_fn = lambda: self.fenster.show_options("ki")
+            self._ki_fn = lambda: self.fenster.befehle.tun("w.eigenenAnbieterHinzufuegen")
             self.ki_aktion.show()
 
     def _ollama_pruefen(self) -> None:
@@ -340,20 +340,16 @@ class SchreibhilfePanel(QWidget):
         self.stapel.setCurrentIndex(i)
         self.bereich_geaendert.emit(i)
 
-    def setze_bereiche(self, band, ki_gruppen: list) -> None:
-        """Den KI-Bereich aus den Gruppen des Reiters Schreibhilfe bauen (Chat und KI-Gruppen)."""
+    def setze_bereiche(self, band=None, ki_gruppen=None) -> None:
+        """Den KI-Bereich bauen: nur der Chat (Verlauf, Eingabe) — alles andere steht im Reiter Schreibhilfe und im Fenster „KI-Einstellungen“."""
         host = QWidget()
         lay = QVBoxLayout(host)
         lay.setContentsMargins(12, 10, 12, 10)
         lay.setSpacing(8)
-        zurueck = QPushButton("Zur Schreibhilfe")
-        zurueck.clicked.connect(lambda: self.zeige_bereich(0))
-        lay.addWidget(zurueck)
         from lunivo_writer.ui.sidebar.panels.ai_panel import ChatPanel
         self.chat = ChatPanel(self.ki, self.fenster)
+        self.chat.zurueck.connect(lambda: self.zeige_bereich(0))
         lay.addWidget(self.chat, 1)
-        for g in ki_gruppen:
-            lay.addWidget(band.gruppe_widget(g))
         self._seite_ki.setWidget(host)
 
     def zeige(self, funde: list) -> None:

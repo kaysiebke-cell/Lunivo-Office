@@ -335,3 +335,83 @@ def test_live_vorschau(app, tmp_path, monkeypatch):
     w.settings.set("ui/live_vorschau", False)
     w.vorschau.zeigen(lambda ed: ed.toggle_bold(True))
     assert not w.vorschau.aktiv
+
+
+def test_ki_einstellungen_schnelle_aktion_und_chat(app, tmp_path, monkeypatch):
+    """Ein Fenster „KI-Einstellungen“ (Reiter grau, bis ein Modell da ist), Schnelle KI-Aktion als Assistent, Chat ohne Bandgruppen."""
+    from lunivo_writer.ui.dialogs.ki_dialoge import KIEinstellungenDialog, SchnelleAktionDialog
+    w = win(tmp_path, monkeypatch)
+    k = w.ki.konfig
+    monkeypatch.setattr(type(w.ki), "verfuegbar", lambda self: False)
+    d = KIEinstellungenDialog(w)
+    assert [d.reiter.isTabEnabled(i) for i in range(4)] == [True, False, False, False]
+    monkeypatch.setattr(type(w.ki), "verfuegbar", lambda self: True)
+    d2 = KIEinstellungenDialog(w, 1)
+    assert d2.reiter.currentIndex() == 1 and d2.reiter.isTabEnabled(1) and not d2.reiter.isTabEnabled(3)
+    a = SchnelleAktionDialog(w)
+    a._vorlage("Kürzer machen", "Kürze den Text.")
+    a.r_schnell.setChecked(True); a.ergebnis.setCurrentIndex(1)
+    e = k.assistent_hinzufuegen(*a.werte())
+    assert e["modus"] == "anhaengen" and e["zugriff"] == "schnell" and k["assistenten"][-1] is e
+    w.ki_schnell_zeigen()
+    assert len(w.band._ki_schnell_knoepfe) == 1
+    # Chat: ohne Modell der Hinweis, mit Modell Verlauf und Eingabe — und keine Bandgruppen darin
+    c = w.sidebar.chat
+    monkeypatch.setattr(type(w.ki), "verfuegbar", lambda self: False)
+    c.zustand()
+    assert c.hinweis.isVisibleTo(c) and not c.eingabezeile.isVisibleTo(c)
+    monkeypatch.setattr(type(w.ki), "verfuegbar", lambda self: True)
+    c.zustand()
+    assert not c.hinweis.isVisibleTo(c) and c.eingabezeile.isVisibleTo(c)
+
+
+def test_ki_ergebnisse_und_band(app, tmp_path, monkeypatch):
+    from PySide6.QtWidgets import QToolButton
+    from lunivo_writer.ui.dialogs.ki_dialoge import ErgebnisseDialog
+    w = win(tmp_path, monkeypatch)
+    w.ki.merke_ergebnis("Zusammenfassen", "Kurz gesagt: ...", "langer Text")
+    w.ki.merke_ergebnis("Übersetzen", "Hello")
+    d = ErgebnisseDialog(w)
+    assert d.liste.count() == 2 and d.text.toPlainText() == "Hello" and d.einfuegen.isEnabled()
+    d.liste.setCurrentRow(1)
+    assert d.text.toPlainText().startswith("Kurz gesagt")
+    namen = {k.toolTip() for k in w.band.findChildren(QToolButton)}
+    assert {"Alle Ergebnisse anzeigen", "Grammatik & Rechtschreibung"} <= namen
+    assert w.befehle.hat("w.kiErgebnisse")
+
+
+def test_chat_erweiterte_einstellungen(app, tmp_path, monkeypatch):
+    """Die erweiterten Einstellungen des Chats stehen in der KI-Konfiguration, wirken auf Anfragen und teilen sich die Modellwahl mit der Zuweisung."""
+    import json as _json
+    from lunivo_writer.ai import ki as K
+    w = win(tmp_path, monkeypatch)
+    monkeypatch.setattr(type(w.ki), "verfuegbar", lambda self: True)
+    k = w.ki.konfig
+    c = w.sidebar.chat
+    c.s_temp.setValue(7); c.s_top.setValue(9); c.s_laenge.setValue(300); c.stopp.setText("ENDE, ###"); c.direkt.setChecked(True)
+    o = k.chat_optionen()
+    assert o["temperatur"] == 0.7 and o["topP"] == 0.9 and o["maxLaenge"] == 300 and o["stopp"] == "ENDE, ###" and o["direkt"]
+    c.eingabe.setText("a" * 40)
+    assert c.tokens.text() == "Tokens: 10"
+    # Das Modell des Chats ist die „Chatbot“-Zuweisung — keine zweite Einstellung
+    k.anbieter_hinzufuegen("Lokal", "http://localhost:11434/v1", "", "m", ["text"])
+    c._modelle_neu()
+    c.modell.setCurrentIndex(c.modell.findData(K.EIGEN_MARKE + k["anbieter"][0]["id"]))
+    assert k["aufgaben"]["chatbot"] == K.EIGEN_MARKE + k["anbieter"][0]["id"]
+    # Die Werte gehen in die Anfrage an einen eigenen Anbieter
+    gesehen = {}
+
+    class _R:
+        def __enter__(s): return s
+        def __exit__(s, *a): return False
+        def read(s): return _json.dumps({"choices": [{"message": {"content": "ok"}}]}).encode()
+
+    def falsch(url, kopf, body, timeout):
+        gesehen.update(body); return _R()
+    monkeypatch.setattr(K, "_post", falsch)
+    assert w.ki.ki.chat([{"rolle": "mensch", "text": "hi"}])["text"] == "ok"
+    assert gesehen["temperature"] == 0.7 and gesehen["top_p"] == 0.9 and gesehen["max_tokens"] == 300 and gesehen["stop"] == ["ENDE", "###"]
+    # Andere KI-Aufgaben (Korrektur, Übersetzung …) bleiben bei ihren festen Werten
+    gesehen.clear()
+    w.ki.ki.zusammenfassen("Text")
+    assert "temperature" not in gesehen and "top_p" not in gesehen

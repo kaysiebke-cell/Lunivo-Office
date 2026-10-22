@@ -42,10 +42,16 @@ class KIDienst(QObject):
         self.konfig = K.KIKonfig(os.path.join(data_dir(), "ki.json"))
         self.ki = K.KI(self.konfig, assistant.gelernt.daten)
         self._beschaeftigt = False
+        self.ergebnisse: list[dict] = []          # „Alle Ergebnisse anzeigen“: die KI-Antworten dieser Sitzung (neueste zuletzt)
         self._pool = QThreadPool(self)
         self._sig = _Sig()
         self._sig.fertig.connect(self._fertig)
         self.konfig.d["empfaenger"] = assistant.thema
+
+    def merke_ergebnis(self, titel: str, text: str, vorlage: str = "") -> None:
+        import time
+        self.ergebnisse.append({"titel": titel, "text": text, "vorlage": vorlage[:300], "zeit": time.strftime("%H:%M")})
+        del self.ergebnisse[:-50]
 
     # ---- Zustand ------------------------------------------------------------------
     def verfuegbar(self) -> bool:
@@ -94,6 +100,8 @@ class KIDienst(QObject):
             self.w.show_options("ki")
             return
         eing = eing or self._eingabe()
+        if eing is not None:
+            eing["_titel"] = meldung.strip(" .…„“").strip() or "KI"
         if eing is None or not eing["text"].strip():
             self.status.emit("Es steht noch kein Text da.")
             return
@@ -114,10 +122,14 @@ class KIDienst(QObject):
             return
         if danach == "chat":
             self.chatAntwort.emit("⚠ " + r["fehler"] if "fehler" in r else r["text"], r.get("cent"))
+            if "fehler" not in r:
+                self.merke_ergebnis("KI-Chat", r["text"])
             return
         if "fehler" in r:
             self.status.emit(r["fehler"])
             return
+        if r.get("text"):
+            self.merke_ergebnis(eing.get("_titel", "KI"), r["text"], eing.get("text", ""))
         ed = eing["ed"]
         try:
             neu_rev = ed.document().revision()
@@ -196,6 +208,15 @@ class KIDienst(QObject):
             msg = ganz_text if ganz else f"{n} {'Absatz' if n == 1 else 'Absätze'} geändert."
         self.status.emit(msg + " Strg+Z macht es rückgängig." + self._preis(r.get("cent")))
 
+    def _anhaengen(self, r, eing, name: str) -> None:
+        """Das Ergebnis hinter die Markierung (ohne Markierung: ans Ende des Textes) setzen — als ein Schritt für Rückgängig."""
+        from PySide6.QtGui import QTextCursor
+        ed = eing["ed"]
+        c = QTextCursor(ed.document())
+        c.setPosition(min(eing["basis"] + len(eing["text"]), ed.document().characterCount() - 1))
+        c.insertText((" " if eing["markiert"] else "\n") + r["text"].strip())
+        self.status.emit(f"{name}: Ergebnis angehängt. Strg+Z macht es rückgängig." + self._preis(r.get("cent")))
+
     def korrigieren(self) -> None:
         self.ki.gelernt = self.assistant.gelernt.daten
         self.starte("Die KI liest den ganzen Text …", self.ki.korrigieren,
@@ -217,6 +238,8 @@ class KIDienst(QObject):
         arbeit = lambda t: self.ki.eigener_assistent(t, a["prompt"])           # noqa: E731
         if a["modus"] == "ersetzen":
             self.starte(f"„{a['name']}“ …", arbeit, lambda r, e: self._einsetzen(r, e, a["name"] + ".", "Markierung: " + a["name"] + "."))
+        elif a["modus"] == "anhaengen":
+            self.starte(f"„{a['name']}“ …", arbeit, lambda r, e: self._anhaengen(r, e, a["name"]))
         else:
             self.starte(f"„{a['name']}“ …", arbeit, lambda r, e: self.hinweis.emit(a["name"], r["text"], r.get("cent")))
 

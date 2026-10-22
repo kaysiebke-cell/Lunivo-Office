@@ -14,8 +14,13 @@ KI = {"name": "KI", "gruppen": [
                                       _k("vorschlag", "Verbesserungsvorschläge", "kiVorschlaege", True)]},
     {"name": "Seitenleiste", "knoepfe": [_k("tafel", "Schreibhilfe-Seitenleiste", "tafelZeigen", True),
                                          _k("chat", "KI-Chat", "w.chatUmschalten", True)]},
+    {"name": "Ergebnisse", "knoepfe": [
+        _k("zusammenfassen", "Alle Ergebnisse anzeigen", "w.kiErgebnisse", True),
+        {"symbol": "haken", "name": "Grammatik & Rechtschreibung", "gross": True, "menue": [
+            {"name": "KI-Korrektur", "tun": "kiKorrektur"}, {"name": "Verbesserungsvorschläge", "tun": "kiVorschlaege"}, {"trenner": True},
+            {"name": "Rechtschreibung", "tun": "rechtschreibung"}, {"name": "Gründlich prüfen", "tun": "gruendlichPruefen"}]}]},
     {"name": "Einrichten", "knoepfe": [_k("assistent", "Eigene Assistenten", klappe="assistenten", gross=True),
-                                       _k("assistent", "Eigenen Assistenten erstellen", "w.assistentErstellen"),
+                                       _k("assistent", "Schnelle KI-Aktion erstellen", "w.assistentErstellen"),
                                        _k("kombination", "Eigenen Anbieter hinzufügen", "w.eigenenAnbieterHinzufuegen"),
                                        _k("zahnrad", "KI-Konfiguration", "w.kiKonfiguration")]},
 ]}

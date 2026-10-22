@@ -875,6 +875,35 @@ class _Reader:
         from lunivo_writer.editor.zusatz import roemisch
         return str(n) if art == "f" else roemisch(n)
 
+    @staticmethod
+    def _effekte_lesen(drawing) -> dict:
+        """``a:effectLst`` am Bild → ``fx`` (Schatten, Leuchten, Spiegelung, weiche Kanten) in den Werten des Programms."""
+        from lunivo_writer.editor.freie_bilder import farbe_aus_element
+        pt = 12700.0
+        fx: dict = {}
+
+        def farbe(el):
+            c = _xp(el, "a:srgbClr")
+            if not c:
+                return "#000000", 0
+            al = _xp(c[0], "a:alpha/@val")
+            return farbe_aus_element(c[0], _NS).name(), 100 - (int(al[0]) / 1000 if al else 100)
+        try:
+            for el in _xp(drawing, ".//pic:spPr/a:effectLst/a:glow"):
+                f, t = farbe(el); fx["leuchten"] = {"farbe": f, "groesse": int(el.get("rad") or 0) / pt, "transparenz": t}
+            for el in _xp(drawing, ".//pic:spPr/a:effectLst/a:outerShdw"):
+                f, t = farbe(el)
+                fx["schatten"] = {"farbe": f, "transparenz": t, "groesse": 100, "weich": int(el.get("blurRad") or 0) / pt,
+                                  "abstand": int(el.get("dist") or 0) / pt, "winkel": int(el.get("dir") or 0) / 60000}
+            for el in _xp(drawing, ".//pic:spPr/a:effectLst/a:reflection"):
+                fx["reflektion"] = {"groesse": int(el.get("endPos") or 50000) / 1000, "transparenz": 100 - int(el.get("stA") or 50000) / 1000,
+                                    "weich": int(el.get("blurRad") or 0) / pt, "abstand": int(el.get("dist") or 0) / pt}
+            for el in _xp(drawing, ".//pic:spPr/a:effectLst/a:softEdge"):
+                fx["weich"] = {"radius": int(el.get("rad") or 0) / pt}
+        except Exception:                                              # noqa: BLE001 — ein ungewöhnlicher Effekt darf das Laden nicht verhindern
+            return {}
+        return fx
+
     def _frei(self, drawing, teil=None, inline_ok: bool = False):
         """Ein Bild, das frei auf dem Blatt liegt (wp:anchor ohne Textumbruch) → (Angabe, QImage); ``False``, wenn es nicht darstellbar ist
         (Vektorbild); ``None``, wenn es kein solches Bild ist (steht im Text oder umflossen). Siehe editor/freie_bilder.py."""
@@ -925,6 +954,9 @@ class _Reader:
                   "ellipse": bool(_xp(drawing, ".//a:prstGeom[@prst='ellipse']"))}
         if rand:
             angabe["rand"] = rand
+        fx = self._effekte_lesen(drawing)
+        if fx:
+            angabe["fx"] = fx
         fl = _xp(drawing, ".//pic:spPr/a:solidFill/*")  # Füllung der Form hinter dem Bild
         if fl:
             try:

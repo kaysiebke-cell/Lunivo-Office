@@ -1249,13 +1249,13 @@ class OptionenAnsicht(QWidget):
             aufgaben_fuellen(); modell_fuellen(); anbieter_fuellen()
 
         def anbieter_neu():
-            from lunivo_writer.ui.dialogs.ki_dialoge import AnbieterDialog
-            if AnbieterDialog(self.w, k).exec():
-                alles_neu(); geaendert.emit()
+            from lunivo_writer.ui.dialogs.ki_dialoge import KIEinstellungenDialog
+            KIEinstellungenDialog(self.w, 0).exec()
+            alles_neu(); geaendert.emit()
 
         def modelle_bearbeiten():
-            from lunivo_writer.ui.dialogs.ki_dialoge import ModellListeDialog
-            ModellListeDialog(self.w, k).exec()
+            from lunivo_writer.ui.dialogs.ki_dialoge import KIEinstellungenDialog
+            KIEinstellungenDialog(self.w, 0).exec()
             alles_neu(); geaendert.emit()
         neuer.clicked.connect(anbieter_neu)
         mb.clicked.connect(modelle_bearbeiten)

@@ -80,6 +80,7 @@ class MainWindow(QMainWindow):
         self.assistant.status.connect(lambda t: self.lbl_msg.setText(t))
         self.ki = KIDienst(self.assistant, self)
         self.ki.status.connect(lambda t: self.lbl_msg.setText(t))
+        self.ki.geaendert.connect(lambda: hasattr(self, "band") and self.ki_schnell_zeigen())
         from lunivo_writer.ui.dialogs import dokument_dialoge as _dlg
         _dlg.set_einheit(self.settings.get("ui/masseinheit", "Millimeter"))
         from lunivo_writer.ui.widgets.live_vorschau import LiveVorschau
@@ -352,6 +353,9 @@ class MainWindow(QMainWindow):
         e.zoomChanged.connect(lambda f, ed=e: ed is self.current_editor() and self._zoom_anzeigen(f))
         e.formatChanged.connect(self._sync_later)
         e.freiAuswahlGeaendert.connect(self._sync_later)
+        from lunivo_writer.ui.widgets.schweb_knopf import SchwebKnopf
+        tab._chat_knopf = SchwebKnopf(tab, "chat", "KI-Chat", lambda: self.chat_oeffnen(""))
+        self.sidebar.bereich_geaendert.connect(lambda *_: self._chat_knopf_pruefen())
         e.formatChanged.connect(self._effekt_sync)
         e.pageInfoChanged.connect(lambda *_: self._sync_status())
         e.document().modificationChanged.connect(lambda _m: self._update_tab_titles())
@@ -1216,8 +1220,21 @@ class MainWindow(QMainWindow):
         self.neu_bauen_band()
 
     def _bereiche_bauen(self):
-        from lunivo_writer.ui.ribbon.tabs.ai_tab import KI
-        self.sidebar.setze_bereiche(self.band, KI["gruppen"])
+        self.sidebar.setze_bereiche()
+        self.ki_schnell_zeigen()
+
+    def _chat_knopf_pruefen(self) -> None:
+        """Der schwebende KI-Chat-Knopf ist weg, solange der Chat in der Seitenleiste offen ist."""
+        offen = self.sidebar.isVisible() and self.sidebar.stapel.currentIndex() == 1
+        for t in self._doc_tabs():
+            k = getattr(t, "_chat_knopf", None)
+            if k is not None:
+                k.setVisible(not offen)
+
+    def ki_schnell_zeigen(self) -> None:
+        """Die Schnellen KI-Aktionen mit Zugriff „Schnellzugriff“ in der Schnellzugriffsleiste zeigen."""
+        if hasattr(self.band, "ki_schnell"):
+            self.band.ki_schnell([a for a in self.ki.konfig["assistenten"] if a.get("zugriff") == "schnell"], self.ki.assistent)
 
     # ---- Oberfläche: Register oder Symbolleisten, angepasst ----------------------------------------------------
     def _symbole_anwenden(self):
@@ -1478,6 +1495,7 @@ class MainWindow(QMainWindow):
         self.settings.set("ui/seitenleiste", on)
         if hasattr(self, "_rechts"):
             self._rechts_sync()
+        self._chat_knopf_pruefen()
 
     def toggle_menubar(self):
         self.menubar_wanted = not self.menubar_wanted

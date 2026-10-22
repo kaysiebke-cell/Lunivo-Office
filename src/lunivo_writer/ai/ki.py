@@ -69,6 +69,8 @@ _AKTION_SATZ = {
 ANBIETER_TAGS = [("text", "Text"), ("bilder", "Bilder"), ("einbettungen", "Einbettungen"), ("audio", "Audioverarbeitung"),
                  ("moderation", "Inhaltsmoderation"), ("echtzeit", "Echtzeitaufgaben"),
                  ("programmieren", "Hilfe zum Programmieren"), ("visuell", "Visuelle Analyse")]
+# Erweiterte Einstellungen des Chats: maxLaenge 0 = Vorgabe des Anbieters; temperatur/topP gelten für Ollama und eigene Anbieter
+CHAT_VORGABE = {"maxLaenge": 0, "temperatur": 0.2, "topP": 1.0, "stopp": "", "direkt": False}
 AUFGABEN = [("chatbot", "Chatbot"), ("zusammenfassen", "Zusammenfassen"), ("uebersetzung", "Übersetzung"),
             ("textanalyse", "Textanalyse"), ("bildgenerierung", "Bildgenerierung")]
 # Bekannte Anbieter mit der Adresse, die sie selbst angeben (Claude fehlt bewusst: kein OpenAI-kompatibles /chat/completions)
@@ -89,7 +91,7 @@ class KIKonfig:
     def __init__(self, pfad: str):
         self.pfad = pfad
         self.d = {"modell": "claude-opus-5", "sprache": "Englisch", "empfaenger": "egal", "zettel": "",
-                  "apiKey": "", "anbieter": [], "aufgaben": {}, "kosten": 0.0, "claude_erlaubt": False, "assistenten": []}
+                  "apiKey": "", "anbieter": [], "aufgaben": {}, "kosten": 0.0, "claude_erlaubt": False, "assistenten": [], "chat": {}}
         try:
             with open(pfad, encoding="utf-8") as fh:
                 self.d.update(json.load(fh))
@@ -130,6 +132,14 @@ class KIKonfig:
         self.speichern()
         return e
 
+    def chat_optionen(self) -> dict:
+        """Die erweiterten Einstellungen des KI-Chats (Länge, Temperatur, Top P, Stoppfolgen, Antwort direkt einfügen) mit ihren Vorgaben."""
+        return {**CHAT_VORGABE, **(self.d.get("chat") or {})}
+
+    def chat_setzen(self, **teile) -> None:
+        self.d["chat"] = {**(self.d.get("chat") or {}), **teile}
+        self.speichern()
+
     def aufgabe_setzen(self, aufgabe: str, modell: str) -> None:
         if modell:
             self.d["aufgaben"][aufgabe] = modell
@@ -137,10 +147,11 @@ class KIKonfig:
             self.d["aufgaben"].pop(aufgabe, None)
         self.speichern()
 
-    def assistent_hinzufuegen(self, name: str, prompt: str, modus: str) -> dict:
+    def assistent_hinzufuegen(self, name: str, prompt: str, modus: str, zugriff: str = "kontext") -> dict:
+        """Eine „Schnelle KI-Aktion“: ``modus`` = ersetzen | anhaengen | hinweis; ``zugriff`` = kontext (Rechtsklick-Menü) | schnell (Schnellzugriffsleiste)."""
         import uuid
         e = {"id": "a" + uuid.uuid4().hex[:8], "name": (name or "").strip()[:40], "prompt": (prompt or "").strip()[:2000],
-             "modus": "ersetzen" if modus == "ersetzen" else "hinweis"}
+             "modus": modus if modus in ("ersetzen", "anhaengen") else "hinweis", "zugriff": "schnell" if zugriff == "schnell" else "kontext"}
         self.d["assistenten"].append(e)
         self.speichern()
         return e
@@ -308,18 +319,24 @@ class KI:
             return None if (a and ist_lokale_url(a["url"])) else (a["name"] if a else "einen eigenen Anbieter")
         return "Anthropic (Claude)"
 
-    def anfrage(self, anweisung: str, text, bauplan=None, modell: str | None = None) -> dict:
+    def anfrage(self, anweisung: str, text, bauplan=None, modell: str | None = None, optionen: dict | None = None) -> dict:
         m = modell or self.k["modell"]
         if m.startswith(EIGEN_MARKE):
-            return self._eigen(self.k.anbieter_holen(m[len(EIGEN_MARKE):]), anweisung, text, bauplan)
+            return self._eigen(self.k.anbieter_holen(m[len(EIGEN_MARKE):]), anweisung, text, bauplan, optionen)
         if m.startswith(OLLAMA_MARKE):
-            return self._ollama(anweisung, text, bauplan, m[len(OLLAMA_MARKE):])
-        return self._claude(anweisung, text, bauplan, m)
+            return self._ollama(anweisung, text, bauplan, m[len(OLLAMA_MARKE):], optionen)
+        return self._claude(anweisung, text, bauplan, m, optionen)
 
-    def _claude(self, anweisung, text, bauplan, modell) -> dict:
+    @staticmethod
+    def _stopp(optionen) -> list[str]:
+        return [t.strip() for t in str((optionen or {}).get("stopp", "")).split(",") if t.strip()]
+
+    def _claude(self, anweisung, text, bauplan, modell, optionen=None) -> dict:
         if not self.k["apiKey"]:
             return {"fehler": "Es ist kein Schlüssel gespeichert. Optionen ▸ Schreibhilfe und KI."}
-        bitte = {"model": modell, "max_tokens": 16000, "system": anweisung, "messages": _nachrichten(text)}
+        bitte = {"model": modell, "max_tokens": int((optionen or {}).get("maxLaenge") or 16000), "system": anweisung, "messages": _nachrichten(text)}
+        if self._stopp(optionen):
+            bitte["stop_sequences"] = self._stopp(optionen)                  # Temperatur und Top P gelten hier nicht (Claude regelt das selbst)
         ausgabe = {}
         if modell != "claude-haiku-4-5":
             ausgabe["effort"] = "low"
@@ -355,10 +372,18 @@ class KI:
             return {"fehler": "Es kam keine Antwort zurück."}
         return {"ergebnis": erg, "cent": cent_fuer(daten.get("model") or modell, daten.get("usage"))}
 
-    def _ollama(self, anweisung, text, bauplan, modell) -> dict:
+    def _ollama(self, anweisung, text, bauplan, modell, optionen=None) -> dict:
         if not modell:
             return {"fehler": "Es ist noch kein Modell gewählt. In den Optionen nachholen."}
-        bitte = {"model": modell, "stream": False, "options": {"temperature": 0.2}, "think": False,
+        o = optionen or {}
+        opt = {"temperature": float(o.get("temperatur", 0.2))}
+        if o.get("topP") is not None:
+            opt["top_p"] = float(o["topP"])
+        if o.get("maxLaenge"):
+            opt["num_predict"] = int(o["maxLaenge"])
+        if self._stopp(o):
+            opt["stop"] = self._stopp(o)
+        bitte = {"model": modell, "stream": False, "options": opt, "think": False,
                  "messages": [{"role": "system", "content": anweisung}] + _nachrichten(text)}
         if bauplan:
             bitte["format"] = bauplan
@@ -387,12 +412,21 @@ class KI:
         erg = ohne_gruebeln((daten.get("message") or {}).get("content", "")).strip()
         return {"ergebnis": erg} if erg else {"fehler": "Es kam keine Antwort zurück."}
 
-    def _eigen(self, a, anweisung, text, bauplan) -> dict:
+    def _eigen(self, a, anweisung, text, bauplan, optionen=None) -> dict:
         if not a:
             return {"fehler": "Der gewählte Anbieter ist nicht mehr da. In den Optionen neu wählen oder anlegen."}
         if not a["modell"]:
             return {"fehler": f"Für „{a['name']}“ ist kein Modell eingetragen."}
         bitte = {"model": a["modell"], "messages": [{"role": "system", "content": anweisung}] + _nachrichten(text)}
+        if optionen:
+            if optionen.get("temperatur") is not None:
+                bitte["temperature"] = float(optionen["temperatur"])
+            if optionen.get("topP") is not None:
+                bitte["top_p"] = float(optionen["topP"])
+            if optionen.get("maxLaenge"):
+                bitte["max_tokens"] = int(optionen["maxLaenge"])
+            if self._stopp(optionen):
+                bitte["stop"] = self._stopp(optionen)
         if bauplan:
             bitte["response_format"] = {"type": "json_schema", "json_schema": {"name": "antwort", "schema": bauplan,
                                                                               "strict": True}}
@@ -410,8 +444,8 @@ class KI:
         return {"ergebnis": erg} if erg else {"fehler": "Es kam keine Antwort zurück."}
 
     # ---- die Anwendungen
-    def _text(self, anweisung, text, aufgabe=None) -> dict:
-        r = self.anfrage(anweisung, text, None, self.modell(aufgabe))
+    def _text(self, anweisung, text, aufgabe=None, optionen: dict | None = None) -> dict:
+        r = self.anfrage(anweisung, text, None, self.modell(aufgabe), optionen)
         if "fehler" in r:
             return r
         self._kosten(r.get("cent"))
@@ -435,7 +469,7 @@ class KI:
                   "Erfinde nichts dazu. " + EMPFAENGER.get(self.k["empfaenger"], EMPFAENGER["egal"]))
         if dokumenttext.strip():
             system += "\n\nDer Mensch arbeitet gerade an diesem Text:\n" + dokumenttext[:12000]
-        return self._text(system, verlauf, "chatbot")
+        return self._text(system, verlauf, "chatbot", self.k.chat_optionen())
 
     def vorschlaege(self, text: str) -> dict:
         r = self.anfrage(anweisung_vorschlaege(self.k), text, VORSCHLAG_BAUPLAN, self.modell("textanalyse"))

@@ -176,16 +176,15 @@ _CHIP = ("QPushButton { border: 1px solid palette(mid); border-radius: 11px; pad
          "QPushButton:checked { background: #2f6fb5; color: white; border-color: #2f6fb5; }")
 
 
-class ModellListeDialog(QDialog):
-    """„Liste der KI-Modelle“: hinzufügen, bearbeiten, entfernen."""
+class ModellListe(QWidget):
+    """Die Liste der verbundenen KI-Modelle: hinzufügen, bearbeiten, entfernen (im Fenster „KI-Einstellungen“ und als eigenes Fenster)."""
 
     def __init__(self, fenster, konfig: K.KIKonfig):
-        super().__init__(fenster)
+        super().__init__()
         self.fenster, self.k = fenster, konfig
-        self.setWindowTitle("Liste der KI-Modelle")
-        self.setMinimumSize(480, 340)
+        self.setMinimumSize(480, 240)
         v = QVBoxLayout(self)
-        v.addWidget(text_label("Liste der KI-Modelle", fett=True, pt=13, umbruch=False))
+        v.setContentsMargins(0, 0, 0, 0)
         z = QHBoxLayout()
         self.liste = QListWidget()
         z.addWidget(self.liste, 1)
@@ -198,9 +197,6 @@ class ModellListeDialog(QDialog):
         s.addStretch(1)
         z.addLayout(s)
         v.addLayout(z, 1)
-        bb = QDialogButtonBox(QDialogButtonBox.Ok)
-        bb.accepted.connect(self.accept)
-        v.addWidget(bb)
         self.neu.clicked.connect(self._neu)
         self.bearb.clicked.connect(self._bearbeiten)
         self.weg.clicked.connect(self._entfernen)
@@ -242,68 +238,290 @@ class ModellListeDialog(QDialog):
             self._fuellen()
 
 
-class KIKonfigurationDialog(QDialog):
+class ModellListeDialog(QDialog):
+    """„Liste der KI-Modelle“ als eigenes Fenster (Optionen)."""
+
+    def __init__(self, fenster, konfig: K.KIKonfig):
+        super().__init__(fenster)
+        self.setWindowTitle("Liste der KI-Modelle")
+        v = QVBoxLayout(self)
+        v.addWidget(text_label("Liste der KI-Modelle", fett=True, pt=13, umbruch=False))
+        self.liste_widget = ModellListe(fenster, konfig)
+        self._fuellen = self.liste_widget._fuellen
+        v.addWidget(self.liste_widget, 1)
+        bb = QDialogButtonBox(QDialogButtonBox.Ok)
+        bb.accepted.connect(self.accept)
+        v.addWidget(bb)
+
+
+def modell_combo(konfig: K.KIKonfig, aufgabe: str, gewaehlt: str | None = None) -> QComboBox:
+    """Die Auswahl „welches Modell für diese Aufgabe?“ — dieselbe in der Modellzuweisung und in den erweiterten Einstellungen des Chats."""
+    c = QComboBox()
+    c.addItem("Standard (KI-Modell der Optionen)", "")
+    for m in konfig.alle_modelle():
+        if aufgabe == "bildgenerierung":               # nur Anbieter mit „Bilder“ — Claude und Text-Modelle kennen das nicht
+            if "bilder" not in m["verwendungFuer"] or not m["id"].startswith(K.EIGEN_MARKE):
+                continue
+        c.addItem(m["name"] + ("  · lokal" if m["lokal"] else ""), m["id"])
+    g = konfig["aufgaben"].get(aufgabe, "") if gewaehlt is None else gewaehlt
+    c.setCurrentIndex(max(0, c.findData(g)))
+    return c
+
+
+class ModellZuweisung(QWidget):
     """Je Aufgabe ein Modell: Chatbot, Zusammenfassen, Übersetzung, Textanalyse, Bildgenerierung."""
 
     def __init__(self, fenster):
-        super().__init__(fenster)
+        super().__init__()
         self.fenster = fenster
         self.k = fenster.ki.konfig
-        self.setWindowTitle("KI-Konfiguration")
-        self.setMinimumWidth(560)
         v = QVBoxLayout(self)
-        v.addWidget(text_label("KI-Konfiguration", fett=True, pt=13, umbruch=False))
+        v.setContentsMargins(0, 0, 0, 0)
         v.addWidget(QLabel("Fügen Sie hinzu und wählen Sie KI-Modelle für verschiedene Aufgaben aus."))
         self.f = QFormLayout()
         v.addLayout(self.f)
         self.felder: dict[str, QComboBox] = {}
-        z = QHBoxLayout()
-        a = QPushButton("KI-Modelle bearbeiten"); a.setFlat(True); a.setCursor(Qt.PointingHandCursor)
-        b = QPushButton("Eigenen Anbieter hinzufügen"); b.setFlat(True); b.setCursor(Qt.PointingHandCursor)
-        a.clicked.connect(self._liste)
-        b.clicked.connect(self._neu)
-        z.addWidget(a); z.addWidget(b); z.addStretch(1)
-        v.addLayout(z)
         o = QPushButton("Einstellungen der Übersetzung"); o.setFlat(True); o.setCursor(Qt.PointingHandCursor)
         o.clicked.connect(lambda: fenster.show_options("sprache"))
         v.addWidget(o, 0, Qt.AlignLeft)
+        v.addStretch(1)
+        self.aufbauen()
+
+    def aufbauen(self) -> None:
+        alt = {a: c.currentData() for a, c in self.felder.items()}
+        while self.f.rowCount():
+            self.f.removeRow(0)
+        self.felder.clear()
+        for aufgabe, name in K.AUFGABEN:
+            c = modell_combo(self.k, aufgabe, alt.get(aufgabe, self.k["aufgaben"].get(aufgabe, "")))
+            self.felder[aufgabe] = c
+            self.f.addRow(name, c)
+
+    def uebernehmen(self) -> None:
+        for aufgabe, c in self.felder.items():
+            self.k.aufgabe_setzen(aufgabe, c.currentData() or "")
+        self.fenster.ki.geaendert.emit()
+
+
+class KIKonfigurationDialog(QDialog):
+    """Die Modellzuweisung als eigenes Fenster (nur noch für Altaufrufe; im Alltag öffnet „KI-Einstellungen“)."""
+
+    def __init__(self, fenster):
+        super().__init__(fenster)
+        self.setWindowTitle("KI-Konfiguration")
+        self.setMinimumWidth(560)
+        v = QVBoxLayout(self)
+        v.addWidget(text_label("KI-Konfiguration", fett=True, pt=13, umbruch=False))
+        self.zuweisung = ModellZuweisung(fenster)
+        self.felder = self.zuweisung.felder
+        v.addWidget(self.zuweisung)
         bb = QDialogButtonBox()
         bb.addButton("Abbrechen", QDialogButtonBox.RejectRole)
         bb.addButton("OK", QDialogButtonBox.AcceptRole)
         bb.accepted.connect(self._ok)
         bb.rejected.connect(self.reject)
         v.addWidget(bb)
-        self._aufbauen()
-
-    def _aufbauen(self) -> None:
-        alt = {a: c.currentData() for a, c in self.felder.items()}
-        while self.f.rowCount():
-            self.f.removeRow(0)
-        self.felder.clear()
-        modelle = self.k.alle_modelle()
-        for aufgabe, name in K.AUFGABEN:
-            c = QComboBox()
-            c.addItem("Standard (KI-Modell der Optionen)", "")
-            for m in modelle:
-                if aufgabe == "bildgenerierung":           # nur Anbieter mit „Bilder“ — Claude und Text-Modelle kennen das nicht
-                    if "bilder" not in m["verwendungFuer"] or not m["id"].startswith(K.EIGEN_MARKE):
-                        continue
-                c.addItem(m["name"] + ("  · lokal" if m["lokal"] else ""), m["id"])
-            gewaehlt = alt.get(aufgabe, self.k["aufgaben"].get(aufgabe, ""))
-            c.setCurrentIndex(max(0, c.findData(gewaehlt)))
-            self.felder[aufgabe] = c
-            self.f.addRow(name, c)
-
-    def _liste(self) -> None:
-        ModellListeDialog(self.fenster, self.k).exec()
-        self._aufbauen()
-
-    def _neu(self) -> None:
-        if AnbieterDialog(self.fenster, self.k).exec():
-            self._aufbauen()
 
     def _ok(self) -> None:
-        for aufgabe, c in self.felder.items():
-            self.k.aufgabe_setzen(aufgabe, c.currentData() or "")
-        self.fenster.ki.geaendert.emit()
+        self.zuweisung.uebernehmen()
         self.accept()
+
+
+REITER = ("KI-Modelle", "Modellzuweisung", "MCP-Server", "Websuche")
+
+
+class KIEinstellungenDialog(QDialog):
+    """Das eine Fenster für alles zur KI: verbundene Modelle, Modellzuweisung, MCP-Server und Websuche.
+
+    Dieselbe Konfiguration (``KIKonfig``) wie in der Seitenleiste der Schreibhilfe, im KI-Chat und in den Optionen. Bis ein Modell verbunden ist,
+    sind „Modellzuweisung“, „MCP-Server“ und „Websuche“ grau; die beiden letzten sind noch nicht freigeschaltet."""
+
+    def __init__(self, fenster, start: int = 0):
+        super().__init__(fenster)
+        from PySide6.QtWidgets import QStackedWidget, QTabBar
+        self.fenster = fenster
+        self.k = fenster.ki.konfig
+        self.setWindowTitle("KI-Einstellungen")
+        self.setMinimumSize(620, 520)
+        v = QVBoxLayout(self)
+        self.reiter = QTabBar(); self.reiter.setObjectName("bandReiter"); self.reiter.setExpanding(False)
+        for n in REITER:
+            self.reiter.addTab(n)
+        v.addWidget(self.reiter)
+        self.stapel = QStackedWidget()
+        v.addWidget(self.stapel, 1)
+        # 1 KI-Modelle
+        seite = QWidget(); sv = QVBoxLayout(seite); sv.setContentsMargins(0, 8, 0, 0)
+        sv.addWidget(QLabel("Verbinden Sie Ihre eigene KI-Quelle — entweder über den API-Schlüssel eines Anbieters oder ein lokal gehostetes Modell."))
+        self.liste = ModellListe(fenster, self.k)
+        sv.addWidget(self.liste, 1)
+        neu = QPushButton("Neues KI-Modell verbinden …"); neu.clicked.connect(self.neues_modell)
+        sv.addWidget(neu, 0, Qt.AlignLeft)
+        self.stapel.addWidget(seite)
+        # 2 Modellzuweisung
+        z = QWidget(); zv = QVBoxLayout(z); zv.setContentsMargins(0, 8, 0, 0)
+        self.zuweisung = ModellZuweisung(fenster)
+        zv.addWidget(self.zuweisung)
+        self.stapel.addWidget(z)
+        # 3 und 4: noch nicht freigeschaltet
+        for n in REITER[2:]:
+            p = QWidget(); pv = QVBoxLayout(p); pv.addWidget(QLabel(n + " ist noch nicht freigeschaltet.")); pv.addStretch(1)
+            self.stapel.addWidget(p)
+        bb = QDialogButtonBox()
+        bb.addButton("Abbrechen", QDialogButtonBox.RejectRole)
+        bb.addButton("OK", QDialogButtonBox.AcceptRole)
+        bb.accepted.connect(self._ok)
+        bb.rejected.connect(self.reject)
+        v.addWidget(bb)
+        self.reiter.currentChanged.connect(self.stapel.setCurrentIndex)
+        self.freischalten()
+        self.reiter.setCurrentIndex(start if self.reiter.isTabEnabled(start) else 0)
+
+    def freischalten(self) -> None:
+        """Ohne verbundenes Modell ist nur der erste Reiter bedienbar; MCP-Server und Websuche bleiben grau."""
+        da = self.fenster.ki.verfuegbar()
+        self.reiter.setTabEnabled(1, da)
+        for i in (2, 3):
+            self.reiter.setTabEnabled(i, False)
+            self.reiter.setTabToolTip(i, "Noch nicht freigeschaltet.")
+        if not da:
+            self.reiter.setTabToolTip(1, "Erst ein KI-Modell verbinden.")
+
+    def neues_modell(self) -> None:
+        if AnbieterDialog(self.fenster, self.k).exec():
+            self.liste._fuellen()
+            self.zuweisung.aufbauen()
+            self.fenster.ki.geaendert.emit()
+            self.freischalten()
+
+    def _ok(self) -> None:
+        self.zuweisung.uebernehmen()
+        self.accept()
+
+
+VORLAGEN_AKTION = [
+    ("Übersetzen", "Übersetze den Text ins Englische."), ("Ton ändern", "Schreibe den Text in einem freundlicheren, höflichen Ton."),
+    ("Professionelle Umschreibung", "Schreibe den Text professionell und sachlich um."),
+    ("Zusammenfassung als Liste", "Fasse den Text als kurze Aufzählung zusammen."), ("Text vereinfachen", "Schreibe den Text in einfacher Sprache."),
+    ("Text erweitern", "Erweitere den Text um passende Einzelheiten."), ("Grammatik korrigieren", "Korrigiere Grammatik und Rechtschreibung."),
+    ("Kürzer machen", "Kürze den Text, ohne Wichtiges wegzulassen."), ("Länger machen", "Mache den Text ausführlicher."),
+    ("Kernpunkte herausziehen", "Nenne die Kernpunkte des Textes."), ("Tabelle erstellen", "Fasse die Angaben des Textes in einer Tabelle zusammen."),
+    ("Beispiele hinzufügen", "Ergänze passende Beispiele."), ("Einfach erklären", "Erkläre den Inhalt so, dass ihn ein Kind versteht.")]
+ERGEBNIS_ARTEN = (("ersetzen", "Ersetzen (ersetzt den markierten Text durch das Ergebnis)"), ("anhaengen", "Anhängen (setzt das Ergebnis hinter den Text)"),
+                  ("hinweis", "Als Hinweis zeigen (Karte in der Seitenleiste)"))
+
+
+class SchnelleAktionDialog(QDialog):
+    """„Schnelle KI-Aktion erstellen“: eine einmalige KI-Aufgabe mit Name, Anweisung, Ergebnisart und Zugriff.
+
+    Speichert als „Eigener Assistent“ (``KIKonfig.assistenten``) — dieselbe Liste wie im Band und in den Optionen."""
+
+    def __init__(self, fenster):
+        super().__init__(fenster)
+        from PySide6.QtWidgets import QPlainTextEdit, QRadioButton
+        self.setWindowTitle("Schnelle KI-Aktion erstellen")
+        self.setMinimumWidth(560)
+        v = QVBoxLayout(self)
+        v.addWidget(QLabel("Eine schnelle KI-Aktion führt einmalige KI-Aufgaben aus."))
+        v.addWidget(text_label("Mit einer Vorlage beginnen", fett=True))
+        fl = QWidget(); fll = FlowLayout(fl)
+        self.chipfeld = fl
+        self.chips = []
+        for name, prompt in VORLAGEN_AKTION:
+            b = QPushButton(name); b.setStyleSheet(_CHIP); b.clicked.connect(lambda _=False, n=name, p=prompt: self._vorlage(n, p))
+            fll.addWidget(b); self.chips.append(b)
+        v.addWidget(fl)
+        self.mehr = QPushButton(); self.mehr.setFlat(True); self.mehr.setCursor(Qt.PointingHandCursor)
+        self.mehr.clicked.connect(self._umschalten)
+        v.addWidget(self.mehr, 0, Qt.AlignLeft)
+        v.addWidget(text_label("Name *", fett=True))
+        self.name = QLineEdit(); self.name.setPlaceholderText("Geben Sie einen kurzen Namen für die Aktion ein"); self.name.setMaxLength(40)
+        v.addWidget(self.name)
+        v.addWidget(text_label("Was soll die Aktion tun? *", fett=True))
+        self.prompt = QPlainTextEdit()
+        self.prompt.setPlaceholderText("Beschreiben Sie die Aktion, die die KI ausführen soll, z. B. „Grammatik korrigieren“ oder „In einem formellen Ton umschreiben“")
+        self.prompt.setMinimumHeight(90)
+        v.addWidget(self.prompt)
+        v.addWidget(text_label("Ergebnis anwenden als", fett=True))
+        self.ergebnis = QComboBox()
+        for schl, text in ERGEBNIS_ARTEN:
+            self.ergebnis.addItem(text, schl)
+        v.addWidget(self.ergebnis)
+        v.addWidget(text_label("Zugriff von", fett=True))
+        self.r_kontext = QRadioButton("Verfügbar über das Kontextmenü"); self.r_kontext.setChecked(True)
+        self.r_schnell = QRadioButton("Schnellzugriff über die Symbolleiste")
+        v.addWidget(self.r_kontext); v.addWidget(self.r_schnell)
+        bb = QDialogButtonBox()
+        bb.addButton("Abbrechen", QDialogButtonBox.RejectRole)
+        self.ok = bb.addButton("Erstellen", QDialogButtonBox.AcceptRole)
+        bb.accepted.connect(self._ok)
+        bb.rejected.connect(self.reject)
+        v.addWidget(bb)
+        self._alle = False
+        self._umschalten()
+
+    def _umschalten(self) -> None:
+        """Erst die ersten sechs Vorlagen, mit „Alle anzeigen“ alle."""
+        self._alle = not self._alle
+        for i, b in enumerate(self.chips):
+            b.setVisible(self._alle or i < 6)
+        self.mehr.setText("Ausblenden" if self._alle else "Alle anzeigen")
+        self.chipfeld.setMinimumHeight(self.chipfeld.layout().heightForWidth(max(300, self.width() - 24)))
+
+    def _vorlage(self, name: str, prompt: str) -> None:
+        self.name.setText(name)
+        self.prompt.setPlainText(prompt)
+
+    def _ok(self) -> None:
+        if not self.name.text().strip() or not self.prompt.toPlainText().strip():
+            QMessageBox.information(self, "Schnelle KI-Aktion", "Name und Beschreibung werden gebraucht.")
+            return
+        self.accept()
+
+    def werte(self) -> tuple:
+        return (self.name.text(), self.prompt.toPlainText(), self.ergebnis.currentData(), "schnell" if self.r_schnell.isChecked() else "kontext")
+
+
+class ErgebnisseDialog(QDialog):
+    """„Alle Ergebnisse anzeigen“: die KI-Antworten dieser Sitzung; Kopieren oder an der Schreibmarke einfügen."""
+
+    def __init__(self, fenster):
+        super().__init__(fenster)
+        from PySide6.QtWidgets import QApplication, QPlainTextEdit
+        self.fenster = fenster
+        self.setWindowTitle("Alle Ergebnisse")
+        self.setMinimumSize(640, 420)
+        self.liste_daten = list(reversed(fenster.ki.ergebnisse))                     # neueste oben
+        v = QVBoxLayout(self)
+        z = QHBoxLayout()
+        self.liste = QListWidget()
+        for e in self.liste_daten:
+            self.liste.addItem(f"{e['zeit']}  {e['titel']}")
+        z.addWidget(self.liste, 1)
+        self.text = QPlainTextEdit(); self.text.setReadOnly(True)
+        z.addWidget(self.text, 2)
+        v.addLayout(z, 1)
+        if not self.liste_daten:
+            v.addWidget(QLabel("In dieser Sitzung hat die KI noch nichts geliefert."))
+        bb = QDialogButtonBox()
+        self.kopieren = bb.addButton("Kopieren", QDialogButtonBox.ActionRole)
+        self.einfuegen = bb.addButton("Einfügen", QDialogButtonBox.ActionRole)
+        bb.addButton("Schließen", QDialogButtonBox.RejectRole)
+        bb.rejected.connect(self.reject)
+        self.kopieren.clicked.connect(lambda: QApplication.clipboard().setText(self.text.toPlainText()))
+        self.einfuegen.clicked.connect(self._einfuegen)
+        v.addWidget(bb)
+        self.liste.currentRowChanged.connect(self._zeigen)
+        if self.liste_daten:
+            self.liste.setCurrentRow(0)
+        self._zeigen(self.liste.currentRow())
+
+    def _zeigen(self, i: int) -> None:
+        an = 0 <= i < len(self.liste_daten)
+        self.text.setPlainText(self.liste_daten[i]["text"] if an else "")
+        self.kopieren.setEnabled(an); self.einfuegen.setEnabled(an)
+
+    def _einfuegen(self) -> None:
+        e = self.fenster.current_editor()
+        if e is not None and self.text.toPlainText():
+            e.textCursor().insertText(self.text.toPlainText())

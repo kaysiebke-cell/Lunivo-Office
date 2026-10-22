@@ -1547,3 +1547,26 @@ def test_wort_extras(app):
     ed.document().undo()
     ed.setPlainText("a b")
     assert W.zeilenumbruch_in_return(ed) == 1 and ed.document().blockCount() == 2
+
+
+def test_bildeffekte_ueberleben_docx(app, tmp_path):
+    """Schatten, Leuchten, Spiegelung und weiche Kanten eines freien Bildes werden als effectLst geschrieben und wieder gelesen."""
+    from PySide6.QtCore import QUrl
+    from PySide6.QtGui import QTextCursor, QTextDocument
+    from lunivo_writer.editor import freie_bilder as FB
+    from lunivo_writer.models.page import PageSettings
+    from lunivo_writer.services import docx_writer, file_service
+    d = QTextDocument(); d.setPlainText("Hallo")
+    name = FB.neuer_name(d); d.addResource(QTextDocument.ImageResource, QUrl(name), _rot())
+    fx = {"schatten": {"farbe": "#112233", "transparenz": 40, "groesse": 100, "weich": 5.0, "abstand": 6.0, "winkel": 90},
+          "leuchten": {"farbe": "#ff0000", "groesse": 9.0, "transparenz": 30},
+          "reflektion": {"groesse": 40, "transparenz": 60, "weich": 1.0, "abstand": 2.0}, "weich": {"radius": 7.0}}
+    FB.an_absatz(QTextCursor(d.firstBlock()), {"n": name, "b": 40.0, "h": 30.0, "bh": "seite", "xh": 100.0, "bv": "seite", "yv": 400.0,
+                                                "hinter": False, "ellipse": False, "ah": "", "av": "", "fx": fx})
+    pfad = str(tmp_path / "e.docx"); docx_writer.write_docx(pfad, d, PageSettings(), {})
+    g = file_service.load(pfad)
+    a = FB.aus_absatz(g.doc.firstBlock().blockFormat())[0]
+    got = a["fx"]
+    assert got["schatten"]["farbe"] == "#112233" and abs(got["schatten"]["abstand"] - 6.0) < 0.1 and abs(got["schatten"]["winkel"] - 90) < 0.1
+    assert abs(got["schatten"]["transparenz"] - 40) < 0.2 and abs(got["leuchten"]["groesse"] - 9.0) < 0.1 and got["leuchten"]["farbe"] == "#ff0000"
+    assert abs(got["reflektion"]["groesse"] - 40) < 0.1 and abs(got["weich"]["radius"] - 7.0) < 0.1
