@@ -163,6 +163,7 @@ class _Reader:
                     "text": "\n".join(p.text for p in c.paragraphs)}
         except Exception:
             self.report.warn("Kommentare konnten nicht gelesen werden.")
+        self._kommentare_geloest_lesen()
         self._quellen_lesen()
         for art, rel in (("f", "footnotes"), ("e", "endnotes")):
             for r in self.d.part.rels.values():
@@ -177,6 +178,27 @@ class _Reader:
                         for p in n.iterchildren(qn("w:p")):
                             zeilen.append("".join(t.text or "" for t in p.iter(qn("w:t"))).strip())
                         self.zus["noten"][art][int(n.get(qn("w:id")))] = "\n".join(zeilen)
+
+    def _kommentare_geloest_lesen(self) -> None:
+        """Welche Kommentare Word als gelöst markiert hat (Teil commentsExtended: w15:done je Absatzkennung)."""
+        try:
+            from lxml import etree
+            W14 = "{http://schemas.microsoft.com/office/word/2010/wordml}paraId"
+            W15 = "{http://schemas.microsoft.com/office/word/2012/wordml}"
+            fertig = set()
+            for r in self.d.part.rels.values():
+                if r.reltype.endswith("/commentsExtended") and not r.is_external:
+                    for e in etree.fromstring(r.target_part.blob).iter(W15 + "commentEx"):
+                        if e.get(W15 + "done") in ("1", "true"):
+                            fertig.add(e.get(W15 + "paraId"))
+            if not fertig:
+                return
+            for c in self.d.comments:
+                ps = c.paragraphs
+                if ps and ps[0]._p.get(W14) in fertig and int(c.comment_id) in self.zus["kommentare"]:
+                    self.zus["kommentare"][int(c.comment_id)]["geloest"] = True
+        except Exception:                                              # noqa: BLE001 — ein unlesbarer Zusatzteil darf das Laden nicht verhindern
+            pass
 
     def _quellen_lesen(self) -> None:
         """Literaturquellen aus dem Word-Bibliografieteil (customXml, Namensraum …/bibliography)."""

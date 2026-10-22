@@ -229,3 +229,21 @@ def test_einfuegen_modi_und_schaltflaeche(app):
     assert zeichen_format(len("Vorher: ")).fontWeight() < 600
     ed.document().undo()                                                           # ein einziger Rückgängig-Schritt
     assert ed.toPlainText() == "Vorher: "
+
+
+def test_ersetzen_behaelt_die_formatierung(app):
+    """Suchen und ersetzen: der neue Text hat Schrift, Fett und Kursiv des ersetzten Textes (einzeln und „Alle ersetzen“)."""
+    from PySide6.QtGui import QFont, QTextCharFormat, QTextCursor
+    from lunivo_writer.ui.document.document_editor import DocumentEditor
+    ed = DocumentEditor()
+    ed.setPlainText("Bewerbung als Änderungsschneider und Änderungsschneider")
+    c = QTextCursor(ed.document()); c.setPosition(14); c.setPosition(32, QTextCursor.KeepAnchor)
+    f = QTextCharFormat(); f.setFontWeight(QFont.Bold); f.setFontItalic(True); f.setFontFamilies(["Liberation Serif"]); c.mergeCharFormat(f)
+    ed.select_range(14, 32)
+    assert ed.replace_current("Änderungsschneider", "Maßschneider")
+    c2 = QTextCursor(ed.document()); c2.setPosition(16); c2.setPosition(17, QTextCursor.KeepAnchor)
+    cf = c2.charFormat()
+    assert ed.toPlainText().startswith("Bewerbung als Maßschneider") and cf.fontWeight() >= 600 and cf.fontItalic() and cf.fontFamilies() == ["Liberation Serif"]
+    ed.replace_all("Änderungsschneider", "Kürschner")
+    c3 = QTextCursor(ed.document()); c3.setPosition(ed.toPlainText().index("Kürschner") + 2); c3.setPosition(c3.position() + 1, QTextCursor.KeepAnchor)
+    assert ed.toPlainText().endswith("Kürschner") and c3.charFormat().fontWeight() < 600          # das zweite war nicht fett und bleibt es nicht

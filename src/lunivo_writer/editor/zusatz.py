@@ -71,3 +71,12 @@ B_VORHER = QTextFormat.UserProperty + 48           # Absatz am Seitenanfang: der
 def abstand_davor_px(bf) -> float:
     """Der Abstand vor dem Absatz, wie ihn der Benutzer eingestellt hat — auch wenn Lunivo ihn am Seitenanfang gerade unterdrückt."""
     return bf.doubleProperty(B_VORHER) if bf.hasProperty(B_VORHER) else bf.topMargin()
+
+
+# Farben der Kommentare wie in der alten Fassung: orange Kreis mit Initial, gelbe Markierung im Text; ein gelöster Kommentar wird grau
+KOMMENTAR_FARBE = "#d9822b"
+KOMMENTAR_GELOEST = "#adb5bd"
+
+
+def kommentar_farbe(geloest: bool = False) -> str:
+    return KOMMENTAR_GELOEST if geloest else KOMMENTAR_FARBE

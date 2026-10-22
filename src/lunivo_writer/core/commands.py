@@ -1939,11 +1939,13 @@ class Befehle:
         return t.strip() if ok and t.strip() else None
 
     def kommentar(self, k=None):
-        if self.ed and (t := self._text_abfragen("Neuer Kommentar", "Kommentar:")):
-            if self.ed.kommentar_neu(t) is None:
+        """Neuer Kommentar: das Feld „Kommentare“ links öffnet sich mit dem Eingabefeld; ohne Markierung oder Wort gibt es keinen Anker."""
+        if self.ed:
+            c = self.ed.textCursor()
+            if not c.hasSelection() and not self.ed.document().findBlock(c.position()).text().strip():
                 self.w.statusBar().showMessage("Zum Kommentieren Text markieren oder in ein Wort klicken.", 4000)
-            else:
-                self.w.zeige_navigation("kommentare")
+                return
+            self.w.navigation._neu_zeigen()
 
     def kommentarWeiter(self, k=None):
         if self.ed: self.ed.kommentar_springen(1)

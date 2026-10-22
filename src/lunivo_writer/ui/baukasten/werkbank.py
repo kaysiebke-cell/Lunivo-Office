@@ -90,14 +90,14 @@ class FunktionsZeile(QFrame):
 class Werkbank(QScrollArea):
     """Die Zeilen eines Reiters; ``oben`` (optional) ist ein Widget über den Zeilen, etwa ein Hinweis."""
 
-    def __init__(self, fenster, reiter: str, oben: QWidget | None = None):
+    def __init__(self, fenster, reiter: str, oben: QWidget | None = None, nur: set | None = None):
         super().__init__()
         self.setWidgetResizable(True); self.setFrameShape(QFrame.NoFrame)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         host = QWidget(); v = QVBoxLayout(host); v.setContentsMargins(14, 10, 14, 10); v.setSpacing(6)
         if oben is not None:
             v.addWidget(oben)
-        self.zeilen = [FunktionsZeile(f, fenster) for f in fuer_reiter(reiter)]
+        self.zeilen = [FunktionsZeile(f, fenster) for f in fuer_reiter(reiter) if nur is None or f.tun in nur]
         for z in self.zeilen:
             v.addWidget(z)
         v.addStretch(1)

@@ -302,15 +302,16 @@ def test_kommentar_note_verfolgen_ueber_befehle(app, tmp_path, monkeypatch):
     w.new_document(); w.show()
     e = w.current_editor()
     e.insertPlainText("Ein Satz zum Prüfen.")
-    monkeypatch.setattr(QInputDialog, "getMultiLineText", staticmethod(lambda *a, **k: ("Mein Text", True)))
+    monkeypatch.setattr(QInputDialog, "getMultiLineText", staticmethod(lambda *a, **k: ("Mein Text", True)))      # für die Fußnote weiter unten
     e.select_range(0, 3)
-    w.befehle.kommentar()
-    assert len(e.kommentare) == 1 and w.navigation.isVisible()
-    assert w.navigation.liste["kommentare"].count() == 1
+    w.befehle.kommentar()                                     # öffnet das Feld „Kommentare“ links mit dem Eingabefeld
+    assert w.navigation.isVisible() and not w.navigation.neu_feld.isHidden()
+    w.navigation.neu_text.setPlainText("Mein Text"); w.navigation.neu_ok.click()
+    assert len(e.kommentare) == 1 and w.navigation.anzahl("kommentare") == 1
     c = e.textCursor(); c.setPosition(e.document().characterCount() - 1); e.setTextCursor(c)
     w.befehle.fussnote()
     w.navigation.aktualisieren()
-    assert len(e.noten["f"]) == 1 and w.navigation.liste["noten"].count() == 1
+    assert len(e.noten["f"]) == 1 and w.navigation.anzahl("noten") == 1
     assert not w.befehle.an_verfolgen()
     w.befehle.verfolgen()
     assert w.befehle.an_verfolgen()
@@ -360,3 +361,90 @@ def test_oberflaeche_wechseln_register_anpassen_symbole_tauschen(app, tmp_path):
     icons.uebersteuern({})
     assert icons.pfade()[name] == icons.pfade_original()[name]
     w.current_editor().document().setModified(False); w.close()
+
+
+def test_linke_seitenleiste_suchen_kommentare_ueberschriften(app, tmp_path, monkeypatch):
+    """Die Leiste links öffnet die Felder; Suchen/Ersetzen, Kommentare (sortieren, filtern, gelöst, neu) und Überschriften (Menü) funktionieren."""
+    from PySide6.QtGui import QTextCursor
+    w = win(tmp_path)
+    w.new_document(); w.show()
+    e = w.current_editor()
+    e.setPlainText("Kapitel Eins\nText hier und mehr Text zum Suchen.\nKapitel Zwei\nNoch Text.")
+    for n in (0, 2):
+        c = QTextCursor(e.document().findBlockByNumber(n)); bf = c.blockFormat(); bf.setHeadingLevel(1); c.setBlockFormat(bf)
+    # Leiste links: Klick öffnet, zweiter Klick schließt
+    assert not w.navigation.isVisible()
+    w._links_klick("kommentare")
+    assert w.navigation.isVisible() and w.navigation.aktuelle_seite == "kommentare" and w._links["kommentare"].isChecked()
+    w._links_klick("kommentare")
+    assert not w.navigation.isVisible() and not w._links["kommentare"].isChecked()
+    # Suchen und ersetzen
+    nav = w.navigation
+    nav.suche_zeigen("Text")
+    assert nav.aktuelle_seite == "suche" and nav.treffer.text().endswith("von 3") or "3" in nav.treffer.text()
+    assert len(e._such_bereiche) == 3                    # alle Treffer sind im Text farbig hinterlegt
+    nav.ersatzfeld.setText("Wort")
+    nav._ersetzen_alle()
+    assert "Text" not in e.toPlainText() and e.toPlainText().count("Wort") == 3
+    nav.suchfeld.setText("gibtesnicht")
+    assert nav.treffer.text() == "Keine Suchergebnisse" and not e._such_bereiche
+    nav.suchfeld.setText("Wort"); assert len(e._such_bereiche) == 3
+    nav.hide(); assert not e._such_bereiche               # mit dem Feld verschwindet die Markierung
+    nav.show()
+    # Kommentare: zwei anlegen, sortieren, als gelöst markieren, filtern
+    e.select_range(0, 7); e.kommentar_neu("Erster"); e.select_range(13, 17); e.kommentar_neu("Zweiter")
+    nav.zeige_tab("kommentare")
+    assert nav.anzahl("kommentare") == 2
+    texte = lambda: [e.kommentare[k.kid]["text"] for k in nav._karten]              # noqa: E731
+    nav._sortieren("oben"); assert texte() == ["Erster", "Zweiter"]
+    nav._sortieren("unten"); assert texte() == ["Zweiter", "Erster"]
+    kid = int(nav._karten[0].kid)
+    e.kommentar_geloest(kid, True); nav.aktualisieren()
+    nav._anzeigen("offen"); assert nav.anzahl("kommentare") == 1
+    nav._anzeigen("geloest"); assert nav.anzahl("kommentare") == 1
+    nav._anzeigen("alle"); assert nav.anzahl("kommentare") == 2
+    # Überschriften: Menü
+    nav.zeige_tab("ueberschriften")
+    assert nav.baum.topLevelItemCount() == 2
+    nav.baum.collapseAll(); nav._ebene(2)
+    nav._schrift("gross"); assert nav.baum.font().pointSizeF() == 13.0
+    nav._umbrechen(False); assert not nav.baum.wordWrap()
+
+
+def test_kommentar_nachbearbeiten_und_schriftgroesse(app, tmp_path):
+    """Ein Kommentar lässt sich in seiner Karte bearbeiten (Blase und Karte zeigen den neuen Text); die Schriftgröße gilt für Karten und Blasen."""
+    from lunivo_writer.editor import sprechblasen as SB
+    w = win(tmp_path)
+    w.new_document(); w.show()
+    e = w.current_editor()
+    e.setPlainText("Bewerbung als Änderungsschneider,")
+    e.select_range(14, 32); kid = e.kommentar_neu("alter Text")
+    nav = w.navigation
+    nav.zeige_tab("kommentare"); nav.show()
+    assert nav.anzahl("kommentare") == 1
+    e.kommentar_bearbeiten(kid)                                   # Doppelklick auf die Blase
+    assert nav._bearbeite == kid and hasattr(nav._karten[0], "eingabe")
+    nav._karten[0].eingabe.setPlainText("neuer Text")
+    nav._bearbeiten_speichern(kid, "neuer Text")
+    assert e.kommentare[kid]["text"] == "neuer Text" and nav._bearbeite is None and not hasattr(nav._karten[0], "eingabe")
+    assert any(bl.text == "neuer Text" for bl, _r, _y in e.blasen_layout(300))                # die Blase am Rand zeigt ihn
+    # Schriftgröße: groß macht die Blasen höher
+    vorher = SB.messen(next(iter(e.blasen_layout(300)))[0], 280, __import__("PySide6.QtGui", fromlist=["QFont"]).QFont("Sans", 10))
+    nav._kommentar_schrift("gross")
+    assert w.settings.get("kommentare/schrift") == "gross" and SB.blasen_px("gross") > SB.blasen_px("mittel") > SB.blasen_px("klein")
+    assert SB.karten_pt("gross") > SB.karten_pt("klein") and vorher > 0
+
+
+def test_geoeffnetes_dokument_zeigt_kommentar_blasen_sofort(app, tmp_path):
+    """Nach Speichern und Wieder-Öffnen stehen die Kommentare nicht nur links, sondern auch als Blasen am Seitenrand — ohne dass erst etwas geändert werden muss."""
+    w = win(tmp_path)
+    w.new_document(); w.show()
+    e = w.current_editor()
+    e.setPlainText("Bewerbung als Änderungsschneider,\nText hier.")
+    e.select_range(14, 32); e.kommentar_neu("bleibt erhalten")
+    pfad = str(tmp_path / "k.docx")
+    assert w._write(w.current_tab(), pfad)
+    w.open_path(pfad)
+    ed = w.current_editor()
+    assert len(ed.kommentare) == 1 and ed._blasen_flaeche is not None and ed._blasen_flaeche.isVisible()
+    assert len(ed.blasen_layout(300)) == 1

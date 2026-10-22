@@ -104,8 +104,9 @@ def sammeln(doc: QTextDocument, kommentare: dict, verwenden: str = "Nur für Kom
     out: list[Blase] = []
     for kid, (v, e) in kom.items():
         k = kommentare.get(kid) or kommentare.get(str(kid)) or {}
+        from lunivo_writer.editor.zusatz import kommentar_farbe
         out.append(Blase(v, e, k.get("autor", ""), k.get("datum", ""), "kommentar", k.get("text", ""),
-                         autor_farbe(k.get("autor", "")), kid))
+                         kommentar_farbe(bool(k.get("geloest"))), kid))
     for (art, autor, datum), v, e in aend:
         if art in ("ins", "del"):
             out.append(Blase(v, e, autor, datum, art, ("Eingefügt: " if art == "ins" else "Gelöscht: ") + _kuerzen(text[v:e]),
@@ -118,14 +119,28 @@ def _kopf(bl: Blase) -> str:
     return (bl.autor or "Unbekannt") + ((" · " + d) if d else "")
 
 
+# Schriftgröße der Kommentare: Bildpunkte der Blase im Editor bei 100 % Zoom, und Punkt in den Karten links (Menü Kommentare ▸ Schriftgröße)
+SCHRIFTEN = {"klein": (12, 10.0), "mittel": (14, 11.5), "gross": (17, 14.0)}
+
+
+def blasen_px(key: str) -> int:
+    return SCHRIFTEN.get(key, SCHRIFTEN["mittel"])[0]
+
+
+def karten_pt(key: str) -> float:
+    return SCHRIFTEN.get(key, SCHRIFTEN["mittel"])[1]
+
+
+KOPF_HOEHE = 24.0                                  # die Kopfzeile: Kreis mit Initial, Name, Datum, Menüzeichen
+
+
 def messen(bl: Blase, breite: float, font: QFont) -> float:
     """Höhe der Blase bei gegebener Breite (alles in Bildpunkten des Zeichengeräts)."""
-    kl = QFont(font); kl.setPixelSize(max(6, int(font.pixelSize() * 0.92)))
-    fm = QFontMetricsF(font)
+    kl = QFont(font)                                                   # der Text hat die volle Schriftgröße (vorher kleiner und kaum lesbar)
     fk = QFontMetricsF(kl)
-    innen = max(10.0, breite - 14)
+    innen = max(10.0, breite - 16)
     r = fk.boundingRect(QRectF(0, 0, innen, 10000), int(Qt.TextWordWrap), bl.text or " ")
-    return 8 + fm.height() + 3 + r.height() + 8
+    return 8 + KOPF_HOEHE + 6 + r.height() + 8
 
 
 def stapeln(anker_y: list[float], hoehen: list[float], unten: float, abstand: float = 6.0) -> list[float]:
@@ -145,24 +160,63 @@ def stapeln(anker_y: list[float], hoehen: list[float], unten: float, abstand: fl
     return ys
 
 
-def zeichnen(p: QPainter, bl: Blase, r: QRectF, font: QFont) -> None:
-    """Eine Blase zeichnen: Rand und Tönung in der Farbe des Autors, Kopfzeile fett, Text umbrochen."""
+def _ortszeit(iso: str) -> str:
+    """„2026-10-22 12:11“ in der Ortszeit (die Datei speichert UTC; die Karte links zeigt auch Ortszeit)."""
+    import datetime
+    try:
+        return datetime.datetime.fromisoformat(iso).astimezone().strftime("%Y-%m-%d %H:%M")
+    except (ValueError, TypeError):
+        return (iso or "")[:16].replace("T", " ")
+
+
+def menue_rect(r: QRectF) -> QRectF:
+    """Die Fläche des Menüzeichens „☰“ oben rechts in der Blase (für den Klick)."""
+    return QRectF(r.right() - 28, r.y() + 6, 24, KOPF_HOEHE + 4)
+
+
+def zeichnen(p: QPainter, bl: Blase, r: QRectF, font: QFont, druck: bool = False) -> None:
+    """Eine Blase zeichnen wie eine Karte: Kreis mit Initial, Name fett, Datum, Menüzeichen, darunter der Text — Farben des Designs, Kreis in der Farbe des Kommentars."""
+    from PySide6.QtGui import QGuiApplication, QPalette
+    pal = QPalette() if druck else QGuiApplication.palette()                # im Druck immer helle Farben, nie die des dunklen Designs
     p.save()
+    p.setRenderHint(QPainter.Antialiasing)
     c = QColor(bl.farbe)
-    fuell = QColor(c); fuell.setAlpha(28)
-    p.setBrush(fuell)
-    p.setPen(QPen(c, 1.2))
-    p.drawRoundedRect(r, 6, 6)
+    p.setBrush(pal.color(QPalette.Button))
+    p.setPen(QPen(pal.color(QPalette.Mid), 1.0))
+    p.drawRoundedRect(r, 8, 8)
+    # Kreis mit Initial
+    d = KOPF_HOEHE
+    kreis = QRectF(r.x() + 8, r.y() + 8, d, d)
+    p.setPen(Qt.NoPen); p.setBrush(c)
+    p.drawEllipse(kreis)
     fk = QFont(font); fk.setBold(True)
-    p.setFont(fk)
-    p.setPen(c)
+    p.setFont(fk); p.setPen(QColor("white"))
+    p.drawText(kreis, int(Qt.AlignCenter), ((bl.autor or "?").strip()[:1] or "?").upper())
+    # Name, Datum, Menüzeichen
     fm = QFontMetricsF(fk)
-    p.drawText(QRectF(r.x() + 7, r.y() + 6, r.width() - 14, fm.height()), int(Qt.AlignLeft | Qt.AlignVCenter), _kopf(bl))
-    kl = QFont(font); kl.setPixelSize(max(6, int(font.pixelSize() * 0.92)))
-    p.setFont(kl)
-    p.setPen(QColor("#222222"))
+    text_farbe = pal.color(QPalette.ButtonText)
+    p.setPen(text_farbe)
+    p.drawText(QRectF(kreis.right() + 8, r.y() + 8, r.width() * 0.5, d), int(Qt.AlignLeft | Qt.AlignVCenter), bl.autor or "Unbekannt")
+    kl = QFont(font)
+    kleiner = QFont(kl); kleiner.setPixelSize(max(6, int(kl.pixelSize() * 0.8)))
+    p.setFont(kleiner); p.setPen(pal.color(QPalette.Mid))
+    menue_x = r.right() - 20
+    frei = menue_x - 10 - (kreis.right() + 8 + fm.horizontalAdvance(bl.autor or "Unbekannt") + 10)           # so viel Platz bleibt neben dem Namen für das Datum
+    fk2 = QFontMetricsF(kleiner)
+    datum = _ortszeit(bl.datum)
+    for kandidat in (datum, datum[11:], ""):                                                              # vollständig, nur die Uhrzeit, sonst gar nicht (nie über den Namen)
+        if fk2.horizontalAdvance(kandidat) <= frei:
+            datum = kandidat
+            break
+    p.drawText(QRectF(menue_x - 10 - max(0.0, frei), r.y() + 8, max(0.0, frei), d), int(Qt.AlignRight | Qt.AlignVCenter), datum)
+    p.setPen(QPen(pal.color(QPalette.Mid), 1.4))                      # das „☰“ rechts
+    for i in range(3):
+        y = r.y() + 8 + d / 2 - 4 + i * 4
+        p.drawLine(int(menue_x), int(y), int(menue_x + 10), int(y))
+    # Text
+    p.setFont(kl); p.setPen(text_farbe)
     opt = QTextOption(); opt.setWrapMode(QTextOption.WordWrap)
-    p.drawText(QRectF(r.x() + 7, r.y() + 6 + fm.height() + 3, r.width() - 14, r.height() - fm.height() - 12), bl.text or "", opt)
+    p.drawText(QRectF(r.x() + 8, r.y() + 8 + d + 6, r.width() - 16, r.height() - d - 22), bl.text or "", opt)
     p.restore()
 
 

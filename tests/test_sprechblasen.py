@@ -127,3 +127,16 @@ def test_druck_blasen_links_und_ohne(app, tmp_path):
     export_pdf(str(tmp_path / "l.pdf"), ed.document(), pg, "t", "", None, None, None, None, {"blasen": bd})
     assert "Erster Kommentar" in " ".join(PdfReader(str(tmp_path / "l.pdf")).pages[0].extract_text().split())
     assert blasen_geometrie(pg, {}) is None and blasen_geometrie(pg, {"blasen": None}) is None
+
+
+def test_blasenflaeche_ist_unsichtbar_wie_der_grund_ums_blatt(app):
+    """Die Fläche neben dem Blatt hat dieselbe Farbe wie der Grund rund um das Blatt — der Streifen fällt nicht auf, nur die Blasen."""
+    from lunivo_writer.ui.document.document_area import DocumentTab
+    t = DocumentTab()
+    e = t.editor
+    e.setPlainText("Text hier"); e.select_range(0, 4)
+    e.kommentare[1] = {"autor": "Ich", "datum": "2026-10-22T10:00:00+00:00", "text": "k"}
+    from lunivo_writer.ui.document.blasen_flaeche import BlasenFlaeche
+    fl = BlasenFlaeche(e)
+    halter = e.parentWidget()
+    assert fl.grundfarbe() == halter.palette().color(halter.backgroundRole())

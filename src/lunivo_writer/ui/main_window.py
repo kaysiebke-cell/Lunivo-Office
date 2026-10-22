@@ -25,7 +25,7 @@ from lunivo_writer.proofing.proofing_service import WritingAssistant
 from lunivo_writer.core.document_manager import DocumentManager
 from lunivo_writer.ui.statusbar.status_bar import StatusBar
 from lunivo_writer.ui.baukasten import weitere_farben
-from lunivo_writer.ui.dialogs.dokument_dialoge import FindReplaceDialog, HeaderFooterDialog, PageSetupDialog, TableDialog
+from lunivo_writer.ui.dialogs.dokument_dialoge import HeaderFooterDialog, PageSetupDialog, TableDialog
 from lunivo_writer.ui.document.document_tabs import DocTabs
 from lunivo_writer.ui.document.document_area import DocumentTab
 from lunivo_writer.ui.ribbon.menue_tafel import MenueTafel
@@ -75,7 +75,6 @@ class MainWindow(QMainWindow):
         self.leer.setAutoFillBackground(True)
         self.docs.stack.insertWidget(0, self.leer)
         self.docs.stack.setCurrentWidget(self.leer)
-        self.find_dialog = FindReplaceDialog(self.current_editor, self)
         self.assistant = WritingAssistant(self.settings, parent=self)
         self.assistant.status.connect(lambda t: self.lbl_msg.setText(t))
         self.ki = KIDienst(self.assistant, self)
@@ -112,9 +111,10 @@ class MainWindow(QMainWindow):
         mitte = QHBoxLayout(); mitte.setSpacing(0)
         self.arbeit = QWidget()
         mitte.setContentsMargins(0, 0, 0, 0)
-        self.navigation = NavigationPanel(self.current_editor)
+        self.navigation = NavigationPanel(self.current_editor, self)
         self.navigation.aktion = self._nav_aktion
         self.navigation.hide()
+        mitte.addWidget(self._leiste_links())
         mitte.addWidget(self.navigation)
         mitte.addWidget(self.docs.stack, 1)
         mitte.addWidget(self.sidebar)
@@ -1201,8 +1201,11 @@ class MainWindow(QMainWindow):
         return name, init
 
     def toggle_navigation(self):
-        self.navigation.setVisible(not self.navigation.isVisible())
-        self.navigation.aktualisieren()
+        if self.navigation.isVisible():
+            self.navigation.hide()
+        else:
+            self.navigation.show()
+            self.navigation.zeige_tab(self.navigation.zuletzt)
 
     def toggle_lesemodus(self):
         self.lesemodus = not self.lesemodus
@@ -1382,6 +1385,49 @@ class MainWindow(QMainWindow):
         daten = next(m for m in self.band.daten["menues"] if m["name"] == "Datei")
         self._tafel = MenueTafel(daten["punkte"], self.befehle, self)
         self._tafel.zeigen_unter(self.band.menue_knopf)
+
+    def _leiste_links(self):
+        """Schmale Leiste links: Suchen, Kommentare, Überschriften, Änderungen, Noten, Vorlesen. Ein Klick öffnet das Feld, ein zweiter schließt es."""
+        from PySide6.QtWidgets import QFrame, QToolButton, QVBoxLayout
+        from lunivo_writer.ui.document.navigation import SEITEN, TITEL
+        from lunivo_writer.ui.widgets import icons
+        leiste = QFrame()
+        leiste.setObjectName("leisteLinks")
+        leiste.setFixedWidth(48)
+        v = QVBoxLayout(leiste)
+        v.setContentsMargins(4, 8, 4, 8)
+        v.setSpacing(6)
+        self._links = {}
+        symbole = {"suche": "lupe", "kommentare": "notiz", "ueberschriften": "gliederung", "aenderungen": "verfolgt", "noten": "fussnote", "vorlesen": "vorlesen"}
+        for key in SEITEN:
+            b = QToolButton()
+            b.setIcon(icons.icon(symbole[key], 22)); b.setIconSize(QSize(22, 22))
+            b.setToolTip(TITEL[key]); b.setAccessibleName(TITEL[key])
+            b.setCheckable(True)
+            b.setFixedSize(38, 38)
+            b.clicked.connect(lambda _=False, k=key: self._links_klick(k))
+            v.addWidget(b)
+            self._links[key] = b
+        v.addStretch(1)
+        self.navigation.zustandGeaendert.connect(self._links_sync)
+        self._links_sync()
+        return leiste
+
+    def _links_klick(self, key: str):
+        if self.navigation.isVisible() and self.navigation.aktuelle_seite == key:
+            self.navigation.hide()
+        else:
+            self.navigation.show()
+            if key == "suche":
+                self.navigation.suche_zeigen()
+            else:
+                self.navigation.zeige_tab(key)
+        self._links_sync()
+
+    def _links_sync(self):
+        sicht = self.navigation.isVisible()
+        for key, b in self._links.items():
+            b.setChecked(sicht and self.navigation.aktuelle_seite == key)
 
     def _leiste_rechts(self):
         """Schmale Leiste rechts: Die vier Reiter der Schreibhilfe (Prüfen, Lesen, Schreiben, KI) und der KI-Chat schalten die Seitenleiste um."""
@@ -1618,8 +1664,9 @@ class MainWindow(QMainWindow):
         t.editor.page_settings_changed(page)
 
     def find_dialog_show(self):
+        """Strg+F / Strg+H: „Suchen und ersetzen“ als Feld in der linken Seitenleiste."""
         if self.current_editor():
-            self.find_dialog.show_with_selection()
+            self.navigation.suche_zeigen()
 
     # ==== Seite ==================================================================================
     def _page_change(self, fn):

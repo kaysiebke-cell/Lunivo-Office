@@ -288,7 +288,7 @@ class DocumentEditor(FreieBilderMixin, ZusatzMixin, QTextEdit):
             return self._blasen_cache[1]
         k = self.blasen_konfig()
         blasen = SB.sammeln(self.document(), self.kommentare, k["verwenden"])
-        font = QFont(self.font()); font.setPixelSize(max(7, int(11 * self.zoom)))
+        font = QFont(self.font()); font.setPixelSize(max(7, int(SB.blasen_px(self.opt_text("kommentare/schrift", "mittel")) * self.zoom)))
         w = max(60.0, breite - 12)
         anker, hoehen = [], []
         for bl in blasen:
@@ -303,12 +303,10 @@ class DocumentEditor(FreieBilderMixin, ZusatzMixin, QTextEdit):
         return out
 
     def kommentar_bearbeiten(self, kid: int) -> None:
-        fenster = self.window()
-        alt = self.kommentare.get(kid, {}).get("text", "")
-        if hasattr(fenster, "befehle") and (t := fenster.befehle._text_abfragen("Kommentar bearbeiten", "Kommentar:", alt)) is not None:
-            self.kommentare[kid]["text"] = t
-            self.document().setModified(True)
-            self._zus_geaendert()
+        """Doppelklick auf eine Blase: den Kommentar in der Karte links bearbeiten."""
+        nav = getattr(self.window(), "navigation", None)
+        if nav is not None:
+            nav.kommentar_bearbeiten(kid)
 
     # ---- Ausgeblendeter Text -------------------------------------------------------------------------------------------
     def set_versteckt_zeigen(self, an: bool) -> None:
@@ -1604,9 +1602,18 @@ class DocumentEditor(FreieBilderMixin, ZusatzMixin, QTextEdit):
         cur = self.textCursor()
         sel = cur.selectedText()
         if cur.hasSelection() and (sel == find or (not case and sel.lower() == find.lower())):
-            cur.insertText(repl)
+            fmt = QTextCharFormat(self._format_am_anfang(cur))              # die Formatierung des ersetzten Textes bleibt (Schrift, fett, kursiv …)
+            cur.insertText(repl, fmt)
             return True
         return False
+
+    @staticmethod
+    def _format_am_anfang(cur: QTextCursor) -> QTextCharFormat:
+        """Das Zeichenformat des ersten Zeichens der Markierung (``charFormat()`` eines Cursors mit Markierung wäre das davor)."""
+        c = QTextCursor(cur)
+        c.setPosition(cur.selectionStart())
+        c.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor)
+        return c.charFormat()
 
     def replace_all(self, find: str, repl: str, case=False, whole=False) -> int:
         if not find:
@@ -1625,7 +1632,7 @@ class DocumentEditor(FreieBilderMixin, ZusatzMixin, QTextEdit):
             found = doc.find(find, pos, flags)
             if found.isNull():
                 break
-            found.insertText(repl)
+            found.insertText(repl, QTextCharFormat(self._format_am_anfang(found)))
             pos = found.position()
             n += 1
         cur.endEditBlock()

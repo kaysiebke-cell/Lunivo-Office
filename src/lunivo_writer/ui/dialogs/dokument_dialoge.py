@@ -97,62 +97,6 @@ class TableDialog(QDialog):
         lay = QVBoxLayout(self); lay.addLayout(form); lay.addWidget(bb)
 
 
-class FindReplaceDialog(QDialog):
-    """Nicht-modal: bleibt offen, während man im Dokument arbeitet."""
-    def __init__(self, get_editor, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("Suchen und Ersetzen")
-        self.get_editor = get_editor
-        self.find = QLineEdit(); self.repl = QLineEdit()
-        self.case = QCheckBox("Groß-/Kleinschreibung beachten"); self.whole = QCheckBox("Ganze Wörter")
-        self.msg = QLabel("")
-        g = QGridLayout(self)
-        g.addWidget(QLabel("Suchen nach"), 0, 0); g.addWidget(self.find, 0, 1, 1, 3)
-        g.addWidget(QLabel("Ersetzen durch"), 1, 0); g.addWidget(self.repl, 1, 1, 1, 3)
-        g.addWidget(self.case, 2, 0, 1, 2); g.addWidget(self.whole, 2, 2, 1, 2)
-        for i, (t, fn) in enumerate((("Weitersuchen", self.next), ("Zurück", self.prev),
-                                     ("Ersetzen", self.replace_one), ("Alle ersetzen", self.replace_all))):
-            b = QPushButton(t); b.clicked.connect(fn); g.addWidget(b, 3, i)
-        g.addWidget(self.msg, 4, 0, 1, 4)
-        self.find.returnPressed.connect(self.next)
-
-    def show_with_selection(self) -> None:
-        ed = self.get_editor()
-        if ed and ed.textCursor().hasSelection():
-            self.find.setText(ed.textCursor().selectedText())
-        self.show(); self.raise_(); self.activateWindow(); self.find.setFocus(); self.find.selectAll()
-
-    def _ed(self):
-        ed = self.get_editor()
-        if ed is None:
-            self.msg.setText("Kein Dokument geöffnet.")
-        return ed
-
-    def next(self):
-        ed = self._ed()
-        if ed:
-            ok = ed.find_text(self.find.text(), False, self.case.isChecked(), self.whole.isChecked())
-            self.msg.setText("" if ok else "Nicht gefunden.")
-
-    def prev(self):
-        ed = self._ed()
-        if ed:
-            ok = ed.find_text(self.find.text(), True, self.case.isChecked(), self.whole.isChecked())
-            self.msg.setText("" if ok else "Nicht gefunden.")
-
-    def replace_one(self):
-        ed = self._ed()
-        if ed:
-            ed.replace_current(self.find.text(), self.repl.text(), self.case.isChecked())
-            self.next()
-
-    def replace_all(self):
-        ed = self._ed()
-        if ed:
-            n = ed.replace_all(self.find.text(), self.repl.text(), self.case.isChecked(), self.whole.isChecked())
-            self.msg.setText(f"{n} Ersetzung(en).")
-
-
 class BildGroesseDialog(QDialog):
     def __init__(self, breite_px: float, hoehe_px: float, parent=None):
         super().__init__(parent)

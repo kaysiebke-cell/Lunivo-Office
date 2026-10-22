@@ -1058,7 +1058,7 @@ def _blasen_zeichnen(p: QPainter, eintraege: list, geo: dict) -> None:
         r = QRectF(geo["x_blasen"], yy, w, h)
         if geo["k"]["linien"]:
             SB.verbindung(p, bl, kante, a + 8, r, not geo["links"])
-        SB.zeichnen(p, bl, r, font)
+        SB.zeichnen(p, bl, r, font, druck=True)
 
 
 def _page_layout(page: PageSettings, quer: bool = False) -> QPageLayout:

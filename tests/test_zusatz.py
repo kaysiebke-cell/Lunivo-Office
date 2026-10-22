@@ -79,3 +79,25 @@ def test_zusatz_datei_oeffnet_in_libreoffice(app, tmp_path):
     import pypdf
     txt = " ".join(pypdf.PdfReader(pdf).pages[0].extract_text().split())
     assert "Eine Fußnote." in txt
+
+
+def test_geloester_kommentar_ueberlebt_docx(app, tmp_path):
+    """„Gelöst“ wird wie in Word als commentsExtended (w15:done) gespeichert und beim Öffnen wieder gelesen."""
+    meta = {"kommentare": {7: {"autor": "Ann", "initialen": "AN", "datum": "2026-01-02T03:04:05+00:00", "text": "Erledigt", "geloest": True}},
+            "noten": {"f": {5: "Eine Fußnote."}, "e": {}}}
+    out = str(tmp_path / "g.docx")
+    docx_writer.write_docx(out, _dokument(), PageSettings(), meta)
+    z = zipfile.ZipFile(out)
+    assert "word/commentsExtended.xml" in z.namelist() and 'done="1"' in z.read("word/commentsExtended.xml").decode()
+    _d, _, meta2, _rep = docx_reader.read_docx(out)
+    assert meta2["kommentare"][0]["geloest"] is True
+    # offene Kommentare bleiben offen
+    meta["kommentare"][7]["geloest"] = False
+    docx_writer.write_docx(out, _dokument(), PageSettings(), meta)
+    assert "word/commentsExtended.xml" not in zipfile.ZipFile(out).namelist()
+    assert not read_offen(out)
+
+
+def read_offen(pfad):
+    _d, _, meta, _rep = docx_reader.read_docx(pfad)
+    return [k for k in meta["kommentare"].values() if k.get("geloest")]

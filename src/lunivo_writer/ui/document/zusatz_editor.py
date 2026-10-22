@@ -53,6 +53,8 @@ class ZusatzMixin:
         self._meta = meta
         self._hat_zusatz = bool(self.kommentare or self.noten["f"] or self.noten["e"]) or bool(self.aenderungen())
         self._overlays_neu()
+        if hasattr(self, "_blasen_da") and self._blasen_da() != bool(getattr(self, "_blasen_extra", 0)):
+            self.apply_page(self.page)                  # ein geöffnetes Dokument mit Kommentaren zeigt die Blasen am Rand gleich, nicht erst nach der ersten Änderung
 
     # ---- Suchen von Bereichen ----------------------------------------------------------------
     def _fragmente(self):
@@ -147,6 +149,31 @@ class ZusatzMixin:
         self._hat_zusatz = True
         self._zus_geaendert()
         return kid
+
+    def set_suchtreffer(self, bereiche: list) -> None:
+        """Alle Treffer der Suche farbig hinterlegen (leere Liste nimmt die Markierung weg)."""
+        self._such_bereiche = list(bereiche)
+        self._overlays_neu()
+
+    def kommentar_text_setzen(self, kid: int, text: str) -> None:
+        """Den Text eines Kommentars ändern; Blase und Karte zeigen ihn sofort neu."""
+        k = self.kommentare.get(kid)
+        if k is None or text == k.get("text"):
+            return
+        k["text"] = text
+        self._blasen_cache = (None, [])
+        self.document().setModified(True)
+        self._zus_geaendert()
+        self.viewport().update()
+
+    def kommentar_geloest(self, kid: int, geloest: bool = True) -> None:
+        """Einen Kommentar als gelöst markieren (oder wieder öffnen); er bleibt im Dokument."""
+        k = self.kommentare.get(kid)
+        if k is None:
+            return
+        k["geloest"] = bool(geloest)
+        self.document().setModified(True)
+        self._zus_geaendert()
 
     def kommentar_loeschen(self, kid: int) -> None:
         self._eigenschaft_weg(P_KOMMENTAR, lambda cf: int(cf.property(P_KOMMENTAR)) == kid)
@@ -413,7 +440,9 @@ class ZusatzMixin:
             for b in self.kommentar_bereiche():
                 c = QTextCursor(doc)
                 c.setPosition(b["von"]); c.setPosition(b["bis"], QTextCursor.KeepAnchor)
-                fmt = QTextCharFormat(); fmt.setBackground(QColor(255, 236, 153, 140))
+                geloest = bool((self.kommentare.get(int(b["wert"])) or {}).get("geloest"))
+                farbe = QColor(173, 181, 189, 90) if geloest else QColor(255, 236, 153, 140)            # gelb; gelöst: grau
+                fmt = QTextCharFormat(); fmt.setBackground(farbe)
                 e = QTextEdit.ExtraSelection(); e.cursor = c; e.format = fmt
                 sel.append(e)
             ins_stil = self.opt_text("aenderungen/ins_stil", "Unterstrichen")
@@ -443,6 +472,12 @@ class ZusatzMixin:
                     fmt.setFontItalic(True)
                 e = QTextEdit.ExtraSelection(); e.cursor = c; e.format = fmt
                 sel.append(e)
+        for von, bis in getattr(self, "_such_bereiche", ()):                     # alle Treffer des Feldes „Suchen und ersetzen“
+            c = QTextCursor(doc)
+            c.setPosition(von); c.setPosition(min(bis, doc.characterCount() - 1), QTextCursor.KeepAnchor)
+            fmt = QTextCharFormat(); fmt.setBackground(QColor(255, 176, 46, 130))
+            e = QTextEdit.ExtraSelection(); e.cursor = c; e.format = fmt
+            sel.append(e)
         self.setExtraSelections(sel)
         fl = getattr(self, "_blasen_flaeche", None)
         if fl is not None and fl.isVisible():

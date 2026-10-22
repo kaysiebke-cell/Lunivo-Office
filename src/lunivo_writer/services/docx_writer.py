@@ -1083,6 +1083,7 @@ class _Writer:
 
     def _kommentare_schreiben(self) -> None:
         daten = self.meta.get("kommentare", {}) or {}
+        gelost: list[str] = []                                   # Kennungen der als gelöst markierten Kommentare (für commentsExtended)
         for kid in sorted(self._komm_runs):
             runs = self._komm_runs[kid]
             k = daten.get(kid) or daten.get(str(kid)) or {}
@@ -1091,8 +1092,28 @@ class _Writer:
                                        author=k.get("autor", "") or "Unbekannt", initials=k.get("initialen", "") or "")
                 if k.get("datum"):
                     c._comment_elm.set(qn("w:date"), k["datum"])
+                if k.get("geloest"):
+                    pid = f"{0x20000000 + len(gelost) * 0x111:08X}"
+                    c.paragraphs[0]._p.set("{http://schemas.microsoft.com/office/word/2010/wordml}paraId", pid)
+                    gelost.append(pid)
             except Exception as ex:
                 self.report.warn(f"Ein Kommentar konnte nicht gespeichert werden: {ex}")
+        if gelost:
+            self._komm_erweitert(gelost)
+
+    def _komm_erweitert(self, kennungen: list[str]) -> None:
+        """Teil word/commentsExtended.xml: Die Kommentare mit diesen Absatzkennungen sind gelöst (w15:done), wie Word es speichert."""
+        from docx.opc.packuri import PackURI
+        from docx.opc.part import Part
+        from lxml import etree
+        W15 = "http://schemas.microsoft.com/office/word/2012/wordml"
+        wurzel = etree.Element(f"{{{W15}}}commentsEx", nsmap={"w15": W15})
+        for pid in kennungen:
+            etree.SubElement(wurzel, f"{{{W15}}}commentEx", {f"{{{W15}}}paraId": pid, f"{{{W15}}}done": "1"})
+        blob = etree.tostring(wurzel, xml_declaration=True, encoding="UTF-8", standalone=True)
+        pkg = self.d.part.package
+        teil = Part(PackURI("/word/commentsExtended.xml"), "application/vnd.openxmlformats-officedocument.wordprocessingml.commentsExtended+xml", blob, pkg)
+        self.d.part.relate_to(teil, "http://schemas.microsoft.com/office/2011/relationships/commentsExtended")
 
     def _quellen_schreiben(self) -> None:
         quellen = self.meta.get("quellen") or []
