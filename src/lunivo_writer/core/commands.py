@@ -1238,16 +1238,30 @@ class Befehle:
             from lunivo_writer.ui.dialogs.einfuegen_dialoge import BausteinDialog
             BausteinDialog(self.w, self.ed).exec()
 
+    def textbausteine(self, k=None):
+        self.textbaustein()
+
     def schnellbaustein(self, k=None):
+        """F3: steht vor der Schreibmarke ein Kürzel, kommt der Baustein sofort; sonst die Liste aller Bausteine zum Auswählen."""
         if not self.ed:
             return
+        from PySide6.QtGui import QTextCursor
         from lunivo_writer.services import bausteine
+        c = self.ed.textCursor()
+        if not c.hasSelection():
+            w = QTextCursor(c); w.movePosition(QTextCursor.StartOfWord, QTextCursor.KeepAnchor)
+            b = bausteine.finde_kuerzel(w.selectedText())
+            if b is not None:
+                w.removeSelectedText(); bausteine.einfuegen(w, b); self.ed.document().setModified(True)
+                return
         m = QMenu()
-        liste = bausteine.laden()
-        for b in liste:
-            m.addAction(b["name"], lambda _=False, b=b: (bausteine.einfuegen(self.ed.textCursor(), b), self.ed.document().setModified(True)))
-        if not liste:
-            m.addAction("Noch keine Bausteine — Einfügen ▸ Textbaustein").setEnabled(False)
+        for titel, liste in (("Eigene", bausteine.laden()), ("Standard", bausteine.standard())):
+            if not liste:
+                continue
+            m.addSection(titel)
+            for b in liste:
+                m.addAction(b["name"] + (f"   [{b['kuerzel']}]" if b.get("kuerzel") else ""),
+                            lambda _=False, b=b: (bausteine.einfuegen(self.ed.textCursor(), b), self.ed.document().setModified(True)))
         m.addSeparator()
         m.addAction("Textbausteine verwalten …", self.textbaustein)
         self._popup(m)

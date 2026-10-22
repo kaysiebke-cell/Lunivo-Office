@@ -32,7 +32,10 @@ def test_pruefen_findet_und_aendert(app, tmp_path, monkeypatch):
     e = w.current_editor()
     e.setPlainText("Wir hat keine Zahlung erhalten.")
     w.assistant.pruefen()
-    warte(w.assistant.fundeGeaendert)
+    for _ in range(5):                                    # eine frühere (leere) Meldung nicht für das Ergebnis halten
+        warte(w.assistant.fundeGeaendert, 3000)
+        if any(f["neu"] == "Wir haben" for f in w.assistant.funde):
+            break
     funde = w.assistant.funde
     assert any(f["neu"] == "Wir haben" for f in funde), funde
     # Wellenlinien stehen im Editor
@@ -528,15 +531,51 @@ def test_aktionen_in_schreibhilfe_und_chat(app, tmp_path, monkeypatch):
     # Das Ergebnis einer Aktion kommt als Antwort in den Chat und in die Ergebnisliste
     e = k.assistent_hinzufuegen("Kürzer", "Kürze den Text.", "hinweis")
     w.current_editor().setPlainText("Ein langer Text, der gekürzt werden soll.")
+    import time
+    for _ in range(40):                                  # die Seitenverwaltung ändert das Blatt kurz nach dem Setzen; erst danach fragen (sonst „weitergeschrieben“)
+        app.processEvents(); time.sleep(0.03)
     monkeypatch.setattr(w.ki, "_einwilligung", lambda modell=None: True)
     monkeypatch.setattr(w.ki.ki, "eigener_assistent", lambda text, prompt: {"text": "Kurz.", "cent": None})
     w.ki._pool.setMaxThreadCount(1)
     w.ki.assistent(e)
-    for _ in range(200):
+    for _ in range(300):
         app.processEvents()
-        if w.ki.ergebnisse:
+        if any(z["text"] == "Kurz." for z in w.sidebar.chat.verlauf):
             break
-        import time; time.sleep(0.02)
-    app.processEvents()
+        time.sleep(0.02)
     assert w.ki.ergebnisse and w.ki.ergebnisse[-1]["text"] == "Kurz."
     assert any(z["text"] == "Kurz." for z in w.sidebar.chat.verlauf)
+
+
+def test_textbausteine_welche_hilfe_und_zusammenfassen(app, tmp_path, monkeypatch):
+    from PySide6.QtGui import QTextCursor
+    from lunivo_writer.services import bausteine
+    from lunivo_writer.ui.dialogs.einfuegen_dialoge import BausteinDialog
+    from lunivo_writer.ui.dialogs.welche_hilfe import HilfeWannDialog
+    w = win(tmp_path, monkeypatch)
+    monkeypatch.setattr(bausteine, "_pfad", lambda: str(tmp_path / "b.json"))
+    # Seitenleiste: der vierte KI-Knopf
+    assert [b.text() for b in w.sidebar.ki_knoepfe][-1] == "Zusammenfassen" and len(w.sidebar.ki_knoepfe) == 4
+    # Mitgelieferte Bausteine mit Kürzel; F3 setzt das Kürzel ein
+    assert len(bausteine.standard()) >= 10 and bausteine.finde_kuerzel("BT")["name"] == "Blindtext"
+    e = w.current_editor()
+    e.setPlainText("BT")
+    c = e.textCursor(); c.movePosition(QTextCursor.End); e.setTextCursor(c)
+    w.befehle.schnellbaustein()
+    assert e.toPlainText().startswith("Er hörte leise Schritte")
+    # Dialog: eigene aus Markierung mit Kürzel, mitgelieferte nicht löschbar
+    e.setPlainText("Mit freundlichen Grüßen")
+    c = e.textCursor(); c.select(QTextCursor.Document); e.setTextCursor(c)
+    d = BausteinDialog(w, e)
+    d.name.setText("Gruß"); d.kuerzel.setText("MFG"); d._neu()
+    assert [b["name"] for b in bausteine.laden()] == ["Gruß"] and bausteine.finde_kuerzel("MFG")["name"] == "Gruß"
+    assert d._aktuell()["name"] == "Gruß" and d.loeschen.isEnabled()
+    d.liste.setCurrentRow(1)
+    assert not d.loeschen.isEnabled() and d._aktuell()["name"] == "Anfrage" and "Angebot" in d.vorschau.toPlainText()
+    # Welche Hilfe wann: Schalter sind die der Seitenleiste
+    h = HilfeWannDialog(w)
+    h.schalter["wellen"].setChecked(False)
+    assert not w.assistant.an("wellen")
+    w.assistant.setze("wellen", True)
+    assert h.schalter["wellen"].isChecked()
+    assert w.befehle.hat("textbausteine")

@@ -328,8 +328,42 @@ class KIKonfigurationDialog(QDialog):
         self.accept()
 
 
+class SprachListe(QListWidget):
+    """Eine Sprachliste mit hohen Zeilen (wie das alte Fenster „Einstellungen der Übersetzung“); bedienbar wie eine Auswahl: ``currentData()``,
+    ``currentText()``, ``setCurrentText()``, ``findData()``, ``setCurrentIndex()``."""
+
+    def __init__(self, eintraege: list[tuple[str, str]]):
+        super().__init__()
+        for daten, text in eintraege:
+            it = QListWidgetItem(text); it.setData(Qt.UserRole, daten); self.addItem(it)
+        self.setStyleSheet("QListWidget { border: 1px solid palette(mid); border-radius: 6px; }"
+                           "QListWidget::item { padding: 11px 14px; border-bottom: 1px solid palette(midlight); }"
+                           "QListWidget::item:selected { background: palette(highlight); color: palette(highlighted-text); }"
+                           "QListWidget::item:hover:!selected { background: palette(alternate-base); }")
+        self.setMinimumHeight(260)
+
+    def currentData(self):
+        it = self.currentItem()
+        return it.data(Qt.UserRole) if it else None
+
+    def currentText(self) -> str:
+        it = self.currentItem()
+        return it.text() if it else ""
+
+    def findData(self, daten) -> int:
+        return next((i for i in range(self.count()) if self.item(i).data(Qt.UserRole) == daten), -1)
+
+    def setCurrentIndex(self, i: int) -> None:
+        self.setCurrentRow(i)
+        if 0 <= i < self.count():
+            self.scrollToItem(self.item(i))
+
+    def setCurrentText(self, text: str) -> None:
+        self.setCurrentIndex(next((i for i in range(self.count()) if self.item(i).text() == text), -1))
+
+
 class SprachePanel(QWidget):
-    """Die Sprachen der Schreibhilfe: „Sprache für die Überprüfung“ (Sprache des Dokuments) und „Übersetzen nach“ (Ziel der KI-Übersetzung).
+    """Die Sprachen der Schreibhilfe, nebeneinander: „Sprache für die Überprüfung“ (Sprache des Dokuments) und „Übersetzen nach“ (Ziel der KI-Übersetzung).
     Das Modell für die Übersetzung steht in der Modellzuweisung."""
 
     def __init__(self, fenster):
@@ -337,27 +371,28 @@ class SprachePanel(QWidget):
         self.fenster = fenster
         b = fenster.befehle
         v = QVBoxLayout(self); v.setContentsMargins(0, 8, 0, 0)
-        z = QHBoxLayout(); z.setSpacing(24)                                  # die beiden Sprachen stehen nebeneinander, die Beschriftung jeweils darüber
-        self.pruefung = QComboBox()
-        for kennung, name in b.SPRACHEN:
-            self.pruefung.addItem(name, kennung)
+        z = QHBoxLayout(); z.setSpacing(24)
+        self.pruefung = SprachListe(list(b.SPRACHEN))
         self.pruefung.setCurrentIndex(max(0, self.pruefung.findData(b.pruefsprache_aktuell())))
         self.pruefung.setEnabled(fenster.current_tab() is not None)
-        self.sprache = QComboBox(); self.sprache.addItems(K.SPRACHEN)
+        self.sprache = SprachListe([(n, n) for n in K.SPRACHEN])
         self.sprache.setCurrentText(fenster.ki.konfig["sprache"])
-        for titel, box in (("Sprache für die Überprüfung", self.pruefung), ("Übersetzen nach", self.sprache)):
+        for titel, unter, liste in (("Sprache für die Überprüfung", "Sprache des Dokuments — wird in der Datei vermerkt.", self.pruefung),
+                                    ("Übersetzen nach", "Sprache für die KI-Übersetzung wählen.", self.sprache)):
             sp = QVBoxLayout(); sp.setSpacing(4)
-            sp.addWidget(text_label(titel, fett=True, umbruch=False)); sp.addWidget(box)
+            sp.addWidget(text_label(titel, fett=True, pt=12, umbruch=False))
+            hint = QLabel(unter); hint.setStyleSheet("color: palette(mid);"); sp.addWidget(hint)
+            sp.addWidget(liste, 1)
             z.addLayout(sp, 1)
-        v.addLayout(z)
-        h = QLabel("Die Sprache für die Überprüfung wird in der Datei vermerkt. Die Schreibhilfe selbst prüft weiter auf Deutsch. "
-                   "Das Modell für die Übersetzung wählen Sie im Reiter „Modellzuweisung“ (Aufgabe „Übersetzung“).")
+        v.addLayout(z, 1)
+        h = QLabel("Die Schreibhilfe selbst prüft weiter auf Deutsch. Das Modell für die Übersetzung wählen Sie im Reiter „Modellzuweisung“ (Aufgabe „Übersetzung“).")
         h.setWordWrap(True); h.setStyleSheet("color: palette(mid);")
-        v.addWidget(h); v.addStretch(1)
+        v.addWidget(h)
 
     def uebernehmen(self) -> None:
-        self.fenster.ki.konfig.setze("sprache", self.sprache.currentText())
-        if self.pruefung.isEnabled() and self.pruefung.currentData() != self.fenster.befehle.pruefsprache_aktuell():
+        if self.sprache.currentItem() is not None:
+            self.fenster.ki.konfig.setze("sprache", self.sprache.currentText())
+        if self.pruefung.isEnabled() and self.pruefung.currentData() and self.pruefung.currentData() != self.fenster.befehle.pruefsprache_aktuell():
             self.fenster.befehle.pruefsprache_setzen(self.pruefung.currentData())
 
 

@@ -1,0 +1,67 @@
+[
+ {
+  "name": "Anfrage",
+  "kuerzel": "AF",
+  "text": "Sehr geehrte Damen und Herren,\n\nich interessiere mich für «Produkt oder Leistung» und bitte Sie um ein Angebot. Bitte teilen Sie mir mit, zu welchen Konditionen und bis wann eine Lieferung möglich wäre.\n\nÜber eine kurze Rückmeldung freue ich mich.\n\nMit freundlichen Grüßen\n«Ihr Name»"
+ },
+ {
+  "name": "Angebot",
+  "kuerzel": "AN",
+  "text": "Sehr geehrte «Anrede» «Name»,\n\nvielen Dank für Ihre Anfrage vom «Datum». Gern unterbreiten wir Ihnen folgendes Angebot:\n\n«Leistung / Produkt» zum Preis von «Betrag» € zuzüglich Umsatzsteuer.\n\nDas Angebot ist gültig bis zum «Datum». Für Rückfragen stehe ich Ihnen gern zur Verfügung.\n\nMit freundlichen Grüßen\n«Ihr Name»"
+ },
+ {
+  "name": "Anlage",
+  "kuerzel": "AL",
+  "text": "Anlagen:\n«Anlage 1»\n«Anlage 2»"
+ },
+ {
+  "name": "Bewerbungsanschreiben",
+  "kuerzel": "BA",
+  "text": "Sehr geehrte Damen und Herren,\n\nmit großem Interesse habe ich Ihre Stellenanzeige für «Stelle» gelesen. Die Aufgaben sprechen mich besonders an, weil «Grund».\n\nIn meiner bisherigen Tätigkeit als «bisherige Tätigkeit» habe ich «Erfahrung und Kenntnisse» gesammelt, die ich gern bei Ihnen einbringen möchte.\n\nIch freue mich auf ein persönliches Gespräch, in dem ich Sie von meiner Eignung überzeugen kann.\n\nMit freundlichen Grüßen\n«Ihr Name»"
+ },
+ {
+  "name": "Bewerbung: Absage",
+  "kuerzel": "BAb",
+  "text": "Sehr geehrte «Anrede» «Name»,\n\nvielen Dank für Ihre Bewerbung und das Interesse an unserem Unternehmen. Nach sorgfältiger Prüfung haben wir uns leider für einen anderen Bewerber entschieden.\n\nWir wünschen Ihnen für Ihre weitere berufliche Zukunft alles Gute.\n\nMit freundlichen Grüßen\n«Ihr Name»"
+ },
+ {
+  "name": "Bewerbung: Eingangsbestätigung",
+  "kuerzel": "BE",
+  "text": "Sehr geehrte «Anrede» «Name»,\n\nvielen Dank für Ihre Bewerbung als «Stelle». Wir haben Ihre Unterlagen erhalten und prüfen sie sorgfältig. Sie hören bis zum «Datum» von uns.\n\nMit freundlichen Grüßen\n«Ihr Name»"
+ },
+ {
+  "name": "Bewerbung: Absage, Unterlagen behalten",
+  "kuerzel": "BAu",
+  "text": "Sehr geehrte «Anrede» «Name»,\n\nvielen Dank für Ihre Bewerbung. Leider können wir Ihnen derzeit keine Stelle anbieten. Mit Ihrem Einverständnis behalten wir Ihre Unterlagen in unserer Bewerberdatei und melden uns, sobald eine passende Position frei wird.\n\nMit freundlichen Grüßen\n«Ihr Name»"
+ },
+ {
+  "name": "Bewerbung: Einladung zum Vorstellungsgespräch",
+  "kuerzel": "BV",
+  "text": "Sehr geehrte «Anrede» «Name»,\n\nvielen Dank für Ihre Bewerbung. Wir laden Sie gern zu einem Vorstellungsgespräch ein am «Datum» um «Uhrzeit» Uhr in «Ort».\n\nBitte bestätigen Sie den Termin kurz. Falls er Ihnen nicht passt, nennen wir Ihnen gern einen Ausweichtermin.\n\nMit freundlichen Grüßen\n«Ihr Name»"
+ },
+ {
+  "name": "Bestellung",
+  "kuerzel": "BS",
+  "text": "Sehr geehrte Damen und Herren,\n\nhiermit bestelle ich verbindlich:\n\n«Menge» × «Artikel» (Artikelnummer «Nummer») zum Preis von «Preis» €\n\nBitte senden Sie die Ware an die oben genannte Adresse und stellen Sie die Rechnung auf meinen Namen aus.\n\nMit freundlichen Grüßen\n«Ihr Name»"
+ },
+ {
+  "name": "Kündigung",
+  "kuerzel": "KD",
+  "text": "Sehr geehrte Damen und Herren,\n\nhiermit kündige ich den Vertrag «Vertragsnummer» fristgerecht zum nächstmöglichen Zeitpunkt, hilfsweise zum «Datum». Bitte bestätigen Sie mir die Kündigung und das Vertragsende schriftlich.\n\nMit freundlichen Grüßen\n«Ihr Name»"
+ },
+ {
+  "name": "Mahnung",
+  "kuerzel": "MH",
+  "text": "Sehr geehrte «Anrede» «Name»,\n\nleider konnten wir für die Rechnung «Rechnungsnummer» vom «Datum» über «Betrag» € bisher keinen Zahlungseingang feststellen. Bitte überweisen Sie den Betrag bis zum «Datum».\n\nSollten Sie die Zahlung bereits veranlasst haben, betrachten Sie dieses Schreiben als gegenstandslos.\n\nMit freundlichen Grüßen\n«Ihr Name»"
+ },
+ {
+  "name": "Reklamation",
+  "kuerzel": "RK",
+  "text": "Sehr geehrte Damen und Herren,\n\nam «Datum» habe ich «Artikel» bei Ihnen gekauft. Leider ist «Mangel» aufgetreten. Ich bitte Sie, den Mangel bis zum «Datum» zu beseitigen oder mir die Ware zu ersetzen.\n\nMit freundlichen Grüßen\n«Ihr Name»"
+ },
+ {
+  "name": "Blindtext",
+  "kuerzel": "BT",
+  "text": "Er hörte leise Schritte hinter sich. Das bedeutete nichts Gutes. Wer würde ihm schon folgen, spät in der Nacht und dazu noch in dieser engen Gasse mitten im übel beleumundeten Hafenviertel? Gerade jetzt, wo er das Ding seines Lebens gedreht hatte und mit der Beute verschwinden wollte!"
+ }
+]

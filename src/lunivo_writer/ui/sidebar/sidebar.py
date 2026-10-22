@@ -19,19 +19,6 @@ CHIP_GRUEN = ("QPushButton { border: 1px solid palette(mid); border-radius: 11px
               "QPushButton:checked { background: #2f9e75; color: white; border-color: #2f9e75; }")
 LEER = ("Nichts gefunden. Das heißt nicht, dass alles richtig ist — die Schreibhilfe sucht nur die Fehler, "
         "die ein Rechtschreibprüfer nicht finden kann.")
-HILFE = """**Welche Hilfe wann?**
-
-**Wellen** — während Sie schreiben, werden Fundstellen unterschlängelt: orange = sicher falsch, blau = kommt auf den Zusammenhang an, grau = nur zum Nachdenken.
-
-**Vorhersage** — nach drei Buchstaben erscheinen passende Wörter. Tab oder Eingabe übernimmt das markierte.
-
-**AutoKorr** — bessert das Offensichtliche, sobald ein Wort fertig ist: „ statt ", Gedankenstrich, Auslassungszeichen, Satzanfang, Wochentage.
-
-**Prüfen** — prüft den ganzen Text gründlich und listet jeden Fund mit Begründung auf. Sie entscheiden: Ändern oder Lassen.
-
-**KI** — freiwillig; ohne Schlüssel oder Ollama auf diesem Rechner bleibt sie aus. Der Text verlässt den Rechner nie ohne Ihr Zutun."""
-
-
 class SchreibhilfePanel(QWidget):
     _ollama_gefunden = Signal(list)
     bereich_geaendert = Signal(int)
@@ -140,14 +127,14 @@ class SchreibhilfePanel(QWidget):
                                  "padding: 5px 0; }")
         pal = self.worum.palette(); pal.setColor(QPalette.PlaceholderText, QColor("#c98a3d")); self.worum.setPalette(pal)
         v.addWidget(self.worum)
-        ki = QHBoxLayout()
+        ki_feld = QWidget(); ki = FlowLayout(ki_feld)                  # vier Knöpfe: reichen sie nicht in eine Zeile, brechen sie um
         self.ki_knoepfe = []
-        for text in ("KI-Korrektur", "Vorschläge", "Nach Englisch"):
+        for text in ("KI-Korrektur", "Vorschläge", "Nach Englisch", "Zusammenfassen"):
             b = QPushButton(text)
             b.setEnabled(False)
             ki.addWidget(b)
             self.ki_knoepfe.append(b)
-        v.addLayout(ki)
+        v.addWidget(ki_feld)
         from lunivo_writer.ui.baukasten.aktionen_leiste import AktionenLeiste
         self.aktionen = AktionenLeiste()
         v.addWidget(self.aktionen)
@@ -174,10 +161,11 @@ class SchreibhilfePanel(QWidget):
     def verbinde_ki(self, dienst, fenster) -> None:
         self.ki, self.fenster = dienst, fenster
         self.aktionen.verbinde(dienst, fenster)
-        k, v_, e_ = self.ki_knoepfe
+        k, v_, e_, z_ = self.ki_knoepfe
         k.clicked.connect(dienst.korrigieren)
         v_.clicked.connect(dienst.vorschlaege_holen)
         e_.clicked.connect(lambda: dienst.uebersetzen())
+        z_.clicked.connect(dienst.zusammenfassen)
         self.worum.textChanged.connect(dienst.zettel)
         dienst.vorschlaege.connect(self.zeige_vorschlaege)
         dienst.hinweis.connect(self.zeige_hinweis)
@@ -209,7 +197,7 @@ class SchreibhilfePanel(QWidget):
                                  else f"Beim Drücken geht der Text an „{ziel}“ (nur nach Ihrer Zustimmung).")
             self.ki_aktion.hide()
         else:
-            self.ki_info.setText("Die drei Knöpfe sind grau, weil kein KI-Schlüssel gespeichert ist. "
+            self.ki_info.setText("Die Knöpfe sind grau, weil kein KI-Schlüssel gespeichert ist. "
                                  "Ollama auf diesem Rechner geht ohne Schlüssel und ohne Geld.")
             self.ki_aktion.setText("Einrichten …")
             self._ki_fn = lambda: self.fenster.befehle.tun("w.eigenenAnbieterHinzufuegen")
@@ -380,8 +368,5 @@ class SchreibhilfePanel(QWidget):
         self.a.status.emit(f"{n} Korrektur(en) übernommen.")
 
     def welche_hilfe(self):
-        m = QMessageBox(self)
-        m.setWindowTitle("Welche Hilfe wann?")
-        m.setTextFormat(Qt.MarkdownText)
-        m.setText(HILFE)
-        m.exec()
+        from lunivo_writer.ui.dialogs.welche_hilfe import HilfeWannDialog
+        HilfeWannDialog(self.fenster).exec()

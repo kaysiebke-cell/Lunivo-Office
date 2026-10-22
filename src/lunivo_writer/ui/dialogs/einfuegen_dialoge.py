@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QColor, QPixmap
+from PySide6.QtGui import QColor, QFont, QPixmap
 from PySide6.QtWidgets import (
     QComboBox, QDialog, QDialogButtonBox, QDoubleSpinBox, QFormLayout, QHBoxLayout, QLabel, QLineEdit,
     QListWidget, QListWidgetItem, QMessageBox, QPlainTextEdit, QPushButton, QSpinBox, QTableWidget, QTableWidgetItem,
@@ -286,43 +286,106 @@ class DatumDialog(QDialog):
 
 
 class BausteinDialog(QDialog):
+    """Textbausteine: links die Liste (mitgelieferte und eigene), rechts die Vorschau; Name und Kürzel oben. „Aus Markierung …“ merkt den markierten Text
+    samt Formatierung, „Einfügen“ setzt den Baustein an die Schreibmarke. Das Kürzel plus F3 setzt ihn direkt ein."""
+
     def __init__(self, parent, ed):
         super().__init__(parent)
+        from PySide6.QtWidgets import QLineEdit, QTextBrowser
         self.ed = ed
         self.setWindowTitle("Textbausteine")
-        self.resize(460, 420)
+        self.resize(840, 600)
         v = QVBoxLayout(self)
-        self.liste = QListWidget(); self.liste.itemDoubleClicked.connect(lambda _: self._einfuegen())
-        v.addWidget(self.liste)
+        titel = QLabel("Textbausteine"); tf = titel.font(); tf.setBold(True); tf.setPointSizeF(tf.pointSizeF() + 3); titel.setFont(tf)
+        v.addWidget(titel)
+        kopf = QHBoxLayout()
+        kopf.addWidget(QLabel("Name:"))
+        self.name = QLineEdit(); kopf.addWidget(self.name, 1)
+        kopf.addWidget(QLabel("Kürzel:"))
+        self.kuerzel = QLineEdit(); self.kuerzel.setFixedWidth(110); kopf.addWidget(self.kuerzel)
+        v.addLayout(kopf)
         z = QHBoxLayout()
-        for text, fn in (("Einfügen", self._einfuegen), ("Markierung speichern …", self._neu), ("Löschen", self._weg)):
-            b = QPushButton(text); b.clicked.connect(fn); z.addWidget(b)
-        v.addLayout(z)
-        bb = QDialogButtonBox(QDialogButtonBox.Close); bb.rejected.connect(self.reject); v.addWidget(bb)
+        self.liste = QListWidget(); self.liste.itemDoubleClicked.connect(lambda _: self._einfuegen())
+        self.liste.currentItemChanged.connect(lambda *_: self._zeigen())
+        z.addWidget(self.liste, 1)
+        self.vorschau = QTextBrowser(); self.vorschau.setFont(QFont("Liberation Serif", 12))
+        z.addWidget(self.vorschau, 1)
+        v.addLayout(z, 1)
+        h = QLabel("Eigene kommen aus dem Markierten, die übrigen sind mitgeliefert. «So gesetzte Stellen» sind Lücken: Tab springt von einer zur nächsten, Tippen ersetzt sie.")
+        h.setWordWrap(True); h.setStyleSheet("color: palette(mid); font-size: 9pt;")
+        v.addWidget(h)
+        u = QHBoxLayout()
+        self.aus_markierung = QPushButton("Aus Markierung …"); self.aus_markierung.clicked.connect(self._neu)
+        self.loeschen = QPushButton("Löschen"); self.loeschen.clicked.connect(self._weg)
+        self.einfuegen_knopf = QPushButton("Einfügen"); self.einfuegen_knopf.setDefault(True); self.einfuegen_knopf.clicked.connect(self._einfuegen)
+        schliessen = QPushButton("Schließen"); schliessen.clicked.connect(self.reject)
+        u.addWidget(self.aus_markierung); u.addWidget(self.loeschen); u.addStretch(1); u.addWidget(schliessen); u.addWidget(self.einfuegen_knopf)
+        v.addLayout(u)
         self._fuellen()
 
-    def _fuellen(self):
+    def _fuellen(self, wahl: str | None = None) -> None:
         self.liste.clear()
-        for b in bausteine.laden():
-            it = QListWidgetItem(f"{b['name']} — {b.get('text', '')[:50]}"); it.setData(Qt.UserRole, b); self.liste.addItem(it)
+        gruppen = (("Standard", bausteine.standard()), ("Eigene", bausteine.laden()))
+        for titel, eintraege in gruppen:
+            if not eintraege:
+                continue
+            kopf = QListWidgetItem(titel.upper()); kopf.setFlags(Qt.NoItemFlags)
+            f = kopf.font(); f.setPointSizeF(f.pointSizeF() * 0.85); kopf.setFont(f); self.liste.addItem(kopf)
+            for b in eintraege:
+                it = QListWidgetItem(b["name"]); it.setData(Qt.UserRole, b); self.liste.addItem(it)
+                if wahl and b["name"] == wahl:
+                    self.liste.setCurrentItem(it)
+        if self.liste.currentItem() is None:
+            for i in range(self.liste.count()):
+                if self.liste.item(i).data(Qt.UserRole):
+                    self.liste.setCurrentRow(i); break
+        self._zeigen()
 
-    def _neu(self):
+    def _aktuell(self) -> dict | None:
+        it = self.liste.currentItem()
+        return it.data(Qt.UserRole) if it else None
+
+    def _zeigen(self) -> None:
+        b = self._aktuell()
+        self.einfuegen_knopf.setEnabled(b is not None)
+        self.loeschen.setEnabled(bool(b) and not b.get("standard"))
+        if b is None:
+            self.vorschau.clear()
+            return
+        self.name.setText(b["name"]); self.kuerzel.setText(b.get("kuerzel", ""))
+        if b.get("absaetze"):
+            from lunivo_writer.editor.textdaten import daten_zu_fragment
+            from PySide6.QtGui import QTextCursor
+            self.vorschau.clear()
+            c = QTextCursor(self.vorschau.document()); c.insertFragment(daten_zu_fragment(b["absaetze"]))
+        else:
+            self.vorschau.setPlainText(b.get("text", ""))
+
+    def _neu(self) -> None:
         from PySide6.QtGui import QTextDocumentFragment
         from PySide6.QtWidgets import QInputDialog
         c = self.ed.textCursor()
         if not c.hasSelection():
             QMessageBox.information(self, "Textbaustein", "Bitte zuerst den Text markieren, der gemerkt werden soll.")
             return
-        n, ok = QInputDialog.getText(self, "Textbaustein", "Name des Bausteins:")
-        if ok and n.strip():
-            bausteine.hinzufuegen(n.strip(), QTextDocumentFragment(c)); self._fuellen()
+        n = self.name.text().strip()
+        if not n:
+            n, ok = QInputDialog.getText(self, "Textbaustein", "Name des Bausteins:")
+            if not ok or not n.strip():
+                return
+            n = n.strip()
+        if any(b["name"] == n for b in bausteine.standard()):
+            QMessageBox.information(self, "Textbaustein", "Dieser Name gehört zu einem mitgelieferten Baustein. Bitte einen anderen wählen.")
+            return
+        bausteine.hinzufuegen(n, QTextDocumentFragment(c), self.kuerzel.text())
+        self._fuellen(n)
 
-    def _weg(self):
-        it = self.liste.currentItem()
-        if it:
-            bausteine.entfernen(it.data(Qt.UserRole)["name"]); self._fuellen()
+    def _weg(self) -> None:
+        b = self._aktuell()
+        if b and not b.get("standard"):
+            bausteine.entfernen(b["name"]); self._fuellen()
 
-    def _einfuegen(self):
-        it = self.liste.currentItem()
-        if it:
-            bausteine.einfuegen(self.ed.textCursor(), it.data(Qt.UserRole)); self.ed.document().setModified(True); self.accept()
+    def _einfuegen(self) -> None:
+        b = self._aktuell()
+        if b:
+            bausteine.einfuegen(self.ed.textCursor(), b); self.ed.document().setModified(True); self.accept()
