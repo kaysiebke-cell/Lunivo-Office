@@ -53,7 +53,8 @@ def _zeile(g: QGridLayout, r: int, radio: QRadioButton, *rest) -> None:
         g.addWidget(w, r, i + 1)
 
 
-class LayoutDialog(QDialog):
+from lunivo_writer.ui.baukasten.zusatz_panel import PanelFaehig
+class LayoutDialog(PanelFaehig, QDialog):
     def __init__(self, parent=None, werte: dict | None = None):
         super().__init__(parent)
         self.setWindowTitle("Layout")

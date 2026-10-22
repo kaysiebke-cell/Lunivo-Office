@@ -8,7 +8,8 @@ from PySide6.QtWidgets import (
 from lunivo_writer.editor import gehe_zu as G
 
 
-class GeheZuDialog(QDialog):
+from lunivo_writer.ui.baukasten.zusatz_panel import PanelFaehig
+class GeheZuDialog(PanelFaehig, QDialog):
     def __init__(self, parent, ed, art: str = "Seite"):
         super().__init__(parent)
         self.setWindowTitle("Gehe zu")

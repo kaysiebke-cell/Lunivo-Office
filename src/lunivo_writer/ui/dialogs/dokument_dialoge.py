@@ -14,7 +14,8 @@ from lunivo_writer.ui.baukasten import DialogRahmen, FarbFeld, Linie, LinienWahl
 from lunivo_writer.ui.baukasten.mass_feld import EINHEITEN, MassSpin as _MassSpin, einheit, set_einheit, spin as _spin  # noqa: F401
 
 
-class PageSetupDialog(QDialog):
+from lunivo_writer.ui.baukasten.zusatz_panel import PanelFaehig
+class PageSetupDialog(PanelFaehig, QDialog):
     def __init__(self, page: PageSettings, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Seite einrichten")
@@ -60,7 +61,7 @@ class PageSetupDialog(QDialog):
         super().accept()
 
 
-class HeaderFooterDialog(QDialog):
+class HeaderFooterDialog(PanelFaehig, QDialog):
     def __init__(self, title: str, hf: HeaderFooter, parent=None):
         super().__init__(parent)
         self.setWindowTitle(title)
@@ -83,7 +84,7 @@ class HeaderFooterDialog(QDialog):
                             ["left", "center", "right"][self.align.currentIndex()])
 
 
-class TableDialog(QDialog):
+class TableDialog(PanelFaehig, QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Tabelle einfügen")
@@ -97,7 +98,7 @@ class TableDialog(QDialog):
         lay = QVBoxLayout(self); lay.addLayout(form); lay.addWidget(bb)
 
 
-class BildGroesseDialog(QDialog):
+class BildGroesseDialog(PanelFaehig, QDialog):
     def __init__(self, breite_px: float, hoehe_px: float, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Bildgröße")
@@ -125,7 +126,7 @@ class BildGroesseDialog(QDialog):
     def hoehe_px(self): return self.h.value() * 96 / 25.4
 
 
-class ZoomDialog(QDialog):
+class ZoomDialog(PanelFaehig, QDialog):
     """Ansicht ▸ Zoom: feste Stufen, Seitenbreite, ganze Seite oder eigener Wert."""
     STUFEN = (200, 150, 100, 75, 50, 25)
 
@@ -165,7 +166,7 @@ class ZoomDialog(QDialog):
         return self._art[i]
 
 
-class WasserzeichenDialog(DialogRahmen):
+class WasserzeichenDialog(PanelFaehig, DialogRahmen):
     def __init__(self, parent, aktuell: dict | None):
         a = aktuell or {}
         super().__init__(parent, "Wasserzeichen", self._male)

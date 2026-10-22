@@ -29,7 +29,8 @@ KEINE = "(keine)"
 GLEICHE = "(dieselbe Vorlage)"
 
 
-class FormatvorlageDialog(QDialog):
+from lunivo_writer.ui.baukasten.zusatz_panel import PanelFaehig
+class FormatvorlageDialog(PanelFaehig, QDialog):
     def __init__(self, parent=None, *, start: dict | None = None, vorlagen: list[str] | None = None, name: str = "Formatvorlage1",
                  basis: str = "Standard", aendern: str | None = None, belegt=None, standard_tab_mm: float | None = None):
         """``aendern``: Name einer vorhandenen Vorlage — dann ist es das Fenster „Formatvorlage ändern“ (Name fest)."""

@@ -23,6 +23,7 @@ def _ok(dlg):
 _Farbknopf = FarbFeld
 
 
+from lunivo_writer.ui.baukasten.zusatz_panel import PanelFaehig
 class VorschauMixin:
     def _vorschau_bauen(self, layout):
         self.vorschau = QLabel(); self.vorschau.setMinimumHeight(120); self.vorschau.setAlignment(Qt.AlignCenter)
@@ -258,7 +259,7 @@ class DeckblattDialog(QDialog):
         f.addRow(_ok(self))
 
 
-class DatumDialog(QDialog):
+class DatumDialog(PanelFaehig, QDialog):
     def __init__(self, parent):
         super().__init__(parent)
         self.setWindowTitle("Datum und Uhrzeit")

@@ -40,12 +40,14 @@ def test_alle_befehle_stuerzen_nicht_ab(app, tmp_path, monkeypatch):
     from PySide6.QtWidgets import QDialog, QMenu as _QMenu
 
     def waechter():
-        # (QApplication.activeModalWidget() stürzt unter „offscreen“ bei QFontDialog ab — deshalb über die Fensterliste)
-        for x in QApplication.topLevelWidgets():
-            if isinstance(x, QDialog) and x.isVisible():
-                x.reject()
-            elif isinstance(x, _QMenu) and x.isVisible():
-                x.close()
+        # (QApplication.activeModalWidget() stürzt unter „offscreen“ bei QFontDialog ab — deshalb über die Fensterliste;
+        # Zusatzfenster liegen als Seite in der Seitenleiste, also auch die Dialoge in den Fenstern suchen)
+        for t in QApplication.topLevelWidgets():
+            for x in [t] + t.findChildren(QDialog):
+                if isinstance(x, QDialog) and x.isVisible():
+                    x.reject()
+                elif isinstance(x, _QMenu) and x.isVisible():
+                    x.close()
     uhr = QTimer(); uhr.setInterval(40); uhr.timeout.connect(waechter); uhr.start()
 
     w = MainWindow(Settings(QSettings(str(tmp_path / "s.ini"), QSettings.IniFormat)))

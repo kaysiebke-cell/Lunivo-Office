@@ -97,6 +97,7 @@ def _muster_symbol(schluessel: str, px: int = 16) -> QIcon:
 
 
 # ------------------------------------------------------------------------------------------------------ Vorschau
+from lunivo_writer.ui.baukasten.zusatz_panel import PanelFaehig
 class _Vorschau(QWidget):
     """Blatt mit zwei Absätzen aus grauen Zeilen; zeigt Rahmen und Füllung und schaltet Kanten per Klick."""
     kante = Signal(str)
@@ -505,7 +506,7 @@ class _SchattierungSeite(QWidget):
 
 
 # ---------------------------------------------------------------------------------------------------------- Fenster
-class RahmenSchattierungDialog(QDialog):
+class RahmenSchattierungDialog(PanelFaehig, QDialog):
     """Das Fenster „Rahmen und Schattierung“. Die Reiter und ihre Werte stehen oben in der Beschreibung des Bausteins."""
 
     def __init__(self, parent=None, *, rahmen: Linie | None = None, fuell: str | None = None, muster: tuple[str, str] | None = None,

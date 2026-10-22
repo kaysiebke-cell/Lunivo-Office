@@ -23,6 +23,7 @@ from lunivo_writer.ui.baukasten.schiebe_feld import SchiebeFeld, SchrittFeld
 from lunivo_writer.ui.baukasten.voreinstellung_menue import VoreinstellungMenue
 
 
+from lunivo_writer.ui.baukasten.zusatz_panel import PanelFaehig
 class Abschnitt(QWidget):
     """Aufklappbarer Abschnitt: Pfeil und Überschrift in Großbuchstaben links, optional ein Bedienelement rechts (z. B. die Voreinstellung)."""
 
@@ -455,7 +456,7 @@ class TexteffektPanel(QWidget):
                             face, kontur)
 
 
-class TexteffektDialog(QDialog):
+class TexteffektDialog(PanelFaehig, QDialog):
     """Das Fenster „Texteffekte formatieren“: das Panel mit „OK“ (wie in der Vorlage; das Schließen-Kreuz bricht ab). Felder des Panels sind hier erreichbar."""
 
     def __init__(self, parent=None, werte: dict | None = None):

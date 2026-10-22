@@ -50,7 +50,8 @@ def _schnitt_combo() -> QComboBox:
     return c
 
 
-class SchriftartDialog(QDialog):
+from lunivo_writer.ui.baukasten.zusatz_panel import PanelFaehig
+class SchriftartDialog(PanelFaehig, QDialog):
     def __init__(self, parent=None, werte: dict | None = None, *, umfang: str = "text"):
         super().__init__(parent)
         self.setWindowTitle("Schriftart"); self.resize(504, 721)

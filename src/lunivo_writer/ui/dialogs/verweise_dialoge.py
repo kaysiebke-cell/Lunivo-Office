@@ -18,7 +18,8 @@ def _knoepfe(dlg) -> QDialogButtonBox:
     return bb
 
 
-class BeschriftungDialog(QDialog):
+from lunivo_writer.ui.baukasten.zusatz_panel import PanelFaehig
+class BeschriftungDialog(PanelFaehig, QDialog):
     def __init__(self, parent):
         super().__init__(parent)
         self.setWindowTitle("Beschriftung einfügen")
@@ -30,7 +31,7 @@ class BeschriftungDialog(QDialog):
         f.addRow(_knoepfe(self))
 
 
-class TextmarkeDialog(QDialog):
+class TextmarkeDialog(PanelFaehig, QDialog):
     def __init__(self, parent, ed):
         super().__init__(parent)
         self.ed = ed
@@ -73,7 +74,7 @@ class TextmarkeDialog(QDialog):
             verweise.lesezeichen_gehe(self.ed, it.text())
 
 
-class QuerverweisDialog(QDialog):
+class QuerverweisDialog(PanelFaehig, QDialog):
     def __init__(self, parent, ed):
         super().__init__(parent)
         self.setWindowTitle("Querverweis")
@@ -101,7 +102,7 @@ class QuerverweisDialog(QDialog):
         return (it.data(Qt.UserRole), ["text", "nummer", "seite"][self.wie.checkedId()]) if it else (None, None)
 
 
-class QuelleDialog(QDialog):
+class QuelleDialog(PanelFaehig, QDialog):
     FELDER = [("autor", "Autor(en) — „Nachname, Vorname; …“"), ("titel", "Titel"), ("jahr", "Jahr"), ("verlag", "Verlag"),
               ("ort", "Ort"), ("url", "Adresse (URL)")]
 
@@ -123,7 +124,7 @@ class QuelleDialog(QDialog):
         return d
 
 
-class QuellenDialog(QDialog):
+class QuellenDialog(PanelFaehig, QDialog):
     def __init__(self, parent, ed):
         super().__init__(parent)
         self.ed = ed

@@ -30,7 +30,8 @@ _ZEILEN = (("faktor", 1.0, "Einfach"), ("faktor", 1.5, "1,5 Zeilen"), ("faktor",
            ("genau", 0.0, "Genau"), ("faktor", 0.0, "Mehrfach"))
 
 
-class AbsatzDialog(QDialog):
+from lunivo_writer.ui.baukasten.zusatz_panel import PanelFaehig
+class AbsatzDialog(PanelFaehig, QDialog):
     def __init__(self, parent=None, werte: dict | None = None, *, umfang: str = "text"):
         super().__init__(parent)
         self.setWindowTitle("Absatz")

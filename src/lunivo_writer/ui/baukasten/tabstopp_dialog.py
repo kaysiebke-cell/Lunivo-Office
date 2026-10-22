@@ -65,7 +65,8 @@ def _text(mm: float, art: str, fuell: str = "") -> str:
     return f"{mm * f:.2f} {kurz}".replace(".", ",") + "  ·  " + dict(ARTEN)[art] + (f"  ·  {FUELL[fuell][1]}{FUELL[fuell][1]}{FUELL[fuell][1]}" if fuell else "")
 
 
-class TabstoppDialog(QDialog):
+from lunivo_writer.ui.baukasten.zusatz_panel import PanelFaehig
+class TabstoppDialog(PanelFaehig, QDialog):
     def __init__(self, parent=None, stopps=(), standard_mm: float | None = None):
         """``standard_mm``: Standardabstand der Tabstopps des Dokuments (``None``: das Feld bleibt weg)."""
         super().__init__(parent)

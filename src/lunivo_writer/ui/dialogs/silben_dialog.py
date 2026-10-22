@@ -12,7 +12,8 @@ from lunivo_writer.editor import silbenfarben as S
 from lunivo_writer.ui.baukasten import weitere_farben
 
 
-class SilbenDialog(QDialog):
+from lunivo_writer.ui.baukasten.zusatz_panel import PanelFaehig
+class SilbenDialog(PanelFaehig, QDialog):
     def __init__(self, fenster):
         super().__init__(fenster)
         self.w = fenster

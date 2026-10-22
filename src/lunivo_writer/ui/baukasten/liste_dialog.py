@@ -76,6 +76,7 @@ def _raster(eintraege: list[dict | None], bild=None) -> QListWidget:
     return w
 
 
+from lunivo_writer.ui.baukasten.zusatz_panel import PanelFaehig
 class _Zahlenformat(QWidget):
     """Zahlenformat, Zahlenart, Startzahl und „Schriftart …“ der Nummer — gemeinsam für „Nummerierung anpassen“ und „Gliederung anpassen“."""
     geaendert = Signal()
@@ -160,7 +161,7 @@ class _Positionen(QWidget):
         return {"ausr": self.ausr.value(), "ausr_art": self.art.currentData(), "tab": self.tab.value(), "einzug": self.einzug.value()}
 
 
-class NummerierungAnpassenDialog(QDialog):
+class NummerierungAnpassenDialog(PanelFaehig, QDialog):
     def __init__(self, parent=None, spec: dict | None = None):
         super().__init__(parent)
         self.setWindowTitle("Nummerierung anpassen"); self.resize(359, 403)
@@ -265,7 +266,7 @@ def _gl_bild(defn: dict | None, groesse: QSize = _KACHEL) -> QIcon:
     return QIcon(pm)
 
 
-class GliederungAnpassenDialog(QDialog):
+class GliederungAnpassenDialog(PanelFaehig, QDialog):
     """„Gliederung anpassen“ (auch „Aufzählungszeichen anpassen“): je Ebene Zahlenformat, Zahlenart, Startzahl, Schriftart, Position und Text,
     dazu Nummerieren nach Norm, Verbinden mit Formatvorlage, Text danach und Neu nummerieren nach."""
 
@@ -408,7 +409,20 @@ class GliederungAnpassenDialog(QDialog):
             y += h
 
 
-class ListenDialog(QDialog):
+class ListenDialog(PanelFaehig, QDialog):
+    ALS_PANEL = True                                          # öffnet sich in der Seitenleiste (siehe zusatz_panel)
+
+    def kompakt_machen(self) -> None:
+        """Für die schmale Seitenleiste: kleinere Kacheln (drei je Zeile), Reiter zum Rollen, Fenster ohne feste Größe."""
+        kl = QSize(96, 68)
+        for w in (self.r_punkte, self.r_zahlen, self.r_gl):
+            w.setIconSize(kl); w.setGridSize(QSize(kl.width() + 8, kl.height() + 8)); w.setMinimumHeight(2 * (kl.height() + 8) + 8)
+        self.reiter.setUsesScrollButtons(True); self.reiter.tabBar().setExpanding(False); self.reiter.tabBar().setElideMode(Qt.ElideNone)
+        for i, (kurz, voll) in enumerate((("Aufzählung", "Aufzählungszeichen"), ("Nummern", "Nummerierung"), ("Gliederung", "Gliederung nummeriert"),
+                                          ("Eigene", "Benutzerdefinierte Liste"))):
+            self.reiter.setTabText(i, kurz); self.reiter.setTabToolTip(i, voll)
+        self.setMinimumSize(0, 0)
+
     def __init__(self, parent=None, aktuell: dict | None = None, *, seite: str = "aufzaehlung"):
         super().__init__(parent)
         self.setWindowTitle("Nummerierung und Aufzählungszeichen"); self.resize(694, 435)

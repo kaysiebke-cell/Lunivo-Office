@@ -84,14 +84,19 @@ class FensterStapel(QDialog):
 def ausfuehren(d: QDialog) -> bool:
     """``d`` als oberstes Fenster eines Stapels zeigen und warten (wie ``d.exec()``): seine Unterfenster öffnen sich als Seiten im selben Fenster.
     → True nach „OK“. ``d`` bleibt danach lesbar (``d.werte()`` …); der Wirt hängt an ``d`` und lebt so lange wie dieses."""
+    if getattr(d, "ALS_PANEL", False):                                  # Zusatzfenster: in der Seitenleiste statt über dem Text
+        from lunivo_writer.ui.baukasten.zusatz_panel import leiste_fuer
+        leiste = leiste_fuer(d)
+        if leiste is not None:
+            return leiste.zusatz_ausfuehren(d)
     host = FensterStapel(d, d.parentWidget())
     d._stapel_wirt = host
     return host.exec() == QDialog.Accepted
 
 
-def stapel_von(w: QWidget | None) -> FensterStapel | None:
+def stapel_von(w: QWidget | None):
     while w is not None:
-        if isinstance(w, FensterStapel):
+        if isinstance(w, FensterStapel) or getattr(w, "ist_stapel", False):
             return w
         w = w.parentWidget()
     return None

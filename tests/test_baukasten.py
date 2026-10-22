@@ -1570,3 +1570,27 @@ def test_bildeffekte_ueberleben_docx(app, tmp_path):
     assert got["schatten"]["farbe"] == "#112233" and abs(got["schatten"]["abstand"] - 6.0) < 0.1 and abs(got["schatten"]["winkel"] - 90) < 0.1
     assert abs(got["schatten"]["transparenz"] - 40) < 0.2 and abs(got["leuchten"]["groesse"] - 9.0) < 0.1 and got["leuchten"]["farbe"] == "#ff0000"
     assert abs(got["reflektion"]["groesse"] - 40) < 0.1 and abs(got["weich"]["radius"] - 7.0) < 0.1
+
+
+def test_zusatzfenster_oeffnet_in_der_seitenleiste_ohne_breite_zu_aendern(app, tmp_path):
+    """„Nummerierung und Aufzählungszeichen“ erscheint als Seite in der Seitenleiste (Breite bleibt), gilt nur solange man es bearbeitet und setzt die Liste."""
+    from PySide6.QtCore import QTimer
+    from PySide6.QtWidgets import QDialog
+    w = _fenster(tmp_path)
+    w.show()                                                # nur ein sichtbares Hauptfenster hat eine Seitenleiste, in der sich das Fenster zeigen kann
+    e = w.current_editor(); e.insertPlainText("Eins\nZwei")
+    breite = w.sidebar.width()
+    seen = {}
+
+    def waehle_und_ok():
+        seen["breite"] = w.sidebar.width(); seen["sichtbar"] = not w.sidebar.isHidden()
+        seen["seite"] = w.sidebar.stapel.currentIndex()
+        d = w.sidebar.findChildren(QDialog)[0]
+        d.r_punkte.setCurrentRow(1)                         # Punkt
+        d.accept()
+    QTimer.singleShot(300, waehle_und_ok)
+    w.befehle.listeDialog()
+    assert seen["breite"] == breite and seen["sichtbar"] and seen["seite"] == 2
+    assert w.sidebar.stapel.currentIndex() == 0 and getattr(w.sidebar, "_zusatz", None) is None      # danach wie vorher
+    assert e.textCursor().currentList() is not None
+    _zu(w)

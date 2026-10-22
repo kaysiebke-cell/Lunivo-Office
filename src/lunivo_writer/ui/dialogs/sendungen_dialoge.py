@@ -17,7 +17,8 @@ def _ok(dlg, text_ok: str | None = None):
     return bb
 
 
-class UmschlagDialog(QDialog):
+from lunivo_writer.ui.baukasten.zusatz_panel import PanelFaehig
+class UmschlagDialog(PanelFaehig, QDialog):
     def __init__(self, parent, absender: str = ""):
         super().__init__(parent)
         self.setWindowTitle("Umschlag")
@@ -30,7 +31,7 @@ class UmschlagDialog(QDialog):
         f.addRow(_ok(self, "Anlegen"))
 
 
-class EtikettenDialog(QDialog):
+class EtikettenDialog(PanelFaehig, QDialog):
     def __init__(self, parent):
         super().__init__(parent)
         self.setWindowTitle("Etiketten")
@@ -43,7 +44,7 @@ class EtikettenDialog(QDialog):
         f.addRow(_ok(self, "Anlegen"))
 
 
-class SeriendruckDialog(QDialog):
+class SeriendruckDialog(PanelFaehig, QDialog):
     def __init__(self, parent, felder: list[str], gespeichert: str):
         super().__init__(parent)
         self.setWindowTitle("Seriendruck")
@@ -70,7 +71,7 @@ class SeriendruckDialog(QDialog):
                     continue
 
 
-class RegelDialog(QDialog):
+class RegelDialog(PanelFaehig, QDialog):
     def __init__(self, parent):
         super().__init__(parent)
         self.setWindowTitle("Regel")

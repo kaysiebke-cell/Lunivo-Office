@@ -16,6 +16,7 @@ GRUPPEN = {
 }
 
 
+from lunivo_writer.ui.baukasten.zusatz_panel import PanelFaehig
 class SonderzeichenDialog(QDialog):
     def __init__(self, parent, einfuegen):
         super().__init__(parent)

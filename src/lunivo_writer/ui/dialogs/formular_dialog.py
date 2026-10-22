@@ -8,7 +8,8 @@ from lunivo_writer.editor import formular as FO
 TITEL = {"text": "Textfeld", "auswahl": "Auswahlliste", "datum": "Datumsfeld", "kasten": "Kontrollkästchen", "knopf": "Schaltfläche"}
 
 
-class FormFeldDialog(QDialog):
+from lunivo_writer.ui.baukasten.zusatz_panel import PanelFaehig
+class FormFeldDialog(PanelFaehig, QDialog):
     def __init__(self, fenster, art: str, bestehend: dict | None = None):
         super().__init__(fenster)
         self.art = art

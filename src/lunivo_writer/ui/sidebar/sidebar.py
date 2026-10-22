@@ -353,6 +353,32 @@ class SchreibhilfePanel(QWidget):
         if self.effekt_panel is not None and not (f is not None and self.effekt_panel.isAncestorOf(f)):
             self.effekt_panel.setze(werte)
 
+    def zusatz_ausfuehren(self, d) -> bool:
+        """Ein Zusatzfenster als Seite hier in der Seitenleiste zeigen, solange man es bearbeitet (wie ``d.exec()``). Die Breite bleibt."""
+        from lunivo_writer.ui.baukasten.zusatz_panel import ZusatzPanel, ausfuehren_in
+        if getattr(self, "_zusatz", None) is not None:                       # es ist schon eines offen: das alte schließt
+            self._zusatz._schliessen()
+        seite = ZusatzPanel()
+        seite.verfuegbar = max(300, min(self.width(), 420)) - 56                      # Seitenleiste ohne Ränder und Rollbalken
+        self._zusatz = seite
+        i = self.stapel.addWidget(seite)
+        vorher = (self.stapel.currentIndex(), self.isHidden())
+
+        def zeigen() -> None:
+            if self.isHidden():
+                self.show()
+            self.stapel.setCurrentIndex(i)
+            self.bereich_geaendert.emit(i)
+
+        def zurueck() -> None:
+            self.stapel.setCurrentIndex(vorher[0])
+            self.stapel.removeWidget(seite); seite.deleteLater()
+            self._zusatz = None
+            if vorher[1]:
+                self.hide()
+            self.bereich_geaendert.emit(vorher[0])
+        return ausfuehren_in(seite, d, zeigen, zurueck)
+
     def zeige_bereich(self, i: int) -> None:
         """0 = Schreibhilfe, 1 = KI-Chat."""
         self.stapel.setCurrentIndex(i)
