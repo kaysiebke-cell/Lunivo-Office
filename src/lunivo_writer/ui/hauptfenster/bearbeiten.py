@@ -305,9 +305,29 @@ class BearbeitenBaustein:
         from lunivo_writer.ui import theme
         self.settings.set("theme", wahl)
         theme.WEICH = self.settings.get_bool("ui/weich", False)
-        apply_theme(QApplication.instance(), wahl)
-        icons.leeren()
-        self.neu_bauen_band()
+        QApplication.setOverrideCursor(Qt.WaitCursor)               # das Umstellen dauert einen Moment: Sanduhr statt scheinbarem Stillstand
+        try:
+            apply_theme(QApplication.instance(), wahl)
+            icons.leeren()
+            self.neu_bauen_band()
+        finally:
+            QApplication.restoreOverrideCursor()
+        self.thema_anzeigen()
+
+
+    def thema_ist_dunkel(self) -> bool:
+        return QApplication.instance().palette().window().color().lightness() < 128
+
+
+    def thema_wechseln(self):
+        """Schneller Zugang zu Hell und Dunkel (Strg+Umschalt+D, Statusleiste, Ansicht-Menü): wechselt zum jeweils anderen."""
+        self.set_theme("light" if self.thema_ist_dunkel() else "dark")
+
+
+    def thema_anzeigen(self) -> None:
+        sb = self.statusBar()
+        if hasattr(sb, "thema_zeigen"):
+            sb.thema_zeigen(self.thema_ist_dunkel())
 
 
     def _bereiche_bauen(self):

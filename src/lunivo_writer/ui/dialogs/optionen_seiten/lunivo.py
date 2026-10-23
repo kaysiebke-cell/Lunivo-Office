@@ -59,7 +59,7 @@ class LunivoSeiten:
         schluessel = QLineEdit(k["apiKey"]); schluessel.setEchoMode(QLineEdit.Password); schluessel.setPlaceholderText("sk-ant-…")
         schluessel.setProperty("optName", "API-Schlüssel")
         f.addRow("API-Schlüssel", schluessel)
-        hinweis = QLabel(); hinweis.setStyleSheet("color: palette(mid); font-size: 9pt;"); hinweis.setWordWrap(True)
+        hinweis = QLabel(); hinweis.setStyleSheet("color: palette(window-text); font-size: 9pt;"); hinweis.setWordWrap(True)
         f.addRow(hinweis)
         zeile = QWidget(); h = QHBoxLayout(zeile); h.setContentsMargins(0, 0, 0, 0)
         zeigen = QPushButton("Anzeigen"); zeigen.setCheckable(True)
@@ -195,12 +195,12 @@ class LunivoSeiten:
         g = self.w.assistant.gelernt
         f = p.gruppe("Gelernte Schreibweisen")
         zeile = QWidget(); h = QHBoxLayout(zeile); h.setContentsMargins(0, 2, 0, 2)
-        lab = QLabel(); lab.setStyleSheet("color: palette(mid);")
+        lab = QLabel(); lab.setStyleSheet("color: palette(window-text);")
         vergessen = QPushButton("vergessen")
         h.addWidget(lab, 1); h.addWidget(vergessen)
         f.addRow(zeile)
         zeile.setProperty("optName", "Gelernte Schreibweisen")
-        liste = QListWidget(); liste.setMinimumHeight(120)
+        liste = QListWidget(); liste.setMinimumHeight(120); liste.setAccessibleName("Gelernte Schreibweisen")
 
         def fuellen():
             d = g.daten
@@ -310,10 +310,10 @@ class LunivoSeiten:
             v = QVBoxLayout(); v.setSpacing(2)
             v.addWidget(text_label(name, fett=True, umbruch=False))
             b = QLabel(beschr if da else f"{beschr} — nicht vorhanden ({fehlt})")
-            b.setWordWrap(True); b.setStyleSheet("color: palette(mid); font-style: italic;")
+            b.setWordWrap(True); b.setStyleSheet("color: palette(window-text); font-style: italic;")
             v.addWidget(b)
             h.addLayout(v, 1)
-            gr = QLabel(groesse(pfad) if da else ""); gr.setStyleSheet("color: palette(mid); font-size: 9pt;")
+            gr = QLabel(groesse(pfad) if da else ""); gr.setStyleSheet("color: palette(window-text); font-size: 9pt;")
             h.addWidget(gr, 0, Qt.AlignTop)
             f.addRow(k)
         f = p.gruppe("Daten")

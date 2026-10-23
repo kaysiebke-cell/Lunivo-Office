@@ -17,7 +17,7 @@ class LesenSeiten:
 
     # ================= Leichter lesen =================
     def _lesehilfe(self, titel):
-        p = _Seite(self.w, titel, ["Zeilenluft"])
+        p = _Seite(self.w, titel)
         refs: dict = {}
         stufen = LS.STUFEN
         proben = ("Sehr geehrte Damen und Herren, hiermit kündige ich meinen Vertrag fristgerecht zum nächstmöglichen Termin.",
@@ -48,7 +48,7 @@ class LesenSeiten:
         gruppe = QButtonGroup(karte)
         aktuell = LS.aktuell(p.s)
         erlaeutert = text_label(" ".join(stufen[aktuell]["text"] if aktuell else LS.EIGENE))
-        erlaeutert.setStyleSheet("color: palette(mid); font-size: 9pt;")
+        erlaeutert.setStyleSheet("color: palette(window-text); font-size: 9pt;")
         for name in stufen:
             r = QRadioButton(name)
             r.setProperty("optName", "Lesestufe")
@@ -91,22 +91,19 @@ class LesenSeiten:
                                   LS.GROESSER, "keine", anwenden)
         refs["zurueck"] = p.wahl(f, "lesehilfe/zurueck", "Übriger Text",
                                  LS.ZURUECK, "keine", anwenden)
-        f = p.gruppe("Schrift und Sprache")
-        p.aktion("Schrift zum leichteren Lesen", "Zur Schriftwahl", lambda: self.gehe_zu("schriften"))
-        self._silbentrennung_haken(p, f)
-        p.haken(f, "schreibhilfe/wellen", "Rechtschreibung während der Eingabe prüfen", True,
-                lambda on: self.w.assistant.setze("wellen", on))
         f = p.gruppe("Vorlesen")
         p.aktion("Den Text hören", "Stimme und Tempo …", lambda: self.w.befehle.stimmeWaehlen())
         if not vorlesen.verfuegbar():
             p.hinweis("Es ist keine Sprachausgabe eingerichtet (speech-dispatcher oder Piper).")
-        f = p.gruppe("Silben farbig (Lesehilfe für Legasthenie)")
+        e = p.mehr()
+        f = p.unter(e, "Silben farbig (Lesehilfe für Legasthenie)")
         p.haken(f, "lesehilfe/silben/an", "Silben farbig anzeigen", False, lambda _: self.w.silbenfarben_anwenden())
         b = QPushButton("Farben, Darstellung und Mindestlänge einstellen …")
         b.clicked.connect(lambda: self.w.befehle.silbenEinstellen())
         f.addRow(b)
-        f = p.gruppe("Silbentrennung")
+        f = p.unter(e, "Silbentrennung")
         p.auswahl(f, "silben/sprache", "Sprache der Silbentrennung", ["de_DE", "de_AT", "de_CH", "en_US", "en_GB", "fr", "es", "it", "nl_NL", "pl_PL", "tr_TR"], "de_DE")
+        self._lese_schriften(p, e)
         vorschau_neu()
         p.abschluss()
         return p
@@ -122,17 +119,9 @@ class LesenSeiten:
         return c
 
 
-    def _schriften(self, titel):
-        p = _Seite(self.w, titel)
-        f = p.gruppe("Schrift für neuen Text")
-        fam = QComboBox(); fam.setEditable(True)
-        fam.addItems(sorted(set(QFontDatabase.families())))
-        fam.setCurrentText(p.s.get("standard/schrift", "Liberation Sans"))
-        fam.currentTextChanged.connect(lambda t: p.s.set("standard/schrift", t))
-        f.addRow("Schrift", fam)
-        p.zahl(f, "standard/groesse", "Größe", 6, 72, 11, " pt", 1)
-        f = p.gruppe("Zum leichteren Lesen")
-        f.addRow(QLabel("Drei Schriften sind dafür gemacht"))
+    def _lese_schriften(self, p, e):
+        """Die drei Schriften zum leichteren Lesen mit Probe; sagt, ob sie da sind."""
+        f = p.unter(e, "Schriften zum leichteren Lesen")
         vorhanden = {n.lower() for n in QFontDatabase.families()}
         beschreibung = {"OpenDyslexic": "Die Buchstaben sind unten schwerer — sie kippen nicht.",
                         "Lexend": "Weitere Abstände, ruhigeres Zeilenbild.",
@@ -146,14 +135,11 @@ class LesenSeiten:
                 fnt = QFont(n); fnt.setPointSizeF(13); name.setFont(fnt)
             kv.addWidget(name)
             t = text_label(beschreibung.get(n, "") + ("" if n.lower() in vorhanden else "  (fehlt — ./schrift-holen.sh holt sie)"))
-            t.setStyleSheet("color: palette(mid); font-size: 8pt;")
+            t.setStyleSheet("color: palette(window-text); font-size: 9pt;")
             kv.addWidget(t)
             rh.addWidget(k, 1)
+        reihe.setProperty("optName", "Schriften zum leichteren Lesen")
         f.addRow(reihe)
-        p.aktion("Sind sie da?", "Zu Erweitert", lambda: self.gehe_zu("erweitert"))
-        p.hinweis("Gilt für neue Dokumente. Bestehende Dokumente behalten ihre Schrift.")
-        p.abschluss()
-        return p
 
 
     def _uebersetzung_oeffnen(self) -> None:
@@ -161,37 +147,3 @@ class LesenSeiten:
         from lunivo_writer.ui.dialogs.ki_dialoge import KIEinstellungenDialog
         ausfuehren(KIEinstellungenDialog(self.w, 2))
         self.w.ki.geaendert.emit()
-
-
-    def _sprache(self, titel):
-        p = _Seite(self.w, titel, ["Weitere Prüfsprachen (derzeit Deutsch)"])
-        f = p.gruppe("Sprache")
-        p.aktion("Sprache für die Überprüfung und Übersetzen nach", "KI-Einstellungen ▸ Sprache …", self._uebersetzung_oeffnen)
-        f = p.gruppe("Was geprüft wird")
-        p.haken(f, "schreibhilfe/wellen", "Rechtschreibung während der Eingabe", True, lambda on: self.w.assistant.setze("wellen", on))
-        p.haken(f, "rsGrammatik", "Grammatik mitprüfen", True, lambda _: self.w.assistant.pruefen(voll=True))
-        self._silbentrennung_haken(p, f)
-        p.aktion("Alle Prüfoptionen", "Zur Rechtschreibprüfung", lambda: self.gehe_zu("rechtschreibung"))
-        f = p.gruppe("Wörter, die Lunivo kennt")
-        p.aktion("Dein eigener Wortschatz", "Zum Gedächtnis", lambda: self.gehe_zu("gedaechtnis"))
-        p.aktion("Gründlich prüfen", "Gründlich prüfen …", lambda: self.w.befehle.tun("gruendlichPruefen"))
-        p.abschluss()
-        return p
-
-
-    def _rechtschreibung(self, titel):
-        p = _Seite(self.w, titel)
-        f = p.gruppe("Rechtschreibprüfung")
-        p.aktion("Sprache für die Prüfung", "KI-Einstellungen ▸ Sprache …", self._uebersetzung_oeffnen)
-        p.haken(f, "schreibhilfe/wellen", "Rechtschreibung während der Eingabe prüfen", True, lambda on: self.w.assistant.setze("wellen", on))
-        p.haken(f, "schreibhilfe/vorschlaege", "Immer Korrekturvorschläge unterbreiten", True)
-        p.haken(f, "rsGrammatik", "Grammatik mitprüfen", True, lambda _: self.w.assistant.pruefen(voll=True))
-        p.haken(f, "rsGrossIgnorieren", "Wörter in GROSSBUCHSTABEN ignorieren", True, lambda _: self.w.assistant.pruefen(voll=True))
-        p.haken(f, "rsZahlenIgnorieren", "Wörter mit Zahlen ignorieren", True, lambda _: self.w.assistant.pruefen(voll=True))
-        p.haken(f, "rsPfadeIgnorieren", "Internet- und Netzwerkpfade ignorieren", True, lambda _: self.w.assistant.pruefen(voll=True))
-        p.aktion("Weggewinkte Funde wieder anzeigen", "Wieder anzeigen",
-                 lambda: (self.w.assistant._weg.clear(), self.w.assistant.pruefen(voll=True)))
-        f = p.gruppe("Benutzerwörterbuch")
-        p.aktion("Was das Programm gelernt hat", "Zum Gedächtnis", lambda: self.gehe_zu("gedaechtnis"))
-        p.abschluss()
-        return p

@@ -160,6 +160,7 @@ class MainWindow(DateienBaustein, BearbeitenBaustein, OberflaecheBaustein, Backs
         self.a_preview = A("Druckvorschau …", self.print_preview)
         self.a_info = A("Dokumentinformationen …", self.show_info)
         self.a_options = A("Optionen …", self.show_options, "F9")
+        self.a_thema = A("Hell/Dunkel wechseln", self.thema_wechseln, "Ctrl+Shift+D")
         self.a_close = A("Schließen", lambda: self.close_tab(self.tabs.currentIndex()), "Ctrl+W")
         self.a_quit = A("Beenden", self.close, "Ctrl+Q")
 
@@ -243,7 +244,7 @@ class MainWindow(DateienBaustein, BearbeitenBaustein, OberflaecheBaustein, Backs
                   self.a_paste_plain, None, self.a_find, self.a_replace, self.a_goto, self.a_select_all):
             e.addSeparator() if a is None else e.addAction(a)
         v = mb.addMenu("&Ansicht")
-        v.addAction(self.a_marks); v.addAction(self.a_fullscreen)
+        v.addAction(self.a_marks); v.addAction(self.a_fullscreen); v.addAction(self.a_thema)
         h = mb.addMenu("&Hilfe")
         h.addAction(self.a_about)
 
@@ -273,10 +274,12 @@ class MainWindow(DateienBaustein, BearbeitenBaustein, OberflaecheBaustein, Backs
         self.statusleiste = sb
         self.lbl_msg, self.lbl_words, self.lbl_page, self.lbl_zoom = sb.lbl_msg, sb.lbl_words, sb.lbl_page, sb.lbl_zoom
         self.zoom_regler = sb.zoom_regler
+        sb.thema_wechseln.connect(self.thema_wechseln)
         sb.zoom_kleiner.connect(lambda: self.befehle.kleiner())
         sb.zoom_groesser.connect(lambda: self.befehle.groesser())
         sb.zoom_stufe.connect(lambda: self.befehle.zoomStufe())
         sb.zoom_geaendert.connect(self._regler_bewegt)
+        self.thema_anzeigen()
 
 
     # ==== Hilfen ====================================================================

@@ -1,478 +1,345 @@
 # Der Aufbau der Optionen
 
-Quelle der Optionen: `src/lunivo_writer/ui/dialogs/optionen.py`.
+Quelle: `src/lunivo_writer/ui/dialogs/optionen.py`, Seiten in `optionen_seiten/`. Konzept und Begründung: [konzept-optionen.md](konzept-optionen.md).
 
-Das Optionen-Fenster geht mit **F9** auf, oder über *Datei ▸ Optionen*.
-Links ein Baum mit drei Zweigen, rechts der Bereich.
+Das Optionen-Fenster geht mit **F9** auf, oder über *Datei ▸ Optionen*. Links oben die **Suche** (Strg+F), darunter eine
+flache Liste mit **sechs Seiten**, rechts die Seite. Jede Seite zeigt das Häufige; der Rest steht unter *Weitere Einstellungen*
+(eingeklappt, mit Tab und Leertaste erreichbar). Änderungen gelten sofort.
 
-## Die Zweige
+**Hell und Dunkel** stehen ganz oben auf der Seite *Anzeige* (Hell · Dunkel · Wie das System, genau eine ist gewählt). Schneller
+geht es ohne Optionen: **Strg+Umschalt+D**, *Ansicht ▸ Hell/Dunkel wechseln* oder der Knopf in der Statusleiste.
 
-| Zweig | Wofür |
-|---|---|
-| [Leichter lesen](#leichter-lesen) | Wofür dieses Programm gebaut ist — steht deshalb zuoberst |
-| [Wie im Writer](#wie-im-writer) | Alle dreizehn Seiten in seiner Reihenfolge und mit seinen Namen |
-| [Nur bei Lunivo](#nur-bei-lunivo) | Was nicht hat |
+Als eigenes Fenster (aus *Weitere Einstellungen* der Seiten *Anzeige* und *Speichern*): Menüband anpassen, Symbolleiste für den
+Schnellzugriff, Kennwort und Datenschutz, Änderungen verfolgen.
 
----
+Frühere Seitennamen (`lesehilfe`, `ki`, `sprache` …) führen auf die neue Seite und klappen dort den passenden Bereich auf.
 
-## Leichter lesen
+## Die Seiten
 
-### Lesehilfe
+Auf *Lesen* kommt vor den Gruppen die **Lesestufe** (drei Voreinstellungen mit Vorschau).
 
-```
-├── Lesestufe
-│ └── Wie leicht soll es zu lesen sein?
-├── Leichter lesen
-│ ├── Papierton
-│ ├── Buchstabenabstand
-│ ├── Wortabstand
-│ └── Zeilenluft
-├── Beim Schreiben
-│ ├── Zeilenfokus
-│ ├── Absatz beim Schreiben
-│ └── Übriger Text
-├── Schrift und Sprache
-│ ├── Schrift zum leichteren Lesen
-│ ├── Silbentrennung
-│ └── Rechtschreibung während der Eingabe prüfen
-└── Vorlesen
- └── Den Text hören
-```
+### Lesen
 
-### Schriftarten
+**Sichtbar**
 
-```
-├── Schrift für neuen Text
-│ ├── Schrift
-│ └── Größe
-└── Zum leichteren Lesen
- ├── Drei Schriften sind dafür gemacht
- └── Sind sie da?
-```
+- *Leichter lesen*
+  - Papierton
+  - Buchstabenabstand
+  - Wortabstand
+  - Zeilenluft
+- *Beim Schreiben*
+  - Zeilenfokus
+  - Absatz beim Schreiben
+  - Übriger Text
+- *Vorlesen*
+  - Den Text hören
 
-### Sprache
+**Weitere Einstellungen (eingeklappt)**
 
-```
-├── Sprache
-│ ├── Sprache für die Prüfung
-│ └── Übersetzen nach
-├── Was geprüft wird
-│ ├── Rechtschreibung während der Eingabe
-│ ├── Grammatik mitprüfen
-│ ├── Silbentrennung
-│ └── Alle Prüfoptionen
-└── Wörter, die Lunivo kennt
- ├── Dein eigener Wortschatz
- └── Gründlich prüfen
-```
+- *Silben farbig (Lesehilfe für Legasthenie)*
+  - Silben farbig anzeigen
+- *Silbentrennung*
+  - Sprache der Silbentrennung
 
-### Rechtschreibprüfung
+### Anzeige
 
-```
-├── Rechtschreibprüfung
-│ ├── Sprache für die Prüfung
-│ ├── Rechtschreibung während der Eingabe prüfen
-│ ├── Immer Korrekturvorschläge unterbreiten
-│ ├── Grammatik mitprüfen
-│ ├── Wörter in GROSSBUCHSTABEN ignorieren
-│ ├── Wörter mit Zahlen ignorieren
-│ ├── Internet- und Netzwerkpfade ignorieren
-│ └── Weggewinkte Funde wieder anzeigen
-└── Benutzerwörterbuch
- └── Was das Programm gelernt hat
-```
+**Sichtbar**
 
-## Wie im Writer
+- *Aussehen*
+  - Hell, Dunkel (Aussehen)
+- *Anzeigen*
+  - Lineal
+  - Statusleiste
+  - Absatzmarken und Leerzeichen zeigen
+- *Größe und Kontrast*
+  - Schrift im Text
+  - Weicher Kontrast
+  - Größe der Symbole
+  - Schrift der Bedienung
 
-### Ansicht
+**Weitere Einstellungen (eingeklappt)**
 
-```
-├── Anzeigen
-│ ├── Lineal
-│ ├── Vertikales Lineal
-│ ├── Navigationsbereich
-│ ├── Textbegrenzungen
-│ ├── Gitternetzlinien
-│ ├── Statusleiste
-│ ├── Seitenleiste beim Start
-│ ├── QuickInfo
-│ ├── Live-Vorschau
-│ ├── Minisymbolleiste bei Auswahl
-│ ├── Minisymbolleiste bei Rechtsklick
-│ └── Tipp für Kopf- bzw. Fußzeile
-├── Druckoptionen
-│ ├── Hervorhebungen drucken
-│ ├── Textbegrenzungen drucken
-│ ├── Zuschnittsmarken anzeigen
-│ ├── Feldfunktionen drucken
-│ ├── Textmarken drucken
-│ └── Feldschattierung
-├── Formatierungszeichen
-│ ├── Alle anzeigen
-│ ├── Absatzmarken
-│ ├── Leerzeichen
-│ ├── Tabstoppzeichen
-│ ├── Objektanker
-│ └── Ausgeblendeter Text
-├── Menübandoptionen
-│ ├── Doppelklick blendet das Band aus
-│ └── Strg+Klick folgt einem Verweis
-└── Darstellung
- ├── Schrift und Helligkeit
- ├── Weicher Kontrast
- ├── Größe der Symbole
- ├── Schrift der Bedienung
- └── Benutzeroberfläche
-```
+- *Weitere Anzeige*
+  - Vertikales Lineal
+  - Navigationsbereich
+  - Textbegrenzungen
+  - Gitternetzlinien
+  - Seitenleiste beim Start
+  - QuickInfo
+  - Live-Vorschau
+  - Minisymbolleiste bei Auswahl
+  - Objektanker
+  - Ausgeblendeter Text
+- *Formatierungszeichen einzeln*
+  - Absatzmarken
+  - Leerzeichen und Tabstoppzeichen
+- *Menüband*
+  - Doppelklick blendet das Band aus
+  - Strg+Klick folgt einem Verweis
+  - Benutzeroberfläche
+  - Menüband anpassen
+  - Symbolleiste für den Schnellzugriff
 
-### Bearbeiten
+### Schreiben
 
-```
-├── Bearbeitungsoptionen
-│ ├── Wortweise markieren
-│ ├── Text mit der Maus verschieben
-│ ├── Tippen ersetzt die Auswahl
-│ └── Maximale Rückgängig-Schritte
-├── AutoFormat
-│ ├── Automatisch nummerierte Listen
-│ ├── Aufzählungen erkennen
-│ └── Zahl automatisch im Kreis
-├── AutoKorrektur
-│ ├── AutoKorrektur
-│ ├── Typografische Anführungszeichen
-│ ├── Gedankenstriche
-│ ├── Auslassungspunkte
-│ ├── Jeden Satz mit einem Großbuchstaben beginnen
-│ ├── Wochentage immer großschreiben
-│ ├── Englische Ordnungszahlen hochstellen
-│ ├── Feststelltaste korrigieren
-│ ├── Internet- und Netzwerkpfade durch Hyperlinks ersetzen
-│ ├── Leerzeichen am Absatzanfang mit Erstzeileneinzug
-│ ├── Leerzeichenformat am Ende rechtsbündiger Zeilen anpassen
-│ ├── Bei zentriertem Ausrichten Erstzeileneinzug löschen
-│ ├── Tabulator und Rücktaste setzen den Einzug
-│ └── Wortvorhersage
-└── Ausschneiden und Einfügen
- ├── Schaltfläche nach dem Einfügen
- ├── Mittlere Maustaste fügt ein
- ├── Standardeinfügeformat
- └── Ohne Formatierung einfügen
-```
+**Sichtbar**
 
-### Allgemein und Speichern
+- *Schrift für neuen Text*
+  - Schrift
+  - Größe
+- *Prüfen*
+  - Rechtschreibung während der Eingabe prüfen
+  - Grammatik mitprüfen
+  - Silbentrennung
+  - Sprache für die Prüfung und Übersetzen nach
+- *AutoKorrektur*
+  - Wortvorhersage
 
-```
-├── Speichern
-│ └── Dateien als Standard speichern
-├── Allgemeine Optionen
-│ ├── Maßeinheit
-│ ├── Bilder in der Datei nicht komprimieren
-│ └── Standard-Ausgabeziel
-└── Kompatibilitätsoptionen
- ├── Seitenumbruch und Absatzmarke aufteilen
- ├── Hängenden Einzug nicht als Tabstopp verwenden
- ├── Nachstehende Leerstellen unterstreichen
- ├── Layout von Fußnoten wie Word 6/95/97
- └── Zeilenhöhe in Tabellen auf Rasterhöhe anpassen
-```
+**Weitere Einstellungen (eingeklappt)**
 
-### Sicherungseinstellungen
+- *AutoKorrektur: Groß- und Kleinschreibung*
+  - Jeden Satz mit einem Großbuchstaben beginnen
+  - Wochentage immer großschreiben
+  - Unbeabsichtigtes Verwenden der fESTSTELLTASTE korrigieren
+  - Englische Ordnungszahlen hochstellen
+- *AutoKorrektur: Zeichen*
+  - Gerade Anführungszeichen durch typografische ersetzen
+  - Zwei Bindestriche durch einen Gedankenstrich ersetzen
+  - Drei Punkte durch ein Auslassungszeichen ersetzen
+  - Internet- und Netzwerkpfade durch Hyperlinks ersetzen
+- *AutoKorrektur: Einzüge und Leerzeichen*
+  - Leerzeichen am Absatzanfang mit Erstzeileneinzug
+  - Leerzeichenformat am Ende rechtsbündiger Zeilen anpassen
+  - Bei zentriertem Ausrichten Erstzeileneinzug löschen
+  - Tabulator und Rücktaste setzen den Einzug
+- *Prüfung im Einzelnen*
+  - Immer Korrekturvorschläge unterbreiten
+  - Wörter in GROSSBUCHSTABEN ignorieren
+  - Wörter mit Zahlen ignorieren
+  - Internet- und Netzwerkpfade ignorieren
+  - Weggewinkte Funde wieder anzeigen
+  - Gründlich prüfen
+- *AutoFormat*
+  - Automatisch nummerierte Listen
+  - Aufzählungen erkennen
+  - Zahl automatisch im Kreis
+- *Bearbeiten und Einfügen*
+  - Wortweise markieren
+  - Text mit der Maus verschieben
+  - Tippen ersetzt die Auswahl
+  - Schaltfläche nach dem Einfügen
+  - Mittlere Maustaste fügt ein
+  - Standardeinfügeformat
+- *Eigenes Wörterbuch und gelernte Schreibweisen*
+  - Gelernte Schreibweisen
 
-```
-├── Sicherung
-│ ├── Wann gesichert wird
-│ ├── Abstand (Minuten)
-│ └── Wo die Einstellungen liegen
-├── Zwischenstände aufheben
-│ ├── Wie lange (Tage)
-│ └── Zwischenstände löschen
-└── Was im Speicher steht
- └── Sichern und zurückholen
-```
+### Speichern
 
-### Speicherort für Dateien
+**Sichtbar**
 
-```
-└── Speicherort für Dateien
- ├── Ordner zum Speichern
- └── Eigene Vorlagen
-```
+- *Speichern*
+  - Dateien als Standard speichern
+  - Ordner zum Speichern
+  - Maßeinheit
+- *Sicherung*
+  - Wann gesichert wird
+  - Abstand (Minuten)
 
-### Änderungen verfolgen
+**Weitere Einstellungen (eingeklappt)**
 
-```
-├── Änderungen verfolgen
-│ ├── Änderungen verfolgen
-│ └── Markup anzeigen
-├── Markup
-│ ├── Einfügungen
-│ ├── Löschvorgänge
-│ ├── Geänderte Zeilen
-│ └── Farbe
-├── Sprechblasen
-│ ├── Sprechblasen verwenden
-│ ├── Empfohlene Breite verwenden
-│ ├── Bevorzugte Breite (mm)
-│ ├── Seitenrand
-│ └── Verbindungslinien zum Text anzeigen
-└── Drucken (mit Sprechblasen)
- └── Papierausrichtung
-```
+- *Weiteres zum Speichern*
+  - Beim Start das zuletzt geschriebene Dokument öffnen
+  - Bilder in der Datei nicht komprimieren
+  - Standard-Ausgabeziel
+  - Eigene Vorlagen
+- *Zwischenstände*
+  - Aufbewahren (Tage)
+  - Zwischenstände löschen
+- *Gedächtnis und Wörterbuch sichern*
+  - Sichern und zurückholen
+  - Einstellungsdatei
+- *Dokument schützen und Änderungen*
+  - Kennwort, Bearbeitung sperren, Datenschutz
+  - Änderungen verfolgen: Markup, Farben, Sprechblasen
 
-### In PDF exportieren
+### Drucken und PDF
 
-```
-└── Exportoptionen
- ├── Hyperlinks
- ├── Überschriften als Lesezeichen
- ├── Kommentare mitnehmen
- ├── Dokumenteigenschaften mitnehmen
- ├── Verknüpfung von Fuß- und Endnoten
- ├── Textmarken übernehmen
- ├── Andere Formatvorlagen in Lesezeichen umwandeln
- ├── Eigene Formatvorlagen in Lesezeichen umwandeln
- └── PDF nach dem Export öffnen
-```
+**Sichtbar**
 
-### Benutzerinformationen
+- *Drucken*
+  - Hohe Qualität
+  - Hintergrundfarben und -bilder drucken
+- *PDF*
+  - PDF nach dem Export öffnen
+  - Überschriften als Lesezeichen
 
-```
-└── Benutzerdaten
- ├── Wer schreibt
- ├── Initialen
- └── Diese Benutzerinformationen verwenden
-```
+**Weitere Einstellungen (eingeklappt)**
 
-### Drucken
+- *Drucken im Einzelnen*
+  - Womit das Druckfenster aufgeht
+  - Umgekehrte Reihenfolge
+  - Zeichnungsobjekte drucken
+  - Leere Seiten mitdrucken
+  - Felder vor dem Drucken aktualisieren
+  - Ausgeblendeter Text
+- *PDF im Einzelnen*
+  - Kommentare als PDF-Notizen mitnehmen
+  - Dokumenteigenschaften (Autor) in das PDF übernehmen
+  - Textmarken übernehmen
 
-```
-├── Druckoptionen
-│ ├── Womit das Druckfenster aufgeht
-│ ├── Hohe Qualität
-│ ├── Umgekehrte Reihenfolge
-│ ├── Zeichnungsobjekte drucken
-│ ├── Hintergrundfarben und -bilder drucken
-│ ├── Leere Seiten mitdrucken
-│ ├── Felder vor dem Drucken aktualisieren
-│ ├── Feldfunktionen drucken
-│ ├── Ausgeblendeter Text
-│ └── Autor der Kommentare und Überarbeitungen
-├── Nur für das aktuelle Dokument
-│ └── Nur Formulardaten drucken
-└── Duplexdruck
- ├── Blattvorderseite
- └── Blattrückseite
-```
+### Name und KI
 
-### Sicherheit
+**Sichtbar**
 
-```
-├── Kennwortschutz
-│ ├── Dokumentkennwort
-│ └── Bearbeitung sperren
-└── Datenschutz
- ├── Ausgeblendete Markups beim Öffnen anzeigen
- └── Beim Speichern persönliche Daten entfernen
-```
+- *Wer schreibt*
+  - Name
+  - Initialen
+  - Diese Benutzerinformationen verwenden
 
-### Menüband anpassen
+**Weitere Einstellungen (eingeklappt)**
 
-```
-├── Befehle auswählen
-└── Menüband anpassen
-```
+- *Adresse*
+  - Straße und Hausnummer
+  - PLZ und Ort
+  - Ort (für „Ort, Datum“)
+  - Telefon
+  - E-Mail
+  - Beim Speichern persönliche Daten entfernen
+- *Prüfung und KI*
+  - Chatbot
+  - Zusammenfassen
+  - Übersetzung
+  - Textanalyse
+  - Bildgenerierung
+  - API-Schlüssel
+  - KI-Modell
+  - Eigene Anbieter
+  - Eigene Assistenten
+  - Für wen der Text ist
 
-### Symbolleiste für den Schnellzugriff
-
-```
-├── Befehle auswählen
-└── Derzeit angezeigte Optionen
-```
-
-## Nur bei Lunivo
-
-### Schreibhilfe und KI
-
-```
-└── Prüfung und KI
- ├── API-Schlüssel
- ├── KI-Modell
- ├── Für wen der Text ist
- └── Verbrauch
-```
-
-### Gedächtnis
-
-```
-└── Gedächtnis
- └── Gelernte Schreibweisen
-```
-
-### Erweitert
-
-```
-└── Erweitert
- └── Was zusätzlich geholt wurde
-```
-
----
 
 ## Wo finde ich was?
 
-Alphabetisch, mit Seite und Gruppe.
+Alphabetisch, mit Seite und Gruppe. Oder in den Optionen oben in die Suche tippen.
 
 | Einstellung | Wo sie steht |
 |---|---|
-| Absatz beim Schreiben | Lesehilfe ▸ Beim Schreiben |
-| Absatzmarken | Ansicht ▸ Formatierungszeichen |
-| Abstand (Minuten) | Sicherungseinstellungen ▸ Sicherung |
-| Alle anzeigen | Ansicht ▸ Formatierungszeichen |
-| Alle Prüfoptionen | Sprache ▸ Was geprüft wird |
-| Andere Formatvorlagen in Lesezeichen umwandeln | In PDF exportieren ▸ Exportoptionen |
-| API-Schlüssel | Schreibhilfe und KI ▸ Prüfung und KI |
-| Aufzählungen erkennen | Bearbeiten ▸ AutoFormat |
-| Ausgeblendete Markups beim Öffnen anzeigen | Sicherheit ▸ Datenschutz |
-| Ausgeblendeter Text | Ansicht ▸ Formatierungszeichen · Drucken ▸ Druckoptionen |
-| Auslassungspunkte | Bearbeiten ▸ AutoKorrektur |
-| AutoKorrektur | Bearbeiten ▸ AutoKorrektur |
-| Automatisch nummerierte Listen | Bearbeiten ▸ AutoFormat |
-| Autor der Kommentare und Überarbeitungen | Drucken ▸ Druckoptionen |
-| Bearbeitung sperren | Sicherheit ▸ Kennwortschutz |
-| Befehle auswählen | Menüband anpassen · Symbolleiste für den Schnellzugriff |
-| Bei zentriertem Ausrichten Erstzeileneinzug löschen | Bearbeiten ▸ AutoKorrektur |
-| Beim Speichern persönliche Daten entfernen | Sicherheit ▸ Datenschutz |
-| Benutzeroberfläche | Ansicht ▸ Darstellung |
-| Bevorzugte Breite (mm) | Änderungen verfolgen ▸ Sprechblasen |
-| Bilder in der Datei nicht komprimieren | Allgemein und Speichern ▸ Allgemeine Optionen |
-| Blattrückseite | Drucken ▸ Duplexdruck |
-| Blattvorderseite | Drucken ▸ Duplexdruck |
-| Buchstabenabstand | Lesehilfe ▸ Leichter lesen |
-| Dateien als Standard speichern | Allgemein und Speichern ▸ Speichern |
-| Dein eigener Wortschatz | Sprache ▸ Wörter, die Lunivo kennt |
-| Den Text hören | Lesehilfe ▸ Vorlesen |
-| Derzeit angezeigte Optionen | Symbolleiste für den Schnellzugriff |
-| Diese Benutzerinformationen verwenden | Benutzerinformationen ▸ Benutzerdaten |
-| Dokumenteigenschaften mitnehmen | In PDF exportieren ▸ Exportoptionen |
-| Dokumentkennwort | Sicherheit ▸ Kennwortschutz |
-| Doppelklick blendet das Band aus | Ansicht ▸ Menübandoptionen |
-| Drei Schriften sind dafür gemacht | Schriftarten ▸ Zum leichteren Lesen |
-| Eigene Formatvorlagen in Lesezeichen umwandeln | In PDF exportieren ▸ Exportoptionen |
-| Eigene Vorlagen | Speicherort für Dateien ▸ Speicherort für Dateien |
-| Einfügungen | Änderungen verfolgen ▸ Markup |
-| Empfohlene Breite verwenden | Änderungen verfolgen ▸ Sprechblasen |
-| Englische Ordnungszahlen hochstellen | Bearbeiten ▸ AutoKorrektur |
-| Farbe | Änderungen verfolgen ▸ Markup |
-| Felder vor dem Drucken aktualisieren | Drucken ▸ Druckoptionen |
-| Feldfunktionen drucken | Ansicht ▸ Druckoptionen · Drucken ▸ Druckoptionen |
-| Feldschattierung | Ansicht ▸ Druckoptionen |
-| Feststelltaste korrigieren | Bearbeiten ▸ AutoKorrektur |
-| Für wen der Text ist | Schreibhilfe und KI ▸ Prüfung und KI |
-| Gedankenstriche | Bearbeiten ▸ AutoKorrektur |
-| Gelernte Schreibweisen | Gedächtnis ▸ Gedächtnis |
-| Geänderte Zeilen | Änderungen verfolgen ▸ Markup |
-| Gitternetzlinien | Ansicht ▸ Anzeigen |
-| Grammatik mitprüfen | Sprache ▸ Was geprüft wird · Rechtschreibprüfung ▸ Rechtschreibprüfung |
-| Größe | Schriftarten ▸ Schrift für neuen Text |
-| Größe der Symbole | Ansicht ▸ Darstellung |
-| Gründlich prüfen | Sprache ▸ Wörter, die Lunivo kennt |
-| Hervorhebungen drucken | Ansicht ▸ Druckoptionen |
-| Hintergrundfarben und -bilder drucken | Drucken ▸ Druckoptionen |
-| Hohe Qualität | Drucken ▸ Druckoptionen |
-| Hyperlinks | In PDF exportieren ▸ Exportoptionen |
-| Hängenden Einzug nicht als Tabstopp verwenden | Allgemein und Speichern ▸ Kompatibilitätsoptionen |
-| Immer Korrekturvorschläge unterbreiten | Rechtschreibprüfung ▸ Rechtschreibprüfung |
-| Initialen | Benutzerinformationen ▸ Benutzerdaten |
-| Internet- und Netzwerkpfade durch Hyperlinks ersetzen | Bearbeiten ▸ AutoKorrektur |
-| Internet- und Netzwerkpfade ignorieren | Rechtschreibprüfung ▸ Rechtschreibprüfung |
-| Jeden Satz mit einem Großbuchstaben beginnen | Bearbeiten ▸ AutoKorrektur |
-| KI-Modell | Schreibhilfe und KI ▸ Prüfung und KI |
-| Kommentare mitnehmen | In PDF exportieren ▸ Exportoptionen |
-| Layout von Fußnoten wie Word 6/95/97 | Allgemein und Speichern ▸ Kompatibilitätsoptionen |
-| Leere Seiten mitdrucken | Drucken ▸ Druckoptionen |
-| Leerzeichen | Ansicht ▸ Formatierungszeichen |
-| Leerzeichen am Absatzanfang mit Erstzeileneinzug | Bearbeiten ▸ AutoKorrektur |
-| Leerzeichenformat am Ende rechtsbündiger Zeilen anpassen | Bearbeiten ▸ AutoKorrektur |
-| Lineal | Ansicht ▸ Anzeigen |
-| Live-Vorschau | Ansicht ▸ Anzeigen |
-| Löschvorgänge | Änderungen verfolgen ▸ Markup |
-| Markup anzeigen | Änderungen verfolgen ▸ Änderungen verfolgen |
-| Maximale Rückgängig-Schritte | Bearbeiten ▸ Bearbeitungsoptionen |
-| Maßeinheit | Allgemein und Speichern ▸ Allgemeine Optionen |
-| Menüband anpassen | Menüband anpassen |
-| Minisymbolleiste bei Auswahl | Ansicht ▸ Anzeigen |
-| Minisymbolleiste bei Rechtsklick | Ansicht ▸ Anzeigen |
-| Mittlere Maustaste fügt ein | Bearbeiten ▸ Ausschneiden und Einfügen |
-| Nachstehende Leerstellen unterstreichen | Allgemein und Speichern ▸ Kompatibilitätsoptionen |
-| Navigationsbereich | Ansicht ▸ Anzeigen |
-| Nur Formulardaten drucken | Drucken ▸ Nur für das aktuelle Dokument |
-| Objektanker | Ansicht ▸ Formatierungszeichen |
-| Ohne Formatierung einfügen | Bearbeiten ▸ Ausschneiden und Einfügen |
-| Ordner zum Speichern | Speicherort für Dateien ▸ Speicherort für Dateien |
-| Papierausrichtung | Änderungen verfolgen ▸ Drucken (mit Sprechblasen) |
-| Papierton | Lesehilfe ▸ Leichter lesen |
-| PDF nach dem Export öffnen | In PDF exportieren ▸ Exportoptionen |
-| QuickInfo | Ansicht ▸ Anzeigen |
-| Rechtschreibung während der Eingabe | Sprache ▸ Was geprüft wird |
-| Rechtschreibung während der Eingabe prüfen | Lesehilfe ▸ Schrift und Sprache · Rechtschreibprüfung ▸ Rechtschreibprüfung |
-| Schaltfläche nach dem Einfügen | Bearbeiten ▸ Ausschneiden und Einfügen |
-| Schrift | Schriftarten ▸ Schrift für neuen Text |
-| Schrift der Bedienung | Ansicht ▸ Darstellung |
-| Schrift und Helligkeit | Ansicht ▸ Darstellung |
-| Schrift zum leichteren Lesen | Lesehilfe ▸ Schrift und Sprache |
-| Seitenleiste beim Start | Ansicht ▸ Anzeigen |
-| Seitenrand | Änderungen verfolgen ▸ Sprechblasen |
-| Seitenumbruch und Absatzmarke aufteilen | Allgemein und Speichern ▸ Kompatibilitätsoptionen |
-| Sichern und zurückholen | Sicherungseinstellungen ▸ Was im Speicher steht |
-| Silbentrennung | Lesehilfe ▸ Schrift und Sprache · Sprache ▸ Was geprüft wird |
-| Sind sie da? | Schriftarten ▸ Zum leichteren Lesen |
-| Sprache für die Prüfung | Sprache ▸ Sprache · Rechtschreibprüfung ▸ Rechtschreibprüfung |
-| Sprechblasen verwenden | Änderungen verfolgen ▸ Sprechblasen |
-| Standard-Ausgabeziel | Allgemein und Speichern ▸ Allgemeine Optionen |
-| Standardeinfügeformat | Bearbeiten ▸ Ausschneiden und Einfügen |
-| Statusleiste | Ansicht ▸ Anzeigen |
-| Strg+Klick folgt einem Verweis | Ansicht ▸ Menübandoptionen |
-| Tabstoppzeichen | Ansicht ▸ Formatierungszeichen |
-| Tabulator und Rücktaste setzen den Einzug | Bearbeiten ▸ AutoKorrektur |
-| Text mit der Maus verschieben | Bearbeiten ▸ Bearbeitungsoptionen |
-| Textbegrenzungen | Ansicht ▸ Anzeigen |
-| Textbegrenzungen drucken | Ansicht ▸ Druckoptionen |
-| Textmarken drucken | Ansicht ▸ Druckoptionen |
-| Textmarken übernehmen | In PDF exportieren ▸ Exportoptionen |
-| Tipp für Kopf- bzw. Fußzeile | Ansicht ▸ Anzeigen |
-| Tippen ersetzt die Auswahl | Bearbeiten ▸ Bearbeitungsoptionen |
-| Typografische Anführungszeichen | Bearbeiten ▸ AutoKorrektur |
-| Umgekehrte Reihenfolge | Drucken ▸ Druckoptionen |
-| Verbindungslinien zum Text anzeigen | Änderungen verfolgen ▸ Sprechblasen |
-| Verbrauch | Schreibhilfe und KI ▸ Prüfung und KI |
-| Verknüpfung von Fuß- und Endnoten | In PDF exportieren ▸ Exportoptionen |
-| Vertikales Lineal | Ansicht ▸ Anzeigen |
-| Wann gesichert wird | Sicherungseinstellungen ▸ Sicherung |
-| Was das Programm gelernt hat | Rechtschreibprüfung ▸ Benutzerwörterbuch |
-| Was zusätzlich geholt wurde | Erweitert ▸ Erweitert |
-| Weggewinkte Funde wieder anzeigen | Rechtschreibprüfung ▸ Rechtschreibprüfung |
-| Weicher Kontrast | Ansicht ▸ Darstellung |
-| Wer schreibt | Benutzerinformationen ▸ Benutzerdaten |
-| Wie lange (Tage) | Sicherungseinstellungen ▸ Zwischenstände aufheben |
-| Wie leicht soll es zu lesen sein? | Lesehilfe ▸ Lesestufe |
-| Wo die Einstellungen liegen | Sicherungseinstellungen ▸ Sicherung |
-| Wochentage immer großschreiben | Bearbeiten ▸ AutoKorrektur |
-| Womit das Druckfenster aufgeht | Drucken ▸ Druckoptionen |
-| Wortabstand | Lesehilfe ▸ Leichter lesen |
-| Wortvorhersage | Bearbeiten ▸ AutoKorrektur |
-| Wortweise markieren | Bearbeiten ▸ Bearbeitungsoptionen |
-| Wörter in GROSSBUCHSTABEN ignorieren | Rechtschreibprüfung ▸ Rechtschreibprüfung |
-| Wörter mit Zahlen ignorieren | Rechtschreibprüfung ▸ Rechtschreibprüfung |
-| Zahl automatisch im Kreis | Bearbeiten ▸ AutoFormat |
-| Zeichnungsobjekte drucken | Drucken ▸ Druckoptionen |
-| Zeilenfokus | Lesehilfe ▸ Beim Schreiben |
-| Zeilenhöhe in Tabellen auf Rasterhöhe anpassen | Allgemein und Speichern ▸ Kompatibilitätsoptionen |
-| Zeilenluft | Lesehilfe ▸ Leichter lesen |
-| Zuschnittsmarken anzeigen | Ansicht ▸ Druckoptionen |
-| Zwischenstände löschen | Sicherungseinstellungen ▸ Zwischenstände aufheben |
-| Änderungen verfolgen | Änderungen verfolgen ▸ Änderungen verfolgen |
-| Überschriften als Lesezeichen | In PDF exportieren ▸ Exportoptionen |
-| Übersetzen nach | Sprache ▸ Sprache |
-| Übriger Text | Lesehilfe ▸ Beim Schreiben |
+| Absatz beim Schreiben | Lesen ▸ Beim Schreiben |
+| Absatzmarken | Anzeige ▸ Formatierungszeichen einzeln (eingeklappt) |
+| Absatzmarken und Leerzeichen zeigen | Anzeige ▸ Anzeigen |
+| Abstand (Minuten) | Speichern ▸ Sicherung |
+| API-Schlüssel | Name und KI ▸ Prüfung und KI (eingeklappt) |
+| Aufbewahren (Tage) | Speichern ▸ Zwischenstände (eingeklappt) |
+| Aufzählungen erkennen | Schreiben ▸ AutoFormat (eingeklappt) |
+| Ausgeblendeter Text | Anzeige ▸ Weitere Anzeige (eingeklappt) · Drucken und PDF ▸ Drucken im Einzelnen (eingeklappt) |
+| Automatisch nummerierte Listen | Schreiben ▸ AutoFormat (eingeklappt) |
+| Bei zentriertem Ausrichten Erstzeileneinzug löschen | Schreiben ▸ AutoKorrektur: Einzüge und Leerzeichen (eingeklappt) |
+| Beim Speichern persönliche Daten entfernen | Name und KI ▸ Adresse (eingeklappt) |
+| Beim Start das zuletzt geschriebene Dokument öffnen | Speichern ▸ Weiteres zum Speichern (eingeklappt) |
+| Benutzeroberfläche | Anzeige ▸ Menüband (eingeklappt) |
+| Bilder in der Datei nicht komprimieren | Speichern ▸ Weiteres zum Speichern (eingeklappt) |
+| Bildgenerierung | Name und KI ▸ Prüfung und KI (eingeklappt) |
+| Buchstabenabstand | Lesen ▸ Leichter lesen |
+| Chatbot | Name und KI ▸ Prüfung und KI (eingeklappt) |
+| Dateien als Standard speichern | Speichern ▸ Speichern |
+| Den Text hören | Lesen ▸ Vorlesen |
+| Diese Benutzerinformationen verwenden | Name und KI ▸ Wer schreibt |
+| Dokumenteigenschaften (Autor) in das PDF übernehmen | Drucken und PDF ▸ PDF im Einzelnen (eingeklappt) |
+| Doppelklick blendet das Band aus | Anzeige ▸ Menüband (eingeklappt) |
+| Drei Punkte durch ein Auslassungszeichen ersetzen | Schreiben ▸ AutoKorrektur: Zeichen (eingeklappt) |
+| E-Mail | Name und KI ▸ Adresse (eingeklappt) |
+| Eigene Anbieter | Name und KI ▸ Prüfung und KI (eingeklappt) |
+| Eigene Assistenten | Name und KI ▸ Prüfung und KI (eingeklappt) |
+| Eigene Vorlagen | Speichern ▸ Weiteres zum Speichern (eingeklappt) |
+| Einstellungsdatei | Speichern ▸ Gedächtnis und Wörterbuch sichern (eingeklappt) |
+| Englische Ordnungszahlen hochstellen | Schreiben ▸ AutoKorrektur: Groß- und Kleinschreibung (eingeklappt) |
+| Felder vor dem Drucken aktualisieren | Drucken und PDF ▸ Drucken im Einzelnen (eingeklappt) |
+| Für wen der Text ist | Name und KI ▸ Prüfung und KI (eingeklappt) |
+| Gelernte Schreibweisen | Schreiben ▸ Eigenes Wörterbuch und gelernte Schreibweisen (eingeklappt) |
+| Gerade Anführungszeichen durch typografische ersetzen | Schreiben ▸ AutoKorrektur: Zeichen (eingeklappt) |
+| Gitternetzlinien | Anzeige ▸ Weitere Anzeige (eingeklappt) |
+| Grammatik mitprüfen | Schreiben ▸ Prüfen |
+| Größe | Schreiben ▸ Schrift für neuen Text |
+| Größe der Symbole | Anzeige ▸ Größe und Kontrast |
+| Gründlich prüfen | Schreiben ▸ Prüfung im Einzelnen (eingeklappt) |
+| Hell, Dunkel (Aussehen) | Anzeige ▸ Aussehen |
+| Hintergrundfarben und -bilder drucken | Drucken und PDF ▸ Drucken |
+| Hohe Qualität | Drucken und PDF ▸ Drucken |
+| Immer Korrekturvorschläge unterbreiten | Schreiben ▸ Prüfung im Einzelnen (eingeklappt) |
+| Initialen | Name und KI ▸ Wer schreibt |
+| Internet- und Netzwerkpfade durch Hyperlinks ersetzen | Schreiben ▸ AutoKorrektur: Zeichen (eingeklappt) |
+| Internet- und Netzwerkpfade ignorieren | Schreiben ▸ Prüfung im Einzelnen (eingeklappt) |
+| Jeden Satz mit einem Großbuchstaben beginnen | Schreiben ▸ AutoKorrektur: Groß- und Kleinschreibung (eingeklappt) |
+| Kennwort, Bearbeitung sperren, Datenschutz | Speichern ▸ Dokument schützen und Änderungen (eingeklappt) |
+| KI-Modell | Name und KI ▸ Prüfung und KI (eingeklappt) |
+| Kommentare als PDF-Notizen mitnehmen | Drucken und PDF ▸ PDF im Einzelnen (eingeklappt) |
+| Leere Seiten mitdrucken | Drucken und PDF ▸ Drucken im Einzelnen (eingeklappt) |
+| Leerzeichen am Absatzanfang mit Erstzeileneinzug | Schreiben ▸ AutoKorrektur: Einzüge und Leerzeichen (eingeklappt) |
+| Leerzeichen und Tabstoppzeichen | Anzeige ▸ Formatierungszeichen einzeln (eingeklappt) |
+| Leerzeichenformat am Ende rechtsbündiger Zeilen anpassen | Schreiben ▸ AutoKorrektur: Einzüge und Leerzeichen (eingeklappt) |
+| Lineal | Anzeige ▸ Anzeigen |
+| Live-Vorschau | Anzeige ▸ Weitere Anzeige (eingeklappt) |
+| Maßeinheit | Speichern ▸ Speichern |
+| Menüband anpassen | Anzeige ▸ Menüband (eingeklappt) |
+| Minisymbolleiste bei Auswahl | Anzeige ▸ Weitere Anzeige (eingeklappt) |
+| Mittlere Maustaste fügt ein | Schreiben ▸ Bearbeiten und Einfügen (eingeklappt) |
+| Name | Name und KI ▸ Wer schreibt |
+| Navigationsbereich | Anzeige ▸ Weitere Anzeige (eingeklappt) |
+| Objektanker | Anzeige ▸ Weitere Anzeige (eingeklappt) |
+| Ordner zum Speichern | Speichern ▸ Speichern |
+| Ort (für „Ort, Datum“) | Name und KI ▸ Adresse (eingeklappt) |
+| Papierton | Lesen ▸ Leichter lesen |
+| PDF nach dem Export öffnen | Drucken und PDF ▸ PDF |
+| PLZ und Ort | Name und KI ▸ Adresse (eingeklappt) |
+| QuickInfo | Anzeige ▸ Weitere Anzeige (eingeklappt) |
+| Rechtschreibung während der Eingabe prüfen | Schreiben ▸ Prüfen |
+| Schaltfläche nach dem Einfügen | Schreiben ▸ Bearbeiten und Einfügen (eingeklappt) |
+| Schrift | Schreiben ▸ Schrift für neuen Text |
+| Schrift der Bedienung | Anzeige ▸ Größe und Kontrast |
+| Schrift im Text | Anzeige ▸ Größe und Kontrast |
+| Seitenleiste beim Start | Anzeige ▸ Weitere Anzeige (eingeklappt) |
+| Sichern und zurückholen | Speichern ▸ Gedächtnis und Wörterbuch sichern (eingeklappt) |
+| Silben farbig anzeigen | Lesen ▸ Silben farbig (Lesehilfe für Legasthenie) (eingeklappt) |
+| Silbentrennung | Schreiben ▸ Prüfen |
+| Sprache der Silbentrennung | Lesen ▸ Silbentrennung (eingeklappt) |
+| Sprache für die Prüfung und Übersetzen nach | Schreiben ▸ Prüfen |
+| Standard-Ausgabeziel | Speichern ▸ Weiteres zum Speichern (eingeklappt) |
+| Standardeinfügeformat | Schreiben ▸ Bearbeiten und Einfügen (eingeklappt) |
+| Statusleiste | Anzeige ▸ Anzeigen |
+| Straße und Hausnummer | Name und KI ▸ Adresse (eingeklappt) |
+| Strg+Klick folgt einem Verweis | Anzeige ▸ Menüband (eingeklappt) |
+| Symbolleiste für den Schnellzugriff | Anzeige ▸ Menüband (eingeklappt) |
+| Tabulator und Rücktaste setzen den Einzug | Schreiben ▸ AutoKorrektur: Einzüge und Leerzeichen (eingeklappt) |
+| Telefon | Name und KI ▸ Adresse (eingeklappt) |
+| Text mit der Maus verschieben | Schreiben ▸ Bearbeiten und Einfügen (eingeklappt) |
+| Textanalyse | Name und KI ▸ Prüfung und KI (eingeklappt) |
+| Textbegrenzungen | Anzeige ▸ Weitere Anzeige (eingeklappt) |
+| Textmarken übernehmen | Drucken und PDF ▸ PDF im Einzelnen (eingeklappt) |
+| Tippen ersetzt die Auswahl | Schreiben ▸ Bearbeiten und Einfügen (eingeklappt) |
+| Umgekehrte Reihenfolge | Drucken und PDF ▸ Drucken im Einzelnen (eingeklappt) |
+| Unbeabsichtigtes Verwenden der fESTSTELLTASTE korrigieren | Schreiben ▸ AutoKorrektur: Groß- und Kleinschreibung (eingeklappt) |
+| Vertikales Lineal | Anzeige ▸ Weitere Anzeige (eingeklappt) |
+| Wann gesichert wird | Speichern ▸ Sicherung |
+| Weggewinkte Funde wieder anzeigen | Schreiben ▸ Prüfung im Einzelnen (eingeklappt) |
+| Weicher Kontrast | Anzeige ▸ Größe und Kontrast |
+| Wochentage immer großschreiben | Schreiben ▸ AutoKorrektur: Groß- und Kleinschreibung (eingeklappt) |
+| Womit das Druckfenster aufgeht | Drucken und PDF ▸ Drucken im Einzelnen (eingeklappt) |
+| Wortabstand | Lesen ▸ Leichter lesen |
+| Wortvorhersage | Schreiben ▸ AutoKorrektur |
+| Wortweise markieren | Schreiben ▸ Bearbeiten und Einfügen (eingeklappt) |
+| Wörter in GROSSBUCHSTABEN ignorieren | Schreiben ▸ Prüfung im Einzelnen (eingeklappt) |
+| Wörter mit Zahlen ignorieren | Schreiben ▸ Prüfung im Einzelnen (eingeklappt) |
+| Zahl automatisch im Kreis | Schreiben ▸ AutoFormat (eingeklappt) |
+| Zeichnungsobjekte drucken | Drucken und PDF ▸ Drucken im Einzelnen (eingeklappt) |
+| Zeilenfokus | Lesen ▸ Beim Schreiben |
+| Zeilenluft | Lesen ▸ Leichter lesen |
+| Zusammenfassen | Name und KI ▸ Prüfung und KI (eingeklappt) |
+| Zwei Bindestriche durch einen Gedankenstrich ersetzen | Schreiben ▸ AutoKorrektur: Zeichen (eingeklappt) |
+| Zwischenstände löschen | Speichern ▸ Zwischenstände (eingeklappt) |
+| Änderungen verfolgen: Markup, Farben, Sprechblasen | Speichern ▸ Dokument schützen und Änderungen (eingeklappt) |
+| Überschriften als Lesezeichen | Drucken und PDF ▸ PDF |
+| Übersetzung | Name und KI ▸ Prüfung und KI (eingeklappt) |
+| Übriger Text | Lesen ▸ Beim Schreiben |
 
 ---
 

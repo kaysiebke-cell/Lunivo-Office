@@ -1,36 +1,76 @@
 """Gemeinsame Werte der Bausteine."""
 from __future__ import annotations
 
+import json
 import os
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QCheckBox, QComboBox, QDoubleSpinBox, QFormLayout, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit, QPushButton, QSpinBox, QVBoxLayout, QWidget
+from lunivo_writer.core import paths
 from lunivo_writer.ui.baukasten.beschriftung import text_label
+from lunivo_writer.ui.baukasten.einklappgruppe import EinklappGruppe
+
+MIN_HOEHE = 32                                      # Mindesthöhe der Bedienelemente (leicht zu treffen)
+_ERKLAERUNGEN: dict | None = None
+
+
+def erklaerung(name: str) -> str:
+    """Der Satz zu einer Einstellung (aus resources/daten/optionen_erklaerungen.json); leer, wenn es keinen gibt."""
+    global _ERKLAERUNGEN
+    if _ERKLAERUNGEN is None:
+        try:
+            with open(os.path.join(paths.RESSOURCEN, "daten", "optionen_erklaerungen.json"), encoding="utf-8") as fh:
+                _ERKLAERUNGEN = json.load(fh)
+        except (OSError, ValueError):
+            _ERKLAERUNGEN = {}
+    n = " ".join(name.split())
+    if n in _ERKLAERUNGEN:
+        return _ERKLAERUNGEN[n]
+    return next((v for k, v in _ERKLAERUNGEN.items() if len(k) >= 8 and (n.startswith(k) or k.startswith(n))), "")
 
 
 class _Seite(QWidget):
-    """Eine Optionenseite: Gruppen mit Zeilen; Werte stehen sofort in den Einstellungen."""
+    """Eine Optionenseite: Gruppen mit Zeilen; Werte stehen sofort in den Einstellungen.
+    Mit leerem ``titel`` ist sie ein Einbau in eine andere Seite oder ein Fenster: ohne Überschrift und ohne Rand."""
     def __init__(self, fenster, titel: str, offen: list[str] | None = None):
         super().__init__()
         self.w = fenster
         self.s = fenster.settings
         self.lay = QVBoxLayout(self)
-        self.lay.setContentsMargins(24, 16, 24, 16)
-        t = text_label(titel, fett=True, pt=16, umbruch=False)
-        self.lay.addWidget(t)
+        self.lay.setContentsMargins(24, 16, 24, 16) if titel else self.lay.setContentsMargins(0, 0, 0, 0)
+        if titel:
+            self.lay.addWidget(text_label(titel, fett=True, pt=16, umbruch=False))
         self.gruppe_lay = None
         self.karten: list[_Karte] = []
+        self.einklappe: list[EinklappGruppe] = []
         self._offen = offen or []
 
     def gruppe(self, name: str) -> QFormLayout:
         g = QGroupBox(name.upper())
+        g.setProperty("optName", name)
         f = _Karte(g)
         self.karten.append(f)
         self.lay.addWidget(g)
         return f
 
+    def mehr(self, name: str = "Weitere Einstellungen") -> EinklappGruppe:
+        """Eingeklappter Bereich am Ende einer Seite; ``unter`` legt Gruppen hinein."""
+        e = EinklappGruppe(name)
+        self.einklappe.append(e)
+        self.lay.addWidget(e)
+        return e
+
+    def unter(self, e: EinklappGruppe, name: str = "") -> QFormLayout:
+        g = QGroupBox(name.upper())
+        g.setProperty("optName", name)
+        f = _Karte(g)
+        self.karten.append(f)
+        e.innen.addWidget(g)
+        return f
+
     def haken(self, f, key, text, std, wirkt=None):
         c = QCheckBox(text)
         c.setProperty("optName", text)
+        c.setMinimumHeight(MIN_HOEHE)
         c.setChecked(self.s.get_bool(key, std))
 
         def geaendert(on):
@@ -38,11 +78,28 @@ class _Seite(QWidget):
             if wirkt:
                 wirkt(on)
         c.toggled.connect(geaendert)
-        f.addRow(c)
+        self._zeile(f, c, text)
         return c
+
+    @staticmethod
+    def _zeile(f, c: QCheckBox, text: str) -> None:
+        """Haken in die Gruppe setzen; gibt es einen Erklärsatz, steht er immer sichtbar darunter (nicht nur als QuickInfo)."""
+        satz = erklaerung(text)
+        if not satz:
+            f.addRow(c)
+            return
+        c.setAccessibleDescription(satz)
+        zeile = QWidget(); zeile.setObjectName("optPaar"); zeile.setProperty("optName", text)
+        v = QVBoxLayout(zeile); v.setContentsMargins(0, 2, 0, 6); v.setSpacing(0)
+        v.addWidget(c)
+        hinweis = text_label(satz)
+        hinweis.setObjectName("optHinweis")                       # Aussehen steht in STIL (optionen.py): ein Stylesheet statt eines je Zeile
+        v.addWidget(hinweis)
+        f.addRow(zeile)
 
     def auswahl(self, f, key, label, werte: list[str], std, wirkt=None):
         c = QComboBox()
+        c.setMinimumHeight(MIN_HOEHE)
         c.addItems(werte)
         c.setCurrentText(str(self.s.get(key, std)))
 
@@ -57,6 +114,7 @@ class _Seite(QWidget):
     def wahl(self, f, key, label, eintraege: list[tuple[str, object]], std, wirkt=None):
         """Auswahl mit Anzeigetext und gespeichertem Wert (Text oder Ja/Nein)."""
         c = QComboBox()
+        c.setMinimumHeight(MIN_HOEHE)
         for text, wert in eintraege:
             c.addItem(text, wert)
         aktuell = self.s.get_bool(key, std) if isinstance(std, bool) else self.s.get(key, std)
@@ -74,15 +132,17 @@ class _Seite(QWidget):
         """Haken, der den Zustand eines anderen Teils des Programms zeigt und schaltet (Navigationsbereich, Gitternetzlinien …)."""
         c = QCheckBox(text)
         c.setProperty("optName", text)
+        c.setMinimumHeight(MIN_HOEHE)
         c.setChecked(bool(ist()))
         c.toggled.connect(lambda on: on != bool(ist()) and umschalten())
-        f.addRow(c)
+        self._zeile(f, c, text)
         return c
 
     def eingabe(self, key: str, platzhalter: str) -> QLineEdit:
         e = QLineEdit(str(self.s.get(key, "")))
         e.setPlaceholderText(platzhalter)
         e.setProperty("optName", platzhalter)
+        e.setAccessibleName(platzhalter)
         e.textChanged.connect(lambda t: self.s.set(key, t))
         return e
 
@@ -116,6 +176,7 @@ class _Seite(QWidget):
     def stufen(self, f, key, label, eintraege: list[tuple[str, float]], std, wirkt=None):
         """Auswahl aus benannten Stufen („normal“, „weit“ …), die als Zahl gespeichert werden."""
         c = QComboBox()
+        c.setMinimumHeight(MIN_HOEHE)
         for text, wert in eintraege:
             c.addItem(text, wert)
         akt = float(self.s.get(key, std))
@@ -154,7 +215,7 @@ class _Seite(QWidget):
 
     def hinweis(self, text: str):
         l = text_label(text)
-        l.setStyleSheet("color: palette(mid);")
+        l.setStyleSheet("color: palette(window-text);")
         self.lay.addWidget(l)
 
     def aktion(self, text: str, knopf: str, aktion, name: str | None = None):
@@ -172,9 +233,6 @@ class _Seite(QWidget):
     def abschluss(self):
         for k in self.karten:
             k.ende()
-        fuss = text_label("Lunivo-Office · Prüfung und Wortschatz aus der Schreibhilfe", umbruch=False)
-        fuss.setStyleSheet("color: palette(mid); font-size: 8pt; padding-top: 6px;")
-        self.lay.addWidget(fuss)
         if self._offen:
             self.hinweis("Noch nicht umgesetzt (Einstellung ohne Wirkung): " + "; ".join(self._offen) + ".")
         self.lay.addStretch(1)
@@ -197,6 +255,8 @@ class _Karte(QFormLayout):
             zeile = QWidget(); zeile.setObjectName("optPaar")
             h = QHBoxLayout(zeile); h.setContentsMargins(0, 4, 0, 6); h.setSpacing(12)
             l = QLabel(args[0]); l.setWordWrap(False)
+            if not args[1].accessibleName():
+                args[1].setAccessibleName(args[0])               # Bildschirmleser: das Feld heißt wie seine Beschriftung
             h.addWidget(l); h.addWidget(args[1], 1)
             args[1].setProperty("optName", args[0])
             self.paare.append(zeile)

@@ -18,9 +18,9 @@ def win(tmp_path, monkeypatch):
 def test_optionen_baum_und_wirkung(app, tmp_path, monkeypatch):
     w = win(tmp_path, monkeypatch); w.new_document()
     d = OptionenDialog(w, "lesehilfe")
-    zweige = [d.baum.topLevelItem(i).text(0) for i in range(d.baum.topLevelItemCount())]
-    assert zweige == ["Leichter lesen", "Allgemein", "Nur bei Lunivo"]
-    assert sum(d.baum.topLevelItem(i).childCount() for i in range(3)) == 19
+    seiten = [d.baum.topLevelItem(i).text(0) for i in range(d.baum.topLevelItemCount())]
+    assert seiten == ["Lesen", "Anzeige", "Schreiben", "Speichern", "Drucken und PDF", "Name und KI"]
+    assert d.baum.currentItem().text(0) == "Lesen"                       # der frühere Name „lesehilfe“ führt auf die neue Seite
     # Papierton wirkt auf den Editor und wird gespeichert
     from PySide6.QtWidgets import QComboBox
     seite = d.stapel.widget(d.baum.currentItem().data(0, 0x101))
@@ -176,7 +176,7 @@ def test_befehlslisten_kennwort_ki_und_erweitert(app, tmp_path, monkeypatch):
     from PySide6.QtWidgets import QListWidget
     w = win(tmp_path, monkeypatch)
     d = OptionenDialog(w, "schnellzugriff")
-    seite = d.stapel.currentWidget()
+    seite = d.ansicht._schnellzugriff("")                                  # die Werkzeuge öffnen als eigenes Fenster, hier als Seite geprüft
     listen = seite.findChildren(QListWidget)
     links, rechts = listen[0], listen[1]
     n = rechts.count()
@@ -187,14 +187,13 @@ def test_befehlslisten_kennwort_ki_und_erweitert(app, tmp_path, monkeypatch):
     assert rechts.count() == n + 1
     assert erster in json.loads(w.settings.get("ui/schnellzugriff"))
     # Menüband: ein Register ausblenden
-    d.gehe_zu("menueband")
-    seite = d.stapel.currentWidget()
+    seite = d.ansicht._menueband("")
     links, rechts = seite.findChildren(QListWidget)[:2]
     rechts.setCurrentRow(0); name = rechts.item(0).text()
     [b for b in seite.findChildren(QPushButton) if b.text() == "Entfernen"][0].click()
     assert name in json.loads(w.settings.get("ui/register_plan"))["versteckt"]
     # Sicherheit: Kennwort, Markup-Haken
-    d.gehe_zu("sicherheit")
+    d.ansicht._sicherheit(""); d.ansicht._verfolgen("")
     d.gehe_zu("ki"); d.gehe_zu("gedaechtnis"); d.gehe_zu("erweitert")
     # KI: Aufgabenmodell wird gespeichert
     d.gehe_zu("ki")
@@ -202,3 +201,62 @@ def test_befehlslisten_kennwort_ki_und_erweitert(app, tmp_path, monkeypatch):
     from PySide6.QtWidgets import QComboBox
     c = [x for x in seite.findChildren(QComboBox)][0]
     assert c.itemText(0).startswith("Standard (")
+
+
+def test_optionen_flach_suche_aufklappen_und_hell_dunkel(app, tmp_path, monkeypatch):
+    """Sechs Seiten ohne Baum, Suche springt auch in eingeklappte Bereiche, Hell/Dunkel/System als eine Wahl."""
+    from PySide6.QtCore import Qt
+    from lunivo_writer.ui.baukasten.einklappgruppe import EinklappGruppe
+    w = win(tmp_path, monkeypatch)
+    d = OptionenDialog(w, "anzeige")
+    a = d.ansicht
+    assert a.baum.topLevelItemCount() == 6 and all(a.baum.topLevelItem(i).childCount() == 0 for i in range(6))
+    # Suche: eine AutoKorrektur-Einzelregel steht in einem eingeklappten Bereich der Seite „Schreiben“
+    a.suche.setText("Gedankenstrich")
+    assert a.treffer.count() >= 1
+    it = a.treffer.item(0)
+    seite = a.stapel.widget(a.knoten["schreiben"].data(0, Qt.UserRole + 1))
+    zu = [e for e in seite.findChildren(EinklappGruppe) if not e.ist_offen()]
+    assert zu                                                                 # die Zusatzeinstellungen sind erst einmal zu
+    a._springe(it)
+    assert a.baum.currentItem().text(0) == "Schreiben"
+    assert all(e.ist_offen() for e in seite.findChildren(EinklappGruppe) if e.isAncestorOf(it.data(Qt.UserRole)[1]))
+    # Alte Seitennamen führen auf die neuen Seiten
+    a.gehe_zu("gedaechtnis"); assert a.baum.currentItem().text(0) == "Schreiben"
+    a.gehe_zu("pdf"); assert a.baum.currentItem().text(0) == "Drucken und PDF"
+    # Hell / Dunkel / Wie das System: genau eine Wahl, sie wirkt und steht in den Einstellungen
+    from PySide6.QtWidgets import QApplication, QPushButton
+    from PySide6.QtGui import QPalette
+    a.gehe_zu("anzeige")
+    knoepfe = {b.accessibleName(): b for b in a.stapel.currentWidget().findChildren(QPushButton) if b.objectName() == "optWahl"}
+    assert set(knoepfe) == {"Hell", "Dunkel", "Wie das System"}
+    try:
+        knoepfe["Dunkel"].click()
+        assert w.settings.get("theme") == "dark" and QApplication.instance().palette().color(QPalette.Window).lightness() < 128
+        assert knoepfe["Dunkel"].isChecked() and not knoepfe["Hell"].isChecked() and knoepfe["Dunkel"].text().startswith("✓")
+        w.thema_wechseln()                                                    # Strg+Umschalt+D / Statusleiste: zum jeweils anderen
+        assert w.settings.get("theme") == "light" and w.statusBar().thema.text() == "Hell"
+    finally:
+        knoepfe["Wie das System"].click()
+
+
+def test_optionen_barrierefrei_namen_und_fokus(app, tmp_path, monkeypatch):
+    """Jedes Bedienelement hat einen Namen für Bildschirmleser und ist mit der Tastatur erreichbar; die Seitenliste ist fokussierbar."""
+    from PySide6.QtCore import Qt
+    from PySide6.QtWidgets import (QAbstractSpinBox, QCheckBox, QComboBox, QLineEdit, QListWidget, QPushButton, QRadioButton, QSlider,
+                                   QToolButton, QWidget)
+    w = win(tmp_path, monkeypatch)
+    a = OptionenDialog(w, "lesen").ansicht
+    assert a.baum.focusPolicy() == Qt.StrongFocus and a.baum.accessibleName() and a.suche.accessibleName()
+    ohne_name, ohne_fokus = [], []
+    for x in a.stapel.findChildren(QWidget):
+        if not isinstance(x, (QPushButton, QComboBox, QSlider, QAbstractSpinBox, QLineEdit, QToolButton, QRadioButton, QCheckBox, QListWidget)):
+            continue
+        if isinstance(x, QLineEdit) and isinstance(x.parentWidget(), (QComboBox, QAbstractSpinBox)):
+            continue
+        name = x.accessibleName() or (x.text() if isinstance(x, (QPushButton, QToolButton, QRadioButton, QCheckBox)) else "")
+        if not name:
+            ohne_name.append(type(x).__name__)
+        if x.focusPolicy() == Qt.NoFocus:
+            ohne_fokus.append(type(x).__name__)
+    assert not ohne_name and not ohne_fokus

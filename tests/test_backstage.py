@@ -102,7 +102,7 @@ def test_optionen_stehen_in_der_datei_ansicht(app, tmp_path):
     assert ph._ansicht.baum.currentItem().data(0, 0x100) == "ki"                  # gleich auf der gewünschten Seite
     assert not w.backstage._links.isVisible()                                      # das Menü ist für die Dauer der Optionen weg
     w.show_options("sprache")
-    assert w.backstage.seiten["optionen"]._ansicht.baum.currentItem().data(0, 0x100) == "sprache"
+    assert w.backstage.seiten["optionen"]._ansicht.baum.currentItem().data(0, 0x100) == "schreiben"    # „sprache“ führt auf die neue Seite
     w.backstage_schliessen()
     assert not w.backstage.isVisible() and w.arbeit.isVisible() and not w.band.menue_knopf.isChecked()
     # Verlassen: oben „← Optionen“ oder unten rechts „Fertig“

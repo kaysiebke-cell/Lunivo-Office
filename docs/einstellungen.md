@@ -2,27 +2,16 @@
 
 Das Optionen-Fenster, die Sprachen, das Kennwort, die Einstellungsdatei.
 
-**Optionen** — *☰ Menü ▸ Optionen*, oder **F9**. Links ein Baum mit drei
-Zweigen, rechts der Bereich, zweispaltig und kompakt wie im Writer.
+**Optionen** — *☰ Menü ▸ Optionen*, oder **F9**. Links die Suche und eine flache Liste mit sechs Seiten
+(*Lesen, Anzeige, Schreiben, Speichern, Drucken und PDF, Name und KI*), rechts die Seite. Jede Seite zeigt das Häufige; der Rest
+steht unter *Weitere Einstellungen*. Aufbau: [aufbau-optionen.md](aufbau-optionen.md).
 
-*Leichter lesen* steht zuoberst: **Lesehilfe**, **Schriftarten**,
+**Hell oder Dunkel** — ganz oben unter *Anzeige*, oder mit **Strg+Umschalt+D**, im Menü *Ansicht* und über den Knopf in der Statusleiste.
 
-**Sprache**, **Rechtschreibprüfung**. Darunter *Wie im Writer* mit
-
-**allen dreizehn Seiten** in seiner Reihenfolge und mit seinen Namen, und
-zuletzt *Nur bei Lunivo* — Schreibhilfe und KI, Gedächtnis und
-*Erweitert*, wo steht, was zusätzlich geholt wurde und ob es da ist.
-
-87 Schalter und 20 Klapplisten, keiner davon eine Attrappe. Die Schalter
-sind dieselben wie im Menü und im Band — ein Schalter, drei Stellen, ein
-Zustand; wer ihn irgendwo umlegt, sieht ihn überall wechseln.
-
-*Menüband anpassen* und *Symbolleiste für den Schnellzugriff* sind nach
-demselben Bild gebaut: links die Befehle mit Klappliste, Suchfeld und
-ihren Zeichnungen, in der Mitte Hinzufügen und Entfernen, rechts das
-Ziel — beim Menüband ein Baum aus Registerkarten und Gruppen, bei der
-Leiste ihr Inhalt. Neue Registerkarten und Gruppen lassen sich anlegen
-und umbenennen.
+*Menüband anpassen* und *Symbolleiste für den Schnellzugriff* öffnen als eigenes Fenster (*Anzeige ▸ Weitere Einstellungen*):
+links die Befehle mit Klappliste, Suchfeld und ihren Zeichnungen, in der Mitte Hinzufügen und Entfernen, rechts das
+Ziel — beim Menüband ein Baum aus Registerkarten und Gruppen, bei der Leiste ihr Inhalt. Neue Registerkarten und Gruppen lassen sich
+anlegen und umbenennen.
 
 **Das Dokumentkennwort** verschlüsselt wirklich: AES-256, den Schlüssel
 mit PBKDF2 aus dem Kennwort, beides vom Programm selbst gerechnet. Ohne das

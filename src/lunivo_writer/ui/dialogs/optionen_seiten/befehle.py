@@ -161,21 +161,6 @@ class BefehleSeiten:
         return p
 
 
-    def _benutzer(self, titel):
-        p = _Seite(self.w, titel)
-        f = p.gruppe("Benutzerdaten")
-        f.addRow(QLabel("Wer schreibt"))
-        p.felder(f, [("benutzer/name", "Name (Autor in DOCX-Dokumenten)"), ("benutzer/strasse", "Straße und Hausnummer"),
-                     ("benutzer/plz_ort", "PLZ und Ort"), ("benutzer/ort", "Ort (für „Ort, Datum“)"),
-                     ("benutzer/telefon", "Telefon"), ("benutzer/mail", "E-Mail")])
-        p.zeile(f, "Bleibt auf diesem Rechner und geht nie mit einem Text an die KI.")
-        f.addRow("Initialen", p.eingabe("benutzer/initialen", "z. B. KS"))
-        p.haken(f, "benutzer/verwenden", "Diese Benutzerinformationen verwenden", True)
-        p.haken(f, "sicherheit/personendaten_weg", "Beim Speichern persönliche Daten entfernen", False)
-        p.abschluss()
-        return p
-
-
     def _sicherheit(self, titel):
         p = _Seite(self.w, titel)
         t = self.w.current_tab()
@@ -220,7 +205,7 @@ class BefehleSeiten:
                                      zeige("Entfernt — gilt ab dem nächsten Speichern.")))
         zeige()
         warn = md_label("**Ein vergessenes Kennwort kann niemand wiederherstellen.** Bewahre es an einem sicheren Ort auf.")
-        warn.setWordWrap(True); warn.setStyleSheet("color: palette(mid);")
+        warn.setWordWrap(True); warn.setStyleSheet("color: palette(window-text);")
         f.addRow(warn)
         sperre = QCheckBox("Bearbeitung sperren")
         sperre.setChecked(bool(t and getattr(t, "gesperrt", False))); sperre.setEnabled(t is not None)

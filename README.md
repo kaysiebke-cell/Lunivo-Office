@@ -104,8 +104,8 @@ freiwillig und braucht einen eigenen Schlüssel; ohne sie läuft alles Übrige.
 
 **Ein vollständiges Schreibprogramm.** Neun Register nach dem Vorbild des
 WPS Writer, zwei Oberflächen zur Wahl, Formatvorlagen, Tabellen, Kopf- und
-Fußzeilen, Seriendruck, Druckvorschau, PDF-Export. Die Optionen tragen alle
-dreizehn Seiten von WPS, dazu drei eigene.
+Fußzeilen, Seriendruck, Druckvorschau, PDF-Export. Die Optionen haben sechs
+Seiten mit Suche, das Häufige zuerst, Hell und Dunkel mit einem Klick.
 
 **Was geschrieben wird, bleibt hier.** Kein Konto, keine Cloud, kein
 Mitlesen. Die Einstellungen liegen als lesbare Datei unter
@@ -154,21 +154,21 @@ erleichtert. Der Text steht in OpenDyslexic.
 
 ![Das Fenster mit dem offenen Reiter Schreibhilfe: die Gruppen Lesen, Prüfen, Beim Schreiben, Vorlesen, Sprache, KI und Anzeigen, rechts die Seitenleiste](bilder/uebersicht.png)
 
-Die **Lesehilfe** ist die erste Seite der Optionen (**F9**). Jede Wahl
+Das **Lesen** ist die erste Seite der Optionen (**F9**). Jede Wahl
 wirkt sofort auf dem Blatt — kein „Übernehmen", kein Fenster, das über dem
 Text liegt, den man beurteilen will.
 
-![Die Optionen mit der offenen Seite Lesehilfe: Papierton, Buchstabenabstand, Wortabstand, Zeilenluft, Zeilenfokus und Vorlesen; links der Baum mit den drei Zweigen](bilder/lesehilfe.png)
+![Die Optionen mit der offenen Seite Lesen: Lesestufe, Papierton, Buchstabenabstand, Wortabstand, Zeilenluft, Zeilenfokus und Vorlesen; links die Suche und die sechs Seiten](bilder/lesehilfe.png)
 
-Unter **Schriftarten** stehen die drei Leseschriften als Knöpfe, jede in
+Unter *Lesen ▸ Weitere Einstellungen* stehen die drei Leseschriften, jede in
 ihrer eigenen Schrift — man muss ihren Namen nicht kennen.
 
-![Die Seite Schriftarten mit der Schriftwahl und den drei Knöpfen OpenDyslexic, Lexend und Atkinson Hyperlegible, jeder in seiner eigenen Schrift](bilder/schriften.png)
+![Der eingeklappte Bereich der Seite Lesen mit Silben, Silbentrennung und den drei Schriften OpenDyslexic, Lexend und Atkinson Hyperlegible, jede in ihrer eigenen Schrift](bilder/schriften.png)
 
-Die Optionen tragen **alle dreizehn Seiten** des WPS Writer, zweispaltig
-und kompakt wie dort — hier die Seite *Ansicht*.
+Die Optionen haben **sechs Seiten** und eine Suche; was selten gebraucht wird, steht
+eingeklappt unter *Weitere Einstellungen*. Das Bild zeigt die Seite *Anzeige* mit der Wahl zwischen Hell, Dunkel und dem Systemdesign.
 
-![Die Seite Ansicht der Optionen, zweispaltig: Anzeigen, Druckoptionen, Formatierungszeichen, Menübandoptionen und Darstellung](bilder/einstellungen.png)
+![Die Seite Anzeige der Optionen: oben Hell, Dunkel und Wie das System, darunter Anzeigen sowie Größe und Kontrast](bilder/einstellungen.png)
 
 Wer die Reiter aus Word gewohnt ist, findet sie unter *Ansicht ▸
 Darstellung ▸ Benutzeroberfläche*. Über dem Blatt liegt das Lineal mit den

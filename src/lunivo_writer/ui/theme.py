@@ -5,6 +5,9 @@ from PySide6.QtGui import QColor, QPalette
 from PySide6.QtWidgets import QApplication, QStyleFactory
 
 
+_FUSION = False
+
+
 def apply_theme(app: QApplication, mode: str) -> None:
     _setze(app, mode)
     _stil(app)
@@ -155,13 +158,18 @@ def _stil(app: QApplication) -> None:
     f = dict((WEICHE_FARBEN if WEICH else FARBEN)[_ist_dunkel(app)])
     f["pfeil_unten"], f["pfeil_oben"] = _pfeile(f["text"])
     f["x_bild"] = _kreuz(f["grau"])
-    app.setStyleSheet(QSS % f)
+    qss = QSS % f
+    if app.styleSheet() != qss:                                    # unverändert: nichts neu auswerten lassen
+        app.setStyleSheet(qss)
 
 
 def _setze(app: QApplication, mode: str) -> None:
-    fusion = QStyleFactory.create("Fusion")
-    if fusion is not None:
-        app.setStyle(fusion)
+    global _FUSION
+    if not _FUSION:                                                 # ein Stilwechsel baut alle Widgets neu auf (Sekunden): nur einmal
+        fusion = QStyleFactory.create("Fusion")
+        if fusion is not None:
+            app.setStyle(fusion)
+            _FUSION = True
     if mode == "dark":
         p = QPalette()
         bg, base, txt = QColor(42, 46, 50), QColor(31, 34, 37), QColor(230, 233, 236)      # Leiste, Fläche um das Blatt, Schrift
@@ -189,7 +197,7 @@ def _setze(app: QApplication, mode: str) -> None:
                 p.setColor(rolle, farbe)
         app.setPalette(p)
     elif mode == "light":
-        app.setPalette(app.style().standardPalette())
+        app.setPalette(_helle_palette())                            # „Immer hell“ darf nie vom Systemdesign (z. B. qt5ct dunkel) abhängen
         _hell_feinschliff(app)
     else:
         app.setPalette(app.style().standardPalette())
@@ -197,6 +205,23 @@ def _setze(app: QApplication, mode: str) -> None:
             _setze(app, "dark")                                     # dunkles System: dieselbe Palette wie „Immer dunkel“
         else:
             _hell_feinschliff(app)
+
+
+def _helle_palette() -> QPalette:
+    """Feste helle Grundpalette (wie Fusion hell), unabhängig von der Palette des Plattformdesigns."""
+    p = QPalette()
+    fest = {QPalette.Window: "#efefef", QPalette.WindowText: "#000000", QPalette.Base: "#ffffff", QPalette.AlternateBase: "#f7f7f7",
+            QPalette.ToolTipBase: "#ffffdc", QPalette.ToolTipText: "#000000", QPalette.Text: "#000000", QPalette.Button: "#efefef",
+            QPalette.ButtonText: "#000000", QPalette.BrightText: "#ffffff", QPalette.Light: "#ffffff", QPalette.Midlight: "#cacaca",
+            QPalette.Mid: "#a0a0a0", QPalette.Dark: "#9f9f9f", QPalette.Shadow: "#767676", QPalette.Highlight: "#308cc6",
+            QPalette.HighlightedText: "#ffffff", QPalette.Link: "#0000ff", QPalette.LinkVisited: "#ff00ff",
+            QPalette.PlaceholderText: "#808080"}
+    for rolle, farbe in fest.items():
+        p.setColor(rolle, QColor(farbe))
+    grau = QColor("#bebebe")
+    for rolle in (QPalette.WindowText, QPalette.Text, QPalette.ButtonText):
+        p.setColor(QPalette.Disabled, rolle, grau)
+    return p
 
 
 def _hell_feinschliff(app: QApplication) -> None:

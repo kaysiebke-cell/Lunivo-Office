@@ -10,6 +10,7 @@ class StatusBar(QStatusBar):
     zoom_groesser = Signal()
     zoom_stufe = Signal()
     zoom_geaendert = Signal(int)          # Prozent, vom Regler
+    thema_wechseln = Signal()             # Hell ↔ Dunkel
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -21,6 +22,11 @@ class StatusBar(QStatusBar):
         for w in (self.lbl_words, self.lbl_page):
             w.setContentsMargins(10, 0, 10, 0)
             self.addPermanentWidget(w)
+        self.thema = QToolButton(); self.thema.setAutoRaise(True); self.thema.setMinimumHeight(24)
+        self.thema.setText("Hell / Dunkel"); self.thema.setToolTip("Zwischen hell und dunkel wechseln (Strg+Umschalt+D)")
+        self.thema.setAccessibleName("Zwischen hell und dunkel wechseln")
+        self.thema.clicked.connect(self.thema_wechseln)
+        self.addPermanentWidget(self.thema)
         self.zoom_minus = QToolButton(); self.zoom_minus.setText("−"); self.zoom_minus.setAutoRaise(True)
         self.zoom_plus = QToolButton(); self.zoom_plus.setText("+"); self.zoom_plus.setAutoRaise(True)
         self.zoom_regler = QSlider(Qt.Horizontal); self.zoom_regler.setRange(10, 500); self.zoom_regler.setValue(100)
@@ -33,6 +39,9 @@ class StatusBar(QStatusBar):
         self.zoom_regler.valueChanged.connect(self.zoom_geaendert)
         for w in (self.zoom_minus, self.zoom_regler, self.zoom_plus, self.lbl_zoom):
             self.addPermanentWidget(w)
+
+    def thema_zeigen(self, dunkel: bool) -> None:
+        self.thema.setText("Dunkel" if dunkel else "Hell")
 
     def meldung(self, text: str) -> None:
         self.lbl_msg.setText(text)
