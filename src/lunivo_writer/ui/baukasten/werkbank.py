@@ -34,6 +34,7 @@ class FunktionsZeile(QFrame):
         sym = QLabel(); sym.setFixedWidth(28); sym.setAttribute(Qt.WA_TransparentForMouseEvents)
         if icons.hat(f.symbol):
             sym.setPixmap(icons.icon(f.symbol, 22).pixmap(22, 22))
+            sym.setProperty("symbolName", f.symbol); sym.setProperty("symbolPx", 22)       # Farbwechsel: Symbol neu beziehen (icons.alle_neu)
         h.addWidget(sym)
         mitte = QVBoxLayout(); mitte.setSpacing(0)
         self.titel = QLabel(f.name); ft = self.titel.font(); ft.setBold(True); self.titel.setFont(ft)

@@ -260,3 +260,18 @@ def test_optionen_barrierefrei_namen_und_fokus(app, tmp_path, monkeypatch):
         if x.focusPolicy() == Qt.NoFocus:
             ohne_fokus.append(type(x).__name__)
     assert not ohne_name and not ohne_fokus
+
+
+def test_symbole_der_schienen_folgen_dem_farbwechsel(app, tmp_path, monkeypatch):
+    """Nach dem Wechsel von hell auf dunkel sind die Symbole der Seitenleisten hell (nicht schwarz auf dunkel)."""
+    from PySide6.QtWidgets import QApplication
+    from lunivo_writer.ui.theme import apply_theme
+    apply_theme(QApplication.instance(), "light")
+    w = win(tmp_path, monkeypatch)
+    try:
+        w.set_theme("dark")
+        bild = w._links["suche"].icon().pixmap(22, 22).toImage()
+        hell = max(bild.pixelColor(x, y).lightness() for x in range(bild.width()) for y in range(bild.height()) if bild.pixelColor(x, y).alpha() > 100)
+        assert hell > 200
+    finally:
+        w.set_theme("system")

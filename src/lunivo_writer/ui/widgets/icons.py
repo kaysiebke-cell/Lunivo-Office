@@ -210,3 +210,23 @@ def icon(name: str, px: int = 20) -> QIcon:
 
 def leeren() -> None:
     _CACHE.clear()
+
+
+def setze(knopf, name: str, px: int = 20) -> None:
+    """Symbol auf einen Knopf setzen und den Namen merken: beim Wechsel zwischen hell und dunkel bekommt er sein Symbol in der neuen Farbe zurück."""
+    knopf.setProperty("symbolName", name)
+    knopf.setProperty("symbolPx", px)
+    knopf.setIcon(icon(name, px))
+
+
+def alle_neu() -> None:
+    """Nach einem Farbwechsel: alle Knöpfe mit gemerktem Symbol neu beziehen (der Zwischenspeicher ist dann schon geleert)."""
+    for w in QApplication.allWidgets():
+        name = w.property("symbolName")
+        if not name:
+            continue
+        px = int(w.property("symbolPx") or 20)
+        if hasattr(w, "setIcon"):
+            w.setIcon(icon(str(name), px))
+        elif hasattr(w, "setPixmap"):
+            w.setPixmap(icon(str(name), px).pixmap(px, px))

@@ -124,7 +124,7 @@ class BackstageBaustein:
         symbole = {"suche": "lupe", "kommentare": "notiz", "ueberschriften": "gliederung", "aenderungen": "verfolgt", "noten": "fussnote", "vorlesen": "vorlesen"}
         for key in SEITEN:
             b = QToolButton()
-            b.setIcon(icons.icon(symbole[key], 22)); b.setIconSize(QSize(22, 22))
+            icons.setze(b, symbole[key], 22); b.setIconSize(QSize(22, 22))
             b.setToolTip(TITEL[key]); b.setAccessibleName(TITEL[key])
             b.setCheckable(True)
             b.setFixedSize(38, 38)
@@ -170,7 +170,7 @@ class BackstageBaustein:
                                ("Schreiben", "stift", "Schreiben — Schalter, Textbausteine, Sprache"), ("KI", "assistent", "KI — Korrektur, Übersetzen, Aktionen"),
                                ("Chat", "chat", "KI-Chat")):
             b = QToolButton()
-            b.setIcon(icons.icon(sym, 22)); b.setIconSize(QSize(22, 22))
+            icons.setze(b, sym, 22); b.setIconSize(QSize(22, 22))
             b.setToolTip(tip); b.setAccessibleName(name)
             b.setCheckable(True)
             b.setFixedSize(38, 38)

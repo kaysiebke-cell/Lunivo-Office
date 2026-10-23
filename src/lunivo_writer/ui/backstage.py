@@ -68,7 +68,7 @@ class Backstage(QWidget):
         links.setFixedWidth(340)
         ll = QVBoxLayout(links)
         ll.setContentsMargins(0, 8, 0, 8)
-        zurueck = QPushButton(icons.icon("voriges", 18), "  Zurück zum Dokument")
+        zurueck = QPushButton("  Zurück zum Dokument"); icons.setze(zurueck, "voriges", 18)
         zurueck.setObjectName("bsKnopf")
         zurueck.setCursor(Qt.PointingHandCursor)
         zurueck.clicked.connect(self.schliessen)
@@ -232,7 +232,7 @@ class Backstage(QWidget):
         if sym is not None and not sym.isNull():                       # Dateiformat: Symbol des Systems statt unseres
             k.setIcon(sym); k.setIconSize(QSize(22, 22))
         elif icon and icons.hat(icon):
-            k.setIcon(icons.icon(icon, 18))
+            icons.setze(k, icon, 18)
         k.setEnabled(self.w.befehle.hat(befehl))
         k.setCursor(Qt.PointingHandCursor)
         k.setFixedWidth(BREITE)                               # alle Zeilen gleich breit, keine Kästen

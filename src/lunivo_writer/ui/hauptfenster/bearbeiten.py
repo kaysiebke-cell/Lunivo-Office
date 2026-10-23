@@ -194,6 +194,7 @@ class BearbeitenBaustein:
         if abs(icons.FAKTOR - faktor) > 1e-6:
             icons.FAKTOR = faktor
             icons.leeren()
+            icons.alle_neu()
             self.neu_bauen_band()
 
 
@@ -309,6 +310,7 @@ class BearbeitenBaustein:
         try:
             apply_theme(QApplication.instance(), wahl)
             icons.leeren()
+            icons.alle_neu()                                        # Schienen, Schwebeknopf und Datei-Ansicht: Symbole in der neuen Farbe
             self.neu_bauen_band()
         finally:
             QApplication.restoreOverrideCursor()

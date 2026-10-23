@@ -14,7 +14,7 @@ class SchwebKnopf(QToolButton):
     def __init__(self, editor, symbol: str, tipp: str, aktion):
         super().__init__(editor)
         self.editor = editor
-        self.setIcon(icons.icon(symbol, 26)); self.setIconSize(QSize(26, 26)); self.setToolTip(tipp); self.setAccessibleName(tipp)
+        icons.setze(self, symbol, 26); self.setIconSize(QSize(26, 26)); self.setToolTip(tipp); self.setAccessibleName(tipp)
         self.setFixedSize(48, 48)
         self.setCursor(self.cursor())
         self.setStyleSheet(('QToolButton { background: palette(button); border: 1px solid palette(mid); border-radius: 8px; }QToolButton:hover { background: palette(alternate-base); }QToolButton:focus { border: 2px solid ' + Farbe.AKZENT + '; }'))
