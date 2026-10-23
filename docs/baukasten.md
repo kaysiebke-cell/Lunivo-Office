@@ -78,3 +78,49 @@ unten kommt überall von `fussleiste` (`dialog_rahmen.py`), Maße von `EinheitFe
 | Hilfen | `schiebe_feld.py`, `voreinstellung_menue.py`, `pipette.py` | Regler mit Feld, Popup mit Bildchen in Abschnitten, Farbe vom Bildschirm |
 
 Tests: `tests/test_baukasten.py`.
+
+## Zusatzfenster in der Seitenleiste
+
+Seltene Einstellungen (Absatz, Schriftart, Rahmen, Listen, Seite einrichten …) öffnen sich nicht über dem Text, sondern als Seite in der
+Seitenleiste — nur solange man sie bearbeitet. Die Breite der Seitenleiste ändert sich nie; der Inhalt passt sich an.
+Jeder Baustein macht genau eine Sache:
+
+| Baustein | Datei | Aufgabe |
+|---|---|---|
+| `PanelFaehig` | `zusatz_panel.py` | Markierung für ein Fenster: `exec()` zeigt es in der Seitenleiste (sonst wie bisher als Fenster) |
+| `ZusatzPanel` | `zusatz_panel.py` | die Seite in der Seitenleiste: Kopf mit Titel und ✕, Rollbereich ohne seitliche Leiste, Unterfenster mit „←“ |
+| `FormularGitter` | `formular_gitter.py` | Felder, die sich der Breite anpassen: `zeile(Beschriftung, Feld)`, `breit(Feld)`, `reihe((Beschr., Feld), …)`. Breit: zwei Paare nebeneinander; schmal: eines je Zeile; sehr schmal: Beschriftung über dem Feld |
+| `AngepassteReiter` | `formular_gitter.py` | Reiter, deren Höhe dem gewählten Reiter folgt (kein leerer Platz unter kurzen Reitern) |
+| `UmbruchSchalter` | `formular_gitter.py` | Ankreuzfeld, dessen langer Text umbricht |
+| `FlussLayout` | `formular_gitter.py` | Reihe von Feldern, die wie Text umbricht (Beschriftung und Feld bleiben beisammen) |
+| `schmal_machen` | `schmal.py` | **Notbehelf** für Fenster, die noch nicht aus Bausteinen gebaut sind: bricht zu breite Zeilen nachträglich um. Neue Fenster bauen mit `FormularGitter`, nicht darauf verlassen |
+
+Ein Fenster, das aus einem offenen Zusatzfenster heraus aufgerufen wird (zum Beispiel „Farben“ aus „Rahmen und Schattierung“), legt sich als weitere Seite darüber (mit „←“); das darunter bleibt offen.
+
+Neues Fenster: `class MeinDialog(PanelFaehig, QDialog)`, Felder in `FormularGitter`-Gruppen. Fertig umgebaut (alle Fenster der Seitenleiste außer Rahmen und Schattierung): Farben, Absatz, Schriftart, Tabstopps, Layout, Nummerierung, Gliederung, Texteffekte, Formatvorlage. Dazu KI-Einstellungen (`KIEinstellungenDialog`, `kompakt_machen()` kürzt die Reiternamen, die Sprachlisten stehen untereinander).
+
+Platz in der Seitenleiste: Wer Größen der Seitenleiste braucht, bietet `passe_an(breite, hoehe)` an (`ZusatzPanel` ruft es mit `verfuegbar` und `verfuegbar_hoehe` auf, die die Seitenleiste aus ihrer echten Größe setzt); Beispiele: Farbraster, Rahmenvorschau, Kachelzahl der Nummerierung, Texteffekte. `AngepassteReiter` und der Stapel der KI-Einstellungen richten die Höhe nach der gewählten Seite. Prüfung: `test_seitenleisten_seiten_passen_in_echte_groesse`.
+Auf dem Notbehelf nur noch: Rahmen und Schattierung (bewusst: Spalten mit Vorschau, `schmal_nein` schützt die Kantenknöpfe) und die kleinen Fenster mit `QFormLayout`.
+Tests, die Fenster per Zeitgeber schließen, müssen auch die Fenster in der Seitenleiste finden (`tests/test_smoke_befehle.py`).
+
+## Befehle nach Aufgaben
+
+`core/commands.py` enthält nur noch die Grundfunktionen von `Befehle` (Aktion suchen, ausführen, Zustand). Die Befehle selbst stehen in
+`core/befehle/`, je Aufgabe ein Baustein: `text` (Zeichen und Absatz), `bearbeiten`, `einfuegen`, `seite` (Seite, Abschnitte, Spalten),
+`pruefen` (Schreibhilfe, Vergleichen), `ansicht`, `datei`, `verweise`, `kommentare`, `kontext` (Tabelle, Bild, Formen), `ki`, `extern`.
+Ein neuer Befehl kommt in den Baustein seiner Aufgabe; `Befehle` setzt sie zusammen. Kein Baustein importiert `commands.py`.
+
+## Aufbau der großen Klassen
+
+Die drei großen Klassen sind nach Aufgaben in Bausteine (Mixins) geteilt. Die Hauptdatei behält Aufbau, Signale und Qt-Ereignisse
+(`…Event`), die Bausteine die Aufgaben:
+
+| Klasse | Hauptdatei | Bausteine |
+|---|---|---|
+| `Befehle` | `core/commands.py` (Grundfunktionen) | `core/befehle/*.py` |
+| `MainWindow` | `ui/main_window.py` | `ui/hauptfenster/`: `dateien`, `bearbeiten`, `oberflaeche`, `backstage_steuerung` |
+| `DocumentEditor` | `ui/document/document_editor.py` | `ui/document/editor_*.py`: `anzeige`, `spalten`, `seiten`, `formatierung`, `bilder`, `schreibhilfe` |
+| `OptionenAnsicht` | `ui/dialogs/optionen.py` | `ui/dialogs/optionen_seiten/`: `lesen`, `ansicht`, `datei`, `befehle`, `lunivo` |
+
+Regel: Ein neuer Befehl, eine neue Editor-Funktion oder eine neue Optionen-Seite kommt in den Baustein ihrer Aufgabe, nicht in die Hauptdatei.
+Bausteine kennen die Hauptdatei nicht (kein Import zurück); Werte, die mehrere brauchen, stehen in `gemeinsam.py` des jeweiligen Ordners.

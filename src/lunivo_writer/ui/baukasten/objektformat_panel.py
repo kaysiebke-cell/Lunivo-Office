@@ -21,7 +21,9 @@ from lunivo_writer.ui.baukasten.schiebe_feld import SchiebeFeld
 from lunivo_writer.ui.baukasten.texteffekt_dialog import Abschnitt, TexteffektPanel
 from lunivo_writer.ui.baukasten.voreinstellung_menue import VoreinstellungMenue
 
-STRICHE = ["einfach", "gepunktet", "fein_gestrichelt", "gestrichelt", "strichpunkt", "strichpunktpunkt"]
+from lunivo_writer.editor.linie import OBJEKT_STRICHE
+from lunivo_writer.core.farben import Farbe
+STRICHE = [k for k, _name in OBJEKT_STRICHE]                                    # die eine Liste der Strichlinien (editor/linie.py)
 WEICH_STUFEN = (1, 2.5, 5, 10, 25, 50)
 LEER = {"fuell": None, "rand": None}
 
@@ -40,17 +42,17 @@ class ObjektFormatPanel(TexteffektPanel):
         p = QPainter(pm); p.setRenderHint(QPainter.Antialiasing)
         if unterstrichen:
             p.drawPixmap(2, 0, icons.icon("farbe", 22).pixmap(22, 22))
-            p.setPen(QColor("#4c6ef5")); p.drawLine(5, 24, 21, 24)
+            p.setPen(QColor(Farbe.BLAU)); p.drawLine(5, 24, 21, 24)
         else:
-            p.setPen(QPen(QColor("#868e96"), 1.6)); p.drawRect(QRectF(4, 6, 14, 14))
-            p.setPen(QPen(QColor("#4c6ef5"), 1.6)); p.drawLine(18, 2, 18, 8); p.drawLine(15, 5, 21, 5)
+            p.setPen(QPen(QColor(Farbe.GRAU), 1.6)); p.drawRect(QRectF(4, 6, 14, 14))
+            p.setPen(QPen(QColor(Farbe.BLAU), 1.6)); p.drawLine(18, 2, 18, 8); p.drawLine(15, 5, 21, 5)
         p.end()
         return QIcon(pm)
 
     # ---- Seite 1: Füllung und Linie ------------------------------------------------------------------------------------------
     def _seite_fuellung(self, w: dict) -> QWidget:
         seite = QWidget(); v = QVBoxLayout(seite); v.setSpacing(10)
-        self.fuell_farbe_kopf = FarbFeld("#4c6ef5", "Füllfarbe", keine_text="Keine Füllung", verlauf=True)
+        self.fuell_farbe_kopf = FarbFeld(Farbe.BLAU, "Füllfarbe", keine_text="Keine Füllung", verlauf=True)
         self.fuell_farbe_kopf.setMinimumWidth(110)
         self.a_fuell = Abschnitt("Füllung", self.fuell_farbe_kopf)
         self.r_keine, self.r_farbe, self.r_verlauf = QRadioButton("Keine Füllung"), QRadioButton("Einfarbige Füllung"), QRadioButton("Farbverlauf")
@@ -58,7 +60,7 @@ class ObjektFormatPanel(TexteffektPanel):
         self.r_bild = QRadioButton("Bildfüllung")
         for r in (self.r_keine, self.r_farbe, self.r_verlauf, self.r_textur, self.r_muster, self.r_bild):
             self.a_fuell.breit(r)
-        self.farbe = FarbFeld("#4c6ef5", "Füllfarbe", keine_text="Automatisch")
+        self.farbe = FarbFeld(Farbe.BLAU, "Füllfarbe", keine_text="Automatisch")
         self.a_fuell.zeile("Farbe:", self.farbe)
         self.v1, self.v2 = FarbFeld("#1864ab", "Dunkle Farbe"), FarbFeld("#d0ebff", "Helle Farbe")
         self.a_fuell.zeile("Farbe 1:", self.v1); self.a_fuell.zeile("Farbe 2:", self.v2)
@@ -70,7 +72,7 @@ class ObjektFormatPanel(TexteffektPanel):
         for schl, name, _o in M.MUSTER:
             if schl != "loeschen":
                 self.muster.addItem(M.name_von(schl), schl)
-        self.m_farbe = FarbFeld("#343a40", "Musterfarbe")
+        self.m_farbe = FarbFeld(Farbe.TINTE, "Musterfarbe")
         self.a_fuell.zeile("Muster:", self.muster); self.a_fuell.zeile("Musterfarbe:", self.m_farbe)
         self.bild_knopf = QPushButton("Bild wählen …"); self.bild_knopf.clicked.connect(self.bild_gewuenscht)
         self.a_fuell.zeile("Bild:", self.bild_knopf)
@@ -81,7 +83,7 @@ class ObjektFormatPanel(TexteffektPanel):
         self.k_keine, self.k_linie = QRadioButton("Keine Linie"), QRadioButton("Durchgezogene Linie")
         for r in (self.k_keine, self.k_linie):
             self.a_kontur.breit(r)
-        self.k_farbe = FarbFeld("#000000", "Linienfarbe")
+        self.k_farbe = FarbFeld(Farbe.SCHWARZ, "Linienfarbe")
         self.k_breite = SchiebeFeld(0.25, 20, " pt", 0.25, 2)
         self.k_art = QComboBox(); self.k_art.setIconSize(QSize(86, 14))
         for k in STRICHE:                                          # die Strichlinien des Bausteins „Linie“ als Bildchen, nicht als Text
@@ -153,26 +155,26 @@ class ObjektFormatPanel(TexteffektPanel):
             elif art == "textur":
                 self.textur.setCurrentIndex(max(0, self.textur.findData(f.get("key"))))
             elif art == "muster":
-                self.muster.setCurrentIndex(max(0, self.muster.findData(f.get("key")))); self.m_farbe.setFarbe(f.get("farbe", "#343a40"))
+                self.muster.setCurrentIndex(max(0, self.muster.findData(f.get("key")))); self.m_farbe.setFarbe(f.get("farbe", Farbe.TINTE))
         self.fuell_farbe_kopf.setFarbe(f.get("farbe", "") if art == "farbe" else "")
         if r:
-            self.k_farbe.setFarbe(r.get("farbe", "#000000")); self.k_breite.setValue(r.get("b", 2.0) * 72 / 96)
+            self.k_farbe.setFarbe(r.get("farbe", Farbe.SCHWARZ)); self.k_breite.setValue(r.get("b", 2.0) * 72 / 96)
             self.k_art.setCurrentIndex(max(0, self.k_art.findData(r.get("art", "einfach"))))
 
     def _werte_fuellung(self) -> tuple[dict, dict]:
         if self.r_keine.isChecked():
             fuell = None
         elif self.r_verlauf.isChecked():
-            fuell = {"art": "graduell", "dunkel": self.v1.farbe or "#1864ab", "hell": self.v2.farbe or "#ffffff", "farbe": self.v1.farbe or "#1864ab"}
+            fuell = {"art": "graduell", "dunkel": self.v1.farbe or "#1864ab", "hell": self.v2.farbe or Farbe.WEISS, "farbe": self.v1.farbe or "#1864ab"}
         elif self.r_textur.isChecked():
             fuell = {"art": "textur", "key": self.textur.currentData()}
         elif self.r_muster.isChecked():
-            fuell = {"art": "muster", "key": self.muster.currentData(), "farbe": self.m_farbe.farbe or "#343a40", "grund": "#ffffff"}
+            fuell = {"art": "muster", "key": self.muster.currentData(), "farbe": self.m_farbe.farbe or Farbe.TINTE, "grund": Farbe.WEISS}
         elif self.r_bild.isChecked():
             fuell = {"art": "bild", "unveraendert": True}                       # das Bild bleibt, wie es ist (der Aufrufer behält es)
         else:
-            fuell = {"art": "farbe", "farbe": self.farbe.farbe or "#4c6ef5"}
-        rand = None if self.k_keine.isChecked() else {"b": self.k_breite.value() * 96 / 72, "farbe": self.k_farbe.farbe or "#000000",
+            fuell = {"art": "farbe", "farbe": self.farbe.farbe or Farbe.BLAU}
+        rand = None if self.k_keine.isChecked() else {"b": self.k_breite.value() * 96 / 72, "farbe": self.k_farbe.farbe or Farbe.SCHWARZ,
                                                          "art": self.k_art.currentData() or "einfach"}
         return {"fuell": fuell, "rand": rand}, {}
 

@@ -66,44 +66,46 @@ def _text(mm: float, art: str, fuell: str = "") -> str:
 
 
 from lunivo_writer.ui.baukasten.zusatz_panel import PanelFaehig
+from lunivo_writer.ui.baukasten.formular_gitter import FlussLayout, FormularGitter, abschnittstitel
 class TabstoppDialog(PanelFaehig, QDialog):
     def __init__(self, parent=None, stopps=(), standard_mm: float | None = None):
         """``standard_mm``: Standardabstand der Tabstopps des Dokuments (``None``: das Feld bleibt weg)."""
         super().__init__(parent)
         self.setWindowTitle("Tabstopps")
-        self.resize(550, 410)
+        self.resize(550, 340)
         self._stopps: list[tuple[float, str, str]] = sorted(((round(m, 1), a, f) for m, a, f in stopps), key=lambda x: x[0])
         self._geloescht: list[float] = []
         v = QVBoxLayout(self)
-        kopf = QGridLayout(); kopf.setHorizontalSpacing(18)
-        kopf.addWidget(QLabel("Tabstoppposition:"), 0, 0)
+        kopf = FormularGitter(); kopf.setContentsMargins(0, 0, 0, 0)
         self.pos = EinheitFeld(0.0, 0.0, 1000.0, ("mm", "cm", "in", "pt"), leer_bei_null=True)
-        kopf.addWidget(self.pos, 1, 0)
         self.standard = None
+        felder = [("Tabstoppposition:", self.pos)]
         if standard_mm is not None:
-            kopf.addWidget(QLabel("Standardtabstopps:"), 0, 1)
             self.standard = EinheitFeld(standard_mm, 0.5, 200.0, ("Zeichen", "mm", "cm", "in", "pt"), "Zeichen")
-            kopf.addWidget(self.standard, 1, 1)
-        kopf.setColumnStretch(0, 3); kopf.setColumnStretch(1, 2)
-        self.liste = QListWidget(); self.liste.setMinimumHeight(110)
-        kopf.addWidget(self.liste, 2, 0)
+            felder.append(("Standardtabstopps:", self.standard))
+        kopf.reihe(*felder, gewichte=(3, 2))
+        self.liste = QListWidget(); self.liste.setMinimumHeight(48); self.liste.setMaximumHeight(72)
+        kopf.breit(self.liste)
         self.geloescht_text = QLabel(); self.geloescht_text.setWordWrap(True); self.geloescht_text.setAlignment(Qt.AlignTop)
-        kopf.addWidget(self.geloescht_text, 2, 1)
-        v.addLayout(kopf)
-        box = QGroupBox("Ausrichtung"); bh = QHBoxLayout(box)
+        kopf.breit(self.geloescht_text)
+        kopf.breit(abschnittstitel("Ausrichtung"))
+        bh = FlussLayout(14); bh.setContentsMargins(0, 0, 0, 0)
         self.art = QButtonGroup(self)
         for i, k in enumerate(("dezimal", "links", "mitte", "rechts")):
             r = QRadioButton(dict(ARTEN)[k]); self.art.addButton(r, [a for a, _n in ARTEN].index(k)); bh.addWidget(r)
         self.art.button(0).setChecked(True)
-        v.addWidget(box)
-        fb = QGroupBox("Füllzeichen"); fg = QGridLayout(fb)
+        kopf.breit(bh)
+        kopf.breit(abschnittstitel("Füllzeichen"))
+        fg = FlussLayout(14); fg.setContentsMargins(0, 0, 0, 0)
         from lunivo_writer.editor.tabfuell import FUELL
         self.fuell = QButtonGroup(self)
         self._fuell_schluessel = list(FUELL)
         for i, k in enumerate(self._fuell_schluessel):
-            r = QRadioButton(FUELL[k][0]); self.fuell.addButton(r, i); fg.addWidget(r, i // 3, i % 3)
+            r = QRadioButton(FUELL[k][0]); self.fuell.addButton(r, i); fg.addWidget(r)
         self.fuell.button(0).setChecked(True)
-        v.addWidget(fb)
+        kopf.breit(fg)
+        v.addLayout(kopf)
+        v.addStretch(1)
         self.b_fest, self.b_loesch = QPushButton("Festlegen"), QPushButton("Löschen")
         self.b_fest.clicked.connect(self.festlegen); self.b_loesch.clicked.connect(self.loeschen)
         b_alle = QPushButton("Alle löschen"); b_alle.clicked.connect(self.alle)
@@ -116,8 +118,8 @@ class TabstoppDialog(PanelFaehig, QDialog):
         self.liste.clear()
         self.liste.addItems([_text(m, a, f) for m, a, f in self._stopps])
         f, kurz = einheit()
-        self.geloescht_text.setText("Zu löschende Tabstopps:" + ("\n" + ", ".join(f"{m * f:.2f}".replace(".", ",") + " " + kurz
-                                                                                for m in self._geloescht) if self._geloescht else ""))
+        self.geloescht_text.setText("Zu löschende Tabstopps:\n" + ", ".join(f"{m * f:.2f}".replace(".", ",") + " " + kurz for m in self._geloescht))
+        self.geloescht_text.setVisible(bool(self._geloescht))
         self._knoepfe()
 
     def _knoepfe(self, *_) -> None:

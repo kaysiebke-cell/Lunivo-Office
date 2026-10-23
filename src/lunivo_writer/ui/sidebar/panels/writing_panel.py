@@ -9,6 +9,7 @@ from lunivo_writer.ui.widgets import icons
 
 import re
 
+from lunivo_writer.core.farben import Farbe
 _LAUF = re.compile(r"(.)\1{5,}")
 
 
@@ -17,12 +18,12 @@ def kurz(text: str) -> str:
     return _LAUF.sub(lambda m: f"{m.group(1)}×{len(m.group(0))}", text)
 
 
-FARBE = {"fehler": "#e8590c", "tipp": "#1c7ed6", "hinweis": "#868e96"}
+FARBE = {"fehler": Farbe.ORANGE, "tipp": "#1c7ed6", "hinweis": Farbe.GRAU}
 
 
 # Marke oben auf der Karte: Schrift, Hintergrund (nach der Vorlage der ersten Fassung)
-MARKE = {"fehler": ("SICHER FALSCH", "#d9a03a", "#1d1a12"), "tipp": ("KOMMT DRAUF AN", "#2f6fb5", "#ffffff"),
-         "hinweis": ("NUR ZUM NACHDENKEN", "#6b7280", "#ffffff")}
+MARKE = {"fehler": ("SICHER FALSCH", "#d9a03a", "#1d1a12"), "tipp": ("KOMMT DRAUF AN", Farbe.AKZENT, Farbe.WEISS),
+         "hinweis": ("NUR ZUM NACHDENKEN", "#6b7280", Farbe.WEISS)}
 KARTE = "{name} {{ border: 1px solid palette(midlight); border-radius: 10px; background: rgba(128, 128, 128, 0.07); }}"
 
 

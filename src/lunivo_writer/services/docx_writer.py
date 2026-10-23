@@ -30,6 +30,7 @@ from lunivo_writer.models.page import PageSettings
 from lunivo_writer.services.docx_reader import LH_FIXED, LH_PROPORTIONAL, STYLE_PROP
 from lunivo_writer.models.report import DocumentIOError, IOReport
 
+from lunivo_writer.core.farben import Farbe
 PX_TO_PT = 0.75
 EMU_PER_PX = 9525
 
@@ -215,7 +216,7 @@ class _Writer:
                 e.set(qn("w:val"), b["kunst"] if b.get("kunst") else docx_wert(b.get("art", "einfach")))
                 e.set(qn("w:sz"), str(max(2, int(round(b.get("breite_pt", 1.0) * 8)))))
                 e.set(qn("w:space"), str(min(31, int(round(ab[seite])))))
-                e.set(qn("w:color"), b.get("farbe", "#000000").lstrip("#").upper())
+                e.set(qn("w:color"), b.get("farbe", Farbe.SCHWARZ).lstrip("#").upper())
                 pb.append(e)
             st = self.d.settings.element                                        # Kopf-/Fußzeile umgeben, am Seitenrand ausrichten (Einstellungen des Dokuments)
             for tag, an in (("w:bordersDoNotSurroundHeader", not b.get("kopf")), ("w:bordersDoNotSurroundFooter", not b.get("fuss")),
@@ -464,7 +465,7 @@ class _Writer:
                 e.set(qn("w:sz"), str(max(2, int(round(li.breite_pt * 8)))))
                 pol = li.polster()
                 e.set(qn("w:space"), str(int(round(pol[{"t": 0, "b": 1, "l": 2, "r": 3, "h": 0}[kurz]]))) if pol else "4")
-                e.set(qn("w:color"), (li.farbe or "#000000").lstrip("#").upper())
+                e.set(qn("w:color"), (li.farbe or Farbe.SCHWARZ).lstrip("#").upper())
                 bdr.append(e)
             if len(bdr):
                 para._p.get_or_add_pPr().insert_element_before(bdr, "w:shd", *nach_shd)
@@ -796,7 +797,7 @@ class _Writer:
         fg = cf.foreground()
         if fg.style() != Qt.NoBrush and not is_link:
             c = fg.color()
-            if c.isValid() and c.name().lower() != "#000000":
+            if c.isValid() and c.name().lower() != Farbe.SCHWARZ:
                 f.color.rgb = RGBColor(c.red(), c.green(), c.blue())
         bg = cf.background()
         if bg.style() != Qt.NoBrush:
@@ -937,10 +938,10 @@ class _Writer:
                     el = OxmlElement("a:solidFill"); el.append(farbe(f["farbe"]))
                 elif f["art"] == "muster":
                     el = OxmlElement("a:pattFill"); el.set("prst", MU.ooxml_von(f.get("key", "rein")))
-                    fg, bg = OxmlElement("a:fgClr"), OxmlElement("a:bgClr"); fg.append(farbe(f.get("farbe", "#000000"))); bg.append(farbe(f.get("grund") or "#ffffff"))
+                    fg, bg = OxmlElement("a:fgClr"), OxmlElement("a:bgClr"); fg.append(farbe(f.get("farbe", Farbe.SCHWARZ))); bg.append(farbe(f.get("grund") or Farbe.WEISS))
                     el.append(fg); el.append(bg)
                 else:                                                                           # Verlauf von hell nach dunkel, von oben nach unten
-                    dunkel = f.get("dunkel", f["farbe"]); hell = f.get("hell", "#ffffff")
+                    dunkel = f.get("dunkel", f["farbe"]); hell = f.get("hell", Farbe.WEISS)
                     el = OxmlElement("a:gradFill"); lst = OxmlElement("a:gsLst")
                     for pos, c in ((0, hell), (100000, dunkel)):
                         gs = OxmlElement("a:gs"); gs.set("pos", str(pos)); gs.append(farbe(c)); lst.append(gs)
@@ -950,7 +951,7 @@ class _Writer:
         if a.get("rand"):
             for sppr in run._r.xpath(".//pic:spPr"):
                 ln = OxmlElement("a:ln"); ln.set("w", str(int(round(float(a["rand"].get("b", 1)) * EMU_PER_PX))))
-                fill = OxmlElement("a:solidFill"); clr = OxmlElement("a:srgbClr"); clr.set("val", str(a["rand"].get("farbe", "#ffffff")).lstrip("#").upper())
+                fill = OxmlElement("a:solidFill"); clr = OxmlElement("a:srgbClr"); clr.set("val", str(a["rand"].get("farbe", Farbe.WEISS)).lstrip("#").upper())
                 fill.append(clr); ln.append(fill)
                 dash = {"gepunktet": "sysDot", "fein_gestrichelt": "sysDash", "gestrichelt": "dash", "strichpunkt": "dashDot", "strichpunktpunkt": "lgDashDotDot"}.get(a["rand"].get("art", "einfach"))
                 if dash:
@@ -968,17 +969,17 @@ class _Writer:
         pt = 12700
 
         def farbe(el, hexfarbe: str, transparenz) -> None:
-            c = OxmlElement("a:srgbClr"); c.set("val", str(hexfarbe or "#000000").lstrip("#").upper())
+            c = OxmlElement("a:srgbClr"); c.set("val", str(hexfarbe or Farbe.SCHWARZ).lstrip("#").upper())
             al = OxmlElement("a:alpha"); al.set("val", str(int(round((100 - float(transparenz)) * 1000)))); c.append(al); el.append(c)
         lst = OxmlElement("a:effectLst")
         if fx.get("leuchten"):
             g = fx["leuchten"]; el = OxmlElement("a:glow"); el.set("rad", str(int(float(g.get("groesse", 8)) * pt)))
-            farbe(el, g.get("farbe", "#4c6ef5"), g.get("transparenz", 60)); lst.append(el)
+            farbe(el, g.get("farbe", Farbe.BLAU), g.get("transparenz", 60)); lst.append(el)
         if fx.get("schatten"):
             sc = fx["schatten"]; el = OxmlElement("a:outerShdw")
             el.set("blurRad", str(int(float(sc.get("weich", 4)) * pt))); el.set("dist", str(int(float(sc.get("abstand", 4)) * pt)))
             el.set("dir", str(int(float(sc.get("winkel", 45)) * 60000))); el.set("algn", "ctr"); el.set("rotWithShape", "0")
-            farbe(el, sc.get("farbe", "#000000"), sc.get("transparenz", 60)); lst.append(el)
+            farbe(el, sc.get("farbe", Farbe.SCHWARZ), sc.get("transparenz", 60)); lst.append(el)
         if fx.get("reflektion"):
             r = fx["reflektion"]; el = OxmlElement("a:reflection")
             el.set("blurRad", str(int(float(r.get("weich", 0.5)) * pt))); el.set("stA", str(int(round((100 - float(r.get("transparenz", 50))) * 1000))))

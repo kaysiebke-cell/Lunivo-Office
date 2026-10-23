@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
 from lunivo_writer.ui.baukasten import farben as F
 
 
+from lunivo_writer.core.farben import Farbe
 def weitere_farben(parent, start=None, titel: str = "Farbe") -> QColor | None:
     """„Weitere Farben …“: das Fenster „Farben“ (Standard · Benutzerdefiniert · Erweitert). Gibt die Farbe zurück oder ``None`` bei Abbruch."""
     from lunivo_writer.ui.baukasten.farbwaehler import FarbenDialog
@@ -128,7 +129,7 @@ class FarbPalette(QMenu):
             v.addLayout(self._raster([letzte]))
         if automatisch:                                    # „Automatisch“ mit schwarzem Feld (Vorlage: Füllung)
             auto = QPushButton(automatisch); auto.setFlat(True); auto.setStyleSheet("text-align: left; padding: 4px 6px;")
-            pm = QPixmap(14, 14); pm.fill(QColor("black")); auto.setIcon(QIcon(pm)); auto.clicked.connect(lambda: self.waehle(QColor("#000000")))
+            pm = QPixmap(14, 14); pm.fill(QColor("black")); auto.setIcon(QIcon(pm)); auto.clicked.connect(lambda: self.waehle(QColor(Farbe.SCHWARZ)))
             v.addWidget(auto)
         if weitere:
             mehr = QPushButton(weitere_text); mehr.setFlat(True); mehr.setStyleSheet("text-align: left; padding: 4px 6px;")
@@ -159,7 +160,7 @@ class FarbPalette(QMenu):
     @staticmethod
     def _keine_symbol() -> QIcon:
         pm = QPixmap(14, 14); pm.fill(Qt.transparent)
-        p = QPainter(pm); p.setPen(QPen(QColor("#c92a2a"), 1.5)); p.drawRect(1, 1, 11, 11); p.drawLine(1, 12, 12, 1); p.end()
+        p = QPainter(pm); p.setPen(QPen(QColor(Farbe.ROT), 1.5)); p.drawRect(1, 1, 11, 11); p.drawLine(1, 12, 12, 1); p.end()
         return QIcon(pm)
 
     def _raster(self, zeilen: list[list[str]]) -> QGridLayout:
@@ -198,7 +199,7 @@ class FarbFeld(QPushButton):
     farbeGeaendert = Signal(str)
     verlaufGewaehlt = Signal(str)          # Farbe, die als Farbverlauf gemeint ist (nur mit ``verlauf=True``)
 
-    def __init__(self, farbe: str = "#000000", titel: str = "Farbe", keine_text: str | None = None, parent=None, verlauf: bool = False):
+    def __init__(self, farbe: str = Farbe.SCHWARZ, titel: str = "Farbe", keine_text: str | None = None, parent=None, verlauf: bool = False):
         super().__init__(parent)
         self.farbe, self.titel, self.keine_text, self._verlauf = farbe, titel, keine_text, verlauf
         self.clicked.connect(self._waehle)
@@ -227,12 +228,12 @@ class FarbFeld(QPushButton):
         if not self.farbe:
             self.setText(self.keine_text or "Keine")
             pm = QPixmap(14, 14); pm.fill(Qt.transparent)
-            p = QPainter(pm); p.setPen(QPen(QColor("#868e96"), 1)); p.drawRect(0, 0, 13, 13); p.drawLine(0, 13, 13, 0); p.end()
+            p = QPainter(pm); p.setPen(QPen(QColor(Farbe.GRAU), 1)); p.drawRect(0, 0, 13, 13); p.drawLine(0, 13, 13, 0); p.end()
             self.setIcon(QIcon(pm))
         else:
             self.setText(self.farbe.upper())
             pm = QPixmap(14, 14); pm.fill(QColor(self.farbe))
-            p = QPainter(pm); p.setPen(QPen(QColor("#868e96"), 1)); p.setBrush(Qt.NoBrush); p.drawRect(0, 0, 13, 13); p.end()
+            p = QPainter(pm); p.setPen(QPen(QColor(Farbe.GRAU), 1)); p.setBrush(Qt.NoBrush); p.drawRect(0, 0, 13, 13); p.end()
             self.setIcon(QIcon(pm))
         self.setStyleSheet("QPushButton { text-align: left; padding: 3px 10px; min-width: 120px; }")
 
@@ -242,7 +243,7 @@ class FarbKnopf(QToolButton):
 
     angewendet = Signal(object)      # QColor oder None
 
-    def __init__(self, symbol: QIcon | None = None, text: str = "", farbe: str = "#c92a2a", *, keine_text: str | None = "Keine Farbe",
+    def __init__(self, symbol: QIcon | None = None, text: str = "", farbe: str = Farbe.ROT, *, keine_text: str | None = "Keine Farbe",
                  titel: str = "Farbe", parent=None):
         super().__init__(parent)
         self._symbol, self.farbe, self._titel, self._keine = symbol, farbe, titel, keine_text

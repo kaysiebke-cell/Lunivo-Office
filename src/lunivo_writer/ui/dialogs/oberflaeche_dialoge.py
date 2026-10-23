@@ -6,7 +6,7 @@ import json
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtWidgets import (
-    QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFrame, QGridLayout, QHBoxLayout, QLabel, QLineEdit, QListWidget,
+    QCheckBox, QComboBox, QDialog, QFrame, QGridLayout, QHBoxLayout, QLabel, QLineEdit, QListWidget,
     QListWidgetItem, QMessageBox, QPlainTextEdit, QPushButton, QRadioButton, QScrollArea, QToolButton, QVBoxLayout, QWidget,
 )
 
@@ -25,6 +25,7 @@ def lade_json(settings, key: str, standard):
         return standard
 
 
+from lunivo_writer.ui.baukasten.dialog_rahmen import knopfzeile
 class RegisterAnpassenDialog(QDialog):
     """Reiter ein-/ausblenden und umordnen — wie „Menüband anpassen“ in WPS."""
 
@@ -53,9 +54,7 @@ class RegisterAnpassenDialog(QDialog):
         for text, d in (("▲ Nach oben", -1), ("▼ Nach unten", 1)):
             b = QPushButton(text); b.clicked.connect(lambda _=False, d=d: self._schieben(d)); z.addWidget(b)
         v.addLayout(z)
-        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        bb.accepted.connect(self._speichern); bb.rejected.connect(self.reject)
-        v.addWidget(bb)
+        v.addWidget(knopfzeile(self, bei_ok=self._speichern))
 
     def _schieben(self, d: int):
         i = self.liste.currentRow(); j = i + d
@@ -91,9 +90,7 @@ class SchnellzugriffDialog(QDialog):
             it.setFlags(it.flags() | Qt.ItemIsUserCheckable)
             it.setCheckState(Qt.Checked if aktion in aktuell else Qt.Unchecked)
             self.liste.addItem(it)
-        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        bb.accepted.connect(self._speichern); bb.rejected.connect(self.reject)
-        v.addWidget(bb)
+        v.addWidget(knopfzeile(self, bei_ok=self._speichern))
 
     def _speichern(self):
         gewaehlt = [self.liste.item(i).data(Qt.UserRole) for i in range(self.liste.count())
@@ -298,8 +295,7 @@ class OberflaecheDialog(QDialog):
         self.menue = QCheckBox("Menüleiste zusätzlich anzeigen")
         self.menue.setChecked(settings.get_bool("ui/menueleiste", False))
         v.addWidget(self.menue)
-        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        bb.accepted.connect(self.accept); bb.rejected.connect(self.reject); v.addWidget(bb)
+        bb = knopfzeile(self); v.addWidget(bb)
 
     def wahl(self) -> str:
         return "symbolleisten" if self.sym.isChecked() else "register"

@@ -2,13 +2,14 @@
 from __future__ import annotations
 
 from PySide6.QtWidgets import (
-    QComboBox, QDialog, QDialogButtonBox, QLabel, QListWidget, QPushButton, QSpinBox, QStackedWidget, QVBoxLayout, QWidget,
+    QComboBox, QDialog, QLabel, QListWidget, QPushButton, QSpinBox, QStackedWidget, QVBoxLayout, QWidget,
 )
 
 from lunivo_writer.editor import gehe_zu as G
 
 
 from lunivo_writer.ui.baukasten.zusatz_panel import PanelFaehig
+from lunivo_writer.ui.baukasten.dialog_rahmen import knopfzeile
 class GeheZuDialog(PanelFaehig, QDialog):
     def __init__(self, parent, ed, art: str = "Seite"):
         super().__init__(parent)
@@ -35,10 +36,7 @@ class GeheZuDialog(PanelFaehig, QDialog):
         self.knopf = QPushButton("Gehe zu")
         self.knopf.setDefault(True)
         self.knopf.clicked.connect(self.springen)
-        bb = QDialogButtonBox(QDialogButtonBox.Close)
-        bb.addButton(self.knopf, QDialogButtonBox.ActionRole)
-        bb.rejected.connect(self.reject)
-        v.addWidget(bb)
+        z = knopfzeile(self, schliessen=True); z.zusatz_knopf(self.knopf); v.addWidget(z)
         self.art.currentTextChanged.connect(self._umstellen)
         self.art.setCurrentText(art)
         self._umstellen(art)

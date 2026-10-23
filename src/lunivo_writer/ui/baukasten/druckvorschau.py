@@ -9,6 +9,7 @@ from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (QComboBox, QDialog, QFrame, QHBoxLayout, QLabel, QPushButton, QScrollArea, QSpinBox, QStyle, QVBoxLayout, QWidget)
 
+from lunivo_writer.core.farben import Farbe
 ANSICHTEN = [("Eine Seite", 1), ("Zwei Seiten", 2), ("Alle Seiten", 0)]
 
 
@@ -100,7 +101,7 @@ class DruckVorschau(QDialog):
         self._seiten = []
         for n in zeigen:
             l = QLabel(); l.setPixmap(QPixmap.fromImage(self._q.bild(n, self._zoom))); l.setObjectName("vorschauSeite")
-            l.setStyleSheet("QLabel#vorschauSeite { border: 1px solid " + ("#1c7ed6" if n == self._n else "#868e96") + "; }")
+            l.setStyleSheet("QLabel#vorschauSeite { border: 1px solid " + ("#1c7ed6" if n == self._n else Farbe.GRAU) + "; }")
             h.addWidget(l, 0, Qt.AlignCenter); self._seiten.append(l)
         self.flaeche.setWidget(inhalt)
         if modus == 0 and self._n > 1:

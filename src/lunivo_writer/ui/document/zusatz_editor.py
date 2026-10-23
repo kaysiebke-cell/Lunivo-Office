@@ -8,12 +8,12 @@ from PySide6.QtCore import QTimer, Qt, Signal
 from PySide6.QtGui import QColor, QFont, QTextCharFormat, QTextCursor, QTextFormat
 from PySide6.QtWidgets import QTextEdit
 
-from lunivo_writer.editor.zusatz import P_AENDERUNG, P_AUTOR, P_DATUM, P_KOMMENTAR, P_NOTE, neue_id, roemisch
-
-AUTOR_FARBEN = ["#c92a2a", "#1971c2", "#2f9e44", "#e8590c", "#7048a8", "#0b7285", "#a61e4d", "#5c940d"]
+from lunivo_writer.editor.zusatz import P_AENDERUNG, P_AUTOR, P_DATUM, P_KOMMENTAR, P_NOTE, neue_id, roemisch, AUTOR_FARBEN
 
 
-FESTE_FARBEN = {"Rot": "#c92a2a", "Blau": "#1971c2", "Grün": "#2f9e44", "Schwarz": "#222222", "Violett": "#7048a8"}
+
+from lunivo_writer.core.farben import Farbe
+FESTE_FARBEN = {"Rot": Farbe.ROT, "Blau": "#1971c2", "Grün": Farbe.GRUEN, "Schwarz": "#222222", "Violett": "#7048a8"}
 INS_STILE = ["Unterstrichen", "Doppelt unterstrichen", "Fett", "Kursiv", "Keine"]
 DEL_STILE = ["Durchgestrichen", "Fett", "Kursiv", "Keine"]
 
@@ -419,7 +419,7 @@ class ZusatzMixin:
             c.setPosition(f["von"]); c.setPosition(f["bis"], QTextCursor.KeepAnchor)
             fmt = QTextCharFormat()
             fmt.setUnderlineStyle(QTextCharFormat.WaveUnderline)
-            fmt.setUnderlineColor(QColor(self.WELLE.get(f["art"], "#868e96")))
+            fmt.setUnderlineColor(QColor(self.WELLE.get(f["art"], Farbe.GRAU)))
             e = QTextEdit.ExtraSelection(); e.cursor = c; e.format = fmt
             sel.append(e)
         n_text = doc.characterCount()

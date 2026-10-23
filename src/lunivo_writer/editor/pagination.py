@@ -16,6 +16,7 @@ from lunivo_writer.services.docx_reader import STYLE_PROP
 from lunivo_writer.editor.zusatz import B_NOTENZIEL
 from lunivo_writer.models.page import PX_PER_MM, PageSettings, mm_to_px
 
+from lunivo_writer.core.farben import Farbe
 _DEV = None
 
 
@@ -341,7 +342,7 @@ def _text_schwarz(d: QTextDocument) -> None:
     from PySide6.QtGui import QBrush, QColor, QTextCursor
     c = QTextCursor(d)
     c.select(QTextCursor.Document)
-    f = QTextCharFormat(); f.setForeground(QBrush(QColor("#000000"))); c.mergeCharFormat(f)
+    f = QTextCharFormat(); f.setForeground(QBrush(QColor(Farbe.SCHWARZ))); c.mergeCharFormat(f)
 
 
 def _formularteile_ausblenden(d: QTextDocument, steuer: bool, platzhalter: bool) -> None:
@@ -786,7 +787,7 @@ def _inhalt_zeichnen(p: QPainter, d: QTextDocument, rect: QRectF) -> None:
     from PySide6.QtGui import QAbstractTextDocumentLayout, QColor, QPalette
     ctx = QAbstractTextDocumentLayout.PaintContext()
     pal = QPalette(ctx.palette)
-    pal.setColor(QPalette.Text, QColor("#000000")); pal.setColor(QPalette.WindowText, QColor("#000000"))
+    pal.setColor(QPalette.Text, QColor(Farbe.SCHWARZ)); pal.setColor(QPalette.WindowText, QColor(Farbe.SCHWARZ))
     ctx.palette = pal
     p.save()
     p.setClipRect(rect)
@@ -858,7 +859,7 @@ def zeichne_seite(p: QPainter, d: QTextDocument, page: PageSettings, n: int, tot
             x = ml + j * (cb + luecke) + (cb + 6 if rechts else -6)
             from PySide6.QtGui import QColor, QPen
             p.save()
-            pen = QPen(QColor("#c92a2a")); pen.setWidthF(1.4)
+            pen = QPen(QColor(Farbe.ROT)); pen.setWidthF(1.4)
             p.setPen(pen)
             for t, u in zeilen:
                 if int((t + 0.5) // ch) == lp - 1:

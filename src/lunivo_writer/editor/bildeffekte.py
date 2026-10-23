@@ -11,11 +11,12 @@ import math
 from PySide6.QtCore import QRectF, Qt
 from PySide6.QtGui import QColor, QImage, QLinearGradient, QPainter, QPainterPath
 
+from lunivo_writer.core.farben import Farbe
 PX_PT = 96.0 / 72.0
 # Dieselben Schlüssel wie bei den Texteffekten (editor/textfx.py), damit Voreinstellungen und Regler gemeinsam genutzt werden
-VORGABE = {"schatten": {"farbe": "#000000", "transparenz": 60, "groesse": 100, "weich": 4.0, "abstand": 4.0, "winkel": 45},
+VORGABE = {"schatten": {"farbe": Farbe.SCHWARZ, "transparenz": 60, "groesse": 100, "weich": 4.0, "abstand": 4.0, "winkel": 45},
            "reflektion": {"groesse": 50, "transparenz": 50, "weich": 0.5, "abstand": 0.0},
-           "leuchten": {"farbe": "#4c6ef5", "groesse": 8.0, "transparenz": 60},
+           "leuchten": {"farbe": Farbe.BLAU, "groesse": 8.0, "transparenz": 60},
            "weich": {"radius": 6.0}}
 _MERK: dict = {}
 
@@ -98,7 +99,7 @@ def unter_zeichnen(p: QPainter, bild: QImage, r: QRectF, ellipse: bool, fx: dict
     p.save(); p.setRenderHint(QPainter.SmoothPixmapTransform)
     leu = fx.get("leuchten")
     if leu:
-        c = QColor(leu.get("farbe", "#4c6ef5")); c.setAlphaF(max(0.0, min(1.0, 1 - leu.get("transparenz", 60) / 100)))
+        c = QColor(leu.get("farbe", Farbe.BLAU)); c.setAlphaF(max(0.0, min(1.0, 1 - leu.get("transparenz", 60) / 100)))
         rad = float(leu.get("groesse", 8.0)) * PX_PT
         faktor = 1.0 + 2 * rad / max(w, h)
 
@@ -109,7 +110,7 @@ def unter_zeichnen(p: QPainter, bild: QImage, r: QRectF, ellipse: bool, fx: dict
         p.drawImage(QPointF(r.left() - pad, r.top() - pad), img)
     sch = fx.get("schatten")
     if sch:
-        c = QColor(sch.get("farbe", "#000000")); c.setAlphaF(max(0.0, min(1.0, 1 - sch.get("transparenz", 60) / 100)))
+        c = QColor(sch.get("farbe", Farbe.SCHWARZ)); c.setAlphaF(max(0.0, min(1.0, 1 - sch.get("transparenz", 60) / 100)))
         weich = float(sch.get("weich", 4.0)) * PX_PT
         faktor = max(0.2, sch.get("groesse", 100) / 100.0)
 

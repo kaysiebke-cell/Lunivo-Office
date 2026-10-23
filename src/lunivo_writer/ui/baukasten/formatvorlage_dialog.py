@@ -21,6 +21,7 @@ from lunivo_writer.ui.baukasten.farbpalette import weitere_farben
 from lunivo_writer.ui.baukasten.mass_feld import MassSpin, spin
 from lunivo_writer.ui.baukasten.text_format import TextFormatLeiste, zeichne_absaetze, zu_format
 
+from lunivo_writer.core.farben import Farbe
 ZEICHEN_ZUSATZ = ("unter", "unterfarbe", "durch", "doppelt", "hoch", "tief", "kapital", "gross", "versteckt", "abstand", "kerning", "betonung", "schrift_asien",
                   "schnitt_asien", "groesse_asien", "schrift_komplex", "schnitt_komplex", "groesse_komplex", "skala", "position", "kern_ab", "raster")
 ABSATZ_ZUSATZ = ("rechts", "erste", "rtl", "umbruch", "zeilen_art", "zeilen_pt", "gliederung", "opt")
@@ -30,6 +31,7 @@ GLEICHE = "(dieselbe Vorlage)"
 
 
 from lunivo_writer.ui.baukasten.zusatz_panel import PanelFaehig
+from lunivo_writer.ui.baukasten.formular_gitter import FormularGitter, UmbruchSchalter, abschnittstitel
 class FormatvorlageDialog(PanelFaehig, QDialog):
     def __init__(self, parent=None, *, start: dict | None = None, vorlagen: list[str] | None = None, name: str = "Formatvorlage1",
                  basis: str = "Standard", aendern: str | None = None, belegt=None, standard_tab_mm: float | None = None):
@@ -46,20 +48,22 @@ class FormatvorlageDialog(PanelFaehig, QDialog):
         self._rs = {k: (start or {}).get(k, stile.VORLAGE[k]) for k in RAHMEN_FELDER}      # Rahmen und Schattierung (kein Feld der Leiste)
         v = QVBoxLayout(self)
         # --- Eigenschaften
-        eig = QGroupBox("Eigenschaften"); f = QFormLayout(eig)
+        eig = QWidget(); f = FormularGitter(eig)                    # flach: Abschnittstitel statt Rahmen im Rahmen
         self.name = QLineEdit(aendern or self._freier_name(name))
         self.name.setReadOnly(bool(aendern))
         self.typ = QComboBox(); self.typ.addItem("Absatz")
         namen = [n for n in (vorlagen if vorlagen is not None else stile.namen()) if n != aendern]
         self.basis = QComboBox(); self.basis.addItem(KEINE, ""); [self.basis.addItem("↵ " + n, n) for n in namen]
         self.folge = QComboBox(); self.folge.addItem(GLEICHE, ""); [self.folge.addItem("↵ " + n, n) for n in namen]
-        f.addRow("Name:", self.name); f.addRow("Formatvorlagentyp:", self.typ)
-        f.addRow("Formatvorlage basiert auf:", self.basis); f.addRow("Formatvorlage für folgenden Absatz:", self.folge)
-        self.hinweis = QLabel(); self.hinweis.setStyleSheet("color: #e8590c;")
-        f.addRow(self.hinweis)
+        f.breit(abschnittstitel("Eigenschaften"))
+        f.reihe(("Name:", self.name), ("Typ:", self.typ), gewichte=(3, 2))
+        f.reihe(("Basiert auf:", self.basis), ("Für folgenden Absatz:", self.folge))
+        self.hinweis = QLabel(); self.hinweis.setWordWrap(True); self.hinweis.setStyleSheet(('color: ' + Farbe.ORANGE + ';'))
+        f.breit(self.hinweis)
         v.addWidget(eig)
         # --- Formatierung (dieselbe Leiste wie im Band)
-        fo = QGroupBox("Formatierung"); fv = QVBoxLayout(fo)
+        fo = QWidget(); fv = QVBoxLayout(fo); fv.setContentsMargins(0, 0, 0, 0); fv.setSpacing(6)
+        fv.addWidget(abschnittstitel("Formatierung"))
         self.leiste = TextFormatLeiste()
         fv.addWidget(self.leiste)
         self.vorschau = VorschauFlaeche(self._male, 118)
@@ -67,11 +71,11 @@ class FormatvorlageDialog(PanelFaehig, QDialog):
         fv.addWidget(self.vorschau)
         v.addWidget(fo)
         # --- Zur Vorlage hinzufügen, Knöpfe
-        self.zur_vorlage = QCheckBox("Zur Vorlage hinzufügen")
+        self.zur_vorlage = UmbruchSchalter("Zur Vorlage hinzufügen")
         self.zur_vorlage.setToolTip("Die Formatvorlage auch für künftige Dokumente merken (sonst gilt sie nur, solange Lunivo läuft, und in den Dokumenten, die sie benutzen)")
         self.zur_vorlage.setVisible(not aendern)
         v.addWidget(self.zur_vorlage)
-        self.format = QPushButton("Format ▾")
+        self.format = QPushButton("Format")
         m = QMenu(self.format)
         m.addAction("Schriftart …", self._schriftart); m.addAction("Absatz …", self._absatz); m.addAction("Tabstopps …", self._tabs); m.addAction("Rahmen …", self._rahmen); m.addAction("Nummerierung …", self._liste); m.addAction("Texteffekte …", self._effekte); m.addAction("Verknüpfung …", self._verknuepfung)
         self.format.setMenu(m)
@@ -117,7 +121,7 @@ class FormatvorlageDialog(PanelFaehig, QDialog):
     def _male(self, p, rect) -> None:
         """Vorhergehender Absatz (grau), Beispieltext in der Vorlage, folgender Absatz (grau)."""
         d = self._w
-        grau = QTextCharFormat(); grau.setForeground(QColor("#868e96")); grau.setFontPointSize(7.5); grau.setFontFamilies(["Liberation Sans"])
+        grau = QTextCharFormat(); grau.setForeground(QColor(Farbe.GRAU)); grau.setFontPointSize(7.5); grau.setFontFamilies(["Liberation Sans"])
         bf = QTextBlockFormat()
         bf.setTopMargin(max(0.0, d.get("vor", 0)) / 0.75); bf.setBottomMargin(max(0.0, d.get("nach", 0)) / 0.75)
         bf.setLeftMargin(max(0.0, d.get("einzug", 0)) * 3.78)
@@ -128,7 +132,7 @@ class FormatvorlageDialog(PanelFaehig, QDialog):
         f.setForeground(QColor(d.get("farbe") or "#111417"))
         if d.get("fuell") or d.get("muster"):
             from lunivo_writer.editor import muster as M
-            bf.setBackground(M.pinsel(d["muster"], d.get("musterfarbe") or "#000000", d.get("fuell") or None) if d.get("muster")
+            bf.setBackground(M.pinsel(d["muster"], d.get("musterfarbe") or Farbe.SCHWARZ, d.get("fuell") or None) if d.get("muster")
                              else QColor(d["fuell"]))
         zeichne_absaetze(p, rect, [(QTextBlockFormat(), grau, "Vorhergehender Absatz " * 6), (bf, f, "Beispieltext " * 14),
                                    (QTextBlockFormat(), grau, "Folgender Absatz " * 6)])
@@ -191,7 +195,7 @@ class FormatvorlageDialog(PanelFaehig, QDialog):
         from lunivo_writer.ui.baukasten.rahmen_schattierung import RahmenSchattierungDialog
         r = self._rs
         d = RahmenSchattierungDialog(self, rahmen=Linie.aus_text(r["rahmen"]) if r["rahmen"] else None, fuell=r["fuell"] or None,
-                                     muster=(r["muster"], r["musterfarbe"] or "#000000") if r["muster"] else None,
+                                     muster=(r["muster"], r["musterfarbe"] or Farbe.SCHWARZ) if r["muster"] else None,
                                      mit_seitenrand=False, fuer=["Absatz"])
 
         def fertig() -> None:

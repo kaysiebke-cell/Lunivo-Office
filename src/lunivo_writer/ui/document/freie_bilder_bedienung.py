@@ -14,6 +14,7 @@ from PySide6.QtGui import QColor, QPainter, QPen, QTextCursor
 from lunivo_writer.editor import freie_bilder as FB
 from lunivo_writer.editor.zusatz import B_BILDANKER
 
+from lunivo_writer.core.farben import Farbe
 GRIFF = 9.0                                                  # Seitenlänge eines Griffs in Bildschirmpunkten
 GRIFFE = {"nw": (0, 0), "n": (0.5, 0), "ne": (1, 0), "e": (1, 0.5), "se": (1, 1), "s": (0.5, 1), "sw": (0, 1), "w": (0, 0.5)}
 ROT_ABSTAND = 24.0                                           # Drehgriff: so weit über der Oberkante des Rahmens
@@ -114,7 +115,7 @@ class FreieBilderMixin:
         offen = getattr(self, "_frei_knoepfe_offen", True)
         p.save(); p.setRenderHint(QPainter.Antialiasing)
         for name, k in self._frei_knopf_rects(r).items():
-            p.setPen(QPen(QColor("#adb5bd"), 1)); p.setBrush(QColor("white"))
+            p.setPen(QPen(QColor(Farbe.GRAU_HELL), 1)); p.setBrush(QColor("white"))
             if name == "minus":
                 p.drawEllipse(k); p.setPen(QPen(QColor("#495057"), 1.6))
                 p.drawLine(int(k.left() + 5), int(k.center().y()), int(k.right() - 5), int(k.center().y()))
@@ -154,7 +155,7 @@ class FreieBilderMixin:
         from PySide6.QtGui import QPixmap
         from lunivo_writer.ui.widgets import icons
         pm = icons.icon(name, 20).pixmap(20, 20)
-        p = QPainter(pm); p.setCompositionMode(QPainter.CompositionMode_SourceIn); p.fillRect(pm.rect(), QColor("#343a40")); p.end()
+        p = QPainter(pm); p.setCompositionMode(QPainter.CompositionMode_SourceIn); p.fillRect(pm.rect(), QColor(Farbe.TINTE)); p.end()
         return pm
 
     @staticmethod
@@ -384,7 +385,7 @@ class FreieBilderMixin:
         m.gewaehlt.connect(lambda c: E()._frei_wirken(fuell=None if c is None else {"art": "farbe", "farbe": c.name()}))
         m.verlauf_gewaehlt.connect(lambda c: E()._frei_wirken(fuell={"art": "verlauf", "farbe": c.name()}))
         m.graduell_gewaehlt.connect(lambda d, h: E()._frei_wirken(fuell={"art": "graduell", "dunkel": d, "hell": h, "farbe": d}))
-        m.muster_gewaehlt.connect(lambda k: E()._frei_wirken(fuell={"art": "muster", "key": k, "farbe": "#343a40", "grund": "#ffffff"}))
+        m.muster_gewaehlt.connect(lambda k: E()._frei_wirken(fuell={"art": "muster", "key": k, "farbe": Farbe.TINTE, "grund": Farbe.WEISS}))
         m.textur_gewaehlt.connect(lambda k: E()._frei_wirken(fuell={"art": "textur", "key": k}))
 
         def bild():

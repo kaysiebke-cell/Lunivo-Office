@@ -13,9 +13,10 @@ from PySide6.QtGui import QBrush, QColor, QFont, QImage, QPainter, QPainterPath,
 
 from lunivo_writer.editor.zusatz import P_OBJEKT
 
+from lunivo_writer.core.farben import Farbe
 LAYOUTS = ["Liste", "Prozess", "Hierarchie", "Zyklus", "Pyramide"]
-FARBEN = {"Blau": ("#2f6fb5", "#5b9bd5", "#a9c9ea"), "Grün": ("#2d8a4e", "#5fb877", "#b4dfc0"), "Orange": ("#e67700", "#f4a259", "#fbd5ae"),
-          "Grau": ("#495057", "#868e96", "#ced4da"), "Bunt": ("#2f6fb5", "#e67700", "#2d8a4e")}
+FARBEN = {"Blau": (Farbe.AKZENT, "#5b9bd5", "#a9c9ea"), "Grün": ("#2d8a4e", "#5fb877", "#b4dfc0"), "Orange": ("#e67700", "#f4a259", "#fbd5ae"),
+          "Grau": ("#495057", Farbe.GRAU, "#ced4da"), "Bunt": (Farbe.AKZENT, "#e67700", "#2d8a4e")}
 MUSTER = {"Liste": "Erster Punkt\nZweiter Punkt\nDritter Punkt", "Prozess": "Planen\nUmsetzen\nPrüfen\nAbschließen",
           "Hierarchie": "Leitung\n  Team A\n    Aufgabe 1\n  Team B", "Zyklus": "Idee\nEntwurf\nTest\nStart", "Pyramide": "Spitze\nMitte\nBasis"}
 
@@ -37,7 +38,7 @@ def _farbe(daten: dict, ebene: int) -> QColor:
 
 
 def _text_farbe(c: QColor) -> QColor:
-    return QColor("#ffffff") if c.lightness() < 150 else QColor("#212529")
+    return QColor(Farbe.WEISS) if c.lightness() < 150 else QColor(Farbe.TINTE_DUNKEL)
 
 
 def _kasten(p: QPainter, r: QRectF, text: str, c: QColor, rund: float = 8) -> None:
@@ -77,7 +78,7 @@ def zeichnen(daten: dict) -> QImage:
             r = QRectF(8 + s * (bw + 34), 8 + z * 96, bw, 80)
             _kasten(p, r, t, _farbe(daten, 0 if daten.get("farben") != "Bunt" else i))
             if i < len(pts) - 1 and s < je_zeile - 1:
-                _pfeil(p, QPointF(r.right() + 4, r.center().y()), QPointF(r.right() + 30, r.center().y()), QColor("#868e96"))
+                _pfeil(p, QPointF(r.right() + 4, r.center().y()), QPointF(r.right() + 30, r.center().y()), QColor(Farbe.GRAU))
     elif layout == "Hierarchie":
         # Blätter nebeneinander, Eltern mittig über ihren Kindern
         baum: list[dict] = []
@@ -111,7 +112,7 @@ def zeichnen(daten: dict) -> QImage:
             r = QRectF(8 + n["x"] * raster + (raster - bw) / 2, 8 + n["e"] * 78, bw, 50)
             for k in n["k"]:
                 kr = QRectF(8 + k["x"] * raster + (raster - bw) / 2, 8 + k["e"] * 78, bw, 50)
-                p.setPen(QPen(QColor("#868e96"), 1.5))
+                p.setPen(QPen(QColor(Farbe.GRAU), 1.5))
                 p.drawLine(QPointF(r.center().x(), r.bottom()), QPointF(kr.center().x(), kr.top()))
             _kasten(p, r, n["t"], _farbe(daten, n["e"]))
             for k in n["k"]:
@@ -131,7 +132,7 @@ def zeichnen(daten: dict) -> QImage:
             if n > 1:
                 w = math.atan2(b.y() - a.y(), b.x() - a.x())
                 _pfeil(p, QPointF(a.x() + 62 * math.cos(w), a.y() + 30 * math.sin(w)), QPointF(b.x() - 66 * math.cos(w), b.y() - 33 * math.sin(w)),
-                       QColor("#868e96"))
+                       QColor(Farbe.GRAU))
         for i, (e, t) in enumerate(pts):
             _kasten(p, QRectF(pos[i].x() - 56, pos[i].y() - 26, 112, 52), t, _farbe(daten, i if daten.get("farben") == "Bunt" else 0), 26)
     else:                                                                   # Pyramide

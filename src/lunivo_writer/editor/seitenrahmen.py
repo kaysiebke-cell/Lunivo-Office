@@ -16,6 +16,7 @@ from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen, QPolygonF
 
 from lunivo_writer.models.page import mm_to_px
 
+from lunivo_writer.core.farben import Farbe
 KUNST = (("", "(keine)"), ("stars", "Sterne"), ("hearts", "Herzen"), ("triangles", "Dreiecke"), ("gems", "Edelsteine"), ("zigZag", "Zickzack"))
 KOPF_MM = 12.5                      # Abstand der Kopf- und Fußzeile vom Blattrand, soweit der Rahmen sie umgeben soll
 
@@ -92,6 +93,6 @@ def zeichnen(p: QPainter, b: dict, page, seite: QRectF) -> None:
     rect = rechteck(b, page, seite)
     breite = float(b.get("breite_pt", 1.0))
     if b.get("kunst"):
-        kunst_zeichnen(p, rect, b["kunst"], breite * 96 / 72, QColor(b.get("farbe", "#000000")))
+        kunst_zeichnen(p, rect, b["kunst"], breite * 96 / 72, QColor(b.get("farbe", Farbe.SCHWARZ)))
         return
-    Linie(b.get("farbe", "#000000"), breite, b.get("art", "einfach"), b.get("seiten", "tblr")).rahmen_zeichnen(p, rect, 96 / 72)
+    Linie(b.get("farbe", Farbe.SCHWARZ), breite, b.get("art", "einfach"), b.get("seiten", "tblr")).rahmen_zeichnen(p, rect, 96 / 72)

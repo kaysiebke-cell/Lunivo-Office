@@ -4,7 +4,7 @@ from __future__ import annotations
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QFont, QPixmap
 from PySide6.QtWidgets import (
-    QComboBox, QDialog, QDialogButtonBox, QDoubleSpinBox, QFormLayout, QHBoxLayout, QLabel, QLineEdit,
+    QComboBox, QDialog, QDoubleSpinBox, QFormLayout, QHBoxLayout, QLabel, QLineEdit,
     QListWidget, QListWidgetItem, QMessageBox, QPlainTextEdit, QPushButton, QSpinBox, QTableWidget, QTableWidgetItem,
     QVBoxLayout,
 )
@@ -14,20 +14,20 @@ from lunivo_writer.ui.baukasten import FarbFeld
 from lunivo_writer.services import bausteine
 
 
+from lunivo_writer.core.farben import Farbe
 def _ok(dlg):
-    bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-    bb.accepted.connect(dlg.accept); bb.rejected.connect(dlg.reject)
-    return bb
+    return knopfzeile(dlg)
 
 
 _Farbknopf = FarbFeld
 
 
 from lunivo_writer.ui.baukasten.zusatz_panel import PanelFaehig
+from lunivo_writer.ui.baukasten.dialog_rahmen import knopfzeile
 class VorschauMixin:
     def _vorschau_bauen(self, layout):
         self.vorschau = QLabel(); self.vorschau.setMinimumHeight(120); self.vorschau.setAlignment(Qt.AlignCenter)
-        self.vorschau.setStyleSheet("background: white; border: 1px solid #adb5bd;")
+        self.vorschau.setStyleSheet(('background: white; border: 1px solid ' + Farbe.GRAU_HELL + ';'))
         layout.addWidget(self.vorschau)
 
     def _zeige(self, img):
@@ -45,7 +45,7 @@ class FormDialog(QDialog, VorschauMixin):
         self.art = QComboBox(); self.art.addItems(E.FORMEN)
         if form:
             self.art.setCurrentText(form)
-        self.fuell = _Farbknopf("#4a8fd8", "Füllfarbe"); self.linie = _Farbknopf("#1f3864", "Linienfarbe")
+        self.fuell = _Farbknopf(Farbe.AKZENT_DUNKEL, "Füllfarbe"); self.linie = _Farbknopf("#1f3864", "Linienfarbe")
         self.breite = QSpinBox(); self.breite.setRange(20, 1200); self.breite.setValue(240)
         self.hoehe = QSpinBox(); self.hoehe.setRange(10, 1200); self.hoehe.setValue(140)
         self.strich = QDoubleSpinBox(); self.strich.setRange(0.5, 12); self.strich.setValue(2.0)
@@ -115,7 +115,7 @@ class WordArtDialog(QDialog, VorschauMixin):
         v = QVBoxLayout(self); f = QFormLayout(); v.addLayout(f)
         self.text = QLineEdit("Ihr Text"); self.stil = QComboBox(); self.stil.addItems(E.WORDART_STILE)
         self.schrift = QLineEdit("Liberation Sans"); self.pt = QSpinBox(); self.pt.setRange(12, 200); self.pt.setValue(48)
-        self.farbe = _Farbknopf("#2f6fb5")
+        self.farbe = _Farbknopf(Farbe.AKZENT)
         for lab, w in (("Text", self.text), ("Stil", self.stil), ("Schriftart", self.schrift), ("Größe (pt)", self.pt), ("Farbe", self.farbe)):
             f.addRow(lab, w)
         self._vorschau_bauen(v); v.addWidget(_ok(self))

@@ -1,7 +1,7 @@
 """Dialog zum Anlegen eines Formularfelds (Textfeld, Auswahlliste, Datum, Kontrollkästchen, Schaltfläche)."""
 from __future__ import annotations
 
-from PySide6.QtWidgets import QComboBox, QDialog, QDialogButtonBox, QFormLayout, QLabel, QLineEdit, QPlainTextEdit, QVBoxLayout
+from PySide6.QtWidgets import QComboBox, QDialog, QFormLayout, QLabel, QLineEdit, QPlainTextEdit, QVBoxLayout
 
 from lunivo_writer.editor import formular as FO
 
@@ -9,6 +9,7 @@ TITEL = {"text": "Textfeld", "auswahl": "Auswahlliste", "datum": "Datumsfeld", "
 
 
 from lunivo_writer.ui.baukasten.zusatz_panel import PanelFaehig
+from lunivo_writer.ui.baukasten.dialog_rahmen import knopfzeile
 class FormFeldDialog(PanelFaehig, QDialog):
     def __init__(self, fenster, art: str, bestehend: dict | None = None):
         super().__init__(fenster)
@@ -43,10 +44,7 @@ class FormFeldDialog(PanelFaehig, QDialog):
         info.setWordWrap(True)
         info.setStyleSheet("color: palette(mid);")
         v.addWidget(info)
-        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        bb.accepted.connect(self._ok)
-        bb.rejected.connect(self.reject)
-        v.addWidget(bb)
+        v.addWidget(knopfzeile(self, bei_ok=self._ok))
 
     def _ok(self) -> None:
         if self.art == "auswahl" and not [z for z in self.liste.toPlainText().splitlines() if z.strip()]:

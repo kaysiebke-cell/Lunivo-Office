@@ -22,6 +22,7 @@ import math
 from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import QBrush, QColor, QLinearGradient, QPainter, QPainterPath, QPainterPathStroker, QPen, QTransform
 
+from lunivo_writer.core.farben import Farbe
 PX = 96 / 72                                    # Punkt → Bildpunkt
 
 MATERIAL = (("matt", "Matt"), ("plastik", "Plastik"), ("metall", "Metall"), ("dunkel", "Dunkle Kanten"), ("weich", "Weicher Rand"), ("hell", "Hell"))
@@ -29,7 +30,7 @@ BELEUCHTUNG = (("neutral", "Neutral"), ("weich", "Weich"), ("hart", "Hart"), ("w
 
 
 def _farbe(hexwert: str, transparenz: float = 0.0) -> QColor:
-    c = QColor(hexwert or "#000000")
+    c = QColor(hexwert or Farbe.SCHWARZ)
     c.setAlphaF(max(0.0, min(1.0, 1.0 - transparenz / 100)))
     return c
 
@@ -63,7 +64,7 @@ def _verlauf(rect: QRectF, v: dict) -> QLinearGradient:
     r = (abs(math.cos(w)) * rect.width() + abs(math.sin(w)) * rect.height()) / 2 or 1.0       # halbe Länge der Verlaufsstrecke durch das Rechteck
     d = QPointF(math.cos(w) * r, math.sin(w) * r)
     g = QLinearGradient(mitte - d, mitte + d)
-    g.setColorAt(0, QColor(v.get("farbe1", "#000000"))); g.setColorAt(1, QColor(v.get("farbe2", "#ffffff")))
+    g.setColorAt(0, QColor(v.get("farbe1", Farbe.SCHWARZ))); g.setColorAt(1, QColor(v.get("farbe2", Farbe.WEISS)))
     return g
 
 
@@ -128,11 +129,11 @@ def fx_zeichnen(p: QPainter, pfad: QPainterPath, fx: dict, grundlinie: float, sc
         spiegel = sp.map(pfad)
         hoch = max(1.0, schrift_px * 1.0 * r.get("groesse", 50) / 100)
         g = QLinearGradient(0, grundlinie + r.get("abstand", 0) * PX, 0, grundlinie + r.get("abstand", 0) * PX + hoch)
-        g.setColorAt(0, _farbe(basis_farbe.name() if basis_farbe else "#000000", r.get("transparenz", 50)))
+        g.setColorAt(0, _farbe(basis_farbe.name() if basis_farbe else Farbe.SCHWARZ, r.get("transparenz", 50)))
         g.setColorAt(1, QColor(0, 0, 0, 0))
         p.save(); p.setClipPath(aussen)
         if r.get("weich", 0) > 0:
-            _weich(p, spiegel, _farbe(basis_farbe.name() if basis_farbe else "#000000", 85), r["weich"] * PX * 0.5)
+            _weich(p, spiegel, _farbe(basis_farbe.name() if basis_farbe else Farbe.SCHWARZ, 85), r["weich"] * PX * 0.5)
         else:
             p.fillPath(spiegel, QBrush(g))
         p.restore()
@@ -174,7 +175,7 @@ def fx_zeichnen(p: QPainter, pfad: QPainterPath, fx: dict, grundlinie: float, sc
         abst = s.get("abstand", 3) * PX
         dr = _richtung(s.get("winkel", 45))
         sk = s.get("groesse", 100) / 100
-        farbe = _farbe(s.get("farbe", "#000000"), s.get("transparenz", 50))
+        farbe = _farbe(s.get("farbe", Farbe.SCHWARZ), s.get("transparenz", 50))
         t = QTransform().translate(dr.x() * abst, dr.y() * abst)
         if s.get("art") == "persp":                       # flach auf den Boden gelegt und in Richtung des Lichts geneigt
             t = QTransform()
@@ -187,7 +188,7 @@ def fx_zeichnen(p: QPainter, pfad: QPainterPath, fx: dict, grundlinie: float, sc
         p.restore()
     g = fx.get("leuchten")
     if g and g.get("groesse", 0) > 0:
-        farbe = _farbe(g.get("farbe", "#4c6ef5"), g.get("transparenz", 60))
+        farbe = _farbe(g.get("farbe", Farbe.BLAU), g.get("transparenz", 60))
         p.save(); p.setClipPath(aussen); p.setPen(Qt.NoPen)
         _weich(p, pfad, farbe, g["groesse"] * PX)
         p.restore()
@@ -197,14 +198,14 @@ def fx_zeichnen(p: QPainter, pfad: QPainterPath, fx: dict, grundlinie: float, sc
     if s and s.get("art") == "innen":
         abst = s.get("abstand", 3) * PX
         dr = _richtung(s.get("winkel", 45))
-        farbe = _farbe(s.get("farbe", "#000000"), s.get("transparenz", 50))
+        farbe = _farbe(s.get("farbe", Farbe.SCHWARZ), s.get("transparenz", 50))
         innen = QPainterPath(); innen.addRect(rect.adjusted(-50, -50, 50, 50))
         loch = QTransform().translate(dr.x() * abst, dr.y() * abst).map(pfad)
         p.save(); p.setClipPath(pfad); p.setPen(Qt.NoPen)
         _weich(p, innen.subtracted(loch), farbe, s.get("weich", 4) * PX * 0.5)
         p.restore()
     if kontur is not None or "kontur_verlauf" in fx or fx.get("kontur_form", "einfach") != "einfach":
-        farbe, breite, form, *rest = kontur if kontur else (QColor("#000000"), 0.75 * PX, fx.get("kontur_form", "einfach"))
+        farbe, breite, form, *rest = kontur if kontur else (QColor(Farbe.SCHWARZ), 0.75 * PX, fx.get("kontur_form", "einfach"))
         brush = QBrush(_verlauf(rect, fx["kontur_verlauf"])) if "kontur_verlauf" in fx else QBrush(farbe)
         for flaeche in _kontur_pfade(pfad, breite, fx.get("kontur_form", form), rest[0] if rest else fx.get("kontur_art", "einfach")):
             p.fillPath(flaeche, brush)
@@ -379,7 +380,7 @@ def _stueck(p: QPainter, b, tl, von: int, laenge: int, cf, fx: dict) -> None:
             farbe = QColor("black")
         kontur = None
         if "kontur_verlauf" in fx or fx.get("kontur_form", "einfach") != "einfach":
-            kontur = (QColor(fx.get("kontur_farbe", "#000000")), max(0.1, fx.get("kontur_breite", 0.75)) * PX, fx.get("kontur_form", "einfach"),
+            kontur = (QColor(fx.get("kontur_farbe", Farbe.SCHWARZ)), max(0.1, fx.get("kontur_breite", 0.75)) * PX, fx.get("kontur_form", "einfach"),
                       fx.get("kontur_art", "einfach"))
         groesse = cf.font().pixelSize() if cf.font().pixelSize() > 0 else cf.font().pointSizeF() * PX
         grundlinie = ursprung.y() + z.ascent()
@@ -409,11 +410,11 @@ def schatten_vorgaben() -> list[tuple[str, str, dict]]:
     for art, abschnitt in (("aussen", "Außen"), ("innen", "Innen")):
         for name, w in _RICHTUNGEN:
             zentral = name == "Zentriert"
-            aus.append((abschnitt, name, {"art": art, "farbe": "#000000", "transparenz": 50 if art == "aussen" else 40, "groesse": 100,
+            aus.append((abschnitt, name, {"art": art, "farbe": Farbe.SCHWARZ, "transparenz": 50 if art == "aussen" else 40, "groesse": 100,
                                           "weich": 6 if zentral else 3, "abstand": 0 if zentral else 4, "winkel": w}))
     for i, (name, w) in enumerate((("Perspektive diagonal unten rechts", 45), ("Perspektive diagonal unten links", 135), ("Perspektive unten", 90),
                                    ("Perspektive rechts", 0), ("Perspektive links", 180))):
-        aus.append(("Perspektive", name, {"art": "persp", "farbe": "#000000", "transparenz": 55, "groesse": 100, "weich": 2, "abstand": 8, "winkel": w}))
+        aus.append(("Perspektive", name, {"art": "persp", "farbe": Farbe.SCHWARZ, "transparenz": 55, "groesse": 100, "weich": 2, "abstand": 8, "winkel": w}))
     return aus
 
 
@@ -430,12 +431,12 @@ def leuchten_vorgaben() -> list[tuple[str, dict]]:
     """24 Leuchtvarianten: sechs Farben mal vier Größen."""
     aus = []
     for groesse in (5, 8, 11, 18):
-        for name, farbe in (("Blau", "#4c6ef5"), ("Rot", "#fa5252"), ("Grau", "#868e96"), ("Gelb", "#fab005"), ("Hellblau", "#339af0"), ("Grün", "#40c057")):
+        for name, farbe in (("Blau", Farbe.BLAU), ("Rot", "#fa5252"), ("Grau", Farbe.GRAU), ("Gelb", "#fab005"), ("Hellblau", "#339af0"), ("Grün", "#40c057")):
             aus.append((f"{name}, {groesse} pt", {"farbe": farbe, "groesse": groesse, "transparenz": 60}))
     return aus
 
 
-def voreinstellung_icon(fx: dict, groesse=(52, 40), text: str = "A", farbe: str = "#adb5bd"):
+def voreinstellung_icon(fx: dict, groesse=(52, 40), text: str = "A", farbe: str = Farbe.GRAU_HELL):
     """Kachelbild einer Voreinstellung: ein „A“ mit dem Effekt auf weißem Grund."""
     from PySide6.QtGui import QFont, QIcon, QPixmap
     pm = QPixmap(*groesse); pm.fill(QColor("white"))
@@ -449,15 +450,15 @@ def voreinstellung_icon(fx: dict, groesse=(52, 40), text: str = "A", farbe: str 
 def wordart_vorgaben() -> list[tuple[str, dict]]:
     """Die 15 Formatvorlagen im Menü „Texteffekte ▸ WordArt“: Füllung, Kontur, Schatten (vollständige Effekte, ersetzen die bisherigen)."""
     def e(**k):
-        return {"fuell": "farbe", "farbe": "#111417", "transparenz": 0, "kontur": False, "kontur_farbe": "#000000", "kontur_breite": 0.75, "kontur_art": "einfach", **k}
-    sch = {"art": "aussen", "farbe": "#000000", "transparenz": 55, "groesse": 100, "weich": 2, "abstand": 3, "winkel": 45}
+        return {"fuell": "farbe", "farbe": "#111417", "transparenz": 0, "kontur": False, "kontur_farbe": Farbe.SCHWARZ, "kontur_breite": 0.75, "kontur_art": "einfach", **k}
+    sch = {"art": "aussen", "farbe": Farbe.SCHWARZ, "transparenz": 55, "groesse": 100, "weich": 2, "abstand": 3, "winkel": 45}
     return [("Schwarz", e()), ("Blau", e(farbe="#4a90d9")), ("Orange", e(farbe="#f08c2e")),
             ("Blaue Kontur", e(fuell="keine", kontur=True, kontur_farbe="#4a90d9", kontur_breite=1.25)), ("Gelb", e(farbe="#ffc61a")), ("Grau", e(farbe="#7f8790")),
-            ("Blau mit Schatten", e(farbe="#2f6fb5", schatten=sch)), ("Gelbe Kontur", e(fuell="keine", kontur=True, kontur_farbe="#ffc61a", kontur_breite=1.25)),
+            ("Blau mit Schatten", e(farbe=Farbe.AKZENT, schatten=sch)), ("Gelbe Kontur", e(fuell="keine", kontur=True, kontur_farbe="#ffc61a", kontur_breite=1.25)),
             ("Hellblaue Kontur", e(fuell="keine", kontur=True, kontur_farbe="#8fb8ea", kontur_breite=1.0)), ("Dunkelgrau", e(farbe="#495057")),
             ("Schwarz mit Schatten", e(schatten=sch)), ("Schwarz mit blauer Kontur", e(kontur=True, kontur_farbe="#4a90d9", kontur_breite=1.0)),
             ("Blauer Verlauf", e(fuell="verlauf", farbe="", verlauf={"farbe1": "#5b9be0", "farbe2": "#1c4fa3", "winkel": 90}, schatten=sch)),
-            ("Orange Kontur", e(fuell="keine", kontur=True, kontur_farbe="#f08c2e", kontur_breite=1.25)), ("Graue Kontur", e(fuell="keine", kontur=True, kontur_farbe="#868e96", kontur_breite=1.25))]
+            ("Orange Kontur", e(fuell="keine", kontur=True, kontur_farbe="#f08c2e", kontur_breite=1.25)), ("Graue Kontur", e(fuell="keine", kontur=True, kontur_farbe=Farbe.GRAU, kontur_breite=1.25))]
 
 
 def wordart_icon(w: dict, groesse=(52, 40)):

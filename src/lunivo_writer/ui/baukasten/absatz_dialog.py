@@ -13,7 +13,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QTextBlockFormat, QTextCharFormat
 from PySide6.QtWidgets import (
     QButtonGroup, QCheckBox, QComboBox, QDialog, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QPushButton, QRadioButton, QTabWidget,
-    QVBoxLayout, QWidget,
+    QToolButton, QVBoxLayout, QWidget,
 )
 
 from lunivo_writer.ui.baukasten.dialog_rahmen import VorschauFlaeche, fussleiste
@@ -31,46 +31,37 @@ _ZEILEN = (("faktor", 1.0, "Einfach"), ("faktor", 1.5, "1,5 Zeilen"), ("faktor",
 
 
 from lunivo_writer.ui.baukasten.zusatz_panel import PanelFaehig
+from lunivo_writer.ui.baukasten.formular_gitter import AngepassteReiter, FlussLayout, FormularGitter, UmbruchSchalter, abschnittstitel
 class AbsatzDialog(PanelFaehig, QDialog):
     def __init__(self, parent=None, werte: dict | None = None, *, umfang: str = "text"):
         super().__init__(parent)
         self.setWindowTitle("Absatz")
-        self.resize(574, 631)
+        self.resize(574, 560)
         self.umfang = umfang
         w = {**ABSATZ, **(werte or {})}
         self._tabs = list(w["tabs"])
         v = QVBoxLayout(self)
-        self.reiter = QTabWidget(); v.addWidget(self.reiter, 1)
-        # ---- Einzüge und Abstände
-        s = QWidget(); sv = QVBoxLayout(s)
-        allg = QGroupBox("Allgemein"); ag = QGridLayout(allg)
+        self.reiter = AngepassteReiter(); v.addWidget(self.reiter, 1)
+        # ---- Einzüge und Abstände: flach, Felder als Reihen (je nach Breite 2 bis 4 nebeneinander), keine Gruppenrahmen
+        s = QWidget(); g = FormularGitter(s)
         self.ausr = QComboBox()
         for k, name in AUSRICHTUNG:
             self.ausr.addItem(name, k)
         self.ebene = QComboBox(); self.ebene.addItem("Textkörper", 0)
         for i in range(1, 10):
             self.ebene.addItem(f"Ebene {i}", i)
-        self.r_rtl, self.r_ltr = QRadioButton("Rechts nach links"), QRadioButton("Links-Nach-Rechts")
+        self.r_rtl, self.r_ltr = QRadioButton("Rechts nach links"), QRadioButton("Links nach rechts")
         self.richtung = QButtonGroup(self); self.richtung.addButton(self.r_rtl); self.richtung.addButton(self.r_ltr)
-        rz = QHBoxLayout(); rz.addWidget(self.r_rtl); rz.addWidget(self.r_ltr); rz.addStretch(1)
-        ag.addWidget(QLabel("Ausrichtung:"), 0, 0); ag.addWidget(self.ausr, 0, 1)
-        ag.addWidget(QLabel("Gliederungsebene:"), 0, 2); ag.addWidget(self.ebene, 0, 3)
-        ag.addWidget(QLabel("Richtung:"), 1, 0); ag.addLayout(rz, 1, 1, 1, 3)
-        ag.setColumnStretch(1, 1); ag.setColumnStretch(3, 1)
-        sv.addWidget(allg)
-        ein = QGroupBox("Einzug"); eg = QGridLayout(ein)
+        rz = FlussLayout(10); rz.addWidget(self.r_rtl); rz.addWidget(self.r_ltr)
+        g.reihe(("Ausrichtung:", self.ausr), ("Gliederungsebene:", self.ebene))
+        g.zeile("Richtung:", rz)
+        g.breit(abschnittstitel("Einzug"))
         self.links = EinheitFeld(0.0, 0.0, 300.0); self.rechts = EinheitFeld(0.0, 0.0, 300.0); self.sonder = QComboBox()
         for k, name in _SONDER:
             self.sonder.addItem(name, k)
         self.sonder_mass = EinheitFeld(0.0, 0.0, 300.0)
-        eg.addWidget(QLabel("Vor Text:"), 0, 0); eg.addWidget(self.links, 0, 1)
-        eg.addWidget(QLabel("Sondereinzug:"), 0, 2); eg.addWidget(self.sonder, 0, 3)
-        eg.addWidget(QLabel("Nach Text:"), 1, 0); eg.addWidget(self.rechts, 1, 1)
-        eg.addWidget(QLabel("Von:"), 1, 2); eg.addWidget(self.sonder_mass, 1, 3)
-        self.rest_einzug = QCheckBox("Bei Dokumentrasterdefinition rechten Einzug automatisch ausrichten")
-        eg.addWidget(self.rest_einzug, 2, 0, 1, 4)
-        sv.addWidget(ein)
-        abst = QGroupBox("Abstand"); bg = QGridLayout(abst)
+        g.reihe(("Vor Text:", self.links), ("Nach Text:", self.rechts), ("Sondereinzug:", self.sonder), ("Von:", self.sonder_mass))
+        g.breit(abschnittstitel("Abstand"))
         self.vor = EinheitFeld(0.0, 0.0, 200 * _PT_MM, ("pt", "Zeile", "mm", "cm", "in"), "pt")
         self.nach = EinheitFeld(0.0, 0.0, 200 * _PT_MM, ("pt", "Zeile", "mm", "cm", "in"), "pt")
         self.zeilen_art = QComboBox()
@@ -78,44 +69,40 @@ class AbsatzDialog(PanelFaehig, QDialog):
             self.zeilen_art.addItem(name, (art, f))
         self.zeilen = spin(1.0, 0.1, 10.0, " ×", 0.05, 2)
         self.zeilen_pt = spin(12.0, 1.0, 1000.0, " pt", 0.5, 1)
-        bg.addWidget(QLabel("Vor:"), 0, 0); bg.addWidget(self.vor, 0, 1)
-        bg.addWidget(QLabel("Zeilenabstand:"), 0, 2); bg.addWidget(self.zeilen_art, 0, 3)
-        bg.addWidget(QLabel("Nach:"), 1, 0); bg.addWidget(self.nach, 1, 1)
-        bg.addWidget(QLabel("Von:"), 1, 2); bg.addWidget(self.zeilen, 1, 3); bg.addWidget(self.zeilen_pt, 1, 3)
-        self.raster = QCheckBox("Bei Dokumentrasterdefinition am Raster ausrichten")
-        bg.addWidget(self.raster, 2, 0, 1, 4)
-        sv.addWidget(abst)
-        sv.addStretch(1)
+        zf = QVBoxLayout(); zf.setContentsMargins(0, 0, 0, 0); zf.addWidget(self.zeilen); zf.addWidget(self.zeilen_pt)      # je nach Art ist eines davon zu sehen
+        g.reihe(("Vor:", self.vor), ("Nach:", self.nach), ("Zeilenabstand:", self.zeilen_art), ("Von:", zf))
         self.reiter.addTab(s, "Einzüge und Abstände")
-        # ---- Zeilen- und Seitenumbruch
-        u = QWidget(); uv = QVBoxLayout(u)
-        pg = QGroupBox("Paginierung"); pgl = QGridLayout(pg)
-        self.cb = {k: QCheckBox(t) for k, t in (
+        # ---- Zeilen- und Seitenumbruch: das Gebräuchliche sichtbar, asiatische Regeln und Raster eingeklappt
+        u = QWidget(); ul = FormularGitter(u)
+        self.cb = {k: UmbruchSchalter(t) for k, t in (
             ("kontrolle", "Absatzkontrolle"), ("nicht_trennen", "Nicht vom nächsten Absatz trennen"), ("zusammen", "Diesen Absatz zusammenhalten"),
             ("asiat", "Asiatische Regeln zum Steuern von Anfangs- und Endzeichen verwenden"),
             ("mitten", "Textumbruch in der Mitte eines Wortes für westlichen Text zulassen"), ("haengend", "Hängende Interpunktion zulassen"),
             ("kompr", "Interpunktion am Zeilenbeginn zum Komprimieren zulassen"),
             ("ade", "Abstand zwischen asiatischem und westlichem Text automatisch anpassen"),
             ("adn", "Abstand zwischen asiatischem Text und Zahlen automatisch anpassen"))}
-        self.umbruch = QCheckBox("Seitenumbruch oberhalb")
-        pgl.addWidget(self.cb["kontrolle"], 0, 0); pgl.addWidget(self.cb["nicht_trennen"], 0, 1)
-        pgl.addWidget(self.cb["zusammen"], 1, 0); pgl.addWidget(self.umbruch, 1, 1)
-        zg = QGroupBox("Zeilenumbruch"); zl = QVBoxLayout(zg)
-        for k in ("asiat", "mitten", "haengend"):
-            zl.addWidget(self.cb[k])
-        ag2 = QGroupBox("Zeichenabstand"); al = QVBoxLayout(ag2)
-        for k in ("kompr", "ade", "adn"):
-            al.addWidget(self.cb[k])
+        self.umbruch = UmbruchSchalter("Seitenumbruch oberhalb")
+        self.rest_einzug = UmbruchSchalter("Bei Dokumentrasterdefinition rechten Einzug automatisch ausrichten")
+        self.raster = UmbruchSchalter("Bei Dokumentrasterdefinition am Raster ausrichten")
         self.textausr = QComboBox()
         for k, name in (("auto", "Automatisch"), ("top", "Oben"), ("center", "Zentriert"), ("baseline", "Basislinie"), ("bottom", "Unten")):
             self.textausr.addItem(name, k)
-        tz = QHBoxLayout(); tz.addWidget(QLabel("Textausrichtung:")); tz.addWidget(self.textausr); tz.addStretch(1)
-        al.addLayout(tz)
-        uv.addWidget(pg); uv.addWidget(zg); uv.addWidget(ag2); uv.addStretch(1)
+        ul.breit(abschnittstitel("Seitenumbruch"))
+        for w_ in (self.cb["kontrolle"], self.cb["nicht_trennen"], self.cb["zusammen"], self.umbruch, self.cb["mitten"], self.cb["haengend"]):
+            ul.breit(w_)
+        ul.zeile("Textausrichtung:", self.textausr)
+        erweitert = QWidget(); el = FormularGitter(erweitert)
+        for w_ in (self.cb["asiat"], self.cb["kompr"], self.cb["ade"], self.cb["adn"], self.rest_einzug, self.raster):
+            el.breit(w_)
+        erweitert.setVisible(False)
+        self.erweitert_knopf = QToolButton(); self.erweitert_knopf.setText("Asiatische Typografie und Raster"); self.erweitert_knopf.setArrowType(Qt.RightArrow)
+        self.erweitert_knopf.setToolButtonStyle(Qt.ToolButtonTextBesideIcon); self.erweitert_knopf.setAutoRaise(True); self.erweitert_knopf.setCheckable(True)
+        self.erweitert_knopf.toggled.connect(lambda an: (erweitert.setVisible(an), self.erweitert_knopf.setArrowType(Qt.DownArrow if an else Qt.RightArrow)))
+        ul.breit(self.erweitert_knopf); ul.breit(erweitert)
         self.reiter.addTab(u, "Zeilen- und Seitenumbruch")
         # ---- Vorschau und Knöpfe
         v.addWidget(QLabel("Vorschau"))
-        self.vorschau = VorschauFlaeche(self._male, 130); v.addWidget(self.vorschau)
+        self.vorschau = VorschauFlaeche(self._male, 120); v.addWidget(self.vorschau)
         self.tabs_knopf = QPushButton("Tabstopps …"); self.tabs_knopf.clicked.connect(self._tabstopps)
         fussleiste(self, v, self.tabs_knopf)
         self.setze(w)

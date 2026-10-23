@@ -6,13 +6,14 @@ import os
 from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import (
-    QDialog, QDialogButtonBox, QFileDialog, QHBoxLayout, QLabel, QListWidget, QListWidgetItem, QPushButton, QTabWidget, QVBoxLayout,
+    QDialog, QFileDialog, QHBoxLayout, QLabel, QListWidget, QListWidgetItem, QPushButton, QTabWidget, QVBoxLayout,
     QWidget,
 )
 
 from lunivo_writer.editor import vorlagen
 
 
+from lunivo_writer.ui.baukasten.dialog_rahmen import knopfzeile
 class VorlagenDialog(QDialog):
     def __init__(self, parent, settings, kann_speichern: bool):
         super().__init__(parent)
@@ -41,8 +42,7 @@ class VorlagenDialog(QDialog):
         v2.addLayout(z)
         self.tabs.addTab(s2, "Meine Vorlagen")
         self.als_vorlage_gewuenscht = False
-        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        bb.accepted.connect(self._ok); bb.rejected.connect(self.reject); v.addWidget(bb)
+        v.addWidget(knopfzeile(self, bei_ok=self._ok))
         self._fuellen()
 
     def _fuellen(self):

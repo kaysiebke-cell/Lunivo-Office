@@ -1594,3 +1594,32 @@ def test_zusatzfenster_oeffnet_in_der_seitenleiste_ohne_breite_zu_aendern(app, t
     assert w.sidebar.stapel.currentIndex() == 0 and getattr(w.sidebar, "_zusatz", None) is None      # danach wie vorher
     assert e.textCursor().currentList() is not None
     _zu(w)
+
+
+def test_seitenleisten_seiten_passen_in_echte_groesse(app):
+    """Jede Seite der Seitenleiste passt in die Größe auf einem 1080er Bildschirm (etwa 480 × 727), ohne zu rollen und ohne seitlich überzulaufen."""
+    from PySide6.QtWidgets import QWidget
+    from lunivo_writer.ui.baukasten.absatz_dialog import AbsatzDialog
+    from lunivo_writer.ui.baukasten.farbwaehler import FarbenDialog
+    from lunivo_writer.ui.baukasten.formatvorlage_dialog import FormatvorlageDialog
+    from lunivo_writer.ui.baukasten.liste_dialog import ListenDialog
+    from lunivo_writer.ui.baukasten.rahmen_schattierung import RahmenSchattierungDialog
+    from lunivo_writer.ui.baukasten.schriftart_dialog import SchriftartDialog
+    from lunivo_writer.ui.baukasten.tabstopp_dialog import TabstoppDialog
+    from lunivo_writer.ui.baukasten.zusatz_panel import ZusatzPanel
+    bauen = (lambda: AbsatzDialog(None, {}), lambda: SchriftartDialog(None, {"schrift": "Liberation Sans", "groesse": 12.0}), lambda: TabstoppDialog(None, [], 12.7),
+             lambda: ListenDialog(None), lambda: RahmenSchattierungDialog(None), lambda: FarbenDialog(None), lambda: FormatvorlageDialog(None, vorlagen=["Standard"]))
+    for f in bauen:
+        p = ZusatzPanel(); p.verfuegbar, p.verfuegbar_hoehe = 444, 587; p.resize(480, 727)
+        d = f(); p.oeffne(d); p.show()
+        for i in range(d.reiter.count() if hasattr(d, "reiter") else 1):
+            if hasattr(d, "reiter"):
+                d.reiter.setCurrentIndex(i)
+            app.processEvents(); app.processEvents()
+            sa = p.stapel.currentWidget().sa
+            h = sa.widget()
+            unten = max((c.mapTo(h, c.rect().bottomLeft()).y() for c in d.findChildren(QWidget) if c.isVisible() and c.height() < 600), default=0)
+            rechts = max((c.mapTo(h, c.rect().topRight()).x() for c in d.findChildren(QWidget) if c.isVisible()), default=0)
+            assert unten <= sa.viewport().height(), (type(d).__name__, i, unten, sa.viewport().height())
+            assert rechts <= sa.viewport().width(), (type(d).__name__, i, rechts)
+        p.close()

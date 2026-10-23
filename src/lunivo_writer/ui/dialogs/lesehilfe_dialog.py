@@ -9,7 +9,8 @@ from PySide6.QtWidgets import QComboBox, QDialog, QFormLayout, QHBoxLayout, QLab
 
 from lunivo_writer.ui import lesestufen as LS
 
-PAPIERTOENE = {"Weiß": "#ffffff", "Creme": "#fbf4e2", "Gelblich": "#fff7cc", "Hellblau": "#e6f0fa",
+from lunivo_writer.core.farben import Farbe
+PAPIERTOENE = {"Weiß": Farbe.WEISS, "Creme": "#fbf4e2", "Gelblich": "#fff7cc", "Hellblau": "#e6f0fa",
                "Hellgrün": "#e8f5e9", "Hellgrau": "#eceff1"}
 VORGABEN = {"papier": "Weiß", "buchstaben": 0.0, "wort": 0.0, "zeilenluft": 1.0, "zeilenfokus": False, "groesser": "keine", "zurueck": "keine"}
 

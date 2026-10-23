@@ -18,6 +18,7 @@ from lunivo_writer.ui.baukasten.datei_symbole import datei_symbol
 from lunivo_writer.ui.widgets import icons
 
 # (Schlüssel, Beschriftung, Symbol, Art: "seite" | "tun" | "trenner", Befehl)
+from lunivo_writer.core.farben import Farbe
 EINTRAEGE = [
     ("neu", "Neues Dokument erstellen", "neu", "tun", "neu"),
     ("vorlage", "Von Vorlage erstellen", "vorlage", "seite", None),
@@ -49,24 +50,7 @@ EXPORT_ENDUNG = {"speichernPdf": ".pdf", "exportierenDocx": ".docx", "exportiere
 
 BREITE = 460
 
-STIL = """
-QWidget#bsLinks { background: palette(window); }
-QListWidget#bsListe { background: transparent; border: none; outline: none; }
-QListWidget#bsListe::item { padding: 10px 14px; border-left: 3px solid transparent; }
-QListWidget#bsListe::item:selected { background: palette(midlight); color: palette(window-text); border-left: 3px solid palette(highlight); }
-QListWidget#bsListe::item:hover:!selected { background: palette(midlight); }
-QWidget#bsRechts, QScrollArea#bsSeite, QScrollArea#bsSeite > QWidget > QWidget { background: palette(base); }
-QLabel#bsTitel { font-size: 17pt; }
-QWidget#optKopf { border-bottom: 1px solid palette(midlight); }
-QPushButton#optZurueck { border: none; background: transparent; font-size: 14pt; font-weight: 600; text-align: left; padding: 4px 6px; }
-QPushButton#optFertig { background: #2f6fb5; color: white; border: none; border-radius: 6px; padding: 9px 30px; font-weight: 600; }
-QPushButton#optFertig:hover { background: #4a8fd8; }
-QLabel#bsGruppe { font-size: 11pt; font-weight: 600; }
-QLabel#bsHinweis { color: palette(mid); }
-QPushButton#bsKnopf { border: none; background: transparent; padding: 9px 12px; text-align: left; border-radius: 6px; }
-QPushButton#bsKnopf:hover:enabled { background: palette(midlight); }
-QPushButton#bsKnopf:disabled { color: palette(mid); }
-"""
+STIL = ('\nQWidget#bsLinks { background: palette(window); }\nQListWidget#bsListe { background: transparent; border: none; outline: none; }\nQListWidget#bsListe::item { padding: 10px 14px; border-left: 3px solid transparent; }\nQListWidget#bsListe::item:selected { background: palette(midlight); color: palette(window-text); border-left: 3px solid palette(highlight); }\nQListWidget#bsListe::item:hover:!selected { background: palette(midlight); }\nQWidget#bsRechts, QScrollArea#bsSeite, QScrollArea#bsSeite > QWidget > QWidget { background: palette(base); }\nQLabel#bsTitel { font-size: 17pt; }\nQWidget#optKopf { border-bottom: 1px solid palette(midlight); }\nQPushButton#optZurueck { border: none; background: transparent; font-size: 14pt; font-weight: 600; text-align: left; padding: 4px 6px; }\nQPushButton#optFertig { background: ' + Farbe.AKZENT + '; color: white; border: none; border-radius: 6px; padding: 9px 30px; font-weight: 600; }\nQPushButton#optFertig:hover { background: ' + Farbe.AKZENT_DUNKEL + '; }\nQLabel#bsGruppe { font-size: 11pt; font-weight: 600; }\nQLabel#bsHinweis { color: palette(mid); }\nQPushButton#bsKnopf { border: none; background: transparent; padding: 9px 12px; text-align: left; border-radius: 6px; }\nQPushButton#bsKnopf:hover:enabled { background: palette(midlight); }\nQPushButton#bsKnopf:disabled { color: palette(mid); }\n')
 
 
 class Backstage(QWidget):

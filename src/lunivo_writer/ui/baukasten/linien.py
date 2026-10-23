@@ -12,7 +12,8 @@ from lunivo_writer.ui.baukasten.farbpalette import FarbFeld
 from lunivo_writer.ui.baukasten.menue_liste import MenueListe
 
 
-def linien_symbol(art: str, groesse: QSize = QSize(56, 14), farbe: str = "#343a40", breite_pt: float = 1.5) -> QIcon:
+from lunivo_writer.core.farben import Farbe
+def linien_symbol(art: str, groesse: QSize = QSize(56, 14), farbe: str = Farbe.TINTE, breite_pt: float = 1.5) -> QIcon:
     pm = QPixmap(groesse); pm.fill(Qt.transparent)
     p = QPainter(pm)
     p.setRenderHint(QPainter.Antialiasing)
@@ -97,7 +98,7 @@ class LinienWahl(QWidget):
         self.farbe.setFarbe(linie.farbe)
 
     def linie(self) -> Linie:
-        return Linie(self.farbe.farbe or "#000000", float(self.breite.currentData()), str(self.art.currentData()))
+        return Linie(self.farbe.farbe or Farbe.SCHWARZ, float(self.breite.currentData()), str(self.art.currentData()))
 
     def _aend(self) -> None:
         self.geaendert.emit(self.linie())

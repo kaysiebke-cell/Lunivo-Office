@@ -21,6 +21,9 @@ from PySide6.QtWidgets import (
 MODELLE = ("RGB", "HSV", "HSL")
 
 
+from lunivo_writer.ui.baukasten.zusatz_panel import PanelFaehig
+from lunivo_writer.ui.baukasten.dialog_rahmen import knopfzeile
+from lunivo_writer.ui.baukasten.formular_gitter import AngepassteReiter
 class Modell(QObject):
     """Die gewählte Farbe, als Farbton/Sättigung/Wert gehalten (der Farbton geht bei Grau nicht verloren)."""
     geaendert = Signal()
@@ -58,11 +61,19 @@ class Modell(QObject):
 class _Kacheln(QWidget):
     """Rundes Kachelraster: Farbton quer, oben hell und blass, unten dunkel; ganz unten die Graustufen."""
     bestaetigt = Signal()
-    SPALTEN, ZEILEN, ZELLE, LUECKE = 17, 16, 17, 2
+    SPALTEN, ZEILEN, ZELLE, LUECKE = 17, 16, 14, 1
 
     def __init__(self, modell: Modell):
         super().__init__()
         self.m = modell
+        self.skaliere(self.ZELLE)
+        self.m.geaendert.connect(self.update)
+        self.setMouseTracking(False)
+
+    def skaliere(self, zelle: int) -> None:
+        """Die Kacheln in dieser Größe (Bildpunkte) neu legen: so groß, wie Breite und Höhe der Seitenleiste es zulassen."""
+        self.ZELLE = zelle
+        self.LUECKE = 1 if zelle < 18 else 2
         schritt = self.ZELLE + self.LUECKE
         self.setFixedSize(self.SPALTEN * schritt + self.LUECKE, (self.ZEILEN + 2) * schritt + 14)
         self.kacheln: list[tuple[QRectF, QColor]] = []
@@ -74,8 +85,7 @@ class _Kacheln(QWidget):
         for i in range(12):                                        # Graustufen, weiß bis schwarz
             g = 1.0 - i / 11
             self.kacheln.append((self._feld(2 + i, self.ZEILEN + 0.6), QColor.fromHsvF(0, 0, g)))
-        self.m.geaendert.connect(self.update)
-        self.setMouseTracking(False)
+        self.update()
 
     def _feld(self, s: float, z: float) -> QRectF:
         schritt = self.ZELLE + self.LUECKE
@@ -93,7 +103,7 @@ class _Kacheln(QWidget):
         jetzt = self.m.farbe().name()
         for r, f in self.kacheln:
             p.setPen(Qt.NoPen); p.setBrush(f)
-            p.drawRoundedRect(r, 4, 4)
+            p.drawRoundedRect(r, 3, 3)
             if f.name() == jetzt:
                 p.setBrush(Qt.NoBrush); p.setPen(QPen(self.palette().highlight().color(), 2))
                 p.drawRoundedRect(r.adjusted(-1.5, -1.5, 1.5, 1.5), 5, 5)
@@ -121,6 +131,15 @@ class _Flaeche(QWidget):
             for x in range(self.width()):
                 self.bild.setPixelColor(x, y, QColor.fromHsvF(x / self.width(), 1 - y / (self.height() - 1), 1.0))
         self.m.geaendert.connect(self.update)
+
+    def setGroesse(self, b: int, h: int) -> None:
+        """Größe ändern und das Farbbild neu rechnen."""
+        self.setFixedSize(b, h)
+        self.bild = QImage(b, h, QImage.Format_RGB32)
+        for y in range(h):
+            for x in range(b):
+                self.bild.setPixelColor(x, y, QColor.fromHsvF(x / b, 1 - y / max(1, h - 1), 1.0))
+        self.update()
 
     def paintEvent(self, _e):
         p = QPainter(self)
@@ -175,6 +194,13 @@ class _Ring(QWidget):
         self.mitte = QPointF(self.width() / 2, self.height() / 2)
         self._ziehen = None                                      # "ring" oder "dreieck"
         self.m.geaendert.connect(self.update)
+
+    def skaliere(self, k: float) -> None:
+        """Ring und Dreieck im Maßstab ``k`` (1,0 = 270 × 250 Bildpunkte)."""
+        self.AUSSEN, self.INNEN = 112.0 * k, 90.0 * k
+        self.setFixedSize(int(270 * k), int(250 * k))
+        self.mitte = QPointF(self.width() / 2, self.height() / 2)
+        self.update()
 
     def _ecken(self) -> tuple[QPointF, QPointF, QPointF]:
         r = self.INNEN - 4
@@ -255,15 +281,16 @@ class _Regler(QWidget):
         self.m = modell
         g = QGridLayout(self); g.setContentsMargins(0, 0, 0, 0); g.setVerticalSpacing(8)
         self.modell_wahl = QComboBox(); self.modell_wahl.addItems(MODELLE)
-        g.addWidget(QLabel("Farbmodell"), 0, 0); g.addWidget(self.modell_wahl, 0, 1)
+        g.addWidget(QLabel("Farbmodell"), 0, 0); g.addWidget(self.modell_wahl, 0, 1, 1, 2)       # Zeile 1: Farbmodell und Hex, Zeile 2: die drei Zahlenfelder nebeneinander
         self.namen = [QLabel() for _ in range(3)]
         self.felder = [QSpinBox() for _ in range(3)]
-        for i, (n, f) in enumerate(zip(self.namen, self.felder), start=1):
-            g.addWidget(n, i, 0); g.addWidget(f, i, 1)
+        for i, (n, f) in enumerate(zip(self.namen, self.felder)):
+            g.addWidget(n, 1, 2 * i); g.addWidget(f, 1, 2 * i + 1)
             f.valueChanged.connect(self._tippen)
         self.hex = QLineEdit(); self.hex.setMaxLength(7); self.hex.setPlaceholderText("#rrggbb")
-        g.addWidget(QLabel("Hex"), 4, 0); g.addWidget(self.hex, 4, 1)
-        g.setColumnStretch(2, 1)
+        g.addWidget(QLabel("Hex"), 0, 3); g.addWidget(self.hex, 0, 4, 1, 2)
+        for c in (1, 3, 5):
+            g.setColumnStretch(c, 1)
         self.modell_wahl.currentTextChanged.connect(self._modus)
         self.hex.editingFinished.connect(self._hex)
         self.m.geaendert.connect(self.auffrischen)
@@ -321,7 +348,7 @@ class _Proben(QWidget):
     def __init__(self, modell: Modell, aktuell: QColor):
         super().__init__()
         self.m, self.alt = modell, QColor(aktuell)
-        self.setFixedSize(86, 86)
+        self.setFixedSize(72, 56)
         self.m.geaendert.connect(self.update)
 
     def paintEvent(self, _e):
@@ -333,43 +360,51 @@ class _Proben(QWidget):
         p.end()
 
 
-class FarbenDialog(QDialog):
-    """Das Fenster „Farben“. ``farbe()`` gibt nach OK die gewählte Farbe zurück."""
+class FarbenDialog(PanelFaehig, QDialog):
+    """Das Fenster „Farben“ (öffnet sich in der Seitenleiste). ``farbe()`` gibt nach OK die gewählte Farbe zurück."""
 
     def __init__(self, parent=None, start=None, titel: str = "Farben"):
         super().__init__(parent)
         self.setWindowTitle(titel if titel not in ("", "Farbe") else "Farben")
         ausgang = QColor(start) if start is not None and QColor(start).isValid() else QColor(Qt.black)
         self.m = Modell(ausgang)
-        h = QHBoxLayout(self)
-        self.reiter = QTabWidget()
-        h.addWidget(self.reiter, 1)
+        v = QVBoxLayout(self)
+        self.reiter = AngepassteReiter()                                  # Standard braucht weniger Platz als Erweitert
+        v.addWidget(self.reiter, 1)
 
         def seite(inhalt: QWidget, regler: bool) -> QWidget:
-            w = QWidget(); v = QVBoxLayout(w)
-            v.addWidget(QLabel("Farben:"))
-            v.addWidget(inhalt, 0, Qt.AlignHCenter)
+            w = QWidget(); sv = QVBoxLayout(w); sv.setContentsMargins(6, 8, 6, 6)
+            sv.addWidget(inhalt, 0, Qt.AlignHCenter)
             if regler:
-                v.addWidget(_Regler(self.m))
-            v.addStretch(1)
+                sv.addWidget(_Regler(self.m))
+            sv.addStretch(1)
             return w
-        kacheln = _Kacheln(self.m)
+        kacheln = self._kacheln = _Kacheln(self.m)
         kacheln.bestaetigt.connect(self.accept)
         flaeche = QWidget(); fh = QHBoxLayout(flaeche); fh.setContentsMargins(0, 0, 0, 0); fh.setSpacing(6)
-        fh.addWidget(_Flaeche(self.m)); fh.addWidget(_Leiste(self.m))
+        self._flaeche, self._leiste = _Flaeche(self.m), _Leiste(self.m)
+        fh.addWidget(self._flaeche); fh.addWidget(self._leiste)
         self.reiter.addTab(seite(kacheln, False), "Standard")
         self.reiter.addTab(seite(flaeche, True), "Benutzerdefiniert")
-        self.reiter.addTab(seite(_Ring(self.m), True), "Erweitert")
-        rechts = QVBoxLayout(); h.addLayout(rechts)
-        ok = QPushButton("OK"); ok.setIcon(self.style().standardIcon(QStyle.SP_DialogOkButton)); ok.setDefault(True)
-        ab = QPushButton("Abbrechen"); ab.setIcon(self.style().standardIcon(QStyle.SP_DialogCancelButton))
-        ok.clicked.connect(self.accept); ab.clicked.connect(self.reject)
-        rechts.addWidget(ok); rechts.addWidget(ab); rechts.addStretch(1)
-        for text in ("Neu",):
-            l = QLabel(text); l.setAlignment(Qt.AlignHCenter); rechts.addWidget(l)
-        rechts.addWidget(_Proben(self.m, ausgang), 0, Qt.AlignHCenter)
-        l = QLabel("Aktuell"); l.setAlignment(Qt.AlignHCenter); rechts.addWidget(l)
-        rechts.addSpacing(40)
+        self._ring = _Ring(self.m)
+        self.reiter.addTab(seite(self._ring, True), "Erweitert")
+        # Neu und Aktuell: die Probe mit ihren Beschriftungen, mittig unter den Reitern
+        probe = QHBoxLayout(); probe.setSpacing(8); probe.setContentsMargins(6, 0, 6, 0)
+        probe.addStretch(1)                                                  # mittig unter den Farben
+        probe.addWidget(_Proben(self.m, ausgang))
+        namen = QVBoxLayout(); namen.addWidget(QLabel("Neu")); namen.addStretch(1); namen.addWidget(QLabel("Aktuell"))
+        probe.addLayout(namen); probe.addStretch(1)
+        v.addLayout(probe)
+        v.addWidget(knopfzeile(self))
+
+    def passe_an(self, breite: int, hoehe: int) -> None:
+        """Das Standard-Raster so groß machen, wie die Seitenleiste Platz hat (Breite für 17 Spalten, Höhe für 18 Zeilen samt Reitern und Probe)."""
+        k = self._kacheln
+        zelle = min((breite - 24) // k.SPALTEN - 1, (hoehe - 190) // (k.ZEILEN + 2) - 1)
+        k.skaliere(max(12, min(24, zelle)))
+        h = max(150, min(340, hoehe - 235))                                         # Farbfläche und Leiste: die Höhe, die nach den zwei Reihen Felder und der Probe übrig bleibt
+        self._leiste.setFixedHeight(h); self._flaeche.setGroesse(max(200, min(380, breite - 70)), h)
+        self._ring.skaliere(max(0.7, min(1.5, (hoehe - 235) / 250, (breite - 24) / 270)))
 
     def farbe(self) -> QColor:
         return self.m.farbe()

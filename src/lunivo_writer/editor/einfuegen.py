@@ -16,6 +16,7 @@ from PySide6.QtGui import (
 
 from lunivo_writer.services.docx_reader import STYLE_PROP
 
+from lunivo_writer.core.farben import Farbe
 FORMEN = ["Rechteck", "Abgerundetes Rechteck", "Ellipse", "Dreieck", "Raute", "Pfeil nach rechts", "Stern", "Sprechblase", "Linie"]
 
 
@@ -46,7 +47,7 @@ def _leer(w: int, h: int) -> QImage:
 
 
 # ---- Formen ---------------------------------------------------------------------------------------------------
-def form_bild(art: str, breite: int = 240, hoehe: int = 140, fuell: str = "#4a8fd8", linie: str = "#1f3864",
+def form_bild(art: str, breite: int = 240, hoehe: int = 140, fuell: str = Farbe.AKZENT_DUNKEL, linie: str = "#1f3864",
               strich: float = 2.0, text: str = "") -> QImage:
     img = _leer(breite, hoehe)
     p = QPainter(img)
@@ -92,7 +93,7 @@ def form_bild(art: str, breite: int = 240, hoehe: int = 140, fuell: str = "#4a8f
     elif art == "Linie":
         p.drawLine(QPointF(r.left(), r.center().y()), QPointF(r.right(), r.center().y()))
     if text:
-        p.setPen(QColor("#ffffff" if QColor(fuell).lightness() < 140 else "#000000"))
+        p.setPen(QColor(Farbe.WEISS if QColor(fuell).lightness() < 140 else Farbe.SCHWARZ))
         f = p.font(); f.setPointSizeF(12); p.setFont(f)
         p.drawText(r, Qt.AlignCenter | Qt.TextWordWrap, text)
     p.end()
@@ -103,7 +104,7 @@ def form_bild(art: str, breite: int = 240, hoehe: int = 140, fuell: str = "#4a8f
 WORDART_STILE = ["Verlauf", "Schatten", "Umriss", "Regenbogen", "Welle"]
 
 
-def wordart_bild(text: str, stil: str = "Verlauf", schrift: str = "Liberation Sans", pt: int = 48, farbe: str = "#2f6fb5") -> QImage:
+def wordart_bild(text: str, stil: str = "Verlauf", schrift: str = "Liberation Sans", pt: int = 48, farbe: str = Farbe.AKZENT) -> QImage:
     f = QFont(schrift); f.setPointSizeF(pt); f.setBold(True)
     fm = QFontMetricsF(f)
     b, h = int(fm.horizontalAdvance(text)) + 40, int(fm.height()) + 40
@@ -127,7 +128,7 @@ def wordart_bild(text: str, stil: str = "Verlauf", schrift: str = "Liberation Sa
         p.setPen(Qt.NoPen)
         g = QLinearGradient(0, 0, 0 if stil != "Regenbogen" else b, h if stil != "Regenbogen" else 0)
         if stil == "Regenbogen":
-            for i, c in enumerate(("#e03131", "#f08c00", "#ffd43b", "#2f9e44", "#1971c2", "#7048a8")):
+            for i, c in enumerate(("#e03131", "#f08c00", "#ffd43b", Farbe.GRUEN, "#1971c2", "#7048a8")):
                 g.setColorAt(i / 5, QColor(c))
         else:
             g.setColorAt(0, QColor(farbe).lighter(150)); g.setColorAt(1, QColor(farbe).darker(150))

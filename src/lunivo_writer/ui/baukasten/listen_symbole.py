@@ -5,10 +5,11 @@ from PySide6.QtCore import QRectF, Qt
 from PySide6.QtGui import QColor, QFont, QPainter
 
 
+from lunivo_writer.core.farben import Farbe
 def liste_zeichner(marke: str | None):
     """``marke``: 'disc', 'circle', 'square' oder die Zeichenfolge der ersten drei Nummern (z. B. '1.|2.|3.'); None = Keine."""
     def zeichne(p: QPainter, r: QRectF) -> None:
-        dunkel, grau = QColor("#343a40"), QColor("#adb5bd")
+        dunkel, grau = QColor(Farbe.TINTE), QColor(Farbe.GRAU_HELL)
         h = r.height() / 3
         for i in range(3):
             y = r.top() + h * i + h / 2

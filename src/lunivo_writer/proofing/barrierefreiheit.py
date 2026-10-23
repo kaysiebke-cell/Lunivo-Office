@@ -8,6 +8,7 @@ from PySide6.QtGui import QColor
 from lunivo_writer.services.docx_reader import STYLE_PROP
 
 
+from lunivo_writer.core.farben import Farbe
 def _hell(c: QColor) -> float:
     def lin(v):
         v /= 255
@@ -26,7 +27,7 @@ def pruefe(editor) -> list[str]:
     bilder_ohne = 0
     links_schlecht = 0
     farben: dict[str, int] = {}
-    seite = QColor(editor.page.color or "#ffffff")
+    seite = QColor(editor.page.color or Farbe.WEISS)
     b = doc.firstBlock()
     ebenen = []
     woerter = 0
@@ -45,7 +46,7 @@ def pruefe(editor) -> list[str]:
                     if not (alt or "").strip():
                         bilder_ohne += 1
                 elif f.text().strip():
-                    fg = cf.foreground().color() if cf.foreground().style() != 0 else QColor("#000000")
+                    fg = cf.foreground().color() if cf.foreground().style() != 0 else QColor(Farbe.SCHWARZ)
                     hg = cf.background().color() if cf.background().style() != 0 else seite
                     if kontrast(fg, hg) < 4.5:
                         farben[fg.name()] = farben.get(fg.name(), 0) + 1

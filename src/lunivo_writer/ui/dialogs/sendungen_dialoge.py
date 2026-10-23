@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from PySide6.QtWidgets import (
-    QComboBox, QDialog, QDialogButtonBox, QFileDialog, QFormLayout, QHBoxLayout, QLabel, QLineEdit, QPlainTextEdit, QPushButton,
+    QComboBox, QDialog, QFileDialog, QFormLayout, QHBoxLayout, QLabel, QLineEdit, QPlainTextEdit, QPushButton,
     QVBoxLayout,
 )
 
@@ -10,14 +10,11 @@ from lunivo_writer.editor import sendungen as S
 
 
 def _ok(dlg, text_ok: str | None = None):
-    bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-    if text_ok:
-        bb.button(QDialogButtonBox.Ok).setText(text_ok)
-    bb.accepted.connect(dlg.accept); bb.rejected.connect(dlg.reject)
-    return bb
+    return knopfzeile(dlg, ok_text=text_ok or "OK")
 
 
 from lunivo_writer.ui.baukasten.zusatz_panel import PanelFaehig
+from lunivo_writer.ui.baukasten.dialog_rahmen import knopfzeile
 class UmschlagDialog(PanelFaehig, QDialog):
     def __init__(self, parent, absender: str = ""):
         super().__init__(parent)

@@ -4,7 +4,7 @@ from __future__ import annotations
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
-    QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFormLayout, QHBoxLayout, QLabel, QPushButton,
+    QCheckBox, QComboBox, QDialog, QFormLayout, QHBoxLayout, QLabel, QPushButton,
     QSpinBox, QTextEdit, QVBoxLayout, QWidget,
 )
 
@@ -13,6 +13,8 @@ from lunivo_writer.ui.baukasten import weitere_farben
 
 
 from lunivo_writer.ui.baukasten.zusatz_panel import PanelFaehig
+from lunivo_writer.ui.baukasten.dialog_rahmen import knopfzeile
+from lunivo_writer.core.farben import Farbe
 class SilbenDialog(PanelFaehig, QDialog):
     def __init__(self, fenster):
         super().__init__(fenster)
@@ -87,14 +89,10 @@ class SilbenDialog(PanelFaehig, QDialog):
         self._hl = S.SilbenFarben(self.vorschau.document(), {**k, "an": True, "nur_absatz": False})
         v.addWidget(self.vorschau)
         self.hinweis = QLabel("")
-        self.hinweis.setStyleSheet("color: #c92a2a;")
+        self.hinweis.setStyleSheet(('color: ' + Farbe.ROT + ';'))
         v.addWidget(self.hinweis)
-        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel | QDialogButtonBox.RestoreDefaults)
-        bb.accepted.connect(self.accept)
-        bb.rejected.connect(self.reject)
-        bb.button(QDialogButtonBox.RestoreDefaults).setText("Standard")
-        bb.button(QDialogButtonBox.RestoreDefaults).clicked.connect(self._standard)
-        v.addWidget(bb)
+        standard = QPushButton("Standard"); standard.clicked.connect(self._standard)
+        v.addWidget(knopfzeile(self, standard))
         for c in (self.an, self.fett, self.einsilbig, self.neu, self.absatz, self.drucken):
             c.toggled.connect(lambda *_: self.anwenden())
         for c in (self.palette, self.darstellung):

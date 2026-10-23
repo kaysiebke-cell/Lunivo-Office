@@ -11,14 +11,16 @@ import json
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QBrush, QColor, QFont, QTextCharFormat, QTextCursor, QTextDocument, QTextFormat
 
+from lunivo_writer.core.farben import Farbe
 P_FORM = QTextFormat.UserProperty + 34
 ARTEN = ("text", "auswahl", "datum", "kasten", "knopf")
 KASTEN_LEER, KASTEN_VOLL = "☐", "☒"
 AKTIONEN = ["Keine", "Drucken", "Als PDF exportieren", "Felder zurücksetzen"]
 DATUMSFORMAT = "dd.MM.yyyy"
-PLATZHALTER_FARBE = "#868e96"
+PLATZHALTER_FARBE = Farbe.GRAU
 
 
+from lunivo_writer.ui.baukasten.dialog_rahmen import knopfzeile
 def meta(art: str, name: str = "", **kw) -> dict:
     m = {"art": art, "name": name}
     m.update({k: v for k, v in kw.items() if v not in (None, "")})
@@ -139,14 +141,13 @@ def klick(ed, pos: int, fenster=None) -> bool:
             menu.exec(ed.viewport().mapToGlobal(ed.cursorRect(_c(ed, v)).bottomLeft()))
     elif art == "datum":
         from PySide6.QtCore import QDate
-        from PySide6.QtWidgets import QCalendarWidget, QDialog, QDialogButtonBox, QVBoxLayout
+        from PySide6.QtWidgets import QCalendarWidget, QDialog, QVBoxLayout
         d = QDialog(ed.window())
         d.setWindowTitle(m.get("name") or "Datum")
         kal = QCalendarWidget()
         aktuell = QDate.fromString(wert_von(ed.document(), v, e), DATUMSFORMAT)
         kal.setSelectedDate(aktuell if aktuell.isValid() else QDate.currentDate())
-        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        bb.accepted.connect(d.accept); bb.rejected.connect(d.reject)
+        bb = knopfzeile(d)
         lay = QVBoxLayout(d); lay.addWidget(kal); lay.addWidget(bb)
         if d.exec():
             _ersetzen(ed, v, e, m, kal.selectedDate().toString(DATUMSFORMAT))
@@ -246,7 +247,7 @@ def nur_formulardaten(d: QTextDocument) -> int:
         if e > v:
             c = QTextCursor(d); c.setPosition(v); c.setPosition(e, QTextCursor.KeepAnchor); c.mergeCharFormat(unsichtbar)
     sichtbar = QTextCharFormat()
-    sichtbar.setForeground(QBrush(QColor("#000000")))
+    sichtbar.setForeground(QBrush(QColor(Farbe.SCHWARZ)))
     sichtbar.setBackground(QBrush(Qt.NoBrush))
     for v, e in felder:
         c = QTextCursor(d); c.setPosition(v); c.setPosition(e, QTextCursor.KeepAnchor); c.mergeCharFormat(sichtbar)

@@ -13,9 +13,10 @@ from PySide6.QtWidgets import QWidget
 
 from lunivo_writer.models.page import PX_PER_MM, px_to_mm
 
+from lunivo_writer.core.farben import Farbe
 HOEHE = 26          # Dicke des Lineals
 FANG = 6            # so nahe (Bildpunkte) muss die Maus an einer Marke sein
-AKZENT = QColor("#4a8fd8")
+AKZENT = QColor(Farbe.AKZENT_DUNKEL)
 
 
 class _Lineal(QWidget):
@@ -42,7 +43,7 @@ class _Lineal(QWidget):
         grund = pal.color(pal.ColorRole.Window)
         schrift = pal.color(pal.ColorRole.WindowText)
         dunkel = grund.darker(130) if grund.lightness() < 128 else grund.darker(108)
-        hell = grund.lighter(125) if grund.lightness() < 128 else QColor("#ffffff")
+        hell = grund.lighter(125) if grund.lightness() < 128 else QColor(Farbe.WEISS)
         return {"grund": grund, "schrift": schrift, "aussen": dunkel, "text": hell}
 
     def _schrift(self, p: QPainter) -> None:

@@ -5,7 +5,7 @@ import os
 from lunivo_writer.core import paths
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (QDialog, QDialogButtonBox, QFrame, QGridLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QTextBrowser,
+from PySide6.QtWidgets import (QDialog, QFrame, QGridLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QTextBrowser,
                                QVBoxLayout)
 
 from lunivo_writer.ui import kuerzel
@@ -13,6 +13,7 @@ from lunivo_writer.ui import kuerzel
 
 
 
+from lunivo_writer.core.farben import Farbe
 def _browser(parent, titel: str, breite=860, hoehe=640) -> tuple[QDialog, QTextBrowser, QVBoxLayout]:
     d = QDialog(parent)
     d.setWindowTitle(titel)
@@ -235,7 +236,7 @@ def erweiterungen(parent) -> QDialog:
         karte.setStyleSheet("QFrame#erwKarte { border: 1px solid palette(midlight); border-radius: 8px; }")
         h = QHBoxLayout(karte); h.setContentsMargins(12, 10, 14, 10); h.setSpacing(12)
         b = QLabel("DA" if da else "—"); b.setAlignment(Qt.AlignCenter); b.setFixedSize(40, 26)
-        b.setStyleSheet("background: %s; color: white; border-radius: 5px; font-weight: 700;" % ("#2f9e73" if da else "#868e96"))
+        b.setStyleSheet("background: %s; color: white; border-radius: 5px; font-weight: 700;" % ("#2f9e73" if da else Farbe.GRAU))
         mitte = QVBoxLayout(); mitte.setSpacing(2)
         n = QLabel(name); f = n.font(); f.setBold(True); n.setFont(f)
         t = QLabel(text); f = t.font(); f.setItalic(True); t.setFont(f); t.setStyleSheet("color: palette(mid);")

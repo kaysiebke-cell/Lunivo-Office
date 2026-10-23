@@ -8,14 +8,15 @@ from __future__ import annotations
 from PySide6.QtGui import QBrush, QColor, QTextCharFormat, QTextCursor, QTextTable
 
 # Name: (Kopf-Füllung, Kopf-Schrift, Streifen-Füllung, Rahmen)
+from lunivo_writer.core.farben import Farbe
 VORLAGEN = {
     "Gitternetz": (None, None, None, 0.5),
     "Einfach": (None, None, None, 0),
-    "Blau": ("#2f6fb5", "#ffffff", "#e7f0fa", 0.5),
-    "Grün": ("#2d8a4e", "#ffffff", "#e6f4ea", 0.5),
-    "Orange": ("#e67700", "#ffffff", "#fff0e0", 0.5),
-    "Grau": ("#495057", "#ffffff", "#f1f3f5", 0.5),
-    "Hell": ("#dee2e6", "#000000", "#f8f9fa", 0),
+    "Blau": (Farbe.AKZENT, Farbe.WEISS, "#e7f0fa", 0.5),
+    "Grün": ("#2d8a4e", Farbe.WEISS, "#e6f4ea", 0.5),
+    "Orange": ("#e67700", Farbe.WEISS, "#fff0e0", 0.5),
+    "Grau": ("#495057", Farbe.WEISS, "#f1f3f5", 0.5),
+    "Hell": ("#dee2e6", Farbe.SCHWARZ, "#f8f9fa", 0),
 }
 
 

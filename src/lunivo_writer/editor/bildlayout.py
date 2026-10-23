@@ -18,6 +18,7 @@ from lunivo_writer.editor import freie_bilder as FB
 from lunivo_writer.editor import umbruch as U
 from lunivo_writer.models.page import mm_to_px, px_to_mm
 
+from lunivo_writer.core.farben import Farbe
 AUSR_H = {"left": "links", "center": "zentriert", "right": "rechts"}
 AUSR_V = {"top": "oben", "center": "zentriert", "bottom": "unten"}
 UMGEKEHRT_H = {v: k for k, v in AUSR_H.items()}
@@ -233,7 +234,7 @@ def format_setzen(ed, z, fuell="__nicht__", rand="__nicht__", rand_teil: dict | 
         else:
             neu.pop("fx", None)
     if rand_teil:
-        alt = dict(neu.get("rand") or {"b": 2.0, "farbe": "#000000", "art": "einfach"})
+        alt = dict(neu.get("rand") or {"b": 2.0, "farbe": Farbe.SCHWARZ, "art": "einfach"})
         alt.update(rand_teil)
         neu["rand"] = alt
     _speichern_frei(ed, key, neu)

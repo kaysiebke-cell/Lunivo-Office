@@ -19,14 +19,14 @@ from lunivo_writer.ui.baukasten.farbpalette import FarbPalette
 from lunivo_writer.ui.baukasten.linien import linien_menue_zeile, linien_symbol
 from lunivo_writer.ui.baukasten.raster_auswahl import RasterAuswahl
 
-STRICHARTEN = [("einfach", "Durchgezogen"), ("gepunktet", "Gepunktet"), ("fein_gestrichelt", "Fein gestrichelt"), ("gestrichelt", "Gestrichelt"),
-               ("strichpunkt", "Strich-Punkt"), ("strichpunktpunkt", "Strich-Punkt-Punkt")]
-STIL_FARBEN = ["#212529", "#4c9be8", "#f08c00", "#868e96", "#fcc419", "#3b5bdb", "#51cf66"]       # sieben Spalten der Vorlage
+from lunivo_writer.editor.linie import OBJEKT_STRICHE as STRICHARTEN                        # die eine Liste der Strichlinien (editor/linie.py)
+from lunivo_writer.core.farben import Farbe
+STIL_FARBEN = [Farbe.TINTE_DUNKEL, "#4c9be8", "#f08c00", Farbe.GRAU, "#fcc419", "#3b5bdb", "#51cf66"]       # sieben Spalten der Vorlage
 STIL_ZEILEN = ["hell", "voll", "voll2", "getoent", "kante", "dunkel"]
 
 
 def _linien_symbol(art: str, breite: float, groesse: QSize = QSize(120, 16)) -> QIcon:
-    return linien_symbol(art, groesse, "#343a40", breite)                # der vorhandene Baustein
+    return linien_symbol(art, groesse, Farbe.TINTE, breite)                # der vorhandene Baustein
 
 
 def _textur(name: str, groesse: int = 26) -> QPixmap:
@@ -53,8 +53,8 @@ def _textur(name: str, groesse: int = 26) -> QPixmap:
 
 
 TEXTUREN = [("papier", "Papier"), ("granit", "Granit"), ("holz", "Holz"), ("stoff", "Stoff"), ("marmor", "Marmor"), ("sand", "Sand")]
-GRADUELL = [("#e03131", "#ffc9c9"), ("#f08c00", "#ffe8cc"), ("#f2c200", "#fff3bf"), ("#2f9e44", "#d3f9d8"), ("#1971c2", "#d0ebff"), ("#7048e8", "#e5dbff"),
-            ("#212529", "#dee2e6"), ("#868e96", "#f8f9fa")]
+GRADUELL = [("#e03131", "#ffc9c9"), ("#f08c00", "#ffe8cc"), ("#f2c200", "#fff3bf"), (Farbe.GRUEN, "#d3f9d8"), ("#1971c2", "#d0ebff"), ("#7048e8", "#e5dbff"),
+            (Farbe.TINTE_DUNKEL, "#dee2e6"), (Farbe.GRAU, "#f8f9fa")]
 
 
 def graduell_pixmap(dunkel: str, hell: str, w: int = 34, h: int = 24) -> QPixmap:
@@ -153,7 +153,7 @@ def formstil_zeichner(schluessel: str):
         p.setPen(QPen(QColor(w["rand"]["farbe"]), min(3.0, w["rand"]["b"])) if w["rand"] else Qt.NoPen)
         p.drawRoundedRect(kachel, 4, 4)
         light = f is None or (f["art"] == "farbe" and QColor(f["farbe"]).lightness() > 170)
-        p.setPen(QColor("#212529") if light else QColor("white")); p.drawText(kachel, Qt.AlignCenter, "Abc")
+        p.setPen(QColor(Farbe.TINTE_DUNKEL) if light else QColor("white")); p.drawText(kachel, Qt.AlignCenter, "Abc")
         p.restore()
     return zeichne
 

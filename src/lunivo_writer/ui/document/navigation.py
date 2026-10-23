@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
 
 from lunivo_writer.ui.baukasten.panel_rahmen import PanelRahmen
 
+from lunivo_writer.core.farben import Farbe
 SEITEN = ("suche", "kommentare", "ueberschriften", "aenderungen", "noten", "vorlesen")
 TABS = SEITEN                                                             # alter Name
 TITEL = {"suche": "Suchen und ersetzen", "kommentare": "Kommentare", "ueberschriften": "Überschriften", "aenderungen": "Änderungen",
@@ -556,7 +557,7 @@ class NavigationPanel(QWidget):
         for i, b in enumerate(ed.aenderungen()):
             ins = b["wert"] == "ins"
             autor, datum = b["cf"].stringProperty(P_AUTOR) or "?", b["cf"].stringProperty(P_DATUM) or ""
-            k, v = self._karte("Eingefügt" if ins else "Gelöscht", f"„{text_ges[b['von']:b['bis']][:120]}“", "#2f9e75" if ins else "#c92a2a",
+            k, v = self._karte("Eingefügt" if ins else "Gelöscht", f"„{text_ges[b['von']:b['bis']][:120]}“", "#2f9e75" if ins else Farbe.ROT,
                                f"{autor} · {_datum(datum)}")
             z = QHBoxLayout(); z.setSpacing(6)
             for text, fn in (("Zeigen", lambda b=b: (ed.select_range(b["von"], b["bis"]), ed.ensureCursorVisible(), ed.setFocus())),
@@ -569,7 +570,7 @@ class NavigationPanel(QWidget):
         for i, st in enumerate(ed.noten_stellen()):
             zaehler[st["art"]] += 1
             txt = ed.noten[st["art"]].get(st["id"], "")
-            k, v = self._karte(("Fußnote " if st["art"] == "f" else "Endnote ") + str(zaehler[st["art"]]), txt or "(leer)", "#2f6fb5" if st["art"] == "f" else "#7048a8")
+            k, v = self._karte(("Fußnote " if st["art"] == "f" else "Endnote ") + str(zaehler[st["art"]]), txt or "(leer)", Farbe.AKZENT if st["art"] == "f" else "#7048a8")
             z = QHBoxLayout(); z.setSpacing(6)
             for text, fn in (("Zeigen", lambda st=st: (ed.select_range(st["von"], st["bis"]), ed.ensureCursorVisible(), ed.setFocus())),
                              ("Bearbeiten", lambda st=st: self._aend_aktion("note_bearbeiten", st)), ("Löschen", lambda st=st: self._aend_aktion("note_weg", st))):

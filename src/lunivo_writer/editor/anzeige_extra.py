@@ -7,6 +7,7 @@ from lunivo_writer.editor.zusatz import P_AENDERUNG, P_FELD, P_OBJEKT, P_VERSTEC
 
 
 # ---- Ausgeblendeter Text ---------------------------------------------------------------------------------------------
+from lunivo_writer.core.farben import Farbe
 class VersteckterText(QSyntaxHighlighter):
     """Ausgeblendeter Text (Eigenschaft P_VERSTECKT) wird nur in der Anzeige unsichtbar gemacht (winzige, durchsichtige Schrift)
     oder — bei „Ausgeblendeten Text anzeigen“ — grau und gepunktet unterstrichen gezeigt. Der Text selbst bleibt unangetastet."""
@@ -29,9 +30,9 @@ class VersteckterText(QSyntaxHighlighter):
                 von = f.position() - b.position()
                 fmt = QTextCharFormat()
                 if self.zeigen:
-                    fmt.setForeground(QBrush(QColor("#868e96")))
+                    fmt.setForeground(QBrush(QColor(Farbe.GRAU)))
                     fmt.setUnderlineStyle(QTextCharFormat.DotLine)
-                    fmt.setUnderlineColor(QColor("#868e96"))
+                    fmt.setUnderlineColor(QColor(Farbe.GRAU))
                 else:
                     fmt.setFontPointSize(0.5)
                     fmt.setForeground(QBrush(QColor(0, 0, 0, 0)))

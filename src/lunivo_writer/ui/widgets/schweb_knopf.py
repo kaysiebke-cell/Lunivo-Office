@@ -7,6 +7,7 @@ from PySide6.QtWidgets import QToolButton
 from lunivo_writer.ui.widgets import icons
 
 
+from lunivo_writer.core.farben import Farbe
 class SchwebKnopf(QToolButton):
     RAND = 16
 
@@ -16,9 +17,7 @@ class SchwebKnopf(QToolButton):
         self.setIcon(icons.icon(symbol, 26)); self.setIconSize(QSize(26, 26)); self.setToolTip(tipp); self.setAccessibleName(tipp)
         self.setFixedSize(48, 48)
         self.setCursor(self.cursor())
-        self.setStyleSheet("QToolButton { background: palette(button); border: 1px solid palette(mid); border-radius: 8px; }"      # Farben des Designs: das Symbol bleibt im hellen wie im dunklen Design lesbar
-                           "QToolButton:hover { background: palette(alternate-base); }"
-                           "QToolButton:focus { border: 2px solid #2f6fb5; }")
+        self.setStyleSheet(('QToolButton { background: palette(button); border: 1px solid palette(mid); border-radius: 8px; }QToolButton:hover { background: palette(alternate-base); }QToolButton:focus { border: 2px solid ' + Farbe.AKZENT + '; }'))
         self.clicked.connect(lambda: aktion())
         editor.installEventFilter(self)
         self.platzieren()

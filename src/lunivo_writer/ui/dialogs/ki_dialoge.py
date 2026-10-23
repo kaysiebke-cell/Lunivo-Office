@@ -6,16 +6,18 @@ from __future__ import annotations
 
 from PySide6.QtCore import QObject, QRunnable, QThreadPool, Qt, Signal
 from PySide6.QtWidgets import (
-    QComboBox, QDialog, QDialogButtonBox, QFormLayout, QHBoxLayout, QLabel, QLineEdit, QListWidget, QListWidgetItem,
+    QComboBox, QDialog, QFormLayout, QGridLayout, QHBoxLayout, QLabel, QLineEdit, QListWidget, QListWidgetItem,
     QMessageBox, QPushButton, QToolButton, QVBoxLayout, QWidget,
 )
 
 from lunivo_writer.ui.baukasten.beschriftung import md_escape, md_label, text_label
 from lunivo_writer.ai import ki as K
 from lunivo_writer.ui.baukasten.fenster_stapel import zeige_unter
+from lunivo_writer.ui.baukasten.dialog_rahmen import knopfzeile
 from lunivo_writer.ui.widgets.flow_layout import FlowLayout
 
 
+from lunivo_writer.core.farben import Farbe
 def _tags_text(a: dict) -> str:
     n = dict(K.ANBIETER_TAGS)
     return ", ".join(n[t] for t in a.get("verwendungFuer", []) if t in n)
@@ -34,7 +36,7 @@ class AnbieterDialog(QDialog):
         self.setWindowTitle("Modell bearbeiten" if bestehend else "Eigenen Anbieter hinzufügen")
         self.setMinimumWidth(560)
         v = QVBoxLayout(self)
-        t = text_label(self.windowTitle(), fett=True, pt=13, umbruch=False)
+        t = self._titel = text_label(self.windowTitle(), fett=True, pt=13, umbruch=False)
         v.addWidget(t)
         f = QFormLayout()
         self.name = QLineEdit(bestehend["name"] if bestehend else "")
@@ -80,28 +82,28 @@ class AnbieterDialog(QDialog):
         v.addLayout(f)
         v.addWidget(QLabel("Modell verwenden für"))
         fl = QWidget()
-        fll = FlowLayout(fl)
+        self._chipgitter = QGridLayout(fl); self._chipgitter.setContentsMargins(0, 0, 0, 0); self._chipgitter.setSpacing(6)
         self.tags = {}
         gesetzt = set(bestehend["verwendungFuer"]) if bestehend else {"text"}
         alle = QPushButton("Alle")
         alle.setCheckable(True)
         alle.setStyleSheet(_CHIP)
         alle.toggled.connect(lambda an: [b.setChecked(an) for b in self.tags.values()])
-        fll.addWidget(alle)
+        self._chips = [alle]
         for key, name in K.ANBIETER_TAGS:
             b = QPushButton(name)
             b.setCheckable(True)
             b.setChecked(key in gesetzt)
             b.setStyleSheet(_CHIP)
             self.tags[key] = b
-            fll.addWidget(b)
+            self._chips.append(b)
+        self._chips_legen(3)
+        from PySide6.QtWidgets import QSizePolicy
+        fl.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         v.addWidget(fl)
-        bb = QDialogButtonBox()
-        bb.addButton("Abbrechen", QDialogButtonBox.RejectRole)
-        self.ok = bb.addButton("Speichern" if bestehend else "Hinzufügen", QDialogButtonBox.AcceptRole)
-        bb.accepted.connect(self._ok)
-        bb.rejected.connect(self.reject)
-        v.addWidget(bb)
+        z = knopfzeile(self, bei_ok=self._ok, ok_text="Speichern" if bestehend else "Hinzufügen")
+        self.ok = z.ok
+        v.addWidget(z)
         self._antwort = _Antwort()
         self._antwort.da.connect(self._geholt)
         self.vorlage.currentIndexChanged.connect(self._vorlage_gewaehlt)
@@ -112,6 +114,23 @@ class AnbieterDialog(QDialog):
             self.vorlage.blockSignals(False)
         elif not bestehend:
             self.vorlage.setCurrentIndex(1)           # Ollama ist die Vorbelegung
+
+    def _chips_legen(self, spalten: int) -> None:
+        """„Modell verwenden für“ als gleichmäßiges Raster (gleich breite Felder) statt einer Zeile, die irgendwo umbricht."""
+        from PySide6.QtWidgets import QSizePolicy
+        self._chipgitter.setProperty("schmal_nein", True)                         # das Raster bleibt, wie es ist (der Notbehelf der Seitenleiste bricht es sonst auf eine Spalte um)
+        for b in self._chips:
+            self._chipgitter.removeWidget(b)
+            b.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        for i, b in enumerate(self._chips):
+            self._chipgitter.addWidget(b, i // spalten, i % spalten)
+        for c in range(spalten):
+            self._chipgitter.setColumnStretch(c, 1)
+
+    def kompakt_machen(self) -> None:
+        """In der Seitenleiste: der Titel steht schon im Kopf der Seite, und die Fähigkeiten stehen zu zweit nebeneinander."""
+        self._titel.setVisible(False)
+        self._chips_legen(2)
 
     def _vorlage_gewaehlt(self, i: int) -> None:
         url = self.vorlage.itemData(i)
@@ -173,8 +192,7 @@ class AnbieterDialog(QDialog):
         self.accept()
 
 
-_CHIP = ("QPushButton { border: 1px solid palette(mid); border-radius: 11px; padding: 3px 12px; color: palette(window-text); }"
-         "QPushButton:checked { background: #2f6fb5; color: white; border-color: #2f6fb5; }")
+_CHIP = (('QPushButton { border: 1px solid palette(mid); border-radius: 11px; padding: 3px 12px; color: palette(window-text); }QPushButton:checked { background: ' + Farbe.AKZENT + '; color: white; border-color: ' + Farbe.AKZENT + '; }'))
 
 
 class ModellListe(QWidget):
@@ -251,9 +269,7 @@ class ModellListeDialog(QDialog):
         self.liste_widget = ModellListe(fenster, konfig)
         self._fuellen = self.liste_widget._fuellen
         v.addWidget(self.liste_widget, 1)
-        bb = QDialogButtonBox(QDialogButtonBox.Ok)
-        bb.accepted.connect(self.accept)
-        v.addWidget(bb)
+        v.addWidget(knopfzeile(self, nur_ok=True))
 
 
 def modell_combo(konfig: K.KIKonfig, aufgabe: str, gewaehlt: str | None = None) -> QComboBox:
@@ -316,12 +332,7 @@ class KIKonfigurationDialog(QDialog):
         self.zuweisung = ModellZuweisung(fenster)
         self.felder = self.zuweisung.felder
         v.addWidget(self.zuweisung)
-        bb = QDialogButtonBox()
-        bb.addButton("Abbrechen", QDialogButtonBox.RejectRole)
-        bb.addButton("OK", QDialogButtonBox.AcceptRole)
-        bb.accepted.connect(self._ok)
-        bb.rejected.connect(self.reject)
-        v.addWidget(bb)
+        v.addWidget(knopfzeile(self, bei_ok=self._ok))
 
     def _ok(self) -> None:
         self.zuweisung.uebernehmen()
@@ -371,7 +382,7 @@ class SprachePanel(QWidget):
         self.fenster = fenster
         b = fenster.befehle
         v = QVBoxLayout(self); v.setContentsMargins(0, 8, 0, 0)
-        z = QHBoxLayout(); z.setSpacing(24)
+        z = self._spalten = QHBoxLayout(); z.setSpacing(24); self._spalten_w = []
         self.pruefung = SprachListe(list(b.SPRACHEN))
         self.pruefung.setCurrentIndex(max(0, self.pruefung.findData(b.pruefsprache_aktuell())))
         self.pruefung.setEnabled(fenster.current_tab() is not None)
@@ -379,15 +390,31 @@ class SprachePanel(QWidget):
         self.sprache.setCurrentText(fenster.ki.konfig["sprache"])
         for titel, unter, liste in (("Sprache für die Überprüfung", "Sprache des Dokuments — wird in der Datei vermerkt.", self.pruefung),
                                     ("Übersetzen nach", "Sprache für die KI-Übersetzung wählen.", self.sprache)):
-            sp = QVBoxLayout(); sp.setSpacing(4)
+            spalte = QWidget(); sp = QVBoxLayout(spalte); sp.setContentsMargins(0, 0, 0, 0); sp.setSpacing(4)
             sp.addWidget(text_label(titel, fett=True, pt=12, umbruch=False))
             hint = QLabel(unter); hint.setStyleSheet("color: palette(mid);"); sp.addWidget(hint)
             sp.addWidget(liste, 1)
-            z.addLayout(sp, 1)
+            z.addWidget(spalte, 1); self._spalten_w.append(spalte)
         v.addLayout(z, 1)
+        self._v = v
         h = QLabel("Die Schreibhilfe selbst prüft weiter auf Deutsch. Das Modell für die Übersetzung wählen Sie im Reiter „Modellzuweisung“ (Aufgabe „Übersetzung“).")
         h.setWordWrap(True); h.setStyleSheet("color: palette(mid);")
         v.addWidget(h)
+
+    def kompakt_machen(self) -> None:
+        """In der Seitenleiste: die zwei Listen untereinander statt nebeneinander, jede mit sechs sichtbaren Zeilen (der Rest rollt)."""
+        neu = QVBoxLayout(); neu.setSpacing(10)                              # die Spalten wandern in ein neues, senkrechtes Layout
+        self._v.removeItem(self._spalten)
+        for w in self._spalten_w:
+            neu.addWidget(w)
+        self._v.insertLayout(0, neu)
+        from PySide6.QtWidgets import QSizePolicy
+        for l in (self.pruefung, self.sprache):
+            l.setMinimumHeight(0); l.setFixedHeight(150); l.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+            l.setStyleSheet(l.styleSheet() + "QListWidget::item { padding: 6px 12px; border-bottom: 1px solid palette(midlight); }")
+        for h in self.findChildren(QLabel):
+            h.setWordWrap(True)
+        self.layout().invalidate()
 
     def uebernehmen(self) -> None:
         if self.sprache.currentItem() is not None:
@@ -417,11 +444,7 @@ class McpDialog(QDialog):
         self.stand = QLabel(""); self.stand.setWordWrap(True)
         t = QPushButton("Testen"); t.clicked.connect(self._testen)
         v.addWidget(t, 0, Qt.AlignLeft); v.addWidget(self.stand)
-        bb = QDialogButtonBox()
-        bb.addButton("Abbrechen", QDialogButtonBox.RejectRole)
-        bb.addButton("Speichern", QDialogButtonBox.AcceptRole)
-        bb.accepted.connect(self._ok); bb.rejected.connect(self.reject)
-        v.addWidget(bb)
+        v.addWidget(knopfzeile(self, bei_ok=self._ok, ok_text="Speichern"))
 
     def _testen(self) -> None:
         from lunivo_writer.ai import mcp as M
@@ -546,7 +569,10 @@ class WebsuchePanel(QWidget):
 REITER = ("KI-Modelle", "Modellzuweisung", "Sprache", "MCP-Server", "Websuche")
 
 
-class KIEinstellungenDialog(QDialog):
+from lunivo_writer.ui.baukasten.zusatz_panel import PanelFaehig
+
+
+class KIEinstellungenDialog(PanelFaehig, QDialog):
     """Das eine Fenster für alles zur KI: verbundene Modelle, Modellzuweisung, MCP-Server und Websuche.
 
     Dieselbe Konfiguration (``KIKonfig``) wie in der Seitenleiste der Schreibhilfe, im KI-Chat und in den Optionen. Bis ein Modell verbunden ist,
@@ -586,15 +612,38 @@ class KIEinstellungenDialog(QDialog):
         self.stapel.addWidget(self.mcp)
         self.websuche = WebsuchePanel(self.k)
         self.stapel.addWidget(self.websuche)
-        bb = QDialogButtonBox()
-        bb.addButton("Abbrechen", QDialogButtonBox.RejectRole)
-        bb.addButton("OK", QDialogButtonBox.AcceptRole)
-        bb.accepted.connect(self._ok)
-        bb.rejected.connect(self.reject)
-        v.addWidget(bb)
+        v.addWidget(knopfzeile(self, bei_ok=self._ok))
         self.reiter.currentChanged.connect(self.stapel.setCurrentIndex)
         self.freischalten()
         self.reiter.setCurrentIndex(start if self.reiter.isTabEnabled(start) else 0)
+
+    def kompakt_machen(self) -> None:
+        """In der Seitenleiste: kurze Reiternamen (die langen stehen im Tipp), damit alle fünf nebeneinander passen."""
+        for i, (kurz, voll) in enumerate((("Modelle", "KI-Modelle"), ("Zuweisung", "Modellzuweisung"), ("Sprache", "Sprache"), ("MCP", "MCP-Server"),
+                                          ("Websuche", "Websuche"))):
+            self.reiter.setTabText(i, kurz)
+            if self.reiter.isTabEnabled(i):
+                self.reiter.setTabToolTip(i, voll)
+        self.reiter.setUsesScrollButtons(True); self.reiter.setElideMode(Qt.ElideNone)
+        self.liste.setMinimumSize(0, 0)
+        for l in self.stapel.widget(0).findChildren(QLabel):
+            l.setWordWrap(True)
+        self.sprache.kompakt_machen()
+
+        def hoehe_der_seite(i: int) -> None:                                  # nur die gewählte Seite bestimmt die Höhe, die anderen zählen nicht mit
+            from PySide6.QtWidgets import QSizePolicy
+            for k in range(self.stapel.count()):
+                w = self.stapel.widget(k); sp = w.sizePolicy()
+                sp.setVerticalPolicy(QSizePolicy.Preferred if k == i else QSizePolicy.Ignored); w.setSizePolicy(sp)
+            self.stapel.updateGeometry()
+            e = self.stapel.parentWidget()
+            while e is not None:
+                if e.layout() is not None:
+                    e.layout().invalidate()
+                e = e.parentWidget()
+        self.reiter.currentChanged.connect(hoehe_der_seite)
+        hoehe_der_seite(self.reiter.currentIndex())
+        self.setMinimumSize(0, 0)
 
     def freischalten(self) -> None:
         """Ohne verbundenes Modell ist nur der erste Reiter bedienbar; mit Modell (auch Ollama auf diesem Rechner) sind alle frei."""
@@ -670,12 +719,9 @@ class SchnelleAktionDialog(QDialog):
         self.r_kontext = QRadioButton("Verfügbar über das Kontextmenü"); self.r_kontext.setChecked(True)
         self.r_schnell = QRadioButton("Schnellzugriff über die Symbolleiste")
         v.addWidget(self.r_kontext); v.addWidget(self.r_schnell)
-        bb = QDialogButtonBox()
-        bb.addButton("Abbrechen", QDialogButtonBox.RejectRole)
-        self.ok = bb.addButton("Erstellen", QDialogButtonBox.AcceptRole)
-        bb.accepted.connect(self._ok)
-        bb.rejected.connect(self.reject)
-        v.addWidget(bb)
+        z = knopfzeile(self, bei_ok=self._ok, ok_text="Erstellen")
+        self.ok = z.ok
+        v.addWidget(z)
         self._alle = False
         self._umschalten()
 
@@ -722,11 +768,9 @@ class ErgebnisseDialog(QDialog):
         v.addLayout(z, 1)
         if not self.liste_daten:
             v.addWidget(QLabel("In dieser Sitzung hat die KI noch nichts geliefert."))
-        bb = QDialogButtonBox()
-        self.kopieren = bb.addButton("Kopieren", QDialogButtonBox.ActionRole)
-        self.einfuegen = bb.addButton("Einfügen", QDialogButtonBox.ActionRole)
-        bb.addButton("Schließen", QDialogButtonBox.RejectRole)
-        bb.rejected.connect(self.reject)
+        bb = knopfzeile(self, schliessen=True)
+        self.kopieren = bb.zusatz_knopf(QPushButton("Kopieren"))
+        self.einfuegen = bb.zusatz_knopf(QPushButton("Einfügen"))
         self.kopieren.clicked.connect(lambda: QApplication.clipboard().setText(self.text.toPlainText()))
         self.einfuegen.clicked.connect(self._einfuegen)
         v.addWidget(bb)

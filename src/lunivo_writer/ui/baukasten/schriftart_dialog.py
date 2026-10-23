@@ -16,7 +16,7 @@ from __future__ import annotations
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QColor, QFont, QFontDatabase, QIcon, QTextBlockFormat
 from PySide6.QtWidgets import (
-    QCheckBox, QComboBox, QDialog, QFontComboBox, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QPushButton, QTabWidget, QVBoxLayout, QWidget,
+    QCheckBox, QComboBox, QDialog, QFontComboBox, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QPushButton, QTabWidget, QToolButton, QVBoxLayout, QWidget,
 )
 
 from lunivo_writer.ui.baukasten.dialog_rahmen import VorschauFlaeche, fussleiste
@@ -41,45 +41,47 @@ def _schrift_combo(thema: tuple[str, ...] = ()) -> QFontComboBox:
     c = QFontComboBox(); c.setEditable(True)
     for i, t in enumerate(thema):
         c.insertItem(i, t)
-    c.setMinimumWidth(200)
+    c.setMinimumWidth(120)
+    c.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLengthWithIcon); c.setMinimumContentsLength(12)     # breite Schriftnamen machen das Feld nicht breiter
     return c
 
 
 def _schnitt_combo() -> QComboBox:
-    c = QComboBox(); c.setEditable(True); c.addItems(SCHNITTE); c.setMinimumWidth(110)
+    c = QComboBox(); c.setEditable(True); c.addItems(SCHNITTE); c.setMinimumWidth(90)
+    c.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLengthWithIcon); c.setMinimumContentsLength(8)
     return c
 
 
 from lunivo_writer.ui.baukasten.zusatz_panel import PanelFaehig
+from lunivo_writer.ui.baukasten.formular_gitter import AngepassteReiter, FlussLayout, FormularGitter, UmbruchSchalter, abschnittstitel
+def _ueberschrift(text: str) -> QLabel:
+    return abschnittstitel(text)
+
+
 class SchriftartDialog(PanelFaehig, QDialog):
     def __init__(self, parent=None, werte: dict | None = None, *, umfang: str = "text"):
         super().__init__(parent)
-        self.setWindowTitle("Schriftart"); self.resize(504, 721)
+        self.setWindowTitle("Schriftart"); self.resize(504, 560)
         self.umfang = umfang
         w = {**ZEICHEN, **(werte or {})}
         v = QVBoxLayout(self)
-        self.reiter = QTabWidget(); v.addWidget(self.reiter, 1)
+        self.reiter = AngepassteReiter(); v.addWidget(self.reiter, 1)
         # ---- Karteireiter „Schriftart“
-        s = QWidget(); g = QGridLayout(s); g.setHorizontalSpacing(12); g.setVerticalSpacing(4)
-        self.asien, self.schnitt_asien, self.groesse_asien = _schrift_combo(("+Überschrift asiatisch", "+Textkörper asiatisch")), _schnitt_combo(), groesse_feld(breite=90)
-        self.schrift, self.schnitt, self.groesse = _schrift_combo(("+Überschrift", "+Textkörper")), _schnitt_combo(), groesse_feld(breite=90)
-        self.komplex, self.schnitt_komplex, self.groesse_komplex = _schrift_combo(("+Überschrift komplex", "+Textkörper komplex")), _schnitt_combo(), groesse_feld(breite=90)
-        zeile = 0
-        for kopf, felder in (("Schriftart für asiatischen Text:", (self.asien, self.schnitt_asien, self.groesse_asien)),
-                             ("Schriftart für westlichen Text:", (self.schrift, self.schnitt, self.groesse))):
-            for i, t in enumerate((kopf, "Schriftschnitt:", "Größe:")):
-                g.addWidget(QLabel(t), zeile, i)
-            for i, f in enumerate(felder):
-                g.addWidget(f, zeile + 1, i)
-            zeile += 2
-        g.addWidget(QLabel("Komplexe Schriftzeichen"), zeile, 0, 1, 3); zeile += 1
-        for i, t in enumerate(("Schriftart:", "Schriftschnitt:", "Größe:")):
-            g.addWidget(QLabel(t), zeile, i)
-        for i, f in enumerate((self.komplex, self.schnitt_komplex, self.groesse_komplex)):
-            g.addWidget(f, zeile + 1, i)
-        zeile += 2
-        g.addWidget(QLabel("Alle Texte"), zeile, 0, 1, 3); zeile += 1
-        alle = QWidget(); ah = QGridLayout(alle); ah.setContentsMargins(0, 0, 0, 0); ah.setHorizontalSpacing(12)
+        s = QWidget(); g = FormularGitter(s)
+        self.asien, self.schnitt_asien, self.groesse_asien = _schrift_combo(("+Überschrift asiatisch", "+Textkörper asiatisch")), _schnitt_combo(), groesse_feld(breite=70)
+        self.schrift, self.schnitt, self.groesse = _schrift_combo(("+Überschrift", "+Textkörper")), _schnitt_combo(), groesse_feld(breite=70)
+        self.komplex, self.schnitt_komplex, self.groesse_komplex = _schrift_combo(("+Überschrift komplex", "+Textkörper komplex")), _schnitt_combo(), groesse_feld(breite=70)
+        gew = (3, 2, 1)
+        g.reihe(("Schriftart:", self.schrift), ("Schriftschnitt:", self.schnitt), ("Größe:", self.groesse), gewichte=gew)
+        asiat = QWidget(); ag = FormularGitter(asiat)                       # asiatische und komplexe Schrift: eingeklappt, bis man sie braucht
+        ag.reihe(("Schriftart für asiatischen Text:", self.asien), ("Schriftschnitt:", self.schnitt_asien), ("Größe:", self.groesse_asien), gewichte=gew)
+        ag.breit(_ueberschrift("Komplexe Schriftzeichen"))
+        ag.reihe(("Schriftart:", self.komplex), ("Schriftschnitt:", self.schnitt_komplex), ("Größe:", self.groesse_komplex), gewichte=gew)
+        asiat.setVisible(False)
+        self.asiat_knopf = QToolButton(); self.asiat_knopf.setText("Asiatische und komplexe Schrift"); self.asiat_knopf.setArrowType(Qt.RightArrow)
+        self.asiat_knopf.setToolButtonStyle(Qt.ToolButtonTextBesideIcon); self.asiat_knopf.setAutoRaise(True); self.asiat_knopf.setCheckable(True)
+        self.asiat_knopf.toggled.connect(lambda an: (asiat.setVisible(an), self.asiat_knopf.setArrowType(Qt.DownArrow if an else Qt.RightArrow)))
+        g.breit(self.asiat_knopf); g.breit(asiat)
         self.farbe = FarbFeld(w["farbe"], "Schriftfarbe", keine_text="Automatisch")
         self.unter = QComboBox(); self.unter.setIconSize(QSize(70, 14))
         from lunivo_writer.editor.textfx import unter_symbol
@@ -90,37 +92,31 @@ class SchriftartDialog(PanelFaehig, QDialog):
         self.betonung = QComboBox()
         for k, name in BETONUNG:
             self.betonung.addItem(name, k)
-        for i, (t, wd) in enumerate((("Schriftfarbe:", self.farbe), ("Unterstreichung:", self.unter), ("Farbe:", self.unterfarbe), ("Betonungszeichen:", self.betonung))):
-            ah.addWidget(QLabel(t), 0, i); ah.addWidget(wd, 1, i)
-        g.addWidget(alle, zeile, 0, 1, 3); zeile += 1
-        self.effekte = QGroupBox("Effekte"); eg = QGridLayout(self.effekte)
+        g.reihe(("Schriftfarbe:", self.farbe), ("Unterstreichung:", self.unter), ("Farbe:", self.unterfarbe), ("Betonungszeichen:", self.betonung))
+        self.effekte = QGroupBox("Effekte"); eg = FlussLayout(12); eg.setContentsMargins(0, 6, 0, 2); self.effekte.setLayout(eg)
         namen = (("durch", "Durchgestrichen"), ("doppelt", "Doppelt durchgestrichen"), ("hoch", "Hochgestellt"), ("tief", "Tiefgestellt"),
                  ("kapital", "Kapitälchen"), ("gross", "Großbuchstaben"), ("versteckt", "Ausgeblendet"))
         self.cb = {k: QCheckBox(t) for k, t in namen}
-        for i, (k, _t) in enumerate(namen):
-            eg.addWidget(self.cb[k], i % 4 if i < 4 else i - 4, 0 if i < 4 else 1)
-        g.addWidget(self.effekte, zeile, 0, 1, 3)
-        g.setColumnStretch(0, 3); g.setColumnStretch(1, 2); g.setColumnStretch(2, 1)
+        for k, _t in namen:
+            eg.addWidget(self.cb[k])
+        g.breit(self.effekte)
         self.reiter.addTab(s, "Schriftart")
         # ---- Karteireiter „Zeichenabstand“
-        z = QWidget(); zg = QGridLayout(z); zg.setHorizontalSpacing(12); zg.setVerticalSpacing(8)
+        z = QWidget(); zg = FormularGitter(z)
         self.skala = QComboBox(); self.skala.setEditable(True); self.skala.addItems(["200%", "150%", "100%", "90%", "80%", "66%", "50%", "33%"])
         self.abstand_art = QComboBox(); self.abstand_art.addItems(["Normal", "Erweitert", "Schmal"])
         self.abstand_wert = EinheitFeld(0.0, 0.0, 20 * _PT_MM, ("mm", "cm", "in", "pt"), "pt", leer_bei_null=True)
         self.pos_art = QComboBox(); self.pos_art.addItems(["Normal", "Höher", "Tiefer"])
         self.pos_wert = EinheitFeld(0.0, 0.0, 100 * _PT_MM, ("mm", "cm", "in", "pt"), "pt", leer_bei_null=True)
-        self.kerning = QCheckBox("Unterschneidung ab:"); self.kern_ab = spin(0.0, 0.0, 200.0, "", 0.5, 1)
-        self.raster = QCheckBox("Bei Dokumentrasterdefinition am Raster ausrichten")
-        zg.addWidget(QLabel("Skalieren:"), 0, 0); zg.addWidget(self.skala, 0, 1)
-        zg.addWidget(QLabel("Abstand:"), 1, 0); zg.addWidget(self.abstand_art, 1, 1); zg.addWidget(QLabel("Von:"), 1, 2); zg.addWidget(self.abstand_wert, 1, 3)
-        zg.addWidget(QLabel("Position:"), 2, 0); zg.addWidget(self.pos_art, 2, 1); zg.addWidget(QLabel("Von:"), 2, 2); zg.addWidget(self.pos_wert, 2, 3)
-        zg.addWidget(self.kerning, 3, 0, 1, 2); zg.addWidget(self.kern_ab, 3, 2); zg.addWidget(QLabel("Punkte und größer"), 3, 3)
-        zg.addWidget(self.raster, 4, 0, 1, 4)
-        zg.setRowStretch(5, 1); zg.setColumnStretch(3, 1)
+        self.kerning = UmbruchSchalter("Einschalten"); self.kern_ab = spin(0.0, 0.0, 200.0, "", 0.5, 1)
+        self.raster = UmbruchSchalter("Bei Dokumentrasterdefinition am Raster ausrichten")
+        zg.reihe(("Skalieren:", self.skala), ("Abstand:", self.abstand_art), ("Von:", self.abstand_wert), ("Position:", self.pos_art), ("Von:", self.pos_wert))
+        zg.reihe(("Unterschneidung:", self.kerning), ("Ab (Punkte und größer):", self.kern_ab))
+        zg.breit(self.raster)
         self.reiter.addTab(z, "Zeichenabstand")
         # ---- Vorschau, Hinweis, Knöpfe
         v.addWidget(QLabel("Vorschau"))
-        self.vorschau = VorschauFlaeche(self._male, 92); v.addWidget(self.vorschau)
+        self.vorschau = VorschauFlaeche(self._male, 44); v.addWidget(self.vorschau)
         self._w = dict(ZEICHEN)
         self.hinweis = QLabel(); self.hinweis.setWordWrap(True); self.hinweis.setStyleSheet("color: palette(mid); font-size: 9pt;")
         v.addWidget(self.hinweis)
@@ -238,6 +234,7 @@ class SchriftartDialog(PanelFaehig, QDialog):
         fam = w["schrift"] or self.schrift.currentText()
         self.hinweis.setText("" if (not w["schrift"] or fam in QFontDatabase.families()) else
                              "Diese Schriftart wurde nicht installiert. Es wird die ähnlichste verfügbare Schriftart zum Drucken verwendet.")
+        self.hinweis.setVisible(bool(self.hinweis.text()))
         self._w = w
         self.vorschau.update()
 

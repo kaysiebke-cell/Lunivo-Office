@@ -13,12 +13,9 @@ from lunivo_writer.proofing.vorhersage import EMPFAENGER
 from lunivo_writer.ui.sidebar.panels.writing_panel import FundKarte, HinweisKarte, VorschlagKarte
 from lunivo_writer.ui.widgets.flow_layout import FlowLayout
 
-WERK_REITER = ("QPushButton { border: none; border-bottom: 3px solid transparent; border-radius: 0; padding: 4px 6px; font-weight: bold; color: palette(mid); background: transparent; }"
-               "QPushButton:checked { color: palette(window-text); border-bottom: 3px solid #2f6fb5; }"
-               "QPushButton:hover { color: palette(window-text); }"
-               "QPushButton:focus { border-bottom: 3px solid #2f6fb5; }")
-CHIP = ("QPushButton { border: 1px solid palette(mid); border-radius: 11px; padding: 3px 12px; color: palette(window-text); }"
-        "QPushButton:checked { background: #2f6fb5; color: white; border-color: #2f6fb5; }")
+from lunivo_writer.core.farben import Farbe
+WERK_REITER = (('QPushButton { border: none; border-bottom: 3px solid transparent; border-radius: 0; padding: 4px 6px; font-weight: bold; color: palette(mid); background: transparent; }QPushButton:checked { color: palette(window-text); border-bottom: 3px solid ' + Farbe.AKZENT + '; }QPushButton:hover { color: palette(window-text); }QPushButton:focus { border-bottom: 3px solid ' + Farbe.AKZENT + '; }'))
+CHIP = (('QPushButton { border: 1px solid palette(mid); border-radius: 11px; padding: 3px 12px; color: palette(window-text); }QPushButton:checked { background: ' + Farbe.AKZENT + '; color: white; border-color: ' + Farbe.AKZENT + '; }'))
 CHIP_GRUEN = ("QPushButton { border: 1px solid palette(mid); border-radius: 11px; padding: 0px; font-weight: bold; color: palette(window-text); }"
               "QPushButton:checked { background: #2f9e75; color: white; border-color: #2f9e75; }")
 LEER = ("Nichts gefunden. Das heißt nicht, dass alles richtig ist — die Schreibhilfe sucht nur die Fehler, "
@@ -63,7 +60,7 @@ class SchreibhilfePanel(QWidget):
         kopf.setSpacing(6)
         titel = QHBoxLayout()
         titel.setSpacing(0)
-        for teil, farbe in (("Schreib", None), (" | ", "#2f6fb5"), ("hilfe", None)):
+        for teil, farbe in (("Schreib", None), (" | ", Farbe.AKZENT), ("hilfe", None)):
             t = text_label(teil, fett=True, pt=12, umbruch=False)
             if farbe:
                 t.setStyleSheet(f"color: {farbe};")
@@ -356,10 +353,11 @@ class SchreibhilfePanel(QWidget):
     def zusatz_ausfuehren(self, d) -> bool:
         """Ein Zusatzfenster als Seite hier in der Seitenleiste zeigen, solange man es bearbeitet (wie ``d.exec()``). Die Breite bleibt."""
         from lunivo_writer.ui.baukasten.zusatz_panel import ZusatzPanel, ausfuehren_in
-        if getattr(self, "_zusatz", None) is not None:                       # es ist schon eines offen: das alte schließt
-            self._zusatz._schliessen()
+        if getattr(self, "_zusatz", None) is not None:                       # es ist schon eines offen: das neue legt sich als Seite darüber
+            return self._zusatz.unter_ausfuehren(d)
         seite = ZusatzPanel()
-        seite.verfuegbar = max(300, min(self.width(), 420)) - 56                      # Seitenleiste ohne Ränder und Rollbalken
+        seite.verfuegbar = max(300, self.width()) - 36                      # Seitenleiste ohne Ränder und Rollbalken
+        seite.verfuegbar_hoehe = max(300, self.height() - 140)                      # ohne Kopf und Knopfzeile
         self._zusatz = seite
         i = self.stapel.addWidget(seite)
         vorher = (self.stapel.currentIndex(), self.isHidden())

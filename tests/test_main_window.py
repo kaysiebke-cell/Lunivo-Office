@@ -22,7 +22,7 @@ def test_new_edit_save_reopen(app, tmp_path, monkeypatch):
     assert e.document().isModified() and "●" in w.tabs.tabText(w.tabs.currentIndex())
     assert e.textCursor().charFormat().fontWeight() >= 600
     target = str(tmp_path / "doc.docx")
-    monkeypatch.setattr("lunivo_writer.ui.main_window.QFileDialog.getSaveFileName", lambda *a, **k: (target, ""))
+    monkeypatch.setattr("lunivo_writer.ui.hauptfenster.dateien.QFileDialog.getSaveFileName", lambda *a, **k: (target, ""))
     assert w.save()
     assert not e.document().isModified()
     assert docx.Document(target).paragraphs[0].runs[0].bold
@@ -39,7 +39,7 @@ def test_pdf_export_and_status(app, tmp_path, monkeypatch):
     w._sync_status()
     assert " von 3" in w.lbl_page.text() or " von 2" in w.lbl_page.text()
     out = str(tmp_path / "x.pdf")
-    monkeypatch.setattr("lunivo_writer.ui.main_window.QFileDialog.getSaveFileName", lambda *a, **k: (out, ""))
+    monkeypatch.setattr("lunivo_writer.ui.hauptfenster.dateien.QFileDialog.getSaveFileName", lambda *a, **k: (out, ""))
     w.export_pdf_dialog()
     assert os.path.getsize(out) > 500
 

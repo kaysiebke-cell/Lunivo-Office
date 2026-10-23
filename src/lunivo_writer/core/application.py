@@ -1,7 +1,7 @@
 """Anwendungsstart: QApplication einrichten, Einstellungen und Theme laden, Hauptfenster zeigen, sauber beenden."""
 from __future__ import annotations
 
-from PySide6.QtCore import QEvent
+from PySide6.QtCore import QEvent, QLibraryInfo, QTranslator
 from PySide6.QtWidgets import QApplication
 
 from lunivo_writer.services.settings_service import APP_NAME, APP_ORG, Settings
@@ -16,6 +16,11 @@ class LunivoApplication:
         self.app.setApplicationName(APP_NAME)
         self.app.setOrganizationName(APP_ORG)
         self.app.setDesktopFileName("lunivo-writer")
+        self._uebersetzer = []                                           # Standardknöpfe und Menüs von Qt auf Deutsch („Abbrechen“ statt „Cancel“)
+        for name in ("qtbase_de", "qt_de"):
+            t = QTranslator()
+            if t.load(name, QLibraryInfo.path(QLibraryInfo.TranslationsPath)):
+                self.app.installTranslator(t); self._uebersetzer.append(t)
         self.settings = Settings()
         from lunivo_writer.ui import theme
         theme.WEICH = self.settings.get_bool("ui/weich", False)

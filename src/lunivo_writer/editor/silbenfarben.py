@@ -10,18 +10,19 @@ from __future__ import annotations
 import re
 from PySide6.QtGui import QBrush, QColor, QFont, QSyntaxHighlighter, QTextCharFormat
 
+from lunivo_writer.core.farben import Farbe
 PALETTEN = {
-    "Blau / Rot": ["#1f5fbf", "#c92a2a"],
+    "Blau / Rot": ["#1f5fbf", Farbe.ROT],
     "Blau / Orange": ["#1f5fbf", "#d9480f"],
     "Grün / Violett": ["#2b8a3e", "#862e9c"],
     "Dunkelblau / Braun": ["#1b3a6b", "#8a4b14"],
-    "Drei Farben (Blau, Rot, Grün)": ["#1f5fbf", "#c92a2a", "#2b8a3e"],
+    "Drei Farben (Blau, Rot, Grün)": ["#1f5fbf", Farbe.ROT, "#2b8a3e"],
     "Eigene Farben": None,
 }
 DARSTELLUNGEN = ["Schriftfarbe", "Hintergrund (Marker)", "Schriftfarbe und Hintergrund"]
 BEISPIEL = ("Die Silbenfarben helfen beim Lesen: Wörter wie Schmetterling, Wanderung und Computertastatur "
             "werden in ihre Teile zerlegt.")
-STANDARD = {"an": False, "palette": "Blau / Rot", "eigene": ["#1f5fbf", "#c92a2a", "#2b8a3e"], "anzahl_eigene": 2,
+STANDARD = {"an": False, "palette": "Blau / Rot", "eigene": ["#1f5fbf", Farbe.ROT, "#2b8a3e"], "anzahl_eigene": 2,
             "darstellung": "Schriftfarbe", "fett": False, "einsilbig": True, "neu_pro_wort": True, "mindestens": 4,
             "nur_absatz": False, "drucken": False, "sprache": "de_DE"}
 _WORT = re.compile(r"[^\W\d_]{2,}", re.UNICODE)

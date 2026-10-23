@@ -14,10 +14,11 @@ from PySide6.QtGui import QColor, QImage, QPainter, QTextCursor, QTextDocument, 
 from lunivo_writer.editor import einfuegen as E
 from lunivo_writer.editor.zusatz import P_OBJEKT
 
-STANDARD = {"fuell": "#4a8fd8", "linie": "#1f3864", "strich": 2.0, "text": ""}
-VORLAGEN = [("Blau", "#4a8fd8", "#1f3864", 2.0), ("Grün", "#6bbf59", "#2d6a1f", 2.0), ("Orange", "#f4a259", "#9c4f0a", 2.0),
+from lunivo_writer.core.farben import Farbe
+STANDARD = {"fuell": Farbe.AKZENT_DUNKEL, "linie": "#1f3864", "strich": 2.0, "text": ""}
+VORLAGEN = [("Blau", Farbe.AKZENT_DUNKEL, "#1f3864", 2.0), ("Grün", "#6bbf59", "#2d6a1f", 2.0), ("Orange", "#f4a259", "#9c4f0a", 2.0),
             ("Rot", "#e5645f", "#8c1d18", 2.0), ("Grau", "#ced4da", "#495057", 2.0), ("Nur Kontur", "", "#1f3864", 2.5),
-            ("Dunkel", "#2b2d42", "#000000", 1.5), ("Hell mit dicker Kontur", "#fff3bf", "#e67700", 5.0)]
+            ("Dunkel", "#2b2d42", Farbe.SCHWARZ, 1.5), ("Hell mit dicker Kontur", "#fff3bf", "#e67700", 5.0)]
 GRUPPEN_ABSTAND = 8
 
 

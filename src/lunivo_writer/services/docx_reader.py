@@ -34,6 +34,7 @@ from lunivo_writer.models.page import HeaderFooter, PageSettings, px_to_mm
 from lunivo_writer.models.report import DocumentIOError, IOReport
 
 LH_PROPORTIONAL, LH_FIXED = 1, 2                # QTextBlockFormat.LineHeightTypes
+from lunivo_writer.core.farben import Farbe
 STYLE_PROP = QTextFormat.UserProperty + 1       # Name der Formatvorlage am Block
 from lunivo_writer.editor.zusatz import B_SPALTE, P_OBJEKT, P_VERSTECKT  # noqa: E402
 from lunivo_writer.editor.formular import P_FORM  # noqa: E402
@@ -350,7 +351,7 @@ class _Reader:
                 f.merge(unter_format(art))
         if run.font.outline:
             from PySide6.QtGui import QPen
-            f.setTextOutline(QPen(QColor("#000000")))
+            f.setTextOutline(QPen(QColor(Farbe.SCHWARZ)))
         if run.font.hidden:
             f.setProperty(P_VERSTECKT, 1)
         rpr = run._r.rPr
@@ -425,7 +426,7 @@ class _Reader:
            "blue": "#0000FF", "red": "#FF0000", "darkBlue": "#000080", "darkCyan": "#008080",
            "darkGreen": "#008000", "darkMagenta": "#800080", "darkRed": "#800000",
            "darkYellow": "#808000", "darkGray": "#808080", "lightGray": "#C0C0C0",
-           "black": "#000000"}
+           "black": Farbe.SCHWARZ}
 
     def _highlight(self, run) -> Optional[str]:
         rpr = run._r.rPr
@@ -526,7 +527,7 @@ class _Reader:
         if shd and art and art != "loeschen":                    # Muster über Füllfarbe
             farbe = shd[0].get(qn("w:color"))
             fill = shd[0].get(qn("w:fill"))
-            mf = "#" + farbe if farbe not in (None, "auto") else "#000000"
+            mf = "#" + farbe if farbe not in (None, "auto") else Farbe.SCHWARZ
             ff = "#" + fill if fill not in (None, "auto") else None
             b.setBackground(muster.pinsel(art, mf, ff))
             b.setProperty(B_MUSTER, muster.als_text(art, mf, ff))
@@ -907,7 +908,7 @@ class _Reader:
         def farbe(el):
             c = _xp(el, "a:srgbClr")
             if not c:
-                return "#000000", 0
+                return Farbe.SCHWARZ, 0
             al = _xp(c[0], "a:alpha/@val")
             return farbe_aus_element(c[0], _NS).name(), 100 - (int(al[0]) / 1000 if al else 100)
         try:

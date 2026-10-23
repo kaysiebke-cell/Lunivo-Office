@@ -13,6 +13,7 @@ from PySide6.QtCore import QEventLoop, QPoint, QRect, QTimer, Qt, Signal
 from PySide6.QtGui import QColor, QCursor, QGuiApplication, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import QApplication, QWidget
 
+from lunivo_writer.core.farben import Farbe
 ZEIT_S = 10                                     # nach so vielen Sekunden bricht die Pipette von selbst ab
 AKTIV = True                                    # False: der Eintrag „Pipette“ erscheint in keiner Farbpalette (Schalter zum Abschalten)
 
@@ -69,16 +70,16 @@ class _Pipette(QWidget):
     def _farbe_bei(self, p: QPoint) -> QColor:
         f = self._bild.devicePixelRatio()
         x, y = int(p.x() * f), int(p.y() * f)
-        return QColor(self._img.pixel(x, y)) if self._img.rect().contains(x, y) else QColor("#000000")
+        return QColor(self._img.pixel(x, y)) if self._img.rect().contains(x, y) else QColor(Farbe.SCHWARZ)
 
     def paintEvent(self, _e):
         p = QPainter(self)
         p.drawPixmap(0, 0, self._bild)
         c = self._farbe_bei(self._pos)
         r = QRect(self._pos.x() + 18, self._pos.y() + 18, 250, 66)
-        p.setPen(QPen(QColor("#212529"), 1)); p.setBrush(QColor("#ffffff")); p.drawRect(r)
+        p.setPen(QPen(QColor(Farbe.TINTE_DUNKEL), 1)); p.setBrush(QColor(Farbe.WEISS)); p.drawRect(r)
         p.setBrush(c); p.drawRect(QRect(r.left() + 6, r.top() + 6, 32, 32))
-        p.setPen(QColor("#212529"))
+        p.setPen(QColor(Farbe.TINTE_DUNKEL))
         p.drawText(QRect(r.left() + 44, r.top() + 4, 200, 34), Qt.AlignVCenter, c.name().upper())
         p.drawText(QRect(r.left() + 6, r.top() + 40, 240, 22), Qt.AlignVCenter, f"Klick: aufnehmen · Esc oder Rechtsklick: abbrechen ({self._rest} s)")
 

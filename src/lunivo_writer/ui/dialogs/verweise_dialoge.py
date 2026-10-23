@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QButtonGroup, QComboBox, QDialog, QDialogButtonBox, QFormLayout, QHBoxLayout, QLabel, QLineEdit, QListWidget,
+    QButtonGroup, QComboBox, QDialog, QFormLayout, QHBoxLayout, QLabel, QLineEdit, QListWidget,
     QListWidgetItem, QMessageBox, QPushButton, QRadioButton, QVBoxLayout,
 )
 
@@ -12,13 +12,12 @@ from lunivo_writer.editor.literatur import TYPEN, ZITIERWEISEN, eintrag
 from lunivo_writer.editor.zusatz import BESCHRIFTUNGEN
 
 
-def _knoepfe(dlg) -> QDialogButtonBox:
-    bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-    bb.accepted.connect(dlg.accept); bb.rejected.connect(dlg.reject)
-    return bb
+def _knoepfe(dlg):
+    return knopfzeile(dlg)
 
 
 from lunivo_writer.ui.baukasten.zusatz_panel import PanelFaehig
+from lunivo_writer.ui.baukasten.dialog_rahmen import knopfzeile
 class BeschriftungDialog(PanelFaehig, QDialog):
     def __init__(self, parent):
         super().__init__(parent)
@@ -45,7 +44,7 @@ class TextmarkeDialog(PanelFaehig, QDialog):
         for text, fn in (("Hinzufügen", self._add), ("Löschen", self._del), ("Gehe zu", self._gehe)):
             b = QPushButton(text); b.clicked.connect(fn); z.addWidget(b)
         v.addLayout(z)
-        bb = QDialogButtonBox(QDialogButtonBox.Close); bb.rejected.connect(self.reject); v.addWidget(bb)
+        bb = knopfzeile(self, schliessen=True); v.addWidget(bb)
         self._fuellen()
 
     def _fuellen(self):
@@ -136,7 +135,7 @@ class QuellenDialog(PanelFaehig, QDialog):
         for text, fn in (("Neu …", self._neu), ("Bearbeiten …", self._bearb), ("Löschen", self._weg), ("Zitat einfügen", self._zitat)):
             b = QPushButton(text); b.clicked.connect(fn); z.addWidget(b)
         v.addLayout(z)
-        bb = QDialogButtonBox(QDialogButtonBox.Close); bb.rejected.connect(self.reject); v.addWidget(bb)
+        bb = knopfzeile(self, schliessen=True); v.addWidget(bb)
         self._fuellen()
 
     def _fuellen(self):

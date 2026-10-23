@@ -14,6 +14,7 @@ from PySide6.QtWidgets import QDialog, QGroupBox, QHBoxLayout, QKeySequenceEdit,
 from lunivo_writer.ui.baukasten.dialog_rahmen import fussleiste
 
 
+from lunivo_writer.core.farben import Farbe
 class TastenDialog(QDialog):
     def __init__(self, parent=None, aktuell: str = "", *, belegt=None):
         super().__init__(parent)
@@ -25,7 +26,7 @@ class TastenDialog(QDialog):
         self.feld = QKeySequenceEdit(QKeySequence(aktuell)); self.feld.setMaximumSequenceLength(1)
         h.addWidget(self.feld, 1)
         v.addWidget(g)
-        self.hinweis = QLabel(); self.hinweis.setStyleSheet("color: #e8590c;"); self.hinweis.setWordWrap(True)
+        self.hinweis = QLabel(); self.hinweis.setStyleSheet(('color: ' + Farbe.ORANGE + ';')); self.hinweis.setWordWrap(True)
         v.addWidget(self.hinweis)
         self.zuweisen = fussleiste(self, v, ok_text="Zuweisen", abbrechen_text="Schließen")
         self.feld.keySequenceChanged.connect(self._pruefen)

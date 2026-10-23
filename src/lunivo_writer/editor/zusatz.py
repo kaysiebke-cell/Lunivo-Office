@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from PySide6.QtGui import QTextFormat
 
+from lunivo_writer.core.farben import Farbe
 P_KOMMENTAR = QTextFormat.UserProperty + 20      # int: Kommentar-Id
 P_NOTE = QTextFormat.UserProperty + 21           # "f:3" | "e:2": Art und Id der Note
 P_AENDERUNG = QTextFormat.UserProperty + 22      # "ins" | "del"
@@ -74,8 +75,9 @@ def abstand_davor_px(bf) -> float:
 
 
 # Farben der Kommentare wie in der alten Fassung: orange Kreis mit Initial, gelbe Markierung im Text; ein gelöster Kommentar wird grau
+AUTOR_FARBEN = [Farbe.ROT, "#1971c2", Farbe.GRUEN, Farbe.ORANGE, "#7048a8", "#0b7285", "#a61e4d", "#5c940d"]      # eine Farbe je Autor — die einzige Liste dafür
 KOMMENTAR_FARBE = "#d9822b"
-KOMMENTAR_GELOEST = "#adb5bd"
+KOMMENTAR_GELOEST = Farbe.GRAU_HELL
 
 
 def kommentar_farbe(geloest: bool = False) -> str:

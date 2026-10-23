@@ -4,7 +4,7 @@ from __future__ import annotations
 from PySide6.QtCore import QRect, Qt, Signal
 from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
-    QCheckBox, QComboBox, QDialog, QDialogButtonBox, QDoubleSpinBox, QFormLayout, QGridLayout,
+    QCheckBox, QComboBox, QDialog, QDoubleSpinBox, QFormLayout, QGridLayout,
     QGroupBox, QHBoxLayout, QLabel, QLineEdit, QPlainTextEdit, QPushButton, QSpinBox, QVBoxLayout,
     QWidget,
 )
@@ -15,6 +15,7 @@ from lunivo_writer.ui.baukasten.mass_feld import EINHEITEN, MassSpin as _MassSpi
 
 
 from lunivo_writer.ui.baukasten.zusatz_panel import PanelFaehig
+from lunivo_writer.ui.baukasten.dialog_rahmen import knopfzeile
 class PageSetupDialog(PanelFaehig, QDialog):
     def __init__(self, page: PageSettings, parent=None):
         super().__init__(parent)
@@ -35,8 +36,7 @@ class PageSetupDialog(PanelFaehig, QDialog):
         self.spalten_linie = QCheckBox("Linie zwischen den Spalten"); self.spalten_linie.setChecked(page.spalten_linie)
         form.addRow("Spalten", self.spalten); form.addRow("Abstand der Spalten", self.spalten_abstand)
         form.addRow("", self.spalten_linie)
-        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        bb.accepted.connect(self.accept); bb.rejected.connect(self.reject)
+        bb = knopfzeile(self)
         lay = QVBoxLayout(self); lay.addLayout(form); lay.addWidget(bb)
 
     def result_page(self) -> PageSettings:
@@ -75,8 +75,7 @@ class HeaderFooterDialog(PanelFaehig, QDialog):
         lay.addWidget(self.text); 
         row = QHBoxLayout(); row.addWidget(QLabel("Ausrichtung")); row.addWidget(self.align); row.addWidget(b)
         lay.addLayout(row)
-        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        bb.accepted.connect(self.accept); bb.rejected.connect(self.reject)
+        bb = knopfzeile(self)
         lay.addWidget(bb)
 
     def value(self) -> HeaderFooter:
@@ -93,8 +92,7 @@ class TableDialog(PanelFaehig, QDialog):
         self.borders = QCheckBox("Rahmenlinien"); self.borders.setChecked(True)
         form = QFormLayout(); form.addRow("Zeilen", self.rows); form.addRow("Spalten", self.cols)
         form.addRow("", self.borders)
-        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        bb.accepted.connect(self.accept); bb.rejected.connect(self.reject)
+        bb = knopfzeile(self)
         lay = QVBoxLayout(self); lay.addLayout(form); lay.addWidget(bb)
 
 
@@ -110,8 +108,7 @@ class BildGroesseDialog(PanelFaehig, QDialog):
         self.b.valueChanged.connect(self._b)
         self.h.valueChanged.connect(self._h)
         form = QFormLayout(); form.addRow("Breite", self.b); form.addRow("Höhe", self.h); form.addRow("", self.fest)
-        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        bb.accepted.connect(self.accept); bb.rejected.connect(self.reject)
+        bb = knopfzeile(self)
         lay = QVBoxLayout(self); lay.addLayout(form); lay.addWidget(bb)
 
     def _b(self, v):
@@ -155,8 +152,7 @@ class ZoomDialog(PanelFaehig, QDialog):
         lay.addLayout(zeile)
         if self.gruppe.checkedId() < 0:
             eigen.setChecked(True)
-        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        bb.accepted.connect(self.accept); bb.rejected.connect(self.reject)
+        bb = knopfzeile(self)
         lay.addWidget(bb)
 
     def ergebnis(self) -> tuple[str, float]:

@@ -23,6 +23,7 @@ from PySide6.QtGui import QImage, QPainter, QPainterPath, QTextDocument
 
 from lunivo_writer.editor.zusatz import B_BILDANKER
 
+from lunivo_writer.core.farben import Farbe
 EMU_PX = 9525.0                                              # 1 px bei 96 dpi
 
 
@@ -102,7 +103,7 @@ def bild_aus_daten(blob: bytes) -> QImage:
 
 
 # ---- Zweifarbig („Duoton“) ------------------------------------------------------------------------------------------------
-SCHEMA = {"tx1": "#000000", "dk1": "#000000", "bg1": "#ffffff", "lt1": "#ffffff", "tx2": "#1f497d", "dk2": "#1f497d", "bg2": "#eeece1",
+SCHEMA = {"tx1": Farbe.SCHWARZ, "dk1": Farbe.SCHWARZ, "bg1": Farbe.WEISS, "lt1": Farbe.WEISS, "tx2": "#1f497d", "dk2": "#1f497d", "bg2": "#eeece1",
           "lt2": "#eeece1", "accent1": "#4f81bd", "accent2": "#c0504d", "accent3": "#9bbb59", "accent4": "#8064a2", "accent5": "#4bacc6",
           "accent6": "#f79646"}
 
@@ -115,7 +116,7 @@ def farbe_aus_element(el, ns) -> "QColor":
     if tag == "srgbClr":
         c = QColor("#" + wert)
     elif tag == "prstClr":
-        c = QColor({"black": "#000000", "white": "#ffffff"}.get(wert, "#808080"))
+        c = QColor({"black": Farbe.SCHWARZ, "white": Farbe.WEISS}.get(wert, "#808080"))
     else:
         c = QColor(SCHEMA.get(wert, "#808080"))
     for m in el:
@@ -204,12 +205,12 @@ def fuell_pinsel(fuell: dict | None, r: QRectF, fuellbild: QImage | None = None)
         return QBrush(QColor(fuell["farbe"]))
     if art in ("verlauf", "graduell"):
         dunkel = QColor(fuell["farbe"]) if art == "verlauf" else QColor(fuell.get("dunkel", fuell.get("farbe")))
-        hell = QColor(fuell["farbe"]).lighter(160) if art == "verlauf" else QColor(fuell.get("hell", "#ffffff"))
+        hell = QColor(fuell["farbe"]).lighter(160) if art == "verlauf" else QColor(fuell.get("hell", Farbe.WEISS))
         g = QLinearGradient(r.topLeft(), r.bottomLeft()); g.setColorAt(0, hell); g.setColorAt(1, dunkel)
         return QBrush(g)
     if art == "muster":
         from lunivo_writer.editor import muster as M
-        return M.pinsel(fuell.get("key", "rein"), fuell.get("farbe", "#000000"), fuell.get("grund") or "#ffffff")
+        return M.pinsel(fuell.get("key", "rein"), fuell.get("farbe", Farbe.SCHWARZ), fuell.get("grund") or Farbe.WEISS)
     if art == "textur":
         from lunivo_writer.ui.baukasten.objekt_menues import _textur
         return QBrush(_textur(fuell.get("key", "papier"), 64))
@@ -223,7 +224,7 @@ def _stift(rand: dict):
     from PySide6.QtCore import Qt
     from PySide6.QtGui import QColor, QPen
     from lunivo_writer.editor.linie import STILE
-    pen = QPen(QColor(rand.get("farbe", "#ffffff")), float(rand.get("b", 1.0)))
+    pen = QPen(QColor(rand.get("farbe", Farbe.WEISS)), float(rand.get("b", 1.0)))
     strich = STILE.get(rand.get("art", "einfach"), STILE["einfach"])[1]
     if isinstance(strich, tuple):
         pen.setDashPattern(list(strich))

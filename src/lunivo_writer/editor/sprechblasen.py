@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from PySide6.QtCore import QRectF, Qt
 from PySide6.QtGui import QColor, QFont, QFontMetricsF, QPainter, QPen, QTextDocument, QTextOption
 
-from lunivo_writer.editor.zusatz import P_AENDERUNG, P_AUTOR, P_DATUM, P_KOMMENTAR
+from lunivo_writer.editor.zusatz import P_AENDERUNG, P_AUTOR, P_DATUM, P_KOMMENTAR, AUTOR_FARBEN
 
 EMPFOHLENE_BREITE_MM = 60.0
 STANDARD = {"verwenden": "Nur für Kommentare", "breite_mm": 60.0, "empfohlen": True, "rand": "Rechts", "linien": True,
@@ -23,7 +23,6 @@ VERWENDEN = ["Nur für Kommentare", "Immer", "Nie"]
 RAND = ["Rechts", "Links"]
 AUSRICHTUNG = ["Automatisch", "Beibehalten", "Querformat"]
 LUECKE_MM = 3.0                       # Abstand zwischen Seite und Blasenfläche
-AUTOR_FARBEN = ["#c92a2a", "#1971c2", "#2f9e44", "#e8590c", "#7048a8", "#0b7285", "#a61e4d", "#5c940d"]
 
 
 def konfig_lesen(settings) -> dict:

@@ -5,8 +5,9 @@ Tastenkürzel rufen."""
 from __future__ import annotations
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QDialog, QDialogButtonBox, QFrame, QHBoxLayout, QLabel, QPushButton, QScrollArea, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QDialog, QFrame, QHBoxLayout, QLabel, QPushButton, QScrollArea, QVBoxLayout, QWidget
 
+from lunivo_writer.core.farben import Farbe
 STUFEN = [
     # (Stufe, Titel, Kürzel, Frage, Hinweis rechts, Schalter | Befehl)
     (1, "Rote Wellenlinien", "", "Gibt es das Wort überhaupt?", "sofort beim Tippen", ("schalter", "wellen")),
@@ -19,8 +20,8 @@ STUFEN = [
     (6, "KI-Korrektur", "F8", "Versteht das jemand? Passt der Ton?", "Internet und Guthaben", ("tun", "kiKorrektur")),
 ]
 ETIKETTEN = [("SICHER FALSCH", "#c77d2e", "white", "Da ist kein Zweifel.", "blind übernehmen"),
-             ("KOMMT DRAUF AN", "#2f6fb5", "white", "Hängt vom Satz ab.", "kurz hinschauen"),
-             ("ZUM NACHDENKEN", "#868e96", "white", "Nur ein Anstoß, keine Regel.", "oft übergehen")]
+             ("KOMMT DRAUF AN", Farbe.AKZENT, "white", "Hängt vom Satz ab.", "kurz hinschauen"),
+             ("ZUM NACHDENKEN", Farbe.GRAU, "white", "Nur ein Anstoß, keine Regel.", "oft übergehen")]
 WEG = ["Schreiben, ohne auf die Wellenlinien zu achten.", "F7 drücken und „Alles Eindeutige übernehmen“ wählen.", "Die übrigen Karten einzeln durchgehen.",
        "F4 — einmal vorlesen lassen. Da fällt auf, was keine Regel findet.", "Nur wenn der Text sitzen muss: F8."]
 
@@ -82,7 +83,7 @@ class HilfeWannDialog(QDialog):
     def _zeile(self, stufe, titel, kuerzel, frage, rechts, aktion, trenner: bool) -> QWidget:
         z = QWidget(); zh = QHBoxLayout(z); zh.setContentsMargins(12, 8, 12, 8); zh.setSpacing(12)
         n = QLabel(str(stufe)); n.setAlignment(Qt.AlignCenter); n.setFixedSize(26, 26)
-        n.setStyleSheet("background: #2f6fb5; color: white; font-weight: bold; border-radius: 13px;")
+        n.setStyleSheet(('background: ' + Farbe.AKZENT + '; color: white; font-weight: bold; border-radius: 13px;'))
         zh.addWidget(n)
         mitte = QVBoxLayout(); mitte.setSpacing(0)
         kopf = QHBoxLayout(); kopf.setSpacing(8)
@@ -103,7 +104,7 @@ class HilfeWannDialog(QDialog):
             self.schalter[aktion[1]] = b
             zh.addWidget(b)
         elif aktion:
-            b = QPushButton("jetzt"); b.setStyleSheet("QPushButton { border: 1px solid #2f6fb5; color: #2f6fb5; border-radius: 11px; padding: 2px 12px; }")
+            b = QPushButton("jetzt"); b.setStyleSheet(('QPushButton { border: 1px solid ' + Farbe.AKZENT + '; color: ' + Farbe.AKZENT + '; border-radius: 11px; padding: 2px 12px; }'))
             b.clicked.connect(lambda _=False, a=aktion[1]: (self.accept(), self.fenster.befehle.tun(a)))
             zh.addWidget(b)
         else:

@@ -97,6 +97,11 @@ QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 4px; color:
 QTreeWidget, QListWidget { border: 1px solid %(rand)s; border-radius: 6px; background: %(karte)s; outline: 0; }
 QTreeWidget::item, QListWidget::item { padding: 4px; border-radius: 4px; }
 QTreeWidget::item:selected, QListWidget::item:selected { background: %(weich)s; color: %(text)s; }
+QTabBar::tab { background: transparent; border: 1px solid %(rand)s; border-bottom: none; border-top-left-radius: 6px; border-top-right-radius: 6px;
+    padding: 6px 12px 7px 12px; margin-right: 2px; color: %(text2)s; }
+QTabBar::tab:selected { background: %(karte)s; color: %(text)s; font-weight: 600; }
+QTabBar::tab:hover:!selected { background: %(hover)s; }
+QTabWidget::pane { border: 1px solid %(rand)s; border-radius: 6px; top: -1px; }
 QTabBar#bandReiter { background: transparent; }
 QTabBar#bandReiter::tab { background: transparent; border: none; border-bottom: 3px solid transparent;
     padding: 6px 14px 4px 14px; margin: 0 2px; }

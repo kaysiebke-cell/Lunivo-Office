@@ -9,6 +9,7 @@ from __future__ import annotations
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QBrush, QColor, QImage, QPixmap
 
+from lunivo_writer.core.farben import Farbe
 _BAYER = ((0, 32, 8, 40, 2, 34, 10, 42), (48, 16, 56, 24, 50, 18, 58, 26), (12, 44, 4, 36, 14, 46, 6, 38), (60, 28, 52, 20, 62, 30, 54, 22),
           (3, 35, 11, 43, 1, 33, 9, 41), (51, 19, 59, 27, 49, 17, 57, 25), (15, 47, 7, 39, 13, 45, 5, 37), (63, 31, 55, 23, 61, 29, 53, 21))
 
@@ -63,7 +64,7 @@ def _an(schluessel: str, x: int, y: int) -> bool:
     return {"h": waag, "v": senk, "ab": ab, "auf": auf, "raster": waag or senk, "karo": ab or auf}[richtung]
 
 
-def kachel(schluessel: str, muster: str = "#000000", fuell: str | None = None) -> QPixmap:
+def kachel(schluessel: str, muster: str = Farbe.SCHWARZ, fuell: str | None = None) -> QPixmap:
     """Eine 8 × 8-Kachel des Musters; ohne Füllfarbe bleibt der Grund durchsichtig."""
     bild = QImage(8, 8, QImage.Format_ARGB32)
     grund = QColor(fuell) if fuell else QColor(0, 0, 0, 0)
@@ -74,7 +75,7 @@ def kachel(schluessel: str, muster: str = "#000000", fuell: str | None = None) -
     return QPixmap.fromImage(bild)
 
 
-def pinsel(schluessel: str, muster: str = "#000000", fuell: str | None = None) -> QBrush:
+def pinsel(schluessel: str, muster: str = Farbe.SCHWARZ, fuell: str | None = None) -> QBrush:
     """Der Pinsel für den Hintergrund eines Absatzes (Muster über Füllfarbe)."""
     if schluessel in ("", "loeschen"):
         return QBrush(QColor(fuell)) if fuell else QBrush(Qt.NoBrush)
@@ -91,4 +92,4 @@ def aus_text(text: str | None) -> tuple[str, str, str | None] | None:
     t = text.split("|")
     if len(t) < 2 or not t[0] or t[0] not in _NAME:
         return None
-    return t[0], t[1] or "#000000", (t[2] if len(t) > 2 and t[2] else None)
+    return t[0], t[1] or Farbe.SCHWARZ, (t[2] if len(t) > 2 and t[2] else None)

@@ -47,13 +47,15 @@ def _combo(eintraege, aktuell) -> QComboBox:
     return c
 
 
-def _zeile(g: QGridLayout, r: int, radio: QRadioButton, *rest) -> None:
-    g.addWidget(radio, r, 0)
-    for i, w in enumerate(rest):
-        g.addWidget(w, r, i + 1)
+def _zeile(g: FormularGitter, _r: int, radio: QRadioButton, *rest) -> None:
+    """Eine Wahlzeile: der Knopf mit seinem Feld, dahinter (falls da) „Beschriftung + Feld“ — nebeneinander oder untereinander, je nach Breite."""
+    g.zeile(radio, rest[0])
+    if len(rest) >= 3:
+        g.zeile(rest[1], rest[2])
 
 
 from lunivo_writer.ui.baukasten.zusatz_panel import PanelFaehig
+from lunivo_writer.ui.baukasten.formular_gitter import AngepassteReiter, FlussLayout, FormularGitter, UmbruchSchalter
 class LayoutDialog(PanelFaehig, QDialog):
     def __init__(self, parent=None, werte: dict | None = None):
         super().__init__(parent)
@@ -66,14 +68,14 @@ class LayoutDialog(PanelFaehig, QDialog):
                 w[k] = v
         self._w = w
         v = QVBoxLayout(self)
-        self.reiter = QTabWidget(); v.addWidget(self.reiter)
+        self.reiter = AngepassteReiter(); v.addWidget(self.reiter)
         self._position(w); self._umbruch(w); self._groesse(w)
         self.ok = fussleiste(self, v)
         self._pruefen()
 
     # ---- Reiter Position ---------------------------------------------------------------------------------------------------
     def _achse(self, titel: str, w: dict, waagerecht: bool) -> dict:
-        box = QGroupBox(titel); g = QGridLayout(box); g.setColumnStretch(2, 1)
+        box = QGroupBox(titel); g = FormularGitter(box); g.setContentsMargins(0, 6, 0, 2)
         grp = QButtonGroup(self)
         ausr_liste, bezug = (AUSR_H, BEZUG_H) if waagerecht else (AUSR_V, BEZUG_V)
         f: dict = {}
@@ -119,12 +121,13 @@ class LayoutDialog(PanelFaehig, QDialog):
         seite = QWidget(); v = QVBoxLayout(seite)
         self.h = self._achse("Horizontal", w["h"], True); self.v = self._achse("Vertikal", w["v"], False)
         v.addWidget(self.h["box"]); v.addWidget(self.v["box"])
-        opt = QGroupBox("Optionen"); g = QGridLayout(opt)
-        self.mit_text = QCheckBox("Objekt mit Text verschieben"); self.mit_text.setChecked(w["mit_text"])
-        self.ueberlappen = QCheckBox("Überlappen zulassen"); self.ueberlappen.setChecked(w["ueberlappen"])
-        self.verankern = QCheckBox("Verankern"); self.verankern.setChecked(w["verankern"])
-        tabelle = QCheckBox("Layout in Tabellenzelle"); tabelle.setChecked(True); tabelle.setEnabled(False)       # wie in der Vorlage grau
-        g.addWidget(self.mit_text, 0, 0); g.addWidget(self.ueberlappen, 0, 1); g.addWidget(self.verankern, 1, 0); g.addWidget(tabelle, 1, 1)
+        opt = QGroupBox("Optionen"); g = FormularGitter(opt); g.setContentsMargins(0, 6, 0, 2)
+        self.mit_text = UmbruchSchalter("Objekt mit Text verschieben"); self.mit_text.setChecked(w["mit_text"])
+        self.ueberlappen = UmbruchSchalter("Überlappen zulassen"); self.ueberlappen.setChecked(w["ueberlappen"])
+        self.verankern = UmbruchSchalter("Verankern"); self.verankern.setChecked(w["verankern"])
+        tabelle = UmbruchSchalter("Layout in Tabellenzelle"); tabelle.setChecked(True); tabelle.setEnabled(False)       # wie in der Vorlage grau
+        for x in (self.mit_text, self.ueberlappen, self.verankern, tabelle):
+            g.breit(x)
         v.addWidget(opt); v.addStretch(1)
         self.reiter.addTab(seite, "Position")
 
@@ -137,24 +140,24 @@ class LayoutDialog(PanelFaehig, QDialog):
             self.kacheln.hinzu(schl, text, umbruch_zeichner(schl))
         self.kacheln.setze(w["umbruch"]); self.kacheln.gewaehlt.connect(lambda _k: self._pruefen())
         bv.addWidget(self.kacheln); v.addWidget(box)
-        zb = QGroupBox("Zeilenumbruch"); zh = QHBoxLayout(zb)
+        zb = QGroupBox("Zeilenumbruch"); zh = FlussLayout(14); zh.setContentsMargins(0, 6, 0, 2); zb.setLayout(zh)
         self.zeilen = {}
         gr = QButtonGroup(self)
         for schl, text in ZEILEN:
             r = QRadioButton(text); r.setChecked(w["zeilen"] == schl); gr.addButton(r); zh.addWidget(r); self.zeilen[schl] = r
         v.addWidget(zb); self._zeilen_box = zb
-        ab = QGroupBox("Abstand zum Text"); ag = QGridLayout(ab)
+        ab = QGroupBox("Abstand zum Text"); ag = FormularGitter(ab); ag.setContentsMargins(0, 6, 0, 2)
         self.abstand = {}
         for i, (schl, text) in enumerate((("oben", "Oben"), ("links", "Links"), ("unten", "Unten"), ("rechts", "Rechts"))):
             f = EinheitFeld(w["abstand"][schl], 0.0, 200.0, ("mm", "cm", "in", "pt"))
             self.abstand[schl] = f
-            ag.addWidget(QLabel(text), i % 2, (i // 2) * 2); ag.addWidget(f, i % 2, (i // 2) * 2 + 1)
+            ag.zeile(text + ":", f)
         v.addWidget(ab); self._abstand_box = ab; v.addStretch(1)
         self.reiter.addTab(seite, "Textumbruch")
 
     # ---- Reiter Größe ------------------------------------------------------------------------------------------------------
     def _mass(self, titel: str, w: dict) -> dict:
-        box = QGroupBox(titel); g = QGridLayout(box); g.setColumnStretch(2, 1)
+        box = QGroupBox(titel); g = FormularGitter(box); g.setContentsMargins(0, 6, 0, 2)
         f = {"r_abs": QRadioButton("Absolut"), "mm": EinheitFeld(w["mm"], 1.0, 3000.0, ("mm", "cm", "in", "pt")),
              "r_rel": QRadioButton("Relativ"), "proz": QDoubleSpinBox(), "bezug": _combo([("seite", "Seite"), ("rand", "Seitenrand")], w["bezug"])}
         f["proz"].setRange(1, 1000); f["proz"].setSuffix(" %"); f["proz"].setValue(w["proz"] or 100)
@@ -172,22 +175,22 @@ class LayoutDialog(PanelFaehig, QDialog):
         seite = QWidget(); v = QVBoxLayout(seite)
         self.hoehe = self._mass("Höhe", w["hoehe"]); self.breite = self._mass("Breite", w["breite"])
         v.addWidget(self.hoehe["box"]); v.addWidget(self.breite["box"])
-        d = QGroupBox("Drehen"); dh = QHBoxLayout(d)
+        d = QGroupBox("Drehen"); dh = FormularGitter(d); dh.setContentsMargins(0, 6, 0, 2)
         self.drehung = QDoubleSpinBox(); self.drehung.setRange(-360, 360); self.drehung.setSuffix(" °"); self.drehung.setValue(w["drehung"])
-        dh.addWidget(QLabel("Drehung:")); dh.addWidget(self.drehung); dh.addStretch(1); v.addWidget(d)
-        s = QGroupBox("Skalieren"); sg = QGridLayout(s)
+        dh.zeile("Drehung:", self.drehung); v.addWidget(d)
+        s = QGroupBox("Skalieren"); sg = FormularGitter(s); sg.setContentsMargins(0, 6, 0, 2)
         self.skal_h = QDoubleSpinBox(); self.skal_b = QDoubleSpinBox()
         for x in (self.skal_h, self.skal_b):
             x.setRange(1, 1000); x.setSuffix(" %"); x.setValue(100)
-        sg.addWidget(QLabel("Höhe:"), 0, 0); sg.addWidget(self.skal_h, 0, 1); sg.addWidget(QLabel("Breite:"), 0, 2); sg.addWidget(self.skal_b, 0, 3)
-        self.sperren = QCheckBox("Seitenverhältnis sperren"); self.sperren.setChecked(w["sperren"])
-        self.skal_original = QCheckBox("Relativ zur Originalbildgröße"); self.skal_original.setChecked(w["skal_original"])
-        sg.addWidget(self.sperren, 1, 0, 1, 4); sg.addWidget(self.skal_original, 2, 0, 1, 4)
+        sg.zeile("Höhe:", self.skal_h); sg.zeile("Breite:", self.skal_b)
+        self.sperren = UmbruchSchalter("Seitenverhältnis sperren"); self.sperren.setChecked(w["sperren"])
+        self.skal_original = UmbruchSchalter("Relativ zur Originalbildgröße"); self.skal_original.setChecked(w["skal_original"])
+        sg.breit(self.sperren); sg.breit(self.skal_original)
         v.addWidget(s)
-        o = QGroupBox("Originalgröße"); og = QGridLayout(o)
+        o = QGroupBox("Originalgröße"); og = FormularGitter(o); og.setContentsMargins(0, 6, 0, 2)
         self._orig_b, self._orig_h = w["original"]
-        self.orig_text = QLabel(); og.addWidget(self.orig_text, 0, 0)
-        zur = QPushButton("Zurücksetzen"); zur.clicked.connect(self._zuruecksetzen); og.addWidget(zur, 0, 1, Qt.AlignRight)
+        self.orig_text = QLabel(); og.breit(self.orig_text)
+        zur = QPushButton("Zurücksetzen"); zur.clicked.connect(self._zuruecksetzen); og.breit(zur)
         v.addWidget(o); v.addStretch(1)
         self.reiter.addTab(seite, "Größe")
         self._skal_nachziehen(); self._orig_anzeigen()

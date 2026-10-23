@@ -13,6 +13,7 @@ from PySide6.QtGui import QColor, QPen, QTextCharFormat, QTextFormat
 from lunivo_writer.editor import textfx
 
 # Schlüssel → (Name, Qt-Strichart oder Strichmuster in Linienbreiten, DOCX-Wert ``a:prstDash``)
+from lunivo_writer.core.farben import Farbe
 KONTUR_ARTEN = {"einfach": ("Durchgezogen", Qt.SolidLine, "solid"), "gepunktet": ("Gepunktet", Qt.DotLine, "sysDot"),
                 "fein": ("Fein gestrichelt", [3.0, 1.0], "sysDash"), "gestrichelt": ("Gestrichelt", Qt.DashLine, "dash"),
                 "lang": ("Lang gestrichelt", [8.0, 3.0], "lgDash"), "strichpunkt": ("Strich-Punkt", Qt.DashDotLine, "dashDot"),
@@ -31,7 +32,7 @@ def strich_setzen(pen: QPen, art: str) -> None:
         pen.setStyle(st)
 
 
-EFFEKT = {"fuell": "farbe", "farbe": "", "transparenz": 0, "kontur": False, "kontur_farbe": "#000000", "kontur_breite": 0.75, "kontur_art": "einfach"}
+EFFEKT = {"fuell": "farbe", "farbe": "", "transparenz": 0, "kontur": False, "kontur_farbe": Farbe.SCHWARZ, "kontur_breite": 0.75, "kontur_art": "einfach"}
 
 
 def zu_format(w: dict) -> QTextCharFormat:
@@ -41,7 +42,7 @@ def zu_format(w: dict) -> QTextCharFormat:
     if w["fuell"] == "keine":
         f.setForeground(QColor(0, 0, 0, 0))
     elif w["farbe"] or w["transparenz"]:
-        c = QColor(w["farbe"] or "#000000")
+        c = QColor(w["farbe"] or Farbe.SCHWARZ)
         c.setAlphaF(1.0 - w["transparenz"] / 100)
         f.setForeground(c)
     if w["kontur"] and not ("kontur_verlauf" in w or w.get("kontur_form", "einfach") != "einfach"):   # sonst zeichnet Lunivo die Kontur (textfx)
@@ -53,7 +54,7 @@ def zu_format(w: dict) -> QTextCharFormat:
     from lunivo_writer.editor.zusatz import P_EFFEKT
     f.setProperty(P_EFFEKT, textfx.als_text(w))                                  # immer setzen: beim Zusammenführen löscht ein leerer Wert einen alten Effekt
     if w["fuell"] == "verlauf" and w.get("verlauf"):
-        f.setForeground(QColor(w["verlauf"].get("farbe1", "#000000")))         # sichtbar, auch wo der Verlauf nicht gezeichnet wird
+        f.setForeground(QColor(w["verlauf"].get("farbe1", Farbe.SCHWARZ)))         # sichtbar, auch wo der Verlauf nicht gezeichnet wird
     return f
 
 
@@ -95,7 +96,7 @@ def aus_text(text: str | None, farbe: str = "") -> dict | None:
     if len(t) not in (4, 5):
         return None
     try:
-        w = {**EFFEKT, "farbe": farbe, "transparenz": int(t[0]), "kontur": bool(t[1]), "kontur_farbe": t[1] or "#000000",
+        w = {**EFFEKT, "farbe": farbe, "transparenz": int(t[0]), "kontur": bool(t[1]), "kontur_farbe": t[1] or Farbe.SCHWARZ,
              "kontur_breite": float(t[2]), "kontur_art": t[3] if t[3] in KONTUR_ARTEN else "einfach"}
         if len(t) == 5:
             w.update(textfx.aus_text(t[4]))
@@ -124,7 +125,7 @@ _EMU_PT = 12700
 
 def _farbelement(eltern, hexwert: str, alpha_pct: float | None = None):
     from lxml import etree
-    c = etree.SubElement(eltern, _q("srgbClr")); c.set(_q("val"), (hexwert or "#000000")[1:].upper())
+    c = etree.SubElement(eltern, _q("srgbClr")); c.set(_q("val"), (hexwert or Farbe.SCHWARZ)[1:].upper())
     if alpha_pct is not None and alpha_pct < 100:
         etree.SubElement(c, _q("alpha")).set(_q("val"), str(int(round(alpha_pct * 1000))))
     return c
@@ -134,7 +135,7 @@ def _verlauf_element(eltern, v: dict) -> None:
     from lxml import etree
     g = etree.SubElement(eltern, _q("gradFill"))
     lst = etree.SubElement(g, _q("gsLst"))
-    for pos, farbe in ((0, v.get("farbe1", "#000000")), (100000, v.get("farbe2", "#ffffff"))):
+    for pos, farbe in ((0, v.get("farbe1", Farbe.SCHWARZ)), (100000, v.get("farbe2", Farbe.WEISS))):
         gs = etree.SubElement(lst, _q("gs")); gs.set(_q("pos"), str(pos)); _farbelement(gs, farbe)
     lin = etree.SubElement(g, _q("lin")); lin.set(_q("ang"), str(int(round(v.get("winkel", 90) * 60000)))); lin.set(_q("scaled"), "0")
 
@@ -146,7 +147,7 @@ def in_rpr(rpr, cf: QTextCharFormat) -> None:
     g = w.get("leuchten")
     if g and g.get("groesse", 0) > 0:
         e = etree.SubElement(rpr, _q("glow")); e.set(_q("rad"), str(int(g["groesse"] * _EMU_PT)))
-        _farbelement(e, g.get("farbe", "#4c6ef5"), 100 - g.get("transparenz", 60))
+        _farbelement(e, g.get("farbe", Farbe.BLAU), 100 - g.get("transparenz", 60))
     s = w.get("schatten")
     if s and s.get("art") != "innen":                                       # Innenschatten kennt DOCX nicht
         e = etree.SubElement(rpr, _q("shadow"))
@@ -155,7 +156,7 @@ def in_rpr(rpr, cf: QTextCharFormat) -> None:
         persp = s.get("art") == "persp"
         e.set(_q("sy"), str(int(s.get("groesse", 100) * 1000 * (-0.4 if persp else 1)))); e.set(_q("kx"), "0"); e.set(_q("ky"), "0")
         e.set(_q("algn"), "b" if persp else "ctr")
-        _farbelement(e, s.get("farbe", "#000000"), 100 - s.get("transparenz", 50))
+        _farbelement(e, s.get("farbe", Farbe.SCHWARZ), 100 - s.get("transparenz", 50))
     r = w.get("reflektion")
     if r:
         e = etree.SubElement(rpr, _q("reflection"))
@@ -177,14 +178,14 @@ def in_rpr(rpr, cf: QTextCharFormat) -> None:
     elif w["fuell"] == "verlauf" and "verlauf" in w:
         _verlauf_element(etree.SubElement(rpr, _q("textFill")), w["verlauf"])
     elif w["transparenz"]:
-        c = _farbelement(etree.SubElement(etree.SubElement(rpr, _q("textFill")), _q("solidFill")), w["farbe"] or "#000000")
+        c = _farbelement(etree.SubElement(etree.SubElement(rpr, _q("textFill")), _q("solidFill")), w["farbe"] or Farbe.SCHWARZ)
         etree.SubElement(c, _q("alpha")).set(_q("val"), str(int(round((100 - w["transparenz"]) * 1000))))
     d = w.get("d3")
     if d and d.get("tiefe", 0) > 0:
         e = etree.SubElement(rpr, _q("props3d")); e.set(_q("extrusionH"), str(int(d["tiefe"] * _EMU_PT)))
         e.set(_q("contourW"), str(int(d.get("kontur", 0) * _EMU_PT))); e.set(_q("prstMaterial"), _MATERIAL.get(d.get("material", "matt"), "matte"))
-        _farbelement(etree.SubElement(e, _q("extrusionClr")), d.get("tiefe_farbe", "#868e96"))
-        _farbelement(etree.SubElement(e, _q("contourClr")), d.get("kontur_farbe", "#343a40"))
+        _farbelement(etree.SubElement(e, _q("extrusionClr")), d.get("tiefe_farbe", Farbe.GRAU))
+        _farbelement(etree.SubElement(e, _q("contourClr")), d.get("kontur_farbe", Farbe.TINTE))
 
 
 def _wert(e, name: str, vorgabe: float = 0.0) -> float:
@@ -198,7 +199,7 @@ def _farbe_aus(e) -> tuple[str, float]:
     """(Farbe, Transparenz in %) eines Elements mit w14:srgbClr darunter."""
     c = e.find(_q("srgbClr")) if e is not None else None
     if c is None:
-        return "#000000", 0.0
+        return Farbe.SCHWARZ, 0.0
     a = c.find(_q("alpha"))
     return "#" + (c.get(_q("val")) or "000000"), (100 - _wert(a, "val", 100000) / 1000) if a is not None else 0.0
 
@@ -207,7 +208,7 @@ def _verlauf_aus(g) -> dict:
     stopps = [(_wert(gs, "pos"), "#" + ((gs.find(_q("srgbClr")).get(_q("val"))) if gs.find(_q("srgbClr")) is not None else "000000")) for gs in g.iter(_q("gs"))]
     stopps.sort()
     lin = g.find(_q("lin"))
-    return {"farbe1": stopps[0][1] if stopps else "#000000", "farbe2": stopps[-1][1] if stopps else "#ffffff",
+    return {"farbe1": stopps[0][1] if stopps else Farbe.SCHWARZ, "farbe2": stopps[-1][1] if stopps else Farbe.WEISS,
             "winkel": round(_wert(lin, "ang", 5400000) / 60000) % 360 if lin is not None else 90}
 
 

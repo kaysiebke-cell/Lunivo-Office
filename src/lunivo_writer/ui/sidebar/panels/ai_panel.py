@@ -13,6 +13,7 @@ from lunivo_writer.ui.baukasten.beschriftung import md_escape, md_label, text_la
 
 
 
+from lunivo_writer.core.farben import Farbe
 class ChatEingabe(QPlainTextEdit):
     """Mehrzeiliges Eingabefeld für den Chat: Enter schickt ab, Umschalt+Enter macht eine neue Zeile. ``text()``/``setText()`` wie beim Einzeiler."""
     abgeschickt = Signal()
@@ -174,7 +175,7 @@ class ChatPanel(QWidget):
 
     def _blase(self, text: str, ki: bool, cent=None) -> None:
         f = QFrame(); f.setFrameShape(QFrame.StyledPanel)
-        f.setStyleSheet("QFrame { border-left: 4px solid %s; }" % ("#2f6fb5" if ki else "#868e96"))
+        f.setStyleSheet("QFrame { border-left: 4px solid %s; }" % (Farbe.AKZENT if ki else Farbe.GRAU))
         l = QVBoxLayout(f)
         t = text_label(text)
         t.setTextInteractionFlags(Qt.TextSelectableByMouse)

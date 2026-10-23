@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import QColor, QPainter, QPen
 
+from lunivo_writer.core.farben import Farbe
 LINIENBREITEN = (0.25, 0.5, 0.75, 1.0, 1.5, 2.25, 3.0, 4.5, 6.0)                       # pt
 ALLE_SEITEN = "tblr"
 
@@ -43,6 +44,9 @@ def _bauen() -> dict:
 
 
 STILE = _bauen()
+# Die Strichlinien für Formen und Bilder (Auswahl „Strichart“): Schlüssel und Name — die einzige Liste dafür, Menü und Seitenleiste lesen sie hier
+OBJEKT_STRICHE = (("einfach", "Durchgezogen"), ("gepunktet", "Gepunktet"), ("fein_gestrichelt", "Fein gestrichelt"), ("gestrichelt", "Gestrichelt"),
+                  ("strichpunkt", "Strich-Punkt"), ("strichpunktpunkt", "Strich-Punkt-Punkt"))
 LINIENARTEN = {k: (v[0], v[1]) for k, v in STILE.items()}                              # Name und Strichart (wie bisher)
 _VON_DOCX = {v[2]: k for k, v in STILE.items()}
 
@@ -58,7 +62,7 @@ def art_aus_docx(wert: str | None) -> str:
 
 @dataclass
 class Linie:
-    farbe: str = "#000000"
+    farbe: str = Farbe.SCHWARZ
     breite_pt: float = 1.0
     art: str = "einfach"
     seiten: str = ALLE_SEITEN
@@ -84,7 +88,7 @@ class Linie:
             return None
         t = text.split("|")
         try:
-            return cls(t[0] or "#000000", float(t[1]) if len(t) > 1 and t[1] else 1.0, t[2] if len(t) > 2 and t[2] else "einfach",
+            return cls(t[0] or Farbe.SCHWARZ, float(t[1]) if len(t) > 1 and t[1] else 1.0, t[2] if len(t) > 2 and t[2] else "einfach",
                        t[3] if len(t) > 3 else ALLE_SEITEN, t[4] if len(t) > 4 else "")
         except ValueError:
             return None

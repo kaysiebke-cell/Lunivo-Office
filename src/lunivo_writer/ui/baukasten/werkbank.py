@@ -10,9 +10,8 @@ from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPushButton, QScrollA
 from lunivo_writer.ui.schreibhilfe_katalog import Funktion, fuer_reiter
 from lunivo_writer.ui.widgets import icons
 
-ZEILE = ("QFrame#funktionsZeile { border: 1px solid palette(midlight); border-radius: 8px; background: transparent; }"
-         "QFrame#funktionsZeile:hover { background: palette(alternate-base); border-color: palette(mid); }"
-         "QFrame#funktionsZeile:focus { border: 2px solid #2f6fb5; }")
+from lunivo_writer.core.farben import Farbe
+ZEILE = (('QFrame#funktionsZeile { border: 1px solid palette(midlight); border-radius: 8px; background: transparent; }QFrame#funktionsZeile:hover { background: palette(alternate-base); border-color: palette(mid); }QFrame#funktionsZeile:focus { border: 2px solid ' + Farbe.AKZENT + '; }'))
 AN = "background: #2f9e75; color: white; border-radius: 11px; padding: 2px 10px; font-weight: bold;"
 AUS = "background: transparent; color: palette(mid); border: 1px solid palette(mid); border-radius: 11px; padding: 2px 10px;"
 

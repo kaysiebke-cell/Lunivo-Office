@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (QTabBar, QFileDialog, QFrame, QGridLayout, QInput
 from lunivo_writer.editor import vorlagen
 from lunivo_writer.ui.widgets import icons
 
+from lunivo_writer.core.farben import Farbe
 KACHEL = QSize(186, 243)
 _VORSCHAU: dict[tuple, QPixmap] = {}                     # (Art, Schlüssel, Änderungszeit) → Bild, solange das Programm läuft
 
@@ -37,7 +38,7 @@ def _geruest_bild(muster: dict, benutzer: dict) -> QPixmap:
     vorlagen.aufbauen(ed, muster["zeilen"], benutzer, QLocale("de_DE").toString(QDate.currentDate(), "d. MMMM yyyy"))
     from PySide6.QtGui import QBrush, QTextCharFormat, QTextCursor
     c = QTextCursor(ed.document()); c.select(QTextCursor.Document)
-    f = QTextCharFormat(); f.setForeground(QBrush(QColor("#000000"))); f.setBackground(QBrush(Qt.NoBrush))
+    f = QTextCharFormat(); f.setForeground(QBrush(QColor(Farbe.SCHWARZ))); f.setBackground(QBrush(Qt.NoBrush))
     c.mergeCharFormat(f)                                      # in der Vorschau sind die Lücken schlichter Text: lesbar, ohne Farbe und Gelb
     return _blatt_bild(ed.document(), PageSettings())
 
@@ -79,7 +80,7 @@ class _Kachel(QToolButton):
         w, h = pm.width(), pm.height()
         vorn = pm.scaled(w - 16, h - 16, Qt.KeepAspectRatio, Qt.SmoothTransformation)
         for dx, dy in ((16, 0), (8, 8)):                             # zwei Blätter dahinter, nur an der Kante zu sehen
-            p.setPen(QColor("#adb5bd")); p.setBrush(QColor("#f1f3f5")); p.drawRect(dx, dy, vorn.width() - 1, vorn.height() - 1)
+            p.setPen(QColor(Farbe.GRAU_HELL)); p.setBrush(QColor("#f1f3f5")); p.drawRect(dx, dy, vorn.width() - 1, vorn.height() - 1)
         p.drawPixmap(0, 16, vorn)
         p.setBrush(QColor(0, 0, 0, 190)); p.setPen(Qt.NoPen); p.drawRoundedRect(6, KACHEL.height() - 34, 58, 26, 6, 6)
         p.setPen(QColor("white")); p.drawText(6, KACHEL.height() - 34, 58, 26, Qt.AlignCenter, f"▣ {self.anzahl}")

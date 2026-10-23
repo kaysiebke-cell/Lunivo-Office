@@ -6,6 +6,7 @@ from PySide6.QtGui import QColor, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import QApplication, QWidget
 
 
+from lunivo_writer.core.farben import Farbe
 class BereichWahl(QWidget):
     """Vollbild mit eingefrorenem Bildschirm; mit der Maus einen Bereich aufziehen (Esc bricht ab)."""
     fertig = Signal(object)          # QPixmap oder None
@@ -24,7 +25,7 @@ class BereichWahl(QWidget):
         if self.a and self.b:
             r = QRect(self.a, self.b).normalized()
             p.drawPixmap(r, self.bild, self._quelle(r))
-            p.setPen(QPen(QColor("#4a8fd8"), 2)); p.drawRect(r)
+            p.setPen(QPen(QColor(Farbe.AKZENT_DUNKEL), 2)); p.drawRect(r)
         p.end()
 
     def _quelle(self, r: QRect) -> QRect:

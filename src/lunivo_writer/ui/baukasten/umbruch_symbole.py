@@ -10,9 +10,10 @@ from PySide6.QtCore import QRectF, Qt
 from PySide6.QtGui import QColor, QPainter, QPen
 
 # Schlüssel → Beschriftung, in der Reihenfolge des Reiters „Textumbruch“
+from lunivo_writer.core.farben import Farbe
 ARTEN = [("quadrat", "Quadrat"), ("passend", "Passend"), ("transparent", "Transparent"), ("obenunten", "Oben und Unten"),
          ("hinter", "Hinter den Text"), ("vor", "Vor dem Text"), ("textfluss", "Im Textfluss")]
-BILD = QColor("#4c6ef5")
+BILD = QColor(Farbe.BLAU)
 ZEILEN = 7
 
 
