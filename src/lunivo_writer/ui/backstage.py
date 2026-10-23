@@ -50,7 +50,7 @@ EXPORT_ENDUNG = {"speichernPdf": ".pdf", "exportierenDocx": ".docx", "exportiere
 
 BREITE = 460
 
-STIL = ('\nQWidget#bsLinks { background: palette(window); }\nQListWidget#bsListe { background: transparent; border: none; outline: none; }\nQListWidget#bsListe::item { padding: 10px 14px; border-left: 3px solid transparent; }\nQListWidget#bsListe::item:selected { background: palette(midlight); color: palette(window-text); border-left: 3px solid palette(highlight); }\nQListWidget#bsListe::item:hover:!selected { background: palette(midlight); }\nQWidget#bsRechts, QScrollArea#bsSeite, QScrollArea#bsSeite > QWidget > QWidget { background: palette(base); }\nQLabel#bsTitel { font-size: 17pt; }\nQWidget#optKopf { border-bottom: 1px solid palette(midlight); }\nQPushButton#optZurueck { border: none; background: transparent; font-size: 14pt; font-weight: 600; text-align: left; padding: 4px 6px; }\nQPushButton#optFertig { background: ' + Farbe.AKZENT + '; color: white; border: none; border-radius: 6px; padding: 9px 30px; font-weight: 600; }\nQPushButton#optFertig:hover { background: ' + Farbe.AKZENT_DUNKEL + '; }\nQLabel#bsGruppe { font-size: 11pt; font-weight: 600; }\nQLabel#bsHinweis { color: palette(mid); }\nQPushButton#bsKnopf { border: none; background: transparent; padding: 9px 12px; text-align: left; border-radius: 6px; }\nQPushButton#bsKnopf:hover:enabled { background: palette(midlight); }\nQPushButton#bsKnopf:disabled { color: palette(mid); }\n')
+STIL = ('\nQWidget#bsLinks { background: palette(window); }\nQListWidget#bsListe { background: transparent; border: none; outline: none; }\nQListWidget#bsListe::item { padding: 10px 14px; border-left: 3px solid transparent; }\nQListWidget#bsListe::item:selected { background: palette(midlight); color: palette(window-text); border-left: 3px solid palette(highlight); }\nQListWidget#bsListe::item:hover:!selected { background: palette(midlight); }\nQWidget#bsRechts, QScrollArea#bsSeite, QScrollArea#bsSeite > QWidget > QWidget { background: palette(base); }\nQLabel#bsTitel { font-size: 17pt; }\nQWidget#optLinks { background: palette(window); border-right: 1px solid palette(midlight); }\nQWidget#optKopf { border-bottom: 1px solid palette(midlight); }\nQPushButton#optZurueck { border: none; background: transparent; font-size: 14pt; font-weight: 600; text-align: left; padding: 4px 6px; }\nQPushButton#optFertig { background: ' + Farbe.AKZENT + '; color: white; border: none; border-radius: 6px; padding: 9px 30px; font-weight: 600; }\nQPushButton#optFertig:hover { background: ' + Farbe.AKZENT_DUNKEL + '; }\nQLabel#bsGruppe { font-size: 11pt; font-weight: 600; }\nQLabel#bsHinweis { color: palette(mid); }\nQPushButton#bsKnopf { border: none; background: transparent; padding: 9px 12px; text-align: left; border-radius: 6px; }\nQPushButton#bsKnopf:hover:enabled { background: palette(midlight); }\nQPushButton#bsKnopf:disabled { color: palette(mid); }\n')
 
 
 class Backstage(QWidget):
@@ -144,7 +144,7 @@ class Backstage(QWidget):
         ph = self.seiten["optionen"]
         self._links.hide()                                           # die Optionen füllen die ganze Breite; das Menü ist für die Dauer weg
         if ph._ansicht is None:
-            v = ph.layout()
+            v = ph.layout(); v.setSpacing(0)                         # keine Lücke zwischen Optionen und Fußleiste: die linke Fläche bleibt ganz
             kopf = QWidget(); kopf.setObjectName("optKopf")
             kh = QHBoxLayout(kopf); kh.setContentsMargins(14, 10, 14, 10)
             zurueck = QPushButton("←   Optionen")
@@ -153,10 +153,14 @@ class Backstage(QWidget):
             zurueck.clicked.connect(self.schliessen)
             kh.addWidget(zurueck); kh.addStretch(1)
             ph._ansicht = OptionenAnsicht(self.w, getattr(self, "_optionen_unter", None))
-            fuss = QWidget(); fh = QHBoxLayout(fuss); fh.setContentsMargins(24, 10, 24, 14)
+            fuss = QWidget(); fh = QHBoxLayout(fuss); fh.setContentsMargins(0, 0, 0, 0); fh.setSpacing(0)
+            unten_links = QWidget(); unten_links.setObjectName("optLinks"); unten_links.setFixedWidth(250)     # die linke Fläche läuft bis ganz unten durch
+            unten_links.setAttribute(Qt.WA_StyledBackground, True)
+            rechts_fuss = QHBoxLayout(); rechts_fuss.setContentsMargins(24, 10, 24, 14)
             fertig = QPushButton("Fertig"); fertig.setObjectName("optFertig"); fertig.setCursor(Qt.PointingHandCursor)
             fertig.clicked.connect(self.schliessen)
-            fh.addStretch(1); fh.addWidget(fertig)
+            rechts_fuss.addStretch(1); rechts_fuss.addWidget(fertig)
+            fh.addWidget(unten_links); fh.addLayout(rechts_fuss, 1)
             ph._kopf, ph._fertig, ph._zurueck = kopf, fertig, zurueck
             v.addWidget(kopf); v.addWidget(ph._ansicht, 1); v.addWidget(fuss)
         elif getattr(self, "_optionen_unter", None):
